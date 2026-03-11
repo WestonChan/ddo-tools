@@ -11,13 +11,12 @@ npm run build        # Production build
 npm run lint         # ESLint
 npm run format       # Prettier
 
-# Python data pipeline
-cd scripts
-pip install -e ".[dev]"  # Install with dev deps (or: uv pip install -e ".[dev]")
-ddo-data --help          # CLI commands
-ddo-data info            # Show DDO install info and .dat files
-ddo-data parse <file>    # Parse a .dat archive header
-pytest                   # Run Python tests
+# Python data pipeline (run from scripts/)
+pip install -e "scripts/.[dev]"  # Install with dev deps (or: uv pip install -e "scripts/.[dev]")
+ddo-data --help                  # CLI commands
+ddo-data info                    # Show DDO install info and .dat files
+ddo-data parse <file>            # Parse a .dat archive header
+pytest scripts/                  # Run Python tests
 ```
 
 ## Project Structure
@@ -53,5 +52,5 @@ The `.dat` files use Turbine's proprietary archive format (shared with LOTRO). R
 - **Frontend:** React + TypeScript + Vite. Use feature-based organization. Router basename is `/ddo-builder` (for GitHub Pages).
 - **Styling:** Dark theme with gold (#c9a848) accents. CSS modules or plain CSS in component directories.
 - **Python:** Package lives in `scripts/` with `pyproject.toml`. Use `click` for CLI commands. Type hints required.
-- **Data flow:** Python scripts extract game data → JSON files in `src/data/` → React app reads them at runtime.
+- **Data flow:** Python scripts extract game data → JSON files in `public/data/` → React app reads them at runtime.
 - **Hosting:** GitHub Pages (static only). Auto-deployed via GitHub Actions on push to `main`.
