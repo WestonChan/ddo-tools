@@ -41,5 +41,10 @@ scripts/extracted/
 htmlcov/
 .pytest_cache/
 
+# Claude Code
+.claude/
+.mcp.json
+.playwright-mcp/
+
 # Misc
 *.log
