@@ -26,14 +26,6 @@ export interface Enhancement {
   description: string
 }
 
-export interface CharacterBuild {
-  name: string
-  race: string
-  classes: { classId: string; levels: number }[]
-  feats: string[]
-  enhancements: string[]
-}
-
 export type AbilityScore = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA'
 
 export interface CharacterStats {
@@ -50,4 +42,110 @@ export interface CharacterStats {
   meleePower: number
   rangedPower: number
   spellPower: number
+}
+
+// --- Reincarnation & Character model ---
+
+export type ReincarnationType = 'heroic' | 'racial' | 'iconic' | 'epic'
+export type EpicSphere = 'arcane' | 'divine' | 'martial' | 'primal'
+export type Server = 'Cormyr' | 'Moonsea' | 'Shadowdale' | 'Thrane' | 'Hardcore'
+export type LifeStatus = 'completed' | 'current' | 'planned'
+
+/** How a life ended — the reincarnation event that completed it */
+export interface Reincarnation {
+  type: ReincarnationType
+  epicSphere?: EpicSphere // only when type === 'epic'
+  completedAt?: string // ISO date
+}
+
+/** Tracks provenance of imported lives, preserving original data for future mapping */
+export type ImportFormat = 'ddo-builder-v2'
+export interface ImportSource {
+  format: ImportFormat
+  filename: string
+  importedAt: string // ISO date
+  rawData?: string // original XML preserved for unmapped fields
+}
+
+/** A single life (build) within a character's reincarnation history */
+export interface Life {
+  id: string
+  name: string
+  race: string
+  classes: { classId: string; levels: number }[]
+  feats: string[]
+  enhancements: string[]
+  status: LifeStatus
+  reincarnation?: Reincarnation // how this life ended (only for completed lives)
+  importSource?: ImportSource // only for imported lives
+  notes?: string
+}
+
+/** Backward-compat alias — existing code references CharacterBuild */
+export type CharacterBuild = Life
+
+/** Manual past life stacks — keyed by sourceId (classId, raceId, or sphere) */
+export interface PastLifeOverrides {
+  heroic: Record<string, number>
+  racial: Record<string, number>
+  iconic: Record<string, number>
+  epic: Record<string, number>
+}
+
+/** A character is a container of ordered lives with past life tracking */
+export interface Character {
+  id: string
+  name: string
+  server?: Server
+  notes?: string
+  lives: Life[]
+  currentLifeIndex: number
+  pastLifeOverrides: PastLifeOverrides
+  createdAt: string
+  updatedAt: string
+}
+
+/** App-level settings stored in localStorage */
+export interface AppSettings {
+  defaultServer?: Server
+}
+
+// --- Past life reference data (loaded from JSON) ---
+
+/** All categories that grant past life stacks (same as ReincarnationType) */
+export type PastLifeCategory = ReincarnationType
+
+export interface PastLifeBonus {
+  stat: string
+  value: number
+  description: string
+}
+
+export interface PastLifeFeat {
+  id: string
+  name: string
+  description: string
+  category: PastLifeCategory
+  sourceId: string
+  maxStacks: number
+  bonusPerStack: PastLifeBonus[]
+}
+
+// --- Derived past life summary (computed, not stored) ---
+
+export interface PastLifeStack {
+  pastLifeFeatId: string
+  category: PastLifeCategory
+  sourceId: string
+  stacks: number
+  fromLives: number
+  fromOverride: number
+}
+
+export interface PastLifeSummary {
+  heroic: PastLifeStack[]
+  racial: PastLifeStack[]
+  iconic: PastLifeStack[]
+  epic: PastLifeStack[]
+  totalPastLives: number
 }
