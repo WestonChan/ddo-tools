@@ -1,0 +1,81 @@
+/* --- Confirm modal --- */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.confirm-modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-accent);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.confirm-modal-title {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.confirm-modal-message {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.confirm-modal-input {
+  margin-bottom: 1rem;
+}
+
+.confirm-modal-input label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.35rem;
+}
+
+.confirm-modal-input strong {
+  color: var(--text);
+}
+
+.confirm-modal-input input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.confirm-modal-input input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.confirm-modal-actions .btn-ghost {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.confirm-modal-actions .btn-primary {
+  padding: 0.35rem 1rem;
+  font-size: 0.8rem;
+}
