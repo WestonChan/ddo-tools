@@ -14,7 +14,7 @@ const STUB_LIVES: Life[] = [
     feats: [],
     enhancements: [],
     status: 'completed',
-    reincarnation: { type: 'epic', epicSphere: 'martial', completedAt: '2025-01-10' },
+    reincarnation: { type: 'epic', epicFeatId: 'doublestrike', completedAt: '2025-01-10' },
   },
   {
     id: '1b',
@@ -24,7 +24,7 @@ const STUB_LIVES: Life[] = [
     feats: [],
     enhancements: [],
     status: 'completed',
-    reincarnation: { type: 'epic', epicSphere: 'arcane', completedAt: '2025-01-12' },
+    reincarnation: { type: 'epic', epicFeatId: 'energy-criticals', completedAt: '2025-01-12' },
   },
   {
     id: '1c',
@@ -45,7 +45,7 @@ const STUB_LIVES: Life[] = [
     feats: [],
     enhancements: [],
     status: 'completed',
-    reincarnation: { type: 'epic', epicSphere: 'divine', completedAt: '2025-06-18' },
+    reincarnation: { type: 'epic', epicFeatId: 'brace', completedAt: '2025-06-18' },
   },
   {
     id: '2b',
@@ -69,7 +69,7 @@ const STUB_LIVES: Life[] = [
     feats: [],
     enhancements: [],
     status: 'completed',
-    reincarnation: { type: 'epic', epicSphere: 'martial', completedAt: '2025-08-01' },
+    reincarnation: { type: 'epic', epicFeatId: 'doublestrike', completedAt: '2025-08-01' },
   },
   {
     id: '3b',
@@ -115,7 +115,7 @@ export const STUB_CHARACTERS: Character[] = [
       heroic: { paladin: 2, fighter: 3, rogue: 1 },
       racial: { human: 2, elf: 1 },
       iconic: {},
-      epic: { martial: 2 },
+      epic: { doublestrike: 2 },
     },
     createdAt: '2025-01-01',
     updatedAt: '2025-12-01',

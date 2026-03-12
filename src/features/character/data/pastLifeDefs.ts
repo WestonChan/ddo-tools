@@ -1,12 +1,13 @@
+import type { EpicSphere } from '../types'
+
 /** Definition of a single past life feat for the stacks UI */
 export interface PastLifeDef {
   id: string
   name: string
   category: 'heroic' | 'racial' | 'iconic' | 'epic'
+  sphere?: EpicSphere // grouping for epic feats
   max: number
-  bonusPerStack: number
-  bonusUnit: string
-  bonus: string // display text on stack row
+  bonuses: string[] // what each individual stack contributes (index 0 = 1st stack's bonus, etc.)
 }
 
 /**
@@ -14,20 +15,521 @@ export interface PastLifeDef {
  * public/data/past-life-feats.json once the data pipeline produces it.
  */
 export const PAST_LIFE_DEFS: PastLifeDef[] = [
-  // Heroic — keyed by classId
-  { id: 'paladin', name: 'Paladin', category: 'heroic', max: 3, bonusPerStack: 1, bonusUnit: 'hit/dmg vs evil', bonus: '+1 hit/dmg vs evil per stack' },
-  { id: 'fighter', name: 'Fighter', category: 'heroic', max: 3, bonusPerStack: 10, bonusUnit: 'HP', bonus: '+10 HP per stack' },
-  { id: 'rogue', name: 'Rogue', category: 'heroic', max: 3, bonusPerStack: 1, bonusUnit: 'Reflex save', bonus: '+1 Reflex save per stack' },
-  { id: 'wizard', name: 'Wizard', category: 'heroic', max: 3, bonusPerStack: 1, bonusUnit: 'spell penetration', bonus: '+1 spell penetration per stack' },
-  // Racial — keyed by raceId
-  { id: 'human', name: 'Human', category: 'racial', max: 3, bonusPerStack: 1, bonusUnit: 'ability point', bonus: '+1 ability point per stack' },
-  { id: 'elf', name: 'Elf', category: 'racial', max: 3, bonusPerStack: 1, bonusUnit: 'dex skills', bonus: '+1 dex skills per stack' },
-  // Iconic
-  { id: 'morninglord', name: 'Morninglord', category: 'iconic', max: 3, bonusPerStack: 1, bonusUnit: 'Turn Undead', bonus: '+1 Turn Undead per stack' },
-  { id: 'bladeforged', name: 'Bladeforged', category: 'iconic', max: 3, bonusPerStack: 1, bonusUnit: 'Reconstruct', bonus: '+1 Reconstruct per stack' },
-  // Epic — keyed by sphere
-  { id: 'martial', name: 'Martial', category: 'epic', max: 3, bonusPerStack: 1, bonusUnit: 'physical ability', bonus: '+1 physical ability per stack' },
-  { id: 'arcane', name: 'Arcane', category: 'epic', max: 3, bonusPerStack: 1, bonusUnit: 'spell ability', bonus: '+1 spell ability per stack' },
-  { id: 'divine', name: 'Divine', category: 'epic', max: 3, bonusPerStack: 1, bonusUnit: 'spell ability', bonus: '+1 spell ability per stack' },
-  { id: 'primal', name: 'Primal', category: 'epic', max: 3, bonusPerStack: 1, bonusUnit: 'physical ability', bonus: '+1 physical ability per stack' },
+  // Class (Heroic) — keyed by classId; each stack gives the same bonus
+  {
+    id: 'barbarian',
+    name: 'Barbarian',
+    category: 'heroic',
+    max: 3,
+    bonuses: ['+10 HP', '+10 HP', '+10 HP'],
+  },
+  {
+    id: 'bard',
+    name: 'Bard',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+2 Enchantment/Illusion saves',
+      '+2 Enchantment/Illusion saves',
+      '+2 Enchantment/Illusion saves',
+    ],
+  },
+  {
+    id: 'cleric',
+    name: 'Cleric',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+1 Conjuration DC, +1 Turn Undead',
+      '+1 Conjuration DC, +1 Turn Undead',
+      '+1 Conjuration DC, +1 Turn Undead',
+    ],
+  },
+  {
+    id: 'fighter',
+    name: 'Fighter',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+1 Attack, +1 Tactical DC',
+      '+1 Attack, +1 Tactical DC',
+      '+1 Attack, +1 Tactical DC',
+    ],
+  },
+  {
+    id: 'paladin',
+    name: 'Paladin',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+10% Positive Healing Amp',
+      '+10% Positive Healing Amp',
+      '+10% Positive Healing Amp',
+    ],
+  },
+  {
+    id: 'ranger',
+    name: 'Ranger',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+2 Ranged damage, +2 Elemental resist',
+      '+2 Ranged damage, +2 Elemental resist',
+      '+2 Ranged damage, +2 Elemental resist',
+    ],
+  },
+  {
+    id: 'rogue',
+    name: 'Rogue',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+2 Trap saves, +1 Sneak Attack damage',
+      '+2 Trap saves, +1 Sneak Attack damage',
+      '+2 Trap saves, +1 Sneak Attack damage',
+    ],
+  },
+  {
+    id: 'sorcerer',
+    name: 'Sorcerer',
+    category: 'heroic',
+    max: 3,
+    bonuses: ['+1 Evocation DC, +20 SP', '+1 Evocation DC, +20 SP', '+1 Evocation DC, +20 SP'],
+  },
+  {
+    id: 'wizard',
+    name: 'Wizard',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+2 Spell Penetration, +2 Wand DC',
+      '+2 Spell Penetration, +2 Wand DC',
+      '+2 Spell Penetration, +2 Wand DC',
+    ],
+  },
+  {
+    id: 'monk',
+    name: 'Monk',
+    category: 'heroic',
+    max: 3,
+    bonuses: ['+1 damage', '+1 damage', '+1 damage'],
+  },
+  {
+    id: 'favored-soul',
+    name: 'Favored Soul',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+1 Spell Penetration, +20 SP',
+      '+1 Spell Penetration, +20 SP',
+      '+1 Spell Penetration, +20 SP',
+    ],
+  },
+  {
+    id: 'artificer',
+    name: 'Artificer',
+    category: 'heroic',
+    max: 3,
+    bonuses: ['+1 INT skills, +1 UMD', '+1 INT skills, +1 UMD', '+1 INT skills, +1 UMD'],
+  },
+  {
+    id: 'druid',
+    name: 'Druid',
+    category: 'heroic',
+    max: 3,
+    bonuses: ['+2 Summon ability scores', '+2 Summon ability scores', '+2 Summon ability scores'],
+  },
+  {
+    id: 'warlock',
+    name: 'Warlock',
+    category: 'heroic',
+    max: 3,
+    bonuses: ['+3 MRR', '+3 MRR', '+3 MRR'],
+  },
+  {
+    id: 'alchemist',
+    name: 'Alchemist',
+    category: 'heroic',
+    max: 3,
+    bonuses: [
+      '+1 Transmutation DC, +20 SP',
+      '+1 Transmutation DC, +20 SP',
+      '+1 Transmutation DC, +20 SP',
+    ],
+  },
+
+  // Racial — keyed by raceId; each stack adds a different bonus
+  {
+    id: 'aasimar',
+    name: 'Aasimar',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Heal', '+1 WIS', '+1 Racial AP'],
+  },
+  {
+    id: 'dhampir',
+    name: 'Dhampir',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Hide', '+1 STR', '+1 Racial AP'],
+  },
+  {
+    id: 'dragonborn',
+    name: 'Dragonborn',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Spellcraft', '+1 CHA', '+1 Racial AP'],
+  },
+  {
+    id: 'drow',
+    name: 'Drow',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Search', '+1 INT', '+1 Racial AP'],
+  },
+  {
+    id: 'dwarf',
+    name: 'Dwarf',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Balance', '+1 CON', '+1 Racial AP'],
+  },
+  {
+    id: 'eladrin',
+    name: 'Eladrin',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Listen', '+1 DEX', '+1 Racial AP'],
+  },
+  {
+    id: 'elf',
+    name: 'Elf',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Spot', '+1 DEX', '+1 Racial AP'],
+  },
+  {
+    id: 'gnome',
+    name: 'Gnome',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 UMD', '+1 INT', '+1 Racial AP'],
+  },
+  {
+    id: 'half-elf',
+    name: 'Half-Elf',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Diplomacy', '+1 CHA', '+1 Racial AP'],
+  },
+  {
+    id: 'half-orc',
+    name: 'Half-Orc',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Intimidate', '+1 STR', '+1 Racial AP'],
+  },
+  {
+    id: 'halfling',
+    name: 'Halfling',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Move Silently', '+1 DEX', '+1 Racial AP'],
+  },
+  {
+    id: 'human',
+    name: 'Human',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Haggle', '+1 WIS', '+1 Racial AP'],
+  },
+  {
+    id: 'shifter',
+    name: 'Shifter',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Spot', '+1 DEX', '+1 Racial AP'],
+  },
+  {
+    id: 'tabaxi',
+    name: 'Tabaxi',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Tumble', '+1 DEX', '+1 Racial AP'],
+  },
+  {
+    id: 'tiefling',
+    name: 'Tiefling',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Spellcraft', '+1 CHA', '+1 Racial AP'],
+  },
+  {
+    id: 'warforged',
+    name: 'Warforged',
+    category: 'racial',
+    max: 3,
+    bonuses: ['+1 Repair', '+1 CON', '+1 Racial AP'],
+  },
+
+  // Iconic — keyed by iconic race; each stack gives the same bonus
+  {
+    id: 'morninglord',
+    name: 'Sun Elf (Morninglord)',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+3 Positive Spell Power', '+3 Positive Spell Power', '+3 Positive Spell Power'],
+  },
+  {
+    id: 'bladeforged',
+    name: 'Bladeforged',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+5% Fortification', '+5% Fortification', '+5% Fortification'],
+  },
+  {
+    id: 'purple-dragon-knight',
+    name: 'Purple Dragon Knight',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+3 PRR', '+3 PRR', '+3 PRR'],
+  },
+  {
+    id: 'shadar-kai',
+    name: 'Shadar-kai',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+1% Dodge', '+1% Dodge', '+1% Dodge'],
+  },
+  {
+    id: 'deep-gnome',
+    name: 'Deep Gnome',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+3 MRR', '+3 MRR', '+3 MRR'],
+  },
+  {
+    id: 'aasimar-scourge',
+    name: 'Aasimar Scourge',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+1 Fortitude save', '+1 Fortitude save', '+1 Fortitude save'],
+  },
+  {
+    id: 'razorclaw-shifter',
+    name: 'Razorclaw Shifter',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+1 Will save', '+1 Will save', '+1 Will save'],
+  },
+  {
+    id: 'tabaxi-trailblazer',
+    name: 'Tabaxi Trailblazer',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+1 Trap save', '+1 Trap save', '+1 Trap save'],
+  },
+  {
+    id: 'tiefling-scoundrel',
+    name: 'Tiefling Scoundrel',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+1 Reflex save', '+1 Reflex save', '+1 Reflex save'],
+  },
+  {
+    id: 'eladrin-chaosmancer',
+    name: 'Eladrin Chaosmancer',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+3 Universal Spell Power', '+3 Universal Spell Power', '+3 Universal Spell Power'],
+  },
+  {
+    id: 'dhampir-dark-bargainer',
+    name: 'Dhampir Dark Bargainer',
+    category: 'iconic',
+    max: 3,
+    bonuses: ['+1 Enchantment save', '+1 Enchantment save', '+1 Enchantment save'],
+  },
+
+  // Epic — keyed by individual feat ID, grouped by sphere
+  // Arcane sphere — passive: +1% Elemental Absorption per stack
+  {
+    id: 'ancient-knowledge',
+    name: 'Ancient Knowledge',
+    category: 'epic',
+    sphere: 'arcane',
+    max: 3,
+    bonuses: ['+3 MRR (stance)', '+3 MRR (stance)', '+3 MRR (stance)'],
+  },
+  {
+    id: 'arcane-alacrity',
+    name: 'Arcane Alacrity',
+    category: 'epic',
+    sphere: 'arcane',
+    max: 3,
+    bonuses: ['-3% Cooldowns (stance)', '-3% Cooldowns (stance)', '-4% Cooldowns (stance)'],
+  },
+  {
+    id: 'eclipse-power',
+    name: 'Eclipse Power',
+    category: 'epic',
+    sphere: 'arcane',
+    max: 3,
+    bonuses: [
+      '+1 Spell Penetration (stance)',
+      '+1 Spell Penetration (stance)',
+      '+1 Spell Penetration (stance)',
+    ],
+  },
+  {
+    id: 'enchant-weapon',
+    name: 'Enchant Weapon',
+    category: 'epic',
+    sphere: 'arcane',
+    max: 3,
+    bonuses: [
+      '+1 weapon enhancement (stance)',
+      '+1 weapon enhancement (stance)',
+      '+1 weapon enhancement (stance)',
+    ],
+  },
+  {
+    id: 'energy-criticals',
+    name: 'Energy Criticals',
+    category: 'epic',
+    sphere: 'arcane',
+    max: 3,
+    bonuses: [
+      '+3% Elemental crit (stance)',
+      '+3% Elemental crit (stance)',
+      '+3% Elemental crit (stance)',
+    ],
+  },
+  // Divine sphere — passive: +3 PRR per stack
+  {
+    id: 'ancient-blessings',
+    name: 'Ancient Blessings',
+    category: 'epic',
+    sphere: 'divine',
+    max: 3,
+    bonuses: ['+5 Healing Amp (stance)', '+5 Healing Amp (stance)', '+5 Healing Amp (stance)'],
+  },
+  {
+    id: 'block-energy',
+    name: 'Block Energy',
+    category: 'epic',
+    sphere: 'divine',
+    max: 3,
+    bonuses: [
+      '+10% Block Absorption (stance)',
+      '+10% Block Absorption (stance)',
+      '+10% Block Absorption (stance)',
+    ],
+  },
+  {
+    id: 'brace',
+    name: 'Brace',
+    category: 'epic',
+    sphere: 'divine',
+    max: 3,
+    bonuses: ['+1 all saves (stance)', '+1 all saves (stance)', '+1 all saves (stance)'],
+  },
+  {
+    id: 'power-over-life-and-death',
+    name: 'Power Over Life and Death',
+    category: 'epic',
+    sphere: 'divine',
+    max: 3,
+    bonuses: [
+      '+10 Pos/Neg Spell Power (stance)',
+      '+10 Pos/Neg Spell Power (stance)',
+      '+10 Pos/Neg Spell Power (stance)',
+    ],
+  },
+  // Martial sphere — passive: +2 AC per stack
+  {
+    id: 'ancient-tactics',
+    name: 'Ancient Tactics',
+    category: 'epic',
+    sphere: 'martial',
+    max: 3,
+    bonuses: ['+2 Tactics DC (stance)', '+2 Tactics DC (stance)', '+2 Tactics DC (stance)'],
+  },
+  {
+    id: 'doublestrike',
+    name: 'Doublestrike',
+    category: 'epic',
+    sphere: 'martial',
+    max: 3,
+    bonuses: [
+      '+3% Doublestrike (stance)',
+      '+3% Doublestrike (stance)',
+      '+3% Doublestrike (stance)',
+    ],
+  },
+  {
+    id: 'fortification',
+    name: 'Fortification',
+    category: 'epic',
+    sphere: 'martial',
+    max: 3,
+    bonuses: [
+      '+10% Fortification (stance)',
+      '+10% Fortification (stance)',
+      '+10% Fortification (stance)',
+    ],
+  },
+  {
+    id: 'skill-mastery',
+    name: 'Skill Mastery',
+    category: 'epic',
+    sphere: 'martial',
+    max: 3,
+    bonuses: ['+1 all skills (stance)', '+1 all skills (stance)', '+1 all skills (stance)'],
+  },
+  {
+    id: 'trap-damage-absorption',
+    name: 'Trap Damage Absorption',
+    category: 'epic',
+    sphere: 'martial',
+    max: 3,
+    bonuses: [
+      '+3% Trap Absorption (stance)',
+      '+3% Trap Absorption (stance)',
+      '+3% Trap Absorption (stance)',
+    ],
+  },
+  // Primal sphere — passive: +3 max HP per stack
+  {
+    id: 'ancient-power',
+    name: 'Ancient Power',
+    category: 'epic',
+    sphere: 'primal',
+    max: 3,
+    bonuses: ['+2 Attack (stance)', '+2 Attack (stance)', '+2 Attack (stance)'],
+  },
+  {
+    id: 'colors-of-the-queen',
+    name: 'Colors of the Queen',
+    category: 'epic',
+    sphere: 'primal',
+    max: 3,
+    bonuses: ['Random effect, 30s CD (stance)', 'CD reduced to 20s', 'CD reduced to 10s'],
+  },
+  {
+    id: 'doubleshot',
+    name: 'Doubleshot',
+    category: 'epic',
+    sphere: 'primal',
+    max: 3,
+    bonuses: ['+3% Doubleshot (stance)', '+3% Doubleshot (stance)', '+3% Doubleshot (stance)'],
+  },
+  {
+    id: 'fast-healing',
+    name: 'Fast Healing',
+    category: 'epic',
+    sphere: 'primal',
+    max: 3,
+    bonuses: ['+5 HP/min regen (stance)', '+5 HP/min regen (stance)', '+5 HP/min regen (stance)'],
+  },
 ]

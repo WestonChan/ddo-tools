@@ -54,7 +54,7 @@ export type LifeStatus = 'completed' | 'current' | 'planned'
 /** How a life ended — the reincarnation event that completed it */
 export interface Reincarnation {
   type: ReincarnationType
-  epicSphere?: EpicSphere // only when type === 'epic'
+  epicFeatId?: string // specific epic past life feat chosen (only when type === 'epic')
   completedAt?: string // ISO date
 }
 

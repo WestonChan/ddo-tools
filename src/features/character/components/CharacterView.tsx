@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { STUB_CHARACTERS } from '../data/stubCharacters'
+import type { Life } from '../types'
 import { formatClassSummary, formatRace } from '../utils'
 import { ConfirmModal } from '../../shared/ConfirmModal'
 import { PastLifeStacks } from './PastLifeStacks'
 import { LifeHistory, type ReincarnateResult } from './LifeHistory'
 import './CharacterView.css'
 
-function CharacterView() {
+function CharacterView({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onViewChange: _onViewChange,
+}: {
+  onViewChange: (view: 'build' | 'character') => void
+}) {
   const [characters, setCharacters] = useState(STUB_CHARACTERS)
   const [selectedId, setSelectedId] = useState(STUB_CHARACTERS[0].id)
   const [showReincarnate, setShowReincarnate] = useState(false)
@@ -16,6 +22,8 @@ function CharacterView() {
   } | null>(null)
 
   const selected = characters.find((c) => c.id === selectedId) ?? characters[0]
+  const currentLife = selected.lives[selected.currentLifeIndex]
+  const [viewingLifeId, setViewingLifeId] = useState(currentLife?.id ?? '')
 
   return (
     <div className="character-view">
@@ -29,19 +37,18 @@ function CharacterView() {
             <div
               key={char.id}
               className={`character-row row-interactive ${isActive ? 'active' : ''}`}
-              onClick={() => setSelectedId(char.id)}
+              onClick={() => {
+                setSelectedId(char.id)
+                setViewingLifeId(char.lives[char.currentLifeIndex]?.id ?? '')
+              }}
             >
-              <span className="character-marker">
-                {isActive ? '★' : ''}
-              </span>
+              <span className="character-marker">{isActive ? '★' : ''}</span>
               <span className="character-name">{char.name}</span>
               <span className="character-server">{char.server}</span>
               <span className="character-class-summary">
                 {currentLife ? formatClassSummary(currentLife) : '—'}
               </span>
-              <span className="character-life-count">
-                Life {char.currentLifeIndex + 1}
-              </span>
+              <span className="character-life-count">Life {char.currentLifeIndex + 1}</span>
               <span className="character-row-actions">
                 <button className="btn-ghost-sm">Export</button>
                 <button className="btn-ghost-sm delete">Delete</button>
@@ -55,9 +62,7 @@ function CharacterView() {
         <button className="btn-ghost">Import JSON</button>
         <button
           className="btn-ghost import-ddo-btn"
-          onClick={() =>
-            window.alert('DDO Builder V2 (.xml) import coming soon.')
-          }
+          onClick={() => window.alert('DDO Builder V2 (.xml) import coming soon.')}
         >
           Import DDO Builder
         </button>
@@ -71,6 +76,7 @@ function CharacterView() {
       <div className="past-lives-content">
         <PastLifeStacks
           character={selected}
+          viewingLifeId={viewingLifeId}
           onSetOverride={(category, id, value) => {
             setCharacters((prev) =>
               prev.map((c) => {
@@ -92,6 +98,7 @@ function CharacterView() {
         />
         <LifeHistory
           character={selected}
+          viewingLifeId={viewingLifeId}
           showReincarnate={showReincarnate}
           onToggleReincarnate={() => setShowReincarnate(!showReincarnate)}
           onCancelReincarnate={() => setShowReincarnate(false)}
@@ -111,6 +118,26 @@ function CharacterView() {
             }
             const desc = `${formatRace(life.race)} ${formatClassSummary(life)}`
             setApplyConfirm({ lifeId, desc })
+          }}
+          onViewLife={(lifeId) => {
+            setViewingLifeId(lifeId)
+          }}
+          onCopyToPlanned={(lifeId) => {
+            const life = selected.lives.find((l) => l.id === lifeId)
+            if (!life) return
+            const newLife: Life = {
+              ...life,
+              id: crypto.randomUUID(),
+              status: 'planned',
+              reincarnation: undefined,
+              notes: undefined,
+            }
+            setCharacters((prev) =>
+              prev.map((c) => {
+                if (c.id !== selectedId) return c
+                return { ...c, lives: [...c.lives, newLife] }
+              }),
+            )
           }}
         />
       </div>

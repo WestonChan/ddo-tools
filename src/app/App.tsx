@@ -33,30 +33,22 @@ function App() {
         <>
           <div className="app-content">
             <CollapsibleSection title="Level Plan" defaultExpanded>
-              <div className="section-placeholder">
-                Level-by-level planning coming soon.
-              </div>
+              <div className="section-placeholder">Level-by-level planning coming soon.</div>
             </CollapsibleSection>
             <CollapsibleSection title="Gear">
-              <div className="section-placeholder">
-                Gear planning coming soon.
-              </div>
+              <div className="section-placeholder">Gear planning coming soon.</div>
             </CollapsibleSection>
             <CollapsibleSection title="Enhancements">
-              <div className="section-placeholder">
-                Enhancement trees coming soon.
-              </div>
+              <div className="section-placeholder">Enhancement trees coming soon.</div>
             </CollapsibleSection>
             <CollapsibleSection title="Epic Destinies">
-              <div className="section-placeholder">
-                Epic destiny trees coming soon.
-              </div>
+              <div className="section-placeholder">Epic destiny trees coming soon.</div>
             </CollapsibleSection>
           </div>
           <SidePanel />
         </>
       ) : (
-        <CharacterView />
+        <CharacterView onViewChange={handleViewChange} />
       )}
     </div>
   )

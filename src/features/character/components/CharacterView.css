@@ -113,12 +113,8 @@
   user-select: none;
 }
 
-.stack-row.empty {
-  opacity: 0.4;
-}
-
-.stack-row.empty:hover {
-  opacity: 0.6;
+.stack-row.empty .stack-name {
+  color: var(--text-muted);
 }
 
 .stack-name {
@@ -135,7 +131,7 @@
   width: 1rem;
   height: 1rem;
   border-radius: 3px;
-  background: #2a2a2e;
+  background: var(--pip-empty);
 }
 
 .stack-pip.filled {
@@ -147,8 +143,8 @@
     -45deg,
     var(--accent),
     var(--accent) 3px,
-    #1a1a1e 3px,
-    #1a1a1e 6px
+    var(--pip-locked-stripe) 3px,
+    var(--pip-locked-stripe) 6px
   );
 }
 
@@ -166,6 +162,15 @@
 .stack-bonus {
   color: var(--text-secondary);
   font-size: 0.75rem;
+}
+
+.bonus-earned {
+  color: var(--text-secondary);
+}
+
+.bonus-remaining {
+  color: var(--text-muted);
+  margin-left: 0.4rem;
 }
 
 .stacks-hint {
@@ -241,25 +246,36 @@
 }
 
 .life-entry .life-label {
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .life-entry .life-summary {
   color: var(--text);
 }
 
-/* --- Chronological history entry variants --- */
-.epic-tr-entry .life-label {
-  color: var(--text-muted);
+.life-entry.viewing {
+  background: var(--bg-input);
 }
 
-.epic-label {
-  font-style: italic;
-}
-
-.true-tr-entry .life-label {
-  color: var(--text-secondary);
+/* --- Reincarnate button (inline with current life) --- */
+.reincarnate-btn {
+  background: var(--bg-input);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.7rem;
   font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.reincarnate-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 /* --- Reincarnate panel --- */
@@ -323,6 +339,24 @@
   background: var(--bg-panel);
 }
 
+.epic-feat-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.epic-feat-group-label {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.epic-feat-group .reincarnate-type-options {
+  flex-wrap: wrap;
+}
+
 .reincarnate-panel-actions {
   display: flex;
   gap: 0.5rem;
@@ -347,7 +381,6 @@
   color: var(--accent);
   border-color: var(--accent);
 }
-
 
 /* --- Responsive --- */
 @media (max-width: 768px) {

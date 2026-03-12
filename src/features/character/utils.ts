@@ -24,7 +24,7 @@ export function computeHistoryStacks(lives: Life[]): Record<string, number> {
     if (life.status !== 'completed' || !life.reincarnation) continue
     const r = life.reincarnation
     if (r.type === 'epic') {
-      const key = r.epicSphere ?? ''
+      const key = r.epicFeatId ?? ''
       counts[key] = (counts[key] ?? 0) + 1
     } else if (r.type === 'heroic') {
       for (const c of life.classes) {
