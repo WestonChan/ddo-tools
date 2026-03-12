@@ -9,13 +9,16 @@
   padding: 0.6rem 1rem;
   background: var(--bg-panel);
   color: var(--accent);
+  font-family: var(--font-display);
   font-weight: 600;
   font-size: 0.9rem;
+  letter-spacing: 0.03em;
   cursor: pointer;
   border: none;
+  border-left: 3px solid var(--accent);
   width: 100%;
   text-align: left;
-  transition: background 0.15s;
+  transition: background 0.2s ease-out;
 }
 
 .collapsible-header:hover {

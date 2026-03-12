@@ -92,9 +92,11 @@
 }
 
 .past-lives-header h2 {
+  font-family: var(--font-display);
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .past-lives-content {
@@ -225,9 +227,11 @@
 
 /* --- Life history --- */
 .life-history-title {
+  font-family: var(--font-display);
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
   margin-bottom: 0.5rem;
 }
 

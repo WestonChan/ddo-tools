@@ -16,13 +16,17 @@
   padding: 1.25rem 1.5rem;
   max-width: 400px;
   width: 90%;
-  box-shadow: 0 8px 32px var(--shadow-color);
+  box-shadow:
+    0 8px 32px var(--shadow-color),
+    0 0 0 1px var(--accent-glow);
 }
 
 .confirm-modal-title {
+  font-family: var(--font-display);
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
   margin-bottom: 0.5rem;
 }
 
