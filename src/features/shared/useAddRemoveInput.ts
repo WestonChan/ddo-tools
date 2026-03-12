@@ -20,9 +20,11 @@ export function useAddRemoveInput(
 
   // Keep callback refs current without re-attaching listeners
   const onAddRef = useRef(onAdd)
-  onAddRef.current = onAdd
   const onRemoveRef = useRef(onRemove)
-  onRemoveRef.current = onRemove
+  useEffect(() => {
+    onAddRef.current = onAdd
+    onRemoveRef.current = onRemove
+  })
 
   // --- Touch (mobile): tap = add, long-press = remove ---
 
