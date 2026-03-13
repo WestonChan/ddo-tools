@@ -6,7 +6,7 @@ import { CollapsibleSection } from '../components'
 import {
   BuildSidePanel,
   CharacterView,
-  useActiveCharacter,
+  useCharacter,
   formatClassSummary,
   formatRace,
 } from '../features/character'
@@ -28,7 +28,7 @@ function App() {
     viewingPlannedBuild,
     lifeNumbers,
     lifeNumber,
-  } = useActiveCharacter()
+  } = useCharacter()
 
   useEffect(() => {
     const onHashChange = () => setActiveView(getViewFromHash())

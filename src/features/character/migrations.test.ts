@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { migrateSelection } from './useActiveCharacter'
+import { migrateSelection, migrateCharacters } from './migrations'
+import { EMPTY_UNTRACKED } from './utils'
 
 describe('migrateSelection', () => {
   it('passes through a new-shape selection unchanged', () => {
@@ -31,5 +32,34 @@ describe('migrateSelection', () => {
     expect(typeof result.characterId).toBe('string')
     expect(result.characterId.length).toBeGreaterThan(0)
     expect(result.buildId).toBe('life-1')
+  })
+})
+
+describe('migrateCharacters', () => {
+  it('passes through already-migrated characters unchanged', () => {
+    const chars = [
+      { id: 'c1', untrackedLives: { heroic: { fighter: 2 }, racial: {}, iconic: {}, epic: {} } },
+    ]
+    const result = migrateCharacters(chars)
+    expect(result).toEqual(chars)
+  })
+
+  it('renames pastLifeOverrides to untrackedLives', () => {
+    const chars = [
+      { id: 'c1', pastLifeOverrides: { heroic: { fighter: 1 }, racial: {}, iconic: {}, epic: {} } },
+    ]
+    const result = migrateCharacters(chars)
+    expect(result[0].untrackedLives).toEqual({
+      heroic: { fighter: 1 },
+      racial: {},
+      iconic: {},
+      epic: {},
+    })
+  })
+
+  it('adds empty untrackedLives when neither field exists', () => {
+    const chars = [{ id: 'c1' }]
+    const result = migrateCharacters(chars)
+    expect(result[0].untrackedLives).toEqual(EMPTY_UNTRACKED)
   })
 })

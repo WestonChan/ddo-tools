@@ -1,6 +1,7 @@
 export { default as BuildSidePanel } from './components/BuildSidePanel'
 export { default as CharacterView } from './components/CharacterView'
-export { useActiveCharacter } from './hooks/useActiveCharacter'
+export { CharacterProvider } from './CharacterContext'
+export { useCharacter } from './hooks/useCharacter'
 export { formatClassSummary, formatRace } from './utils'
 export type {
   Race,

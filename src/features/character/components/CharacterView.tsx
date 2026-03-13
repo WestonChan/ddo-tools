@@ -6,7 +6,7 @@ import {
   formatRace,
   getCurrentLifeNumber,
 } from '../utils'
-import { useActiveCharacter } from '../hooks/useActiveCharacter'
+import { useCharacter } from '../hooks/useCharacter'
 import { ConfirmModal, StarIcon, PlusIcon } from '../../../components'
 import { PastLifeStacks } from './PastLifeStacks'
 import { LifeHistory, type ReincarnateResult } from './LifeHistory'
@@ -28,7 +28,7 @@ function CharacterView() {
     selectBuild,
     setOverride,
     setBuildDesired,
-  } = useActiveCharacter()
+  } = useCharacter()
 
   const [showReincarnate, setShowReincarnate] = useState(false)
   const [applyConfirm, setApplyConfirm] = useState<{
