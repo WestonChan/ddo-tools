@@ -79,13 +79,11 @@ export interface Life {
   reincarnation?: Reincarnation // how this life ended (only for completed lives)
   importSource?: ImportSource // only for imported lives
   notes?: string
+  desiredPastLives?: PastLifeCounts // only meaningful for planned builds
 }
 
-/** Backward-compat alias — existing code references CharacterBuild */
-export type CharacterBuild = Life
-
-/** Manual past life stacks — keyed by sourceId (classId, raceId, or sphere) */
-export interface PastLifeOverrides {
+/** Past life stacks by category — used for both untracked lives and desired build targets */
+export interface PastLifeCounts {
   heroic: Record<string, number>
   racial: Record<string, number>
   iconic: Record<string, number>
@@ -100,7 +98,7 @@ export interface Character {
   notes?: string
   lives: Life[]
   currentLifeIndex: number
-  pastLifeOverrides: PastLifeOverrides
+  untrackedLives: PastLifeCounts
   createdAt: string
   updatedAt: string
 }

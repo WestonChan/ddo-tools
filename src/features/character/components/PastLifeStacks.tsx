@@ -1,47 +1,40 @@
 import { useCallback, useState } from 'react'
-import type { Character, EpicSphere } from '../types'
+import type { Character, Life, PastLifeCounts } from '../types'
 import { PAST_LIFE_DEFS, type PastLifeDef } from '../data/pastLifeDefs'
-import { computeHistoryStacks } from '../utils'
+import { computeHistoryStacks, EPIC_SPHERE_LIST, formatBonusList } from '../utils'
 import { TooltipWrapper } from '../../shared/Tooltip'
 import { useAddRemoveInput } from '../../shared/useAddRemoveInput'
+import { ChevronDownIcon, ChevronRightIcon } from '../../shared/Icons'
 
-/** Sum per-stack bonuses: ['+10 HP', '+10 HP'] → '+20 HP'. Groups by suffix and adds numbers. */
-function formatBonusList(parts: string[]): string {
-  if (parts.length === 0) return ''
-  const sums = new Map<string, number>()
-  const unsummable: string[] = []
-  for (const part of parts) {
-    for (const seg of part.split(', ')) {
-      const m = seg.match(/^([+-]\d+)(.+)$/)
-      if (m) sums.set(m[2], (sums.get(m[2]) ?? 0) + parseInt(m[1]))
-      else unsummable.push(seg)
-    }
-  }
-  const summed = [...sums.entries()].map(
-    ([suffix, total]) => `${total >= 0 ? '+' : ''}${total}${suffix}`,
-  )
-  return [...summed, ...unsummable].join(', ')
-}
+// --- Normal mode StackBar (existing behavior) ---
 
-function StackBar({
+function StackBarNormal({
   stacks,
   max,
   fromHistory,
+  fromCurrentHistory,
+  currentStacks,
 }: {
   stacks: number
   max: number
   fromHistory: number
+  fromCurrentHistory: number
+  currentStacks: number
 }) {
   return (
     <span className="stack-bar">
       {Array.from({ length: max }, (_, i) => {
+        const isFilled = i < stacks
+        const isLocked = i < fromHistory
+        const isCurrentHasLocked = i < fromCurrentHistory
+        const isCurrentHasFilled = !isCurrentHasLocked && i < currentStacks
         const pip = (
           <span
             key={i}
-            className={`stack-pip ${i < stacks ? 'filled' : ''} ${i < fromHistory ? 'locked' : ''}`}
+            className={`stack-pip ${isFilled ? 'filled' : ''} ${isLocked ? 'locked' : ''} ${isCurrentHasLocked ? 'current-has' : ''} ${isCurrentHasFilled ? 'current-has-filled' : ''}`}
           />
         )
-        return i < fromHistory ? (
+        return isLocked ? (
           <TooltipWrapper
             key={i}
             text="Earned from a completed reincarnation — cannot be removed manually"
@@ -56,16 +49,76 @@ function StackBar({
   )
 }
 
+// --- Overlay mode StackBar (planned build view) ---
+
+function StackBarOverlay({
+  buildDesired,
+  charHas,
+  charFromHistory,
+  max,
+}: {
+  buildDesired: number
+  charHas: number
+  charFromHistory: number
+  max: number
+}) {
+  return (
+    <span className="stack-bar">
+      {Array.from({ length: max }, (_, i) => {
+        const buildWants = i < buildDesired
+        const charOwns = i < charHas
+        const isFromHistory = i < charFromHistory
+
+        let pipClass = 'stack-pip'
+        let tooltip = ''
+
+        if (buildWants) {
+          pipClass += charOwns && isFromHistory ? ' locked' : ' filled'
+          if (!charOwns) pipClass += ' pip-missing'
+        } else if (charOwns) {
+          pipClass += isFromHistory ? ' pip-has-locked' : ' pip-has-filled'
+        }
+
+        if (buildWants && charOwns) {
+          tooltip = 'Character has this — build needs it'
+        } else if (!buildWants && charOwns) {
+          tooltip = "Character has this — build doesn't need it"
+        } else if (buildWants && !charOwns) {
+          tooltip = "Build needs this — character doesn't have it yet"
+        }
+
+        const pip = <span key={i} className={pipClass} />
+
+        return tooltip ? (
+          <TooltipWrapper key={i} text={tooltip}>
+            {pip}
+          </TooltipWrapper>
+        ) : (
+          pip
+        )
+      })}
+    </span>
+  )
+}
+
+// --- StackRow ---
+
 function StackRow({
   def,
   stacks,
   fromHistory,
+  fromCurrentHistory,
+  currentStacks,
   onSetStacks,
+  overlay,
 }: {
   def: PastLifeDef
   stacks: number
   fromHistory: number
+  fromCurrentHistory: number
+  currentStacks: number
   onSetStacks: (value: number) => void
+  overlay?: { charHas: number; charFromHistory: number }
 }) {
   const hasStacks = stacks > 0
 
@@ -73,16 +126,14 @@ function StackRow({
     if (stacks < def.max) onSetStacks(stacks + 1)
   }, [stacks, def.max, onSetStacks])
 
+  const minStacks = overlay ? 0 : fromHistory
   const decrement = useCallback(() => {
-    if (stacks > fromHistory) onSetStacks(stacks - 1)
-  }, [stacks, fromHistory, onSetStacks])
+    if (stacks > minStacks) onSetStacks(stacks - 1)
+  }, [stacks, minStacks, onSetStacks])
 
   const { ref, onClick, onContextMenu } = useAddRemoveInput(increment, decrement)
 
-  // Each bonus entry is what that individual stack contributes.
-  // Earned = first N entries joined, unearned = remaining entries joined.
-  // Dedup identical entries (e.g. heroic "+10 HP" x3 shows once, not repeated).
-  // Hide unearned when it matches earned (uniform bonuses — pips already show progress).
+  // Bonus text based on current stacks
   const earnedText = formatBonusList(def.bonuses.slice(0, stacks))
   const rawUnearned = formatBonusList(def.bonuses.slice(stacks))
   const unearnedText = rawUnearned !== earnedText ? rawUnearned : ''
@@ -90,12 +141,27 @@ function StackRow({
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`stack-row row-interactive ${hasStacks ? '' : 'empty'}`}
+      className={`stack-row row-interactive ${hasStacks || (overlay && overlay.charHas > 0) ? '' : 'empty'}`}
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
       <span className="stack-name">{def.name}</span>
-      <StackBar stacks={stacks} max={def.max} fromHistory={fromHistory} />
+      {overlay ? (
+        <StackBarOverlay
+          buildDesired={stacks}
+          charHas={overlay.charHas}
+          charFromHistory={overlay.charFromHistory}
+          max={def.max}
+        />
+      ) : (
+        <StackBarNormal
+          stacks={stacks}
+          max={def.max}
+          fromHistory={fromHistory}
+          fromCurrentHistory={fromCurrentHistory}
+          currentStacks={currentStacks}
+        />
+      )}
       <span className="stack-count">
         {stacks}/{def.max}
       </span>
@@ -107,39 +173,74 @@ function StackRow({
   )
 }
 
+// --- StackSection ---
+
 function StackSection({
   label,
   defs,
   overrides,
   historyStacks,
+  currentHistoryStacks,
   onSetOverride,
+  buildDesired,
+  charStacks,
 }: {
   label: string
   defs: PastLifeDef[]
   overrides: Record<string, number>
   historyStacks: Record<string, number>
+  currentHistoryStacks: Record<string, number>
   onSetOverride: (id: string, value: number) => void
+  buildDesired?: Record<string, number>
+  charStacks?: Record<string, number>
 }) {
+  const isOverlay = !!buildDesired
   return (
     <>
       <div className="section-label">{label}</div>
       {defs.map((def) => {
+        if (isOverlay) {
+          // Overlay mode: pips = build's desired stacks, overlay = character's actual
+          const stacks = Math.min(buildDesired[def.id] ?? 0, def.max)
+          const fromHistory = Math.min(historyStacks[def.id] ?? 0, def.max)
+          const fromOverride = (charStacks ?? {})[def.id] ?? 0
+          const charHas = Math.min(fromHistory + fromOverride, def.max)
+          return (
+            <StackRow
+              key={def.id}
+              def={def}
+              stacks={stacks}
+              fromHistory={0}
+              fromCurrentHistory={0}
+              currentStacks={0}
+              onSetStacks={(value) => onSetOverride(def.id, value)}
+              overlay={{ charHas, charFromHistory: fromHistory }}
+            />
+          )
+        }
+        // Normal mode
         const fromHistory = Math.min(historyStacks[def.id] ?? 0, def.max)
+        const fromCurrentHistory = Math.min(currentHistoryStacks[def.id] ?? 0, def.max)
         const fromOverride = overrides[def.id] ?? 0
-        const stacks = Math.min(Math.max(fromHistory, fromOverride), def.max)
+        const stacks = Math.min(fromHistory + fromOverride, def.max)
+        const currentStacks = Math.min(fromCurrentHistory + fromOverride, def.max)
         return (
           <StackRow
             key={def.id}
             def={def}
             stacks={stacks}
             fromHistory={fromHistory}
-            onSetStacks={(value) => onSetOverride(def.id, value)}
+            fromCurrentHistory={fromCurrentHistory}
+            currentStacks={currentStacks}
+            onSetStacks={(value) => onSetOverride(def.id, Math.max(0, value - fromHistory))}
           />
         )
       })}
     </>
   )
 }
+
+// --- BonusSummary ---
 
 interface ActiveBonus {
   label: string
@@ -153,96 +254,116 @@ function BonusSummary({ bonuses }: { bonuses: ActiveBonus[] }) {
   return (
     <div className="bonus-summary">
       <div className="bonus-summary-header" onClick={() => setExpanded(!expanded)}>
+        <span className="bonus-toggle">
+          {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+        </span>
         <span className="section-label">Active Bonuses ({bonuses.length})</span>
-        <span className="bonus-toggle">{expanded ? '▾' : '▸'}</span>
       </div>
-      {expanded &&
-        bonuses.map((b) => (
-          <div key={b.label} className="bonus-row">
-            <span className="bonus-value">
-              {b.label}: {b.value}
-            </span>
-          </div>
-        ))}
+      <div className={`bonus-rows ${expanded ? 'expanded' : ''}`}>
+        <div className="bonus-rows-inner">
+          {bonuses.map((b) => (
+            <div key={b.label} className="bonus-row">
+              <span className="bonus-value">
+                {b.label}: {b.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
 
+const STACK_SECTIONS: {
+  category: keyof PastLifeCounts
+  label: string
+  filter?: (d: PastLifeDef) => boolean
+}[] = [
+  { category: 'heroic', label: 'Class' },
+  { category: 'racial', label: 'Racial' },
+  { category: 'iconic', label: 'Iconic' },
+  ...EPIC_SPHERE_LIST.map(({ sphere, label }) => ({
+    category: 'epic' as const,
+    label: `Epic — ${label}`,
+    filter: (d: PastLifeDef) => d.sphere === sphere,
+  })),
+]
+
+// --- PastLifeStacks (main export) ---
+
 export function PastLifeStacks({
   character,
   viewingLifeId,
+  plannedBuild,
   onSetOverride,
+  onSetBuildDesired,
 }: {
   character: Character
   viewingLifeId: string
-  onSetOverride: (category: string, id: string, value: number) => void
+  plannedBuild?: Life
+  onSetOverride: (category: keyof PastLifeCounts, id: string, value: number) => void
+  onSetBuildDesired?: (category: keyof PastLifeCounts, id: string, value: number) => void
 }) {
-  // Only count lives completed before the one being viewed
+  const isOverlay = !!plannedBuild
+
+  // Character's actual stacks (used in both modes)
   const viewingIndex = character.lives.findIndex((l) => l.id === viewingLifeId)
   const livesBeforeViewed =
     viewingIndex >= 0 ? character.lives.slice(0, viewingIndex) : character.lives
   const historyStacks = computeHistoryStacks(livesBeforeViewed)
-  const o = character.pastLifeOverrides
+  const livesBeforeCurrent = character.lives.slice(0, character.currentLifeIndex)
+  const currentHistoryStacks = computeHistoryStacks(livesBeforeCurrent)
+  const o = character.untrackedLives
 
-  const heroicDefs = PAST_LIFE_DEFS.filter((d) => d.category === 'heroic')
-  const racialDefs = PAST_LIFE_DEFS.filter((d) => d.category === 'racial')
-  const iconicDefs = PAST_LIFE_DEFS.filter((d) => d.category === 'iconic')
-  const epicSpheres: { sphere: EpicSphere; label: string }[] = [
-    { sphere: 'arcane', label: 'Epic — Arcane' },
-    { sphere: 'divine', label: 'Epic — Divine' },
-    { sphere: 'martial', label: 'Epic — Martial' },
-    { sphere: 'primal', label: 'Epic — Primal' },
-  ]
+  // Build's desired stacks (only in overlay mode)
+  const desired: PastLifeCounts | undefined = plannedBuild?.desiredPastLives
 
   const totalCompleted = livesBeforeViewed.filter((l) => l.status === 'completed').length
 
-  // Collect active bonuses — show current stack description for each feat with stacks
+  // In overlay mode, use onSetBuildDesired; in normal mode, use onSetOverride
+  const handleSet = isOverlay && onSetBuildDesired ? onSetBuildDesired : onSetOverride
+
+  // Collect active bonuses (normal mode only — overlay shows build's desired bonuses)
   const activeBonuses: ActiveBonus[] = []
-  for (const def of PAST_LIFE_DEFS) {
-    const catOverrides = o[def.category as keyof typeof o] ?? {}
-    const fromHistory = Math.min(historyStacks[def.id] ?? 0, def.max)
-    const fromOverride = catOverrides[def.id] ?? 0
-    const stacks = Math.min(Math.max(fromHistory, fromOverride), def.max)
-    if (stacks > 0) {
-      activeBonuses.push({ label: def.name, value: formatBonusList(def.bonuses.slice(0, stacks)) })
+  if (!isOverlay) {
+    for (const def of PAST_LIFE_DEFS) {
+      const catOverrides = o[def.category as keyof typeof o] ?? {}
+      const fromHistory = Math.min(historyStacks[def.id] ?? 0, def.max)
+      const fromOverride = catOverrides[def.id] ?? 0
+      const stacks = Math.min(fromHistory + fromOverride, def.max)
+      if (stacks > 0) {
+        activeBonuses.push({
+          label: def.name,
+          value: formatBonusList(def.bonuses.slice(0, stacks)),
+        })
+      }
     }
   }
 
   return (
     <div className="past-life-stacks">
-      <StackSection
-        label="Class"
-        defs={heroicDefs}
-        overrides={o.heroic}
-        historyStacks={historyStacks}
-        onSetOverride={(id, v) => onSetOverride('heroic', id, v)}
-      />
-      <StackSection
-        label="Racial"
-        defs={racialDefs}
-        overrides={o.racial}
-        historyStacks={historyStacks}
-        onSetOverride={(id, v) => onSetOverride('racial', id, v)}
-      />
-      <StackSection
-        label="Iconic"
-        defs={iconicDefs}
-        overrides={o.iconic}
-        historyStacks={historyStacks}
-        onSetOverride={(id, v) => onSetOverride('iconic', id, v)}
-      />
-      {epicSpheres.map(({ sphere, label }) => (
-        <StackSection
-          key={sphere}
-          label={label}
-          defs={PAST_LIFE_DEFS.filter((d) => d.category === 'epic' && d.sphere === sphere)}
-          overrides={o.epic}
-          historyStacks={historyStacks}
-          onSetOverride={(id, v) => onSetOverride('epic', id, v)}
-        />
-      ))}
-      <div className="stacks-hint">Tap to add · long-press to remove</div>
-      <div className="total-past-lives">Total Past Lives: {totalCompleted}</div>
+      {STACK_SECTIONS.map(({ category, label, filter }) => {
+        const defs = PAST_LIFE_DEFS.filter((d) => d.category === category && (!filter || filter(d)))
+        return (
+          <StackSection
+            key={label}
+            label={label}
+            defs={defs}
+            overrides={o[category]}
+            historyStacks={historyStacks}
+            currentHistoryStacks={currentHistoryStacks}
+            onSetOverride={(id, v) => handleSet(category, id, v)}
+            buildDesired={isOverlay ? (desired?.[category] ?? {}) : undefined}
+            charStacks={isOverlay ? o[category] : undefined}
+          />
+        )
+      })}
+      <div className="stacks-hint">
+        {isOverlay
+          ? 'Tap to add desired · long-press to remove'
+          : 'Tap to add · long-press to remove'}
+      </div>
+      {!isOverlay && <div className="total-past-lives">Total Past Lives: {totalCompleted}</div>}
       {activeBonuses.length > 0 && <BonusSummary bonuses={activeBonuses} />}
     </div>
   )

@@ -83,15 +83,24 @@ const STUB_LIVES: Life[] = [
     enhancements: [],
     status: 'current',
   },
-  // Planned lives
+]
+
+// --- Global planned builds (not tied to any character) ---
+export const STUB_PLANNED_BUILDS: Life[] = [
   {
     id: '4',
-    name: '',
+    name: 'Dwarf Tank',
     race: 'dwarf',
     classes: [{ classId: 'barbarian', levels: 20 }],
     feats: [],
     enhancements: [],
     status: 'planned',
+    desiredPastLives: {
+      heroic: { barbarian: 3 },
+      racial: { dwarf: 1 },
+      iconic: {},
+      epic: { doublestrike: 3 },
+    },
   },
   {
     id: '5',
@@ -109,13 +118,13 @@ export const STUB_CHARACTERS: Character[] = [
     id: 'char-1',
     name: 'Thordak',
     server: 'Thrane',
-    lives: STUB_LIVES,
+    lives: STUB_LIVES, // completed + current only (indices 0-6)
     currentLifeIndex: 6,
-    pastLifeOverrides: {
-      heroic: { paladin: 2, fighter: 3, rogue: 1 },
-      racial: { human: 2, elf: 1 },
+    untrackedLives: {
+      heroic: { paladin: 2, fighter: 2, rogue: 1 },
+      racial: { human: 2 },
       iconic: {},
-      epic: { doublestrike: 2 },
+      epic: {},
     },
     createdAt: '2025-01-01',
     updatedAt: '2025-12-01',
@@ -136,7 +145,7 @@ export const STUB_CHARACTERS: Character[] = [
       },
     ],
     currentLifeIndex: 0,
-    pastLifeOverrides: { heroic: {}, racial: {}, iconic: {}, epic: {} },
+    untrackedLives: { heroic: {}, racial: {}, iconic: {}, epic: {} },
     createdAt: '2025-03-01',
     updatedAt: '2025-11-15',
   },

@@ -56,11 +56,47 @@
 .character-row-actions {
   display: flex;
   gap: 0.25rem;
+  align-self: stretch;
+  align-items: stretch;
+  margin: -0.4rem -0.6rem;
+  margin-left: 0;
+  padding-right: 0.6rem;
 }
 
-.character-row-actions .delete:hover {
-  color: #ef4444;
-  border-color: #ef4444;
+/* Shared action button style for row actions */
+.row-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  border-radius: 3px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.73rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.row-action-btn:hover {
+  color: var(--text-secondary);
+  background: var(--accent-bg-subtle);
+}
+
+/* Override .row-action-btn's transparent bg for primary variant */
+.row-action-btn.btn-primary-sm {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+.row-action-btn.btn-primary-sm:hover {
+  background: var(--accent-hover);
+}
+
+.row-action-btn.delete:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
 }
 
 .character-list-actions {
@@ -121,7 +157,11 @@
 
 .stack-name {
   color: var(--text);
-  min-width: 6.5rem;
+  width: 12rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stack-bar {
@@ -134,10 +174,27 @@
   height: 1rem;
   border-radius: 3px;
   background: var(--pip-empty);
+  position: relative;
 }
 
 .stack-pip.filled {
   background: var(--accent);
+}
+
+/* Current life has from history — muted hatch (visible when viewing a different life) */
+.stack-pip.current-has:not(.locked):not(.filled) {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--accent) 40%, var(--pip-empty)),
+    color-mix(in srgb, var(--accent) 40%, var(--pip-empty)) 3px,
+    color-mix(in srgb, var(--pip-locked-stripe) 40%, var(--pip-empty)) 3px,
+    color-mix(in srgb, var(--pip-locked-stripe) 40%, var(--pip-empty)) 6px
+  );
+}
+
+/* Current life has from overrides — muted filled (visible when viewing a different life) */
+.stack-pip.current-has-filled:not(.filled) {
+  background: color-mix(in srgb, var(--accent) 40%, var(--pip-empty));
 }
 
 .stack-pip.locked {
@@ -148,6 +205,29 @@
     var(--pip-locked-stripe) 3px,
     var(--pip-locked-stripe) 6px
   );
+}
+
+/* --- Overlay pip states (planned build view) --- */
+
+/* Character has from history, build doesn't need: muted hatch (mirrors locked style) */
+.stack-pip.pip-has-locked {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--accent) 40%, var(--pip-empty)),
+    color-mix(in srgb, var(--accent) 40%, var(--pip-empty)) 3px,
+    color-mix(in srgb, var(--pip-locked-stripe) 40%, var(--pip-empty)) 3px,
+    color-mix(in srgb, var(--pip-locked-stripe) 40%, var(--pip-empty)) 6px
+  );
+}
+
+/* Character has from overrides, build doesn't need: muted solid (mirrors filled style) */
+.stack-pip.pip-has-filled {
+  background: color-mix(in srgb, var(--accent) 40%, var(--pip-empty));
+}
+
+/* Build needs this but character doesn't have it yet: red border */
+.stack-pip.pip-missing {
+  border: 2px solid var(--pip-missing-border);
 }
 
 .stack-bar > span:not(.stack-pip) {
@@ -216,6 +296,20 @@
   font-size: 0.7rem;
 }
 
+.bonus-rows {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.15s ease;
+}
+
+.bonus-rows-inner {
+  overflow: hidden;
+}
+
+.bonus-rows.expanded {
+  grid-template-rows: 1fr;
+}
+
 .bonus-row {
   padding: 0.1rem 0.4rem;
   font-size: 0.75rem;
@@ -249,37 +343,42 @@
   width: 0.75rem;
 }
 
-.life-entry .life-label {
+.life-entry .life-number {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 3rem;
+}
+
+.life-entry .life-name {
   color: var(--text-secondary);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 8rem;
 }
 
 .life-entry .life-summary {
   color: var(--text);
+  flex: 1;
+  min-width: 0;
+}
+
+.life-actions {
+  display: flex;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  align-self: stretch;
+  align-items: stretch;
+  margin: -0.25rem -0.4rem;
+  margin-left: 0;
+  padding-right: 0.4rem;
 }
 
 .life-entry.viewing {
   background: var(--bg-input);
-}
-
-/* --- Reincarnate button (inline with current life) --- */
-.reincarnate-btn {
-  background: var(--bg-input);
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  padding: 0.15rem 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.reincarnate-btn:hover {
-  background: var(--accent);
-  color: var(--bg);
 }
 
 /* --- Reincarnate panel --- */

@@ -1,4 +1,3 @@
-export { default as BuildHeader } from './components/BuildHeader'
 export { default as SidePanel } from './components/SidePanel'
 export { default as CharacterView } from './components/CharacterView'
 export type {
@@ -6,7 +5,6 @@ export type {
   CharacterClass,
   Feat,
   Enhancement,
-  CharacterBuild,
   AbilityScore,
   CharacterStats,
   ReincarnationType,
@@ -18,7 +16,7 @@ export type {
   ImportSource,
   Life,
   PastLifeCategory,
-  PastLifeOverrides,
+  PastLifeCounts,
   Character,
   AppSettings,
   PastLifeBonus,
