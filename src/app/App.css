@@ -63,6 +63,17 @@
   font-size: 0.75rem;
 }
 
+.breadcrumb-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  padding: 0 0.3rem;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
 .app-content {
   display: flex;
   flex-direction: column;

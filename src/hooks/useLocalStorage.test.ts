@@ -30,6 +30,37 @@ function renderHook(key: string, initial: unknown) {
   return { getValue: () => lastValue, getSetter: () => setter }
 }
 
+/** Render two components sharing the same localStorage key, returning both values and setters. */
+function renderTwoHooks(key: string, initial: unknown) {
+  let valueA: unknown, valueB: unknown
+  let setterA: Dispatch<SetStateAction<unknown>> = () => {}
+  let setterB: Dispatch<SetStateAction<unknown>> = () => {}
+
+  const onRenderA = (val: unknown, set: Dispatch<SetStateAction<unknown>>) => {
+    valueA = val
+    setterA = set
+  }
+  const onRenderB = (val: unknown, set: Dispatch<SetStateAction<unknown>>) => {
+    valueB = val
+    setterB = set
+  }
+
+  render(
+    createElement(
+      'div',
+      null,
+      createElement(TestComponent, { storageKey: key, initial, onRender: onRenderA }),
+      createElement(TestComponent, { storageKey: key, initial, onRender: onRenderB }),
+    ),
+  )
+  return {
+    getA: () => valueA,
+    getB: () => valueB,
+    setA: () => setterA,
+    setB: () => setterB,
+  }
+}
+
 describe('useLocalStorage', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -68,5 +99,35 @@ describe('useLocalStorage', () => {
     })
     expect(getValue()).toBe(15)
     expect(JSON.parse(localStorage.getItem('test-key')!)).toBe(15)
+  })
+
+  it('syncs value across two hook instances sharing the same key', () => {
+    const { getA, getB, setA } = renderTwoHooks('sync-key', 'initial')
+    expect(getA()).toBe('initial')
+    expect(getB()).toBe('initial')
+
+    act(() => {
+      setA()('updated-by-A')
+    })
+
+    expect(getA()).toBe('updated-by-A')
+    expect(getB()).toBe('updated-by-A')
+    expect(JSON.parse(localStorage.getItem('sync-key')!)).toBe('updated-by-A')
+  })
+
+  it('syncs in both directions', () => {
+    const { getA, getB, setA, setB } = renderTwoHooks('sync-key', 0)
+
+    act(() => {
+      setA()(10)
+    })
+    expect(getA()).toBe(10)
+    expect(getB()).toBe(10)
+
+    act(() => {
+      setB()(20)
+    })
+    expect(getA()).toBe(20)
+    expect(getB()).toBe(20)
   })
 })

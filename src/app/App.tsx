@@ -22,7 +22,13 @@ function getViewFromHash(): View {
 function App() {
   const [activeView, setActiveView] = useState<View>(getViewFromHash)
   const [sidebarExpanded, setSidebarExpanded] = useLocalStorage('ddo-sidebar-expanded', false)
-  const { character: selected, currentLife, lifeNumber } = useActiveCharacter()
+  const {
+    character: selected,
+    activeBuild,
+    viewingPlannedBuild,
+    lifeNumbers,
+    lifeNumber,
+  } = useActiveCharacter()
 
   useEffect(() => {
     const onHashChange = () => setActiveView(getViewFromHash())
@@ -55,13 +61,19 @@ function App() {
       <nav className="breadcrumb">
         <button className="breadcrumb-link" onClick={() => handleViewChange('character')}>
           <span className="breadcrumb-name">{selected.name}</span>
-          {currentLife && (
+          {activeBuild && (
             <>
-              <span className="breadcrumb-race">{formatRace(currentLife.race)}</span>
-              <span className="breadcrumb-classes">{formatClassSummary(currentLife)}</span>
+              <span className="breadcrumb-race">{formatRace(activeBuild.race)}</span>
+              <span className="breadcrumb-classes">{formatClassSummary(activeBuild)}</span>
             </>
           )}
-          <span className="breadcrumb-life">Life {lifeNumber}</span>
+          {viewingPlannedBuild ? (
+            <span className="breadcrumb-tag">Planned Build</span>
+          ) : (
+            <span className="breadcrumb-life">
+              Life {(activeBuild && lifeNumbers.get(activeBuild.id)) ?? lifeNumber}
+            </span>
+          )}
         </button>
       </nav>
       {activeView === 'build' && (

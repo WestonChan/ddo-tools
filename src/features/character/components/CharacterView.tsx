@@ -25,8 +25,7 @@ function CharacterView() {
     setPlannedBuilds,
     viewingPlannedBuild,
     selectCharacter,
-    selectPlannedBuild,
-    selectLife,
+    selectBuild,
     setOverride,
     setBuildDesired,
   } = useActiveCharacter()
@@ -38,8 +37,8 @@ function CharacterView() {
     warnings: string[]
   } | null>(null)
 
-  const viewingLifeId = selection.lifeId
-  const viewingPlannedBuildId = selection.plannedBuildId
+  const viewingLifeId = viewingPlannedBuild ? '' : selection.buildId
+  const viewingPlannedBuildId = viewingPlannedBuild ? selection.buildId : null
 
   return (
     <div className="character-view">
@@ -112,7 +111,7 @@ function CharacterView() {
             console.log('Reincarnate:', result)
             setShowReincarnate(false)
           }}
-          onViewLife={selectLife}
+          onViewLife={selectBuild}
           onCopyToPlanned={(lifeId) => {
             const life = selected.lives.find((l) => l.id === lifeId)
             if (!life) return
@@ -138,7 +137,7 @@ function CharacterView() {
           }}
           plannedBuilds={plannedBuilds}
           viewingPlannedBuildId={viewingPlannedBuildId}
-          onSelectPlannedBuild={selectPlannedBuild}
+          onSelectPlannedBuild={selectBuild}
           onRenamePlannedBuild={(buildId: string, newName: string) => {
             setPlannedBuilds((prev) =>
               prev.map((b) => (b.id === buildId ? { ...b, name: newName } : b)),
@@ -156,8 +155,7 @@ function CharacterView() {
             if (viewingPlannedBuildId === buildId) {
               setSelection((prev) => ({
                 ...prev,
-                plannedBuildId: null,
-                lifeId: currentLife?.id ?? '',
+                buildId: currentLife?.id ?? '',
               }))
             }
           }}

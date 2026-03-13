@@ -10,19 +10,30 @@ import { useLocalStorage } from '../../../hooks'
 
 export interface Selection {
   characterId: string
-  lifeId: string
-  plannedBuildId: string | null
+  buildId: string // life ID or planned build ID — resolved by lookup
 }
 
 const defaultStub = STUB_CHARACTERS[0]
 const defaultSelection: Selection = {
   characterId: defaultStub.id,
-  lifeId: defaultStub.lives[defaultStub.currentLifeIndex]?.id ?? '',
-  plannedBuildId: null,
+  buildId: defaultStub.lives[defaultStub.currentLifeIndex]?.id ?? '',
+}
+
+/** Migrate old Selection shape (lifeId + plannedBuildId) to unified buildId. */
+export function migrateSelection(sel: unknown): Selection {
+  const raw = sel as Record<string, unknown>
+  if ('buildId' in raw && typeof raw.buildId === 'string') return raw as unknown as Selection
+  const buildId =
+    (raw.plannedBuildId as string) ?? (raw.lifeId as string) ?? defaultSelection.buildId
+  return {
+    characterId: (raw.characterId as string) ?? defaultSelection.characterId,
+    buildId,
+  }
 }
 
 /** Migrate old localStorage shape: pastLifeOverrides → untrackedLives */
-function migrateCharacters(chars: Character[]): Character[] {
+function migrateCharacters(value: unknown): Character[] {
+  const chars = value as Character[]
   return chars.map((c) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = c as any
@@ -43,7 +54,11 @@ export function useActiveCharacter() {
     STUB_CHARACTERS,
     migrateCharacters,
   )
-  const [selection, setSelection] = useLocalStorage<Selection>('ddo-selection', defaultSelection)
+  const [selection, setSelection] = useLocalStorage<Selection>(
+    'ddo-selection',
+    defaultSelection,
+    migrateSelection,
+  )
   const [plannedBuilds, setPlannedBuilds] = useLocalStorage<Life[]>(
     'ddo-plannedBuilds',
     STUB_PLANNED_BUILDS,
@@ -54,26 +69,22 @@ export function useActiveCharacter() {
   const lifeNumbers = computeLifeNumbers(character)
   const lifeNumber = getCurrentLifeNumber(character)
 
-  const viewingPlannedBuild = selection.plannedBuildId
-    ? plannedBuilds.find((b) => b.id === selection.plannedBuildId)
-    : undefined
+  // Resolve buildId into the viewed life or planned build
+  const viewingPlannedBuild = plannedBuilds.find((b) => b.id === selection.buildId)
+  const viewingLife = character.lives.find((l) => l.id === selection.buildId)
+  const activeBuild = viewingPlannedBuild ?? viewingLife ?? currentLife
 
   function selectCharacter(charId: string) {
     const char = characters.find((c) => c.id === charId)
     if (!char) return
     setSelection({
       characterId: charId,
-      lifeId: char.lives[char.currentLifeIndex]?.id ?? '',
-      plannedBuildId: null,
+      buildId: char.lives[char.currentLifeIndex]?.id ?? '',
     })
   }
 
-  function selectPlannedBuild(buildId: string) {
-    setSelection((prev) => ({ ...prev, lifeId: '', plannedBuildId: buildId }))
-  }
-
-  function selectLife(lifeId: string) {
-    setSelection((prev) => ({ ...prev, lifeId, plannedBuildId: null }))
+  function selectBuild(buildId: string) {
+    setSelection((prev) => ({ ...prev, buildId }))
   }
 
   function setOverride(category: keyof PastLifeCounts, id: string, value: number) {
@@ -93,11 +104,11 @@ export function useActiveCharacter() {
   }
 
   function setBuildDesired(category: keyof PastLifeCounts, id: string, value: number) {
-    if (!selection.plannedBuildId) return
-    const buildId = selection.plannedBuildId
+    if (!viewingPlannedBuild) return
+    const currentBuildId = selection.buildId
     setPlannedBuilds((prev) =>
       prev.map((b) => {
-        if (b.id !== buildId) return b
+        if (b.id !== currentBuildId) return b
         const desired: PastLifeCounts = b.desiredPastLives ?? EMPTY_UNTRACKED
         return {
           ...b,
@@ -117,14 +128,14 @@ export function useActiveCharacter() {
     currentLife,
     lifeNumbers,
     lifeNumber,
+    activeBuild,
     selection,
     setSelection,
     plannedBuilds,
     setPlannedBuilds,
     viewingPlannedBuild,
     selectCharacter,
-    selectPlannedBuild,
-    selectLife,
+    selectBuild,
     setOverride,
     setBuildDesired,
   }
