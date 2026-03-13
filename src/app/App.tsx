@@ -58,24 +58,6 @@ function App() {
         expanded={sidebarExpanded}
         onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
       />
-      <nav className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => handleViewChange('character')}>
-          <span className="breadcrumb-name">{selected.name}</span>
-          {activeBuild && (
-            <>
-              <span className="breadcrumb-race">{formatRace(activeBuild.race)}</span>
-              <span className="breadcrumb-classes">{formatClassSummary(activeBuild)}</span>
-            </>
-          )}
-          {viewingPlannedBuild ? (
-            <span className="breadcrumb-tag">Planned Build</span>
-          ) : (
-            <span className="breadcrumb-life">
-              Life {(activeBuild && lifeNumbers.get(activeBuild.id)) ?? lifeNumber}
-            </span>
-          )}
-        </button>
-      </nav>
       {activeView === 'build' && (
         <>
           <div className="app-content">
@@ -111,6 +93,24 @@ function App() {
           <div className="section-placeholder">Epic destiny trees coming soon.</div>
         </div>
       )}
+      <nav className="breadcrumb">
+        <button className="breadcrumb-link" onClick={() => handleViewChange('character')}>
+          <span className="breadcrumb-name">{selected.name}</span>
+          {activeBuild && (
+            <>
+              <span className="breadcrumb-race">{formatRace(activeBuild.race)}</span>
+              <span className="breadcrumb-classes">{formatClassSummary(activeBuild)}</span>
+            </>
+          )}
+          {viewingPlannedBuild ? (
+            <span className="breadcrumb-tag">Planned Build</span>
+          ) : (
+            <span className="breadcrumb-life">
+              Life {(activeBuild && lifeNumbers.get(activeBuild.id)) ?? lifeNumber}
+            </span>
+          )}
+        </button>
+      </nav>
     </div>
   )
 }
