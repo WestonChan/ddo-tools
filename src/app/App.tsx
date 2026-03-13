@@ -1,19 +1,25 @@
 import { useEffect, useState } from 'react'
-import BuildHeader from '../features/character/components/BuildHeader'
+import AppSidebar from '../features/shared/AppSidebar'
+import type { View } from '../features/shared/AppSidebar'
+import { useLocalStorage } from '../features/shared/useLocalStorage'
 import SidePanel from '../features/character/components/SidePanel'
 import CharacterView from '../features/character/components/CharacterView'
 import CollapsibleSection from '../features/shared/CollapsibleSection'
+import { useActiveCharacter } from '../features/character/useActiveCharacter'
+import { formatClassSummary, formatRace } from '../features/character/utils'
 import './App.css'
 
-type View = 'build' | 'character'
+const VALID_VIEWS: View[] = ['build', 'character', 'gear', 'enhancements', 'destinies']
 
 function getViewFromHash(): View {
   const hash = window.location.hash.replace('#', '')
-  return hash === 'character' ? 'character' : 'build'
+  return VALID_VIEWS.includes(hash as View) ? (hash as View) : 'build'
 }
 
 function App() {
   const [activeView, setActiveView] = useState<View>(getViewFromHash)
+  const [sidebarExpanded, setSidebarExpanded] = useLocalStorage('ddo-sidebar-expanded', false)
+  const { character: selected, currentLife, lifeNumber } = useActiveCharacter()
 
   useEffect(() => {
     const onHashChange = () => setActiveView(getViewFromHash())
@@ -26,10 +32,36 @@ function App() {
     setActiveView(view)
   }
 
+  const showRightPanel = activeView === 'build'
+  const appClasses = [
+    'app',
+    showRightPanel ? '' : 'app--no-sidebar',
+    sidebarExpanded ? 'app--sidebar-expanded' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className={`app ${activeView === 'character' ? 'app--no-sidebar' : ''}`}>
-      <BuildHeader activeView={activeView} onViewChange={handleViewChange} />
-      {activeView === 'build' ? (
+    <div className={appClasses}>
+      <AppSidebar
+        activeView={activeView}
+        onViewChange={handleViewChange}
+        expanded={sidebarExpanded}
+        onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
+      />
+      <nav className="breadcrumb">
+        <button className="breadcrumb-link" onClick={() => handleViewChange('character')}>
+          <span className="breadcrumb-name">{selected.name}</span>
+          {currentLife && (
+            <>
+              <span className="breadcrumb-race">{formatRace(currentLife.race)}</span>
+              <span className="breadcrumb-classes">{formatClassSummary(currentLife)}</span>
+            </>
+          )}
+          <span className="breadcrumb-life">Life {lifeNumber}</span>
+        </button>
+      </nav>
+      {activeView === 'build' && (
         <>
           <div className="app-content">
             <CollapsibleSection title="Level Plan" defaultExpanded>
@@ -47,8 +79,22 @@ function App() {
           </div>
           <SidePanel />
         </>
-      ) : (
-        <CharacterView onViewChange={handleViewChange} />
+      )}
+      {activeView === 'character' && <CharacterView />}
+      {activeView === 'gear' && (
+        <div className="app-content">
+          <div className="section-placeholder">Gear planner coming soon.</div>
+        </div>
+      )}
+      {activeView === 'enhancements' && (
+        <div className="app-content">
+          <div className="section-placeholder">Enhancement trees coming soon.</div>
+        </div>
+      )}
+      {activeView === 'destinies' && (
+        <div className="app-content">
+          <div className="section-placeholder">Epic destiny trees coming soon.</div>
+        </div>
       )}
     </div>
   )

@@ -3,9 +3,9 @@ import { describe, it, expect } from 'vitest'
 import App from './App'
 
 describe('App', () => {
-  it('renders the build header brand', () => {
+  it('renders the breadcrumb with character info', () => {
     render(<App />)
-    expect(screen.getByText('DDO Builder')).toBeInTheDocument()
+    expect(screen.getByText('Thordak')).toBeInTheDocument()
   })
 
   it('renders collapsible sections', () => {
