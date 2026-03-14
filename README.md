@@ -55,6 +55,17 @@ ddo-data info
 | `npm run format` | Format code with Prettier |
 | `ddo-data info` | Show DDO installation info |
 | `ddo-data parse <file>` | Parse a .dat archive header |
+| `ddo-data list <file>` | List all files in a .dat archive |
+| `ddo-data dat-extract <file>` | Extract raw files from a .dat archive |
+| `ddo-data dat-peek <file> --id <hex>` | Hex dump of a single entry |
+| `ddo-data dat-stats <file>` | Show compression and file type statistics |
+| `ddo-data dat-dump <file> --id <hex>` | Extract, decompress, and analyze an entry |
+| `ddo-data dat-compare <file>` | Compare brute-force vs B-tree scanner results |
+
+## Credits
+
+- [DATUnpacker](https://github.com/Middle-earth-Revenge/DATUnpacker) (Middle-earth-Revenge) -- C#/.NET reference for the Turbine .dat archive format and compression scheme
+- [DATExplorer](https://github.com/Middle-earth-Revenge/DATExplorer) (Middle-earth-Revenge) -- C# tool documenting the B-tree directory structure and header field layout
 
 ## License
 

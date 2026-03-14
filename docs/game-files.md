@@ -15,7 +15,7 @@ Configure this path by setting `DDO_PATH` in `.env` (see `.env.example`), or pas
 
 ## Archive Format
 
-The `.dat` files use Turbine's proprietary archive format (shared with LOTRO). Format reverse-engineered from actual DDO game files.
+The `.dat` files use Turbine's proprietary archive format (shared with LOTRO). Format reverse-engineered from actual DDO game files, with corrections from [DATExplorer](https://github.com/Middle-earth-Revenge/DATExplorer).
 
 ### Header (0x100 - 0x1A8)
 
@@ -23,13 +23,18 @@ Bytes 0x000-0x0FF are zero padding. All fields little-endian uint32.
 
 | Offset | Field | Notes |
 |--------|-------|-------|
-| 0x140 | BT magic | Always `0x5442` ("BT" — B-tree marker) |
-| 0x144 | Version | `0x200` (gamelogic), `0x400` (english/general) |
+| 0x140 | BT magic | Always `0x5442` ("BT" -- B-tree marker) |
+| 0x144 | Version | `0x200` (gamelogic), `0x400` (english/general). DATExplorer calls this "block_size" -- needs verification against DDO. |
 | 0x148 | File size | Exact match to actual file size on disk |
-| 0x154 | B-tree offset | Points to page index / journal |
-| 0x160 | Free list offset | Free block list |
-| 0x1A0 | File count | Number of file entries in the archive |
-| 0x1A4 | Block size | Always `2460` across all observed files |
+| 0x14C | File version | DATExplorer field; purpose unclear in DDO |
+| 0x154 | First free block | Free block list head. Previously misidentified as "B-tree offset". |
+| 0x158 | Last free block | Free block list tail |
+| 0x15C | Free block count | Number of free blocks |
+| 0x160 | Root offset | **B-tree root directory node**. Previously misidentified as "free list offset". |
+| 0x1A0 | File count | Number of file entries in the archive (empirically verified) |
+| 0x1A4 | Block size | Always `2460` across all observed files (empirically verified) |
+
+Use `ddo-data parse <file>` to view all header fields. Use `header_dump()` in code to see raw uint32 values for the full 0x140-0x1A4 range.
 
 ### Data Blocks
 
@@ -39,15 +44,37 @@ Every content block in the archive uses this wrapper:
 [8 zero bytes] [content...]
 ```
 
-For file content blocks, the content starts with the file ID:
+For file content blocks, the content starts with the file ID and a type field:
 
 ```
-00 00 00 00 00 00 00 00  <file_id_le32>  <actual_data...>
+00 00 00 00 00 00 00 00  <file_id_le32> <type_le32> <actual_data...>
 ```
 
-### File Table
+### Compression
 
-Stored in pages scattered throughout the archive. The first page always starts at offset `0x5F0`.
+Some entries are stored compressed. Compressed entries have `disk_size < size + 8`.
+
+**Format** (from DATUnpacker's `Subfile.cs`):
+```
+[uint32 LE decompressed_length] [zlib compressed data...]
+```
+
+Decompression:
+1. Read first 4 bytes as LE uint32 = expected decompressed length
+2. Pass remaining bytes to zlib.decompress()
+3. Verify output length matches expected
+
+Falls back to raw deflate (wbits=-15, no zlib header) if standard zlib fails.
+
+Compression type is per-entry (stored in the file type field per DATExplorer):
+- 0 = uncompressed
+- 1 = maximum compression
+- 2 = unknown
+- 3 = default compression
+
+### File Table (Flat Pages)
+
+Used by the brute-force scanner. Stored in pages scattered throughout the archive. The first page always starts at offset `0x5F0`.
 
 **Page structure:**
 
@@ -59,23 +86,60 @@ Stored in pages scattered throughout the archive. The first page always starts a
 
 Known page flags: `0x00030000`, `0x00040000`, `0x00060000`, `0x00080000`, `0x000A0000`, `0x000E0000`.
 
-**32-byte file table entry:**
+**32-byte file table entry (flat page layout):**
 
 | Bytes | Type | Field |
 |-------|------|-------|
-| 0-3 | uint32 | file_id — unique identifier |
-| 4-7 | uint32 | data_offset — absolute offset to data block |
-| 8-11 | uint32 | size — data size |
-| 12-15 | uint32 | (varies — timestamp or hash) |
+| 0-3 | uint32 | file_id -- unique identifier |
+| 4-7 | uint32 | data_offset -- absolute offset to data block |
+| 8-11 | uint32 | size -- data size (includes 8-byte id+type prefix) |
+| 12-15 | uint32 | (varies -- timestamp or hash) |
 | 16-19 | uint32 | (varies) |
-| 20-23 | uint32 | disk_size — on-disk block size (= size + 8 when uncompressed) |
+| 20-23 | uint32 | disk_size -- on-disk block size (= size + 8 when uncompressed) |
 | 24-27 | uint32 | reserved (always 0) |
 | 28-31 | uint32 | flags |
 
+### B-tree Directory
+
+The archive also stores file entries in a B-tree directory structure rooted at the header's `root_offset` (0x160). This is the "proper" way to enumerate files.
+
+**B-tree node structure:**
+
+```
+[8 zero bytes]                              block header
+[62 x (uint32 size, uint32 child_offset)]   directory block (496 bytes)
+[61 x 32-byte file entries]                 file block (1952 bytes)
+```
+
+Total node payload: 2456 bytes (close to the 2460 block_size).
+
+- Sentinel values: `0x00000000` or `0xCDCDCDCD` for unused child/entry slots
+- Traversal: recursive depth-first through child offsets
+
+**32-byte file entry in B-tree nodes (DATExplorer layout):**
+
+| Bytes | Type | Field |
+|-------|------|-------|
+| 0-3 | uint32 | unknown1 |
+| 4-7 | uint32 | file_type (low byte = compression type) |
+| 8-11 | uint32 | file_id |
+| 12-15 | uint32 | data_offset |
+| 16-19 | uint32 | size (uncompressed) |
+| 20-23 | uint32 | timestamp |
+| 24-27 | uint32 | unknown2 |
+| 28-31 | uint32 | disk_size (compressed/on-disk size) |
+
+Note: The field ordering differs between flat pages and B-tree nodes. Both formats have been validated independently.
+
+### File IDs
+
 File IDs encode the archive type in their high byte:
-- `0x01XXXXXX` — general assets (`client_general.dat`)
-- `0x07XXXXXX` — game logic (`client_gamelogic.dat`)
-- `0x0AXXXXXX` — localization (`client_local_English.dat`)
+- `0x01XXXXXX` -- general assets (`client_general.dat`)
+- `0x07XXXXXX` -- game logic (`client_gamelogic.dat`)
+- `0x0AXXXXXX` -- localization (`client_local_English.dat`)
+
+Additional high bytes seen in cross-references within game data:
+- `0x40XXXXXX`, `0x41XXXXXX`, `0x78XXXXXX` -- purpose unknown
 
 ### Content Types
 
@@ -87,10 +151,30 @@ File IDs encode the archive type in their high byte:
 
 ### Open Questions
 
-- Compression mechanism for entries where `disk_size << size` (zlib didn't work)
-- Whether the B-tree journal at 0x154 can be used for faster page discovery
 - Multi-block files (entries where data may span multiple blocks)
+- Full binary tagged format specification for gamelogic entries
+- Whether 0x144 is "version" (our interpretation) or "block_size" (DATExplorer)
+- Exact semantics of unknown fields in B-tree file entries
+
+## Implementation Status
+
+**Implemented:**
+- Header parsing with all known fields (0x140-0x1A4)
+- Brute-force file table scanner (flat page detection via 4MB chunk scanning)
+- B-tree directory traversal (depth-first walk from root_offset)
+- Decompression (4-byte length prefix + zlib, with raw deflate fallback)
+- File extraction with magic-byte type detection (OGG, DDS, XML, WAV, BMP)
+- Tagged format explorer (UTF-16LE string detection, file ID cross-references)
+- CLI: `parse`, `list`, `dat-extract`, `dat-peek`, `dat-stats`, `dat-dump`, `dat-compare`
+
+**Not yet implemented:**
+- Game data parsers (items, feats, enhancements, classes, races)
+- Icon extraction (DDS to PNG conversion)
+- Wiki scraper (supplementary data from ddowiki.com)
+- JSON export pipeline (`ddo-data extract` command)
 
 ## Credits
 
-- [DATUnpacker](https://github.com/Middle-earth-Revenge/DATUnpacker) (Middle-earth-Revenge) — C#/.NET reference that identified this as a Turbine B-tree archive format. Our implementation was independently reverse-engineered from actual DDO game files.
+- [DATUnpacker](https://github.com/Middle-earth-Revenge/DATUnpacker) (Middle-earth-Revenge) -- C#/.NET reference that identified this as a Turbine B-tree archive format and documented the compression format.
+- [DATExplorer](https://github.com/Middle-earth-Revenge/DATExplorer) (Middle-earth-Revenge) -- C# tool that documented B-tree directory structure, corrected header field mappings, and identified per-entry compression types.
+- Our implementation was independently reverse-engineered from actual DDO game files, with corrections from the above references.
