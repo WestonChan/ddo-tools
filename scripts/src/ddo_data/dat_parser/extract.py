@@ -10,12 +10,14 @@ from .archive import (
     FILE_TABLE_ENTRIES_START,
     ENTRY_SIZE,
 )
+from .decompress import decompress_entry
 
 # Page header flags observed across DDO .dat files
 _KNOWN_PAGE_FLAGS = {0x00030000, 0x00040000, 0x00060000, 0x00080000, 0x000A0000, 0x000E0000}
 
 # Block header: 8 zero bytes before every data block and file table page
-_BLOCK_HEADER = b"\x00" * 8
+_BLOCK_HDR_SIZE = 8
+_BLOCK_HEADER = b"\x00" * _BLOCK_HDR_SIZE
 
 
 def _parse_entry(data: bytes, offset: int = 0) -> FileEntry:
@@ -177,14 +179,20 @@ def read_entry_data(archive: DatArchive, entry: FileEntry) -> bytes:
             f"expected 0x{entry.file_id:08X}, got 0x{embedded_id:08X}"
         )
 
-    # Return content after the 16-byte prefix (header + file ID + type field)
-    # Trim to actual content length: size includes the 8-byte id+type prefix
+    # Content starts after the 16-byte prefix (block header + file ID + type field)
+    # For compressed entries: raw payload is everything after the prefix up to disk_size
+    # For uncompressed entries: size includes the 8-byte id+type prefix
+    raw_content = block[16:]
+
+    if entry.is_compressed:
+        return decompress_entry(raw_content)
+
     if entry.size < 8:
         raise ValueError(
             f"Entry size too small ({entry.size}) for 0x{entry.file_id:08X}"
         )
     content_size = entry.size - 8
-    return block[16 : 16 + content_size]
+    return raw_content[:content_size]
 
 
 def extract_entry(
@@ -208,16 +216,30 @@ def extract_entry(
     return out_path
 
 
+# Content type detection: (magic_bytes, human_name, file_extension)
+_MAGIC_TYPES: list[tuple[bytes, str, str]] = [
+    (b"OggS", "OGG Vorbis", ".ogg"),
+    (b"DDS ", "DDS texture", ".dds"),
+    (b"<?xml", "XML", ".xml"),
+    (b"RIFF", "RIFF/WAV", ".wav"),
+    (b"BM", "BMP image", ".bmp"),
+    (b"\xff\xfe", "UTF-16LE text", ".txt"),
+]
+
+
+def identify_content_type(data: bytes) -> str:
+    """Identify content type name from the first few magic bytes."""
+    if len(data) < 2:
+        return "unknown"
+    for magic, name, _ in _MAGIC_TYPES:
+        if data[: len(magic)] == magic:
+            return name
+    return f"binary (0x{data[0]:02X}{data[1]:02X})"
+
+
 def _detect_extension(content: bytes) -> str:
     """Detect file extension from content magic bytes."""
-    if content[:4] == b"OggS":
-        return ".ogg"
-    if content[:4] == b"DDS ":
-        return ".dds"
-    if content[:5] == b"<?xml":
-        return ".xml"
-    if content[:4] == b"RIFF":
-        return ".wav"
-    if content[:2] == b"BM":
-        return ".bmp"
+    for magic, _, ext in _MAGIC_TYPES:
+        if content[: len(magic)] == magic:
+            return ext
     return ".bin"

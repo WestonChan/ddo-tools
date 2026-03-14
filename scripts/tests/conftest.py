@@ -1,6 +1,7 @@
 """Shared test fixtures for DDO data pipeline tests."""
 
 import struct
+import zlib
 import pytest
 from pathlib import Path
 
@@ -18,6 +19,7 @@ def _build_dat(
     version: int = 0x200,
     block_size: int = 2460,
     extra_pages: list[list[tuple[int, bytes]]] | None = None,
+    compressed_ids: set[int] | None = None,
 ) -> Path:
     """Build a synthetic .dat archive with the given file entries.
 
@@ -27,6 +29,8 @@ def _build_dat(
         version: Header version field.
         block_size: Header block_size field.
         extra_pages: Additional file table pages, each a list of (file_id, content_bytes).
+        compressed_ids: Set of file_ids whose content should be stored compressed
+            (4-byte LE length prefix + zlib payload).
 
     Returns:
         Path to the created .dat file.
@@ -38,10 +42,23 @@ def _build_dat(
     #   data blocks: after the file table
     #   extra pages: after data blocks (if any)
 
+    if compressed_ids is None:
+        compressed_ids = set()
+
     all_files = list(files)
     if extra_pages:
         for page in extra_pages:
             all_files.extend(page)
+
+    # Pre-compute on-disk payloads (compressed or raw content)
+    disk_payloads: dict[int, bytes] = {}
+    for file_id, content in all_files:
+        if file_id in compressed_ids:
+            # Compressed: 4-byte LE decompressed length + zlib data
+            compressed = zlib.compress(content)
+            disk_payloads[file_id] = struct.pack("<I", len(content)) + compressed
+        else:
+            disk_payloads[file_id] = content
 
     # Calculate file table page 1 size
     page1_entries = len(files)
@@ -57,8 +74,9 @@ def _build_dat(
     current_offset = data_start
     for file_id, content in all_files:
         data_offsets[file_id] = current_offset
-        # Each data block: 8 zero bytes + 4 byte file_id + 4 byte type + content
-        block_len = 8 + 4 + 4 + len(content)
+        payload = disk_payloads[file_id]
+        # Each data block: 8 zero bytes + 4 byte file_id + 4 byte type + payload
+        block_len = 8 + 4 + 4 + len(payload)
         block_len = (block_len + 7) & ~7  # align
         current_offset += block_len
 
@@ -80,10 +98,29 @@ def _build_dat(
     struct.pack_into("<I", buf, 0x140, 0x5442)        # BT magic
     struct.pack_into("<I", buf, 0x144, version)         # version
     struct.pack_into("<I", buf, 0x148, total_size)      # file_size
-    struct.pack_into("<I", buf, 0x154, 0)               # btree_offset (unused)
-    struct.pack_into("<I", buf, 0x160, 0)               # free_list_offset (unused)
+    struct.pack_into("<I", buf, 0x154, 0)               # first_free_block (unused)
+    struct.pack_into("<I", buf, 0x160, 0)               # root_offset (unused)
     struct.pack_into("<I", buf, 0x1A0, len(all_files))  # file_count
     struct.pack_into("<I", buf, 0x1A4, block_size)      # block_size
+
+    def _write_file_table_entry(buf: bytearray, offset: int, file_id: int, content: bytes) -> None:
+        """Write a 32-byte file table entry at the given buffer offset."""
+        payload = disk_payloads[file_id]
+        # size: original content size + 8 (id + type prefix)
+        entry_size = len(content) + 8
+        # disk_size: block header(8) + id(4) + type(4) + on-disk payload
+        disk_size = 8 + 4 + 4 + len(payload)
+        struct.pack_into(
+            "<IIIIIIII", buf, offset,
+            file_id,
+            data_offsets[file_id],
+            entry_size,
+            0,                  # field_12
+            0,                  # field_16
+            disk_size,
+            0,                  # reserved
+            0x00000001,         # flags
+        )
 
     # File table page 1 at 0x5F0
     page1_off = FILE_TABLE_START
@@ -94,26 +131,17 @@ def _build_dat(
 
     entry_off = FILE_TABLE_ENTRIES_START
     for file_id, content in files:
-        struct.pack_into(
-            "<IIIIIIII", buf, entry_off,
-            file_id,
-            data_offsets[file_id],
-            len(content) + 8,   # size (id + type + content)
-            0,                  # field_12
-            0,                  # field_16
-            8 + 4 + 4 + len(content),  # disk_size (header + id + type + content)
-            0,                  # reserved
-            0x00000001,         # flags
-        )
+        _write_file_table_entry(buf, entry_off, file_id, content)
         entry_off += ENTRY_SIZE
 
-    # Data blocks: [8 zeros][file_id][type_field][content]
-    for file_id, content in all_files:
+    # Data blocks: [8 zeros][file_id][type_field][payload]
+    for file_id, _content in all_files:
         off = data_offsets[file_id]
+        payload = disk_payloads[file_id]
         # 8 zero bytes (already zero in buf)
         struct.pack_into("<I", buf, off + 8, file_id)
         struct.pack_into("<I", buf, off + 12, 0)  # type field (0 for tests)
-        buf[off + 16 : off + 16 + len(content)] = content
+        buf[off + 16 : off + 16 + len(payload)] = payload
 
     # Extra file table pages
     if extra_pages:
@@ -125,17 +153,150 @@ def _build_dat(
 
             e_off = page_off + 16
             for file_id, content in page:
-                struct.pack_into(
-                    "<IIIIIIII", buf, e_off,
-                    file_id,
-                    data_offsets[file_id],
-                    len(content) + 8,
-                    0, 0,
-                    8 + 4 + 4 + len(content),
-                    0,
-                    0x00000001,
-                )
+                _write_file_table_entry(buf, e_off, file_id, content)
                 e_off += ENTRY_SIZE
+
+    dat_path = tmp_path / "test.dat"
+    dat_path.write_bytes(bytes(buf))
+    return dat_path
+
+
+# B-tree node layout constants (imported from source of truth)
+from ddo_data.dat_parser.btree import (
+    _DIR_SLOTS,
+    _DIR_BLOCK_SIZE,
+    _FILE_ENTRY_SIZE,
+    _NODE_SIZE as _BTREE_NODE_SIZE,
+)
+
+
+def _build_btree_node(
+    buf: bytearray,
+    node_offset: int,
+    file_entries: list[tuple[int, int, int, int]],
+    child_offsets: list[int] | None = None,
+) -> None:
+    """Write a B-tree node at the given buffer offset.
+
+    file_entries: list of (file_id, data_offset, size, disk_size) tuples.
+    child_offsets: list of child node offsets (up to 62).
+    """
+    # Block header: 8 zero bytes (already zero in buf)
+
+    # Directory block: child slots
+    dir_start = node_offset + 8
+    if child_offsets:
+        for i, child_off in enumerate(child_offsets):
+            slot_off = dir_start + i * 8
+            struct.pack_into("<II", buf, slot_off, 0, child_off)
+
+    # File block: entries in DATExplorer order
+    # (unknown1, file_type, file_id, file_offset, size1, timestamp, unknown2, size2)
+    file_start = node_offset + 8 + _DIR_BLOCK_SIZE
+    for i, (file_id, data_offset, size, disk_size) in enumerate(file_entries):
+        entry_off = file_start + i * _FILE_ENTRY_SIZE
+        struct.pack_into(
+            "<IIIIIIII", buf, entry_off,
+            0,             # unknown1
+            0x00000001,    # file_type (flags)
+            file_id,
+            data_offset,
+            size,
+            0,             # timestamp
+            0,             # unknown2
+            disk_size,
+        )
+
+
+def _build_dat_with_btree(
+    tmp_path: Path,
+    btree_nodes: list[dict],
+    files: list[tuple[int, bytes]],
+) -> Path:
+    """Build a synthetic .dat archive with a B-tree directory structure.
+
+    Args:
+        tmp_path: Directory to write the .dat file into.
+        btree_nodes: List of node dicts, each with:
+            - "file_ids": list of file_ids in this node
+            - "children": list of indices into btree_nodes (optional)
+            The first node (index 0) is the root.
+        files: List of (file_id, content_bytes) — the actual data.
+
+    Returns:
+        Path to the created .dat file.
+    """
+    # Layout:
+    #   0x000-0x0FF: zero padding
+    #   0x100-0x1A7: header
+    #   0x5F0:       flat file table page (empty, 0 entries) — keeps scanner happy
+    #   data blocks: after empty page
+    #   B-tree nodes: after data blocks
+
+    # Empty file table page (no entries for brute-force scanner)
+    page1_size = 8 + 8  # block header + page header with count=0
+    data_start = FILE_TABLE_START + page1_size
+    data_start = (data_start + 7) & ~7
+
+    # Compute data block offsets
+    data_offsets: dict[int, int] = {}
+    current_offset = data_start
+    for file_id, content in files:
+        data_offsets[file_id] = current_offset
+        block_len = 8 + 4 + 4 + len(content)
+        block_len = (block_len + 7) & ~7
+        current_offset += block_len
+
+    # Compute B-tree node offsets
+    node_offsets: list[int] = []
+    for _ in btree_nodes:
+        node_offsets.append(current_offset)
+        current_offset += (_BTREE_NODE_SIZE + 7) & ~7
+
+    total_size = current_offset
+    buf = bytearray(total_size)
+
+    # Header
+    struct.pack_into("<I", buf, 0x140, 0x5442)          # BT magic
+    struct.pack_into("<I", buf, 0x144, 0x200)            # version
+    struct.pack_into("<I", buf, 0x148, total_size)       # file_size
+    struct.pack_into("<I", buf, 0x160, node_offsets[0])  # root_offset
+    struct.pack_into("<I", buf, 0x1A0, len(files))       # file_count
+    struct.pack_into("<I", buf, 0x1A4, 2460)             # block_size
+
+    # Empty file table page at 0x5F0
+    struct.pack_into("<I", buf, FILE_TABLE_START + 8, 0)           # count = 0
+    struct.pack_into("<I", buf, FILE_TABLE_START + 12, 0x00060000) # flags
+
+    # Data blocks
+    file_content_map: dict[int, bytes] = dict(files)
+    for file_id, content in files:
+        off = data_offsets[file_id]
+        struct.pack_into("<I", buf, off + 8, file_id)
+        struct.pack_into("<I", buf, off + 12, 0)
+        buf[off + 16 : off + 16 + len(content)] = content
+
+    # B-tree nodes
+    for node_idx, node_def in enumerate(btree_nodes):
+        node_off = node_offsets[node_idx]
+        node_file_ids = node_def.get("file_ids", [])
+
+        # Build file entry tuples: (file_id, data_offset, size, disk_size)
+        file_entries = []
+        for fid in node_file_ids:
+            content = file_content_map[fid]
+            file_entries.append((
+                fid,
+                data_offsets[fid],
+                len(content) + 8,                    # size (includes id+type prefix)
+                8 + 4 + 4 + len(content),            # disk_size
+            ))
+
+        # Resolve child offsets
+        children = node_def.get("children", [])
+        child_offsets = [node_offsets[ci] for ci in children]
+
+        _build_btree_node(buf, node_off, file_entries, child_offsets)
 
     dat_path = tmp_path / "test.dat"
     dat_path.write_bytes(bytes(buf))
@@ -150,4 +311,15 @@ def build_dat(tmp_path: Path):
         **kwargs,
     ) -> Path:
         return _build_dat(tmp_path, files, **kwargs)
+    return builder
+
+
+@pytest.fixture
+def build_dat_with_btree(tmp_path: Path):
+    """Fixture returning a builder function for synthetic archives with B-tree structure."""
+    def builder(
+        btree_nodes: list[dict],
+        files: list[tuple[int, bytes]],
+    ) -> Path:
+        return _build_dat_with_btree(tmp_path, btree_nodes, files)
     return builder

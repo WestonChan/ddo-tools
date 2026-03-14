@@ -5,10 +5,13 @@ no dependency on a DDO installation.
 """
 
 import struct
+import zlib
 import pytest
 from pathlib import Path
 
 from ddo_data.dat_parser.archive import DatArchive, DatHeader, FileEntry
+from ddo_data.dat_parser.btree import read_btree_node, traverse_btree
+from ddo_data.dat_parser.decompress import decompress_entry
 from ddo_data.dat_parser.extract import scan_file_table, read_entry_data, extract_entry
 
 
@@ -78,6 +81,7 @@ def test_header_info(build_dat) -> None:
     assert "test.dat" in info
     assert "File count: 1" in info
     assert "Block size: 2460" in info
+    assert "Root offset:" in info
 
 
 def test_header_info_before_read(tmp_path: Path) -> None:
@@ -86,6 +90,36 @@ def test_header_info_before_read(tmp_path: Path) -> None:
     dat_path.write_bytes(b"\x00" * 512)
     archive = DatArchive(dat_path)
     assert "not read yet" in archive.header_info()
+
+
+def test_header_new_fields(build_dat) -> None:
+    """New header fields (file_version, free block info) are populated."""
+    dat_path = build_dat([(0x07000001, b"test")])
+    archive = DatArchive(dat_path)
+    header = archive.read_header()
+
+    # These are zero in synthetic archives (build_dat doesn't set them)
+    assert header.file_version == 0
+    assert header.last_free_block == 0
+    assert header.free_block_count == 0
+    # Direct field access (no longer aliases)
+    assert header.root_offset == 0
+    assert header.first_free_block == 0
+
+
+def test_header_dump_format(build_dat) -> None:
+    """header_dump() returns all raw uint32 values with offsets."""
+    dat_path = build_dat([(0x07000001, b"test")])
+    archive = DatArchive(dat_path)
+
+    dump = archive.header_dump()
+    # Should contain the BT magic at 0x140
+    assert "0x140:" in dump
+    assert "0x00005442" in dump
+    # Should contain file_count at 0x1A0
+    assert "0x1A0:" in dump
+    # Should contain block_size at 0x1A4
+    assert "0x1A4:" in dump
 
 
 # -- File table scanning tests --
@@ -280,3 +314,269 @@ def test_extract_creates_output_dir(build_dat, tmp_path: Path) -> None:
 
     extract_entry(archive, entries[0x07000001], out_dir)
     assert out_dir.exists()
+
+
+# -- Decompression tests --
+
+
+def test_decompress_with_length_prefix() -> None:
+    """Round-trip: compress content, prepend length prefix, decompress."""
+    original = b"The quick brown fox jumps over the lazy dog" * 10
+    compressed = zlib.compress(original)
+    payload = struct.pack("<I", len(original)) + compressed
+
+    result = decompress_entry(payload)
+    assert result == original
+
+
+def test_decompress_raw_deflate_fallback() -> None:
+    """Raw deflate (no zlib header) is decompressed via wbits=-15 fallback."""
+    original = b"Hello, DDO world!" * 5
+    # compressobj with wbits=-15 produces raw deflate (no zlib header)
+    compressor = zlib.compressobj(level=6, wbits=-15)
+    raw_deflate = compressor.compress(original) + compressor.flush()
+    payload = struct.pack("<I", len(original)) + raw_deflate
+
+    result = decompress_entry(payload)
+    assert result == original
+
+
+def test_decompress_uncompressed_passthrough() -> None:
+    """Non-compressed data (that fails zlib) is returned as-is."""
+    data = b"\x00\x01\x02\x03\x04\x05\x06\x07"
+    result = decompress_entry(data)
+    assert result == data
+
+
+def test_decompress_too_short_passthrough() -> None:
+    """Data shorter than 5 bytes is returned as-is (can't have length + payload)."""
+    data = b"\x01\x02\x03\x04"
+    result = decompress_entry(data)
+    assert result == data
+
+
+def test_is_compressed_heuristic() -> None:
+    """FileEntry.is_compressed uses disk_size vs size heuristic."""
+    # Uncompressed: disk_size == size + 8 (block header)
+    uncompressed = FileEntry(file_id=1, data_offset=0, size=100, disk_size=108, flags=0)
+    assert not uncompressed.is_compressed
+
+    # Compressed: disk_size < size + 8
+    compressed = FileEntry(file_id=2, data_offset=0, size=100, disk_size=60, flags=0)
+    assert compressed.is_compressed
+
+    # Edge case: disk_size == 0 (shouldn't happen but guard against it)
+    zero_disk = FileEntry(file_id=3, data_offset=0, size=100, disk_size=0, flags=0)
+    assert not zero_disk.is_compressed
+
+
+def test_read_entry_data_compressed(build_dat) -> None:
+    """End-to-end: compressed entry in archive is decompressed by read_entry_data."""
+    content = b"Compressed content for DDO testing!" * 20
+    dat_path = build_dat(
+        [(0x07000001, content)],
+        compressed_ids={0x07000001},
+    )
+    archive = DatArchive(dat_path)
+
+    entries = scan_file_table(archive)
+    entry = entries[0x07000001]
+    assert entry.is_compressed
+
+    data = read_entry_data(archive, entry)
+    assert data == content
+
+
+def test_read_mixed_compressed_uncompressed(build_dat) -> None:
+    """Archive with both compressed and uncompressed entries reads correctly."""
+    plain_content = b"I am not compressed"
+    compressed_content = b"I am compressed!" * 30
+
+    dat_path = build_dat(
+        [
+            (0x07000001, plain_content),
+            (0x07000002, compressed_content),
+        ],
+        compressed_ids={0x07000002},
+    )
+    archive = DatArchive(dat_path)
+    entries = scan_file_table(archive)
+
+    assert not entries[0x07000001].is_compressed
+    assert entries[0x07000002].is_compressed
+
+    assert read_entry_data(archive, entries[0x07000001]) == plain_content
+    assert read_entry_data(archive, entries[0x07000002]) == compressed_content
+
+
+# -- B-tree traversal tests --
+
+
+def test_read_btree_single_node(build_dat_with_btree) -> None:
+    """Single B-tree node with a few entries, verify all found."""
+    files = [
+        (0x07000001, b"alpha"),
+        (0x07000002, b"bravo"),
+        (0x07000003, b"charlie"),
+    ]
+    dat_path = build_dat_with_btree(
+        btree_nodes=[{"file_ids": [0x07000001, 0x07000002, 0x07000003]}],
+        files=files,
+    )
+    archive = DatArchive(dat_path)
+
+    entries = traverse_btree(archive)
+    assert len(entries) == 3
+    assert 0x07000001 in entries
+    assert 0x07000002 in entries
+    assert 0x07000003 in entries
+
+
+def test_read_btree_two_levels(build_dat_with_btree) -> None:
+    """Root with two child nodes, verify depth-first finds all entries."""
+    files = [
+        (0x07000001, b"root_file"),
+        (0x07000002, b"child1_file_a"),
+        (0x07000003, b"child1_file_b"),
+        (0x07000004, b"child2_file"),
+    ]
+    dat_path = build_dat_with_btree(
+        btree_nodes=[
+            # Node 0 (root): has one file and two children
+            {"file_ids": [0x07000001], "children": [1, 2]},
+            # Node 1 (child): has two files
+            {"file_ids": [0x07000002, 0x07000003]},
+            # Node 2 (child): has one file
+            {"file_ids": [0x07000004]},
+        ],
+        files=files,
+    )
+    archive = DatArchive(dat_path)
+
+    entries = traverse_btree(archive)
+    assert len(entries) == 4
+    for fid, _ in files:
+        assert fid in entries
+
+
+def test_btree_sentinel_stops(build_dat_with_btree) -> None:
+    """B-tree traversal doesn't follow sentinel (zero) child offsets."""
+    files = [
+        (0x07000001, b"only_file"),
+    ]
+    dat_path = build_dat_with_btree(
+        btree_nodes=[
+            # Root with one file, no children (default — empty children list)
+            {"file_ids": [0x07000001]},
+        ],
+        files=files,
+    )
+    archive = DatArchive(dat_path)
+
+    entries = traverse_btree(archive)
+    assert len(entries) == 1
+    assert 0x07000001 in entries
+
+
+def test_traverse_btree_auto_reads_header(build_dat_with_btree) -> None:
+    """traverse_btree reads the header automatically if not already read."""
+    files = [(0x07000001, b"auto")]
+    dat_path = build_dat_with_btree(
+        btree_nodes=[{"file_ids": [0x07000001]}],
+        files=files,
+    )
+    archive = DatArchive(dat_path)
+    assert archive.header is None
+
+    entries = traverse_btree(archive)
+    assert archive.header is not None
+    assert len(entries) == 1
+
+
+def test_read_btree_node_too_small(tmp_path: Path) -> None:
+    """read_btree_node raises ValueError on a truncated node."""
+    buf = bytearray(2048)  # big enough for header, but node at end will be truncated
+    struct.pack_into("<I", buf, 0x140, 0x5442)
+    struct.pack_into("<I", buf, 0x148, len(buf))
+    struct.pack_into("<I", buf, 0x1A0, 0)
+    struct.pack_into("<I", buf, 0x1A4, 2460)
+    dat_path = tmp_path / "small_node.dat"
+    dat_path.write_bytes(bytes(buf))
+
+    archive = DatArchive(dat_path)
+    with pytest.raises(ValueError, match="too small"):
+        read_btree_node(archive, 0)
+
+
+def test_read_btree_node_bad_header(build_dat_with_btree) -> None:
+    """read_btree_node raises ValueError when block header is not 8 zero bytes."""
+    files = [(0x07000001, b"data")]
+    dat_path = build_dat_with_btree(
+        btree_nodes=[{"file_ids": [0x07000001]}],
+        files=files,
+    )
+    archive = DatArchive(dat_path)
+    archive.read_header()
+
+    # Corrupt the block header of the B-tree root node
+    node_offset = archive.header.root_offset
+    raw = bytearray(dat_path.read_bytes())
+    raw[node_offset] = 0xFF
+    dat_path.write_bytes(bytes(raw))
+
+    with pytest.raises(ValueError, match="Invalid block header"):
+        read_btree_node(archive, node_offset)
+
+
+def test_traverse_btree_no_root() -> None:
+    """traverse_btree returns empty dict when root_offset is 0."""
+    import tempfile
+    import struct
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as td:
+        buf = bytearray(2048)
+        struct.pack_into("<I", buf, 0x140, 0x5442)  # BT magic
+        struct.pack_into("<I", buf, 0x148, 2048)     # file_size
+        struct.pack_into("<I", buf, 0x160, 0)        # root_offset = 0
+        struct.pack_into("<I", buf, 0x1A0, 0)        # file_count
+        struct.pack_into("<I", buf, 0x1A4, 2460)     # block_size
+        dat_path = Path(td) / "empty.dat"
+        dat_path.write_bytes(bytes(buf))
+
+        archive = DatArchive(dat_path)
+        entries = traverse_btree(archive)
+        assert entries == {}
+
+
+# -- Decompression edge case tests --
+
+
+def test_decompress_size_mismatch_warning() -> None:
+    """decompress_entry emits a warning when decompressed size doesn't match prefix."""
+    original = b"Hello, World!"
+    compressed = zlib.compress(original)
+    # Lie about the expected length (say 999 instead of actual length)
+    payload = struct.pack("<I", 999) + compressed
+
+    with pytest.warns(UserWarning, match="Decompressed size mismatch"):
+        result = decompress_entry(payload)
+    assert result == original
+
+
+# -- identify_content_type tests --
+
+
+def test_identify_content_type_all_types() -> None:
+    """identify_content_type recognizes all known magic byte patterns."""
+    from ddo_data.dat_parser.extract import identify_content_type
+
+    assert identify_content_type(b"OggS\x00\x00\x00\x00") == "OGG Vorbis"
+    assert identify_content_type(b"DDS \x7c\x00\x00\x00") == "DDS texture"
+    assert identify_content_type(b"<?xml version='1.0'?>") == "XML"
+    assert identify_content_type(b"RIFF\x00\x00\x00\x00") == "RIFF/WAV"
+    assert identify_content_type(b"BM\x00\x00\x00\x00") == "BMP image"
+    assert identify_content_type(b"\xff\xfe\x00\x00") == "UTF-16LE text"
+    assert identify_content_type(b"\xDE\xAD\xBE\xEF") == "binary (0xDEAD)"
+    assert identify_content_type(b"\x01") == "unknown"
+    assert identify_content_type(b"") == "unknown"
