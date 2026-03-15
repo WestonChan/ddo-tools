@@ -322,3 +322,30 @@ def build_dat_with_btree(tmp_path: Path):
     ) -> Path:
         return _build_dat_with_btree(tmp_path, btree_nodes, files)
     return builder
+
+
+def build_dds_1x1_rgba() -> bytes:
+    """Build a minimal 1x1 RGBA uncompressed DDS file (132 bytes).
+
+    DDS format: 4-byte magic + 124-byte header + 4 bytes pixel data (BGRA).
+    Usable by Pillow for DDS-to-PNG conversion tests.
+    """
+    buf = bytearray(b"DDS ")
+    header = bytearray(124)
+    struct.pack_into("<I", header, 0, 124)          # dwSize
+    struct.pack_into("<I", header, 4, 0x1007)       # dwFlags (CAPS|HEIGHT|WIDTH|PIXELFORMAT)
+    struct.pack_into("<I", header, 8, 1)            # dwHeight
+    struct.pack_into("<I", header, 12, 1)           # dwWidth
+    struct.pack_into("<I", header, 16, 4)           # dwPitchOrLinearSize
+    pf_off = 72  # DDS_PIXELFORMAT offset within header
+    struct.pack_into("<I", header, pf_off, 32)          # pixelformat dwSize
+    struct.pack_into("<I", header, pf_off + 4, 0x41)    # DDPF_RGB | DDPF_ALPHAPIXELS
+    struct.pack_into("<I", header, pf_off + 12, 32)     # dwRGBBitCount
+    struct.pack_into("<I", header, pf_off + 16, 0x00FF0000)  # dwRBitMask
+    struct.pack_into("<I", header, pf_off + 20, 0x0000FF00)  # dwGBitMask
+    struct.pack_into("<I", header, pf_off + 24, 0x000000FF)  # dwBBitMask
+    struct.pack_into("<I", header, pf_off + 28, 0xFF000000)  # dwABitMask
+    struct.pack_into("<I", header, 104, 0x1000)     # DDSCAPS_TEXTURE
+    buf.extend(header)
+    buf.extend(b"\xFF\x00\x00\xFF")                 # 1 pixel BGRA
+    return bytes(buf)

@@ -297,9 +297,9 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [ ] JSON export pipeline (`ddo-data extract` command)
 
 ### Asset extraction
-- [ ] DDS texture extraction from client_general.dat
-- [ ] DDS to PNG conversion (Pillow)
-- [ ] Icon pipeline (`ddo-data icons` command)
+- [x] DDS texture extraction from client_general.dat
+- [x] DDS to PNG conversion (Pillow)
+- [x] Icon pipeline (`ddo-data icons` command)
 
 ### Supplementary data
 - [ ] DDO Wiki scraper (`ddo-data scrape` command)
@@ -309,7 +309,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] `parse`, `list`, `dat-extract`, `dat-peek`, `dat-stats`
 - [x] `dat-dump`, `dat-compare`, `dat-survey`, `dat-compare-entries`, `dat-validate`, `dat-probe`
 - [ ] `extract` (JSON export)
-- [ ] `icons` (DDS to PNG)
+- [x] `icons` (DDS to PNG)
 - [ ] `scrape` (wiki)
 
 ## Credits

@@ -478,15 +478,19 @@ def extract(ctx: click.Context, output: Path) -> None:
 
 
 @cli.command()
+@click.argument("dat_file", type=click.Path(exists=True, path_type=Path))
 @click.option(
     "--output", "-o", type=click.Path(path_type=Path),
-    default=Path("public/images"), help="Output directory for icons",
+    default=Path("icons"), help="Output directory for PNG icons",
 )
-@click.pass_context
-def icons(ctx: click.Context, output: Path) -> None:
-    """Extract and convert item/feat icons from game files."""
-    click.echo(f"Extracting icons to {output}/")
-    click.echo("(Not yet implemented)")
+@click.option("--limit", "-n", type=int, default=0, help="Max icons to extract (0 = all)")
+def icons(dat_file: Path, output: Path, limit: int) -> None:
+    """Extract DDS textures from a .dat archive and convert to PNG."""
+    from ddo_data.icons import extract_icons
+
+    click.echo(f"Extracting icons from {dat_file.name} to {output}/")
+    png_paths = extract_icons(dat_file, output, limit=limit)
+    click.echo(f"Extracted {len(png_paths)} icons")
 
 
 @cli.command()

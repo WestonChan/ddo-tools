@@ -419,3 +419,40 @@ def test_dat_compare_output(build_dat_with_btree) -> None:
     assert "Root offset:" in result.output
     assert "brute-force" in result.output.lower() or "Brute" in result.output
     assert "B-tree" in result.output
+
+
+# -- icons tests --
+
+
+def test_icons_extracts_dds(build_dat, tmp_path) -> None:
+    """icons command extracts DDS entries as PNG files."""
+    from conftest import build_dds_1x1_rgba
+
+    dds_data = build_dds_1x1_rgba()
+    dat_path = build_dat([(0x01000001, dds_data)])
+    out_dir = tmp_path / "icons_out"
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["icons", str(dat_path), "-o", str(out_dir)])
+
+    assert result.exit_code == 0
+    assert "Extracted 1 icons" in result.output
+
+
+def test_icons_with_limit(build_dat, tmp_path) -> None:
+    """icons command respects --limit."""
+    from conftest import build_dds_1x1_rgba
+
+    dds_data = build_dds_1x1_rgba()
+    dat_path = build_dat([
+        (0x01000001, dds_data),
+        (0x01000002, dds_data),
+        (0x01000003, dds_data),
+    ])
+    out_dir = tmp_path / "icons_out"
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["icons", str(dat_path), "-o", str(out_dir), "-n", "1"])
+
+    assert result.exit_code == 0
+    assert "Extracted 1 icons" in result.output

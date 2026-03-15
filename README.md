@@ -63,6 +63,8 @@ ddo-data info
 | `ddo-data dat-compare <file>` | Compare brute-force vs B-tree scanner results |
 | `ddo-data dat-survey <file>` | Survey entry structure: type codes, sizes, string density |
 | `ddo-data dat-compare-entries <file> --type <hex>` | Compare entries by type code to find field patterns |
+| `ddo-data dat-validate <file>` | Validate TLV hypotheses against real game data |
+| `ddo-data dat-probe <file> --id <hex>` | Probe entry binary structure and decode |
 
 ## Credits
 
