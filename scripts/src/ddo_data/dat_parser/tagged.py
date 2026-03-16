@@ -13,6 +13,8 @@ jtauber/lotro (James Tauber).
 import struct
 from dataclasses import dataclass, field
 
+from .constants import KNOWN_ID_HIGH_BYTES
+
 # ---------------------------------------------------------------------------
 # Heuristic pattern detection (original exploratory tooling)
 # ---------------------------------------------------------------------------
@@ -46,8 +48,8 @@ def scan_tagged_entry(data: bytes) -> TaggedStructure:
     return result
 
 
-# Known file ID high bytes from DDO archives
-_KNOWN_ID_HIGH_BYTES = {0x01, 0x07, 0x0A, 0x40, 0x41, 0x78}
+# Backward-compat alias for internal use
+_KNOWN_ID_HIGH_BYTES = KNOWN_ID_HIGH_BYTES
 
 
 def _scan_file_id_refs(data: bytes) -> list[tuple[int, int]]:
@@ -96,28 +98,8 @@ def _find_utf16_strings(data: bytes, result: TaggedStructure) -> None:
             i += 1
 
 
-def hex_dump(data: bytes, offset: int = 0, limit: int = 0) -> str:
-    """Format binary data as a hex dump with ASCII sidebar.
-
-    Args:
-        data: Bytes to dump.
-        offset: Base offset for display (cosmetic, for file-relative addresses).
-        limit: Max bytes to show (0 = all).
-
-    Returns:
-        Formatted hex dump string.
-    """
-    if limit > 0:
-        data = data[:limit]
-
-    lines = []
-    for row_off in range(0, len(data), 16):
-        chunk = data[row_off : row_off + 16]
-        hex_part = " ".join(f"{b:02X}" for b in chunk)
-        ascii_part = "".join(chr(b) if 0x20 <= b < 0x7F else "." for b in chunk)
-        lines.append(f"  {offset + row_off:08X}  {hex_part:<48s}  {ascii_part}")
-
-    return "\n".join(lines)
+# hex_dump moved to utils.py
+from .utils import hex_dump  # noqa: F401 — re-export for backward compat
 
 
 # ---------------------------------------------------------------------------

@@ -9,8 +9,11 @@ from ddo_data.dat_parser.probe import (
     DecodedProperty,
     GameEntryHeader,
     ProbeResult,
+    PropertyStreamResult,
     Type2Entry,
     Type4Entry,
+    TypedProperty,
+    decode_property_stream,
     decode_type2,
     decode_type4,
     find_definition_refs,
@@ -633,3 +636,225 @@ class TestFormatType2:
         output = format_type2(entry)
         assert "complex-pairs" in output
         assert "Unparsed" not in output
+
+    def test_complex_typed_format(self) -> None:
+        """format_type2 handles the complex-typed variant."""
+        entry = Type2Entry(
+            header=GameEntryHeader(did=2, ref_count=0, file_ids=[], body_offset=5),
+            raw_size=30,
+            variant="complex-typed",
+            outer_count=2,
+            properties=[
+                DecodedProperty(key=0x10000042, value=25),
+                DecodedProperty(key=0x10000043, value=100),
+            ],
+            remaining_bytes=0,
+        )
+        output = format_type2(entry)
+        assert "complex-typed" in output
+        assert "0x10000042" in output
+        assert "0x10000043" in output
+
+
+# ---------------------------------------------------------------------------
+# VLE encoder helper (inverse of read_vle, for building test data)
+# ---------------------------------------------------------------------------
+
+
+def _encode_vle(value: int) -> bytes:
+    """Encode an integer as VLE bytes (inverse of read_vle)."""
+    if value < 0x80:
+        return bytes([value])
+    if value <= 0x3FFF:
+        # Two-byte: 0x80 | (high bits), low byte
+        return bytes([0x80 | (value >> 8), value & 0xFF])
+    # Full uint32 marker
+    return b"\xE0" + struct.pack("<I", value)
+
+
+def _encode_tsize(value: int) -> bytes:
+    """Encode a tsize: skip byte + VLE."""
+    return b"\xFF" + _encode_vle(value)
+
+
+def _build_vle_property(key: int, type_tag: int, value_bytes: bytes) -> bytes:
+    """Build a single VLE-encoded property: [key:VLE][type_tag:VLE][value]."""
+    return _encode_vle(key) + _encode_vle(type_tag) + value_bytes
+
+
+def _make_complex_typed_entry(properties: list[tuple[int, int, bytes]]) -> bytes:
+    """Build a complex type-2 entry with tsize + VLE property stream.
+
+    Each property is (key, type_tag, value_bytes).
+    Returns full entry bytes: [DID=2:u32][ref_count=0:u8][tsize][properties...].
+    """
+    body = bytearray()
+    body.extend(_encode_tsize(len(properties)))
+    for key, type_tag, value_bytes in properties:
+        body.extend(_build_vle_property(key, type_tag, value_bytes))
+
+    header = struct.pack("<I", 2) + b"\x00"  # DID=2, 0 refs
+    return bytes(header) + bytes(body)
+
+
+# ---------------------------------------------------------------------------
+# Property stream decoder tests
+# ---------------------------------------------------------------------------
+
+
+class TestDecodePropertyStream:
+    def test_int_properties(self) -> None:
+        """Decode multiple int (type 0) properties."""
+        props = [
+            (0x10000042, 0, struct.pack("<I", 25)),
+            (0x10000043, 0, struct.pack("<I", 100)),
+            (0x10000044, 0, struct.pack("<I", 0)),
+        ]
+        body = bytearray()
+        body.extend(_encode_tsize(3))
+        tsize_end = len(body)
+        for key, tag, val in props:
+            body.extend(_build_vle_property(key, tag, val))
+
+        result = decode_property_stream(bytes(body), tsize_end, 3)
+        assert len(result.properties) == 3
+        assert result.coverage == pytest.approx(1.0)
+        assert result.properties[0].key == 0x10000042
+        assert result.properties[0].value == 25
+        assert result.properties[0].type_tag == 0
+        assert result.properties[1].value == 100
+        assert result.properties[2].value == 0
+
+    def test_float_property(self) -> None:
+        """Decode a float (type 1) property."""
+        body = _build_vle_property(0x10000001, 1, struct.pack("<f", 3.14))
+        result = decode_property_stream(body, 0, 1)
+        assert len(result.properties) == 1
+        assert result.properties[0].type_tag == 1
+        assert result.properties[0].value == pytest.approx(3.14, abs=1e-5)
+        assert result.coverage == pytest.approx(1.0)
+
+    def test_bool_property(self) -> None:
+        """Decode a bool (type 2) property."""
+        body = _build_vle_property(0x10000002, 2, struct.pack("<I", 1))
+        result = decode_property_stream(body, 0, 1)
+        assert len(result.properties) == 1
+        assert result.properties[0].type_tag == 2
+        assert result.properties[0].value == 1
+
+    def test_string_property(self) -> None:
+        """Decode a string (type 3) property."""
+        text = b"Longsword"
+        string_bytes = _encode_vle(len(text)) + text
+        body = _build_vle_property(0x10000003, 3, string_bytes)
+        result = decode_property_stream(body, 0, 1)
+        assert len(result.properties) == 1
+        assert result.properties[0].type_tag == 3
+        assert result.properties[0].value == "Longsword"
+
+    def test_mixed_types(self) -> None:
+        """Decode a stream with mixed int, float, and string properties."""
+        body = bytearray()
+        # int property
+        body.extend(_build_vle_property(0x01, 0, struct.pack("<I", 42)))
+        # float property
+        body.extend(_build_vle_property(0x02, 1, struct.pack("<f", 1.5)))
+        # string property
+        text = b"hello"
+        body.extend(_build_vle_property(0x03, 3, _encode_vle(5) + text))
+
+        result = decode_property_stream(bytes(body), 0, 3)
+        assert len(result.properties) == 3
+        assert result.properties[0].value == 42
+        assert result.properties[1].value == pytest.approx(1.5)
+        assert result.properties[2].value == "hello"
+        assert result.coverage == pytest.approx(1.0)
+
+    def test_unknown_type_stops(self) -> None:
+        """An unknown type tag stops parsing with partial coverage."""
+        body = bytearray()
+        # Valid int property
+        body.extend(_build_vle_property(0x01, 0, struct.pack("<I", 10)))
+        # Unknown type tag 99
+        body.extend(_build_vle_property(0x02, 99, b"\x00\x00\x00\x00"))
+
+        result = decode_property_stream(bytes(body), 0, 2)
+        assert len(result.properties) == 1  # Only the first decoded
+        assert result.properties[0].value == 10
+        assert 0.0 < result.coverage < 1.0
+        assert len(result.errors) == 1
+
+    def test_truncated_stream(self) -> None:
+        """A truncated stream returns partial results without raising."""
+        # Build a valid int property, then truncate mid-way through a second
+        body = bytearray()
+        body.extend(_build_vle_property(0x01, 0, struct.pack("<I", 7)))
+        body.extend(_encode_vle(0x02))  # key of second property, no type/value
+        body_bytes = bytes(body)
+
+        result = decode_property_stream(body_bytes, 0, 2)
+        assert len(result.properties) == 1
+        assert result.properties[0].value == 7
+        assert len(result.errors) == 1
+
+    def test_array_property(self) -> None:
+        """Decode an array (type 4) of ints."""
+        # Array: [count:VLE][element_type:VLE][elements...]
+        elements = [10, 20, 30]
+        array_bytes = _encode_vle(3) + _encode_vle(0)  # 3 elements, type=int
+        for e in elements:
+            array_bytes += struct.pack("<I", e)
+        body = _build_vle_property(0x10000005, 4, array_bytes)
+
+        result = decode_property_stream(body, 0, 1)
+        assert len(result.properties) == 1
+        assert result.properties[0].type_tag == 4
+        assert result.properties[0].value == [10, 20, 30]
+
+    def test_empty_count(self) -> None:
+        """A stream with count=0 returns empty results with full coverage."""
+        result = decode_property_stream(b"", 0, 0)
+        assert len(result.properties) == 0
+        assert result.errors == []
+
+
+class TestDecodeType2ComplexTyped:
+    def test_complex_typed_variant(self) -> None:
+        """A type-2 entry with VLE property stream decodes as complex-typed."""
+        entry_data = _make_complex_typed_entry([
+            (0x10000042, 0, struct.pack("<I", 25)),   # int
+            (0x10000043, 1, struct.pack("<f", 2.5)),   # float
+            (0x10000044, 2, struct.pack("<I", 1)),     # bool
+        ])
+        result = decode_type2(entry_data)
+        assert result.variant == "complex-typed"
+        assert len(result.properties) >= 2  # int and bool convert, float converts
+        # Check the int property made it through
+        keys = {p.key for p in result.properties}
+        assert 0x10000042 in keys
+
+    def test_complex_typed_with_string_skips_in_decoded(self) -> None:
+        """String properties are parsed but skipped in DecodedProperty conversion."""
+        text = b"Vorpal"
+        string_val = _encode_vle(len(text)) + text
+        entry_data = _make_complex_typed_entry([
+            (0x10000001, 0, struct.pack("<I", 99)),    # int -- kept
+            (0x10000002, 3, string_val),                # string -- skipped
+        ])
+        result = decode_type2(entry_data)
+        assert result.variant == "complex-typed"
+        # Only the int property converts to DecodedProperty
+        assert len(result.properties) == 1
+        assert result.properties[0].key == 0x10000001
+        assert result.properties[0].value == 99
+
+    def test_falls_through_to_partial_on_bad_stream(self) -> None:
+        """If the VLE stream has < 50% coverage, fall through to complex-partial."""
+        # Build an entry where body after tsize is just garbage
+        header = struct.pack("<I", 2) + b"\x00"  # DID=2, 0 refs
+        body = _encode_tsize(5)  # claims 5 properties
+        body += b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"  # garbage
+        entry_data = header + body
+
+        result = decode_type2(entry_data)
+        assert result.variant == "complex-partial"

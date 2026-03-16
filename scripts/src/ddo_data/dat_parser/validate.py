@@ -11,7 +11,8 @@ from pathlib import Path
 
 from .archive import DatArchive, FileEntry
 from .extract import read_entry_data, scan_file_table
-from .tagged import _KNOWN_ID_HIGH_BYTES, scan_tlv
+from .constants import KNOWN_ID_HIGH_BYTES
+from .tagged import scan_tlv
 
 
 @dataclass
@@ -131,7 +132,7 @@ def validate_hypothesis(
                 if val is None:
                     continue
                 high_byte = (val >> 24) & 0xFF
-                if high_byte in _KNOWN_ID_HIGH_BYTES and (val & 0x00FFFFFF) != 0:
+                if high_byte in KNOWN_ID_HIGH_BYTES and (val & 0x00FFFFFF) != 0:
                     result.ref_candidates += 1
                     if val in known_ids:
                         result.ref_valid += 1

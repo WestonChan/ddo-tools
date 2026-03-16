@@ -112,7 +112,7 @@ def build_registry(
             except (ValueError, struct.error):
                 result.skipped += 1
                 continue
-            if decoded.variant in ("simple", "complex-pairs"):
+            if decoded.variant in ("simple", "complex-pairs", "complex-typed"):
                 result.decoded_type2 += 1
                 for prop in decoded.properties:
                     _record_property(result, prop, header.did, entry.file_id)

@@ -199,9 +199,9 @@ Property keys are typically definition references (0x10XXXXXX) or small integers
 
 Use `ddo-data dat-probe <file> --id <hex>` to decode type-4 entries.
 
-#### Type 0x02 entries (partially decoded, ~60% exact parse rate)
+#### Type 0x02 entries (three decoding strategies)
 
-Type-2 entries have two sub-populations:
+Type-2 entries have several sub-populations, decoded by three strategies in order:
 
 **Simple variant** (~785/1304, 60%): identical to type-4 format except `pad=1`:
 ```
@@ -209,11 +209,28 @@ Type-2 entries have two sub-populations:
 ```
 Properties use the same `[key:u32][value:u32]` greedy encoding as type-4 (where non-zero value < 256 is an array count). Parses exactly with 0 bytes remaining.
 
-**Complex variant** (~519/1304, 40%): body starts with a `tsize` (skip byte + VLE) giving a property count, followed by a Turbine property stream:
-```
-[DID:u32=2] [ref_count:u8] [file_ids:u32[]] [tsize -> prop_count] [property_stream...]
-```
-The property stream uses typed values (int, float, string, struct, array) determined by a **property definition registry** (DID 0x34000000 in LOTRO). This registry does **not exist** in any DDO `.dat` file, preventing full type-aware decoding. Pattern detection identifies definition refs, ASCII strings, floats, and file ID cross-references within the body.
+**Complex variant** (~519/1304, 40%): body starts with a `tsize` (skip byte + VLE) giving a property count, followed by property data. Three decoding strategies are tried:
+
+1. **complex-pairs**: greedy `[key:u32][value:u32]` pairs consume the body exactly.
+2. **complex-typed**: VLE-encoded property stream where each property is `[key:VLE][type_tag:VLE][value:typed]`. Accepted when coverage > 50% and at least one property decodes. Type tags follow the Turbine engine format (see below).
+3. **complex-partial**: pattern detection fallback — identifies definition refs, ASCII strings, floats, and file ID cross-references within the body.
+
+**Turbine property stream type tags** (from LOTRO community research, applied to DDO):
+
+| Tag | Type | Value encoding |
+|-----|------|---------------|
+| 0 | int | u32 LE |
+| 1 | float | f32 LE |
+| 2 | bool | u32 LE (0 or 1) |
+| 3 | string | VLE length + Latin-1 bytes |
+| 4 | array | VLE element_count + VLE element_type + elements |
+| 5 | struct | tsize + recursive property stream (max depth 3) |
+| 6 | int64 | 8 bytes LE |
+| 7 | double | 8 bytes LE |
+
+Unknown type tags cause the decoder to stop and return a partial result.
+
+DDO lacks the property definition registry (DID 0x34000000 in LOTRO) that maps property IDs to types. The complex-typed decoder infers types from the stream's embedded type tags rather than a registry lookup.
 
 Use `ddo-data dat-probe <file> --id <hex>` to decode type-2 entries.
 
@@ -247,9 +264,11 @@ Three TLV encoding hypotheses were tested via `dat-validate`:
 All failed because the format is not flat TLV -- it uses definition references as keys, arrays with counts, and nested structures rather than sequential tagged properties.
 
 **Analysis tooling** (in `dat_parser/`):
-- `probe.py` -- data-driven format probe: entry header parsing, pattern detection, type-4 and type-2 decoders
+- `probe.py` -- data-driven format probe: entry header parsing, pattern detection, type-4 and type-2 decoders, VLE property stream decoder
 - `survey.py` -- statistical survey: type code histogram, size distribution, string density
 - `tagged.py` -- legacy TLV scanner (superseded by probe.py for structured decoding)
+- `validate.py` -- cross-archive TLV hypothesis validation harness
+- `constants.py` -- shared constants (file ID high bytes, archive labels)
 - `compare.py` -- byte-by-byte comparison of same-type entries
 
 Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`, and `ddo-data dat-compare-entries --type <hex>` for exploration.
@@ -283,7 +302,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] Entry header decoder (DID + ref_count + file_ids -- all entry types)
 - [x] Data-driven format probe (VLE primitives, pattern detection)
 - [x] Type 0x04 entry decoder (99.7% parse rate, simple + array properties)
-- [x] Type 0x02 entry decoder (~60% exact parse, pattern detection fallback)
+- [x] Type 0x02 entry decoder (simple + complex-pairs + complex-typed via VLE property stream; complex-partial pattern detection fallback)
 - [ ] Type 0x01 entry decoder (complex objects with strings)
 - [x] Property key census (`dat-registry` command -- empirical statistics)
 - [x] Property ID name mapping (0x10XXXXXX definition refs to human-readable names via wiki cross-reference)
@@ -295,6 +314,13 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [ ] Enhancements parser
 - [ ] Classes parser
 - [ ] Races parser
+- [ ] Augments parser (slotted gems/crystals and typed augment slots)
+- [ ] Spells parser (spell lists per class, spell levels)
+- [ ] Set bonuses parser (named item sets with piece-count thresholds)
+- [ ] Epic destinies parser
+- [ ] Filigrees parser (sentient weapon augments)
+- [ ] Past lives parser (heroic, racial, iconic, epic reincarnation bonuses)
+- [ ] Reaper enhancements parser
 - [ ] JSON export pipeline (`ddo-data extract` command)
 
 ### Asset extraction
@@ -304,6 +330,8 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 
 ### Supplementary data
 - [x] DDO Wiki scraper — items (`ddo-data scrape --type items`)
+- [ ] DDO Wiki scraper — feats, enhancements (stubbed)
+- [ ] DDO Wiki scraper — augments, spells, set bonuses, epic destinies
 - [ ] Data merging (game files + wiki data)
 
 ### CLI

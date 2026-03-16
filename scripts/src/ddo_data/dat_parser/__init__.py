@@ -1,5 +1,7 @@
 """Turbine .dat archive parser for DDO/LOTRO game files."""
 
+from .constants import FILE_ID_LABELS, KNOWN_ID_HIGH_BYTES
+from .utils import hex_dump
 from .archive import DatArchive, DatHeader, FileEntry
 from .btree import BTreeNode, read_btree_node, traverse_btree
 from .compare import CompareResult, FieldAnalysis, compare_entries_by_type
@@ -9,8 +11,11 @@ from .probe import (
     DecodedProperty,
     GameEntryHeader,
     ProbeResult,
+    PropertyStreamResult,
     Type2Entry,
     Type4Entry,
+    TypedProperty,
+    decode_property_stream,
     decode_type2,
     decode_type4,
     find_definition_refs,
@@ -27,7 +32,12 @@ from .probe import (
     read_uint32,
     read_vle,
 )
-from .strings import decode_utf16le, load_string_table, resolve_string_ref
+from .strings import (
+    decode_localization_entry,
+    decode_utf16le,
+    load_string_table,
+    resolve_string_ref,
+)
 from .survey import SurveyResult, TypeGroup, survey_entries
 from .tagged import (
     EntryHeader,
@@ -65,6 +75,9 @@ from .validate import (
 )
 
 __all__ = [
+    "FILE_ID_LABELS",
+    "KNOWN_ID_HIGH_BYTES",
+    "hex_dump",
     "DatArchive",
     "DatHeader",
     "FileEntry",
@@ -79,6 +92,7 @@ __all__ = [
     "read_entry_data",
     "extract_entry",
     "load_string_table",
+    "decode_localization_entry",
     "decode_utf16le",
     "resolve_string_ref",
     "SurveyResult",
@@ -111,6 +125,9 @@ __all__ = [
     "format_type2",
     "Type4Entry",
     "Type2Entry",
+    "TypedProperty",
+    "PropertyStreamResult",
+    "decode_property_stream",
     "DecodedProperty",
     "PropertyKeyInfo",
     "RegistryResult",

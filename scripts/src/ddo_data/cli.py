@@ -158,7 +158,7 @@ def dat_extract(dat_file: Path, file_id: str | None, output: Path) -> None:
 def dat_peek(dat_file: Path, file_id: str, limit: int) -> None:
     """Hex dump of a single entry's raw data block."""
     from ddo_data.dat_parser import DatArchive, scan_file_table
-    from ddo_data.dat_parser.tagged import hex_dump
+    from ddo_data.dat_parser.utils import hex_dump
 
     archive = DatArchive(dat_file)
     entries = scan_file_table(archive)
@@ -260,7 +260,8 @@ def dat_stats(dat_file: Path) -> None:
 def dat_dump(dat_file: Path, file_id: str, limit: int) -> None:
     """Extract, decompress, and hex dump an entry with structure analysis."""
     from ddo_data.dat_parser import DatArchive, read_entry_data, scan_file_table
-    from ddo_data.dat_parser.tagged import hex_dump, scan_tagged_entry
+    from ddo_data.dat_parser.tagged import scan_tagged_entry
+    from ddo_data.dat_parser.utils import hex_dump
 
     archive = DatArchive(dat_file)
     entries = scan_file_table(archive)

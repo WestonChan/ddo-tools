@@ -16,7 +16,7 @@ import struct
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from .tagged import _KNOWN_ID_HIGH_BYTES
+from .constants import FILE_ID_LABELS, KNOWN_ID_HIGH_BYTES
 
 # ---------------------------------------------------------------------------
 # VLE (Variable-Length Encoding) primitives — from Turbine engine
@@ -98,7 +98,7 @@ def read_pascal_string(ins: io.BytesIO) -> str:
 # Known file ID high bytes
 # ---------------------------------------------------------------------------
 
-_FILE_ID_LABELS = {0x01: "general", 0x07: "gamelogic", 0x0A: "English"}
+_FILE_ID_LABELS = FILE_ID_LABELS
 
 # Empirical threshold: values 1-255 in the "val" slot of a greedy pair are
 # treated as array counts.  Real scalar property values are either 0 (flag)
@@ -109,7 +109,7 @@ _MAX_ARRAY_COUNT = 256
 def _is_file_id(value: int) -> bool:
     """Check if a uint32 looks like a cross-archive file ID."""
     high = (value >> 24) & 0xFF
-    return high in _KNOWN_ID_HIGH_BYTES and (value & 0x00FFFFFF) != 0
+    return high in KNOWN_ID_HIGH_BYTES and (value & 0x00FFFFFF) != 0
 
 
 # ---------------------------------------------------------------------------
@@ -407,6 +407,167 @@ def format_type4(entry: Type4Entry) -> str:
 
 
 # ---------------------------------------------------------------------------
+# VLE property stream decoder
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class TypedProperty:
+    """A property decoded from a Turbine VLE property stream with type info."""
+
+    key: int
+    """Property key (VLE-encoded in stream)."""
+
+    type_tag: int
+    """Turbine type tag (0=int, 1=float, 2=bool, 3=string, 4=array, 5=struct)."""
+
+    value: int | float | str | list | bytes
+    """Decoded value; type depends on type_tag."""
+
+    offset: int
+    """Byte offset in the stream (for diagnostics)."""
+
+
+@dataclass
+class PropertyStreamResult:
+    """Result of decoding a Turbine VLE property stream."""
+
+    properties: list[TypedProperty] = field(default_factory=list)
+    bytes_parsed: int = 0
+    bytes_total: int = 0
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def coverage(self) -> float:
+        if self.bytes_total == 0:
+            return 0.0
+        return self.bytes_parsed / self.bytes_total
+
+
+# Turbine type tags (from LOTRO community research: LotroCompanion/lotro-tools)
+_TYPE_INT = 0
+_TYPE_FLOAT = 1
+_TYPE_BOOL = 2
+_TYPE_STRING = 3
+_TYPE_ARRAY = 4
+_TYPE_STRUCT = 5
+_TYPE_INT64 = 6
+_TYPE_DOUBLE = 7
+
+_MAX_STRUCT_DEPTH = 3
+
+
+def _decode_typed_value(
+    ins: io.BytesIO,
+    type_tag: int,
+    depth: int = 0,
+) -> int | float | str | list | bytes:
+    """Decode a single typed value from the stream based on its type tag."""
+    if type_tag == _TYPE_INT:
+        return read_uint32(ins)
+    elif type_tag == _TYPE_FLOAT:
+        raw = ins.read(4)
+        if len(raw) < 4:
+            raise ValueError("Truncated float value")
+        return struct.unpack("<f", raw)[0]
+    elif type_tag == _TYPE_BOOL:
+        return read_uint32(ins)
+    elif type_tag == _TYPE_STRING:
+        return read_pascal_string(ins)
+    elif type_tag == _TYPE_ARRAY:
+        elem_count = read_vle(ins)
+        elem_type = read_vle(ins)
+        elements: list[int | float | str | list | bytes] = []
+        for _ in range(elem_count):
+            elements.append(_decode_typed_value(ins, elem_type, depth))
+        return elements
+    elif type_tag == _TYPE_STRUCT:
+        if depth >= _MAX_STRUCT_DEPTH:
+            raise ValueError(f"Struct nesting exceeds max depth {_MAX_STRUCT_DEPTH}")
+        nested_count = read_tsize(ins)
+        nested: list[TypedProperty] = []
+        for _ in range(nested_count):
+            offset = ins.tell()
+            key = read_vle(ins)
+            tag = read_vle(ins)
+            val = _decode_typed_value(ins, tag, depth + 1)
+            nested.append(TypedProperty(key=key, type_tag=tag, value=val, offset=offset))
+        return nested
+    elif type_tag == _TYPE_INT64:
+        raw = ins.read(8)
+        if len(raw) < 8:
+            raise ValueError("Truncated int64 value")
+        return struct.unpack("<q", raw)[0]
+    elif type_tag == _TYPE_DOUBLE:
+        raw = ins.read(8)
+        if len(raw) < 8:
+            raise ValueError("Truncated double value")
+        return struct.unpack("<d", raw)[0]
+    else:
+        raise ValueError(f"Unknown type tag {type_tag}")
+
+
+def decode_property_stream(
+    body: bytes,
+    start: int,
+    count: int,
+) -> PropertyStreamResult:
+    """Decode a Turbine VLE property stream.
+
+    Reads ``count`` properties from ``body[start:]``. Each property is
+    encoded as ``[key:VLE][type_tag:VLE][value:type-dependent]``.
+
+    Stops gracefully on unknown type tags or truncated data, returning
+    a partial result with coverage metrics.
+    """
+    stream_data = body[start:]
+    result = PropertyStreamResult(bytes_total=len(stream_data))
+    ins = io.BytesIO(stream_data)
+
+    for _ in range(count):
+        offset = ins.tell()
+        try:
+            key = read_vle(ins)
+            type_tag = read_vle(ins)
+            value = _decode_typed_value(ins, type_tag)
+        except ValueError as exc:
+            result.errors.append(f"@{offset}: {exc}")
+            break
+
+        result.properties.append(TypedProperty(
+            key=key,
+            type_tag=type_tag,
+            value=value,
+            offset=offset,
+        ))
+
+    result.bytes_parsed = ins.tell()
+    return result
+
+
+def _typed_to_decoded(properties: list[TypedProperty]) -> list[DecodedProperty]:
+    """Convert TypedProperty list to DecodedProperty for registry compatibility.
+
+    Scalar int/bool values convert directly. Floats are stored as their raw
+    uint32 bit pattern. Arrays of ints convert to list[int]. String, nested
+    struct, int64, and double values are skipped (no consumer yet).
+    """
+    decoded: list[DecodedProperty] = []
+    for prop in properties:
+        if prop.type_tag in (_TYPE_INT, _TYPE_BOOL):
+            decoded.append(DecodedProperty(key=prop.key, value=prop.value))
+        elif prop.type_tag == _TYPE_FLOAT:
+            # Preserve float as raw uint32 bits for registry stats
+            raw_bits = struct.unpack("<I", struct.pack("<f", prop.value))[0]
+            decoded.append(DecodedProperty(key=prop.key, value=raw_bits))
+        elif prop.type_tag == _TYPE_ARRAY:
+            # Only convert arrays of ints
+            if prop.value and all(isinstance(e, int) for e in prop.value):
+                decoded.append(DecodedProperty(key=prop.key, value=list(prop.value)))
+    return decoded
+
+
+# ---------------------------------------------------------------------------
 # Type-2 entry decoder
 # ---------------------------------------------------------------------------
 
@@ -415,18 +576,20 @@ def format_type4(entry: Type4Entry) -> str:
 class Type2Entry:
     """Decoded type-2 entry (items, feats, enhancements).
 
-    Type-2 entries come in two variants:
+    Type-2 entries come in several variants:
     - "simple": body = [u32=1][flag:u8][count:u8][key:u32,val:u32 pairs]
       Same as type-4 except the pad uint32 is 1 instead of 0. ~60% of entries.
-    - "complex": body starts with tsize -> property count, followed by a
-      Turbine property stream. Without the property definition registry
-      (missing from DDO), value types cannot be determined from metadata.
+    - "complex-pairs": tsize -> count, then count greedy u32 pairs.
+    - "complex-typed": tsize -> count, then a VLE-encoded property stream
+      with per-property type tags (Turbine engine format).
+    - "complex-partial": tsize -> count, but neither greedy pairs nor VLE
+      stream succeeded. Falls back to pattern detection.
     """
 
     header: GameEntryHeader
     raw_size: int
     variant: str = "unknown"
-    """'simple', 'complex-pairs', or 'complex-partial'."""
+    """'simple', 'complex-pairs', 'complex-typed', or 'complex-partial'."""
 
     outer_count: int = 0
     """Property count (from pad+count or tsize)."""
@@ -447,7 +610,7 @@ class Type2Entry:
 def decode_type2(data: bytes) -> Type2Entry:
     """Decode a type-2 entry: [DID:u32=2][ref_count:u8][file_ids...][body].
 
-    Tries three strategies in order:
+    Tries four strategies in order:
 
     1. **Simple** (type-4-like): body = [u32=1][flag:u8][count:u8][pairs...]
        Identical to type-4 format except the pad uint32 is 1.
@@ -455,11 +618,11 @@ def decode_type2(data: bytes) -> Type2Entry:
     2. **Complex-pairs**: body starts with tsize -> count, then count greedy
        [key:u32, val:u32] pairs.  Works when all property values fit u32.
 
-    3. **Complex-partial**: tsize -> count, but pairs don't fit cleanly.
-       Falls back to pattern detection (def refs, strings, floats, file IDs).
+    3. **Complex-typed**: tsize -> count, then a VLE-encoded property stream
+       where each property is [key:VLE][type_tag:VLE][value:typed].
 
-    DDO lacks the property definition registry (DID 0x34000000 not in any
-    .dat file), so full type-aware decoding of complex entries is not possible.
+    4. **Complex-partial**: tsize -> count, but none of the above succeeded.
+       Falls back to pattern detection (def refs, strings, floats, file IDs).
     """
     header = parse_entry_header(data)
     body = data[header.body_offset:]
@@ -509,7 +672,15 @@ def decode_type2(data: bytes) -> Type2Entry:
             result.remaining_bytes = 0
             return result
 
-    # Strategy 3: Pattern detection fallback
+    # Strategy 3: VLE-encoded property stream (Turbine typed format)
+    stream_result = decode_property_stream(body, tsize_end, outer_count)
+    if stream_result.properties and stream_result.coverage > 0.5:
+        result.variant = "complex-typed"
+        result.properties = _typed_to_decoded(stream_result.properties)
+        result.remaining_bytes = len(body) - tsize_end - stream_result.bytes_parsed
+        return result
+
+    # Strategy 4: Pattern detection fallback
     result.variant = "complex-partial"
     body_after_tsize = body[tsize_end:]
     result.remaining_bytes = len(body_after_tsize)
@@ -529,7 +700,7 @@ def format_type2(entry: Type2Entry) -> str:
 
     lines.append(f"\nProperties: {entry.outer_count}")
 
-    if entry.variant in ("simple", "complex-pairs"):
+    if entry.variant in ("simple", "complex-pairs", "complex-typed"):
         _format_properties(lines, entry.properties)
 
     elif entry.variant == "complex-partial":
