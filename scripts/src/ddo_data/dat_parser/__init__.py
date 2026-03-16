@@ -46,6 +46,16 @@ from .registry import (
     format_registry,
     format_registry_json,
 )
+from .namemap import (
+    KeyMapping,
+    NamedEntry,
+    NameMapResult,
+    build_name_map,
+    correlate_keys,
+    format_name_map,
+    format_name_map_json,
+    match_wiki_to_entries,
+)
 from .validate import (
     ValidationResult,
     build_known_id_set,
@@ -112,4 +122,12 @@ __all__ = [
     "run_validation",
     "format_validation_result",
     "ValidationResult",
+    "NamedEntry",
+    "KeyMapping",
+    "NameMapResult",
+    "build_name_map",
+    "match_wiki_to_entries",
+    "correlate_keys",
+    "format_name_map",
+    "format_name_map_json",
 ]

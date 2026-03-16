@@ -517,3 +517,70 @@ def test_scrape_items_cli(tmp_path) -> None:
     assert result.exit_code == 0
     assert "Scraping items" in result.output
     assert "items written to" in result.output
+
+
+# -- dat-namemap tests --
+
+
+def _mock_namemap_result():
+    """Build a NameMapResult for CLI tests."""
+    from ddo_data.dat_parser.namemap import KeyMapping, NameMapResult
+
+    return NameMapResult(
+        matched_entries=5,
+        unmatched_wiki=2,
+        mappings=[
+            KeyMapping(
+                key=0x10000042, name="minimum_level",
+                confidence=1.0, match_count=5,
+                sample_values=[5, 10, 15],
+            ),
+        ],
+        unmapped_keys=[0x10000099],
+    )
+
+
+def test_dat_namemap_output(tmp_path) -> None:
+    """dat-namemap produces a name mapping report with matched entries."""
+    import json
+
+    wiki_path = tmp_path / "items.json"
+    wiki_path.write_text(json.dumps([{"name": "Celestia"}]))
+
+    mock_result = _mock_namemap_result()
+    with patch("ddo_data.dat_parser.namemap.build_name_map", return_value=mock_result):
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            "--ddo-path", str(tmp_path),
+            "dat-namemap",
+            "--wiki-items", str(wiki_path),
+        ])
+
+    assert result.exit_code == 0
+    assert "Matched entries: 5" in result.output
+    assert "minimum_level" in result.output
+    assert "0x10000042" in result.output
+
+
+def test_dat_namemap_json(tmp_path) -> None:
+    """dat-namemap --json outputs valid JSON with mapping data."""
+    import json
+
+    wiki_path = tmp_path / "items.json"
+    wiki_path.write_text(json.dumps([{"name": "Celestia"}]))
+
+    mock_result = _mock_namemap_result()
+    with patch("ddo_data.dat_parser.namemap.build_name_map", return_value=mock_result):
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            "--ddo-path", str(tmp_path),
+            "dat-namemap",
+            "--wiki-items", str(wiki_path),
+            "--json",
+        ])
+
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["summary"]["matched_entries"] == 5
+    assert len(data["mappings"]) == 1
+    assert data["mappings"][0]["name"] == "minimum_level"

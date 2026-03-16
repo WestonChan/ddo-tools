@@ -497,6 +497,34 @@ def dat_registry(dat_file: Path, limit: int, as_json: bool) -> None:
         click.echo(format_registry(result))
 
 
+@cli.command(name="dat-namemap")
+@click.option(
+    "--wiki-items", type=click.Path(exists=True, path_type=Path),
+    default=Path("public/data/items.json"),
+    help="Path to wiki items JSON (from 'ddo-data scrape')",
+)
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON")
+@click.pass_context
+def dat_namemap(ctx: click.Context, wiki_items: Path, as_json: bool) -> None:
+    """Cross-reference wiki items with gamelogic to map property key names."""
+    import json as json_mod
+
+    from .dat_parser.namemap import (
+        build_name_map,
+        format_name_map,
+        format_name_map_json,
+    )
+
+    ddo_path = ctx.obj["ddo_path"]
+    result = build_name_map(ddo_path, wiki_items, on_progress=click.echo)
+
+    if as_json:
+        click.echo(json_mod.dumps(format_name_map_json(result), indent=2))
+    else:
+        click.echo()
+        click.echo(format_name_map(result))
+
+
 @cli.command()
 @click.option(
     "--output", "-o", type=click.Path(path_type=Path),
