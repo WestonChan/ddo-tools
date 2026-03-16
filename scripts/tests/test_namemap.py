@@ -9,6 +9,7 @@ from ddo_data.dat_parser.namemap import (
     NameMapResult,
     NamedEntry,
     correlate_keys,
+    decode_dup_triple,
     format_name_map,
     format_name_map_json,
     match_wiki_to_entries,
@@ -17,27 +18,22 @@ from ddo_data.dat_parser.probe import DecodedProperty
 
 
 # ---------------------------------------------------------------------------
-# Helpers for building synthetic type-2 entry bytes
+# Helpers for building synthetic 0x79 dup-triple entry bytes
 # ---------------------------------------------------------------------------
 
 
-def _build_type2_bytes(
-    file_ids: list[int],
+def _build_dup_triple_bytes(
     properties: list[tuple[int, int]],
+    schema_id: int = 0x08551000,
 ) -> bytes:
-    """Build raw bytes for a simple type-2 entry with header file_id refs.
+    """Build raw bytes for a 0x79 dup-triple entry.
 
-    Layout: [DID=2:u32][ref_count:u8][file_ids:u32*N][pad=1:u32][flag=0:u8][count:u8][key:u32,val:u32 pairs]
+    Layout: [schema_id:u32] [key:u32][key:u32][value:u32]...
+    The decode_dup_triple scanner finds repeated key patterns.
     """
-    buf = struct.pack("<I", 2)  # DID=2
-    buf += bytes([len(file_ids)])  # ref_count
-    for fid in file_ids:
-        buf += struct.pack("<I", fid)
-    buf += struct.pack("<I", 1)  # pad=1 (simple variant marker)
-    buf += b"\x00"  # flag=0
-    buf += bytes([len(properties)])  # property count
+    buf = struct.pack("<I", schema_id)
     for key, val in properties:
-        buf += struct.pack("<II", key, val)
+        buf += struct.pack("<III", key, key, val)  # dup-triple
     return buf
 
 
@@ -46,20 +42,20 @@ def _build_type2_bytes(
 # ---------------------------------------------------------------------------
 
 
-def test_match_by_header_string_ref(build_dat) -> None:
-    """Matches a type-2 entry whose header 0x0A ref resolves to a wiki item name."""
-    # Entry with ref to string table ID 0x0A000001
-    content = _build_type2_bytes(
-        file_ids=[0x0A000001],
+def test_match_by_deterministic_id(build_dat) -> None:
+    """Matches a 0x79 entry whose lower bytes match a 0x25 string table entry."""
+    # 0x79000001 entry with dup-triple properties
+    content = _build_dup_triple_bytes(
         properties=[(0x10000001, 29)],
     )
-    dat_path = build_dat([(0x07000001, content)])
+    dat_path = build_dat([(0x79000001, content)])
 
     archive = DatArchive(dat_path)
     archive.read_header()
     entries = scan_file_table(archive)
 
-    string_table = {0x0A000001: "Celestia"}
+    # String table: 0x25000001 has same lower bytes as 0x79000001
+    string_table = {0x25000001: "Celestia"}
     wiki_items = [{"name": "Celestia", "minimum_level": 29}]
 
     matched, unmatched = match_wiki_to_entries(wiki_items, string_table, archive, entries)
@@ -72,18 +68,17 @@ def test_match_by_header_string_ref(build_dat) -> None:
 
 def test_match_unmatched_wiki_items(build_dat) -> None:
     """Wiki items not found in string table produce no matches."""
-    content = _build_type2_bytes(
-        file_ids=[0x0A000001],
+    content = _build_dup_triple_bytes(
         properties=[(0x10000001, 10)],
     )
-    dat_path = build_dat([(0x07000001, content)])
+    dat_path = build_dat([(0x79000001, content)])
 
     archive = DatArchive(dat_path)
     archive.read_header()
     entries = scan_file_table(archive)
 
     # String table has the entry but wiki asks for a different name
-    string_table = {0x0A000001: "Celestia"}
+    string_table = {0x25000001: "Celestia"}
     wiki_items = [{"name": "Unknown Sword", "minimum_level": 10}]
 
     matched, unmatched = match_wiki_to_entries(wiki_items, string_table, archive, entries)
@@ -94,23 +89,62 @@ def test_match_unmatched_wiki_items(build_dat) -> None:
 
 def test_match_name_normalization(build_dat) -> None:
     """Matching is case-insensitive and handles underscores/whitespace."""
-    content = _build_type2_bytes(
-        file_ids=[0x0A000001],
+    content = _build_dup_triple_bytes(
         properties=[(0x10000001, 5)],
     )
-    dat_path = build_dat([(0x07000001, content)])
+    dat_path = build_dat([(0x79000001, content)])
 
     archive = DatArchive(dat_path)
     archive.read_header()
     entries = scan_file_table(archive)
 
-    # String table has "Vorpal Sword", wiki has "vorpal_sword"
-    string_table = {0x0A000001: "Vorpal Sword"}
+    # String table: 0x25000001 maps to "Vorpal Sword", wiki has "vorpal_sword"
+    string_table = {0x25000001: "Vorpal Sword"}
     wiki_items = [{"name": "vorpal_sword", "minimum_level": 5}]
 
     matched, _ = match_wiki_to_entries(wiki_items, string_table, archive, entries)
 
     assert len(matched) == 1
+
+
+# ---------------------------------------------------------------------------
+# decode_dup_triple tests
+# ---------------------------------------------------------------------------
+
+
+def test_decode_dup_triple_basic() -> None:
+    """Extracts key-value pairs from dup-triple encoded bytes."""
+    # Schema ID + two dup-triples
+    data = struct.pack("<I", 0x08551000)  # schema ID (ignored)
+    data += struct.pack("<III", 0x10000042, 0x10000042, 29)
+    data += struct.pack("<III", 0x10000077, 0x10000077, 150)
+
+    props = decode_dup_triple(data)
+
+    keys = {p.key: p.value for p in props}
+    assert keys[0x10000042] == 29
+    assert keys[0x10000077] == 150
+
+
+def test_decode_dup_triple_empty() -> None:
+    """Returns empty list for data with no property keys."""
+    data = struct.pack("<III", 0x08551000, 0x00000000, 0xDEADBEEF)
+    props = decode_dup_triple(data)
+    assert props == []
+
+
+def test_decode_dup_triple_lone_key() -> None:
+    """Picks up a lone key-value pair (first record in stream)."""
+    # Schema ID + lone pair (no dup) + dup-triple
+    data = struct.pack("<I", 0x08551000)  # schema ID
+    data += struct.pack("<II", 0x10000001, 42)  # lone pair
+    data += struct.pack("<III", 0x10000002, 0x10000002, 99)  # dup-triple
+
+    props = decode_dup_triple(data)
+
+    keys = {p.key: p.value for p in props}
+    assert keys[0x10000001] == 42
+    assert keys[0x10000002] == 99
 
 
 # ---------------------------------------------------------------------------
@@ -183,19 +217,19 @@ def test_correlate_ignores_insufficient_data() -> None:
 
 
 def test_correlate_string_ref_field() -> None:
-    """Property key holding a 0x0AXXXXXX value matching wiki string field."""
-    string_table = {0x0A000010: "Longsword", 0x0A000011: "Shortsword"}
+    """Property key holding a 0x25XXXXXX value matching wiki string field."""
+    string_table = {0x25000010: "Longsword", 0x25000011: "Shortsword"}
     entries = []
     for i, (text, string_id) in enumerate([
-        ("Longsword", 0x0A000010),
-        ("Longsword", 0x0A000010),
-        ("Shortsword", 0x0A000011),
-        ("Longsword", 0x0A000010),
-        ("Shortsword", 0x0A000011),
-        ("Longsword", 0x0A000010),
+        ("Longsword", 0x25000010),
+        ("Longsword", 0x25000010),
+        ("Shortsword", 0x25000011),
+        ("Longsword", 0x25000010),
+        ("Shortsword", 0x25000011),
+        ("Longsword", 0x25000010),
     ]):
         entries.append(NamedEntry(
-            file_id=0x07000000 + i,
+            file_id=0x79000000 + i,
             name=f"Item {i}",
             wiki_fields={"weapon_type": text},
             properties=[DecodedProperty(key=0x10000099, value=string_id)],

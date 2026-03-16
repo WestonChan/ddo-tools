@@ -1,15 +1,21 @@
-"""Property key name mapping via wiki cross-reference.
+"""Property key name mapping via wiki cross-reference and distribution analysis.
 
-Cross-references wiki item data (human-readable field names and values) with
-decoded gamelogic entries (numeric property key-value pairs) to discover
-mappings like 0x10000042 = minimum_level.
+Cross-references wiki item data with decoded gamelogic entries to discover
+what binary property keys (0x10XXXXXX) mean in human terms.
 
-The matching pipeline:
-  1. Load wiki items (from items.json, produced by `ddo-data scrape`)
-  2. Load string table (from client_local_English.dat)
-  3. Scan gamelogic entries (from client_gamelogic.dat)
-  4. Match: connect entries to wiki items via 0x0AXXXXXX string table refs
-  5. Correlate: find property keys whose values match wiki field values
+Entry format:
+  0x79XXXXXX entries in client_gamelogic.dat use a "dup-triple" encoding:
+  [preamble:2B] [key:u32][val:u32] [key:u32][key:u32][val:u32] ...
+  These share a 24-bit namespace with 0x25XXXXXX localization strings.
+
+Discovery methods:
+  1. Wiki correlation: match entries to wiki items via the string table,
+     then find property keys whose values match known wiki fields.
+  2. Distribution analysis: classify keys by their value distributions
+     across all entries (see DISCOVERED_KEYS constant).
+
+Key finding: some fields like minimum_level appear to be computed at
+runtime from effect contributions rather than stored as properties.
 """
 
 from __future__ import annotations
@@ -23,8 +29,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .archive import DatArchive, FileEntry
-from .extract import read_entry_data, scan_file_table
-from .probe import DecodedProperty, decode_type2, parse_entry_header
+from .btree import traverse_btree
+from .extract import read_entry_data
+from .probe import DecodedProperty
 from .strings import load_string_table
 
 logger = logging.getLogger(__name__)
@@ -47,9 +54,70 @@ _STRING_FIELDS = [
     "proficiency",
     "material",
     "binding",
+    "quest",
+    "description",
+    "set_name",
+    "handedness",
 ]
 
 _MAX_SAMPLE_VALUES = 5
+
+
+# ---------------------------------------------------------------------------
+# Statistically discovered key meanings (from distribution analysis)
+# ---------------------------------------------------------------------------
+# These were identified by analyzing value distributions across 76,000+
+# named 0x79 entries.  Confidence level indicates how strongly the
+# distribution matches the proposed meaning.
+#
+# NOTE: minimum_level appears to be *computed* at runtime from effect
+# contributions rather than stored as a simple property value.  None of the
+# keys below correspond to minimum_level.
+
+DISCOVERED_KEYS: dict[int, dict[str, str]] = {
+    0x1000361A: {
+        "name": "level",
+        "confidence": "high",
+        "evidence": "4715 entries, range 1-30, smooth tapering distribution. "
+                    "Likely quest/encounter level, not item ML.",
+    },
+    0x10000E29: {
+        "name": "rarity",
+        "confidence": "high",
+        "evidence": "6401 entries, values 2-5. Matches DDO rarity tiers: "
+                    "2=Common, 3=Uncommon, 4=Rare, 5=Epic.",
+    },
+    0x10003D24: {
+        "name": "durability",
+        "confidence": "medium",
+        "evidence": "3898 entries, range 1-169. 169 is standard heavy armor "
+                    "durability; other peaks match DDO item types.",
+    },
+    0x10001BA1: {
+        "name": "equipment_slot",
+        "confidence": "medium",
+        "evidence": "8345 entries, range 2-17. Values: 6(3139), 16(1954), "
+                    "2(926), 8(702). Consistent with equipment slot codes.",
+    },
+    0x10001C59: {
+        "name": "item_category",
+        "confidence": "medium",
+        "evidence": "13217 entries, range 1-12. Dominated by 12(6637) and "
+                    "3(4367). Likely item type/category enum.",
+    },
+    0x100012A2: {
+        "name": "effect_value",
+        "confidence": "medium",
+        "evidence": "4988 entries, range 1-100. Top: 33(1155), 100(1131). "
+                    "Numeric magnitude of effect/enchantment.",
+    },
+    0x10000919: {
+        "name": "effect_ref",
+        "confidence": "high",
+        "evidence": "16168 entries, values are 0x70XXXXXX file IDs pointing "
+                    "to type-2 effect definition entries.",
+    },
+}
 
 
 # ---------------------------------------------------------------------------
@@ -115,6 +183,62 @@ def _normalize_name(name: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Dup-triple decoder for 0x79XXXXXX entries
+# ---------------------------------------------------------------------------
+
+
+def decode_dup_triple(data: bytes) -> list[DecodedProperty]:
+    """Decode property key-value pairs from a dup-triple format entry.
+
+    The 0x79XXXXXX entries in client_gamelogic.dat use a 2-byte-aligned
+    format that starts with a 2-byte preamble (the schema type's low
+    bytes, e.g. 0x1000 -> bytes 00 10), followed by property records:
+
+        [preamble:2B] [key1:u32][val1:u32] [key2:u32][key2:u32][val2:u32] ...
+
+    The first record has the key once (lone pair, 8 bytes).
+    Subsequent records duplicate the key: [key][key][value] (12 bytes).
+    Zero u32s act as section breaks within the stream.
+
+    This scanner finds dup-triples at 2-byte alignment throughout the
+    entry, plus lone key-value pairs not captured by the dup pass.
+    """
+    props: list[DecodedProperty] = []
+    seen_keys: set[int] = set()
+    n = len(data)
+
+    # Pass 1: scan for dup-triples at 2-byte alignment
+    # The preamble is 2 bytes, so all u32s in the property stream are
+    # at even offsets (2, 6, 10, 14, ...). Step by 2 to match.
+    i = 0
+    while i + 12 <= n:
+        k1 = struct.unpack_from("<I", data, i)[0]
+        k2 = struct.unpack_from("<I", data, i + 4)[0]
+        if k1 == k2 and (k1 >> 24) == 0x10:
+            val = struct.unpack_from("<I", data, i + 8)[0]
+            if k1 not in seen_keys:
+                props.append(DecodedProperty(key=k1, value=val))
+                seen_keys.add(k1)
+            i += 12
+        else:
+            i += 2
+
+    # Pass 2: lone key-value pairs (first record in each section)
+    i = 0
+    while i + 8 <= n:
+        k = struct.unpack_from("<I", data, i)[0]
+        if (k >> 24) == 0x10 and k not in seen_keys:
+            val = struct.unpack_from("<I", data, i + 4)[0]
+            # Skip if next u32 equals k (dup-triple, handled above)
+            if val != k:
+                props.append(DecodedProperty(key=k, value=val))
+                seen_keys.add(k)
+        i += 2
+
+    return props
+
+
+# ---------------------------------------------------------------------------
 # Step 1: Match wiki items to gamelogic entries
 # ---------------------------------------------------------------------------
 
@@ -125,10 +249,15 @@ def match_wiki_to_entries(
     archive: DatArchive,
     entries: dict[int, FileEntry],
 ) -> tuple[list[NamedEntry], int]:
-    """Match wiki items to gamelogic entries via string table cross-reference.
+    """Match wiki items to gamelogic entries via deterministic ID mapping.
 
-    For each type-2 entry, parses the header and checks if any 0x0AXXXXXX
-    file_id resolves to a wiki item name in the string table.
+    The Turbine engine uses a shared 24-bit namespace across archives.
+    Item definitions live in the 0x79XXXXXX range of client_gamelogic.dat,
+    with corresponding localization strings at 0x25XXXXXX in the English
+    archive (same lower 3 bytes).
+
+    These 0x79 entries use a "dup-triple" property encoding (not type-2),
+    which decode_dup_triple handles.
 
     Returns (matched_entries, unmatched_wiki_count).
     """
@@ -139,53 +268,39 @@ def match_wiki_to_entries(
         if name:
             wiki_by_name[_normalize_name(name)] = item
 
-    string_to_id: dict[str, int] = {
-        _normalize_name(text): file_id
-        for file_id, text in string_table.items()
-    }
-
-    # Find which string table IDs correspond to wiki item names
-    name_to_string_id: dict[str, int] = {}
-    for norm_name in wiki_by_name:
-        if norm_name in string_to_id:
-            name_to_string_id[norm_name] = string_to_id[norm_name]
-
-    # Build reverse: string_id → normalized wiki name
-    string_id_to_name: dict[int, str] = {
-        sid: name for name, sid in name_to_string_id.items()
-    }
+    # Build string table lookup by lower 3 bytes (shared namespace)
+    lower_to_name: dict[int, str] = {}
+    for file_id, text in string_table.items():
+        lower = file_id & 0x00FFFFFF
+        norm = _normalize_name(text)
+        # Only store if it matches a wiki item (avoids noise)
+        if norm in wiki_by_name:
+            lower_to_name[lower] = norm
 
     matched: list[NamedEntry] = []
 
     for file_id, entry in entries.items():
+        # Only process 0x79XXXXXX entries (item definitions)
+        if (file_id >> 24) & 0xFF != 0x79:
+            continue
+
+        # Check deterministic ID mapping: same lower 3 bytes in English
+        lower = file_id & 0x00FFFFFF
+        matched_name = lower_to_name.get(lower)
+        if matched_name is None:
+            continue
+
         try:
             data = read_entry_data(archive, entry)
         except (ValueError, OSError):
             continue
 
-        if len(data) < 5:
+        if len(data) < 12:
             continue
 
-        # Only process type-2 entries (DID == 2)
-        did = struct.unpack_from("<I", data, 0)[0]
-        if did != 2:
-            continue
-
-        header = parse_entry_header(data)
-
-        # Check if any header file_id is a string ref matching a wiki item
-        matched_name = None
-        for ref_id in header.file_ids:
-            if ref_id in string_id_to_name:
-                matched_name = string_id_to_name[ref_id]
-                break
-
-        if matched_name is None:
-            continue
-
-        # Decode properties (skip complex-partial entries)
-        decoded = decode_type2(data)
-        if decoded.variant == "complex-partial" or not decoded.properties:
+        # Decode properties from dup-triple format
+        properties = decode_dup_triple(data)
+        if not properties:
             continue
 
         wiki_item = wiki_by_name[matched_name]
@@ -196,7 +311,7 @@ def match_wiki_to_entries(
                 k: v for k, v in wiki_item.items()
                 if v is not None and k != "name"
             },
-            properties=decoded.properties,
+            properties=properties,
         )
         matched.append(named)
 
@@ -287,14 +402,18 @@ def correlate_keys(
                 for prop in entry.properties:
                     if prop.is_array:
                         continue
-                    # Check if value looks like a string ref (0x0AXXXXXX)
-                    if isinstance(prop.value, int) and (prop.value >> 24) & 0xFF == 0x0A:
-                        resolved = string_table.get(prop.value)
-                        if resolved:
-                            str_candidates[prop.key].append((
-                                _normalize_name(resolved),
-                                norm_expected,
-                            ))
+                    # Check if value looks like a string ref.
+                    # 0x79 entries reference the localization archive
+                    # directly via 0x25XXXXXX file IDs.
+                    if isinstance(prop.value, int):
+                        high = (prop.value >> 24) & 0xFF
+                        if high in (0x25, 0x0A):
+                            resolved = string_table.get(prop.value)
+                            if resolved:
+                                str_candidates[prop.key].append((
+                                    _normalize_name(resolved),
+                                    norm_expected,
+                                ))
 
             best_key = None
             best_confidence = 0.0
@@ -380,7 +499,7 @@ def build_name_map(
         on_progress("Scanning gamelogic entries...")
     gamelogic_archive = DatArchive(gamelogic_path)
     gamelogic_archive.read_header()
-    entries = scan_file_table(gamelogic_archive)
+    entries = traverse_btree(gamelogic_archive)
     if on_progress:
         on_progress(f"  {len(entries):,} entries scanned")
 
