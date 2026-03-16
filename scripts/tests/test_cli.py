@@ -4,6 +4,7 @@ Uses Click's CliRunner to invoke commands against synthetic .dat archives.
 """
 
 import struct
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -497,3 +498,22 @@ def test_dat_registry_json(build_dat) -> None:
     assert "summary" in data
     assert "keys" in data
     assert data["summary"]["unique_keys"] == 1
+
+
+# -- scrape tests --
+
+
+def test_scrape_items_cli(tmp_path) -> None:
+    """scrape --type items invokes scrape_items and produces output."""
+    mock_client = MagicMock()
+    mock_client.iter_namespace_pages.return_value = iter([])
+
+    with patch("ddo_data.wiki.client.WikiClient", return_value=mock_client):
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            "scrape", "--type", "items", "-o", str(tmp_path),
+        ])
+
+    assert result.exit_code == 0
+    assert "Scraping items" in result.output
+    assert "items written to" in result.output

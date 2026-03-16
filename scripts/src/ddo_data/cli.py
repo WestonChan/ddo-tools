@@ -530,11 +530,39 @@ def icons(dat_file: Path, output: Path, limit: int) -> None:
     "--output", "-o", type=click.Path(path_type=Path),
     default=Path("public/data"), help="Output directory for scraped data",
 )
-@click.pass_context
-def scrape(ctx: click.Context, output: Path) -> None:
+@click.option("--no-cache", is_flag=True, help="Ignore cached wiki responses")
+@click.option(
+    "--limit", "-n", type=int, default=0,
+    help="Max pages to fetch per type (0 = all)",
+)
+@click.option(
+    "--type", "data_types",
+    type=click.Choice(["items", "feats", "enhancements"]),
+    multiple=True, default=("items", "feats", "enhancements"),
+    help="Which data types to scrape",
+)
+def scrape(
+    output: Path,
+    no_cache: bool,
+    limit: int,
+    data_types: tuple[str, ...],
+) -> None:
     """Scrape supplementary data from DDO Wiki."""
-    click.echo(f"Scraping DDO Wiki data to {output}/")
-    click.echo("(Not yet implemented)")
+    from .wiki.client import WikiClient
+    from .wiki.scraper import scrape_enhancements, scrape_feats, scrape_items
+
+    client = WikiClient(use_cache=not no_cache)
+    scrapers = {
+        "items": scrape_items,
+        "feats": scrape_feats,
+        "enhancements": scrape_enhancements,
+    }
+
+    for data_type in data_types:
+        scraper = scrapers[data_type]
+        click.echo(f"Scraping {data_type} from DDO Wiki...")
+        count = scraper(client, output, limit=limit, on_progress=click.echo)
+        click.echo(f"  {count:,} {data_type} written to {output}/{data_type}.json")
 
 
 if __name__ == "__main__":
