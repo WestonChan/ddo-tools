@@ -1,11 +1,16 @@
 """Tests for DDO Wiki wikitext template extraction and item parsing."""
 
 from ddo_data.wiki.parsers import (
+    _detect_tier_sections,
     clean_wikitext,
     extract_all_templates,
     extract_template,
+    parse_enhancement_fields,
+    parse_enhancement_tree_wikitext,
     parse_feat_wikitext,
     parse_item_wikitext,
+    parse_tree_index_wikitext,
+    parse_universal_tree_index,
 )
 
 # ---------------------------------------------------------------------------
@@ -393,3 +398,260 @@ def test_parse_feat_minimal() -> None:
     assert feat["bonus_classes"] == []
     assert feat["passive"] is False
     assert feat["active"] is False
+
+
+# ---------------------------------------------------------------------------
+# Enhancement parser tests
+# ---------------------------------------------------------------------------
+
+ENHANCEMENT_TREE_WIKITEXT = """
+{{EnhancementsTOC}}
+== Core abilities ==
+{{Epic destiny table/top}}
+{{Enhancement table/item
+  | image=FighterPassiveIcon.png
+  | name=Kensei Focus
+  | description=Select a group of weapons as your Kensei focus.
+  | ranks=1
+  | level=1
+  | ap=1
+  | pg=0
+  | prereq=Fighter Level 1
+  | ldescription=true
+  | lprereq=true
+}}
+{{Enhancement table/item
+  | image=Icon Enhancement Strike.png
+  | name=Strike With No Thought
+  | description=Activate to attack with +2[W].
+  | ranks=1
+  | level=3
+  | ap=1
+  | pg=5
+  | prereq=Kensei Focus
+  | ldescription=true
+  | lprereq=true
+}}
+{{Epic destiny table/bottom}}
+== Tier One ==
+{{Epic destiny table/top}}
+{{Enhancement table/item
+  | image=Icon Enhancement Extra Action Boost.png
+  | name=Extra Action Boost
+  | description=You gain one extra use of Action Boost.
+  | ranks=3
+  | level=
+  | ap=2
+  | pg=5
+  | prereq=
+  | ldescription=true
+  | lprereq=true
+}}
+{{Epic destiny table/bottom}}
+== Tier Two ==
+{{Epic destiny table/top}}
+{{Enhancement table/item
+  | image=Icon Enhancement Weapon Specialization.png
+  | name=Weapon Specialization
+  | description=+2 damage with Kensei focus weapons.
+  | ranks=1
+  | level=
+  | ap=2
+  | pg=10
+  | prereq=Fighter Level 4
+  | ldescription=true
+  | lprereq=true
+}}
+{{Epic destiny table/bottom}}
+"""
+
+RACIAL_TREE_WIKITEXT = """
+== Core abilities ==
+{{Epic destiny table/top}}
+{{Enhancement table/itemwlvl
+  | image=Icon Enhancement Elven Accuracy.png
+  | link=Elven Accuracy
+  | name=Elven Accuracy I
+  | description=You gain +2% to hit with all attacks.
+  | ranks=1
+  | level=1
+  | ap=1
+  | pg=0
+  | prereq=[[Elf]]
+  | ldescription=true
+  | lprereq=true
+}}
+{{Epic destiny table/bottom}}
+== Tier One ==
+{{Epic destiny table/top}}
+{{Enhancement table/item
+  | image=Icon Enhancement Skill.png
+  | name=Elven Skill
+  | description=+1 to [[Listen]], [[Search]], and [[Spot]].
+  | ranks=3
+  | level=
+  | ap=1
+  | pg=5
+  | prereq=
+  | ldescription=true
+  | lprereq=true
+}}
+{{Epic destiny table/bottom}}
+"""
+
+CLASS_INDEX_WIKITEXT = """
+* '''[[Fighter]]'''
+** Enhancements: [[Kensei enhancements|Kensei]], [[Stalwart Defender enhancements|Stalwart Defender]], [[Vanguard enhancements|Vanguard]]
+* '''[[Paladin]]'''
+** Enhancements: [[Knight of the Chalice enhancements|Knight of the Chalice]], [[Sacred Defender enhancements|Sacred Defender]], [[Vanguard enhancements|Vanguard]]
+"""
+
+RACIAL_INDEX_WIKITEXT = """
+* '''[[Dwarf]]'''
+** Enhancements: [[Dwarf enhancements|Dwarf]]
+* '''[[Elf]]'''
+** Enhancements: [[Elf enhancements|Elf]], [[Elven Arcane Archer enhancements|Arcane Archer]]
+"""
+
+UNIVERSAL_INDEX_WIKITEXT = """
+* '''[[Falconry]]'''
+* '''[[Harper Agent]]'''
+* '''[[Vistani Knife Fighter]]'''
+"""
+
+
+def test_detect_tier_sections() -> None:
+    """Correctly identifies tier header boundaries."""
+    sections = _detect_tier_sections(ENHANCEMENT_TREE_WIKITEXT)
+    labels = [label for _, label in sections]
+    assert labels == ["core", "1", "2"]
+    # Offsets should be in ascending order
+    offsets = [offset for offset, _ in sections]
+    assert offsets == sorted(offsets)
+
+
+def test_parse_enhancement_fields_basic() -> None:
+    """Standard template fields are parsed correctly."""
+    fields = {
+        "name": "Kensei Focus",
+        "image": "FighterPassiveIcon.png",
+        "description": "Select a group of weapons.",
+        "ranks": "1",
+        "ap": "1",
+        "pg": "0",
+        "level": "1",
+        "prereq": "Fighter Level 1",
+    }
+    enh = parse_enhancement_fields(fields)
+    assert enh["name"] == "Kensei Focus"
+    assert enh["icon"] == "FighterPassiveIcon.png"
+    assert enh["ranks"] == 1
+    assert enh["ap_cost"] == 1
+    assert enh["progression"] == 0
+    assert enh["level"] == "1"
+    assert enh["prerequisite"] == "Fighter Level 1"
+
+
+def test_parse_enhancement_fields_multirank() -> None:
+    """Multi-rank enhancement with higher AP cost."""
+    fields = {
+        "name": "Extra Action Boost",
+        "image": "Icon.png",
+        "description": "Gain extra uses.",
+        "ranks": "3",
+        "ap": "2",
+        "pg": "5",
+        "level": "",
+        "prereq": "",
+    }
+    enh = parse_enhancement_fields(fields)
+    assert enh["ranks"] == 3
+    assert enh["ap_cost"] == 2
+    assert enh["level"] is None
+    assert enh["prerequisite"] is None
+
+
+def test_parse_enhancement_tree_basic() -> None:
+    """Tree wikitext with core + tiers is parsed with correct tier assignment."""
+    tree = parse_enhancement_tree_wikitext(
+        ENHANCEMENT_TREE_WIKITEXT, "Kensei enhancements",
+    )
+    assert tree is not None
+    assert tree["name"] == "Kensei"
+    assert len(tree["enhancements"]) == 4
+
+    # Check tier assignments
+    tiers = [e["tier"] for e in tree["enhancements"]]
+    assert tiers == ["core", "core", "1", "2"]
+
+    # Check specific enhancement
+    first = tree["enhancements"][0]
+    assert first["name"] == "Kensei Focus"
+    assert first["ap_cost"] == 1
+
+
+def test_parse_enhancement_tree_both_templates() -> None:
+    """Racial tree with itemwlvl + item template variants."""
+    tree = parse_enhancement_tree_wikitext(
+        RACIAL_TREE_WIKITEXT, "Elf enhancements",
+    )
+    assert tree is not None
+    assert tree["name"] == "Elf"
+    assert len(tree["enhancements"]) == 2
+    # First is from itemwlvl template (racial core)
+    assert tree["enhancements"][0]["name"] == "Elven Accuracy I"
+    assert tree["enhancements"][0]["tier"] == "core"
+    # Second is from item template (tier 1)
+    assert tree["enhancements"][1]["name"] == "Elven Skill"
+    assert tree["enhancements"][1]["tier"] == "1"
+
+
+def test_parse_enhancement_tree_no_templates() -> None:
+    """Returns None when no enhancement templates are found."""
+    assert parse_enhancement_tree_wikitext("Just some text.", "Foo") is None
+
+
+def test_parse_enhancement_tree_name_strip() -> None:
+    """Tree name is derived from page title with suffix stripped."""
+    tree = parse_enhancement_tree_wikitext(
+        ENHANCEMENT_TREE_WIKITEXT, "Stalwart Defender enhancements",
+    )
+    assert tree is not None
+    assert tree["name"] == "Stalwart Defender"
+
+
+def test_parse_tree_index_wikitext_class() -> None:
+    """Class index page extracts tree refs with class parents."""
+    refs = parse_tree_index_wikitext(CLASS_INDEX_WIKITEXT)
+    assert len(refs) == 6
+    # First tree under Fighter
+    assert refs[0]["page_title"] == "Kensei enhancements"
+    assert refs[0]["display_name"] == "Kensei"
+    assert refs[0]["parent"] == "Fighter"
+    # Vanguard under Paladin
+    paladin_refs = [r for r in refs if r["parent"] == "Paladin"]
+    assert len(paladin_refs) == 3
+    vanguard = [r for r in paladin_refs if r["display_name"] == "Vanguard"]
+    assert len(vanguard) == 1
+
+
+def test_parse_tree_index_wikitext_racial() -> None:
+    """Racial index extracts tree refs with race parents."""
+    refs = parse_tree_index_wikitext(RACIAL_INDEX_WIKITEXT)
+    assert len(refs) == 3
+    assert refs[0]["parent"] == "Dwarf"
+    # Elf has two trees
+    elf_refs = [r for r in refs if r["parent"] == "Elf"]
+    assert len(elf_refs) == 2
+    names = {r["display_name"] for r in elf_refs}
+    assert names == {"Elf", "Arcane Archer"}
+
+
+def test_parse_universal_tree_index() -> None:
+    """Universal index extracts bare links with enhancements suffix added."""
+    refs = parse_universal_tree_index(UNIVERSAL_INDEX_WIKITEXT)
+    assert len(refs) == 3
+    assert refs[0]["page_title"] == "Falconry enhancements"
+    assert refs[0]["display_name"] == "Falconry"
+    assert refs[0]["parent"] == ""
+    assert refs[2]["page_title"] == "Vistani Knife Fighter enhancements"

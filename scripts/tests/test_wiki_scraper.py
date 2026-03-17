@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from ddo_data.wiki.scraper import scrape_feats, scrape_items
+from ddo_data.wiki.scraper import scrape_enhancements, scrape_feats, scrape_items
 
 
 ITEM_WIKITEXT = """
@@ -185,3 +185,219 @@ def test_scrape_feats_missing_page(tmp_path: Path) -> None:
     assert count == 0
     feats = json.loads((tmp_path / "feats.json").read_text())
     assert feats == []
+
+
+# ---------------------------------------------------------------------------
+# scrape_enhancements tests
+# ---------------------------------------------------------------------------
+
+# Minimal index page for class enhancements
+CLASS_INDEX = """
+* '''[[Fighter]]'''
+** Enhancements: [[Kensei enhancements|Kensei]]
+"""
+
+# Minimal tree page wikitext
+TREE_WIKITEXT = """
+== Core abilities ==
+{{Enhancement table/item
+  | image=FighterPassiveIcon.png
+  | name=Kensei Focus
+  | description=Select weapons.
+  | ranks=1
+  | level=1
+  | ap=1
+  | pg=0
+  | prereq=Fighter Level 1
+  | ldescription=true
+  | lprereq=true
+}}
+== Tier One ==
+{{Enhancement table/item
+  | image=Icon.png
+  | name=Extra Action Boost
+  | description=Extra boost.
+  | ranks=3
+  | level=
+  | ap=2
+  | pg=5
+  | prereq=
+  | ldescription=true
+  | lprereq=true
+}}
+"""
+
+UNIVERSAL_INDEX = """
+* '''[[Harper Agent]]'''
+"""
+
+RACIAL_INDEX = """
+* '''[[Elf]]'''
+** Enhancements: [[Elf enhancements|Elf]]
+"""
+
+
+def _make_enhancement_client(
+    index_pages: dict[str, str],
+    tree_pages: dict[str, str | None],
+) -> MagicMock:
+    """Build a mock WikiClient that returns specific pages."""
+    client = MagicMock()
+
+    def get_wikitext(title: str) -> str | None:
+        if title in index_pages:
+            return index_pages[title]
+        if title in tree_pages:
+            return tree_pages[title]
+        return None
+
+    client.get_wikitext.side_effect = get_wikitext
+    return client
+
+
+def test_scrape_enhancements_writes_json(tmp_path: Path) -> None:
+    """scrape_enhancements writes parsed trees to enhancements.json."""
+    client = _make_enhancement_client(
+        index_pages={
+            "Class enhancements": CLASS_INDEX,
+            "Racial enhancements": "",
+            "Universal enhancements": "",
+        },
+        tree_pages={"Kensei enhancements": TREE_WIKITEXT},
+    )
+
+    count = scrape_enhancements(client, tmp_path)
+
+    assert count == 1
+    output_file = tmp_path / "enhancements.json"
+    assert output_file.exists()
+    trees = json.loads(output_file.read_text())
+    assert len(trees) == 1
+    assert trees[0]["name"] == "Kensei"
+    assert trees[0]["type"] == "class"
+    assert trees[0]["class_or_race"] == "Fighter"
+    assert len(trees[0]["enhancements"]) == 2
+
+
+def test_scrape_enhancements_resolves_redirects(tmp_path: Path) -> None:
+    """Redirect tree pages are resolved and the target is parsed."""
+    client = _make_enhancement_client(
+        index_pages={
+            "Class enhancements": CLASS_INDEX,
+            "Racial enhancements": "",
+            "Universal enhancements": "",
+        },
+        tree_pages={
+            # First fetch returns a redirect, second returns real content
+            "Kensei enhancements": "#REDIRECT [[Kensei tree enhancements]]",
+            "Kensei tree enhancements": TREE_WIKITEXT,
+        },
+    )
+
+    count = scrape_enhancements(client, tmp_path)
+
+    assert count == 1
+    trees = json.loads((tmp_path / "enhancements.json").read_text())
+    assert trees[0]["name"] == "Kensei tree"
+
+
+def test_scrape_enhancements_tree_metadata(tmp_path: Path) -> None:
+    """Tree type and class_or_race propagate from index pages."""
+    racial_tree = """
+== Core abilities ==
+{{Enhancement table/item
+  | image=Icon.png
+  | name=Elven Accuracy
+  | description=Accuracy bonus.
+  | ranks=1
+  | level=1
+  | ap=1
+  | pg=0
+  | prereq=Elf
+  | ldescription=true
+  | lprereq=true
+}}
+"""
+    client = _make_enhancement_client(
+        index_pages={
+            "Class enhancements": "",
+            "Racial enhancements": RACIAL_INDEX,
+            "Universal enhancements": "",
+        },
+        tree_pages={"Elf enhancements": racial_tree},
+    )
+
+    count = scrape_enhancements(client, tmp_path)
+
+    assert count == 1
+    trees = json.loads((tmp_path / "enhancements.json").read_text())
+    assert trees[0]["type"] == "racial"
+    assert trees[0]["class_or_race"] == "Elf"
+
+
+def test_scrape_enhancements_limit(tmp_path: Path) -> None:
+    """Limit parameter caps the number of trees fetched."""
+    two_trees = """
+* '''[[Fighter]]'''
+** Enhancements: [[Kensei enhancements|Kensei]], [[Stalwart enhancements|Stalwart]]
+"""
+    client = _make_enhancement_client(
+        index_pages={
+            "Class enhancements": two_trees,
+            "Racial enhancements": "",
+            "Universal enhancements": "",
+        },
+        tree_pages={
+            "Kensei enhancements": TREE_WIKITEXT,
+            "Stalwart enhancements": TREE_WIKITEXT,
+        },
+    )
+
+    count = scrape_enhancements(client, tmp_path, limit=1)
+
+    assert count == 1
+
+
+def test_scrape_enhancements_missing_page(tmp_path: Path) -> None:
+    """Tree pages returning None wikitext are skipped."""
+    client = _make_enhancement_client(
+        index_pages={
+            "Class enhancements": CLASS_INDEX,
+            "Racial enhancements": "",
+            "Universal enhancements": "",
+        },
+        tree_pages={"Kensei enhancements": None},
+    )
+
+    count = scrape_enhancements(client, tmp_path)
+
+    assert count == 0
+    trees = json.loads((tmp_path / "enhancements.json").read_text())
+    assert trees == []
+
+
+def test_scrape_enhancements_shared_tree(tmp_path: Path) -> None:
+    """Shared trees (same page_title) are deduplicated."""
+    # Vanguard appears under both Fighter and Paladin
+    shared_index = """
+* '''[[Fighter]]'''
+** Enhancements: [[Vanguard enhancements|Vanguard]]
+* '''[[Paladin]]'''
+** Enhancements: [[Vanguard enhancements|Vanguard]]
+"""
+    client = _make_enhancement_client(
+        index_pages={
+            "Class enhancements": shared_index,
+            "Racial enhancements": "",
+            "Universal enhancements": "",
+        },
+        tree_pages={"Vanguard enhancements": TREE_WIKITEXT},
+    )
+
+    count = scrape_enhancements(client, tmp_path)
+
+    # Should only produce one tree despite appearing twice in index
+    assert count == 1
+    trees = json.loads((tmp_path / "enhancements.json").read_text())
+    assert len(trees) == 1
+    assert trees[0]["name"] == "Vanguard"

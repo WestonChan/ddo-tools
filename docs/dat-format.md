@@ -335,7 +335,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 ### Supplementary data
 - [x] DDO Wiki scraper — items (`ddo-data scrape --type items`)
 - [x] DDO Wiki scraper — feats (`ddo-data scrape --type feats`)
-- [ ] DDO Wiki scraper — enhancements (stubbed)
+- [x] DDO Wiki scraper — enhancements (`ddo-data scrape --type enhancements`)
 - [ ] DDO Wiki scraper — augments, spells, set bonuses, epic destinies
 - [x] Data merging (game files + wiki data -- items via `_merge_wiki_data`)
 
@@ -345,7 +345,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] `extract` (JSON export -- items with `--wiki-items` merge)
 - [x] `icons` (DDS to PNG)
 - [x] `dat-namemap` (property key name mapping via wiki cross-reference)
-- [x] `scrape` (wiki items; feats/enhancements stubbed)
+- [x] `scrape` (wiki items, feats, enhancements)
 
 ## Credits
 

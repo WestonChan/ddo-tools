@@ -334,3 +334,213 @@ def parse_feat_wikitext(wikitext: str) -> dict[str, Any] | None:
     feat["bonus_classes"] = sorted(bonus_set)
 
     return feat
+
+
+# ---------------------------------------------------------------------------
+# Enhancement parser
+# ---------------------------------------------------------------------------
+
+_TIER_HEADER_RE = re.compile(
+    r"^=+\s*(Core abilities|Tier\s+(One|Two|Three|Four|Five))\s*=+",
+    re.MULTILINE | re.IGNORECASE,
+)
+
+_TIER_WORD_MAP = {
+    "one": "1", "two": "2", "three": "3",
+    "four": "4", "five": "5",
+}
+
+# Template names used for enhancement entries on DDO Wiki.
+# Longer name first: "itemwlvl" must be checked before "item" since
+# "item" is a prefix match that would also capture "itemwlvl" entries.
+_ENHANCEMENT_TEMPLATES = [
+    "Enhancement table/itemwlvl",
+    "Enhancement table/item",
+]
+
+def _detect_tier_sections(wikitext: str) -> list[tuple[int, str]]:
+    """Find tier section boundaries in enhancement tree wikitext.
+
+    Returns a list of ``(char_offset, tier_label)`` pairs, sorted by offset.
+    Tier labels are ``"core"``, ``"1"`` through ``"5"``.
+    """
+    sections: list[tuple[int, str]] = []
+    for match in _TIER_HEADER_RE.finditer(wikitext):
+        header_text = match.group(1).strip().lower()
+        if header_text == "core abilities":
+            sections.append((match.start(), "core"))
+        else:
+            # "Tier One" -> extract the word after "Tier "
+            tier_word = match.group(2)
+            if tier_word:
+                label = _TIER_WORD_MAP.get(tier_word.lower())
+                if label:
+                    sections.append((match.start(), label))
+    return sections
+
+
+def parse_enhancement_fields(fields: dict[str, str]) -> dict[str, Any]:
+    """Parse extracted template fields into an enhancement dict."""
+    name = fields.get("name", "")
+    description = fields.get("description", "")
+    prereq = fields.get("prereq", "")
+    level_raw = fields.get("level", "").strip()
+
+    return {
+        "name": clean_wikitext(name) if name.strip() else None,
+        "icon": fields.get("image", "").strip() or None,
+        "description": clean_wikitext(description) if description.strip() else None,
+        "ranks": _parse_int(fields.get("ranks", "")) or 1,
+        "ap_cost": _parse_int(fields.get("ap", "")) or 1,
+        "progression": _parse_int(fields.get("pg", "")) or 0,
+        "level": clean_wikitext(level_raw) if level_raw else None,
+        "prerequisite": clean_wikitext(prereq) if prereq.strip() else None,
+    }
+
+
+def parse_enhancement_tree_wikitext(
+    wikitext: str, page_title: str,
+) -> dict[str, Any] | None:
+    """Parse an enhancement tree wiki page into a structured tree dict.
+
+    Each tree page contains multiple ``{{Enhancement table/item|...}}``
+    templates organized under tier section headers. Returns None if no
+    enhancement templates are found.
+    """
+    # Collect all enhancement templates with their character positions.
+    # Templates are checked longest-name-first to avoid prefix collisions
+    # ("item" is a prefix of "itemwlvl"). Dedup by position ensures each
+    # template instance is only parsed once, by the most specific match.
+    positioned: list[tuple[int, dict[str, str]]] = []
+    seen_positions: set[int] = set()
+    for tmpl_name in _ENHANCEMENT_TEMPLATES:
+        remaining = wikitext
+        offset = 0
+        while True:
+            fields = extract_template(remaining, tmpl_name)
+            if fields is None:
+                break
+            lower = remaining.lower()
+            marker = "{{" + tmpl_name.lower()
+            start = lower.find(marker)
+            if start == -1:
+                break
+            abs_pos = offset + start
+            if abs_pos not in seen_positions:
+                seen_positions.add(abs_pos)
+                positioned.append((abs_pos, fields))
+            remaining = remaining[start + len(marker):]
+            offset += start + len(marker)
+
+    if not positioned:
+        return None
+
+    positioned.sort(key=lambda x: x[0])
+
+    # Detect tier sections
+    sections = _detect_tier_sections(wikitext)
+
+    # Assign tier to each enhancement based on its position
+    enhancements: list[dict[str, Any]] = []
+    for pos, fields in positioned:
+        tier = "unknown"
+        # Find the last section header before this template
+        for sec_offset, sec_label in reversed(sections):
+            if sec_offset <= pos:
+                tier = sec_label
+                break
+        enh = parse_enhancement_fields(fields)
+        enh["tier"] = tier
+        enhancements.append(enh)
+
+    # Derive tree name from page title
+    tree_name = page_title
+    if tree_name.lower().endswith(" enhancements"):
+        tree_name = tree_name[: -len(" enhancements")]
+    tree_name = tree_name.replace("_", " ")
+
+    return {
+        "name": tree_name,
+        "enhancements": enhancements,
+    }
+
+
+def parse_tree_index_wikitext(
+    wikitext: str,
+) -> list[dict[str, str]]:
+    """Parse an enhancement index page to extract tree page references.
+
+    Handles two formats found on DDO Wiki:
+
+    **Class/Racial index** -- parent header + tree links::
+
+        * '''[[Fighter]]'''
+        ** Enhancements: [[Kensei enhancements|Kensei]], ...
+
+    **Universal index** -- bare bold links (redirect to ``X enhancements``)::
+
+        * '''[[Falconry]]'''
+
+    Returns a list of dicts with ``page_title``, ``display_name``, and
+    ``parent`` keys. Skips anchor links (Reaper subtrees) and non-content
+    links (File:, Category:).
+    """
+    results: list[dict[str, str]] = []
+    current_parent = ""
+
+    for line in wikitext.split("\n"):
+        stripped = line.strip()
+
+        # Detect parent headers: * '''[[ClassName]]'''
+        # These are bold wiki links that don't contain "enhancements"
+        parent_match = re.match(
+            r"^\*\s*'{2,3}\[\[([^\]|#]+)\]\]'{2,3}\s*$", stripped,
+        )
+        if parent_match:
+            name = parent_match.group(1).strip()
+            if "enhancements" not in name.lower():
+                current_parent = name
+                continue
+
+        # Find piped enhancement tree links: [[Page|Display]]
+        for match in re.finditer(
+            r"\[\[([^\]#|]+)\|([^\]]+)\]\]", stripped,
+        ):
+            page_title = match.group(1).strip()
+            display_name = match.group(2).strip()
+
+            # Skip non-content links
+            if page_title.startswith(("File:", "Category:")):
+                continue
+
+            results.append({
+                "page_title": page_title,
+                "display_name": display_name,
+                "parent": current_parent,
+            })
+
+    return results
+
+
+def parse_universal_tree_index(wikitext: str) -> list[dict[str, str]]:
+    """Parse the Universal enhancements index page.
+
+    Universal trees use bare bold links ``'''[[TreeName]]'''`` that
+    redirect to ``TreeName enhancements`` pages. Returns tree refs
+    with ``page_title`` set to the redirect target (appending
+    `` enhancements`` suffix).
+    """
+    results: list[dict[str, str]] = []
+    for match in re.finditer(
+        r"'{2,3}\[\[([^\]|#]+)\]\]'{2,3}", wikitext,
+    ):
+        name = match.group(1).strip()
+        if name.startswith(("File:", "Category:")):
+            continue
+        # Universal tree pages redirect to "Name enhancements"
+        results.append({
+            "page_title": f"{name} enhancements",
+            "display_name": name,
+            "parent": "",
+        })
+    return results
