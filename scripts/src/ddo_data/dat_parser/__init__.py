@@ -15,6 +15,7 @@ from .probe import (
     Type2Entry,
     Type4Entry,
     TypedProperty,
+    decode_effect_entry,
     decode_property_stream,
     decode_type2,
     decode_type4,
@@ -57,7 +58,9 @@ from .registry import (
     format_registry_json,
 )
 from .namemap import (
+    BONUS_TYPE_CODES,
     DISCOVERED_KEYS,
+    STAT_DEF_IDS,
     KeyMapping,
     NamedEntry,
     NameMapResult,
@@ -149,7 +152,9 @@ __all__ = [
     "run_validation",
     "format_validation_result",
     "ValidationResult",
+    "BONUS_TYPE_CODES",
     "DISCOVERED_KEYS",
+    "STAT_DEF_IDS",
     "NamedEntry",
     "KeyMapping",
     "NameMapResult",
@@ -159,4 +164,5 @@ __all__ = [
     "correlate_keys",
     "format_name_map",
     "format_name_map_json",
+    "decode_effect_entry",
 ]

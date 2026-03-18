@@ -623,12 +623,16 @@ def build_db(
 
         for data_type in data_types:
             click.echo(f"Collecting {data_type}...")
+            count = 0
             if data_type == "items":
                 count = db.insert_items(collect_items(client, limit=limit, on_progress=click.echo))
             elif data_type == "feats":
                 count = db.insert_feats(collect_feats(client, limit=limit, on_progress=click.echo))
             elif data_type == "enhancements":
                 count = db.insert_enhancement_trees(collect_enhancements(client, limit=limit, on_progress=click.echo))
+            else:
+                click.echo(f"  Unknown data type: {data_type!r} — skipping")
+                continue
             click.echo(f"  {count:,} {data_type} inserted")
 
     click.echo(f"Database written to {output}")

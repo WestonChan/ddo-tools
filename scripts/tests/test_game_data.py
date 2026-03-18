@@ -319,6 +319,123 @@ def test_export_items_json_roundtrip(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# decode_effect_entry tests
+# ---------------------------------------------------------------------------
+
+
+def _build_effect53_bytes(
+    stat_def_id: int,
+    magnitude: int,
+    bonus_type: int = 0x0100,
+) -> bytes:
+    """Build a minimal valid entry_type=53 effect entry (84 bytes)."""
+    buf = bytearray(84)
+    struct.pack_into("<I", buf, 0, 0x00000002)   # DID
+    buf[4] = 0x00                                 # ref_count
+    struct.pack_into("<I", buf, 5, 0x35)          # entry_type = 53
+    struct.pack_into("<I", buf, 9, 0x00000001)    # flag
+    struct.pack_into("<H", buf, 13, bonus_type)   # bonus_type_code
+    struct.pack_into("<H", buf, 16, stat_def_id)  # stat_def_id
+    struct.pack_into("<I", buf, 68, magnitude)    # magnitude
+    return bytes(buf)
+
+
+def test_decode_effect_entry_type53_known_stat() -> None:
+    """entry_type=53 with known stat_def_id decodes to stat name, magnitude, bonus type."""
+    from ddo_data.dat_parser.probe import decode_effect_entry
+
+    data = _build_effect53_bytes(stat_def_id=376, magnitude=11)
+    result = decode_effect_entry(data)
+
+    assert result is not None
+    assert result["stat"] == "Haggle"
+    assert result["magnitude"] == 11
+    assert result["bonus_type"] == "Enhancement"
+    assert result["entry_type"] == 0x35
+    assert result["stat_def_id"] == 376
+
+
+def test_decode_effect_entry_unknown_stat() -> None:
+    """Unknown stat_def_id yields stat=None but entry still decodes."""
+    from ddo_data.dat_parser.probe import decode_effect_entry
+
+    data = _build_effect53_bytes(stat_def_id=9999, magnitude=5)
+    result = decode_effect_entry(data)
+
+    assert result is not None
+    assert result["stat"] is None
+    assert result["magnitude"] == 5
+    assert result["stat_def_id"] == 9999
+
+
+def test_decode_effect_entry_type26_skipped() -> None:
+    """entry_type=26 (secondary augment marker) returns None."""
+    from ddo_data.dat_parser.probe import decode_effect_entry
+
+    buf = bytearray(37)
+    struct.pack_into("<I", buf, 5, 0x1A)  # entry_type = 26
+    result = decode_effect_entry(bytes(buf))
+
+    assert result is None
+
+
+def test_decode_effect_entry_too_short() -> None:
+    """Entry shorter than 20 bytes returns None without crashing."""
+    from ddo_data.dat_parser.probe import decode_effect_entry
+
+    assert decode_effect_entry(b"\x00" * 10) is None
+
+
+def _build_effect17_bytes(stat_def_id: int, bonus_type: int = 0x0100) -> bytes:
+    """Build a minimal valid entry_type=17 effect entry (28 bytes, no magnitude field)."""
+    buf = bytearray(28)
+    struct.pack_into("<I", buf, 0, 0x00000002)   # DID
+    buf[4] = 0x00                                 # ref_count
+    struct.pack_into("<I", buf, 5, 0x11)          # entry_type = 17
+    struct.pack_into("<H", buf, 13, bonus_type)   # bonus_type_code
+    struct.pack_into("<H", buf, 16, stat_def_id)  # stat_def_id
+    return bytes(buf)
+
+
+def test_decode_effect_entry_type17() -> None:
+    """entry_type=17 yields magnitude=1 (implicit) and decodes stat."""
+    from ddo_data.dat_parser.probe import decode_effect_entry
+
+    data = _build_effect17_bytes(stat_def_id=376)
+    result = decode_effect_entry(data)
+
+    assert result is not None
+    assert result["entry_type"] == 0x11
+    assert result["magnitude"] == 1
+    assert result["stat"] == "Haggle"
+    assert result["bonus_type"] == "Enhancement"
+
+
+def test_decode_effect_entry_type17_too_short() -> None:
+    """entry_type=17 entry shorter than 28 bytes returns None.
+
+    27 bytes: passes the initial 20-byte guard but fails the type-17 minimum (28).
+    """
+    from ddo_data.dat_parser.probe import decode_effect_entry
+
+    buf = bytearray(27)  # one byte under the type-17 minimum of 28
+    struct.pack_into("<I", buf, 5, 0x11)  # entry_type = 17
+    assert decode_effect_entry(bytes(buf)) is None
+
+
+def test_decode_effect_entry_zero_magnitude() -> None:
+    """entry_type=53 with magnitude=0 decodes without filtering (value=0 is valid)."""
+    from ddo_data.dat_parser.probe import decode_effect_entry
+
+    data = _build_effect53_bytes(stat_def_id=376, magnitude=0)
+    result = decode_effect_entry(data)
+
+    assert result is not None
+    assert result["magnitude"] == 0
+    assert result["stat"] == "Haggle"
+
+
+# ---------------------------------------------------------------------------
 # Existing stub tests (backward compat)
 # ---------------------------------------------------------------------------
 

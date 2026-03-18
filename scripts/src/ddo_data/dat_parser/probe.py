@@ -850,3 +850,58 @@ def format_probe_result(result: ProbeResult) -> str:
             lines.append(f"  ... and {len(result.float_values) - 10} more")
 
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Effect entry decoder (0x70XXXXXX namespace)
+# ---------------------------------------------------------------------------
+
+
+def decode_effect_entry(data: bytes) -> dict | None:
+    """Decode a 0x70XXXXXX effect entry to a bonus descriptor dict.
+
+    Effect entries use a fixed binary layout keyed by entry_type (u32 at
+    bytes [5..8]), NOT the standard type-2 property stream. Documented in
+    docs/dat-format.md under "Effect entries — 0x70XXXXXX namespace".
+
+    Handles:
+    - entry_type=53 (0x35): primary bonus entry; magnitude at bytes [68..71]
+    - entry_type=17 (0x11): no stored magnitude; treat as 1 (stat-linking only)
+
+    Skips entry_type=26 (secondary augment markers) and entry_type=175
+    (multi-tier augment tables) — neither stores a per-item bonus value.
+
+    Returns a dict with keys:
+        entry_type (int), stat_def_id (int), stat (str|None),
+        magnitude (int|None), bonus_type_code (int), bonus_type (str|None)
+
+    Returns None if the layout is unrecognised or the entry is too short.
+    """
+    from .namemap import BONUS_TYPE_CODES, STAT_DEF_IDS  # deferred: namemap imports DecodedProperty from this module
+
+    if len(data) < 20:
+        return None
+
+    entry_type = struct.unpack_from("<I", data, 5)[0]
+    bonus_type_code = struct.unpack_from("<H", data, 13)[0]
+    stat_def_id = struct.unpack_from("<H", data, 16)[0]
+
+    if entry_type == 0x35:  # 53 — primary; magnitude is u32 at byte 68
+        if len(data) < 72:
+            return None
+        magnitude: int | None = struct.unpack_from("<I", data, 68)[0]
+    elif entry_type == 0x11:  # 17 — no magnitude field; implicitly 1
+        if len(data) < 28:
+            return None
+        magnitude = 1
+    else:
+        return None  # type 26, 175, or unknown — not a direct bonus quantifier
+
+    return {
+        "entry_type": entry_type,
+        "stat_def_id": stat_def_id,
+        "stat": STAT_DEF_IDS.get(stat_def_id),
+        "magnitude": magnitude,
+        "bonus_type_code": bonus_type_code,
+        "bonus_type": BONUS_TYPE_CODES.get(bonus_type_code),
+    }

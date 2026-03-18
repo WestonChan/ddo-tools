@@ -18,6 +18,7 @@ from ..dat_parser.archive import DatArchive
 from ..dat_parser.btree import traverse_btree
 from ..dat_parser.extract import read_entry_data
 from ..dat_parser.namemap import DISCOVERED_KEYS, decode_dup_triple
+from ..dat_parser.probe import decode_effect_entry
 from ..dat_parser.strings import load_string_table
 from .enums import (
     EQUIPMENT_SLOTS,
@@ -266,6 +267,29 @@ def parse_items(
 
     if on_progress:
         on_progress(f"  {len(items):,} items decoded ({skipped:,} skipped)")
+
+    # Resolve effect refs → decoded bonus dicts
+    effects_decoded = 0
+    for item in items:
+        effect_refs = item.pop("_effect_refs", [])
+        bonuses: list[dict] = []
+        for ref_str in effect_refs:
+            ref_id = int(ref_str, 16)
+            effect_entry = entries.get(ref_id)
+            if effect_entry is None:
+                continue
+            try:
+                effect_data = read_entry_data(gamelogic_archive, effect_entry)
+            except (ValueError, OSError):
+                continue
+            effect_desc = decode_effect_entry(effect_data)
+            if effect_desc is not None:
+                bonuses.append(effect_desc)
+        if bonuses:
+            item["_bonuses"] = bonuses
+            effects_decoded += len(bonuses)
+    if on_progress:
+        on_progress(f"  {effects_decoded:,} effect bonuses decoded")
 
     # Merge wiki data if available
     if wiki_items_path and wiki_items_path.exists():

@@ -2930,6 +2930,27 @@ DISCOVERED_KEYS: dict[int, dict[str, str]] = {
 
 
 # ---------------------------------------------------------------------------
+# Effect entry lookup tables
+# ---------------------------------------------------------------------------
+
+# Maps stat_def_id values (u16 at bytes [16..17] of 0x70XXXXXX effect entries)
+# to stat names that match the `stats` table seed values in db/schema.py.
+# Expand via investigation: ddo-data dat-dump --id 0x70XXXXXX on known items.
+STAT_DEF_IDS: dict[int, str] = {
+    376:  "Haggle",
+    450:  "Magical Resistance Rating",
+    1572: "Saving Throws vs Traps",
+    1941: "Spell Points",
+}
+
+# Maps raw bonus_type codes (u16 at bytes [13..14] of 0x70XXXXXX effect entries)
+# to bonus type names matching the `bonus_types` table seed values in db/schema.py.
+BONUS_TYPE_CODES: dict[int, str] = {
+    0x0100: "Enhancement",  # only observed value so far
+}
+
+
+# ---------------------------------------------------------------------------
 # Data structures
 # ---------------------------------------------------------------------------
 

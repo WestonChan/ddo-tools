@@ -197,8 +197,40 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 (item_id, sort_order, slot_color.strip()),
             )
 
-        # --- bonuses (enchantments as raw display strings) ---
-        for sort_order, enchantment in enumerate(item.get("enchantments") or []):
+        # --- bonuses pass A: decoded effect entries with resolved stat/bonus_type ---
+        decoded_bonuses = item.get("_bonuses") or []
+        for sort_order, effect in enumerate(decoded_bonuses):
+            if effect.get("stat") is None:
+                continue  # stat_def_id not yet in STAT_DEF_IDS — skip until mapped
+            stat_id = _lookup_id(conn, "stats", "name", "id", effect["stat"])
+            bonus_type_id = (
+                _lookup_id(conn, "bonus_types", "name", "id", effect["bonus_type"])
+                if effect.get("bonus_type")
+                else None
+            )
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO bonuses
+                    (source_type, source_id, min_rank, min_pieces, sort_order,
+                     name, stat_id, bonus_type_id, value)
+                VALUES ('item', ?, NULL, NULL, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item_id,
+                    sort_order,
+                    f"{effect['stat']} +{effect['magnitude']}",
+                    stat_id,
+                    bonus_type_id,
+                    effect["magnitude"],
+                ),
+            )
+
+        # --- bonuses pass B: wiki enchantment strings (NULL stat — deferred linking) ---
+        # Offset sort_order past the full decoded_bonuses length, not the inserted count.
+        # Pass-A uses INSERT OR IGNORE and never writes more than len(decoded_bonuses) rows,
+        # so starting pass-B at that index guarantees no unique-index collision.
+        pass_a_count = len(decoded_bonuses)
+        for offset, enchantment in enumerate(item.get("enchantments") or []):
             if not enchantment:
                 continue
             conn.execute(
@@ -208,7 +240,7 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                      stat_id, bonus_type_id, value)
                 VALUES ('item', ?, NULL, NULL, ?, ?, NULL, NULL, NULL)
                 """,
-                (item_id, sort_order, enchantment.strip()),
+                (item_id, pass_a_count + offset, enchantment.strip()),
             )
 
     conn.commit()
