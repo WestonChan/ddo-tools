@@ -197,6 +197,566 @@ DISCOVERED_KEYS: dict[int, dict[str, str]] = {
                     "0x10001C5D in the item property cluster. Functions as a "
                     "'linked schema' or 'bonus type template' pointer.",
     },
+    # --- Effect ref slots 5-10 (all confirmed 0x70XXXXXX values) ---
+    0x100011CB: {
+        "name": "effect_ref_5",
+        "confidence": "medium",
+        "evidence": "Values are 0x70XXXXXX effect FIDs. Appears on compound ability "
+                    "entries alongside 0x1000085B, 0x100023E6, 0x1000149C. Example "
+                    "items: Knock, Soulweaver/Splendid Cacophony: Constitution (Rare).",
+    },
+    0x1000085B: {
+        "name": "effect_ref_6",
+        "confidence": "medium",
+        "evidence": "Values are 0x70XXXXXX effect FIDs. Co-occurs with 0x100011CB on "
+                    "the same items (Knock, Bolt[E], augment crystal entries).",
+    },
+    0x100023E6: {
+        "name": "effect_ref_7",
+        "confidence": "medium",
+        "evidence": "Values are 0x70XXXXXX effect FIDs. Co-occurs with 0x100011CB and "
+                    "0x1000085B on the same compound ability items.",
+    },
+    0x1000149C: {
+        "name": "effect_ref_8",
+        "confidence": "medium",
+        "evidence": "Values are 0x70XXXXXX effect FIDs; some items carry 2 values for "
+                    "this key. Co-occurs with 0x100011CB group on same items.",
+    },
+    0x100012F0: {
+        "name": "effect_ref_9",
+        "confidence": "medium",
+        "evidence": "4 named items, all 0x70XXXXXX values. Rare slot; observed on "
+                    "Bloody Bjorn[mn], Essence of the Stonemeld Plate[v], Construct "
+                    "Bane, Judgment.",
+    },
+    0x100012E8: {
+        "name": "effect_ref_10",
+        "confidence": "medium",
+        "evidence": "3 named items, all unique 0x70XXXXXX values. Rare slot; observed "
+                    "on Essence of the Stonemeld Plate[v], Construct Bane, Judgment.",
+    },
+    # --- 0x10001C5X item property cluster completions ---
+    0x10001C5E: {
+        "name": "unknown_cluster_1C5E",
+        "confidence": "low",
+        "evidence": "139 named items, all values are 0x10XXXXXX property key IDs. "
+                    "Adjacent to confirmed item fields (0x10001C5D minimum_level, "
+                    "0x10001C58 item_schema_ref). Most common value: 0x10000909 (68x). "
+                    "Co-occurs with entire 0x10001C58-0x10001C60 cluster at ~99%. "
+                    "Likely another schema/template pointer in the item property block.",
+    },
+    0x10001C60: {
+        "name": "unknown_cluster_1C60",
+        "confidence": "low",
+        "evidence": "140 named items. Values are packed 4-byte structures; most common "
+                    "0x1C590600 (118x) and 0x1C590700 (17x). Bytes[2..3] in LE "
+                    "(0x1C59) match the low 16 bits of the item_category key "
+                    "(0x10001C59), suggesting a packed key reference. Co-occurs with "
+                    "full cluster at ~99%.",
+    },
+    # --- Schema constant nodes ---
+    0x10000909: {
+        "name": "unknown_constant_0909",
+        "confidence": "low",
+        "evidence": "139 named items, ALL share the same value: 0x09190100 "
+                    "(152,633,600). Also the most common ref-target of 0x10001C5E "
+                    "(68 items). Items span NPCs, ammo, feats (cat=-1 70x, cat=12 68x). "
+                    "Behaves as a schema-type identifier node — a fixed 'type tag' "
+                    "shared by a broad class of entries.",
+    },
+    0x10001347: {
+        "name": "unknown_constant_1347",
+        "confidence": "low",
+        "evidence": "97 named items, ALL share the same value: 0x39611300 "
+                    "(962,663,168). Same 97 items as 0x10001348. Likely a CRC or "
+                    "format-version constant embedded in a specific entry schema.",
+    },
+    0x10001348: {
+        "name": "unknown_constant_1348",
+        "confidence": "low",
+        "evidence": "97 named items (same set as 0x10001347), ALL share the same "
+                    "value: 0xAB82A800 (2,877,466,624). Always paired with "
+                    "0x10001347. Likely the second word of a 64-bit format constant.",
+    },
+    # --- Enum/flag keys ---
+    0x10000E39: {
+        "name": "unknown_item_class_E39",
+        "confidence": "low",
+        "evidence": "145 named items; 3 values: 0 (138x), 1 (5x), 8 (2x). Val=0 items "
+                    "span all categories. Val=1 items (Cleric Trainer, Scale: Sonic "
+                    "Spell Crit Damage, Legendary Toughness) all have cat=-1 (no "
+                    "item_category). Val=8 items (Epic Locus of Vol, Incredible "
+                    "Potential Ring Deconstruction) also cat=-1. Non-zero values may "
+                    "flag items as trainer/unique-object class.",
+    },
+    0x10000B32: {
+        "name": "unknown_item_flags_B32",
+        "confidence": "low",
+        "evidence": "118 named items; 4 values: 0 (114x), 18 (2x, Shield spell), "
+                    "22 (1x, Zarigan's Arcane Enlightenment: Spell Points (Rare)), "
+                    "32 (1x, Incredible Potential Ring Deconstruction). Mostly 0 "
+                    "with rare non-zero values on specific named items.",
+    },
+    0x100008B4: {
+        "name": "unknown_rank_8B4",
+        "confidence": "low",
+        "evidence": "118 named items; small integers max=45. Val=1 (65x) is dominant. "
+                    "Many values appear exactly 3x (e.g. 3, 5, 6, 10, 11, 12, 15, "
+                    "19, 24), consistent with DDO enhancements having 3 tiers. Higher "
+                    "values on named items like Dance of the Wind: Tumble (Rare) "
+                    "(val=41), Epic Skill Focus: Perform (val=39). Possibly "
+                    "enhancement tier rank or sort order.",
+    },
+    0x10004281: {
+        "name": "unknown_pool_flag_4281",
+        "confidence": "low",
+        "evidence": "87 named items; 2 values: 4 (74x), 0 (13x). Val=4 items are "
+                    "dominated by item_category=12 (60/74). Val=0 items are mostly "
+                    "item_category=2 (8/13). May be a flag distinguishing standard "
+                    "item pool (val=4) from ability/feat entries (val=0).",
+    },
+    0x100023F5: {
+        "name": "unknown_signed_modifier_23F5",
+        "confidence": "low",
+        "evidence": "82 named items; signed integer values ranging from -10 to +34. "
+                    "Negative values: -10 (12x, e.g. Armor, Lava Caves: Time is "
+                    "Money), -5 (9x, e.g. Sapphire of Vertigo +2). Positive: +3, "
+                    "+22, +24, +27, +34 (3x each). May encode a difficulty class "
+                    "modifier, save penalty, or effect parameter.",
+    },
+    # --- Cross-item group / template reference keys ---
+    0x10000A48: {
+        "name": "unknown_group_ref_A48",
+        "confidence": "low",
+        "evidence": "155 named items; 8 distinct large values in namespace 0x00. "
+                    "Most common: 0x0008AB00 (105x, e.g. Epic Locus of Vol: Blue "
+                    "Augment Slot). Low byte varies 0/1 within a group. Co-occurs "
+                    "with 0x10000DE2 on same items (same category/ML distribution). "
+                    "May encode a loot group or content-pack identifier.",
+    },
+    0x10000DE2: {
+        "name": "unknown_template_ref_DE2",
+        "confidence": "low",
+        "evidence": "151 named items; 5 distinct values. Dominant: 0x000A4A00 (113x). "
+                    "Low byte varies 0/1. Identical item_category and ML distribution "
+                    "to 0x10000A48 — likely always paired. May be a secondary template "
+                    "or variant ID alongside 0x10000A48.",
+    },
+    0x10002DD9: {
+        "name": "unknown_flag_or_float_2DD9",
+        "confidence": "low",
+        "evidence": "145 named items; binary: val=0 (144x) or val=0x40000000 (1x). "
+                    "0x40000000 is IEEE 754 float 2.0; appears only on 'Scale: Sonic "
+                    "Spell Crit Damage'. May encode a scaling multiplier stored as "
+                    "float32, normally 0.",
+    },
+    0x10000901: {
+        "name": "unknown_override_ref_0901",
+        "confidence": "low",
+        "evidence": "140 named items; val=0 (111x), otherwise 0x10XXXXXX property "
+                    "key IDs (e.g. 0x10000D6F on 'Attack'). When non-zero, points to "
+                    "an alternate property key — possibly an override or parent-class "
+                    "property reference.",
+    },
+    0x10000B2E: {
+        "name": "unknown_content_ref_B2E",
+        "confidence": "low",
+        "evidence": "138 named items; 17 distinct values; ALL have item_category=-1 "
+                    "(feats/abilities/NPCs). Most common: 0x00086700 (54x, e.g. "
+                    "Craftable (+6)). Values are diverse and do not clearly encode "
+                    "a small enum.",
+    },
+    0x10000002: {
+        "name": "unknown_format_sig_0002",
+        "confidence": "low",
+        "evidence": "127 named items; 14 distinct large values; ALL item_category=-1. "
+                    "Values: 0x05001C00 (48x, Corrosive Arrows/Ammo), 0x54001800 "
+                    "(38x, Orcish Strength I/Ammo), 0x90000000 (16x, Extra One "
+                    "Power). Very low key ID (0x10000002) suggests a fundamental "
+                    "schema marker. Values may be packed type/version signatures.",
+    },
+    # --- Constant-value keys (schema type tags) ---
+    0x1000048E: {
+        "name": "unknown_constant_pair_048E",
+        "confidence": "low",
+        "evidence": "127 named items; 2 distinct values: 0x3D632E00 (91x) and "
+                    "0x60951300 (36x). Adjacent to 0x1000048D which is single-valued "
+                    "0xA4487500. Together likely form a 64-bit schema constant pair.",
+    },
+    0x1000048D: {
+        "name": "unknown_constant_048D",
+        "confidence": "low",
+        "evidence": "125 named items; ALL share value 0xA4487500 (2,756,211,968). "
+                    "Same magic constant appears in 0x10005175 and 0x100018AA. "
+                    "Likely a CRC-32 or schema-type tag constant.",
+    },
+    0x100018AA: {
+        "name": "unknown_constant_18AA",
+        "confidence": "low",
+        "evidence": "103 named items; 96x share 0xA4487500 (same magic constant as "
+                    "0x1000048D, 0x10005175). All item_category=-1. 5 items have "
+                    "0x00451D01 (NPCs: Longtalon[mn], The Bloody End).",
+    },
+    0x10005175: {
+        "name": "unknown_constant_5175",
+        "confidence": "low",
+        "evidence": "82 named items; ALL share value 0xA4487500 — same magic constant "
+                    "as 0x1000048D and 0x100018AA. All item_category=-1.",
+    },
+    # --- Simple flag keys ---
+    0x10000917: {
+        "name": "unknown_flag_0917",
+        "confidence": "low",
+        "evidence": "99 named items; val=0 (98x), val=2 (1x, 'Bottled Rainstorm'). "
+                    "Essentially always 0 with a single rare non-zero value.",
+    },
+    0x10002877: {
+        "name": "unknown_flag_2877",
+        "confidence": "low",
+        "evidence": "83 named items; val=0 (82x), val=0x00800000 (1x, 'Green Fire'). "
+                    "Essentially always 0 with a single non-zero value.",
+    },
+    # --- Feat/ability-specific keys ---
+    0x1000088E: {
+        "name": "unknown_bitmask_088E",
+        "confidence": "low",
+        "evidence": "98 named items; 32 distinct values; ALL item_category=-1. Values "
+                    "include 0x00040004 (14x), 0x00040001 (12x), 0x00000002 (9x), "
+                    "0x00000080 (6x). High u16 = 0x0004 for many entries, low u16 "
+                    "varies — likely a packed bitmask field for feat/ability flags.",
+    },
+    0x10006F7F: {
+        "name": "unknown_versioned_ref_6F7F",
+        "confidence": "low",
+        "evidence": "93 named items; 10 distinct values; low byte always 0x01. Values "
+                    "like 0x00091701 (25x), 0x00139601 (22x), 0x000B6A01 (15x). "
+                    "The constant low byte 0x01 suggests a type/version flag on a "
+                    "content reference.",
+    },
+    0x10002899: {
+        "name": "unknown_template_ref_2899",
+        "confidence": "low",
+        "evidence": "86 named items; 6 distinct values; item_category=12 dominant "
+                    "(44/86). Values: 0x0008B401 (37x), 0x0008B400 (31x), "
+                    "0x0008FC01 (7x). Low byte 0/1 variant pattern — similar to "
+                    "0x10006F7F.",
+    },
+    0x10001399: {
+        "name": "damage_dice_notation",
+        "confidence": "medium",
+        "evidence": "83 named items; ALL item_category=-1. Values encode ASCII dice "
+                    "notation as a packed 4-byte little-endian u32: byte[0]=bonus, "
+                    "bytes[1..3]='XdY' ASCII. Examples: 0x32643205=[bonus=5,'2d2'] "
+                    "→ 2d2+5; 0x34643103=[bonus=3,'1d4'] → 1d4+3. byte[2] is always "
+                    "0x64 ('d'). Encodes damage dice for weapon/proc effects.",
+    },
+    0x10001585: {
+        "name": "unknown_rank_1585",
+        "confidence": "low",
+        "evidence": "78 named items; small integers max=46; 36 distinct values; ALL "
+                    "item_category=-1. val=1 is most common (16x). May be an "
+                    "enhancement tier or sort-order rank similar to 0x100008B4.",
+    },
+    # --- Float-valued property keys ---
+    0x10000E7C: {
+        "name": "unknown_float_one_E7C",
+        "confidence": "low",
+        "evidence": "78 named items; ALL share value 0x3F800000, which is IEEE 754 "
+                    "float 1.0. ALL item_category=-1. Likely a float32 property "
+                    "storing a multiplicative scale factor, always 1.0 here.",
+    },
+    0x10002BCE: {
+        "name": "unknown_float_modifier_2BCE",
+        "confidence": "low",
+        "evidence": "78 named items; val=0 (74x), otherwise IEEE 754 floats: "
+                    "0x3DCCCCCD≈0.1 (2x, Echo of Ravenkind, Volley the Arbalest), "
+                    "0x3C23D70A≈0.01 (1x, Card Trade 08_09), 0x3E19999A≈0.15 "
+                    "(1x, Witch Doctor Glik[E]). Float32 modifier, normally 0.",
+    },
+    # --- Secondary feat/ability group refs ---
+    0x1000283C: {
+        "name": "unknown_group2_ref_283C",
+        "confidence": "low",
+        "evidence": "78 named items; 6 distinct values; ALL item_category=-1. "
+                    "Most common: 0x00189800 (35x, Dread Pirate Apothecary[m]), "
+                    "0x00189801 (33x, Craftable (+6)). Low byte 0/1 variant pattern.",
+    },
+    0x10002840: {
+        "name": "unknown_group2_ref_2840",
+        "confidence": "low",
+        "evidence": "78 named items; 5 distinct values; ALL item_category=-1. "
+                    "Most common: 0x002D1F00 (56x). Co-occurs with 0x1000283C, "
+                    "0x10002BCE, 0x10000E7C on same entry set.",
+    },
+    # --- 78-item linked property chain (feat/ability entries) ---
+    0x10001071: {
+        "name": "unknown_chain_head_1071",
+        "confidence": "low",
+        "evidence": "77 named items; ALL share value 0x1000A084 (a key ID pointer). "
+                    "Entry in the 78-item linked property chain — acts as a pointer "
+                    "to the chain's data node (0x1000A084). See 0x10001072 for the "
+                    "full chain description.",
+    },
+    0x10001072: {
+        "name": "unknown_chain_count_1072",
+        "confidence": "low",
+        "evidence": "78 named items; ALL val=1. Entry in the 78-item property chain "
+                    "(items like Wildhunter: Attack and Damage, Item Restoration). "
+                    "Chain structure: 0x10001071→0x1000A084 (data ptr), "
+                    "0x10001072=1 (count), 0x10001073=18 (type), "
+                    "0x10001076→0x10730300→0x10731000 (value chain). "
+                    "Likely feat/enhancement slot definitions.",
+    },
+    0x10001073: {
+        "name": "unknown_chain_type_1073",
+        "confidence": "low",
+        "evidence": "78 named items; val=18 (77x), val=15 (1x). Part of the 78-item "
+                    "linked property chain; likely a type or slot-kind identifier.",
+    },
+    0x10001076: {
+        "name": "unknown_chain_start_1076",
+        "confidence": "low",
+        "evidence": "78 named items; ALL val=0x10730300 (key ID pointer). Head of the "
+                    "value sub-chain in the 78-item property chain. Points to the "
+                    "0x10730300→0x10731000 chain node.",
+    },
+    0x1000A084: {
+        "name": "unknown_chain_node_A084",
+        "confidence": "low",
+        "evidence": "78 named items; 6 distinct item-reference values (low byte=0x01). "
+                    "Most common: 0x003D2501 (48x, Angelic Wings entries). Target of "
+                    "the 0x10001071 pointer in the 78-item property chain. Stores "
+                    "the actual data ref for the chain entry.",
+    },
+    0x10710000: {
+        "name": "unknown_chain_ptr_7100",
+        "confidence": "low",
+        "evidence": "77 named items; ALL val=0x10711000 (key ID pointer). Part of the "
+                    "0x107XXXXX linked chain sub-structure. Keys in the 0x107XXXXX "
+                    "range appear to form a linked list where each key's value is the "
+                    "next key in the chain.",
+    },
+    0x10730300: {
+        "name": "unknown_chain_next_7303",
+        "confidence": "low",
+        "evidence": "78 named items; ALL val=0x10731000 (key ID pointer). Chain node "
+                    "in the 0x107XXXXX linked structure; always points to 0x10731000.",
+    },
+    0x10731000: {
+        "name": "unknown_chain_value_7310",
+        "confidence": "low",
+        "evidence": "78 named items; val=0x00121000 (77x), val=0x000F1000 (1x, "
+                    "Insightful Magical Sheltering +). Terminal value node in the "
+                    "0x107XXXXX chain. Value 0x00121000 encodes 0x12=18 (matching "
+                    "0x10001073 type=18) and 0x1000 = a block marker.",
+    },
+    0x10760000: {
+        "name": "unknown_chain_terminal_7600",
+        "confidence": "low",
+        "evidence": "78 named items; ALL val=0x03001000. Terminal node in the "
+                    "0x107XXXXX chain. Constant across all entries.",
+    },
+    # --- Missing 0x107XXXXX chain node ---
+    0x10711000: {
+        "name": "unknown_chain_value_7110",
+        "confidence": "low",
+        "evidence": "77 named items; ALL val=0xA0841000. Terminal value node in the "
+                    "0x10710000→0x10711000 sub-chain. 0xA0841000 may encode a ref "
+                    "to 0x1000A084 (the chain_node_A084 key, low bytes=0xA084).",
+    },
+    # --- Additional constant-value keys (adjacent to known constant cluster) ---
+    0x10001349: {
+        "name": "unknown_constant_1349",
+        "confidence": "low",
+        "evidence": "97 named items; ALL val=0x78F2A800. Third member of the "
+                    "0x10001347/48/49 triple — all three appear on the same 97 items "
+                    "and hold a single constant value each. Likely schema tags.",
+    },
+    0x10003102: {
+        "name": "unknown_constant_3102",
+        "confidence": "low",
+        "evidence": "Appears on same category of items as other constant-value keys; "
+                    "always a single repeated value. Likely a schema or type tag.",
+    },
+    0x10003972: {
+        "name": "unknown_constant_3972",
+        "confidence": "low",
+        "evidence": "One of four keys (0x1000048D, 0x10005175, 0x100018AA, 0x10003972) "
+                    "that all carry the magic constant 0xA4487500, believed to be a "
+                    "schema-type tag. Always the same value across all items.",
+    },
+    0x10001A51: {
+        "name": "unknown_constant_1A51",
+        "confidence": "low",
+        "evidence": "Single constant value across all occurrences. Likely a schema "
+                    "tag or type marker.",
+    },
+    # --- Additional effect_ref slots (0x70XXXXXX values) ---
+    0x10001B8D: {
+        "name": "effect_ref_shared_1B8D",
+        "confidence": "medium",
+        "evidence": "73 named items; ALL share the SAME FID 0x700027E1. Unlike other "
+                    "effect_ref_* keys which vary per item, this slot always points to "
+                    "the same effect entry — possibly a global damage/defence baseline "
+                    "or shared procedural effect.",
+    },
+    0x10001BC4: {
+        "name": "effect_ref_11_BC4",
+        "confidence": "medium",
+        "evidence": "All values are 0x70XXXXXX FIDs (effect entry file IDs). Part of "
+                    "the sequential 0x10001BC4/BC6/BC7 triple of effect_ref slots. "
+                    "Co-occur on the same items as other effect_ref keys.",
+    },
+    0x10001BC6: {
+        "name": "effect_ref_12_BC6",
+        "confidence": "medium",
+        "evidence": "All values are 0x70XXXXXX FIDs (effect entry file IDs). Part of "
+                    "the sequential 0x10001BC4/BC6/BC7 triple of effect_ref slots.",
+    },
+    0x10001BC7: {
+        "name": "effect_ref_13_BC7",
+        "confidence": "medium",
+        "evidence": "All values are 0x70XXXXXX FIDs (effect entry file IDs). Part of "
+                    "the sequential 0x10001BC4/BC6/BC7 triple of effect_ref slots.",
+    },
+    # --- Float-valued property keys (IEEE 754 float32 stored in u32 slots) ---
+    0x10000B60: {
+        "name": "unknown_float_tier_B60",
+        "confidence": "low",
+        "evidence": "Values are IEEE 754 float32; observed: 0.0, 1.0, 2.0, 3.0, 4.0, "
+                    "-1.0. Small integer steps suggest tier or rank multiplier "
+                    "(e.g. weapon tier, upgrade level). Adjacent to 0x10000B5C.",
+    },
+    0x10000B5C: {
+        "name": "unknown_float_sign_B5C",
+        "confidence": "low",
+        "evidence": "Values are IEEE 754 float32; observed: 1.0 (majority), -1.0, 0.0. "
+                    "Binary ±1.0 / 0.0 distribution suggests a sign or direction "
+                    "coefficient. Adjacent to 0x10000B60.",
+    },
+    0x100007F8: {
+        "name": "unknown_float_coeff_7F8",
+        "confidence": "low",
+        "evidence": "IEEE 754 float32; predominantly 1.0 (0x3F800000). Part of the "
+                    "0x100007E2/F0/F5/F8 float coefficient group; likely a multiplier "
+                    "or weight used in effect/stat calculations.",
+    },
+    0x100007F0: {
+        "name": "unknown_float_coeff_7F0",
+        "confidence": "low",
+        "evidence": "IEEE 754 float32; predominantly 1.0 (0x3F800000). Part of the "
+                    "0x100007E2/F0/F5/F8 float coefficient group.",
+    },
+    0x100007F5: {
+        "name": "unknown_float_coeff_7F5",
+        "confidence": "low",
+        "evidence": "IEEE 754 float32; predominantly 1.0 (0x3F800000). Part of the "
+                    "0x100007E2/F0/F5/F8 float coefficient group.",
+    },
+    0x100007E2: {
+        "name": "unknown_float_coeff_7E2",
+        "confidence": "low",
+        "evidence": "IEEE 754 float32; predominantly 1.0 (0x3F800000). Part of the "
+                    "0x100007E2/F0/F5/F8 float coefficient group.",
+    },
+    0x100008FC: {
+        "name": "unknown_float_approx8_8FC",
+        "confidence": "low",
+        "evidence": "IEEE 754 float32; values cluster around 8.0–8.2. Possible item "
+                    "weight (DDO items have weights like 8 lb) or a scaling parameter.",
+    },
+    0x10000742: {
+        "name": "unknown_float_level_742",
+        "confidence": "low",
+        "evidence": "IEEE 754 float32; values range 6.0–32.0. Range matches DDO "
+                    "minimum level range; may be a float representation of a level "
+                    "requirement or caster level.",
+    },
+    # --- 0x10BB linked chain pair ---
+    0x10BB0000: {
+        "name": "unknown_chain_ptr_BB00",
+        "confidence": "low",
+        "evidence": "Always val=0x10BB1000 (key ID). Head of the 0x10BB0000→0x10BB1000 "
+                    "pointer sub-chain, analogous to 0x10710000→0x10711000.",
+    },
+    0x10BB1000: {
+        "name": "unknown_chain_value_BB10",
+        "confidence": "low",
+        "evidence": "Terminal value node for the 0x10BB0000→0x10BB1000 chain. "
+                    "Value is a data reference or constant.",
+    },
+    0x100010BB: {
+        "name": "unknown_chain_node_10BB",
+        "confidence": "low",
+        "evidence": "Parallel key to the 0x10BB chain; appears on the same items. "
+                    "Likely the 0x10XX-namespace equivalent of the 0x10BB chain head.",
+    },
+    # --- 0x10000ABC/D/E ability flags cluster ---
+    0x10000ABC: {
+        "name": "unknown_ability_flags_ABC",
+        "confidence": "low",
+        "evidence": "Part of the 0x10000ABC/ABD/ABE cluster. Values are bitfield-like "
+                    "or small enum. Co-occurrence with ABD/ABE suggests this triple "
+                    "encodes an ability definition (possibly spell component flags, "
+                    "prereq flags, or stance conditions).",
+    },
+    0x10000ABD: {
+        "name": "unknown_ability_id_ABD",
+        "confidence": "low",
+        "evidence": "Part of the 0x10000ABC/ABD/ABE cluster; small integer, max=126. "
+                    "Likely an ability or feat index within a category.",
+    },
+    0x10000ABE: {
+        "name": "unknown_ability_bits_ABE",
+        "confidence": "low",
+        "evidence": "Part of the 0x10000ABC/ABD/ABE cluster. Value distribution "
+                    "similar to ABC; may be a second flags/bits field for the ability.",
+    },
+    # --- Triple small-int parameter group (0x539/53B/53D) ---
+    0x10000539: {
+        "name": "unknown_triple_param_A_539",
+        "confidence": "low",
+        "evidence": "Small integer, max=73; 67 named items. Part of the co-occurring "
+                    "0x10000539/53B/53D triple — 70 items have all three. The three "
+                    "values together likely encode a 3-part parameter (e.g. dice "
+                    "formula components, or effect magnitude triple).",
+    },
+    0x1000053B: {
+        "name": "unknown_triple_param_B_53B",
+        "confidence": "low",
+        "evidence": "Small integer, max=76; 70 named items. Part of the co-occurring "
+                    "0x10000539/53B/53D triple.",
+    },
+    0x1000053D: {
+        "name": "unknown_triple_param_C_53D",
+        "confidence": "low",
+        "evidence": "Small integer, max=82; 67 named items. Part of the co-occurring "
+                    "0x10000539/53B/53D triple.",
+    },
+    # --- Remaining individual keys ---
+    0x100007EB: {
+        "name": "unknown_flag_enum_7EB",
+        "confidence": "low",
+        "evidence": "Small enum with ~6 distinct values. Distribution and category "
+                    "correlation not yet fully characterised.",
+    },
+    0x10000E87: {
+        "name": "unknown_content_ref_E87",
+        "confidence": "low",
+        "evidence": "Values include 0x10XXXXXX property refs and small integers. "
+                    "Possible content pack or expansion reference.",
+    },
+    0x100015C3: {
+        "name": "unknown_flag_15C3",
+        "confidence": "low",
+        "evidence": "Binary or small-enum flag; appears on a subset of items.",
+    },
+    0x1000224E: {
+        "name": "unknown_count_224E",
+        "confidence": "low",
+        "evidence": "Small integer; distribution suggests a count or index field.",
+    },
 }
 
 

@@ -320,12 +320,12 @@ Confirmed on Haggle Diamond companion effect 0x7000000E (stat_def_id=0, flag=3).
 | 0x10001390 | ~185 named items | Secondary effect_ref, often paired with 0x10000919; in DISCOVERED_KEYS |
 | 0x100012AC | ~49 named items | Tertiary effect_ref slot; in DISCOVERED_KEYS |
 | 0x100012BC | ~14 named items | Quaternary effect_ref slot; in DISCOVERED_KEYS |
-| 0x100011CB | augment items | Simple augment crystal ref; not yet in DISCOVERED_KEYS |
-| 0x1000085B | augment items | Simple augment crystal ref; not yet in DISCOVERED_KEYS |
-| 0x100023E6 | augment items | Simple augment crystal ref; not yet in DISCOVERED_KEYS |
-| 0x1000149C | augment items | Simple augment crystal ref (2 values per key); not yet in DISCOVERED_KEYS |
-| 0x100012F0 | 4 named items | Rare; not yet in DISCOVERED_KEYS |
-| 0x100012E8 | 3 named items | Rare; not yet in DISCOVERED_KEYS |
+| 0x100011CB | augment/compound items | effect_ref_5; in DISCOVERED_KEYS |
+| 0x1000085B | augment/compound items | effect_ref_6; in DISCOVERED_KEYS |
+| 0x100023E6 | augment/compound items | effect_ref_7; in DISCOVERED_KEYS |
+| 0x1000149C | augment/compound items | effect_ref_8 (2 values per key); in DISCOVERED_KEYS |
+| 0x100012F0 | 4 named items | effect_ref_9; rare; in DISCOVERED_KEYS |
+| 0x100012E8 | 3 named items | effect_ref_10; rare; in DISCOVERED_KEYS |
 
 To decode: use `ddo-data dat-dump --id 0x70XXXXXX` to hex-inspect a specific effect entry.
 
@@ -350,6 +350,82 @@ To decode: use `ddo-data dat-dump --id 0x70XXXXXX` to hex-inspect a specific eff
 | 0x10001C5B | item_subtype | low | Small enum 1–6 (plus 16, 20); near min_level cluster |
 | 0x10001C5F | stat_def_id_item | low | Medium int 369–1574; overlaps stat_def_id range of effect entries |
 | 0x10001C58 | item_schema_ref | low | All values 0x10XXXXXX refs; adjacent to min_level cluster |
+| 0x100011CB | effect_ref_5 | medium | 0x70XXXXXX refs; co-occurs with effect_ref_6/7/8 on compound items |
+| 0x1000085B | effect_ref_6 | medium | 0x70XXXXXX refs; always paired with effect_ref_5 group |
+| 0x100023E6 | effect_ref_7 | medium | 0x70XXXXXX refs; always paired with effect_ref_5 group |
+| 0x1000149C | effect_ref_8 | medium | 0x70XXXXXX refs; some items have 2 values |
+| 0x100012F0 | effect_ref_9 | medium | 0x70XXXXXX refs; 4 items |
+| 0x100012E8 | effect_ref_10 | medium | 0x70XXXXXX refs; 3 items |
+| 0x10001C5E | unknown_cluster_1C5E | low | Values are 0x10XXXXXX key refs; most common=0x10000909 (68x) |
+| 0x10001C60 | unknown_cluster_1C60 | low | Packed 4B; bytes[2..3] echo item_category key ID (0x1C59) |
+| 0x10000909 | unknown_constant_0909 | low | All 139 items share value 0x09190100; schema-type identifier node |
+| 0x10001347 | unknown_constant_1347 | low | 97 items, always 0x39611300; likely CRC constant; paired with 0x10001348 |
+| 0x10001348 | unknown_constant_1348 | low | 97 items, always 0xAB82A800; always paired with 0x10001347 |
+| 0x10000E39 | unknown_item_class_E39 | low | Enum 0/1/8; val=1 and val=8 on trainer/unique items (all cat=-1) |
+| 0x10000B32 | unknown_item_flags_B32 | low | Enum 0/18/22/32; mostly 0; rare non-zero on Shield, Deconstruction items |
+| 0x100008B4 | unknown_rank_8B4 | low | Small int max=45; many values appear ×3 (DDO enhancement tiers?) |
+| 0x10004281 | unknown_pool_flag_4281 | low | Binary 0/4; val=4 on cat=12 items, val=0 on cat=2 |
+| 0x100023F5 | unknown_signed_modifier_23F5 | low | Signed int −10 to +34; negative values on items like Armor, Sapphire of Vertigo |
+| 0x10000A48 | unknown_group_ref_A48 | low | 155 items; large values (loot group IDs?); always paired with 0x10000DE2 |
+| 0x10000DE2 | unknown_template_ref_DE2 | low | 151 items; 5 distinct values; paired with 0x10000A48 |
+| 0x10002DD9 | unknown_flag_or_float_2DD9 | low | Binary: 0 (144x) or 0x40000000=float 2.0 (1x, Scale: Sonic Spell Crit Damage) |
+| 0x10000901 | unknown_override_ref_0901 | low | Mostly 0; non-zero → 0x10XXXXXX key ref (optional property override?) |
+| 0x10000B2E | unknown_content_ref_B2E | low | 138 items; 17 distinct; all cat=-1 |
+| 0x10000002 | unknown_format_sig_0002 | low | 127 items; packed large values; all cat=-1; very low key ID → fundamental schema marker |
+| 0x1000048E | unknown_constant_pair_048E | low | 2 constants: 0x3D632E00 (91x), 0x60951300 (36x); adjacent to 0x1000048D |
+| 0x1000048D | unknown_constant_048D | low | Always 0xA4487500; same magic constant as 0x10005175 and 0x100018AA |
+| 0x100018AA | unknown_constant_18AA | low | Mostly 0xA4487500; all cat=-1 |
+| 0x10005175 | unknown_constant_5175 | low | Always 0xA4487500; all cat=-1 |
+| 0x10000917 | unknown_flag_0917 | low | 99 items; val=2 only on 'Bottled Rainstorm' (1 item) |
+| 0x10002877 | unknown_flag_2877 | low | 83 items; val=0x00800000 only on 'Green Fire' (1 item) |
+| 0x1000088E | unknown_bitmask_088E | low | 98 items; all cat=-1; packed bitmask (high u16=0x0004 common) |
+| 0x10006F7F | unknown_versioned_ref_6F7F | low | 93 items; low byte always 0x01; content ref with version flag |
+| 0x10002899 | unknown_template_ref_2899 | low | 86 items; 6 distinct; low byte 0/1 variant pattern |
+| 0x10001399 | damage_dice_notation | medium | 83 items; packed ASCII dice: bytes[1..3]="XdY", byte[0]=bonus |
+| 0x10001585 | unknown_rank_1585 | low | 78 items; small int max=46; all cat=-1; similar to unknown_rank_8B4 |
+| 0x10000E7C | unknown_float_one_E7C | low | Always 0x3F800000 = IEEE 754 float 1.0; all cat=-1 |
+| 0x10002BCE | unknown_float_modifier_2BCE | low | Mostly 0; rarely IEEE floats ≈0.01–0.15 (3 named items) |
+| 0x1000283C | unknown_group2_ref_283C | low | 78 items; all cat=-1; 6 distinct values (low byte 0/1) |
+| 0x10002840 | unknown_group2_ref_2840 | low | 78 items; all cat=-1; co-occurs with 0x1000283C/0x10002BCE/0x10000E7C |
+| 0x10001071 | unknown_chain_head_1071 | low | Always 0x1000A084; head pointer in 78-item property chain |
+| 0x10001072 | unknown_chain_count_1072 | low | Always 1; count field in 78-item chain (Wildhunter, Item Restoration group) |
+| 0x10001073 | unknown_chain_type_1073 | low | Mostly 18; type/slot-kind field in 78-item chain |
+| 0x10001076 | unknown_chain_start_1076 | low | Always 0x10730300; pointer to 0x107XXXXX value sub-chain |
+| 0x1000A084 | unknown_chain_node_A084 | low | 6 distinct item refs; data node pointed to by 0x10001071 |
+| 0x10710000 | unknown_chain_ptr_7100 | low | Always 0x10711000; 0x107XXXXX linked-chain node |
+| 0x10730300 | unknown_chain_next_7303 | low | Always 0x10731000; 0x107XXXXX chain → next node |
+| 0x10731000 | unknown_chain_value_7310 | low | Mostly 0x00121000; terminal value in 0x107XXXXX chain |
+| 0x10760000 | unknown_chain_terminal_7600 | low | Always 0x03001000; terminal node in 0x107XXXXX chain |
+| 0x10711000 | unknown_chain_value_7110 | low | Always 0xA0841000; terminal value in 0x10710000→0x10711000 sub-chain |
+| 0x10001349 | unknown_constant_1349 | low | Always 0x78F2A800; third member of the 0x10001347/48/49 constant triple (97 items each) |
+| 0x10003102 | unknown_constant_3102 | low | Single constant value; likely schema or type tag |
+| 0x10003972 | unknown_constant_3972 | low | Always 0xA4487500 (magic schema-type tag); one of four keys sharing this constant |
+| 0x10001A51 | unknown_constant_1A51 | low | Single constant value; likely schema tag |
+| 0x10001B8D | effect_ref_shared_1B8D | medium | 73 items all share SAME FID 0x700027E1; may be global baseline effect |
+| 0x10001BC4 | effect_ref_11_BC4 | medium | 0x70XXXXXX effect FIDs; part of sequential BC4/BC6/BC7 effect_ref triple |
+| 0x10001BC6 | effect_ref_12_BC6 | medium | 0x70XXXXXX effect FIDs; part of sequential BC4/BC6/BC7 effect_ref triple |
+| 0x10001BC7 | effect_ref_13_BC7 | medium | 0x70XXXXXX effect FIDs; part of sequential BC4/BC6/BC7 effect_ref triple |
+| 0x10000B60 | unknown_float_tier_B60 | low | IEEE 754 float32; values 0.0/1.0/2.0/3.0/4.0/−1.0 → tier/rank multiplier |
+| 0x10000B5C | unknown_float_sign_B5C | low | IEEE 754 float32; values ±1.0/0.0 → sign or direction coefficient |
+| 0x100007F8 | unknown_float_coeff_7F8 | low | IEEE 754 float32; mostly 1.0; part of 7E2/7F0/7F5/7F8 coefficient group |
+| 0x100007F0 | unknown_float_coeff_7F0 | low | IEEE 754 float32; mostly 1.0; part of 7E2/7F0/7F5/7F8 coefficient group |
+| 0x100007F5 | unknown_float_coeff_7F5 | low | IEEE 754 float32; mostly 1.0; part of 7E2/7F0/7F5/7F8 coefficient group |
+| 0x100007E2 | unknown_float_coeff_7E2 | low | IEEE 754 float32; mostly 1.0; part of 7E2/7F0/7F5/7F8 coefficient group |
+| 0x100008FC | unknown_float_approx8_8FC | low | IEEE 754 float32; values ~8.0–8.2; possibly item weight |
+| 0x10000742 | unknown_float_level_742 | low | IEEE 754 float32; values 6.0–32.0; possibly float level requirement |
+| 0x10BB0000 | unknown_chain_ptr_BB00 | low | Always 0x10BB1000; head of 0x10BB0000→0x10BB1000 pointer sub-chain |
+| 0x10BB1000 | unknown_chain_value_BB10 | low | Terminal value node for the 0x10BB chain |
+| 0x100010BB | unknown_chain_node_10BB | low | Parallel key to the 0x10BB chain; 0x10-namespace equivalent |
+| 0x10000ABC | unknown_ability_flags_ABC | low | Part of ABC/ABD/ABE cluster; bitfield-like or small enum |
+| 0x10000ABD | unknown_ability_id_ABD | low | Part of ABC/ABD/ABE cluster; small integer max=126; likely ability/feat index |
+| 0x10000ABE | unknown_ability_bits_ABE | low | Part of ABC/ABD/ABE cluster; second flags field |
+| 0x10000539 | unknown_triple_param_A_539 | low | Small int max=73; part of co-occurring 539/53B/53D triple (70 items) |
+| 0x1000053B | unknown_triple_param_B_53B | low | Small int max=76; part of co-occurring 539/53B/53D triple |
+| 0x1000053D | unknown_triple_param_C_53D | low | Small int max=82; part of co-occurring 539/53B/53D triple |
+| 0x100007EB | unknown_flag_enum_7EB | low | Small enum with ~6 distinct values |
+| 0x10000E87 | unknown_content_ref_E87 | low | Mix of 0x10XXXXXX refs and small ints; possibly content/pack reference |
+| 0x100015C3 | unknown_flag_15C3 | low | Binary or small-enum flag |
+| 0x1000224E | unknown_count_224E | low | Small integer; count or index field |
 
 #### Type 0x02 entries (three decoding strategies)
 
@@ -503,7 +579,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - Multi-block files (entries where data may span multiple blocks) — quantified (61,738 of 490K gamelogic entries, 12.6%) but reading not yet implemented
 - Exact purpose of `unknown2` and `timestamp` in B-tree entries (unknown1 = generation counter; timestamp = NOT Unix, likely patch sequence; unknown2 = small per-archive integer)
 - Property type system for complex type-0x02/0x01 entries (LOTRO uses a registry at DID 0x34000000; DDO lacks it)
-- Meaning of remaining 0x10XXXXXX keys (~200+ remain unmapped beyond 10 keys in DISCOVERED_KEYS)
+- Meaning of remaining 0x10XXXXXX keys (top-93 by frequency are now in DISCOVERED_KEYS; ~130+ lower-frequency keys remain unmapped)
 - Spell school source: slot 1 is a variant/type ID (NOT school code); actual school must come from the `client_general.dat` template (slot 0 ref)
 - Compound entry structure (ref_count=19, ref_count=46 groups): purpose of the large ref lists and keys 0x10000882, 0x10006392
 
@@ -547,8 +623,8 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [ ] 0x70XXXXXX stat_def_id lookup table (7 values identified; full mapping requires cross-referencing general.dat stat definitions)
 - [x] 0x47XXXXXX spell entry format (body empty; definition packed in header ref list; slot 0=template ref, slot 1=spell variant/type ID NOT school code, slots 2+=packed params)
 - [x] Property key census (`dat-registry` command -- empirical statistics)
-- [x] Property ID name mapping (17 keys in DISCOVERED_KEYS; 10+ effect_ref key variants identified; cluster 0x10001C5B–0x10001C60 partially characterized)
-  - **Naming convention:** keys with confirmed meaning use descriptive names (`minimum_level`, `effect_ref`). Keys that are observed but not yet understood use `unknown_<context>_<hex4>` (e.g. `unknown_compound_0882`). Do not use speculative descriptive names for unconfirmed fields.
+- [x] Property ID name mapping (93 keys in DISCOVERED_KEYS; 13 effect_ref slot variants; item cluster 0x10001C58–0x10001C60; all top-80 high-frequency keys catalogued)
+  - **Naming convention:** confirmed keys use descriptive names (`minimum_level`, `effect_ref`). Unconfirmed keys use `unknown_<context>_<hex4>` (e.g. `unknown_compound_0882`, `unknown_cluster_1C60`). Do not assign descriptive names to fields whose purpose is unverified.
 - [x] Non-0x10 dup-pair records (stat_def_id keys with float/ref values; confirmed in feat/spell entries)
 - [x] 0x79 dup-triple entry decoder (item definitions with [key][key][value] encoding)
 - [x] Structured localization entry decoder (0x25XXXXXX with VLE string lengths, sub-entry refs)
