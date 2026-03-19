@@ -10,7 +10,13 @@ from ddo_data.game_data.enums import (
     RARITY_TIERS,
     resolve_enum,
 )
-from ddo_data.game_data.feats import parse_feats
+from ddo_data.game_data.feats import (
+    _decode_damage_dice,
+    _decode_feat_entry,
+    _merge_wiki_feats,
+    export_feats_json,
+    parse_feats,
+)
 from ddo_data.game_data.items import (
     _decode_item_entry,
     _merge_wiki_data,
@@ -295,6 +301,224 @@ def test_parse_items_single(tmp_path: Path) -> None:
     assert items[0]["name"] == "Test Sword"
     assert items[0]["rarity"] == "Rare"
     assert items[0]["equipment_slot"] == "Main Hand"
+
+
+# ---------------------------------------------------------------------------
+# _decode_damage_dice tests
+# ---------------------------------------------------------------------------
+
+# Damage dice key constant (matches DISCOVERED_KEYS entry 0x10001399)
+_KEY_DAMAGE_DICE_NOTATION = 0x10001399
+
+
+def test_decode_damage_dice_with_bonus() -> None:
+    """Packed u32 decodes to dice+bonus string."""
+    # 0x32643205: bonus=5, dice bytes=[0x32, 0x64, 0x32] = "2d2"
+    assert _decode_damage_dice(0x32643205) == "2d2+5"
+
+
+def test_decode_damage_dice_no_bonus() -> None:
+    """Zero bonus produces bare dice string."""
+    # 0x34643100: bonus=0, dice bytes=[0x31, 0x64, 0x34] = "1d4"
+    assert _decode_damage_dice(0x34643100) == "1d4"
+
+
+def test_decode_damage_dice_1d4_plus3() -> None:
+    """1d4+3 example from DISCOVERED_KEYS docs."""
+    # 0x34643103: bonus=3, dice bytes=[0x31, 0x64, 0x34] = "1d4"
+    assert _decode_damage_dice(0x34643103) == "1d4+3"
+
+
+def test_decode_damage_dice_invalid_bytes() -> None:
+    """Non-ASCII bytes return None without crashing."""
+    assert _decode_damage_dice(0xFF808080) is None
+
+
+# ---------------------------------------------------------------------------
+# _decode_feat_entry tests
+# ---------------------------------------------------------------------------
+
+
+def test_decode_feat_entry_returns_none_for_item() -> None:
+    """Entry with item indicator key (rarity) returns None."""
+    data = _build_dup_triple_bytes([
+        (_KEY_RARITY, 4),           # Rare — item indicator
+        (_KEY_LEVEL, 10),
+    ])
+    assert _decode_feat_entry(data, 0x79001000, "Precise Shot") is None
+
+
+def test_decode_feat_entry_returns_none_for_equipment_slot() -> None:
+    """Entry with equipment_slot indicator returns None."""
+    data = _build_dup_triple_bytes([
+        (_KEY_EQUIPMENT_SLOT, 6),   # Main Hand — item indicator
+    ])
+    assert _decode_feat_entry(data, 0x79001001, "Some Feat") is None
+
+
+def test_decode_feat_entry_basic() -> None:
+    """Entry with no item indicator keys returns feat dict with dat_id and name."""
+    data = _build_dup_triple_bytes([
+        (_KEY_LEVEL, 5),
+        (_KEY_EFFECT_VALUE, 20),
+    ])
+    feat = _decode_feat_entry(data, 0x79002000, "Weapon Focus")
+
+    assert feat is not None
+    assert feat["dat_id"] == "0x79002000"
+    assert feat["name"] == "Weapon Focus"
+    assert "damage_dice_notation" not in feat
+
+
+def test_decode_feat_entry_damage_dice() -> None:
+    """damage_dice_notation key is decoded when present."""
+    # 0x32643205 = "2d2+5"
+    data = _build_dup_triple_bytes([
+        (_KEY_DAMAGE_DICE_NOTATION, 0x32643205),
+    ])
+    feat = _decode_feat_entry(data, 0x79002001, "Sneak Attack")
+
+    assert feat is not None
+    assert feat["damage_dice_notation"] == "2d2+5"
+
+
+def test_decode_feat_entry_empty_properties() -> None:
+    """Entry with no decodable properties returns None."""
+    data = struct.pack("<III", 0x08551000, 0x00000000, 0xDEADBEEF)
+    assert _decode_feat_entry(data, 0x79000001, "Empty Feat") is None
+
+
+# ---------------------------------------------------------------------------
+# _merge_wiki_feats tests
+# ---------------------------------------------------------------------------
+
+
+def test_merge_wiki_feats_matched() -> None:
+    """Matched feat gets wiki fields overlaid; dat_id preserved from binary."""
+    binary = [{"dat_id": "0x79001000", "name": "Precise Shot"}]
+    wiki = [{"name": "Precise Shot", "description": "Fires precisely.", "passive": True}]
+
+    merged = _merge_wiki_feats(binary, wiki)
+
+    assert len(merged) == 1
+    feat = merged[0]
+    assert feat["dat_id"] == "0x79001000"
+    assert feat["name"] == "Precise Shot"
+    assert feat["description"] == "Fires precisely."
+    assert feat["passive"] is True
+
+
+def test_merge_wiki_feats_unmatched_binary_discarded() -> None:
+    """Binary entries not in wiki (NPCs, abilities) are dropped."""
+    binary = [
+        {"dat_id": "0x79001000", "name": "Precise Shot"},
+        {"dat_id": "0x79001001", "name": "Some NPC Name"},   # no wiki match
+    ]
+    wiki = [{"name": "Precise Shot", "description": "Fires precisely."}]
+
+    merged = _merge_wiki_feats(binary, wiki)
+
+    assert len(merged) == 1
+    assert merged[0]["name"] == "Precise Shot"
+
+
+def test_merge_wiki_feats_wiki_only() -> None:
+    """Wiki-only feat (no binary match) is kept with dat_id=None."""
+    binary: list[dict] = []
+    wiki = [{"name": "Toughness", "description": "Increases HP."}]
+
+    merged = _merge_wiki_feats(binary, wiki)
+
+    assert len(merged) == 1
+    assert merged[0]["dat_id"] is None
+    assert merged[0]["name"] == "Toughness"
+
+
+def test_merge_wiki_feats_name_normalization() -> None:
+    """Case/underscore differences still match."""
+    binary = [{"dat_id": "0x79003000", "name": "Weapon_Focus"}]
+    wiki = [{"name": "weapon focus", "description": "Improves accuracy."}]
+
+    merged = _merge_wiki_feats(binary, wiki)
+
+    assert len(merged) == 1
+    assert merged[0]["dat_id"] == "0x79003000"
+    assert merged[0]["description"] == "Improves accuracy."
+
+
+# ---------------------------------------------------------------------------
+# parse_feats tests
+# ---------------------------------------------------------------------------
+
+
+def test_parse_feats_missing_dat(tmp_path: Path) -> None:
+    """parse_feats returns empty list when .dat files are absent."""
+    assert parse_feats(tmp_path) == []
+
+
+def test_parse_feats_single(tmp_path: Path) -> None:
+    """Parses one feat entry (no item indicator keys) and skips item entries."""
+    from unittest.mock import patch
+
+    from ddo_data.dat_parser.archive import FileEntry
+
+    # Feat entry: no item indicator keys
+    feat_content = _build_dup_triple_bytes([
+        (_KEY_LEVEL, 5),
+    ])
+    # Item entry: has rarity — should be skipped by feat parser
+    item_content = _build_dup_triple_bytes([
+        (_KEY_RARITY, 4),
+        (_KEY_EQUIPMENT_SLOT, 6),
+    ])
+
+    feat_entry = FileEntry(
+        file_id=0x79000001, data_offset=0, size=len(feat_content),
+        disk_size=len(feat_content) + 8, flags=1,
+    )
+    item_entry = FileEntry(
+        file_id=0x79000002, data_offset=0, size=len(item_content),
+        disk_size=len(item_content) + 8, flags=1,
+    )
+
+    (tmp_path / "client_gamelogic.dat").write_bytes(b"\x00" * 256)
+    (tmp_path / "client_local_English.dat").write_bytes(b"\x00" * 256)
+
+    def mock_read_entry(archive, entry):
+        if entry.file_id == 0x79000001:
+            return feat_content
+        return item_content
+
+    with (
+        patch("ddo_data.game_data.feats.DatArchive"),
+        patch("ddo_data.game_data.feats.traverse_btree",
+              return_value={0x79000001: feat_entry, 0x79000002: item_entry}),
+        patch("ddo_data.game_data.feats.load_string_table",
+              return_value={0x25000001: "Precise Shot", 0x25000002: "Iron Defender"}),
+        patch("ddo_data.game_data.feats.read_entry_data", side_effect=mock_read_entry),
+    ):
+        feats = parse_feats(tmp_path)
+
+    assert len(feats) == 1
+    assert feats[0]["name"] == "Precise Shot"
+    assert feats[0]["dat_id"] == "0x79000001"
+
+
+# ---------------------------------------------------------------------------
+# export_feats_json tests
+# ---------------------------------------------------------------------------
+
+
+def test_export_feats_json(tmp_path: Path) -> None:
+    """Feats list is written as valid JSON."""
+    feats = [{"dat_id": "0x79001000", "name": "Toughness", "description": "HP bonus."}]
+    out = tmp_path / "feats.json"
+
+    export_feats_json(feats, out)
+
+    assert out.exists()
+    loaded = json.loads(out.read_text())
+    assert loaded == feats
 
 
 # ---------------------------------------------------------------------------

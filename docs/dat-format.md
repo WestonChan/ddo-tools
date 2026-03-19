@@ -685,7 +685,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] Equipment slot enum-to-seed alignment (EQUIPMENT_SLOTS labels renamed to match seed names; seed updated: Finger 1→Ring, Finger 2→Goggles, added Runearm; Legs slot removed; "Saving Throws vs Traps" stat seed row added at id=62)
 - [x] slot_id FK resolution in insert_items() (_lookup_id via equipment_slot name; binary items will get slot_id populated on next extract run)
 - [ ] Expand STAT_DEF_IDS beyond 4 entries (probe investigation completed 2026-03-18; entry_type=17 stat_def_ids are bonus-mechanism classifiers, not per-stat identifiers — sid=551 appears on both "Exceptional Strength" augments and "+15 Spot" effect packages; expansion requires decoding entry_type=167 effects or locating the stat-definition lookup table in the binary archive)
-- [ ] Feats parser
+- [x] Feats parser (parse_feats() + _merge_wiki_feats(); dat_id populated on binary-matched feats; damage_dice_notation decoded; build-db overlays dat_ids from binary before insert)
 - [ ] Enhancements parser
 - [ ] Classes parser
 - [ ] Races parser

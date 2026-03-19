@@ -535,24 +535,45 @@ def dat_namemap(ctx: click.Context, wiki_items: Path, as_json: bool) -> None:
     "--wiki-items", type=click.Path(path_type=Path),
     default=None, help="Path to wiki items.json for merge",
 )
+@click.option(
+    "--wiki-feats", type=click.Path(path_type=Path),
+    default=None, help="Path to wiki feats.json for merge",
+)
 @click.pass_context
-def extract(ctx: click.Context, output: Path, wiki_items: Path | None) -> None:
+def extract(
+    ctx: click.Context,
+    output: Path,
+    wiki_items: Path | None,
+    wiki_feats: Path | None,
+) -> None:
     """Extract game data from .dat archives to JSON files."""
+    from .game_data.feats import export_feats_json, parse_feats
     from .game_data.items import export_items_json, parse_items
 
     ddo_path: Path = ctx.obj["ddo_path"]
 
-    # Default wiki merge: use existing items.json in output dir if present
-    wiki_path = wiki_items or (output / "items.json")
-    if not wiki_path.exists():
-        wiki_path = None
+    # Default wiki merge: use existing JSON in output dir if present
+    wiki_items_path = wiki_items or (output / "items.json")
+    if not wiki_items_path.exists():
+        wiki_items_path = None
 
     click.echo(f"Extracting items to {output}/")
     items = parse_items(
-        ddo_path, wiki_items_path=wiki_path, on_progress=click.echo,
+        ddo_path, wiki_items_path=wiki_items_path, on_progress=click.echo,
     )
     export_items_json(items, output / "items.json")
     click.echo(f"  {len(items):,} items written to {output}/items.json")
+
+    wiki_feats_path = wiki_feats or (output / "feats.json")
+    if not wiki_feats_path.exists():
+        wiki_feats_path = None
+
+    click.echo(f"Extracting feats to {output}/")
+    feats = parse_feats(
+        ddo_path, wiki_feats_path=wiki_feats_path, on_progress=click.echo,
+    )
+    export_feats_json(feats, output / "feats.json")
+    click.echo(f"  {len(feats):,} feats written to {output}/feats.json")
 
 
 @cli.command()
@@ -604,7 +625,9 @@ def dat_identify(ctx: click.Context) -> None:
     multiple=True, default=("items", "feats", "enhancements"),
     help="Which data types to include",
 )
+@click.pass_context
 def build_db(
+    ctx: click.Context,
     output: Path,
     no_cache: bool,
     limit: int,
@@ -615,6 +638,7 @@ def build_db(
     from .wiki.client import WikiClient
     from .wiki.scraper import collect_enhancements, collect_feats, collect_items
 
+    ddo_path: Path = ctx.obj["ddo_path"]
     client = WikiClient(use_cache=not no_cache)
     output.parent.mkdir(parents=True, exist_ok=True)
 
@@ -627,7 +651,9 @@ def build_db(
             if data_type == "items":
                 count = db.insert_items(collect_items(client, limit=limit, on_progress=click.echo))
             elif data_type == "feats":
-                count = db.insert_feats(collect_feats(client, limit=limit, on_progress=click.echo))
+                wiki_feats = list(collect_feats(client, limit=limit, on_progress=click.echo))
+                _overlay_feat_dat_ids(wiki_feats, ddo_path)
+                count = db.insert_feats(wiki_feats)
             elif data_type == "enhancements":
                 count = db.insert_enhancement_trees(collect_enhancements(client, limit=limit, on_progress=click.echo))
             else:
@@ -636,6 +662,38 @@ def build_db(
             click.echo(f"  {count:,} {data_type} inserted")
 
     click.echo(f"Database written to {output}")
+
+
+def _overlay_feat_dat_ids(feats: list[dict], ddo_path: Path) -> None:
+    """Overlay dat_ids from binary parser onto wiki feat dicts (in-place).
+
+    Silently skips the overlay if the DDO .dat files are unavailable or
+    if binary parsing fails for any reason.
+    """
+    def _norm(s: str) -> str:
+        return s.strip().replace("_", " ").lower()
+
+    try:
+        from .game_data.feats import parse_feats
+        binary_feats = parse_feats(ddo_path, on_progress=click.echo)
+    except Exception as exc:
+        click.echo(f"  Binary dat_id overlay skipped: {exc}")
+        return
+
+    dat_id_by_name: dict[str, str] = {
+        _norm(feat["name"]): feat["dat_id"]
+        for feat in binary_feats
+        if feat.get("dat_id") and feat.get("name")
+    }
+    matched = 0
+    for feat in feats:
+        name = feat.get("name")
+        if name:
+            normed = _norm(name)
+            if normed in dat_id_by_name:
+                feat["dat_id"] = dat_id_by_name[normed]
+                matched += 1
+    click.echo(f"  {matched:,} feats matched with binary dat_id")
 
 
 if __name__ == "__main__":

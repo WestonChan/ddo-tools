@@ -241,6 +241,7 @@ CREATE TABLE IF NOT EXISTS item_effect_refs (
 -- Feats --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS feats (
     id                   INTEGER PRIMARY KEY,
+    dat_id               TEXT,
     name                 TEXT NOT NULL,
     icon                 TEXT,
     description          TEXT,
@@ -248,6 +249,7 @@ CREATE TABLE IF NOT EXISTS feats (
     note                 TEXT,
     cooldown             TEXT,
     min_bab              INTEGER,
+    damage_dice_notation TEXT,
     is_free              INTEGER NOT NULL DEFAULT 0 CHECK (is_free              IN (0, 1)),
     is_passive           INTEGER NOT NULL DEFAULT 0 CHECK (is_passive           IN (0, 1)),
     is_active            INTEGER NOT NULL DEFAULT 0 CHECK (is_active            IN (0, 1)),
@@ -257,6 +259,7 @@ CREATE TABLE IF NOT EXISTS feats (
     proficiency_id       INTEGER REFERENCES weapon_proficiencies(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_feats_name ON feats(name);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_feats_dat_id ON feats(dat_id) WHERE dat_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_feats_proficiency ON feats(proficiency_id) WHERE proficiency_id IS NOT NULL;
 
 -- Past-life subtype — only populated for past life feats

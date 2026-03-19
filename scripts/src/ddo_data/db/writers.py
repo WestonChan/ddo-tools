@@ -277,17 +277,20 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
         cur = conn.execute(
             """
             INSERT OR IGNORE INTO feats (
-                name, icon, description, prerequisite, note, cooldown,
+                dat_id, name, icon, description, prerequisite, note, cooldown,
+                damage_dice_notation,
                 is_free, is_passive, is_active, is_stance, is_metamagic, is_epic_destiny
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                feat.get("dat_id"),
                 name,
                 feat.get("icon"),
                 feat.get("description"),
                 feat.get("prerequisite"),
                 feat.get("note"),
                 feat.get("cooldown"),
+                feat.get("damage_dice_notation"),
                 _bool(feat, "free"),
                 _bool(feat, "passive"),
                 _bool(feat, "active"),
