@@ -8,23 +8,25 @@ labels.  These are inferred from statistical distribution analysis across
 from __future__ import annotations
 
 # Equipment slot codes (from property key 0x10001BA1)
-# Values 2-17, with 6 (Weapon) and 16 (Offhand) most common.
+# Values 2-17, with 6 (Main Hand) and 13/16 (Off Hand) most common.
+# Note: codes 13 and 16 both map to "Off Hand" — DDO has one off-hand slot;
+# both shield and held-item slots resolve to the same equipment_slots seed row.
 EQUIPMENT_SLOTS: dict[int, str] = {
-    2: "Helmet",
-    3: "Necklace",
-    4: "Trinket",
-    5: "Cloak",
-    6: "Weapon",
-    7: "Ring",
-    8: "Belt",
-    9: "Boots",
-    10: "Gloves",
-    11: "Bracers",
-    12: "Armor",
-    13: "Shield",
+    2:  "Head",
+    3:  "Neck",
+    4:  "Trinket",
+    5:  "Back",
+    6:  "Main Hand",
+    7:  "Ring",
+    8:  "Waist",
+    9:  "Feet",
+    10: "Arms",
+    11: "Wrists",
+    12: "Body",
+    13: "Off Hand",
     14: "Goggles",
     15: "Quiver",
-    16: "Offhand",
+    16: "Off Hand",
     17: "Runearm",
 }
 

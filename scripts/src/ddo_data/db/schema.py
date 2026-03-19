@@ -593,7 +593,8 @@ INSERT OR IGNORE INTO stats (id, name, category) VALUES
     (18, 'Fortitude Save',             'defense'),
     (19, 'Reflex Save',                'defense'),
     (20, 'Will Save',                  'defense'),
-    (21, 'Spell Resistance',           'defense');
+    (21, 'Spell Resistance',           'defense'),
+    (62, 'Saving Throws vs Traps',     'defense');
 
 -- Spell stats
 INSERT OR IGNORE INTO stats (id, name, category) VALUES
@@ -719,7 +720,7 @@ INSERT OR IGNORE INTO weapon_proficiencies (id, name, category) VALUES
     (2, 'Martial', 'martial'),
     (3, 'Exotic',  'exotic');
 
--- Equipment slots (id values match DDO binary slot codes where known)
+-- Equipment slots (binary codes 2–17 from EQUIPMENT_SLOTS enum; seed PKs are independent)
 INSERT OR IGNORE INTO equipment_slots (id, name, sort_order, category) VALUES
     (1,  'Main Hand',  1,  'weapon'),
     (2,  'Off Hand',   2,  'weapon'),
@@ -733,10 +734,10 @@ INSERT OR IGNORE INTO equipment_slots (id, name, sort_order, category) VALUES
     (10, 'Arms',       10, 'armor'),
     (11, 'Body',       11, 'armor'),
     (12, 'Waist',      12, 'armor'),
-    (13, 'Legs',       13, 'armor'),
-    (14, 'Feet',       14, 'armor'),
-    (15, 'Finger 1',   15, 'accessory'),
-    (16, 'Finger 2',   16, 'accessory');
+    (13, 'Feet',       13, 'armor'),
+    (14, 'Goggles',    14, 'accessory'),
+    (15, 'Ring',       15, 'accessory'),
+    (16, 'Runearm',    16, 'weapon');
 
 -- Spell schools
 INSERT OR IGNORE INTO spell_schools (id, name) VALUES

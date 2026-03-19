@@ -255,6 +255,172 @@ def test_insert_items_skips_missing_name() -> None:
     assert count == 0
 
 
+def test_insert_items_slot_id_resolved_from_equipment_slot() -> None:
+    """equipment_slot name is resolved to slot_id FK via equipment_slots seed."""
+    item = {
+        "name": "Sword of Testing",
+        "equipment_slot": "Main Hand",
+        "enchantments": [],
+        "augment_slots": [],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([item])
+        row = db.conn.execute(
+            "SELECT slot_id, equipment_slot FROM items WHERE name = ?",
+            ("Sword of Testing",),
+        ).fetchone()
+        # Confirm the FK resolved to the seeded "Main Hand" row
+        main_hand_id = db.conn.execute(
+            "SELECT id FROM equipment_slots WHERE name = 'Main Hand'"
+        ).fetchone()[0]
+    assert row is not None
+    assert row[0] == main_hand_id
+    assert row[1] == "Main Hand"
+
+
+def test_insert_items_slot_id_null_when_slot_unknown() -> None:
+    """equipment_slot with no matching seed row leaves slot_id NULL."""
+    item = {
+        "name": "Mystery Item",
+        "equipment_slot": "Unknown Slot",
+        "enchantments": [],
+        "augment_slots": [],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([item])
+        row = db.conn.execute(
+            "SELECT slot_id FROM items WHERE name = ?", ("Mystery Item",)
+        ).fetchone()
+    assert row is not None
+    assert row[0] is None
+
+
+def test_insert_items_slot_id_null_when_slot_absent() -> None:
+    """Item with no equipment_slot key at all gets slot_id NULL (not an error)."""
+    item = {
+        "name": "Slotless Gem",
+        "enchantments": [],
+        "augment_slots": [],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([item])
+        row = db.conn.execute(
+            "SELECT slot_id, equipment_slot FROM items WHERE name = ?", ("Slotless Gem",)
+        ).fetchone()
+    assert row is not None
+    assert row[0] is None
+    assert row[1] is None
+
+
+def test_insert_items_off_hand_codes_resolve_to_same_slot() -> None:
+    """Binary slot codes 13 and 16 both map to 'Off Hand' and share the same slot_id FK."""
+    shield = {"name": "Tower Shield", "equipment_slot": "Off Hand", "enchantments": [], "augment_slots": []}
+    offhand = {"name": "Orb of Fire", "equipment_slot": "Off Hand", "enchantments": [], "augment_slots": []}
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([shield, offhand])
+        rows = db.conn.execute(
+            "SELECT slot_id FROM items WHERE name IN ('Tower Shield', 'Orb of Fire') ORDER BY name"
+        ).fetchall()
+    assert len(rows) == 2
+    assert rows[0][0] == rows[1][0]   # both resolve to the same slot_id
+    assert rows[0][0] is not None
+
+
+def test_insert_items_bonus_pass_a_with_known_stat() -> None:
+    """_bonuses with a resolvable stat name creates a bonuses row with stat_id set."""
+    item = {
+        "name": "Ring of Haggling",
+        "enchantments": [],
+        "augment_slots": [],
+        "_bonuses": [
+            {
+                "entry_type": 53,
+                "stat_def_id": 376,
+                "stat": "Haggle",
+                "magnitude": 15,
+                "bonus_type_code": 0x0100,
+                "bonus_type": "Enhancement",
+            }
+        ],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([item])
+        row = db.conn.execute(
+            """
+            SELECT b.name, b.value, b.stat_id, b.bonus_type_id
+            FROM bonuses b JOIN items i ON b.source_id = i.id
+            WHERE i.name = ? AND b.source_type = 'item'
+            """,
+            ("Ring of Haggling",),
+        ).fetchone()
+        haggle_stat_id = db.conn.execute(
+            "SELECT id FROM stats WHERE name = 'Haggle'"
+        ).fetchone()[0]
+        enhancement_bt_id = db.conn.execute(
+            "SELECT id FROM bonus_types WHERE name = 'Enhancement'"
+        ).fetchone()[0]
+    assert row is not None
+    assert row[0] == "Haggle +15"
+    assert row[1] == 15
+    assert row[2] == haggle_stat_id
+    assert row[3] == enhancement_bt_id
+
+
+def test_insert_items_pass_b_sort_order_offset() -> None:
+    """Pass B enchantments start at sort_order = len(_bonuses), not 0."""
+    item = {
+        "name": "Fancy Glove",
+        "enchantments": ["Fire Resistance +20", "Proof Against Poison"],
+        "augment_slots": [],
+        "_bonuses": [
+            {
+                "entry_type": 53,
+                "stat_def_id": 376,
+                "stat": "Haggle",
+                "magnitude": 5,
+                "bonus_type_code": 0x0100,
+                "bonus_type": "Enhancement",
+            },
+            {
+                "entry_type": 53,
+                "stat_def_id": 1941,
+                "stat": "Spell Points",
+                "magnitude": 50,
+                "bonus_type_code": 0x0100,
+                "bonus_type": "Enhancement",
+            },
+        ],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([item])
+        rows = db.conn.execute(
+            """
+            SELECT b.sort_order, b.name, b.stat_id
+            FROM bonuses b JOIN items i ON b.source_id = i.id
+            WHERE i.name = ? AND b.source_type = 'item'
+            ORDER BY b.sort_order
+            """,
+            ("Fancy Glove",),
+        ).fetchall()
+    # Pass A: sort_orders 0 and 1 (both stats known)
+    assert rows[0][0] == 0
+    assert rows[0][2] is not None   # stat_id resolved
+    assert rows[1][0] == 1
+    assert rows[1][2] is not None
+    # Pass B: sort_orders 2 and 3 (offset past len(_bonuses)=2)
+    assert rows[2][0] == 2
+    assert rows[2][1] == "Fire Resistance +20"
+    assert rows[2][2] is None       # stat_id NULL for wiki strings
+    assert rows[3][0] == 3
+    assert rows[3][1] == "Proof Against Poison"
+
+
 # ---------------------------------------------------------------------------
 # insert_feats tests
 # ---------------------------------------------------------------------------

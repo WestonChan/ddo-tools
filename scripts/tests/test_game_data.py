@@ -56,7 +56,9 @@ _KEY_MINIMUM_LEVEL = 0x10001C5D
 def test_resolve_enum_known() -> None:
     """Known enum value returns the label."""
     assert resolve_enum(RARITY_TIERS, 4) == "Rare"
-    assert resolve_enum(EQUIPMENT_SLOTS, 6) == "Weapon"
+    assert resolve_enum(EQUIPMENT_SLOTS, 6) == "Main Hand"
+    assert resolve_enum(EQUIPMENT_SLOTS, 13) == "Off Hand"
+    assert resolve_enum(EQUIPMENT_SLOTS, 16) == "Off Hand"
     assert resolve_enum(ITEM_CATEGORIES, 3) == "Weapon"
 
 
@@ -87,7 +89,7 @@ def test_decode_item_entry_basic() -> None:
     assert item["id"] == "0x79001234"
     assert item["name"] == "Celestia"
     assert item["rarity"] == "Rare"
-    assert item["equipment_slot"] == "Weapon"
+    assert item["equipment_slot"] == "Main Hand"
     assert item["item_category"] == "Weapon"
     assert item["durability"] == 150
     assert item["level"] == 15
@@ -292,7 +294,7 @@ def test_parse_items_single(tmp_path: Path) -> None:
     assert len(items) == 1
     assert items[0]["name"] == "Test Sword"
     assert items[0]["rarity"] == "Rare"
-    assert items[0]["equipment_slot"] == "Weapon"
+    assert items[0]["equipment_slot"] == "Main Hand"
 
 
 # ---------------------------------------------------------------------------

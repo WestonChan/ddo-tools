@@ -74,8 +74,10 @@ def _normalise_handedness(raw: str | None) -> str | None:
     return _HANDEDNESS_MAP.get(raw.strip().lower())
 
 
-def _lookup_id(conn: sqlite3.Connection, table: str, name_col: str, id_col: str, name: str) -> int | None:
-    """Return the integer PK for a row matched by *name*, or None if not found."""
+def _lookup_id(conn: sqlite3.Connection, table: str, name_col: str, id_col: str, name: str | None) -> int | None:
+    """Return the integer PK for a row matched by *name*, or None if not found or name is None."""
+    if not name:
+        return None
     row = conn.execute(
         f"SELECT {id_col} FROM {table} WHERE {name_col} = ?", (name,)
     ).fetchone()
@@ -117,6 +119,10 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             item.get("item_type")
         )
 
+        # Resolve slot_id FK from equipment_slot name (set by EQUIPMENT_SLOTS enum)
+        equipment_slot = item.get("equipment_slot")
+        slot_id = _lookup_id(conn, "equipment_slots", "name", "id", equipment_slot)
+
         cur = conn.execute(
             """
             INSERT OR IGNORE INTO items (
@@ -129,8 +135,8 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 name,
                 item.get("dat_id"),
                 item.get("rarity"),
-                item.get("slot_id"),
-                item.get("equipment_slot"),
+                slot_id,
+                equipment_slot,
                 item_category,
                 item.get("level"),
                 item.get("durability"),
@@ -301,8 +307,8 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
         # --- feat_past_life_stats ---
         past_life_type = feat.get("past_life_type")
         if past_life_type:
-            pl_class_id = _lookup_id(conn, "classes", "name", "id", feat.get("past_life_class") or "") if feat.get("past_life_class") else None
-            pl_race_id  = _lookup_id(conn, "races",   "name", "id", feat.get("past_life_race")  or "") if feat.get("past_life_race")  else None
+            pl_class_id = _lookup_id(conn, "classes", "name", "id", feat.get("past_life_class"))
+            pl_race_id  = _lookup_id(conn, "races",   "name", "id", feat.get("past_life_race"))
             conn.execute(
                 """
                 INSERT OR IGNORE INTO feat_past_life_stats

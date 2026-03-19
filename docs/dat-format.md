@@ -309,6 +309,9 @@ Confirmed on Haggle Diamond companion effect 0x7000000E (stat_def_id=0, flag=3).
 | 450  | 0x01C2 | Named item "+6 Magical Resistance Rating" |
 | 376  | 0x0178 | Haggle augments; entry_type=53 with magnitude at byte 68 |
 | 1207 | 0x04B7 | Yellow Slot Diamond of Haggle +11; entry_type=26 |
+| 551  | 0x0227 | **Framework classifier** — appears on "Tempest Rune of Exceptional Strength" augments AND "Passive: +15 Competence Bonus to the Spot skill." effect packages simultaneously; confirms entry_type=17 stat_def_ids are NOT unique per-stat identifiers |
+
+**Probe investigation finding (2026-03-18):** An exhaustive reverse-mapping search across all `0x79XXXXXX` entries confirmed that stat_def_ids 1254, 1251, 1440, 551, and 2114 each appear on items from wildly different stat categories (ability scores, skills, resistances, etc.). The `bonus_type_code` field is also unhelpful — every `entry_type=17` effect has `bonus_type_code=0x0000`. The actual stat identity (e.g. "this is a Strength bonus") is NOT encoded in the `entry_type=17` effect entry itself. It must come from a separate mechanism not yet decoded — possibly entry_type=167 effects, a stat-definition lookup table in a different archive, or a property on the parent item entry.
 
 **Enchantment magnitude encoding:** The numeric bonus (e.g., "+11") IS stored in the effect entry at entry_type-specific offsets. For entry_type=53, it is at byte offset 68. For entry_type=17, there is no magnitude field (either always 1, or defined by the stat spec). The parent item entry does NOT need to re-encode the magnitude.
 
@@ -622,6 +625,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 
 - Multi-block files (entries where data may span multiple blocks) — quantified (61,738 of 490K gamelogic entries, 12.6%) but reading not yet implemented
 - Exact purpose of `unknown2` and `timestamp` in B-tree entries (unknown1 = generation counter; timestamp = NOT Unix, likely patch sequence; unknown2 = small per-archive integer)
+- What determines the actual stat identity (e.g. "Strength", "Dexterity", "Spot") for entry_type=17 bonus effects? The stat_def_id field in effect entries is a bonus-mechanism classifier (not per-stat), bonus_type_code is always 0x0000 for entry_type=17, and there is no magnitude. The per-stat discriminator may live in entry_type=167 effects, a separate stat-definition table, or a property on the parent 0x79XXXXXX item entry not yet identified.
 - Property type system for complex type-0x02/0x01 entries (LOTRO uses a registry at DID 0x34000000; DDO lacks it)
 - Meaning of remaining 0x10XXXXXX keys (442 keys in DISCOVERED_KEYS as of this writing; coverage extends to keys appearing on 19+ of 236 named wiki items; ~560 lower-frequency unknowns remain, predominantly zero-constant schema placeholders for specific item sub-types)
 - Spell school source: slot 1 is a variant/type ID (NOT school code); actual school must come from the `client_general.dat` template (slot 0 ref)
@@ -664,7 +668,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] Type 0x02 entry decoder (simple + complex-pairs + complex-typed via VLE property stream; complex-partial pattern detection fallback)
 - [ ] Type 0x01 entry decoder (behavior scripts — structure characterized, full decoder not yet built)
 - [x] 0x70XXXXXX effect entry layout (variable-size by entry_type; stat_def_id at data[16..17]; magnitude at byte 68 for entry_type=53; 7 stat_def_ids partially mapped)
-- [ ] 0x70XXXXXX stat_def_id lookup table (7 values identified; full mapping requires cross-referencing general.dat stat definitions)
+- [x] 0x70XXXXXX stat_def_id lookup table (4 single-stat mappings in STAT_DEF_IDS: Haggle/376, MRR/450, Saving Throws vs Traps/1572, Spell Points/1941; decode_effect_entry() pipeline operational; expand via probe investigation)
 - [x] 0x47XXXXXX spell entry format (body empty; definition packed in header ref list; slot 0=template ref, slot 1=spell variant/type ID NOT school code, slots 2+=packed params)
 - [x] Property key census (`dat-registry` command -- empirical statistics)
 - [x] Property ID name mapping (442 keys in DISCOVERED_KEYS; 28+ effect_ref slot variants; coverage down to keys appearing on ~19/236 named wiki items)
@@ -677,6 +681,10 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 
 ### Game data extraction
 - [x] Items parser (0x79 dup-triple decoding, enum resolution, wiki merge)
+- [x] Effect entry decoding pipeline (decode_effect_entry() wired into parse_items(); bonuses table populated via two-pass insertion: Pass A decoded effects, Pass B wiki enchantment strings)
+- [x] Equipment slot enum-to-seed alignment (EQUIPMENT_SLOTS labels renamed to match seed names; seed updated: Finger 1→Ring, Finger 2→Goggles, added Runearm; Legs slot removed; "Saving Throws vs Traps" stat seed row added at id=62)
+- [x] slot_id FK resolution in insert_items() (_lookup_id via equipment_slot name; binary items will get slot_id populated on next extract run)
+- [ ] Expand STAT_DEF_IDS beyond 4 entries (probe investigation completed 2026-03-18; entry_type=17 stat_def_ids are bonus-mechanism classifiers, not per-stat identifiers — sid=551 appears on both "Exceptional Strength" augments and "+15 Spot" effect packages; expansion requires decoding entry_type=167 effects or locating the stat-definition lookup table in the binary archive)
 - [ ] Feats parser
 - [ ] Enhancements parser
 - [ ] Classes parser
@@ -711,6 +719,9 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] `dat-namemap` (property key name mapping via wiki cross-reference)
 - [x] `dat-identify` (entity category inventory via B-tree + localization cross-reference)
 - [x] `build-db` (wiki scraping + SQLite database creation; items, feats, enhancements)
+
+### Frontend
+- [x] `useDatabase` React hook (sql.js WASM, singleton promise pattern, queries `public/data/ddo.db`)
 
 ## Credits
 
