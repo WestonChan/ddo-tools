@@ -682,7 +682,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 
 ### Game data extraction
 - [x] Items parser (0x79 dup-triple decoding, enum resolution, wiki merge)
-- [x] Effect entry decoding pipeline (decode_effect_entry() wired into parse_items(); bonuses table populated via two-pass insertion: Pass A decoded effects, Pass B wiki enchantment templates parsed into structured bonuses with stat_id/bonus_type_id/value via parse_enchantment_string(); 21.7% of enchantments parsed into structured bonuses covering {{Stat}}, {{SpellPower}}, {{Sheltering}}, {{Seeker}}, {{Deadly}}, {{Fortification}}, {{Save}}, {{Skills}}, {{Accuracy}}, {{Deception}}, {{Speed}}, {{Resistance}}, {{Wizardry}}, {{Dodge}}, {{Doublestrike}}, {{Doubleshot}}, {{Concealment}}, {{Spell Focus}}, {{Elemental Resistance}}, {{Absorption}}, {{Hp}}, {{HealingAmp}}; 2,370 items (33%) have structured bonuses in ddo.db)
+- [x] Effect entry decoding pipeline (Pass A: binary effects; Pass B: wiki enchantment templates parsed into structured bonuses via parse_enchantment_string, weapon/armor effects via parse_effect_template routed to item_effects table, metadata skipped; 9,313 stat-resolved bonuses, 12,822 item effects, 55% of items with stat bonuses, 71% with effects)
 - [x] Equipment slot enum-to-seed alignment (EQUIPMENT_SLOTS labels renamed to match seed names; seed updated: Finger 1→Ring, Finger 2→Goggles, added Runearm; Legs slot removed; "Saving Throws vs Traps" stat seed row added at id=62)
 - [x] slot_id FK resolution in insert_items() (_lookup_id via equipment_slot name; binary items will get slot_id populated on next extract run)
 - [ ] Expand STAT_DEF_IDS beyond 4 entries (probe investigation completed 2026-03-18; entry_type=17 stat_def_ids are bonus-mechanism classifiers, not per-stat identifiers — sid=551 appears on both "Exceptional Strength" augments and "+15 Spot" effect packages. **2026-03-19 update:** type-167 entries are all byte-identical 720-byte templates (dead end); wiki correlation confirmed type-17 classifier nature (sid 1251 on STR/CON/INT items, sid 1440 on Well Rounded/CON/WIS). Expansion requires finding where the stat-definition linkage lives — possibly a 0x79 item property or a lookup table in client_general.dat.)
@@ -690,12 +690,14 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] Wiki enchantment template parser (parse_enchantment_string handles {{Stat}}, {{Sheltering}}, {{SpellPower}}, {{Seeker}}, {{Deadly}}, {{Fortification}}, {{Save}} templates)
 - [x] Wiki-to-binary effect correlation framework (`dat-effect-map` command — matches wiki enchantment strings to binary effect entries by magnitude + 1:1 type-17 fallback; 8,600 wiki items scraped, 35 matched binary entries, 13 correlations. **Confirmed:** type-17 stat_def_ids are mechanism classifiers, NOT stat identifiers — sid 1251 appears on Strength/Constitution/Intelligence items, sid 1440 on Well Rounded/Constitution/Wisdom. Stat identity must come from type-167 entries or a parent item property.)
 - [x] Feats parser (parse_feats() + _merge_wiki_feats(); dat_id populated on binary-matched feats; damage_dice_notation decoded; build-db overlays dat_ids from binary before insert)
-- [ ] Enhancements parser
-- [ ] Classes parser
-- [ ] Races parser
+- [x] Item dat_id overlay (148 wiki items matched with binary file IDs; name matching limited by binary string table coverage)
+- [x] Classes seed data (15 classes with hit die, BAB, saves, caster type)
+- [x] Races seed data (29 races — 17 standard + 12 iconic)
+- [x] Set bonus effects (111 sets with 366 piece-count bonus effect rows from Named_item_sets wiki page)
+- [x] Set membership linking (254 sets, 1,712 items linked via set_name + Named item sets templates)
+- [ ] Enhancements binary parser (game_data/enhancements.py stub — wiki scraper handles trees)
 - [ ] Augments parser (slotted gems/crystals and typed augment slots)
 - [ ] Spells parser (spell lists per class, spell levels)
-- [ ] Set bonuses parser (named item sets with piece-count thresholds)
 - [ ] Epic destinies parser
 - [ ] Filigrees parser (sentient weapon augments)
 - [ ] Past lives parser (heroic, racial, iconic, epic reincarnation bonuses)
