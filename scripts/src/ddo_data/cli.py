@@ -718,9 +718,15 @@ def build_db(
             click.echo(f"Collecting {data_type}...")
             count = 0
             if data_type == "items":
-                wiki_items = list(collect_items(client, limit=limit, on_progress=click.echo))
-                _overlay_item_dat_ids(wiki_items, ddo_path)
-                count = db.insert_items(wiki_items)
+                wiki_items_list = list(collect_items(client, limit=limit, on_progress=click.echo))
+                try:
+                    from .game_data.items import parse_items
+                    click.echo("Parsing binary items and merging wiki data...")
+                    merged = parse_items(ddo_path, wiki_items=wiki_items_list, on_progress=click.echo)
+                    count = db.insert_items(merged)
+                except Exception as exc:
+                    click.echo(f"  Binary parse failed ({exc}), using wiki-only items")
+                    count = db.insert_items(wiki_items_list)
             elif data_type == "feats":
                 wiki_feats = list(collect_feats(client, limit=limit, on_progress=click.echo))
                 _overlay_feat_dat_ids(wiki_feats, ddo_path)

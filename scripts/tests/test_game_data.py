@@ -233,7 +233,8 @@ def test_merge_wiki_only() -> None:
 
     assert len(merged) == 1
     item = merged[0]
-    assert item["id"] is None
+    assert item["dat_id"] is None
+    assert item["data_source"] == "wiki"
     assert item["wiki_url"] == "https://ddowiki.com/page/Item:Wiki_Only_Item"
 
 

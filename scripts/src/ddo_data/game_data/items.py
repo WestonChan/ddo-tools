@@ -150,10 +150,14 @@ def _merge_wiki_data(
 
     - Matched: binary dict + wiki fields where binary is None/absent.
       Binary values win when both sources have the same field.
-      Adds wiki_url from the matched wiki item name.
-    - Binary-only: kept as-is (no wiki_url).
-    - Wiki-only: appended with id=None, includes wiki_url.
+      Adds wiki_url and marks data_source='both'.
+    - Binary-only: kept as-is, data_source='binary'.
+    - Wiki-only: appended with id=None, data_source='wiki'.
+
+    Sets ``_wiki_fields`` on each item to track which fields came from wiki.
     """
+    import html as html_mod
+
     # Build normalized-name -> index for binary items
     binary_by_name: dict[str, int] = {}
     for i, item in enumerate(binary_items):
@@ -164,28 +168,51 @@ def _merge_wiki_data(
 
     merged = list(binary_items)
 
+    # Mark all binary items as binary source
+    for item in merged:
+        item["data_source"] = "binary"
+        item["dat_id"] = item.get("id")  # rename id -> dat_id for DB
+
+    matched_indices: set[int] = set()
+
     for wiki_item in wiki_items:
         wiki_name = wiki_item.get("name")
         if not wiki_name:
             continue
 
-        norm = _normalize_name(wiki_name)
+        # Try matching with HTML entity decoding and Legendary prefix
+        clean = html_mod.unescape(wiki_name)
+        norm = _normalize_name(clean)
         idx = binary_by_name.get(norm)
+        if idx is None and not norm.startswith("legendary "):
+            idx = binary_by_name.get("legendary " + norm)
+        if idx is None and norm.startswith("legendary "):
+            idx = binary_by_name.get(norm[len("legendary "):])
 
         if idx is not None:
-            # Merge: overlay wiki fields where binary has None or lacks key
+            matched_indices.add(idx)
             target = merged[idx]
+            wiki_fields = []
             for field in _WIKI_ONLY_FIELDS:
                 if field not in target or target[field] is None:
                     wiki_val = wiki_item.get(field)
                     if wiki_val is not None:
                         target[field] = wiki_val
-            target["wiki_url"] = _wiki_url(wiki_name)
+                        wiki_fields.append(field)
+            # Enchantments always come from wiki
+            if wiki_item.get("enchantments"):
+                target["enchantments"] = wiki_item["enchantments"]
+                wiki_fields.append("enchantments")
+            target["wiki_url"] = wiki_item.get("wiki_url") or _wiki_url(wiki_name)
+            target["data_source"] = "both"
+            target["_wiki_fields"] = wiki_fields
         else:
             # Wiki-only item
             wiki_entry = dict(wiki_item)
-            wiki_entry["id"] = None
-            wiki_entry["wiki_url"] = _wiki_url(wiki_name)
+            wiki_entry["dat_id"] = None
+            wiki_entry["data_source"] = "wiki"
+            if not wiki_entry.get("wiki_url"):
+                wiki_entry["wiki_url"] = _wiki_url(wiki_name)
             merged.append(wiki_entry)
 
     return merged
@@ -195,6 +222,7 @@ def parse_items(
     ddo_path: Path,
     *,
     wiki_items_path: Path | None = None,
+    wiki_items: list[dict] | None = None,
     on_progress: Callable[[str], None] | None = None,
 ) -> list[dict]:
     """Parse item definitions from DDO game archives.
@@ -255,6 +283,13 @@ def parse_items(
             skipped += 1
             continue
 
+        # Filter garbled names (raw localization entries with embedded formatting).
+        # Valid DDO item names use ASCII/Latin-1 only; structured localization
+        # entries that failed to parse contain chars above U+00FF.
+        if len(name) > 100 or any(ord(c) > 0xFF for c in name[:30]):
+            skipped += 1
+            continue
+
         try:
             data = read_entry_data(gamelogic_archive, entry)
         except (ValueError, OSError):
@@ -292,12 +327,16 @@ def parse_items(
         on_progress(f"  {effects_decoded:,} effect bonuses decoded")
 
     # Merge wiki data if available
-    if wiki_items_path and wiki_items_path.exists():
+    wiki_data = wiki_items
+    if wiki_data is None and wiki_items_path and wiki_items_path.exists():
         if on_progress:
-            on_progress(f"Merging wiki data from {wiki_items_path}...")
+            on_progress(f"Loading wiki data from {wiki_items_path}...")
         with open(wiki_items_path) as f:
-            wiki_items = json.load(f)
-        items = _merge_wiki_data(items, wiki_items)
+            wiki_data = json.load(f)
+    if wiki_data:
+        if on_progress:
+            on_progress(f"Merging {len(wiki_data):,} wiki items...")
+        items = _merge_wiki_data(items, wiki_data)
         if on_progress:
             on_progress(f"  {len(items):,} items after merge")
 
