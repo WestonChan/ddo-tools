@@ -256,7 +256,8 @@ CREATE TABLE IF NOT EXISTS feats (
     is_stance            INTEGER NOT NULL DEFAULT 0 CHECK (is_stance            IN (0, 1)),
     is_metamagic         INTEGER NOT NULL DEFAULT 0 CHECK (is_metamagic         IN (0, 1)),
     is_epic_destiny      INTEGER NOT NULL DEFAULT 0 CHECK (is_epic_destiny      IN (0, 1)),
-    proficiency_id       INTEGER REFERENCES weapon_proficiencies(id)
+    proficiency_id       INTEGER REFERENCES weapon_proficiencies(id),
+    wiki_url             TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_feats_name ON feats(name);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_feats_dat_id ON feats(dat_id) WHERE dat_id IS NOT NULL;
@@ -337,6 +338,7 @@ CREATE INDEX IF NOT EXISTS idx_race_feats_feat ON race_feats(feat_id);
 -- Enhancement Trees --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS enhancement_trees (
     id        INTEGER PRIMARY KEY,
+    dat_id    TEXT,
     name      TEXT NOT NULL,
     tree_type TEXT NOT NULL CHECK (tree_type IN ('class', 'racial', 'universal', 'reaper', 'destiny')),
     ap_pool   TEXT NOT NULL CHECK (ap_pool IN ('heroic', 'racial', 'reaper', 'legendary')),
@@ -543,10 +545,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_effects_name_mod
     ON effects(name, COALESCE(modifier, ''));
 
 CREATE TABLE IF NOT EXISTS item_effects (
-    item_id    INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
-    effect_id  INTEGER NOT NULL REFERENCES effects(id),
-    value      INTEGER,
-    sort_order INTEGER NOT NULL DEFAULT 0,
+    item_id     INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    effect_id   INTEGER NOT NULL REFERENCES effects(id),
+    value       INTEGER,
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    data_source TEXT CHECK (data_source IN ('binary', 'wiki')),
     PRIMARY KEY (item_id, effect_id, sort_order)
 );
 CREATE INDEX IF NOT EXISTS idx_item_effects_item ON item_effects(item_id);
@@ -564,6 +567,7 @@ CREATE TABLE IF NOT EXISTS bonuses (
     stat_id       INTEGER REFERENCES stats(id),
     bonus_type_id INTEGER REFERENCES bonus_types(id),
     value         INTEGER,
+    data_source   TEXT CHECK (data_source IN ('binary', 'wiki')),
     CHECK (
         (source_type IN ('item', 'feat', 'augment') AND min_rank IS NULL AND min_pieces IS NULL) OR
         (source_type = 'enhancement'                AND min_rank IS NOT NULL AND min_pieces IS NULL) OR

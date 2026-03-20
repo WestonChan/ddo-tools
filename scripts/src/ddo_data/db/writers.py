@@ -263,8 +263,8 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 """
                 INSERT OR IGNORE INTO bonuses
                     (source_type, source_id, min_rank, min_pieces, sort_order,
-                     name, stat_id, bonus_type_id, value)
-                VALUES ('item', ?, NULL, NULL, ?, ?, ?, ?, ?)
+                     name, stat_id, bonus_type_id, value, data_source)
+                VALUES ('item', ?, NULL, NULL, ?, ?, ?, ?, ?, 'binary')
                 """,
                 (
                     item_id,
@@ -300,8 +300,8 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                     """
                     INSERT OR IGNORE INTO bonuses
                         (source_type, source_id, min_rank, min_pieces, sort_order,
-                         name, stat_id, bonus_type_id, value)
-                    VALUES ('item', ?, NULL, NULL, ?, ?, ?, ?, ?)
+                         name, stat_id, bonus_type_id, value, data_source)
+                    VALUES ('item', ?, NULL, NULL, ?, ?, ?, ?, ?, 'wiki')
                     """,
                     (
                         item_id,
@@ -323,8 +323,8 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                     conn.execute(
                         """
                         INSERT OR IGNORE INTO item_effects
-                            (item_id, effect_id, value, sort_order)
-                        VALUES (?, ?, ?, ?)
+                            (item_id, effect_id, value, sort_order, data_source)
+                        VALUES (?, ?, ?, ?, 'wiki')
                         """,
                         (item_id, effect_id, effect["value"], effect_offset),
                     )
@@ -342,7 +342,7 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 effect_id = _ensure_effect(conn, cleaned, None)
                 if effect_id is not None:
                     conn.execute(
-                        "INSERT OR IGNORE INTO item_effects (item_id, effect_id, value, sort_order) VALUES (?, ?, NULL, ?)",
+                        "INSERT OR IGNORE INTO item_effects (item_id, effect_id, value, sort_order, data_source) VALUES (?, ?, NULL, ?, 'wiki')",
                         (item_id, effect_id, effect_offset),
                     )
                     effect_offset += 1
@@ -406,8 +406,8 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
                 """
                 INSERT OR IGNORE INTO bonuses
                     (source_type, source_id, min_rank, min_pieces, sort_order,
-                     name, stat_id, bonus_type_id, value)
-                VALUES ('set_bonus', ?, NULL, ?, ?, ?, NULL, NULL, NULL)
+                     name, stat_id, bonus_type_id, value, data_source)
+                VALUES ('set_bonus', ?, NULL, ?, ?, ?, NULL, NULL, NULL, 'wiki')
                 """,
                 (set_id, bonus["min_pieces"], sort_order, bonus["text"]),
             )
@@ -441,8 +441,9 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
             INSERT OR IGNORE INTO feats (
                 dat_id, name, icon, description, prerequisite, note, cooldown,
                 damage_dice_notation,
-                is_free, is_passive, is_active, is_stance, is_metamagic, is_epic_destiny
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                is_free, is_passive, is_active, is_stance, is_metamagic, is_epic_destiny,
+                wiki_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 feat.get("dat_id"),
@@ -459,6 +460,7 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
                 _bool(feat, "stance"),
                 _bool(feat, "metamagic"),
                 _bool(feat, "epic_destiny"),
+                feat.get("wiki_url"),
             ),
         )
         inserted += cur.rowcount

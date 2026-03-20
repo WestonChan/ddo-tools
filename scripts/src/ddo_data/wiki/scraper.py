@@ -63,6 +63,8 @@ def collect_items(
         if not parsed.get("name"):
             parsed["name"] = title.removeprefix("Item:").replace("_", " ")
 
+        from urllib.parse import quote
+        parsed["wiki_url"] = f"https://ddowiki.com/page/{quote(title.replace(' ', '_'), safe='_/:()-,')}"
         items.append(parsed)
 
         if on_progress and (i + 1) % 100 == 0:
@@ -123,6 +125,8 @@ def collect_feats(
         if not parsed.get("name"):
             parsed["name"] = title.replace("_", " ")
 
+        from urllib.parse import quote
+        parsed["wiki_url"] = f"https://ddowiki.com/page/{quote(title.replace(' ', '_'), safe='_/:()-,')}"
         feats.append(parsed)
 
         if on_progress and (i + 1) % 100 == 0:
