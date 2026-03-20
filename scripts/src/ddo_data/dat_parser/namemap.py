@@ -2940,7 +2940,14 @@ STAT_DEF_IDS: dict[int, str] = {
     376:  "Haggle",
     450:  "Magical Resistance Rating",
     1572: "Saving Throws vs Traps",
+    1692: "Well Rounded",       # confirmed via dat-effect-map (6 confirmations, 0 conflicts)
     1941: "Spell Points",
+    # Candidates (1 confirmation, 0 conflicts — use with caution):
+    # 1269: "Spell Focus Mastery",
+    # 1362: "Charisma",
+    # 1524: "Constitution",
+    # 1730: "Strength",
+    # 1827: "Dodge",
 }
 
 # Maps raw bonus_type codes (u16 at bytes [13..14] of 0x70XXXXXX effect entries)
