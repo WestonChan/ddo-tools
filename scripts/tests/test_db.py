@@ -197,8 +197,8 @@ def test_insert_items_augment_slots() -> None:
     assert rows[2] == (2, "Colorless")
 
 
-def test_insert_items_enchantments_go_to_bonuses() -> None:
-    """enchantments list creates bonuses rows with source_type='item'."""
+def test_insert_items_enchantments_go_to_effects() -> None:
+    """Plain text enchantments route to item_effects as named effects."""
     item = {
         "name": "Magic Ring",
         "enchantments": ["Strength +6", "Insightful Dexterity +3"],
@@ -208,17 +208,15 @@ def test_insert_items_enchantments_go_to_bonuses() -> None:
         db.create_schema()
         db.insert_items([item])
         rows = db.conn.execute(
-            "SELECT b.name, b.source_type, b.sort_order "
-            "FROM bonuses b JOIN items i ON b.source_id = i.id "
-            "WHERE i.name = ? AND b.source_type = 'item' ORDER BY b.sort_order",
+            """SELECT e.name FROM item_effects ie
+               JOIN effects e ON ie.effect_id = e.id
+               JOIN items i ON ie.item_id = i.id
+               WHERE i.name = ? ORDER BY ie.sort_order""",
             ("Magic Ring",),
         ).fetchall()
     assert len(rows) == 2
     assert rows[0][0] == "Strength +6"
-    assert rows[0][1] == "item"
-    assert rows[0][2] == 0
     assert rows[1][0] == "Insightful Dexterity +3"
-    assert rows[1][2] == 1
 
 
 def test_insert_items_item_category_mapped() -> None:
@@ -414,12 +412,9 @@ def test_insert_items_pass_b_sort_order_offset() -> None:
     assert rows[0][2] is not None   # stat_id resolved
     assert rows[1][0] == 1
     assert rows[1][2] is not None
-    # Pass B: sort_orders 2 and 3 (offset past len(_bonuses)=2)
-    assert rows[2][0] == 2
-    assert rows[2][1] == "Fire Resistance +20"
-    assert rows[2][2] is None       # stat_id NULL for wiki strings
-    assert rows[3][0] == 3
-    assert rows[3][1] == "Proof Against Poison"
+    # Pass B: "Fire Resistance +20" and "Proof Against Poison" are plain text
+    # → routed to item_effects (not bonuses)
+    assert len(rows) == 2  # only Pass A bonuses
 
 
 def test_insert_items_pass_b_parses_stat_template() -> None:

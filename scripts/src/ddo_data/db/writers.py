@@ -335,17 +335,17 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             if _is_metadata(enchantment):
                 continue
 
-            # 4. Fallback: truly unknown enchantments as name-only bonus
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO bonuses
-                    (source_type, source_id, min_rank, min_pieces, sort_order, name,
-                     stat_id, bonus_type_id, value)
-                VALUES ('item', ?, NULL, NULL, ?, ?, NULL, NULL, NULL)
-                """,
-                (item_id, pass_a_count + bonus_offset, enchantment.strip()),
-            )
-            bonus_offset += 1
+            # 4. Fallback: plain text enchantments → item_effects (weapon effect names)
+            # Skip broken/empty strings
+            cleaned = enchantment.strip().strip("}")
+            if cleaned and len(cleaned) > 2 and not cleaned.startswith("{{"):
+                effect_id = _ensure_effect(conn, cleaned, None)
+                if effect_id is not None:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO item_effects (item_id, effect_id, value, sort_order) VALUES (?, ?, NULL, ?)",
+                        (item_id, effect_id, effect_offset),
+                    )
+                    effect_offset += 1
 
         # --- set membership ---
         set_names: list[str] = []
