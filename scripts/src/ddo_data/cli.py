@@ -718,7 +718,9 @@ def build_db(
             click.echo(f"Collecting {data_type}...")
             count = 0
             if data_type == "items":
-                count = db.insert_items(collect_items(client, limit=limit, on_progress=click.echo))
+                wiki_items = list(collect_items(client, limit=limit, on_progress=click.echo))
+                _overlay_item_dat_ids(wiki_items, ddo_path)
+                count = db.insert_items(wiki_items)
             elif data_type == "feats":
                 wiki_feats = list(collect_feats(client, limit=limit, on_progress=click.echo))
                 _overlay_feat_dat_ids(wiki_feats, ddo_path)
@@ -733,6 +735,56 @@ def build_db(
             click.echo(f"  {count:,} {data_type} inserted")
 
     click.echo(f"Database written to {output}")
+
+
+def _overlay_item_dat_ids(items: list[dict], ddo_path: Path) -> None:
+    """Overlay dat_ids from binary parser onto wiki item dicts (in-place).
+
+    Matches wiki items to binary 0x79XXXXXX entries by normalized name,
+    setting the ``dat_id`` field to the hex file ID (e.g., ``0x79012345``).
+    Also overlays binary-extracted fields (rarity, equipment_slot, etc.)
+    where the wiki dict has None.
+    """
+    import html
+
+    def _norm(s: str) -> str:
+        return html.unescape(s).strip().replace("_", " ").lower()
+
+    try:
+        from .game_data.items import parse_items
+        binary_items = parse_items(ddo_path, on_progress=click.echo)
+    except Exception as exc:
+        click.echo(f"  Binary dat_id overlay skipped: {exc}")
+        return
+
+    binary_by_name: dict[str, dict] = {}
+    for bi in binary_items:
+        name = bi.get("name")
+        dat_id = bi.get("id")
+        if name and dat_id:
+            norm = _norm(name)
+            if norm not in binary_by_name:
+                binary_by_name[norm] = bi
+
+    matched = 0
+    for item in items:
+        name = item.get("name")
+        if not name:
+            continue
+        norm = _norm(name)
+        bi = binary_by_name.get(norm)
+        if not bi and not norm.startswith("legendary "):
+            bi = binary_by_name.get("legendary " + norm)
+        if not bi and norm.startswith("legendary "):
+            bi = binary_by_name.get(norm[len("legendary "):])
+        if bi:
+            item["dat_id"] = bi["id"]
+            # Overlay binary fields where wiki has None
+            for field in ("rarity", "equipment_slot", "item_category", "durability", "minimum_level"):
+                if item.get(field) is None and bi.get(field) is not None:
+                    item[field] = bi[field]
+            matched += 1
+    click.echo(f"  {matched:,} items matched with binary dat_id")
 
 
 def _overlay_feat_dat_ids(feats: list[dict], ddo_path: Path) -> None:
