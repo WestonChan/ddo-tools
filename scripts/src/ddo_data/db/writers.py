@@ -383,6 +383,38 @@ def _ensure_set_bonus(conn: sqlite3.Connection, name: str) -> int | None:
     return row[0] if row else None
 
 
+def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
+    """Insert set bonus effects from wiki scraper into set_bonuses + bonuses tables.
+
+    Each dict has:
+        {"name": "Seasons of the Feywild",
+         "bonuses": [{"min_pieces": 2, "text": "+10 Artifact bonus to HP"}, ...]}
+
+    Returns the count of set rows created/updated.
+    """
+    inserted = 0
+    for set_data in sets:
+        name = set_data.get("name")
+        if not name:
+            continue
+        set_id = _ensure_set_bonus(conn, name)
+        if set_id is None:
+            continue
+        inserted += 1
+        for sort_order, bonus in enumerate(set_data.get("bonuses", [])):
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO bonuses
+                    (source_type, source_id, min_rank, min_pieces, sort_order,
+                     name, stat_id, bonus_type_id, value)
+                VALUES ('set_bonus', ?, NULL, ?, ?, ?, NULL, NULL, NULL)
+                """,
+                (set_id, bonus["min_pieces"], sort_order, bonus["text"]),
+            )
+    conn.commit()
+    return inserted
+
+
 def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
     """Insert a list of feat dicts (as produced by wiki/parsers.py) into the DB.
 

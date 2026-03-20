@@ -237,3 +237,59 @@ def collect_enhancements(
     return trees
 
 
+_PIECE_RE = re.compile(
+    r"(\d+)\s*(?:Pieces?\s*Equipped|pieces?)\s*:?\s*\n((?:\*[^\n]+\n)*)",
+    re.IGNORECASE,
+)
+
+
+def collect_set_bonuses(
+    client: WikiClient,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+) -> list[dict]:
+    """Scrape set bonus effects from the Named_item_sets wiki page.
+
+    Returns a list of dicts:
+        {"name": "Seasons of the Feywild",
+         "bonuses": [{"min_pieces": 2, "text": "+10 Artifact bonus to HP"}, ...]}
+    """
+    wikitext = client.get_wikitext("Named_item_sets")
+    if not wikitext:
+        logger.warning("Named_item_sets page not found")
+        return []
+
+    anchors = list(re.finditer(r"\{\{Anchor\|([^}]+)\}\}", wikitext))
+    if on_progress:
+        on_progress(f"Found {len(anchors)} set anchors on Named_item_sets page")
+
+    results: list[dict] = []
+
+    for i, anchor_match in enumerate(anchors):
+        set_name = anchor_match.group(1).strip()
+        start = anchor_match.end()
+        end = anchors[i + 1].start() if i + 1 < len(anchors) else len(wikitext)
+        section = wikitext[start:end]
+
+        piece_matches = list(_PIECE_RE.finditer(section))
+        if not piece_matches:
+            continue
+
+        bonuses: list[dict] = []
+        for pm in piece_matches:
+            pieces = int(pm.group(1))
+            bonus_text = pm.group(2).strip()
+            for line in bonus_text.split("\n"):
+                line = line.strip().lstrip("*").strip()
+                if line:
+                    bonuses.append({"min_pieces": pieces, "text": line})
+
+        if bonuses:
+            results.append({"name": set_name, "bonuses": bonuses})
+
+    if on_progress:
+        on_progress(f"  {len(results)} sets with bonus effects parsed")
+
+    return results
+
+
