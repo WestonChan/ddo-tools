@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import sqlite3
 
 logger = logging.getLogger(__name__)
@@ -144,8 +145,8 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
     - ``bonuses`` (from ``enchantments`` list; stat_id/bonus_type_id/value left NULL
       for deferred resolution in a future linking pass)
 
-    Skips ``quest`` and ``set_name`` fields — those cross-entity links are owned
-    by the quest scraper (Task 4) and set bonus scraper (Task 5).
+    Skips ``quest`` field — those cross-entity links are owned by the quest
+    scraper (Task 4). Links items to sets via ``set_bonus_items``.
 
     Returns the count of item rows inserted (not counting sub-table rows).
     """
@@ -346,8 +347,40 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             )
             bonus_offset += 1
 
+        # --- set membership ---
+        set_names: list[str] = []
+        # Source 1: set_name field from wiki parser
+        sn = item.get("set_name")
+        if sn and isinstance(sn, str) and sn.strip():
+            set_names.append(sn.strip())
+        # Source 2: {{Named item sets|...}} enchantment templates (already filtered
+        # as metadata in pass B, so extract directly from enchantments list)
+        for ench in item.get("enchantments") or []:
+            m = re.search(r"\{\{Named item sets\|([^|}]+)", ench, re.IGNORECASE)
+            if m:
+                sn2 = m.group(1).strip()
+                if sn2 and sn2 not in set_names:
+                    set_names.append(sn2)
+        for sn in set_names:
+            set_id = _ensure_set_bonus(conn, sn)
+            if set_id is not None:
+                conn.execute(
+                    "INSERT OR IGNORE INTO set_bonus_items (set_id, item_id) VALUES (?, ?)",
+                    (set_id, item_id),
+                )
+
     conn.commit()
     return inserted
+
+
+def _ensure_set_bonus(conn: sqlite3.Connection, name: str) -> int | None:
+    """Get or create a set_bonuses row, returning its id."""
+    row = conn.execute("SELECT id FROM set_bonuses WHERE name = ?", (name,)).fetchone()
+    if row:
+        return row[0]
+    conn.execute("INSERT OR IGNORE INTO set_bonuses (name) VALUES (?)", (name,))
+    row = conn.execute("SELECT id FROM set_bonuses WHERE name = ?", (name,)).fetchone()
+    return row[0] if row else None
 
 
 def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:

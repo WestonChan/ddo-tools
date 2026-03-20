@@ -552,6 +552,33 @@ def test_insert_items_pass_b_skips_metadata() -> None:
         assert effect_count == 0
 
 
+def test_insert_items_set_membership() -> None:
+    """Items with set_name or {{Named item sets}} create set_bonuses + set_bonus_items rows."""
+    items = [
+        {
+            "name": "Helm of the Stalker",
+            "set_name": "Stalker Set",
+            "enchantments": [],
+            "augment_slots": [],
+        },
+        {
+            "name": "Ring of the Stalker",
+            "enchantments": ["{{Named item sets|Stalker Set}}"],
+            "augment_slots": [],
+        },
+    ]
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items(items)
+        # Should have 1 set
+        sets = db.conn.execute("SELECT id, name FROM set_bonuses").fetchall()
+        assert len(sets) == 1
+        assert sets[0][1] == "Stalker Set"
+        # Both items should be linked
+        links = db.conn.execute("SELECT COUNT(*) FROM set_bonus_items").fetchone()[0]
+        assert links == 2
+
+
 # ---------------------------------------------------------------------------
 # insert_feats tests
 # ---------------------------------------------------------------------------
