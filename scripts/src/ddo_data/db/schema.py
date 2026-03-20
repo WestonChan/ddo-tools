@@ -746,6 +746,57 @@ INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES
     (20, 'Tumble',           2),   -- DEX
     (21, 'Use Magic Device', 6);   -- CHA
 
+-- Classes
+INSERT OR IGNORE INTO classes (id, name, hit_die, bab_progression, skill_points_per_level, fort_save_progression, ref_save_progression, will_save_progression, caster_type, spell_tradition) VALUES
+    (1,  'Barbarian',      12, 'full',          4, 'good', 'poor', 'poor', 'none',  NULL),
+    (2,  'Bard',            8, 'three_quarter',  6, 'poor', 'good', 'good', 'full',  'arcane'),
+    (3,  'Cleric',          8, 'three_quarter',  2, 'good', 'poor', 'good', 'full',  'divine'),
+    (4,  'Fighter',        10, 'full',           2, 'good', 'poor', 'poor', 'none',  NULL),
+    (5,  'Paladin',        10, 'full',           2, 'good', 'poor', 'poor', 'half',  'divine'),
+    (6,  'Ranger',          8, 'full',           6, 'good', 'good', 'poor', 'half',  'divine'),
+    (7,  'Rogue',           6, 'three_quarter',  8, 'poor', 'good', 'poor', 'none',  NULL),
+    (8,  'Sorcerer',        4, 'half',           2, 'poor', 'poor', 'good', 'full',  'arcane'),
+    (9,  'Wizard',          4, 'half',           2, 'poor', 'poor', 'good', 'full',  'arcane'),
+    (10, 'Monk',            8, 'three_quarter',  4, 'good', 'good', 'good', 'none',  NULL),
+    (11, 'Favored Soul',    8, 'three_quarter',  2, 'good', 'poor', 'good', 'full',  'divine'),
+    (12, 'Artificer',       6, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'arcane'),
+    (13, 'Druid',           8, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'divine'),
+    (14, 'Warlock',         6, 'three_quarter',  2, 'poor', 'poor', 'good', 'full',  'arcane'),
+    (15, 'Alchemist',       8, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'arcane');
+
+-- Races (standard + iconic)
+INSERT OR IGNORE INTO races (id, name) VALUES
+    (1,  'Human'),
+    (2,  'Elf'),
+    (3,  'Dwarf'),
+    (4,  'Halfling'),
+    (5,  'Warforged'),
+    (6,  'Drow Elf'),
+    (7,  'Half-Elf'),
+    (8,  'Half-Orc'),
+    (9,  'Gnome'),
+    (10, 'Aasimar'),
+    (11, 'Dragonborn'),
+    (12, 'Tiefling'),
+    (13, 'Wood Elf'),
+    (14, 'Tabaxi'),
+    (15, 'Shifter'),
+    (16, 'Eladrin'),
+    (17, 'Dhampir'),
+    -- Iconic races
+    (18, 'Bladeforged'),
+    (19, 'Purple Dragon Knight'),
+    (20, 'Morninglord'),
+    (21, 'Shadar-kai'),
+    (22, 'Deep Gnome'),
+    (23, 'Aasimar Scourge'),
+    (24, 'Razorclaw Shifter'),
+    (25, 'Tiefling Scoundrel'),
+    (26, 'Tabaxi Trailblazer'),
+    (27, 'Eladrin Chaosmancer'),
+    (28, 'Dhampir Dark Bargainer'),
+    (29, 'Elven Arcane Archer');
+
 -- Bonus types (stacks_with_self=1 means same-type bonuses from different sources stack)
 INSERT OR IGNORE INTO bonus_types (id, name, stacks_with_self) VALUES
     (1,  'Enhancement',   0),

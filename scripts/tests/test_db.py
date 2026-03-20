@@ -640,10 +640,7 @@ def test_insert_feats_bonus_classes_with_known_class() -> None:
     """bonus_classes entries create feat_bonus_classes rows when class exists."""
     with GameDB(":memory:") as db:
         db.create_schema()
-        # Seed a class so the FK resolves
-        db.conn.execute(
-            "INSERT INTO classes (name) VALUES (?)", ("Fighter",)
-        )
+        # Fighter is pre-seeded in classes table
         feat = {
             "name": "Cleave",
             "active": True,
@@ -668,7 +665,7 @@ def test_insert_feats_bonus_classes_unknown_class() -> None:
         "name": "Weapon Focus",
         "active": False, "free": False, "passive": True,
         "stance": False, "metamagic": False, "epic_destiny": False,
-        "bonus_classes": ["Fighter", "Paladin"],  # neither class seeded
+        "bonus_classes": ["Nonexistent Class", "Another Fake"],  # not in classes seed
     }
     with GameDB(":memory:") as db:
         db.create_schema()
@@ -682,7 +679,7 @@ def test_insert_feats_past_life_subtype() -> None:
     """Past life feats populate feat_past_life_stats; class_id resolved by name."""
     with GameDB(":memory:") as db:
         db.create_schema()
-        db.conn.execute("INSERT INTO classes (name) VALUES (?)", ("Fighter",))
+        # Fighter is pre-seeded in classes table
         feat = {
             "name": "Past Life: Fighter",
             "passive": True,
@@ -763,8 +760,8 @@ def test_insert_enhancement_trees_basic() -> None:
         ).fetchone()
         assert tree is not None
         assert tree[0] == "Kensei"
-        # Without Fighter in classes table, falls back to 'universal'
-        assert tree[1] == "universal"
+        # Fighter is seeded in classes table, so class link resolves
+        assert tree[1] == "class"
         assert tree[2] == "heroic"
         enh_count = _count(db.conn, "enhancements")
     assert enh_count == 2
@@ -774,7 +771,7 @@ def test_insert_enhancement_trees_class_link_resolved() -> None:
     """tree_type='class' links to class_id when class exists in classes table."""
     with GameDB(":memory:") as db:
         db.create_schema()
-        db.conn.execute("INSERT INTO classes (name) VALUES (?)", ("Fighter",))
+        # Fighter is pre-seeded in classes table
         db.insert_enhancement_trees([KENSEI_TREE])
         row = db.conn.execute(
             "SELECT t.tree_type, c.name FROM enhancement_trees t "
@@ -848,7 +845,7 @@ def test_insert_enhancement_trees_racial() -> None:
     }
     with GameDB(":memory:") as db:
         db.create_schema()
-        db.conn.execute("INSERT INTO races (name) VALUES (?)", ("Elf",))
+        # Elf is pre-seeded in races table
         db.insert_enhancement_trees([tree])
         row = db.conn.execute(
             "SELECT tree_type, ap_pool FROM enhancement_trees WHERE name = ?",
