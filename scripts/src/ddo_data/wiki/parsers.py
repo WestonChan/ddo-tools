@@ -281,6 +281,51 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
 
 
 # ---------------------------------------------------------------------------
+# Augment parser
+# ---------------------------------------------------------------------------
+
+# Slot color normalization
+_AUGMENT_COLORS: dict[str, str] = {
+    "red": "red", "blue": "blue", "green": "green", "yellow": "yellow",
+    "orange": "orange", "purple": "purple", "colorless": "colorless", "white": "white",
+}
+
+
+def parse_augment_wikitext(wikitext: str) -> dict[str, Any] | None:
+    """Parse a DDO Wiki augment page's wikitext into a structured dict.
+
+    Extracts data from the ``{{Item Augment|...}}`` template.
+    Returns None if the template is not found.
+    """
+    fields = extract_template(wikitext, "Item Augment")
+    if fields is None:
+        return None
+
+    augment: dict[str, Any] = {}
+
+    # Name (required)
+    name = fields.get("name", "")
+    augment["name"] = clean_wikitext(name) if name else None
+
+    # Slot color
+    raw_color = fields.get("type", "").strip().lower()
+    augment["slot_color"] = _AUGMENT_COLORS.get(raw_color, raw_color)
+
+    # Minimum level
+    augment["minimum_level"] = _parse_int(fields.get("minimum level", ""))
+
+    # Enchantments (same format as items — wiki templates)
+    augment["enchantments"] = _parse_enchantment_list(fields.get("enhancements", "")
+                                                       or fields.get("enchantments", ""))
+
+    # Description
+    raw_desc = fields.get("description", "")
+    augment["description"] = clean_wikitext(raw_desc) if raw_desc.strip() else None
+
+    return augment
+
+
+# ---------------------------------------------------------------------------
 # Feat parser
 # ---------------------------------------------------------------------------
 

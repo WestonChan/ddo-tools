@@ -415,6 +415,64 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
     return inserted
 
 
+def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
+    """Insert augment dicts (from wiki scraper) into the DB.
+
+    Populates the ``augments`` table and creates ``bonuses`` rows with
+    ``source_type='augment'`` for each enchantment on the augment.
+
+    Returns the count of augment rows inserted.
+    """
+    inserted = 0
+    for augment in augments:
+        name = augment.get("name")
+        if not name:
+            continue
+
+        slot_color = (augment.get("slot_color") or "colorless").lower()
+        cur = conn.execute(
+            """
+            INSERT OR IGNORE INTO augments (name, slot_color, min_level)
+            VALUES (?, ?, ?)
+            """,
+            (name, slot_color, augment.get("minimum_level")),
+        )
+        if cur.rowcount == 0:
+            continue
+
+        augment_id = conn.execute(
+            "SELECT id FROM augments WHERE name = ?", (name,)
+        ).fetchone()
+        if augment_id is None:
+            continue
+        augment_id = augment_id[0]
+        inserted += 1
+
+        # Bonuses from enchantments
+        for sort_order, enchantment in enumerate(augment.get("enchantments") or []):
+            if not enchantment:
+                continue
+            parsed = _parse_enchantment(enchantment)
+            if parsed:
+                stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
+                bonus_type_id = _lookup_id(
+                    conn, "bonus_types", "name", "id", parsed["bonus_type"]
+                )
+                bonus_name = f"{parsed['stat']} +{parsed['value']}"
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO bonuses
+                        (source_type, source_id, min_rank, min_pieces, sort_order,
+                         name, stat_id, bonus_type_id, value, data_source)
+                    VALUES ('augment', ?, NULL, NULL, ?, ?, ?, ?, ?, 'wiki')
+                    """,
+                    (augment_id, sort_order, bonus_name, stat_id, bonus_type_id, parsed["value"]),
+                )
+
+    conn.commit()
+    return inserted
+
+
 def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
     """Insert a list of feat dicts (as produced by wiki/parsers.py) into the DB.
 

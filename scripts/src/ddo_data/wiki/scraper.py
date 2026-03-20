@@ -8,6 +8,7 @@ from collections.abc import Callable
 
 from .client import WikiClient
 from .parsers import (
+    parse_augment_wikitext,
     parse_enhancement_tree_wikitext,
     parse_feat_wikitext,
     parse_item_wikitext,
@@ -72,6 +73,54 @@ def collect_items(
 
     logger.info("Collected %d items (%d skipped)", len(items), skipped)
     return items
+
+
+def collect_augments(
+    client: WikiClient,
+    *,
+    limit: int = 0,
+    on_progress: Callable[[str], None] | None = None,
+) -> list[dict]:
+    """Collect augment dicts from DDO Wiki.
+
+    Enumerates pages from the Item namespace (ns=500), fetches wikitext
+    for each, and parses the ``{{Item Augment|...}}`` template.
+    Pages without this template are skipped (they're regular items).
+
+    Uses the wiki cache, so if collect_items ran first, this is fast.
+    """
+    augments: list[dict] = []
+    skipped = 0
+
+    page_iter = client.iter_namespace_pages(500, limit=limit)
+
+    for i, title in enumerate(page_iter):
+        wikitext = client.get_wikitext(title)
+        if wikitext is None:
+            skipped += 1
+            continue
+
+        if "#REDIRECT" in wikitext.upper():
+            skipped += 1
+            continue
+
+        parsed = parse_augment_wikitext(wikitext)
+        if parsed is None:
+            skipped += 1
+            continue
+
+        if not parsed.get("name"):
+            parsed["name"] = title.removeprefix("Item:").replace("_", " ")
+
+        from urllib.parse import quote
+        parsed["wiki_url"] = f"https://ddowiki.com/page/{quote(title.replace(' ', '_'), safe='_/:()-,')}"
+        augments.append(parsed)
+
+        if on_progress and (i + 1) % 100 == 0:
+            on_progress(f"  ... {i + 1} pages processed, {len(augments)} augments parsed")
+
+    logger.info("Collected %d augments (%d skipped)", len(augments), skipped)
+    return augments
 
 
 # Page titles that are index/overview pages, not individual feats
