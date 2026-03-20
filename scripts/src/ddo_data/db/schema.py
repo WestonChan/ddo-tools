@@ -143,6 +143,17 @@ CREATE TABLE IF NOT EXISTS item_materials (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_item_materials_name ON item_materials(name);
 
+-- Filigrees (sentient weapon / minor artifact augments) --------------------
+CREATE TABLE IF NOT EXISTS filigrees (
+    id             INTEGER PRIMARY KEY,
+    name           TEXT NOT NULL,
+    set_name       TEXT,
+    rare_bonus     TEXT,
+    bonus          TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_filigrees_name ON filigrees(name);
+CREATE INDEX IF NOT EXISTS idx_filigrees_set ON filigrees(set_name) WHERE set_name IS NOT NULL;
+
 -- Augments -----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS augments (
     id         INTEGER PRIMARY KEY,

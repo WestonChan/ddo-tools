@@ -229,6 +229,10 @@ def collect_feats(
 
         from urllib.parse import quote
         parsed["wiki_url"] = f"https://ddowiki.com/page/{quote(title.replace(' ', '_'), safe='_/:()-,')}"
+
+        # Detect past life feats and annotate with type/class
+        _annotate_past_life(parsed)
+
         feats.append(parsed)
 
         if on_progress and (i + 1) % 100 == 0:
@@ -236,6 +240,25 @@ def collect_feats(
 
     logger.info("Collected %d feats (%d skipped)", len(feats), skipped)
     return feats
+
+
+def _annotate_past_life(feat: dict) -> None:
+    """Detect past life feats and annotate with past_life_type and class."""
+    name = feat.get("name", "")
+    if name.startswith("Past Life: "):
+        suffix = name[len("Past Life: "):]
+        feat["past_life_type"] = "heroic"
+        feat["past_life_class"] = suffix  # May not match a class (e.g., "Arcane Trickster")
+        feat["past_life_max_stacks"] = 3
+    elif "(Epic Past Life Feat)" in name or "(epic past life feat)" in name:
+        feat["past_life_type"] = "epic"
+        feat["past_life_max_stacks"] = 3
+    elif "(Racial Past Life Feat)" in name or "(racial past life feat)" in name:
+        feat["past_life_type"] = "racial"
+        feat["past_life_max_stacks"] = 3
+    elif "(Iconic Past Life Feat)" in name or "(iconic past life feat)" in name:
+        feat["past_life_type"] = "iconic"
+        feat["past_life_max_stacks"] = 3
 
 
 # Index pages that list all enhancement trees, with their tree type.
@@ -339,8 +362,73 @@ def collect_enhancements(
         if on_progress and tree_count % 10 == 0:
             on_progress(f"  ... {tree_count} trees processed")
 
+    # Direct tree pages (single trees not discovered from index pages)
+    _DIRECT_TREES = [
+        ("Reaper enhancements", "reaper", None),
+    ]
+    for page_title, tree_type, parent in _DIRECT_TREES:
+        if page_title in visited:
+            continue
+        if 0 < limit <= tree_count:
+            break
+        wikitext = client.get_wikitext(page_title)
+        if wikitext is None:
+            continue
+        parsed = parse_enhancement_tree_wikitext(wikitext, page_title)
+        if parsed is None:
+            continue
+        parsed["type"] = tree_type
+        parsed["class_or_race"] = parent
+        trees.append(parsed)
+        tree_count += 1
+        visited.add(page_title)
+
     logger.info("Collected %d enhancement trees (%d skipped)", len(trees), skipped)
     return trees
+
+
+def collect_filigrees(
+    client: WikiClient,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+) -> list[dict]:
+    """Scrape filigree data from the Sentient Weapon/Filigrees wiki page.
+
+    Returns a list of dicts: {"name", "set_name", "rare_bonus", "bonus"}.
+    """
+    from .parsers import clean_wikitext
+
+    wikitext = client.get_wikitext("Sentient Weapon/Filigrees")
+    if not wikitext:
+        logger.warning("Sentient Weapon/Filigrees page not found")
+        return []
+
+    filigrees: list[dict] = []
+    for match in re.finditer(r'\|-\s*\n\|\s*(.+)', wikitext):
+        row = match.group(1).strip()
+        cells = [c.strip() for c in row.split("||")]
+        if len(cells) < 2:
+            continue
+
+        name = clean_wikitext(cells[0])
+        if not name or name == "Name" or name.startswith("Set"):
+            continue
+
+        set_name = name.split(": ", 1)[0].strip() if ": " in name else None
+        rare_bonus = clean_wikitext(cells[1]) if len(cells) > 1 and cells[1].strip() else None
+        bonus = clean_wikitext(cells[2]) if len(cells) > 2 and cells[2].strip() else None
+
+        filigrees.append({
+            "name": name,
+            "set_name": set_name,
+            "rare_bonus": rare_bonus,
+            "bonus": bonus,
+        })
+
+    if on_progress:
+        on_progress(f"  {len(filigrees)} filigrees parsed from wiki")
+
+    return filigrees
 
 
 _PIECE_RE = re.compile(

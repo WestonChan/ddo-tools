@@ -680,6 +680,7 @@ def test_build_db_creates_database(tmp_path) -> None:
         patch("ddo_data.wiki.scraper.collect_set_bonuses", return_value=[]),
         patch("ddo_data.wiki.scraper.collect_augments", return_value=[]),
         patch("ddo_data.wiki.scraper.collect_spells", return_value=[]),
+        patch("ddo_data.wiki.scraper.collect_filigrees", return_value=[]),
         patch("ddo_data.cli._overlay_item_dat_ids"),
         patch("ddo_data.cli._overlay_feat_dat_ids"),
         patch("ddo_data.db.GameDB.insert_items", return_value=0),
@@ -688,6 +689,7 @@ def test_build_db_creates_database(tmp_path) -> None:
         patch("ddo_data.db.GameDB.insert_set_bonus_effects", return_value=0),
         patch("ddo_data.db.GameDB.insert_augments", return_value=0),
         patch("ddo_data.db.GameDB.insert_spells", return_value=0),
+        patch("ddo_data.db.GameDB.insert_filigrees", return_value=0),
     ):
         runner = CliRunner()
         result = runner.invoke(cli, ["build-db", "--output", str(db_path), "--limit", "1"])

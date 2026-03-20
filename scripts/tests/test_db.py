@@ -41,7 +41,7 @@ def test_create_schema_tables() -> None:
         "stats", "bonus_types", "skills", "damage_types",
         "weapon_proficiencies", "weapon_types", "equipment_slots", "spell_schools",
         "classes", "races", "items", "feats", "enhancements", "enhancement_trees",
-        "effects", "item_effects",
+        "effects", "item_effects", "filigrees",
         "bonuses", "item_weapon_stats", "item_armor_stats", "item_augment_slots",
         "feat_bonus_classes", "feat_past_life_stats", "schema_version",
     }

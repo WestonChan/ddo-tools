@@ -415,6 +415,25 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
     return inserted
 
 
+def insert_filigrees(conn: sqlite3.Connection, filigrees: list[dict]) -> int:
+    """Insert filigree dicts (from wiki scraper) into the DB.
+
+    Returns the count of filigree rows inserted.
+    """
+    inserted = 0
+    for fil in filigrees:
+        name = fil.get("name")
+        if not name:
+            continue
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO filigrees (name, set_name, rare_bonus, bonus) VALUES (?, ?, ?, ?)",
+            (name, fil.get("set_name"), fil.get("rare_bonus"), fil.get("bonus")),
+        )
+        inserted += cur.rowcount
+    conn.commit()
+    return inserted
+
+
 def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
     """Insert augment dicts (from wiki scraper) into the DB.
 
