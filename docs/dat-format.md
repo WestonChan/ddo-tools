@@ -698,10 +698,10 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [ ] Enhancements binary parser (game_data/enhancements.py stub — wiki scraper handles trees)
 - [x] Augments parser (778 augments scraped from wiki {{Item Augment}} template; 535 structured bonuses with source_type='augment')
 - [x] Spells parser (497 spells scraped from wiki {{Infobox-spell}} template; class spell levels, schools, damage types, metamagic flags)
-- [ ] Epic destinies parser
-- [ ] Filigrees parser (sentient weapon augments)
-- [ ] Past lives parser (heroic, racial, iconic, epic reincarnation bonuses)
-- [ ] Reaper enhancements parser
+- [ ] Epic destinies parser (wiki pages don't use Enhancement table templates — different format, needs custom parser)
+- [x] Filigrees parser (~380 filigrees scraped from Sentient Weapon/Filigrees wiki page; name, set_name, rare_bonus, bonus)
+- [x] Past lives parser (58 past life feats detected and annotated with past_life_type/class during scraping)
+- [x] Reaper enhancements parser (84 enhancements from Reaper enhancements wiki page via direct tree fetch)
 - [x] JSON export pipeline (`ddo-data extract` command -- items)
 
 ### Asset extraction
