@@ -34,9 +34,11 @@ from .probe import (
     read_vle,
 )
 from .strings import (
+    decode_all_sub_entries,
     decode_localization_entry,
     decode_utf16le,
     load_string_table,
+    load_tooltip_table,
     resolve_string_ref,
 )
 from .survey import SurveyResult, TypeGroup, survey_entries
@@ -133,6 +135,8 @@ __all__ = [
     "decode_localization_entry",
     "decode_utf16le",
     "resolve_string_ref",
+    "decode_all_sub_entries",
+    "load_tooltip_table",
     "SurveyResult",
     "TypeGroup",
     "survey_entries",

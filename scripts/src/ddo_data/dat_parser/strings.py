@@ -10,8 +10,10 @@ Localization entries use a structured format:
 
 Known sub-entry ref values (property definition IDs):
   0x0DA44875 = Name (item/object name)
-  0x033D632E = Description (tooltip text)
+  0x033D632E = Description (short label, often just the name repeated)
   0x05E535B5 = PluralName (variant form)
+  0x0B609513 = Tooltip (in-game effect description with numeric details)
+  0x0F0EFF4E = Summary (condensed one-line description)
 
 UTF-16LE string format informed by LocalDataExtractor (Middle-earth-Revenge).
 """
@@ -22,8 +24,12 @@ from .archive import DatArchive, FileEntry
 from .btree import traverse_btree
 from .extract import read_entry_data, scan_file_table
 
-# Localization sub-entry ref for the "Name" property
+# Localization sub-entry ref constants
 _REF_NAME = 0x0DA44875
+_REF_DESC = 0x033D632E
+_REF_TOOLTIP = 0x0B609513
+_REF_SUMMARY = 0x0F0EFF4E
+_REF_PLURAL = 0x05E535B5
 
 
 def load_string_table(
@@ -197,6 +203,131 @@ def decode_utf16le(data: bytes) -> str | None:
         return None
 
     return text
+
+
+def decode_all_sub_entries(data: bytes) -> dict[int, str]:
+    """Extract ALL sub-entry strings from a structured localization entry.
+
+    Returns a dict mapping sub-entry ref -> decoded text for every
+    sub-entry in the localization record. Known refs:
+      0x0DA44875 = Name
+      0x033D632E = Description (short label)
+      0x0B609513 = Tooltip (in-game effect description)
+      0x0F0EFF4E = Summary (condensed one-line)
+      0x05E535B5 = PluralName
+    """
+    if len(data) < 14:
+        return {}
+
+    did = struct.unpack_from("<I", data, 0)[0]
+    if (did >> 24) & 0xFF in (0x25, 0x0A):
+        ref_count = data[4]
+        body_offset = 5 + ref_count * 4
+    else:
+        ref_count = data[0]
+        body_offset = 1 + ref_count * 4
+
+    if body_offset + 1 > len(data):
+        return {}
+
+    body = data[body_offset:]
+    sub_count = body[0]
+
+    if sub_count < 1 or sub_count > 10:
+        return {}
+
+    results: dict[int, str] = {}
+    offset = 1
+
+    for _ in range(sub_count):
+        if offset + 13 > len(body):
+            break
+
+        ref = struct.unpack_from("<I", body, offset)[0]
+
+        strlen_off = offset + 12
+        if strlen_off >= len(body):
+            break
+        b = body[strlen_off]
+        if b < 0x80:
+            strlen = b
+            data_start = strlen_off + 1
+        elif b & 0xC0 != 0xC0:
+            if strlen_off + 1 >= len(body):
+                break
+            strlen = ((b & 0x3F) << 8) | body[strlen_off + 1]
+            data_start = strlen_off + 2
+        else:
+            break
+
+        if strlen < 1 or strlen > 10000:
+            break
+
+        byte_len = strlen * 2
+        if data_start + byte_len > len(body):
+            break
+
+        try:
+            text = body[data_start : data_start + byte_len].decode("utf-16-le")
+            text = text.rstrip("\x00")
+        except (UnicodeDecodeError, ValueError):
+            offset = data_start + byte_len + 5
+            continue
+
+        if text and any(c.isprintable() for c in text):
+            results[ref] = text
+
+        offset = data_start + byte_len + 5
+
+    return results
+
+
+def load_tooltip_table(
+    archive: DatArchive,
+    entries: dict[int, FileEntry] | None = None,
+    limit: int = 0,
+) -> dict[int, str]:
+    """Extract tooltip/description strings from archive entries.
+
+    Like load_string_table but returns the Tooltip sub-entry
+    (ref 0x0B609513) instead of the Name. Falls back to the Summary
+    (0x0F0EFF4E) or Description (0x033D632E) sub-entry if no Tooltip.
+
+    Returns dict mapping file_id -> tooltip text.
+    """
+    if entries is None:
+        if archive.header is None:
+            archive.read_header()
+        entries = traverse_btree(archive)
+        if not entries:
+            entries = scan_file_table(archive)
+
+    tooltips: dict[int, str] = {}
+    count = 0
+
+    for file_id in sorted(entries.keys()):
+        if 0 < limit <= count:
+            break
+
+        entry = entries[file_id]
+        try:
+            data = read_entry_data(archive, entry)
+        except (ValueError, OSError):
+            continue
+
+        subs = decode_all_sub_entries(data)
+        # Prefer tooltip, fall back to summary, then description
+        text = (
+            subs.get(_REF_TOOLTIP)
+            or subs.get(_REF_SUMMARY)
+            or subs.get(_REF_DESC)
+        )
+        if text:
+            tooltips[file_id] = text
+
+        count += 1
+
+    return tooltips
 
 
 def resolve_string_ref(file_id: int, string_table: dict[int, str]) -> str | None:

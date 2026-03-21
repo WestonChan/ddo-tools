@@ -657,20 +657,33 @@ Stats 946/947/950 use the same IDs as non-0x10 dup-pairs in item entries.
 
 **Encoded in 0x47 entries** (mechanical parameters):
 - Spell name (via 0x25 shared namespace)
-- Internal template/category code (slot 0)
+- Internal template/category code (slot 0) — defines delivery/VFX type
 - Class-variant discriminator (slot 1; same spell has consecutive codes per class)
 - Damage/effect scaling coefficients (stats 946, 524, 531)
 - Cross-references to other game systems (stats 947, 950)
 - Boolean flags and internal classification (stats 708, 731, 943, 719)
 
-**NOT encoded in 0x47 entries** (verified via exhaustive search):
+**Extractable from localization entries** (0x25XXXXXX in English archive):
+- **In-game description** — via TOOLTIP sub-entry (ref 0x0B609513). Contains effect text, damage formulas, stat bonuses. Available for 97% of player spells (371/480 wiki-matched). Only 7% of NPC abilities have tooltips, making tooltip presence a strong player-spell indicator.
+- **Short summary** — via SUMMARY sub-entry (ref 0x0F0EFF4E) when present.
+- Saving throw type is mentioned in ~3% of tooltips; caster level references in ~1%. Tooltip text is prose, not structured.
+
+**NOT encoded anywhere in the binary data** (verified via exhaustive search across spell entries, localization text, and all stat values):
 - **School** — not in any ref slot, byte position, stat value, localization sub-entry, or general.dat template
 - **Spell level** — no byte or stat value correlates with wiki spell level
-- **SP cost** — stat 553/554 do not match wiki SP costs (0% correlation)
-- **Cooldown** — stats 723/724 do not match wiki cooldown values
+- **SP cost** — not in tooltip text (0%), not in stat values (0%), not in body bytes
+- **Cooldown** — not in tooltip text (0%), stats 723/724 do not match wiki values
 - **Metamagic eligibility** — not identified in any stat or byte pattern
+- **Maximum caster level** — not found as a direct value; occasionally referenced in tooltip prose
 
-These player-facing attributes (school, level, SP) are defined elsewhere — likely in the class spell table system (possibly 0x07XXXXXX game objects) or computed at runtime. The wiki remains the authoritative source for this metadata.
+These player-facing attributes (school, level, SP, cooldown) are defined elsewhere — likely in the class spell table system (possibly 0x07XXXXXX game objects) or computed at runtime. The wiki remains the authoritative source for this metadata.
+
+##### Player spell discrimination
+
+Of 24K spell entries, most are NPC abilities (Arrow, Bolt, Attack, Set Bonus, etc.). Player-castable spells can be identified by:
+1. **Tooltip presence** — 97% of player spells have TOOLTIP sub-entries vs 7% of NPC abilities
+2. **Wiki name match** — 480 known player spells from wiki scraping
+3. Both DID types (0x028B, 0x008B) contain player and NPC spells in similar ratios (~2% player)
 
 ##### Corrections to prior analysis
 
