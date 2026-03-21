@@ -173,8 +173,9 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             INSERT OR IGNORE INTO items (
                 name, dat_id, rarity, slot_id, equipment_slot, item_category,
                 level, durability, item_type, minimum_level, enhancement_bonus,
-                hardness, weight, material, binding, base_value, description, wiki_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                hardness, weight, material, binding, base_value, description, tooltip,
+                wiki_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
@@ -194,6 +195,7 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 item.get("binding"),
                 item.get("base_value"),
                 item.get("description"),
+                item.get("tooltip"),
                 item.get("wiki_url"),
             ),
         )
@@ -585,17 +587,18 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
         cur = conn.execute(
             """
             INSERT OR IGNORE INTO feats (
-                dat_id, name, icon, description, prerequisite, note, cooldown,
-                damage_dice_notation,
+                dat_id, name, icon, description, tooltip, prerequisite, note,
+                cooldown, damage_dice_notation,
                 is_free, is_passive, is_active, is_stance, is_metamagic, is_epic_destiny,
                 wiki_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 feat.get("dat_id"),
                 name,
                 feat.get("icon"),
                 feat.get("description"),
+                feat.get("tooltip"),
                 feat.get("prerequisite"),
                 feat.get("note"),
                 feat.get("cooldown"),

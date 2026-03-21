@@ -188,6 +188,7 @@ CREATE TABLE IF NOT EXISTS items (
     binding           TEXT,
     base_value        TEXT,
     description       TEXT,
+    tooltip           TEXT,
     wiki_url          TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_items_name ON items(name);
@@ -256,6 +257,7 @@ CREATE TABLE IF NOT EXISTS feats (
     name                 TEXT NOT NULL,
     icon                 TEXT,
     description          TEXT,
+    tooltip              TEXT,
     prerequisite         TEXT,
     note                 TEXT,
     cooldown             TEXT,

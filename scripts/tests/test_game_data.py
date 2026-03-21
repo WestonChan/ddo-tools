@@ -293,6 +293,8 @@ def test_parse_items_single(tmp_path: Path) -> None:
               return_value={0x79000001: mock_entry}),
         patch("ddo_data.game_data.items.load_string_table",
               return_value={0x25000001: "Test Sword"}),
+        patch("ddo_data.game_data.items.load_tooltip_table",
+              return_value={0x25000001: "A sharp test sword."}),
         patch("ddo_data.game_data.items.read_entry_data",
               return_value=item_content),
     ):
@@ -302,6 +304,7 @@ def test_parse_items_single(tmp_path: Path) -> None:
     assert items[0]["name"] == "Test Sword"
     assert items[0]["rarity"] == "Rare"
     assert items[0]["equipment_slot"] == "Main Hand"
+    assert items[0]["tooltip"] == "A sharp test sword."
 
 
 # ---------------------------------------------------------------------------
@@ -496,6 +499,8 @@ def test_parse_feats_single(tmp_path: Path) -> None:
               return_value={0x79000001: feat_entry, 0x79000002: item_entry}),
         patch("ddo_data.game_data.feats.load_string_table",
               return_value={0x25000001: "Precise Shot", 0x25000002: "Iron Defender"}),
+        patch("ddo_data.game_data.feats.load_tooltip_table",
+              return_value={0x25000001: "Improves ranged accuracy."}),
         patch("ddo_data.game_data.feats.read_entry_data", side_effect=mock_read_entry),
     ):
         feats = parse_feats(tmp_path)
@@ -503,6 +508,7 @@ def test_parse_feats_single(tmp_path: Path) -> None:
     assert len(feats) == 1
     assert feats[0]["name"] == "Precise Shot"
     assert feats[0]["dat_id"] == "0x79000001"
+    assert feats[0]["tooltip"] == "Improves ranged accuracy."
 
 
 # ---------------------------------------------------------------------------

@@ -19,7 +19,7 @@ from ..dat_parser.btree import traverse_btree
 from ..dat_parser.extract import read_entry_data
 from ..dat_parser.namemap import DISCOVERED_KEYS, decode_dup_triple
 from ..dat_parser.probe import decode_effect_entry
-from ..dat_parser.strings import load_string_table
+from ..dat_parser.strings import load_string_table, load_tooltip_table
 from .enums import (
     EQUIPMENT_SLOTS,
     ITEM_CATEGORIES,
@@ -253,6 +253,12 @@ def parse_items(
     if on_progress:
         on_progress(f"  {len(string_table):,} strings loaded")
 
+    if on_progress:
+        on_progress("Loading tooltip table...")
+    tooltip_table = load_tooltip_table(english_archive)
+    if on_progress:
+        on_progress(f"  {len(tooltip_table):,} tooltips loaded")
+
     # Load gamelogic entries
     gamelogic_path = ddo_path / "client_gamelogic.dat"
     if not gamelogic_path.exists():
@@ -298,6 +304,10 @@ def parse_items(
 
         item = _decode_item_entry(data, file_id, name)
         if item is not None:
+            # Look up tooltip via same 0x25XXXXXX namespace as name
+            tooltip = tooltip_table.get(str_id)
+            if tooltip:
+                item["tooltip"] = tooltip
             items.append(item)
 
     if on_progress:
