@@ -694,6 +694,7 @@ Of 24K spell entries, most are NPC abilities (Arrow, Bolt, Attack, Set Bonus, et
 - Stat_def_id values in the ref list are NOT "small integers" — many are IEEE 754 floats or 0x10/0x20 definition references
 - Slot 0 is NOT a file reference into client_general.dat — it's an internal template code
 - 37,937 compound 0x79 entries reference 0x47 spells for weapon procs/on-hit effects, not class spell assignments
+- Ref-list dup-triple encoding is primarily a 0x47 phenomenon (41% of spell entries). Only 111 of 201K item entries (0.05%) embed spell parameters in their ref lists — these are "spell-items" with DID 0x028B/0x008B that use the spell preamble format. Their 253 ref-list stat values are entirely separate from the body's 0x10XXXXXX property keys. Other namespaces (0x07 game objects: 20 entries, 0x0C physics: 47 entries) show minimal dup-triple ref usage
 
 #### Item entries — 0x79XXXXXX namespace (dup-triple format)
 
