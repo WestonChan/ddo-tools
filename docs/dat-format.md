@@ -9,9 +9,21 @@ Configure this path by setting `DDO_PATH` in `.env` (see `.env.example`), or pas
 
 ## Key `.dat` Files
 
-- `client_gamelogic.dat` (498 MB) — item defs, feat data, enhancement trees, game rules
-- `client_local_English.dat` (214 MB) — English text strings, names, descriptions
-- `client_general.dat` (438 MB) — UI icons, item icons, feat icons
+- `client_gamelogic.dat` (504 MB) -- item defs, feat data, enhancement trees, game rules
+- `client_local_English.dat` (214 MB) -- English text strings, names, descriptions, audio
+- `client_general.dat` (438 MB) -- UI/item/feat icons; also 577 entries in 0x01 namespace and 489 in 0x02 (stat definition tables? spell school lookups?)
+
+### Other `.dat` Files (not useful for build planning)
+
+- `client_surface.dat` (3.4 GB) -- terrain/environment textures
+- `client_sound.dat` (4.1 GB) -- music, sound effects
+- `client_highres.dat` (4.1 GB) -- high-resolution textures
+- `client_mesh.dat` (2.3 GB) -- 3D models
+- `client_anim.dat` (415 MB) -- character/NPC animations
+- `client_cell_1-4.dat` (760 MB) -- zone/dungeon geometry
+- `client_map_1-4.dat` (88 MB) -- map images
+- `client_local_DE.dat` (94 MB) -- German localization
+- `client_local_FR.dat` (94 MB) -- French localization
 
 ## Archive Format
 
@@ -760,11 +772,14 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 
 - ~~Multi-block files~~ **Resolved** (2026-03-20): the apparent multi-block failure in `client_local_English.dat` was a localization parser bug, not a block-reading issue. `decode_localization_entry` now handles both 0x200 (DID present) and 0x400 (DID stripped) formats. The 61,738 gamelogic entries previously flagged as multi-block may have a similar offset issue, or may genuinely span blocks — needs re-evaluation.
 - Exact purpose of `unknown2` and `timestamp` in B-tree entries (unknown1 = generation counter; timestamp = NOT Unix, likely patch sequence; unknown2 = small per-archive integer)
-- What determines the actual stat identity (e.g. "Strength", "Dexterity", "Spot") for entry_type=17 bonus effects? The stat_def_id field in effect entries is a bonus-mechanism classifier (not per-stat), bonus_type_code is always 0x0000 for entry_type=17, and there is no magnitude. The per-stat discriminator may live in entry_type=167 effects, a separate stat-definition table, or a property on the parent 0x79XXXXXX item entry not yet identified. Census (2026-03-19): 201K effects total; type=17 has 88K entries (560 unique stat_def_ids), type=167 has 45K (22.4%, completely undecoded), type=53 has 34K (only 8 unique stat_def_ids, dominated by sid=376 at 93.6%, with only 1 bonus_type_code 0x0100=Enhancement). The type-53 landscape is much narrower than expected — most item bonus diversity comes through type-17/type-167 entries.
+- What determines the actual stat identity (e.g. "Strength", "Dexterity", "Spot") for entry_type=17 bonus effects? The stat_def_id field in effect entries is a bonus-mechanism classifier (not per-stat), bonus_type_code is always 0x0000 for entry_type=17, and there is no magnitude. Type-167 entries have stat_def_id=0 at the container level but contain sub-effect blocks at byte 0xB0+ that may encode the actual stat identity. Census (2026-03-19): 201K effects total; type=17 has 88K entries (560 unique stat_def_ids), type=167 has 45K (sub-effect containers, partially decoded), type=53 has 34K (only 8 unique stat_def_ids, dominated by sid=376 at 93.6%). The per-stat discriminator likely lives in type-167 sub-effect blocks, type-59/173/503 entries, or a property on the parent 0x79XXXXXX item entry.
 - Property type system for complex type-0x02/0x01 entries (LOTRO uses a registry at DID 0x34000000; DDO lacks it)
 - Meaning of remaining 0x10XXXXXX keys (442 keys in DISCOVERED_KEYS as of this writing; coverage extends to keys appearing on 19+ of 236 named wiki items; ~560 lower-frequency unknowns remain, predominantly zero-constant schema placeholders for specific item sub-types)
-- Spell school source: slot 1 is a variant/type ID (NOT school code); actual school must come from the `client_general.dat` template (slot 0 ref)
+- Spell school source: slot 1 is a variant/type ID (NOT school code); template codes (0x0147XXXX) encode delivery mechanism not school; only 9/166 templates exist in archives; school remains wiki-only
 - Compound entry structure (ref_count=19, ref_count=46 groups): purpose of the large ref lists and keys 0x10000882, 0x10006392
+- Type-167 sub-effect block format: 37K entries have 5 sub-effects each starting at byte 0xB0; repeating `12 00 00 00 63 00 00 00` pattern suggests stat_def_id + magnitude pairs; byte 0xB1 = sub-effect count; may encode enhancement rank bonuses per difficulty tier
+- Undecoded effect types 59 (1,811 entries), 173 (1,545), and 503 (417): completely unexplored, may contain additional stat/bonus data
+- Pseudo-float file references: ~30K values across 6+ property keys read as ~8.0 floats are actually `0x41XXXXXX` file ID pointers to `client_general.dat`; need u32 interpretation
 
 **Resolved:**
 - 0x144 field: confirmed NOT block_size. Values 0x200 (gamelogic) / 0x400 (english, general) are version codes.
@@ -780,6 +795,11 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - Non-0x10 dup-pair key=686 (0x2AE) value=0x10000B22: 0x10000B22 is a "property meta-key" reference, not a file content entry. It functions as a type/bonus-category identifier used in augment gem entries.
 - Wiki enchantment field name: DDO Wiki {{Named item}} template uses field `enhancements` (not `enchantments`). Fixed 2026-03-19. Wiki enchantments use template syntax (e.g., `{{Stat|STR|7|Insightful}}`) not plain text — requires template-aware parser.
 - Localization entry DID prefix: version 0x400 archives (English, general) strip the file_id+type prefix in `read_entry_data`, so `decode_localization_entry` content does NOT start with the DID. Fixed 2026-03-20; string table now loads 128,982 strings (was ~800). This was mislabeled as a "multi-block file support" issue.
+- 0x0AXXXXXX namespace: Ogg Vorbis audio files (3,194 entries in English archive, ~4KB each). NOT supplementary localization text.
+- 0x0147XXXX spell template codes: 166 unique values. Encode delivery mechanism (targeting, AoE shape, range), NOT spell school. Same code spans multiple schools (e.g., 0x0147005A across Abjuration, Enchantment, Evocation). Only 9/166 exist as entries in archives.
+- Float-valued property keys: 190 keys identified with IEEE 754 float values. Key mappings: 0x10000907=duration(s), 0x10000B7A=cooldown(s), 0x10001B29=feat_cooldown(30s), 0x10000B60=tier/rank multiplier, 0x10000B5C=sign multiplier, 0x10000867/868/869=difficulty tier fractions (0.25/0.5/0.75), 0x10000742=internal level. See `docs/binary-reverse-engineering.md` for full table.
+- Type-167 effect entry header: first ~0xB0 bytes are identical across all 45,094 entries (engine boilerplate). Three sub-type discriminator values at bytes 23-24: 0x0499 (98.8%), 0x01E8 (1.0%), 0x09D4 (0.1%). Variable sub-effect data in tail at byte 0xB0+.
+- English archive namespace distribution: 138,797 entries across 0x00-0xFF. 0x25=132,783 (localization text, dominant), 0x0A=3,194 (audio), 0x00=591, 0x22=236, all others 1-64 entries.
 - 0x79XXXXXX preamble semantics: the 2-byte preamble at `prop_start = 5 + ref_count * 4` is a schema version code (81 distinct values). NOT a category discriminator — all item types appear under preamble 0x0010 (most common, 68K entries). Separate from ref_count: entries with ref_count=0 have preamble at bytes[5..6]; ref_count=19 entries have preamble at bytes[81..82] = always 0x3264; ref_count=46 entries have preamble at bytes[189..190] = always 0x6CD2.
 
 ## Implementation Status
@@ -804,7 +824,9 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] Type 0x04 entry decoder (99.7% parse rate, simple + array properties)
 - [x] Type 0x02 entry decoder (simple + complex-pairs + complex-typed via VLE property stream; complex-partial pattern detection fallback)
 - [ ] Type 0x01 entry decoder (behavior scripts — structure characterized, full decoder not yet built)
-- [x] 0x70XXXXXX effect entry layout (variable-size by entry_type; stat_def_id at data[16..17]; magnitude at byte 68 for entry_type=53; 7 stat_def_ids partially mapped)
+- [x] 0x70XXXXXX effect entry layout (variable-size by entry_type; stat_def_id at data[16..17]; magnitude at byte 68 for entry_type=53; 7 stat_def_ids partially mapped; type-167 partially decoded as sub-effect containers)
+- [ ] 0x70XXXXXX type-59/173/503 effect entries (3,773 entries total, completely unexplored; may contain per-stat bonus data)
+- [x] Float-valued property key survey (190 keys identified: duration, cooldown, tier multiplier, difficulty fractions, mount speeds; pseudo-float 0x41XXXXXX file refs distinguished from real floats)
 - [x] 0x70XXXXXX stat_def_id lookup table (4 single-stat mappings in STAT_DEF_IDS: Haggle/376, MRR/450, Saving Throws vs Traps/1572, Spell Points/1941; decode_effect_entry() pipeline operational; expand via probe investigation)
 - [x] 0x47XXXXXX spell entry format (two DIDs 0x028B/0x008B; stat_def_id dup-triples in ref list; compact and extended encodings; 15 stat_def_ids mapped; SP cost in stat 553/554 as floats; damage scaling in stat 946; school encoding still unclear — not in 0x0A refs, not a simple enum)
 - [x] Property key census (`dat-registry` command -- empirical statistics)
@@ -831,6 +853,8 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] Races seed data (29 races — 17 standard + 12 iconic)
 - [x] Set bonus effects (111 sets with 366 piece-count bonus effect rows from Named_item_sets wiki page)
 - [x] Set membership linking (254 sets, 1,712 items linked via set_name + Named item sets templates)
+- [ ] Duration/cooldown extraction from binary (float keys 0x10000907=duration, 0x10000B7A=cooldown into feat/item dicts; schema columns may already exist for feats.cooldown)
+- [ ] Enhancement rank bonuses from binary (type-167 sub-effect decoding at byte 0xB0+; 37K entries with 5 sub-effects each; would provide exact stat values per rank that wiki descriptions often omit)
 - [x] Enhancements binary parser — deferred (game_data/enhancements.py stub removed from priority; wiki scraper provides full tree coverage with 88 class + 27 racial + 6 universal + 84 reaper = 205 trees)
 - [x] Augments parser (778 augments scraped from wiki {{Item Augment}} template; 535 structured bonuses with source_type='augment')
 - [x] Spells parser (497 spells scraped from wiki {{Infobox-spell}} template; class spell levels, schools, damage types, metamagic flags)
