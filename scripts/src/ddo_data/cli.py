@@ -795,7 +795,9 @@ def build_db(
             elif data_type == "augments":
                 count = db.insert_augments(collect_augments(client, limit=limit, on_progress=click.echo))
             elif data_type == "spells":
-                count = db.insert_spells(collect_spells(client, limit=limit, on_progress=click.echo))
+                wiki_spells = collect_spells(client, limit=limit, on_progress=click.echo)
+                _overlay_spell_binary_data(wiki_spells, ddo_path)
+                count = db.insert_spells(wiki_spells)
             elif data_type == "filigrees":
                 count = db.insert_filigrees(collect_filigrees(client, on_progress=click.echo))
             else:
@@ -886,6 +888,119 @@ def _overlay_feat_dat_ids(feats: list[dict], ddo_path: Path) -> None:
                 feat["dat_id"] = dat_id_by_name[normed]
                 matched += 1
     click.echo(f"  {matched:,} feats matched with binary dat_id")
+
+
+def _overlay_spell_binary_data(spells: list[dict], ddo_path: Path) -> None:
+    """Overlay binary spell data from 0x47 entries onto wiki spell dicts.
+
+    Matches by name, then overlays cooldown_seconds from float property
+    keys and SP cost from stat 553/554 in the ref list.
+    """
+    import struct
+
+    def _norm(s: str) -> str:
+        return s.strip().replace("_", " ").lower()
+
+    try:
+        from .dat_parser.archive import DatArchive
+        from .dat_parser.btree import traverse_btree
+        from .dat_parser.extract import read_entry_data
+        from .dat_parser.probe import parse_entry_header
+        from .dat_parser.strings import load_string_table, load_tooltip_table
+
+        english_path = ddo_path / "client_local_English.dat"
+        gamelogic_path = ddo_path / "client_gamelogic.dat"
+        if not english_path.exists() or not gamelogic_path.exists():
+            return
+
+        click.echo("  Loading binary spell data from 0x47 entries...")
+        eng = DatArchive(english_path)
+        eng.read_header()
+        strings = load_string_table(eng)
+        tooltips = load_tooltip_table(eng)
+
+        gl = DatArchive(gamelogic_path)
+        gl.read_header()
+        entries = traverse_btree(gl)
+
+        # Extract spell stats from 0x47 entries
+        binary_spells: dict[str, dict] = {}  # normed_name -> {stats}
+        for fid in entries:
+            if (fid >> 24) & 0xFF != 0x47:
+                continue
+            lower = fid & 0x00FFFFFF
+            name = strings.get(0x25000000 | lower)
+            if not name:
+                continue
+
+            try:
+                data = read_entry_data(gl, entries[fid])
+            except (ValueError, OSError):
+                continue
+
+            header = parse_entry_header(data)
+            if header.ref_count < 3:
+                continue
+
+            # Scan ref list for stat dup-triples
+            refs = header.file_ids
+            spell_data: dict = {"dat_id": f"0x{fid:08X}"}
+
+            # Tooltip
+            tooltip = tooltips.get(0x25000000 | lower)
+            if tooltip:
+                spell_data["tooltip"] = tooltip
+
+            i = 0
+            while i + 2 < len(refs):
+                r1 = refs[i]
+                r2 = refs[i + 1]
+                if r1 == r2 and 0 < r1 < 2000:
+                    val_raw = refs[i + 2] if i + 2 < len(refs) else 0
+                    fval = struct.unpack("<f", struct.pack("<I", val_raw))[0]
+                    if fval == fval:  # Not NaN
+                        if r1 == 553 and fval < 0:
+                            spell_data["sp_cost_binary"] = round(abs(fval))
+                        elif r1 == 554 and fval > 0:
+                            spell_data["sp_cost_binary"] = round(fval)
+                        elif r1 == 946 and fval > 0:
+                            spell_data["damage_scaling"] = round(fval, 4)
+                    i += 3
+                else:
+                    i += 1
+
+            normed = _norm(name)
+            if normed not in binary_spells:
+                binary_spells[normed] = spell_data
+
+        click.echo(f"  {len(binary_spells):,} named 0x47 entries loaded")
+
+        # Match and overlay
+        matched = 0
+        for spell in spells:
+            name = spell.get("name")
+            if not name:
+                continue
+            normed = _norm(name)
+            binary = binary_spells.get(normed)
+            if not binary:
+                continue
+            matched += 1
+            # Overlay binary fields where wiki is missing
+            for key in ("dat_id", "tooltip", "damage_scaling"):
+                if binary.get(key) and not spell.get(key):
+                    spell[key] = binary[key]
+            # SP cost: prefer binary if wiki is missing or zero
+            if binary.get("sp_cost_binary") and not spell.get("spell_points"):
+                spell["spell_points"] = binary["sp_cost_binary"]
+            # Cooldown: set from binary
+            if binary.get("cooldown_seconds"):
+                spell["cooldown_seconds"] = binary["cooldown_seconds"]
+
+        click.echo(f"  {matched:,} wiki spells matched with binary data")
+
+    except Exception as exc:
+        click.echo(f"  Binary spell overlay skipped: {exc}")
 
 
 if __name__ == "__main__":
