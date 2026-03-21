@@ -6,11 +6,14 @@ Comprehensive results from probing all opaque data in DDO `.dat` archives.
 
 | Target | Result | Value |
 |--------|--------|-------|
-| Type-167 effects (45K) | Partially decoded | Effect containers with sub-effect data in tail |
+| Type-167 effects (45K) | Dead end | Behavior script templates, all 37K copies identical |
 | Spell school encoding | Dead end | Template codes = delivery mechanism, not school |
 | 0x0A localization (3.2K) | Dead end | Ogg Vorbis audio files, not text |
 | Float property keys (190) | Productive | Duration, cooldown, tier multipliers identified |
-| 0x07 game objects (35K) | Pending | Deep analysis running |
+| Effect types 59/173/503 | Dead end | All identical system templates, no per-instance data |
+| client_general.dat 0x01 | Partial | 4.2 MB mega-entry has 908 stat refs; rest is 3D data |
+| client_general.dat 0x02 | Dead end | Visual/material data only, zero stat refs |
+| 0x07 game objects (35K) | Pending | Probe timed out, needs streaming approach |
 
 ## Type-167 Effect Entries (0x70XXXXXX)
 
@@ -49,13 +52,29 @@ which may be stat_def_id + magnitude pairs or similar structured data.
 Associated with: enhancement tree effects, augment operations, dragonmark abilities,
 item enchantments ("Focused", "Counterattack", "Strong Defense").
 
-### What's still opaque
+### Key finding: ALL 720-byte entries are completely identical
 
-- `stat_def_id` at offset 16 is always 0 (NOT per-stat at the container level)
-- The sub-effect block format at 0xB0+ needs further decoding to extract individual
-  stat bonuses from within the container
-- The sub-type discriminator at bytes 23-24 (three known values) needs correlation
-  with effect categories
+Deeper analysis confirmed that ALL 37,013 entries at 720 bytes share the exact
+same tail content — every u16/u32 field has exactly 1 unique value across all
+entries. The "5 sub-effects" are always the same sub-effects. These are
+**behavior script templates**, not per-entry data.
+
+The tail at 0xB0+ contains:
+- Bytes 0xB0-0xB1: `01 05` (count=5 sub-effects, always)
+- Bytes 0xB2-0x106: 5 fixed sub-effect blocks with values like `0x12` (18) and
+  `0x63` (99) — engine execution parameters, not stat identifiers
+- Bytes 0x107+: dup-pair property key registry (`0x10XXXXXX` values repeated
+  in pairs) — lists which property keys the engine writes when applying the effect
+
+The actual stat identity and magnitude for a given item come from the SIBLING
+type-17 (stat classifier) and type-53 (magnitude) effect entries referenced by
+the same parent 0x79 item. Type-167 is only the execution template.
+
+**Verdict: Dead end for stat extraction.** Type-167 cannot distinguish between
+"Enhancement bonus to Strength +6" and "Enhancement bonus to Dexterity +6" — both
+reference the exact same type-167 entry.
+
+## Other Undecoded Effect Types (0x70XXXXXX)
 
 ## Spell School Encoding (0x0147XXXX Templates)
 
@@ -85,8 +104,13 @@ The type-167 probe revealed the full effect type distribution:
 | 503 (0x1F7) | 417 | **Unknown** |
 | 175 (0xAF) | varies | Decoded (multi-tier augment table) |
 
-Types 59, 173, and 503 are completely unexplored and may contain additional
-stat or bonus data.
+Types 59, 173, and 503 were probed and found to be **identical template entries**:
+
+- Type 59: 1,811 entries, ALL 70 bytes, ALL identical. stat_def_id=0. System templates.
+- Type 173: 1,545 entries, ALL 184 bytes, ALL identical. stat_def_id=0. System templates.
+- Type 503: 417 entries, ALL 514 bytes, ALL identical. stat_def_id=0. System templates.
+
+None contain per-instance stat or bonus data. Dead end.
 
 ## 0x0A Namespace (client_local_English.dat)
 
@@ -165,9 +189,32 @@ They should be read as u32 pointers, not float magnitudes.
 | `0x10001B2D` | -106024.0 (100%) | Large negative constant -- possibly sentinel |
 | `0x100042E5` | 114.0 (100%) | Green Steel specific constant |
 
+## client_general.dat Non-Icon Namespaces
+
+### 0x01 Namespace (577 entries)
+
+- Entry 0x01000000: **4.2 MB mega-entry** (all zeros in header -- potential master
+  registry or lookup table; contains 908 possible stat_def_id references)
+- Remaining 576 entries: DID=0x000040F0 or 0x0000C0D0, ref_count=240 or 112
+- Heavily float-filled (identity matrices, transformation data)
+- These are **3D model/scene definitions**, not game mechanic data
+- Only 1 dup-triple found (in the 4.2 MB entry at offset 1.7 MB)
+
+The 4.2 MB entry at 0x01000000 may be worth deeper investigation as a
+potential stat definition table.
+
+### 0x02 Namespace (489 entries)
+
+- Sizes vary 218 bytes to 26 KB
+- 116 entries at 218 bytes are minimal matrices (9x 1.0f floats)
+- Larger entries are complex scene/material definitions
+- **Zero stat_def_id references** -- purely visual/geometric data
+- Dead end for game mechanic extraction.
+
 ## 0x07 Game Objects
 
-*Investigation still running -- results pending.*
+*Investigation timed out (script too memory-hungry for 35K entries).*
+Needs a streaming probe that doesn't cache all entries.
 
 Entry count: 34,884 in `client_gamelogic.dat`.
 Largest DID group: DID=1 with ~7K entries (11-byte stubs and larger bodies).
