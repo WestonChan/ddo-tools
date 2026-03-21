@@ -367,6 +367,9 @@ def load_localization_tables(
     enchant_names: dict[int, str] = {}
     enchant_suffixes: dict[int, str] = {}
     descriptions: dict[int, str] = {}
+    plural_names: dict[int, str] = {}
+    action_texts: dict[int, str] = {}
+    quest_objectives: dict[int, str] = {}
 
     for file_id, entry in entries.items():
         try:
@@ -388,10 +391,25 @@ def load_localization_tables(
         if text:
             descriptions[file_id] = text
 
+        text = subs.get(_REF_PLURAL)
+        if text:
+            plural_names[file_id] = text
+
+        text = subs.get(_REF_ACTION_TEXT)
+        if text:
+            action_texts[file_id] = text
+
+        text = subs.get(_REF_QUEST_OBJECTIVE)
+        if text:
+            quest_objectives[file_id] = text
+
     return {
         "enchant_name": enchant_names,
         "enchant_suffix": enchant_suffixes,
         "description": descriptions,
+        "plural_name": plural_names,
+        "action_text": action_texts,
+        "quest_objective": quest_objectives,
     }
 
 
