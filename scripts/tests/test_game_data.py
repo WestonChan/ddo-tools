@@ -428,6 +428,26 @@ def test_decode_item_entry_cooldown() -> None:
     assert item["cooldown_seconds"] == 6.0
 
 
+def test_decode_item_entry_level_and_tier() -> None:
+    """Internal level and tier multiplier float keys are extracted."""
+    _KEY_INTERNAL_LEVEL = 0x10000742
+    _KEY_TIER_MULTIPLIER = 0x10000B60
+    level_20 = struct.unpack("<I", struct.pack("<f", 20.0))[0]
+    tier_3 = struct.unpack("<I", struct.pack("<f", 3.0))[0]
+
+    data = _build_dup_triple_bytes([
+        (_KEY_RARITY, 4),
+        (_KEY_EQUIPMENT_SLOT, 6),
+        (_KEY_INTERNAL_LEVEL, level_20),
+        (_KEY_TIER_MULTIPLIER, tier_3),
+    ])
+
+    item = _decode_item_entry(data, 0x79000001, "Epic Sword")
+    assert item is not None
+    assert item["internal_level"] == 20
+    assert item["tier_multiplier"] == 3.0
+
+
 # ---------------------------------------------------------------------------
 # _merge_wiki_feats tests
 # ---------------------------------------------------------------------------

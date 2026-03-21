@@ -49,7 +49,9 @@ _ITEM_INDICATOR_KEYS = {
 }
 
 # Float-valued property keys (u32 values reinterpreted as IEEE 754 floats)
-_KEY_COOLDOWN = 0x10000B7A  # Cooldown in seconds
+_KEY_COOLDOWN = 0x10000B7A       # Cooldown in seconds
+_KEY_INTERNAL_LEVEL = 0x10000742  # Encounter/object level (distinct from minimum_level)
+_KEY_TIER_MULTIPLIER = 0x10000B60  # Effect scaling tier (1.0, 2.0, 3.0, etc.)
 
 
 def _u32_to_float(value: int) -> float | None:
@@ -161,6 +163,18 @@ def _decode_item_entry(
         cooldown_f = _u32_to_float(cooldown_raw)
         if cooldown_f is not None and cooldown_f > 0:
             item["cooldown_seconds"] = round(cooldown_f, 1)
+
+    level_raw = prop_map.get(_KEY_INTERNAL_LEVEL)
+    if level_raw is not None:
+        level_f = _u32_to_float(level_raw)
+        if level_f is not None and 0 < level_f < 1000:
+            item["internal_level"] = round(level_f)
+
+    tier_raw = prop_map.get(_KEY_TIER_MULTIPLIER)
+    if tier_raw is not None:
+        tier_f = _u32_to_float(tier_raw)
+        if tier_f is not None and abs(tier_f) < 100:
+            item["tier_multiplier"] = round(tier_f, 1)
 
     return item
 

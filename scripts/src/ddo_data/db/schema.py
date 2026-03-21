@@ -189,6 +189,9 @@ CREATE TABLE IF NOT EXISTS items (
     base_value        TEXT,
     description       TEXT,
     tooltip           TEXT,
+    cooldown_seconds  REAL,
+    internal_level    INTEGER,
+    tier_multiplier   REAL,
     wiki_url          TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_items_name ON items(name);
