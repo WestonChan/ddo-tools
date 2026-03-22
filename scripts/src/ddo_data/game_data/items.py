@@ -77,9 +77,11 @@ def _u32_to_float(value: int) -> float | None:
         return None
     return result
 
-# Wiki fields that the binary format does not provide
+# Wiki fields confirmed NOT in binary dup-triple property keys.
+# Verified 2026-03-22 via dat-namemap with full 8,600-item wiki catalog
+# (6,895 matched, 0 new property key mappings discovered).
+# NOTE: minimum_level IS from binary (key 0x10001C5D) — not listed here.
 _WIKI_ONLY_FIELDS = [
-    "minimum_level",
     "item_type",
     "enchantments",
     "augment_slots",
