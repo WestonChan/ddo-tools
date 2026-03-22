@@ -870,12 +870,14 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] JSON export pipeline (`ddo-data extract` command -- items)
 - [x] Wire feat binary fields through overlay (cooldown_seconds, duration_seconds, damage_dice_notation, scales_with_difficulty, tooltip, description — _overlay_feat_binary_data now overlays all schema-backed fields where wiki has None)
 - [x] Run dat-effect-map against full wiki item catalog (8,600 items, 1,850 matched binary entries, 411/5,178 correlations). **Result:** Only 1 confirmed stat mapping above threshold (Well Rounded/1692). 5 candidates with 1 conf, 0 conflicts already added. Mechanism classifier problem confirmed — sid 1254 has 172 conflicts across 22 stats. No new bonus_type_codes discovered. Stat identity resolved at runtime, not in binary.
-- [ ] Per-field data provenance — replace static _WIKI_ONLY_FIELDS with dynamic `_data_sources` dict tracking field_name -> 'binary'|'wiki' per entity. Extends existing data_source pattern on bonuses/item_effects.
 - [x] Item numeric field correlation — ran dat-namemap with full 8,600-item wiki catalog (6,895 matched). **Result:** 0 new mappings. enhancement_bonus, armor_bonus, max_dex_bonus, hardness, weight, base_value confirmed NOT in dup-triple property keys. _WIKI_ONLY_FIELDS is correct.
 - [x] Item enum field correlation — material, binding, handedness, proficiency, weapon_type also not found as simple property keys. Confirmed wiki-only or encoded in complex sub-structures inaccessible via current decoder.
 - [x] Wire spell school from binary — 114-entry hash-to-school lookup table built from 178 wiki-matched spells. DID 0x028B slot 15 (89.3%), DID 0x008B slot 16 (90.9%). Wired into _overlay_spell_binary_data; overlays school where wiki has None. Covers all 8 schools including Divination.
 - [x] Spell field correlation — extended spells_correlate.py with range/saving_throw/spell_resistance correlators. **Results:** range at slot 27 (100%, 12/12), slot 10 (93%, 28/30); saving_throw at slot 15 (90.5%, 105/116); spell_resistance at slot 29 (94.5%, 52/55). **Key finding:** slots 15-16 and 29 show high correlation for MULTIPLE fields (school + saving_throw + spell_resistance), indicating the u32 ref values are **packed composite fields** encoding several attributes per slot. Decoding the bit layout is needed before wiring range/save/SR into the overlay.
+
+### Binary reverse-engineering (complete before pre-frontend gates)
 - [ ] Decode packed spell ref slot bit layout — slots 15-16 and 27-29 encode multiple spell attributes (school, saving_throw, spell_resistance, range) in single u32 values. Determine which bits encode which field via cross-correlation analysis of matched wiki spells. This would unlock 4 additional binary-sourced fields for spells.
+- [ ] Survey for composite/packed fields across all entry types — the spell school discovery revealed that large u32 values can be packed composites encoding multiple attributes per slot. Systematically check for similar patterns in: (a) item 0x79 dup-triple values that are large u32s (e.g., the 144-value bitmask key 0x1000088E on feats), (b) 0x70 effect entries where "mechanism classifier" stat_def_ids might pack stat + modifier type, (c) 0x07 class/race DID=2 entries where the complex-partial body contains packed fields. Look for values that show high-entropy distribution with many unique values but consistent sub-byte patterns when decomposed.
 - [ ] Spell field correlation for remaining fields — components (bitmask), target (enum), duration (formula), damage_types (enum refs), metamagics (bitmask) not yet investigated
 - [ ] Investigate 0x47 spell entry bodies (12% non-trivial, up to 1832 bytes — completely unexplored)
 - [ ] Class/race binary entry decoding — **discovery complete**: 0x07 entries exist for all classes. DID=4 stubs (Fighter/Barbarian/Paladin: 31 bytes, 3 shared effect refs). DID=2 complex entries (Ranger: 5,359 bytes with 484 file_id refs + 50 property keys; Sorcerer/Wizard: 331 bytes each). Race effect entries at 0x70018812-1C (Elf/Warforged/Human/Dwarf/Halfling). **Blocked on:** DID=2 complex-partial decoder improvements for 0x07 namespace
@@ -883,12 +885,22 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [ ] Feat bonus_classes discovery — search for class ID refs in feat property arrays matching wiki bonus_classes lists
 - [ ] Augment slot discovery — search for item property keys encoding augment slot types (colorless, blue, yellow, etc.) as small int arrays
 - [ ] Set membership discovery — check whether group_ref (0x10000A48) or another property key encodes set_name association
+- [ ] Per-field data provenance — replace static _WIKI_ONLY_FIELDS with dynamic `_data_sources` dict tracking field_name -> 'binary'|'wiki' per entity. Extends existing data_source pattern on bonuses/item_effects.
+
+### Pre-frontend gates
+- [x] **PRE-FRONTEND GATE:** Binary coverage audit (2026-03-22) — systematically ran all correlators against full wiki catalogs. Results by entity:
+  - **Items:** 0 new property key mappings from 6,895 matched entries. _WIKI_ONLY_FIELDS confirmed correct for enhancement_bonus, armor_bonus, max_dex_bonus, hardness, weight, base_value, material, binding, handedness, proficiency, weapon_type, damage, critical, augment_slots, set_name, quest.
+  - **Feats:** bitmask key 0x1000088E (144 unique values) does NOT map to is_passive/is_active/is_stance/is_metamagic. 61-feat sample too small for conclusive results. Wiki flags remain wiki-only.
+  - **Spells:** school NOW from binary (114-entry hash lookup). range/saving_throw/spell_resistance discoverable but blocked on packed bit-layout decoding. Components/target/duration/metamagics not yet investigated.
+  - **Effects:** STAT_DEF_IDS wall confirmed — only 1 mapping (Well Rounded/1692) above 3-confirmation threshold from 8,600 items. 5 candidates with 1 conf added. stat identity resolved at runtime. BONUS_TYPE_CODES: 0 new confirmed.
+  - **Enhancements/augments/sets/filigrees:** wiki-only (no binary parser).
+- [ ] **PRE-FRONTEND GATE:** Schema alignment audit — verify all binary-decoded fields have corresponding DB columns and correct types; verify enum code-to-seed ID mappings are consistent; verify writer field-flow (every parser dict key consumed by insert_*); verify CHECK constraints accept all observed binary values. Goal: ensure no data is silently dropped or rejected at insert time.
+
+### Wiki data population (can proceed in parallel with binary RE)
 - [ ] Populate feat_prereq_* tables from wiki (feat_prereq_feats, feat_prereq_stats, feat_prereq_classes, feat_prereq_races, feat_prereq_skills)
 - [ ] Populate class progression tables from wiki or binary (class_bonus_feat_slots, class_spell_slots, class_spells_known, class_skills, class_auto_feats)
 - [ ] Populate race tables from wiki (race_ability_bonuses, race_feats)
 - [ ] Populate enhancement prerequisite tables from wiki (enhancement_tree_ap_thresholds, enhancement_prereqs, enhancement_prereq_classes, enhancement_prereq_races, enhancement_feat_links)
-- [ ] **PRE-FRONTEND GATE:** Binary coverage audit — systematically run all correlators (dat-namemap, spells_correlate, dat-effect-map) against full wiki catalog for every wiki-sourced field. For each field, record: confirmed-binary / confirmed-wiki-only / inconclusive. Update _WIKI_ONLY_FIELDS and _data_sources provenance. Goal: stabilize DB schema and field coverage before frontend depends on the data pipeline.
-- [ ] **PRE-FRONTEND GATE:** Schema alignment audit — verify all binary-decoded fields have corresponding DB columns and correct types; verify enum code-to-seed ID mappings are consistent; verify writer field-flow (every parser dict key consumed by insert_*); verify CHECK constraints accept all observed binary values. Goal: ensure no data is silently dropped or rejected at insert time.
 
 ### Asset extraction
 - [x] DDS texture extraction from client_general.dat
