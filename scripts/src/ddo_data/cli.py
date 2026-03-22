@@ -914,8 +914,10 @@ def _overlay_feat_binary_data(feats: list[dict], ddo_path: Path) -> None:
 def _overlay_spell_binary_data(spells: list[dict], ddo_path: Path) -> None:
     """Overlay binary spell data from 0x47 entries onto wiki spell dicts.
 
-    Matches by name, then overlays cooldown_seconds from float property
-    keys and SP cost from stat 553/554 in the ref list.
+    Matches by name, then overlays SP cost from stat 553/554,
+    damage_scaling from stat 946, and school from ref slot hash lookup.
+    School hash discovered via correlation: slot 15 for DID 0x028B (89%),
+    slot 16 for DID 0x008B (91%).
     """
     import struct
 
@@ -933,6 +935,61 @@ def _overlay_spell_binary_data(spells: list[dict], ddo_path: Path) -> None:
         gamelogic_path = ddo_path / "client_gamelogic.dat"
         if not english_path.exists() or not gamelogic_path.exists():
             return
+
+        # School hash lookup: maps ref slot values to spell school names.
+        # DID 0x028B uses slot 15 (89.3%), DID 0x008B uses slot 16 (90.9%).
+        # Discovered via dat-spell-correlate with 480 wiki spells, 178 matched.
+        school_hash: dict[int, str] = {
+            0x00000002: "Enchantment", 0x00000004: "Abjuration",
+            0x00000005: "Necromancy", 0x0000000A: "Evocation",
+            0x000002D4: "Conjuration", 0x0000037F: "Transmutation",
+            0x000003B5: "Evocation", 0x00010000: "Conjuration",
+            0x00011000: "Evocation", 0x0002C401: "Necromancy",
+            0x0002DB10: "Necromancy", 0x0009A210: "Transmutation",
+            0x00100000: "Transmutation", 0x0010000C: "Necromancy",
+            0x003F004A: "Transmutation", 0x003FB4B3: "Evocation",
+            0x00400000: "Enchantment", 0x00404000: "Illusion",
+            0x004061F0: "Abjuration", 0x00409FFF: "Evocation",
+            0x00412000: "Transmutation", 0x00417000: "Evocation",
+            0x0042C800: "Necromancy", 0x020C0000: "Evocation",
+            0x023F1941: "Enchantment", 0x02C40000: "Evocation",
+            0x06000003: "Necromancy", 0x0640A000: "Transmutation",
+            0x08000003: "Evocation", 0x0A40C000: "Abjuration",
+            0x0E000003: "Abjuration", 0x0E010000: "Evocation",
+            0x100016CF: "Transmutation", 0x10001898: "Enchantment",
+            0x10001BD6: "Transmutation", 0x10780000: "Abjuration",
+            0x13000002: "Evocation", 0x13100000: "Abjuration",
+            0x1A030000: "Evocation", 0x1C410B30: "Abjuration",
+            0x1F412067: "Conjuration", 0x2610001B: "Abjuration",
+            0x2E257000: "Transmutation", 0x2E4028B5: "Conjuration",
+            0x31000000: "Abjuration", 0x3310001B: "Evocation",
+            0x343F8ABC: "Conjuration", 0x3D3FCF11: "Transmutation",
+            0x3D40E8D9: "Illusion", 0x3F666666: "Abjuration",
+            0x44410E59: "Conjuration", 0x453FE2BE: "Abjuration",
+            0x47404318: "Enchantment", 0x48403790: "Conjuration",
+            0x4840A224: "Divination", 0x513F145A: "Transmutation",
+            0x514177D2: "Enchantment", 0x57407CCA: "Conjuration",
+            0x59100004: "Necromancy", 0x5B3FE23E: "Enchantment",
+            0x5C402341: "Transmutation", 0x5C4044F5: "Illusion",
+            0x74000007: "Abjuration", 0x763FAB85: "Enchantment",
+            0x78000016: "Abjuration", 0x7800030E: "Transmutation",
+            0x7D40E346: "Abjuration", 0x80B523D7: "Enchantment",
+            0x8E10001B: "Enchantment", 0x94402215: "Conjuration",
+            0x9A41091E: "Divination", 0x9B000003: "Necromancy",
+            0x9D40F000: "Conjuration", 0xA43E02C9: "Transmutation",
+            0xB6200000: "Conjuration", 0xB6200010: "Necromancy",
+            0xB640A225: "Transmutation", 0xB9000000: "Enchantment",
+            0xBB3F5798: "Abjuration", 0xC03F6D79: "Conjuration",
+            0xC4000002: "Necromancy", 0xC8000003: "Illusion",
+            0xCA40AFE5: "Abjuration", 0xD33FC364: "Enchantment",
+            0xD640C000: "Transmutation", 0xD941A116: "Conjuration",
+            0xE93FFE4E: "Necromancy", 0xE9408000: "Conjuration",
+            0xEC3EC8B0: "Abjuration", 0xF03FA5C2: "Conjuration",
+            0xF241108B: "Necromancy", 0xF63F97AF: "Transmutation",
+            0xF910001B: "Divination", 0xFA401A20: "Necromancy",
+            0xFC3F7F39: "Enchantment", 0xFD400647: "Abjuration",
+            0xFF410F41: "Necromancy", 0xFF920000: "Transmutation",
+        }
 
         click.echo("  Loading binary spell data from 0x47 entries...")
         eng = DatArchive(english_path)
@@ -963,9 +1020,16 @@ def _overlay_spell_binary_data(spells: list[dict], ddo_path: Path) -> None:
             if header.ref_count < 3:
                 continue
 
-            # Scan ref list for stat dup-triples
+            # Scan ref list for stat dup-triples and school hash
             refs = header.file_ids
             spell_data: dict = {"dat_id": f"0x{fid:08X}"}
+
+            # School from ref slot hash (slot 15 for DID 0x028B, slot 16 for 0x008B)
+            school_slot = 15 if header.did == 0x028B else 16 if header.did == 0x008B else None
+            if school_slot is not None and school_slot < len(refs):
+                school = school_hash.get(refs[school_slot])
+                if school:
+                    spell_data["school_binary"] = school
 
             # Tooltip
             tooltip = tooltips.get(0x25000000 | lower)
@@ -1017,6 +1081,9 @@ def _overlay_spell_binary_data(spells: list[dict], ddo_path: Path) -> None:
             # Cooldown: set from binary
             if binary.get("cooldown_seconds"):
                 spell["cooldown_seconds"] = binary["cooldown_seconds"]
+            # School: overlay binary school where wiki is missing
+            if binary.get("school_binary") and not spell.get("school"):
+                spell["school"] = binary["school_binary"]
 
         click.echo(f"  {matched:,} wiki spells matched with binary data")
 

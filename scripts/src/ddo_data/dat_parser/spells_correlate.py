@@ -259,6 +259,113 @@ def _correlate_school_enum(
     return correlations
 
 
+def _correlate_enum_field(
+    matched: list[MatchedSpell],
+    wiki_field: str,
+    normalize_fn: Callable[[str], str | None],
+    max_slot: int = 30,
+    *,
+    did_filter: int | None = None,
+) -> list[SlotCorrelation]:
+    """Generic enum correlator: check if slot values consistently map to a wiki field.
+
+    normalize_fn takes the raw wiki field value and returns a canonical string
+    (or None to skip). For each slot, builds a value -> set-of-canonical mapping
+    and reports slots where each value maps to exactly one canonical value.
+    """
+    correlations: list[SlotCorrelation] = []
+
+    for slot_idx in range(max_slot):
+        value_to_labels: dict[int, set[str]] = defaultdict(set)
+        total = 0
+
+        for ms in matched:
+            raw = ms.wiki.get(wiki_field)
+            if not raw or not isinstance(raw, str):
+                continue
+            canon = normalize_fn(raw)
+            if not canon:
+                continue
+
+            for entry in ms.entries:
+                if did_filter is not None and entry.did != did_filter:
+                    continue
+                if slot_idx >= len(entry.refs):
+                    continue
+                total += 1
+                value_to_labels[entry.refs[slot_idx]].add(canon)
+
+        if not value_to_labels or total == 0:
+            continue
+
+        consistent = sum(
+            1 for labels in value_to_labels.values()
+            if len(labels) == 1
+        )
+        total_values = len(value_to_labels)
+
+        if total_values > 0 and consistent / total_values > 0.5:
+            samples = []
+            for val, labels in sorted(
+                value_to_labels.items(), key=lambda kv: len(kv[1]),
+            )[:5]:
+                if len(labels) == 1:
+                    samples.append(("enum", val, next(iter(labels))))
+
+            correlations.append(SlotCorrelation(
+                slot_index=slot_idx,
+                wiki_field=f"{wiki_field} (enum)",
+                match_count=consistent,
+                total_checked=total_values,
+                samples=samples,
+            ))
+
+    correlations.sort(key=lambda c: -c.confidence)
+    return correlations
+
+
+def _normalize_range(raw: str) -> str | None:
+    """Normalize spell range text to a canonical category."""
+    r = raw.strip().lower()
+    if "personal" in r or "self" in r:
+        return "Personal"
+    if "touch" in r:
+        return "Touch"
+    if "close" in r:
+        return "Close"
+    if "medium" in r:
+        return "Medium"
+    if "long" in r:
+        return "Long"
+    if "short" in r:
+        return "Short"
+    return None
+
+
+def _normalize_save(raw: str) -> str | None:
+    """Normalize saving throw text to a canonical type."""
+    r = raw.strip().lower()
+    if "none" in r or "no" == r:
+        return "None"
+    if "will" in r:
+        return "Will"
+    if "reflex" in r:
+        return "Reflex"
+    if "fortitude" in r or "fort" in r:
+        return "Fortitude"
+    return None
+
+
+def _normalize_sr(raw: str) -> str | None:
+    """Normalize spell resistance text to Yes/No."""
+    r = raw.strip().lower()
+    if r in ("yes", "y"):
+        return "Yes"
+    if r in ("no", "n"):
+        return "No"
+    return None
+
+
 def _analyze_variants(matched: list[MatchedSpell]) -> list[VariantAnalysis]:
     """Analyze class variants — which slots differ between variants of the same spell."""
     analyses: list[VariantAnalysis] = []
@@ -455,6 +562,25 @@ def run_correlation(
             f"{best.confidence:.1%})")
         for sample in best.samples[:5]:
             log(f"    value {sample[1]} -> {sample[2]}")
+
+    # Additional enum field correlations (range, saving_throw, spell_resistance)
+    log("\nCorrelating enum fields (range, saving_throw, spell_resistance)...")
+    for wiki_field, norm_fn in [
+        ("range", _normalize_range),
+        ("saving_throw", _normalize_save),
+        ("spell_resistance", _normalize_sr),
+    ]:
+        corrs = _correlate_enum_field(matched, wiki_field, norm_fn)
+        result.slot_correlations.extend(corrs[:5])
+        if corrs:
+            best = corrs[0]
+            log(f"  {wiki_field}: best slot {best.slot_index} "
+                f"({best.match_count}/{best.total_checked} = "
+                f"{best.confidence:.1%})")
+            for sample in best.samples[:3]:
+                log(f"    value {sample[1]} -> {sample[2]}")
+        else:
+            log(f"  {wiki_field}: no correlations found")
 
     # Per-DID correlations
     log("\nCorrelating per-DID (0x028B)...")
