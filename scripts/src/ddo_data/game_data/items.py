@@ -18,6 +18,7 @@ from urllib.parse import quote
 from ..dat_parser.archive import DatArchive
 from ..dat_parser.btree import traverse_btree
 from ..dat_parser.extract import read_entry_data
+from ..dat_parser.fid_lookups import EFFECT_FID_BONUS_TYPE, EFFECT_FID_STAT
 from ..dat_parser.namemap import DISCOVERED_KEYS, decode_dup_triple
 from ..dat_parser.probe import decode_effect_entry
 from ..dat_parser.strings import load_localization_tables, load_string_table, load_tooltip_table
@@ -408,6 +409,7 @@ def parse_items(
 
     # Resolve effect refs → decoded bonus dicts
     effects_decoded = 0
+    fid_resolved = 0
     for item in items:
         effect_refs = item.pop("_effect_refs", [])
         bonuses: list[dict] = []
@@ -422,12 +424,23 @@ def parse_items(
                 continue
             effect_desc = decode_effect_entry(effect_data)
             if effect_desc is not None:
+                # FID lookup fallback: if decode_effect_entry couldn't resolve
+                # the stat or bonus_type, try the FID lookup tables
+                if effect_desc.get("stat") is None:
+                    fid_stat = EFFECT_FID_STAT.get(ref_id)
+                    if fid_stat:
+                        effect_desc["stat"] = fid_stat
+                        fid_resolved += 1
+                if effect_desc.get("bonus_type") is None:
+                    fid_bt = EFFECT_FID_BONUS_TYPE.get(ref_id)
+                    if fid_bt:
+                        effect_desc["bonus_type"] = fid_bt
                 bonuses.append(effect_desc)
         if bonuses:
             item["_bonuses"] = bonuses
             effects_decoded += len(bonuses)
     if on_progress:
-        on_progress(f"  {effects_decoded:,} effect bonuses decoded")
+        on_progress(f"  {effects_decoded:,} effect bonuses decoded ({fid_resolved} via FID lookup)")
 
     # Merge wiki data if available
     wiki_data = wiki_items
