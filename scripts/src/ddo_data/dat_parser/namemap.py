@@ -622,18 +622,18 @@ DISCOVERED_KEYS: dict[int, dict[str, str]] = {
     },
     # --- Float-valued property keys (IEEE 754 float32 stored in u32 slots) ---
     0x10000B60: {
-        "name": "unknown_float_tier_B60",
-        "confidence": "low",
-        "evidence": "Values are IEEE 754 float32; observed: 0.0, 1.0, 2.0, 3.0, 4.0, "
-                    "-1.0. Small integer steps suggest tier or rank multiplier "
-                    "(e.g. weapon tier, upgrade level). Adjacent to 0x10000B5C.",
+        "name": "tier_multiplier",
+        "confidence": "high",
+        "evidence": "IEEE 754 float32; values 0.0, 1.0, 2.0, 3.0, 4.0, -1.0. "
+                    "Confirmed as effect scaling tier multiplier. Used in items.py "
+                    "as _KEY_TIER_MULTIPLIER, stored in items.tier_multiplier column.",
     },
     0x10000B5C: {
-        "name": "unknown_float_sign_B5C",
-        "confidence": "low",
-        "evidence": "Values are IEEE 754 float32; observed: 1.0 (majority), -1.0, 0.0. "
-                    "Binary ±1.0 / 0.0 distribution suggests a sign or direction "
-                    "coefficient. Adjacent to 0x10000B60.",
+        "name": "sign_multiplier",
+        "confidence": "high",
+        "evidence": "IEEE 754 float32; values +1.0 (buff) or -1.0 (debuff). "
+                    "Confirmed as buff/debuff sign multiplier. Used in items.py "
+                    "as _KEY_SIGN_MULTIPLIER for is_debuff extraction.",
     },
     0x100007F8: {
         "name": "unknown_float_coeff_7F8",
@@ -830,11 +830,11 @@ DISCOVERED_KEYS: dict[int, dict[str, str]] = {
                     "0.5 (3x), 0.05 (1x). Likely a multiplier or fractional coefficient.",
     },
     0x10000B7A: {
-        "name": "unknown_float_default_B7A",
-        "confidence": "low",
-        "evidence": "IEEE 754 float32; mostly 15.0 (60/63), occasionally 1.0 and "
-                    "one 0x10XXXXXX ref outlier. The 15.0 dominance may indicate "
-                    "a fixed dimension (range, size, or cooldown) default.",
+        "name": "cooldown_seconds",
+        "confidence": "high",
+        "evidence": "IEEE 754 float32; mostly 15.0 (60/63), occasionally 1.0. "
+                    "Confirmed as cooldown in seconds. Used in items.py as "
+                    "_KEY_COOLDOWN and feats.py for cooldown_seconds extraction.",
     },
     0x100007BC: {
         "name": "unknown_float_coeff_7BC",
@@ -1197,7 +1197,7 @@ DISCOVERED_KEYS: dict[int, dict[str, str]] = {
         "evidence": "56 items; small integer max=28, values 1–28. Adjacent to "
                     "0x100012A3/A4; likely a count or slot index in the cluster.",
     },
-    # --- Tier-5 keys (53–60 occurrences, not yet added) ---
+    # --- Tier-5 keys (53–60 occurrences) ---
     # 60-count tier
     0x10001CDE: {
         "name": "unknown_float_sparse_1CDE",
@@ -2942,12 +2942,12 @@ STAT_DEF_IDS: dict[int, str] = {
     1572: "Saving Throws vs Traps",
     1692: "Well Rounded",       # confirmed via dat-effect-map (6 confirmations, 0 conflicts)
     1941: "Spell Points",
-    # Candidates (1 confirmation, 0 conflicts — use with caution):
-    # 1269: "Spell Focus Mastery",
-    # 1362: "Charisma",
-    # 1524: "Constitution",
-    # 1730: "Strength",
-    # 1827: "Dodge",
+    # Candidates (1 confirmation, 0 conflicts each):
+    1269: "Spell Focus Mastery",
+    1362: "Charisma",
+    1524: "Constitution",
+    1730: "Strength",
+    1827: "Dodge",
 }
 
 # Maps raw bonus_type codes (u16 at bytes [13..14] of 0x70XXXXXX effect entries)

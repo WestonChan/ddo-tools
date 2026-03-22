@@ -786,7 +786,7 @@ def build_db(
                     count = db.insert_items(wiki_items_list)
             elif data_type == "feats":
                 wiki_feats = list(collect_feats(client, limit=limit, on_progress=click.echo))
-                _overlay_feat_dat_ids(wiki_feats, ddo_path)
+                _overlay_feat_binary_data(wiki_feats, ddo_path)
                 count = db.insert_feats(wiki_feats)
             elif data_type == "enhancements":
                 count = db.insert_enhancement_trees(collect_enhancements(client, limit=limit, on_progress=click.echo))
@@ -808,8 +808,8 @@ def build_db(
     click.echo(f"Database written to {output}")
 
 
-def _overlay_item_dat_ids(items: list[dict], ddo_path: Path) -> None:
-    """Overlay dat_ids from binary parser onto wiki item dicts (in-place).
+def _overlay_item_binary_data(items: list[dict], ddo_path: Path) -> None:
+    """Overlay binary data onto wiki item dicts (in-place).
 
     Matches wiki items to binary 0x79XXXXXX entries by normalized name,
     setting the ``dat_id`` field to the hex file ID (e.g., ``0x79012345``).
@@ -855,11 +855,16 @@ def _overlay_item_dat_ids(items: list[dict], ddo_path: Path) -> None:
                 if item.get(field) is None and bi.get(field) is not None:
                     item[field] = bi[field]
             matched += 1
-    click.echo(f"  {matched:,} items matched with binary dat_id")
+    click.echo(f"  {matched:,} items matched with binary data")
 
 
-def _overlay_feat_dat_ids(feats: list[dict], ddo_path: Path) -> None:
-    """Overlay dat_ids from binary parser onto wiki feat dicts (in-place).
+def _overlay_feat_binary_data(feats: list[dict], ddo_path: Path) -> None:
+    """Overlay binary data onto wiki feat dicts (in-place).
+
+    Matches wiki feats to binary entries by normalized name and overlays
+    dat_id plus binary-extracted fields (cooldown_seconds, duration_seconds,
+    damage_dice_notation, scales_with_difficulty, tooltip, description) where
+    the wiki dict has None.
 
     Silently skips the overlay if the DDO .dat files are unavailable or
     if binary parsing fails for any reason.
@@ -874,20 +879,36 @@ def _overlay_feat_dat_ids(feats: list[dict], ddo_path: Path) -> None:
         click.echo(f"  Binary dat_id overlay skipped: {exc}")
         return
 
-    dat_id_by_name: dict[str, str] = {
-        _norm(feat["name"]): feat["dat_id"]
-        for feat in binary_feats
-        if feat.get("dat_id") and feat.get("name")
-    }
+    binary_by_name: dict[str, dict] = {}
+    for bf in binary_feats:
+        name = bf.get("name")
+        dat_id = bf.get("dat_id")
+        if name and dat_id:
+            norm = _norm(name)
+            if norm not in binary_by_name:
+                binary_by_name[norm] = bf
+
     matched = 0
     for feat in feats:
         name = feat.get("name")
-        if name:
-            normed = _norm(name)
-            if normed in dat_id_by_name:
-                feat["dat_id"] = dat_id_by_name[normed]
-                matched += 1
-    click.echo(f"  {matched:,} feats matched with binary dat_id")
+        if not name:
+            continue
+        normed = _norm(name)
+        bf = binary_by_name.get(normed)
+        if bf:
+            feat["dat_id"] = bf["dat_id"]
+            # Overlay binary fields where wiki has None
+            for field in (
+                "cooldown_seconds", "duration_seconds", "damage_dice_notation",
+                "scales_with_difficulty", "tooltip",
+            ):
+                if feat.get(field) is None and bf.get(field) is not None:
+                    feat[field] = bf[field]
+            # Binary description → description column (different key name)
+            if feat.get("description") is None and bf.get("binary_description"):
+                feat["description"] = bf["binary_description"]
+            matched += 1
+    click.echo(f"  {matched:,} feats matched with binary data")
 
 
 def _overlay_spell_binary_data(spells: list[dict], ddo_path: Path) -> None:
