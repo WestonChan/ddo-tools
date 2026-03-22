@@ -888,7 +888,9 @@ DDO uses a **slot-driven template instancing** architecture for item effects. A 
 
 This means stat identity, augment configuration, weapon damage, etc. are NOT in the effect entries. They're resolved at runtime by: (1) which effect_ref slot points to the template (slot position = semantic meaning), (2) the parent item's dup-triple properties, (3) runtime game state. The effect_ref slot-to-type mapping is deterministic (effect_ref=type-17, effect_ref_2=type-414, effect_ref_18=type-53, etc.).
 
-**Implication for the build planner:** The binary can provide stat MAGNITUDES (via type-53 entries) and feat effect CHAINS (via type-414), but stat NAMES and bonus TYPES require wiki data. This is a fundamental limitation of the binary format, not a decoder issue.
+**Proof:** Traced full effect chains for items with known wiki stat bonuses ("+11 STR", "+3 WIS", "+5 CHA", "+2 DEX"). ALL reference the same type-17 sid=1254 template regardless of stat. Many stat-bonus items (e.g., Blazing Sun +6 WIS, Shield +5 CON) have ZERO effect refs — the stat bonus isn't in the effect chain at all. The stat-to-item assignment exists in a runtime data layer not present in the .dat archives.
+
+**Implication for the build planner:** The binary provides magnitudes (type-53), feat chains (type-414), and structural metadata, but stat NAMES and bonus TYPES require wiki data. This is not a decoder limitation — the data genuinely does not exist in the static game files.
 
 ### Binary reverse-engineering (complete before pre-frontend gates)
 
