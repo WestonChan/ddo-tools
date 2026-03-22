@@ -98,7 +98,7 @@ EFFECT_FID_LOOKUP: dict[int, tuple[str, str]] = {
     0x70023E4A: _n("Charisma", "Enhancement"),
     0x70023E4D: _n("dex", "Enhancement"),
     0x70023E4F: _n("Wisdom", "Enhancement"),
-    0x70023E51: _n("CHA", "Enhancement"),
+    # 0x70023E51 removed — verified incorrect (expected CHA, actual CON)
     0x70023E54: _n("STR", "Enhancement"),
     0x70023E57: _n("WIS", "Enhancement"),
     0x70023E5A: _n("CON", "Enhancement"),
