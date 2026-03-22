@@ -888,9 +888,11 @@ DDO uses a **slot-driven template instancing** architecture for item effects. A 
 
 This means stat identity, augment configuration, weapon damage, etc. are NOT in the effect entries. They're resolved at runtime by: (1) which effect_ref slot points to the template (slot position = semantic meaning), (2) the parent item's dup-triple properties, (3) runtime game state. The effect_ref slot-to-type mapping is deterministic (effect_ref=type-17, effect_ref_2=type-414, effect_ref_18=type-53, etc.).
 
-**Proof:** Traced full effect chains for items with known wiki stat bonuses ("+11 STR", "+3 WIS", "+5 CHA", "+2 DEX"). ALL reference the same type-17 sid=1254 template regardless of stat. Many stat-bonus items (e.g., Blazing Sun +6 WIS, Shield +5 CON) have ZERO effect refs — the stat bonus isn't in the effect chain at all. The stat-to-item assignment exists in a runtime data layer not present in the .dat archives.
+**Template content vs. template FID identity:** The template CONTENT is identical across stats (all type-17 sid=1254 entries are byte-identical). But the template FID is stat-specific — different stats reference DIFFERENT FIDs. This means the stat identity IS in the binary, encoded as **which specific effect FID is referenced**, not what's in that FID's bytes.
 
-**Implication for the build planner:** The binary provides magnitudes (type-53), feat chains (type-414), and structural metadata, but stat NAMES and bonus TYPES require wiki data. This is not a decoder limitation — the data genuinely does not exist in the static game files.
+**Proof via discriminant analysis:** effect_ref FIDs are 87% stat-discriminating (74 stat-unique vs 11 shared across 85 FIDs). Built 89-entry effect_fid→stat lookup table with 0 conflicts from wiki cross-reference (e.g., 0x70002A03→CON with 30 confirmations). 7% initial coverage (2,112/27,835 items) — expands as more wiki items are matched.
+
+**Implication for the build planner:** Stat names CAN be resolved from binary via effect_fid→stat lookup tables built from wiki cross-reference. Binary provides magnitudes (type-53), stat identity (via FID lookup), feat chains (type-414), and structural metadata. Wiki remains needed for FIDs not yet in the lookup table.
 
 ### Binary reverse-engineering (complete before pre-frontend gates)
 
@@ -901,6 +903,8 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - [x] Per-field data provenance — cleaned up _WIKI_ONLY_FIELDS: removed minimum_level (now from binary). Pipeline tracks provenance implicitly.
 
 **Requires further reverse-engineering (DO NOT mark complete without implementation):**
+- [ ] Build and wire effect_fid → stat_name lookup — 89-entry table built from wiki cross-reference with 0 conflicts. Expand coverage beyond 7% by: (a) including multi-stat items with magnitude matching, (b) using effect_ref_18 (type-53) FIDs which are also stat-discriminating (6 stat-unique out of 9), (c) cascading — once an FID is confirmed, use it to resolve other items sharing that FID. Wire the lookup into the items parser to populate stat_id on binary bonuses.
+- [ ] Apply FID-identity approach to other template-blocked tasks — the stat discovery showed that template CONTENT is shared but template FID is context-specific. Apply the same discriminant analysis to: (a) bonus_type resolution (do different bonus types reference different effect FIDs?), (b) augment slot detection (do augmented items reference specific FIDs not found on non-augmented items?), (c) weapon damage/crit (do weapons with different damage dice reference different FIDs?). For each, group wiki items by the target field, then check if effect_ref FIDs discriminate.
 - [x] Spell body stat decoding — wired body dup-triple scanning into _overlay_spell_binary_data. Now scans both ref list AND body bytes for stats 553/554 (SP cost), 946 (damage scaling), and 731 (tick/effect count). Stat 731 values 1-8 encode tick count (Focusing Chant=1, Cometfall=3, Cloudkill=5, Energy Drain=8). Other body stats (708=mechanism code, 943=boolean flag, 950/947/1368=config refs) are engine internals, not player-facing.
 - [ ] Class/race body decoding — **extensively investigated, partially decoded**:
   - 7-byte header: `01 01 1B 00 00 00 XX` (XX=class index, constant 0x1B=27)
