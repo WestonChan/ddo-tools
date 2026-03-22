@@ -903,13 +903,9 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [ ] 0x70 type-26 augment marker decoding — 2,270+ entries, 37 bytes each. All copies with same stat_def_id are byte-identical (per-stat templates). stat_def_id=1207 dominates (2,038 entries). Described as "secondary augment marker" accompanying type-53 effects. May encode augment slot type/color in the fixed 37-byte structure. Investigate byte layout for slot color encoding.
 - [ ] 0x70 type-175 magnitude table decoding — 186 bytes each, stat_def_id=0, flag=3. Contains 16-element magnitude table starting at byte 64. These may encode multi-tier augment or enhancement scaling values (e.g., augment bonuses at different minimum levels). Investigate whether the 16-element table maps to augment tiers.
 - [ ] Linked chain property structure — keys 0x10001071-0x10001076 form pointer chains through 0x107XXXXX/0x10BB values. 78 items have these chains (Wildhunter, Item Restoration group). Chain may encode feat prerequisites, item upgrade paths, or set membership relationships. Decode the chain traversal logic.
-- [ ] Item sub-schema clusters — Sheet Music items have 40+ zero-constant property slots, runearm items have 0x0D88XXXX packed refs. These item-type-specific binary layouts may encode type-specific fields (instrument type, runearm charge, etc.). Low priority for build planner but needed for complete binary coverage.
-- [ ] Unexplored bytes in decoded structures — several structures we partially decode have additional unexplored data:
-  - **0x70 type-53 effect entries**: we read stat_def_id (byte 16), bonus_type (byte 13), magnitude (byte 68) but the remaining ~60 bytes of each 72-byte entry are unexplored. May contain duration, condition flags, stacking rules.
-  - **Spell ref slots 3-14 and 17+**: only slots 0-2 (template/variant/params) and dup-triple stat slots are understood. The remaining non-stat slots may encode targeting, visual effects, or other spell config.
-  - **Item unknown property keys**: 442 keys in DISCOVERED_KEYS, but items.py only consumes ~15. The remaining "unknown_*" keys may encode useful fields once their meaning is determined (e.g., 0x100008B4 "rank" on 7,009 items, 0x10000747 on 6,157 items).
-  - **Feat unknown property keys**: the 10-key active-feat cluster (0x10000D81, 0x10000829, etc.) is discovered but not wired. Similarly, stance keys (0x100024D1, 0x10000771) need wiring into the feat parser.
-  - **Localization sub-entry types**: 13 types cataloged (Name through QuestObjective). There may be additional sub-entry refs not yet discovered in the 0x25 entries.
+- [ ] 0x70 type-53 effect unexplored bytes — we read stat_def_id (byte 16), bonus_type (byte 13), magnitude (byte 68) but the remaining ~60 bytes of each 72-byte entry are unexplored. May contain duration, condition flags, stacking rules relevant to build calculations.
+- [ ] Item unknown property keys — 442 keys in DISCOVERED_KEYS, but items.py only consumes ~15. The remaining "unknown_*" keys may encode useful fields once their meaning is determined (e.g., 0x100008B4 "rank" on 7,009 items, 0x10000747 on 6,157 items).
+- [ ] Feat flag key wiring — the 10-key active-feat cluster (0x10000D81, 0x10000829, etc.) and stance keys (0x100024D1, 0x10000771) are discovered but not wired into the feat parser to set is_active/is_stance/is_free from binary.
 
 ### Wiki parser improvements (complete before pre-frontend gates)
 - [x] Fix augment slot extraction — augment slots were `{{Augment|Color}}` templates embedded in the enhancements field. Parser now extracts them (5,748/8,600 items). Also handles legacy `augmentslot=` field format.
@@ -925,6 +921,15 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
   - **Effects:** STAT_DEF_IDS wall confirmed — only 1 mapping (Well Rounded/1692) above 3-confirmation threshold from 8,600 items. 5 candidates with 1 conf added. stat identity resolved at runtime. BONUS_TYPE_CODES: 0 new confirmed.
   - **Enhancements/augments/sets/filigrees:** wiki-only (no binary parser).
 - [ ] **PRE-FRONTEND GATE:** Schema alignment audit — verify all binary-decoded fields have corresponding DB columns and correct types; verify enum code-to-seed ID mappings are consistent; verify writer field-flow (every parser dict key consumed by insert_*); verify CHECK constraints accept all observed binary values. Goal: ensure no data is silently dropped or rejected at insert time.
+
+### Future reverse-engineering (not build-critical, can proceed after frontend)
+- [ ] Item sub-schema clusters — Sheet Music items have 40+ zero-constant property slots, runearm items have 0x0D88XXXX packed refs. Type-specific binary layouts for instrument type, runearm charge, etc.
+- [ ] Spell ref slots 3-14 and 17+ — non-stat ref slots may encode targeting, visual effects, or spell config. Not player-facing stats.
+- [ ] Localization sub-entry types — 13 types cataloged (Name through QuestObjective). May be additional undiscovered sub-entry refs in 0x25 entries.
+- [ ] DDO extended VLE type tags — type tag 8193 (0x2001) found in class preambles. Understanding the DDO extensions to the Turbine VLE format would unlock class preamble decoding and potentially other complex-partial entries.
+- [ ] Type-1 behavior scripts — 6,838 entries in 0x07 namespace. Quest triggers, NPC logic, state machines. Not relevant to build planner.
+- [ ] 0x0C physics/particle entries — 20,943 entries with float-filled bodies and exotic DIDs. Animation/visual data, not stats.
+- [ ] 0x78 NPC stat definitions — 1,078 entries using dup-triple format. NPC stat blocks, not player-facing.
 
 ### Wiki data population (can proceed in parallel with binary RE)
 - [ ] Populate feat_prereq_* tables from wiki (feat_prereq_feats, feat_prereq_stats, feat_prereq_classes, feat_prereq_races, feat_prereq_skills)
