@@ -950,6 +950,21 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - [x] Type-1 behavior script investigation — **6,838 entries, sizes 11-9,598B typically**. Named entries include feat scripts ("Improved Critical: Throwing Hammer" 442B, "Greater Weapon Specialization: Maul" 787B) with embedded localization text. Bodies use same VLE format as class entries (blocked on DDO VLE type tags). Quest scripts dominate. Feat/ability scripts contain description text but numeric parameters (damage values, DCs) are in the VLE body that we can't parse yet.
 - [x] Runearm sub-schema — **FALSE POSITIVE**: keys 0x1000076B, 0x10000C90, 0x1000278E appear on trap parts, shard deconstruction, NPCs — NOT runearms. They're generic tier/rate keys across game systems. Real runearms (e.g., "Toven's Prototype") have equipment_slot=17 but don't carry these keys. Runearm-specific binary data (charge level, max charge) not found in dup-triple properties. May be in effect_ref chain or not in binary at all.
 
+**Wiki-only field re-investigation (DO NOT mark complete without thorough search):**
+- [ ] Bonus values (+7, +13) — type-167 localization has some, but check if FID-identity approach can recover more. Different +values might reference different type-167 FIDs. Also check if any OTHER entry types (type-414 sub-chains, type-53 non-byte-68 fields) encode the value.
+- [ ] Weapon critical range ("19-20/x2") — not in properties or effect chain. Check if type-414 feat effect entries (e.g., "Improved Critical") encode critical data. Check if localization names on any effect type contain critical range text.
+- [ ] Item weight — not found via dat-namemap. Key 0x10000742 correlates with hardness (1.22 ratio), not weight. Check if any OTHER float key correlates with wiki weight values.
+- [ ] Item binding (BtC/BtA/Unbound) — not found. Check if any small-int property key has values mapping consistently to the 3 binding types across wiki-matched items.
+- [ ] Item base_value (gold) — not found. Check if any large-int property key correlates with wiki base_value.
+- [ ] Item handedness (One-handed/Two-handed) — not found via string correlation. Check if any small enum key (2-4 values) discriminates by handedness.
+- [ ] Item proficiency (Simple/Martial/Exotic) — not found. Check if any 3-value enum key correlates.
+- [ ] Item weapon_type — FID lookup had conflicts. Check if a DIFFERENT effect_ref slot (not primary) discriminates by weapon_type.
+- [ ] Spell components/target/duration/saving throw/spell resistance — not in ref slots. Check type-167 localization names on spell effect chains (spells may have type-167 refs too).
+- [ ] Feat prerequisites — chain pointers are engine infrastructure, but check if type-414 sub-effect chains encode prerequisite feat FIDs.
+- [ ] Set bonus identification — group_ref (0x10000A48) is NOT set membership. FID-identity approach not yet applied: do items in the same set share any common effect FIDs?
+- [ ] Enhancement tree structure from binary — check if 0x79 enhancement entries have property keys encoding tree name, tier position, or AP cost.
+- [ ] Epic destiny data — wiki pages use different format. Check if epic destiny abilities appear in binary as 0x79 entries with identifiable properties.
+
 **Enhancement binary investigation (DO NOT mark complete without implementation):**
 - [ ] Enhancement binary entry identification — DDO treats enhancement abilities as feats internally (0x79 namespace). 62,281 feat-like entries include enhancement abilities but no indicator key distinguishes them from feats. **Needs:** find property keys or patterns that identify enhancement entries (AP cost key? tree membership key?). Compare known wiki enhancement names against binary feat names to find the overlap.
 - [ ] Enhancement effect_ref chain decoding — if enhancement entries have effect_ref chains like items, apply FID lookup + type-167 localization to extract per-rank bonuses from binary. Would provide exact stat values per rank without wiki.
