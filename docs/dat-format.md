@@ -961,8 +961,10 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - [x] Item proficiency — **wiki parser fixed.** FID-identity: 91% (380/417). 618 items. Wired.
 - [x] Item weapon_type — **wiki parser fixed.** FID-identity: 90% (709/787). 1,249 items. Wired.
 - [x] Item critical — **wiki parser fixed.** FID-identity: 91% (379/416). 617 items. Wired.
-- [ ] Item set_name — **0/8600 populated.** Wiki `set` template field returns None — may use different template format or field name. Needs investigation.
-- [ ] Item enhancement_bonus — **0/8600 populated.** Wiki `enchantmentbonus` is parsed as numeric (line 245 in parsers.py) but may return None for most items. Check if the template field name is correct.
+- [ ] Item set_name — **0/8600 populated.** Wiki `set` field returns None. Set membership handled via `{{Named item sets}}` in enchantments.
+- [ ] Item enhancement_bonus — correctly parsed from `enchantmentbonus` but most items don't have this template field (enhancement bonus is in enchantments as `{{Enhancement bonus|w|2}}`).
+- [ ] Wiki parser: missing template fields — `slot` (equipment slot for non-weapons: "Finger", "Eye", "Waist"), `class` (damage type "Slashing"), `attackmod`/`damagemod` (ability mods "STR"), `race` (race restriction). Not currently parsed but present in wiki templates and build-relevant.
+- [ ] 66 unknown FID-bearing property keys on items — values are 0x70XXXXXX but NOT in EFFECT_REF_KEYS. Top: 0x1000191F (4,242 items), 0x10006394 (4,024), 0x1000C187 (1,508). Undiscovered effect_ref slots — run FID discrimination to check if they encode additional fields. Also found 0x07/0x0A/0x47 cross-namespace refs (646/371/10 respectively).
 - [ ] Spell components/target/duration/saving throw/spell resistance — not in ref slots. Check type-167 localization names on spell effect chains (spells may have type-167 refs too).
 - [ ] Feat prerequisites — chain pointers are engine infrastructure, but check if type-414 sub-effect chains encode prerequisite feat FIDs.
 - [ ] Set bonus identification — group_ref (0x10000A48) is NOT set membership. FID-identity approach not yet applied: do items in the same set share any common effect FIDs?
