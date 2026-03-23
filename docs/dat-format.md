@@ -957,12 +957,12 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - [x] Item weight — **FID-identity: 91% discriminating (642/708)**. 679 FID entries added to lookup. Wired into parser.
 - [x] Item binding — **FID-identity: 100% discriminating (53/53)**. 53 FID entries added. Wired.
 - [x] Item base_value — **FID-identity: 90% discriminating (350/391)**. 351 FID entries added. Wired.
-- [ ] Item handedness — **0/8600 wiki items have this field populated.** Wiki parser returns None for handedness on all items. Needs wiki parser fix before binary investigation possible.
-- [ ] Item proficiency — **0/8600 populated.** Same wiki parser issue.
-- [ ] Item weapon_type — **0/8600 populated.** Same wiki parser issue.
-- [ ] Item critical — **0/8600 populated.** Same wiki parser issue.
-- [ ] Item set_name — **0/8600 populated.** Same wiki parser issue. (Note: set membership IS populated via separate {{Named item sets}} template.)
-- [ ] Item enhancement_bonus — **0/8600 populated.** Same wiki parser issue.
+- [x] Item handedness — **wiki parser fixed** (was reading wrong template field). FID-identity: 91% discriminating (363/396). 583 items. Wired.
+- [x] Item proficiency — **wiki parser fixed.** FID-identity: 91% (380/417). 618 items. Wired.
+- [x] Item weapon_type — **wiki parser fixed.** FID-identity: 90% (709/787). 1,249 items. Wired.
+- [x] Item critical — **wiki parser fixed.** FID-identity: 91% (379/416). 617 items. Wired.
+- [ ] Item set_name — **0/8600 populated.** Wiki `set` template field returns None — may use different template format or field name. Needs investigation.
+- [ ] Item enhancement_bonus — **0/8600 populated.** Wiki `enchantmentbonus` is parsed as numeric (line 245 in parsers.py) but may return None for most items. Check if the template field name is correct.
 - [ ] Spell components/target/duration/saving throw/spell resistance — not in ref slots. Check type-167 localization names on spell effect chains (spells may have type-167 refs too).
 - [ ] Feat prerequisites — chain pointers are engine infrastructure, but check if type-414 sub-effect chains encode prerequisite feat FIDs.
 - [ ] Set bonus identification — group_ref (0x10000A48) is NOT set membership. FID-identity approach not yet applied: do items in the same set share any common effect FIDs?
