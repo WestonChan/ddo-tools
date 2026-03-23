@@ -267,8 +267,8 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 level, durability, item_type, minimum_level, enhancement_bonus,
                 hardness, weight, material, binding, base_value, description, tooltip,
                 enchant_name, enchant_suffix, effect_value,
-                cooldown_seconds, internal_level, tier_multiplier, race_required, wiki_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                cooldown_seconds, internal_level, tier_multiplier, wiki_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
@@ -295,7 +295,6 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 item.get("cooldown_seconds"),
                 item.get("internal_level"),
                 item.get("tier_multiplier"),
-                item.get("race_required"),
                 item.get("wiki_url"),
             ),
         )

@@ -2,6 +2,7 @@
   "0x700006D2": {
     "base_value": "2820pp",
     "material": "Steel",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -13,9 +14,12 @@
     "weight": "0.0"
   },
   "0x70000A13": {
+    "attack_mod": "STR, DEX",
     "base_value": "12,801pp",
     "critical": "17-20 / x2",
     "damage": "1.40[1d6] + 5 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -34,23 +38,28 @@
   "0x70000A1A": {
     "augment_count": 1,
     "material": "Cloth",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x70000A23": {
     "augment_count": 2,
     "material": "Leather",
+    "slot": "Head",
     "weapon_type": "Helmet",
     "weight": "0.1"
   },
   "0x70000F09": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cosmetic Cloak",
     "weight": "0.0"
   },
   "0x70001589": {
+    "attack_mod": "STR",
     "critical": "20 / x3",
     "damage": "1.50[1d10] + 5 Bludgeon, Evil, Magic",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "proficiency": "Martial"
   },
@@ -91,25 +100,32 @@
   "0x70002024": {
     "base_value": "10,702pp",
     "critical": "20 / x2",
+    "damage_mod": "CHA",
     "material": "Gem",
     "proficiency": "Magical Training",
     "weapon_type": "Orb",
     "weight": "3.0"
   },
   "0x700021CB": {
+    "attack_mod": "STR, DEX",
     "critical": "19-20 / x2",
     "damage": "4.60[1d6+3] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "proficiency": "Exotic"
   },
   "0x70002286": {
+    "attack_mod": "STR",
     "augment_count": 1,
+    "damage_class": "Bludgeoning",
     "handedness": "One-handed"
   },
   "0x700025B5": {
     "augment_count": 1,
     "base_value": "15,001 pp 5 gp",
     "critical": "20 / x2",
+    "damage_mod": "STR",
     "material": "Dwarven Iron",
     "proficiency": "General",
     "weapon_type": "Buckler",
@@ -119,6 +135,7 @@
     "augment_count": 1,
     "base_value": "15,001 pp 5 gp",
     "critical": "20 / x2",
+    "damage_mod": "STR",
     "material": "Dwarven Iron",
     "proficiency": "General",
     "weapon_type": "Buckler",
@@ -128,13 +145,17 @@
     "augment_count": 1,
     "base_value": "5,620pp",
     "material": "Steel",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x70002663": {
+    "attack_mod": "STR, DEX",
     "base_value": "30,051pp 3gp 3sp 6cp",
     "critical": "20 / x2",
     "damage": "4.20[1d6] + 14 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -142,9 +163,12 @@
     "weight": "0.5"
   },
   "0x7000267A": {
+    "attack_mod": "STR, DEX",
     "base_value": "5450 pp",
     "critical": "20 / x2",
     "damage": "1.50[1d6] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -155,13 +179,17 @@
     "augment_count": 1,
     "base_value": "10,820pp",
     "material": "Steel",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7000278B": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "[2d6] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "proficiency": "Martial"
   },
@@ -181,10 +209,13 @@
     "augment_count": 1
   },
   "0x70002816": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "8,000 pp 2 gp",
     "critical": "17-20 / x2",
     "damage": "3[1d4] + 6 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -192,9 +223,12 @@
     "weight": "1.0"
   },
   "0x70002820": {
+    "attack_mod": "STR",
     "base_value": "6400pp 1cp",
     "critical": "18-20 / x2",
     "damage": "2.20[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -212,6 +246,9 @@
     "augment_count": 1
   },
   "0x70002A03": {
+    "attack_mod": "STR",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "proficiency": "Martial"
   },
   "0x70002A82": {
@@ -229,15 +266,22 @@
     "weight": "0.0"
   },
   "0x70002E30": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "9201pp",
     "critical": "20 / x2",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
-    "proficiency": "Simple"
+    "proficiency": "Simple",
+    "slot": "Cosmetic Cloak"
   },
   "0x70002E31": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -245,9 +289,12 @@
     "weight": "4.0"
   },
   "0x70002E32": {
+    "attack_mod": "STR, DEX",
     "base_value": "800pp 2gp",
     "critical": "19-20 / x2",
     "damage": "[1d4] + 1 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -255,8 +302,11 @@
     "weight": "1.0"
   },
   "0x70002EFF": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -264,26 +314,34 @@
     "weight": "4.0"
   },
   "0x70002F00": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "8,801pp 9gp",
     "critical": "20 / x3",
     "damage": "4.60[1d8] + 9 Slash, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
-    "proficiency": "Martial"
+    "proficiency": "Martial",
+    "slot": "Trinket"
   },
   "0x70002F57": {
     "base_value": "405pp",
     "material": "Leather",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x70002F58": {
+    "attack_mod": "STR",
     "augment_count": 2,
-    "base_value": "1 cp"
+    "base_value": "1 cp",
+    "damage_mod": "STR"
   },
   "0x70003977": {
     "augment_count": 1,
     "base_value": "11,601 pp",
+    "damage_class": "Clothing",
     "weight": "0.1"
   },
   "0x700039A2": {},
@@ -297,9 +355,12 @@
     "augment_count": 1
   },
   "0x70003FA0": {
+    "attack_mod": "STR",
     "base_value": "10420 pp",
     "critical": "19-20 / x2",
     "damage": "4.20[2d6] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -307,7 +368,8 @@
     "weight": "8.0"
   },
   "0x7000407C": {
-    "augment_count": 2
+    "augment_count": 2,
+    "slot": "Trinket"
   },
   "0x70004250": {},
   "0x700048C3": {
@@ -319,6 +381,7 @@
   "0x700048C5": {
     "base_value": "10,420 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.01"
   },
@@ -330,8 +393,11 @@
     "weight": "0.0"
   },
   "0x70004E86": {
+    "attack_mod": "STR",
     "critical": "19-20 / x2",
     "damage": "4.20[2d6] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "proficiency": "Martial"
   },
@@ -356,25 +422,31 @@
   "0x70004F28": {
     "augment_count": 1,
     "material": "Magesteel",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70004F30": {
     "augment_count": 1,
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x70005242": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring"
   },
   "0x70005275": {},
   "0x7000541B": {
+    "attack_mod": "STR",
     "base_value": "4,007 pp 5gp",
     "critical": "18-20 / x2",
     "damage": "[2d4] + 4 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "proficiency": "Martial"
   },
@@ -382,6 +454,7 @@
     "augment_count": 1,
     "base_value": "2,001 pp",
     "material": "Darkwood",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
@@ -403,9 +476,12 @@
     "augment_count": 2
   },
   "0x70005662": {
+    "attack_mod": "STR",
     "base_value": "2,820 pp 4 gp",
     "critical": "20 / x3",
     "damage": "[1d12] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -413,10 +489,13 @@
     "weight": "12.0"
   },
   "0x70005735": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11300 pp",
     "critical": "18-20 / x2",
     "damage": "4.60[1d6+3] + 15 Pierce, Chaotic, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -425,24 +504,32 @@
   },
   "0x700057C1": {
     "augment_count": 2,
-    "handedness": "One-handed"
+    "handedness": "One-handed",
+    "slot": "Cosmetic Cloak"
   },
   "0x700058F1": {
-    "base_value": "14,004 pp"
+    "base_value": "14,004 pp",
+    "slot": "Head"
   },
   "0x70005AAD": {
     "augment_count": 1,
     "weight": "0.1"
   },
   "0x70005C6F": {
+    "attack_mod": "STR",
     "augment_count": 1,
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "material": "Adamantine"
   },
   "0x70005EC4": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "10,001 pp",
     "critical": "17-20 / x2",
     "damage": "4[1d8] + 7 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -450,9 +537,12 @@
     "weight": "2.0"
   },
   "0x70005EC8": {
+    "attack_mod": "STR",
     "base_value": "10,005 pp",
     "critical": "19-20 / x2",
     "damage": "4[3d6] +7 Slash, Silver, Mithral, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Mithral",
     "proficiency": "Martial",
@@ -460,16 +550,22 @@
     "weight": "8.0"
   },
   "0x70005F35": {
+    "attack_mod": "STR, DEX",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed"
   },
   "0x70005F36": {
     "base_value": "4,920 pp",
+    "damage_class": "Jewelry",
     "material": "Gem",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x70005F37": {
+    "attack_mod": "STR",
     "augment_count": 1,
+    "damage_mod": "STR",
     "proficiency": "Martial"
   },
   "0x70005F3B": {},
@@ -479,10 +575,13 @@
     "weight": "0.1"
   },
   "0x70005F3D": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "800pp 1cp",
     "critical": "20 / x2",
     "damage": "[1d6] + 1 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -492,14 +591,18 @@
   "0x70005F90": {
     "base_value": "10,020 pp",
     "material": "Leather",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x70005F95": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "10,000 pp 2 cp",
     "critical": "20 / x2",
     "damage": "4[1d10] + 7 Pierce, Bludgeon, Good, Magic, Crystal",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Crystal",
     "proficiency": "Simple",
@@ -509,15 +612,22 @@
   "0x70006050": {
     "base_value": "10,020 pp",
     "material": "Gold",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
-  "0x700060DF": {},
-  "0x70006490": {},
+  "0x700060DF": {
+    "slot": "Trinket"
+  },
+  "0x70006490": {
+    "slot": "Hand"
+  },
   "0x70006499": {
     "augment_count": 2,
     "base_value": "8,020pp",
+    "damage_class": "Clothing",
     "material": "Leather",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
@@ -528,13 +638,16 @@
   },
   "0x700064F4": {
     "base_value": "10,020pp",
+    "damage_class": "Goggles",
     "material": "Leather",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x700064F5": {
     "augment_count": 1,
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
@@ -542,24 +655,31 @@
     "augment_count": 1,
     "base_value": "10,420pp",
     "material": "Gold",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7000719C": {
     "augment_count": 1,
+    "damage_class": "Clothing",
     "weight": "0.1"
   },
   "0x7000719F": {
     "augment_count": 1,
     "base_value": "10,702pp",
     "critical": "20 / x2",
-    "proficiency": "Magical Training"
+    "damage_mod": "CHA",
+    "proficiency": "Magical Training",
+    "slot": "Neck"
   },
   "0x700071A0": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "base_value": "8,840pp",
     "critical": "19-20 / x2",
     "damage": "4.60[1d10] + 9 Pierce, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Adamantine",
     "proficiency": "Exotic",
@@ -567,6 +687,8 @@
     "weight": "12.0"
   },
   "0x70007292": {
+    "attack_mod": "STR",
+    "damage_mod": "STR",
     "handedness": "One-handed"
   },
   "0x70007A78": {
@@ -581,9 +703,12 @@
     "weight": "25.0"
   },
   "0x70007B3F": {
+    "attack_mod": "STR",
     "base_value": "5,400pp 8gp",
     "critical": "20 / x4",
     "damage": "1.50[1d6] + 5 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -591,9 +716,12 @@
     "weight": "6.0"
   },
   "0x70007B42": {
+    "attack_mod": "STR, DEX",
     "base_value": "5400.1 pp",
     "critical": "20 / x2",
     "damage": "1.50[1d4] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -601,9 +729,12 @@
     "weight": "2.0"
   },
   "0x70007B44": {
+    "attack_mod": "STR, DEX",
     "base_value": "5400pp 8gp",
     "critical": "18-20 / x2",
     "damage": "1.50[1d4] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -615,10 +746,13 @@
     "weight": "0.1"
   },
   "0x70009177": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11,601 pp",
     "critical": "19-20 / x2",
     "damage": "4.80[1d6+3] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -629,16 +763,20 @@
     "augment_count": 1,
     "base_value": "2,402 pp",
     "critical": "20 / x2",
+    "damage_mod": "INT, CHA",
     "material": "Steel",
     "proficiency": "General",
     "weapon_type": "Large",
     "weight": "15.0"
   },
   "0x70009202": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "10,007pp 5gp",
     "critical": "18-20 / x2",
     "damage": "2.50[2d4] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -648,6 +786,7 @@
   "0x70009204": {
     "base_value": "10,020 pp",
     "material": "Stone",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
@@ -658,10 +797,13 @@
     "weight": "0.0"
   },
   "0x7000CF79": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "4,807pp 5gp",
     "critical": "18-20 / x2",
     "damage": "1.40[2d4] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -669,10 +811,13 @@
     "weight": "8.0"
   },
   "0x7000CF7A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "5,100 pp 8gp",
     "critical": "20 / x4",
     "damage": "1.40[1d6] + 5 Pierce, Adamantine, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -680,10 +825,13 @@
     "weight": "6.0"
   },
   "0x7000CF7B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,803pp",
     "critical": "20 / x2",
     "damage": "1.40[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -691,10 +839,13 @@
     "weight": "0.5"
   },
   "0x7000CF7C": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "4,807pp 5gp",
     "critical": "18-20 / x2",
     "damage": "1.40[2d4] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -702,10 +853,13 @@
     "weight": "8.0"
   },
   "0x7000CF7D": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "5,100pp 8gp",
     "critical": "20 / x4",
     "damage": "1.40[1d6] + 5 Pierce, Adamantine, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -714,17 +868,22 @@
   },
   "0x7000D4DD": {
     "material": "Cloth",
+    "slot": "Head",
     "weapon_type": "Helm"
   },
   "0x7000D4DE": {
     "base_value": "5 pp",
+    "damage_class": "Clothing",
     "material": "Cloth",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x7000D4E0": {
     "base_value": "5 pp",
+    "damage_class": "Clothing",
     "material": "Cloth",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
@@ -734,6 +893,7 @@
   "0x7000EF5F": {
     "base_value": "10,702pp",
     "critical": "20 / x2",
+    "damage_mod": "CHA",
     "material": "Gem",
     "proficiency": "Magical Training",
     "weapon_type": "Orb",
@@ -747,14 +907,18 @@
   "0x70011AD3": {
     "base_value": "6405 pp",
     "material": "Gold",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70011B3E": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "8,003 pp 5 gp",
     "critical": "19-20 / x2",
     "damage": "3[1d10] + 6 Slash, Good, Cold Iron, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Cold Iron",
     "proficiency": "Exotic",
@@ -762,10 +926,13 @@
     "weight": "6.0"
   },
   "0x70011B43": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "8301.2 pp",
     "critical": "19-20 / x3",
     "damage": "3[1d10] + 6 Bludgeon, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Adamantine",
     "proficiency": "Martial",
@@ -781,31 +948,38 @@
   },
   "0x70011C8D": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cloak",
     "weight": "0.0"
   },
   "0x70012005": {
     "base_value": "1 cp",
     "material": "None",
+    "slot": "Cosmetic Headwear",
     "weapon_type": "Cosmetic Helm",
     "weight": "0.1"
   },
   "0x70015AC4": {
     "base_value": "10,005pp",
     "material": "Spiritcraft Leather",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70015ACC": {
     "base_value": "10005pp",
     "material": "Leather",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x70015AD7": {
+    "attack_mod": "DEX",
     "base_value": "10,007.5 pp",
     "critical": "20 / x3",
     "damage": "1.50[1d8] + 7 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Darkwood",
     "proficiency": "Martial",
@@ -813,10 +987,13 @@
     "weight": "3.0"
   },
   "0x70015BC4": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,005 pp",
     "critical": "17-20 / x2",
     "damage": "[2d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -830,6 +1007,7 @@
   "0x70016D7E": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
@@ -838,18 +1016,24 @@
     "base_value": "14004000cp",
     "critical": "19-20 / x3",
     "proficiency": "Tower Shield",
+    "slot": "Cosmetic Armor",
     "weight": "50.0"
   },
   "0x700189EA": {
+    "attack_mod": "STR",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Bludgeon, Magic",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "proficiency": "Simple"
   },
   "0x700189EC": {
+    "attack_mod": "STR",
     "base_value": "2,400pp 6gp",
     "critical": "20 / x3",
     "damage": "[1d8] + 3 Slash, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -858,10 +1042,13 @@
   },
   "0x700189F7": {},
   "0x700189FA": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "6003pp",
     "critical": "19-20 / x2",
     "damage": "2[1d6] + 5 Pierce, Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -869,9 +1056,12 @@
     "weight": "0.5"
   },
   "0x70018D11": {
+    "attack_mod": "STR",
     "base_value": "2,820 pp 4 gp",
     "critical": "20 / x3",
     "damage": "[1d12] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -879,9 +1069,12 @@
     "weight": "12.0"
   },
   "0x70018DB2": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "[1d8] + 1 Slash, Good, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Flametouched Iron",
     "proficiency": "Martial",
@@ -889,10 +1082,13 @@
     "weight": "6.0"
   },
   "0x700193A3": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "4.80[1d10+4] + 15 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -906,20 +1102,26 @@
     "weight": "0.1"
   },
   "0x70019504": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "11,903 pp",
     "critical": "20 / x3",
     "damage": "4.80[1d10+3] + 15 Slash, Adamantine, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Exotic",
     "weapon_type": "Dwarven War Axe",
     "weight": "8.0"
   },
-  "0x7001A36F": {},
+  "0x7001A36F": {
+    "slot": "Finger"
+  },
   "0x7001A370": {
     "critical": "20 / x2",
-    "material": "Steel"
+    "material": "Steel",
+    "slot": "Wrist"
   },
   "0x7001A373": {
     "material": "Steel",
@@ -929,13 +1131,17 @@
     "augment_count": 1,
     "base_value": "2,001 pp",
     "material": "Green Dragonscale",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7001AD89": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -945,42 +1151,52 @@
   "0x7001AE2C": {
     "base_value": "10,020 pp",
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x7001AE37": {
     "base_value": "10,020 pp",
     "material": "Adamantine",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x7001AE38": {
     "base_value": "802pp",
     "critical": "20 / x2",
-    "proficiency": "General"
+    "proficiency": "General",
+    "slot": "Finger"
   },
   "0x7001AE39": {
     "base_value": "10,020 pp",
     "material": "Stone",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x7001AE47": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "4[1d10] + 7 Pierce, Bludgeon, Good, Magic, Crystal",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
-    "proficiency": "Simple"
+    "proficiency": "Simple",
+    "slot": "Feet"
   },
   "0x7001AE50": {
     "base_value": "10,020 pp",
     "material": "Mithral",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7001AE5E": {
     "base_value": "10,020 pp",
     "material": "Adamantine",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
@@ -991,30 +1207,41 @@
     "weapon_type": "Clothing"
   },
   "0x7001AE60": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "1.50[1d8] + 5 Bludgeon, Evil, Magic",
+    "damage_mod": "STR",
     "handedness": "One-handed",
-    "proficiency": "Simple"
+    "proficiency": "Simple",
+    "slot": "Neck"
   },
   "0x7001AE62": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "1.50[2d8] + 5 Pierce, Evil, Magic",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
-    "proficiency": "Exotic"
+    "proficiency": "Exotic",
+    "slot": "Neck"
   },
   "0x7001AE64": {
     "augment_count": 1,
     "base_value": "8,005 pp",
+    "damage_class": "Clothing",
     "material": "Leather",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x7001AE69": {
+    "attack_mod": "STR",
     "base_value": "10,005 pp",
     "critical": "19-20 / x2",
     "damage": "4[3d6] +7 Slash, Silver, Mithral, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Mithral",
     "proficiency": "Martial",
@@ -1022,39 +1249,49 @@
     "weight": "8.0"
   },
   "0x7001AE6A": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "17-20 / x2",
     "damage": "4[1d8] + 7 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "proficiency": "Martial"
   },
   "0x7001AE6B": {
     "base_value": "10,020 pp",
     "material": "Gold",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x7001AE75": {
     "base_value": "10,020 pp",
     "material": "Mithral",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7001AE7A": {
     "base_value": "10,020 pp",
     "material": "Stone",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x7001AE7C": {
     "augment_count": 1,
+    "damage_class": "Clothing",
     "weight": "0.1"
   },
   "0x7001AE82": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "10,000 pp 8 gp",
     "critical": "18-20 / x2",
     "damage": "4[2d6] + 7 Pierce, Bludgeon, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -1072,6 +1309,7 @@
     "augment_count": 1,
     "base_value": "8,020 pp",
     "material": "Gem",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
@@ -1083,10 +1321,13 @@
     "weight": "50.0"
   },
   "0x7001AED4": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "10,000 pp 8 gp",
     "critical": "18-20 / x2",
     "damage": "4[2d6] + 7 Pierce, Bludgeon, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -1096,6 +1337,7 @@
   "0x7001AED6": {
     "base_value": "10,020 pp",
     "material": "Gold",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
@@ -1116,6 +1358,7 @@
     "augment_count": 1,
     "base_value": "6,100 pp",
     "critical": "19-20 / x2",
+    "damage_mod": "CHA",
     "material": "Gem",
     "proficiency": "Magical Training",
     "weapon_type": "Orb",
@@ -1126,9 +1369,12 @@
     "material": "Crystal"
   },
   "0x7001B9D5": {
+    "attack_mod": "STR",
     "base_value": "10420 pp",
     "critical": "20 / x3",
     "damage": "4.20[1d12] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1148,6 +1394,7 @@
     "augment_count": 1,
     "base_value": "3204 pp",
     "critical": "18-20 / x3",
+    "damage_mod": "DEX",
     "material": "Wood",
     "proficiency": "General",
     "weapon_type": "Buckler",
@@ -1156,6 +1403,7 @@
   "0x7001C8D1": {
     "base_value": "10,420 pp",
     "material": "Steel",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
@@ -1163,6 +1411,7 @@
     "augment_count": 1,
     "base_value": "10,420 pp",
     "material": "Gold",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -1170,66 +1419,79 @@
     "augment_count": 1,
     "base_value": "10,420pp",
     "material": "Gold",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7001C8DB": {
     "base_value": "10,420 pp",
     "material": "Steel",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x7001C8DD": {
     "base_value": "10,420 pp",
     "material": "Steel",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x7001CD81": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x7001D089": {
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x7001D0FA": {
     "base_value": "10,420 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.01"
   },
   "0x7001D0FB": {
     "base_value": "10,820 pp",
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7001D0FC": {
     "base_value": "10,820 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x7001D0FD": {
     "base_value": "10,820 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x7001D0FF": {
     "base_value": "10,820pp",
     "material": "Gold",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x7001DFE4": {
+    "attack_mod": "STR",
     "base_value": "2,820 pp",
     "critical": "19-20 / x2",
     "damage": "[2d6] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1237,9 +1499,12 @@
     "weight": "8.0"
   },
   "0x7001DFE8": {
+    "attack_mod": "STR",
     "base_value": "2,820 pp",
     "critical": "19-20 / x2",
     "damage": "[2d6] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1247,9 +1512,12 @@
     "weight": "8.0"
   },
   "0x7001E062": {
+    "attack_mod": "STR",
     "base_value": "10420 pp",
     "critical": "19-20 / x2",
     "damage": "4.20[2d6] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1268,18 +1536,23 @@
   "0x70021EE5": {
     "base_value": "6,020 pp",
     "material": "Steel",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70021EE7": {
     "base_value": "6,020 pp",
     "material": "Steel",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x70021EEE": {
+    "attack_mod": "STR",
     "critical": "20 / x2",
     "damage": "1.50[1d8] + 3 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1289,18 +1562,21 @@
   "0x70021EF0": {
     "base_value": "6,020 pp",
     "material": "Glass",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70022266": {
     "base_value": "20 pp",
     "material": "Cloth",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70022467": {
     "base_value": "6,010 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
@@ -1322,18 +1598,21 @@
     "augment_count": 1,
     "base_value": "11,605 pp 5 gp",
     "material": "Cloth",
+    "slot": "Armor",
     "weapon_type": "Clothing"
   },
   "0x700237C0": {
     "augment_count": 1,
     "base_value": "4,005 pp 5 gp",
     "material": "Cloth",
+    "slot": "Armor",
     "weapon_type": "Outfit"
   },
   "0x70023818": {
     "augment_count": 1,
     "base_value": "68055gp",
     "material": "Cloth",
+    "slot": "Armor",
     "weapon_type": "Outfit"
   },
   "0x7002382A": {
@@ -1346,15 +1625,19 @@
   "0x70023832": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x70023980": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "base_value": "11,607pp",
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "4.80[1d10+2] + 15 Pierce, Good, Silver, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1362,10 +1645,13 @@
     "weight": "8.0"
   },
   "0x70023983": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "4.80[2d6+4] + 15 Slash, Good, Silver, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1373,10 +1659,13 @@
     "weight": "8.0"
   },
   "0x70023985": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d2] + 5 Slash, Evil, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -1384,10 +1673,13 @@
     "weight": "0.5"
   },
   "0x70023987": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "[1d8] + 5 Pierce, Good, Silver, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1395,10 +1687,13 @@
     "weight": "3.0"
   },
   "0x70023989": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "4.80[1d6+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1406,18 +1701,25 @@
     "weight": "2.0"
   },
   "0x7002398B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
-    "proficiency": "Exotic"
+    "proficiency": "Exotic",
+    "slot": "Feet"
   },
   "0x7002398F": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d2] + 5 Slash, Good, Silver, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -1425,10 +1727,13 @@
     "weight": "0.5"
   },
   "0x70023995": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "[1d8] + 5 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1436,11 +1741,14 @@
     "weight": "3.0"
   },
   "0x7002399B": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "4,002pp 1gp",
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d4] + 5 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1448,10 +1756,13 @@
     "weight": "2.0"
   },
   "0x7002399D": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "[1d10] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1459,10 +1770,13 @@
     "weight": "10.0"
   },
   "0x700239A1": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "4.80[1d4+2] + 15 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1470,10 +1784,13 @@
     "weight": "2.0"
   },
   "0x700239A3": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "[1d6] + 5 Pierce, Good, Silver, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1481,10 +1798,13 @@
     "weight": "2.0"
   },
   "0x700239A4": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d10+2] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -1492,10 +1812,13 @@
     "weight": "8.0"
   },
   "0x700239A8": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "[1d8] + 5 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1503,11 +1826,14 @@
     "weight": "4.0"
   },
   "0x700239A9": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,000 pp 2 gp",
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d6] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -1515,10 +1841,13 @@
     "weight": "2.0"
   },
   "0x700239AD": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d12+4] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1526,10 +1855,13 @@
     "weight": "12.0"
   },
   "0x700239B2": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d8+2] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1537,10 +1869,13 @@
     "weight": "6.0"
   },
   "0x700239B3": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d6+2] + 15 Slash, Good, Silver, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1548,10 +1883,13 @@
     "weight": "2.0"
   },
   "0x700239B7": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x4",
     "damage": "[1d4] + 5 Pierce, Good, Silver, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1559,10 +1897,13 @@
     "weight": "3.0"
   },
   "0x700239BC": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "[1d6] + 5 Pierce, Good, Silver, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1570,11 +1911,14 @@
     "weight": "2.0"
   },
   "0x700239C0": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "11,600pp 2cp",
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] +15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1582,18 +1926,25 @@
     "weight": "3.0"
   },
   "0x700239C2": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "[1d8] + 5 Pierce, Good, Silver, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
-    "proficiency": "Exotic"
+    "proficiency": "Exotic",
+    "slot": "Feet"
   },
   "0x700239C6": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d6] + 5 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1601,10 +1952,13 @@
     "weight": "4.0"
   },
   "0x700239D0": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x4",
     "damage": "4.80[1d6+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1612,11 +1966,14 @@
     "weight": "6.0"
   },
   "0x700239D2": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,002 pp",
     "binding": "from chest; otherwise",
     "critical": "18-20 / x2",
     "damage": "[1d6] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1624,10 +1981,13 @@
     "weight": "4.0"
   },
   "0x700239D3": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d8+2] + 15 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1635,11 +1995,14 @@
     "weight": "5.0"
   },
   "0x700239D5": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "4,002pp 8gp",
     "binding": "from chest; otherwise",
     "critical": "20 / x4",
     "damage": "[1d6] + 5 Pierce, Good, Silver, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1647,11 +2010,14 @@
     "weight": "6.0"
   },
   "0x700239D9": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,003 pp",
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d6] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -1659,10 +2025,13 @@
     "weight": "0.5"
   },
   "0x700239DF": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d8+2] + 15 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1670,20 +2039,26 @@
     "weight": "5.0"
   },
   "0x700239E0": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "[1d6] + 5 Slash, Good, Silver, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "material": "Steel",
     "proficiency": "Martial",
     "weapon_type": "Handaxe",
     "weight": "3.0"
   },
   "0x700239E2": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Slash, Good, Silver, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1691,10 +2066,13 @@
     "weight": "2.0"
   },
   "0x700239E3": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d6+2] + 15 Pierce, Good, Silver, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1704,15 +2082,19 @@
   "0x700239E5": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x700239E6": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,002pp 2gp",
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "[1d4] + 5 Pierce, Good, Silver, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1720,11 +2102,14 @@
     "weight": "1.0"
   },
   "0x700239EA": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "4,000 pp 8gp",
     "binding": "from chest; otherwise",
     "critical": "20 / x4",
     "damage": "[1d6] + 5 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1732,21 +2117,27 @@
     "weight": "6.0"
   },
   "0x700239ED": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d6] + 5 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "material": "Steel",
     "proficiency": "Simple",
     "weapon_type": "Light Mace",
     "weight": "4.0"
   },
   "0x700239EE": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,000 pp 8 gp",
     "binding": "from chest; otherwise",
     "critical": "18-20 / x2",
     "damage": "[1d4] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1754,10 +2145,13 @@
     "weight": "2.0"
   },
   "0x700239F3": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "[1d10] + 5 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -1765,10 +2159,13 @@
     "weight": "12.0"
   },
   "0x700239FC": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "[1d12] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1776,10 +2173,13 @@
     "weight": "12.0"
   },
   "0x70023A00": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x4",
     "damage": "[1d4] + 5 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1787,10 +2187,13 @@
     "weight": "3.0"
   },
   "0x70023A02": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "18-20 / x2",
     "damage": "[2d4] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1798,11 +2201,14 @@
     "weight": "8.0"
   },
   "0x70023A05": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "11,602pp 2gp",
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "4.80[1d4+2] + 15 Pierce, Good, Silver, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1810,10 +2216,13 @@
     "weight": "1.0"
   },
   "0x70023A08": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "4.80[1d6+2] + 15 Pierce, Good, Silver, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1821,11 +2230,14 @@
     "weight": "2.0"
   },
   "0x70023A0A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "4,005 pp",
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "[2d6] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1833,10 +2245,13 @@
     "weight": "8.0"
   },
   "0x70023A0B": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "[1d10] + 5 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1844,11 +2259,14 @@
     "weight": "8.0"
   },
   "0x70023A0C": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "4,000 pp 2gp",
     "binding": "from chest; otherwise",
     "critical": "18-20 / x2",
     "damage": "[1d6] + 5 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1856,20 +2274,26 @@
     "weight": "2.0"
   },
   "0x70023A0E": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "6875 pp",
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Slash, Good, Silver, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "proficiency": "Exotic"
   },
   "0x70023A0F": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "11,605 pp",
     "binding": "from chest; otherwise",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Bludgeon, Good, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -1877,11 +2301,14 @@
     "weight": "0.5"
   },
   "0x70023A10": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "11,600 pp 2gp",
     "binding": "from chest; otherwise",
     "critical": "19-20 / x2",
     "damage": "4.80[1d4+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1889,10 +2316,13 @@
     "weight": "1.0"
   },
   "0x70023A11": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "binding": "from chest; otherwise",
     "critical": "18-20 / x2",
     "damage": "4.80[1d4+2] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1900,18 +2330,24 @@
     "weight": "2.0"
   },
   "0x70023A12": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "6850 pp",
     "binding": "from chest; otherwise",
     "critical": "20 / x3",
     "damage": "4.80[1d10+4] + 15 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "proficiency": "Martial"
   },
   "0x70023A13": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.40[1d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1921,15 +2357,19 @@
   "0x70023BB2": {
     "base_value": "8,101pp 5gp",
     "critical": "20 / x2",
+    "damage_mod": "STR",
     "material": "Magesteel",
     "proficiency": "General",
     "weapon_type": "Buckler",
     "weight": "5.0"
   },
   "0x70023BBA": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "4.80[1d10+2] + 15 Slash, Good, Adamantine, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Exotic",
@@ -1947,13 +2387,17 @@
     "augment_count": 1,
     "base_value": "5,601pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E28": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "4.80[1d8+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1964,14 +2408,18 @@
     "augment_count": 1,
     "base_value": "11,601pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E2A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "5,600 pp",
     "critical": "20 / x2",
     "damage": "1.80[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -1982,13 +2430,17 @@
     "augment_count": 1,
     "base_value": "11,601 pp",
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x70023E2C": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x4",
     "damage": "1.80[1d4] +5 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -1996,10 +2448,13 @@
     "weight": "3.0"
   },
   "0x70023E2E": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "12,803 pp",
     "critical": "20 / x3",
     "damage": "1.80[1d10] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -2007,10 +2462,13 @@
     "weight": "8.0"
   },
   "0x70023E30": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "base_value": "5,625pp",
     "critical": "17-20 / x2",
     "damage": "1.80[1d8] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -2018,10 +2476,13 @@
     "weight": "6.0"
   },
   "0x70023E31": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "11,607 pp 5 gp",
     "critical": "15-20 / x2",
     "damage": "5.30[2d4+4] + 15 Slash, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2029,10 +2490,13 @@
     "weight": "8.0"
   },
   "0x70023E32": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "base_value": "11,625pp",
     "critical": "17-20 / x2",
     "damage": "4.80[1d8+2] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -2043,16 +2507,20 @@
     "augment_count": 1,
     "base_value": "6,004 pp",
     "critical": "19-20 /x3",
+    "damage_mod": "STR",
     "material": "Densewood",
     "proficiency": "General",
     "weapon_type": "Large",
     "weight": "10.0"
   },
   "0x70023E34": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "base_value": "5,603pp",
     "critical": "19-20 / x3",
     "damage": "1.80[1d6] + 5 Pierce, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2069,19 +2537,24 @@
   "0x70023E36": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70023E37": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70023E38": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "15-20 / x2",
     "damage": "2.30[1d6] +5 Slash, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2089,9 +2562,12 @@
     "weight": "4.0"
   },
   "0x70023E3B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x4",
     "damage": "4.80[1d4+2] + 15 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2102,15 +2578,19 @@
     "augment_count": 1,
     "base_value": "12,004 pp",
     "critical": "19-20 /x3",
+    "damage_mod": "STR",
     "material": "Densewood",
     "proficiency": "General",
     "weapon_type": "Large",
     "weight": "10.0"
   },
   "0x70023E3D": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.80[1d8] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2120,20 +2600,25 @@
   "0x70023E3E": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E3F": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E40": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "5,600pp 6gp",
     "critical": "20 / x2",
     "damage": "1.80[1d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2143,13 +2628,17 @@
   "0x70023E41": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x70023E42": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "15-20 / x2",
     "damage": "5.30[1d6+2] + 15 Slash, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2160,14 +2649,18 @@
     "augment_count": 1,
     "base_value": "5,601pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E45": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "5,600pp 6gp",
     "critical": "20 / x2",
     "damage": "1.80[1d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2178,19 +2671,24 @@
     "augment_count": 1,
     "base_value": "11,601pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E47": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E48": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "4.80[1d8+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2200,6 +2698,7 @@
   "0x70023E49": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
@@ -2207,13 +2706,17 @@
     "augment_count": 1,
     "base_value": "11601 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E4B": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "1.80[1d8] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2221,9 +2724,12 @@
     "weight": "5.0"
   },
   "0x70023E4C": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "4.80[1d8+2] + 15 Bludgeon, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2234,6 +2740,7 @@
     "augment_count": 1,
     "base_value": "5,601pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
@@ -2245,9 +2752,12 @@
     "weight": "30.0"
   },
   "0x70023E50": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x3",
     "damage": "4.80[1d6+2] + 15 Pierce, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2257,14 +2767,18 @@
   "0x70023E51": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E52": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "5607pp 5gp",
     "critical": "15-20 / x2",
     "damage": "2.30[2d4] + 5 Slash, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2272,10 +2786,13 @@
     "weight": "8.0"
   },
   "0x70023E53": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "11,600pp 6gp",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2283,10 +2800,13 @@
     "weight": "2.0"
   },
   "0x70023E55": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "11,603 pp",
     "critical": "20 / x3",
     "damage": "4.80[1d10+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -2297,16 +2817,20 @@
     "augment_count": 1,
     "base_value": "5,700 pp",
     "critical": "19-20 / x2",
+    "damage_mod": "CHA",
     "material": "Gem",
     "proficiency": "Magical Training",
     "weapon_type": "Orb",
     "weight": "3.0"
   },
   "0x70023E57": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "11,600pp 2cp",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2317,14 +2841,18 @@
     "augment_count": 1,
     "base_value": "11,601 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70023E59": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "11,600pp 6gp",
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2335,13 +2863,17 @@
     "augment_count": 1,
     "base_value": "5601 pp",
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x70023E5B": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.80[1d8] + 5 Bludgeon, Silver, Adamantine, Mithral, Cold Iron, Magic, Byeshk",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2352,6 +2884,7 @@
     "augment_count": 1,
     "base_value": "5,601 pp",
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
@@ -2359,6 +2892,7 @@
     "augment_count": 1,
     "base_value": "11,700 pp",
     "critical": "19-20 / x2",
+    "damage_mod": "CHA",
     "material": "Gem",
     "proficiency": "Magical Training",
     "weapon_type": "Orb",
@@ -2372,12 +2906,14 @@
   },
   "0x70023F3C": {
     "material": "none",
+    "slot": "Cosmetic Headwear",
     "weapon_type": "Helm"
   },
   "0x70023F43": {
     "augment_count": 2,
     "base_value": "2010pp",
     "material": "Gem",
+    "slot": "Armor",
     "weapon_type": "Docent"
   },
   "0x70023F46": {
@@ -2390,12 +2926,14 @@
     "augment_count": 2,
     "base_value": "11605 pp 5 gp",
     "material": "Cloth",
+    "slot": "Armor",
     "weapon_type": "Clothing"
   },
   "0x70023F4D": {
     "augment_count": 2,
     "base_value": "11,610 pp",
     "material": "Gem",
+    "slot": "Armor",
     "weapon_type": "Docent"
   },
   "0x70023F4F": {
@@ -2413,19 +2951,24 @@
   },
   "0x70023FCD": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cloak",
     "weight": "0.0"
   },
   "0x70024017": {
     "augment_count": 1,
     "material": "Cloth",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x700242CE": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "2[1d6] + 5 Slash, Good, Adamantine, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Martial",
@@ -2433,9 +2976,12 @@
     "weight": "4.0"
   },
   "0x700242D5": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "4.80[1d6+2] + 15 Slash, Good, Adamantine, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Exotic",
@@ -2444,12 +2990,14 @@
   },
   "0x700242F9": {
     "material": "none",
+    "slot": "Cosmetic Headwear",
     "weapon_type": "Helm"
   },
   "0x7002430B": {
     "augment_count": 1,
     "base_value": "15,001 pp 5 gp",
     "critical": "20 / x2",
+    "damage_mod": "STR",
     "material": "Dwarven Iron",
     "proficiency": "General",
     "weapon_type": "Buckler",
@@ -2459,23 +3007,29 @@
     "augment_count": 1,
     "base_value": "11,601pp",
     "material": "Cloth",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x700244A1": {
     "augment_count": 1,
+    "slot": "Eye",
     "weapon_type": "Goggles"
   },
   "0x70024735": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x70024CF0": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2[2d4] + 5 Pierce, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2483,9 +3037,12 @@
     "weight": "1.0"
   },
   "0x70024CF1": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "[2d4] + 2 Pierce, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -2493,9 +3050,12 @@
     "weight": "1.0"
   },
   "0x70024F50": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2[1d10] + 5 Bludgeon, Good, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Adamantine",
     "proficiency": "Martial",
@@ -2503,9 +3063,12 @@
     "weight": "8.0"
   },
   "0x70024F56": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "4.80[1d4+2] + 15 Pierce, Good, Adamantine, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -2513,9 +3076,12 @@
     "weight": "0.5"
   },
   "0x70024F59": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "4.80[1d8+2] + 15 Bludgeon, Good, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -2523,9 +3089,12 @@
     "weight": "8.0"
   },
   "0x70024F5C": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "4.80[1d6+2] + 15 Pierce, Good, Adamantine, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Martial",
@@ -2533,9 +3102,12 @@
     "weight": "2.0"
   },
   "0x70024F6D": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "4.80[1d8+2] + 15 Bludgeon, Good, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -2543,14 +3115,20 @@
     "weight": "6.0"
   },
   "0x70024F70": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "6,305 pp",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "material": "Adamantine"
   },
   "0x70024F9E": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2[1d10] + 5 Pierce, Good, Adamantine, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -2558,10 +3136,13 @@
     "weight": "8.0"
   },
   "0x70025279": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11,601 pp",
     "critical": "19-20 / x2",
     "damage": "4.80[1d6+3] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2571,6 +3152,7 @@
   "0x7002527D": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
@@ -2578,26 +3160,32 @@
     "augment_count": 2,
     "base_value": "11,601 pp",
     "material": "Adamantine",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70025289": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x7002528A": {
     "augment_count": 2,
     "material": "Crystal",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x7002528C": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "11,603 pp 5gp",
     "critical": "19-20 / x2",
     "damage": "4.80[1d10+3] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -2608,14 +3196,18 @@
     "augment_count": 3,
     "base_value": "11,601 pp",
     "material": "Platinum",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x7002528E": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "11602 pp",
     "critical": "19-20 / x3",
     "damage": "4.80[1d12+6] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2625,27 +3217,34 @@
   "0x70025290": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x70025291": {
     "augment_count": 2,
     "base_value": "11601 pp",
+    "damage_class": "Jewelry",
     "material": "Paper",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x70025293": {
     "augment_count": 3,
     "material": "Silver",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7002529A": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11,602pp",
     "critical": "15-20 / x2",
     "damage": "4.80[1d6+3] + 15 Slash, Pierce, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Glass",
     "proficiency": "Martial",
@@ -2653,10 +3252,13 @@
     "weight": "4.0"
   },
   "0x7002529B": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "base_value": "11,640 pp",
     "critical": "19-20 / x2",
     "damage": "5.30[1d10+3] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -2664,9 +3266,12 @@
     "weight": "12.0"
   },
   "0x700252DF": {
+    "attack_mod": "STR",
     "base_value": "10420 pp",
     "critical": "20 / x3",
     "damage": "4.20[1d12] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2674,9 +3279,12 @@
     "weight": "12.0"
   },
   "0x700252E0": {
+    "attack_mod": "STR",
     "base_value": "10420 pp",
     "critical": "20 / x3",
     "damage": "4.20[1d12] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2684,9 +3292,12 @@
     "weight": "12.0"
   },
   "0x700252E1": {
+    "attack_mod": "STR",
     "base_value": "2,820 pp",
     "critical": "19-20 / x2",
     "damage": "[2d6] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -2694,9 +3305,12 @@
     "weight": "8.0"
   },
   "0x70025439": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "2[1d6] + 5 Slash, Good, Adamantine, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Martial",
@@ -2704,10 +3318,13 @@
     "weight": "4.0"
   },
   "0x7002577B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "6803pp",
     "critical": "20 / x2",
     "damage": "2.40[1d6] + 5 Bludgeon, Good, Evil, Lawful, Chaotic, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -2715,9 +3332,12 @@
     "weight": "0.5"
   },
   "0x70025907": {
+    "attack_mod": "STR",
     "base_value": "3,220 pp",
     "critical": "20 / x3",
     "damage": "1.50[1d12] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Force",
     "proficiency": "Martial",
@@ -2725,9 +3345,12 @@
     "weight": "12.0"
   },
   "0x70025924": {
+    "attack_mod": "STR",
     "base_value": "3,220 pp",
     "critical": "20 / x3",
     "damage": "1.50[1d12] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Force",
     "proficiency": "Martial",
@@ -2735,8 +3358,11 @@
     "weight": "12.0"
   },
   "0x7002592B": {
+    "attack_mod": "STR",
     "critical": "20 / x3",
     "damage": "1.50[1d8] + 3 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Force",
     "proficiency": "Martial",
@@ -2744,8 +3370,11 @@
     "weight": "5.0"
   },
   "0x70025935": {
+    "attack_mod": "STR",
     "critical": "20 / x3",
     "damage": "1.50[1d8] + 3 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Force",
     "proficiency": "Martial",
@@ -2753,9 +3382,12 @@
     "weight": "5.0"
   },
   "0x7002593F": {
+    "attack_mod": "STR",
     "base_value": "3,220 pp",
     "critical": "20 / x3",
     "damage": "1.50[1d12] + 3 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Force",
     "proficiency": "Martial",
@@ -2772,12 +3404,16 @@
   "0x70025A2B": {
     "augment_count": 1,
     "material": "Magesteel",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70025AC1": {
+    "attack_mod": "STR",
     "critical": "20 / x3",
     "damage": "1.50[1d8] + 3 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Force",
     "proficiency": "Martial",
@@ -2791,9 +3427,12 @@
     "weapon_type": "Clothing"
   },
   "0x7002687B": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "4.80[2d6+4] + 15 Slash, Cold Iron, Magic, Crystal",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Crystal",
     "proficiency": "Martial",
@@ -2803,14 +3442,18 @@
   "0x70026888": {
     "base_value": "6005 pp",
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x7002689B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "6,003 pp",
     "critical": "20 / x2",
     "damage": "2[1d6] + 3 Bludgeon, Adamantine, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -2820,18 +3463,21 @@
   "0x7002689C": {
     "base_value": "6,020 pp",
     "material": "Steel",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x700268AF": {
     "base_value": "6,020 pp",
     "material": "Silver",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70026B48": {
     "augment_count": 1,
     "material": "Copper",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
@@ -2851,9 +3497,12 @@
     "material": "Crystal"
   },
   "0x70026E6D": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "[1d6] + 2 Slashing, Cold Iron, Magic, Crystal",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Crystal",
     "proficiency": "Martial",
@@ -2861,9 +3510,12 @@
     "weight": "3.0"
   },
   "0x70026E70": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x4",
     "damage": "[1d4] + 2 Pierce, Cold Iron, Magic, Crystal",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Crystal",
     "proficiency": "Martial",
@@ -2871,9 +3523,12 @@
     "weight": "3.0"
   },
   "0x70026E71": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "4.80[1d10+2] + 15 Pierce, Cold Iron, Magic, Crystal",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Crystal",
     "proficiency": "Exotic",
@@ -2881,10 +3536,13 @@
     "weight": "12.0"
   },
   "0x70026EF8": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "2,000pp 1cp",
     "critical": "20 / x2",
     "damage": "[1d6] + 2 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Cold Iron",
     "proficiency": "Simple",
@@ -2892,9 +3550,12 @@
     "weight": "3.0"
   },
   "0x70027738": {
+    "attack_mod": "WIS",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "4.80[1d8+3] + 15 Cold",
+    "damage_class": "Slashing",
+    "damage_mod": "WIS",
     "handedness": "One-handed",
     "material": "Ice",
     "proficiency": "Martial",
@@ -2904,14 +3565,18 @@
   "0x70027747": {
     "augment_count": 3,
     "material": "Glass",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70027758": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "11,600pp 1cp",
     "critical": "20 / x2",
     "damage": "4.80[1d6+6] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -2919,9 +3584,12 @@
     "weight": "4.0"
   },
   "0x7002775A": {
+    "attack_mod": "CHA",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "4.80[2d6+6] + 15 Force",
+    "damage_class": "Slashing",
+    "damage_mod": "CHA",
     "handedness": "Two-handed",
     "material": "Force",
     "proficiency": "Martial",
@@ -2929,10 +3597,13 @@
     "weight": "8.0"
   },
   "0x70027768": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11,600 pp 2 gp",
     "critical": "17-20 / x2",
     "damage": "4.80[1d4+3] + 15 Pierce, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Wood",
     "proficiency": "Simple",
@@ -2940,10 +3611,13 @@
     "weight": "1.0"
   },
   "0x70027775": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "11,600pp 8gp",
     "critical": "19-20 / x2",
     "damage": "4.80[1d8+3] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Ice",
     "proficiency": "Simple",
@@ -2959,58 +3633,75 @@
   "0x700277E9": {
     "base_value": "4,420 pp",
     "material": "Leather",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x700277EB": {
     "base_value": "4,420 pp",
+    "damage_class": "Clothing",
     "material": "Leather",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x700277EE": {
     "base_value": "3,605 pp",
+    "damage_class": "Clothing",
     "material": "Leather",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x700277F1": {
     "augment_count": 2,
     "base_value": "2,005 pp",
+    "damage_class": "Clothing",
     "material": "Steel",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x700277F9": {
     "base_value": "3,605 pp",
+    "damage_class": "Clothing",
     "material": "Leather",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x700277FA": {
     "base_value": "4,420 pp",
     "material": "Leather",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x700277FB": {
     "base_value": "3,620pp",
+    "damage_class": "Jewelry",
     "material": "Gem",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x700277FD": {
     "augment_count": 1,
     "base_value": "2020 pp",
+    "damage_class": "Jewelry",
     "material": "Gem",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x700277FE": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "1618 pp 1cp",
     "critical": "20 / x2",
     "damage": "[1d6] + 2 Bludgeon, Silver, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Two-handed",
     "material": "Silver",
     "proficiency": "Simple",
@@ -3020,26 +3711,33 @@
   "0x700277FF": {
     "augment_count": 1,
     "material": "Platinum",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70027803": {
     "base_value": "4,420 pp",
     "material": "Leather",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70027804": {
     "augment_count": 1,
     "base_value": "2,005 pp",
+    "damage_class": "Jewelry",
     "material": "Leather",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7002794F": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "4.80[1d6+2] + 15 Slash, Good, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Flametouched Iron",
     "proficiency": "Martial",
@@ -3047,9 +3745,12 @@
     "weight": "3.0"
   },
   "0x70027950": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x4",
     "damage": "4.80[1d6+2] + 15 Pierce, Good, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Flametouched Iron",
     "proficiency": "Martial",
@@ -3059,27 +3760,34 @@
   "0x70027C93": {
     "augment_count": 2,
     "base_value": "8,001pp",
+    "damage_class": "Clothing",
     "material": "Cloth",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x70027C94": {
     "augment_count": 1,
     "base_value": "1201 pp",
+    "damage_class": "Clothing",
     "material": "Cloth",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70027C95": {
     "augment_count": 2,
     "base_value": "8,001 pp",
+    "damage_class": "Clothing",
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x70027C9A": {
     "augment_count": 2,
     "material": "Gold",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
@@ -3099,23 +3807,27 @@
   },
   "0x70028C78": {
     "material": "None",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cosmetic Cloak"
   },
   "0x70028DB1": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70028DE3": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x70028DF3": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3136,6 +3848,7 @@
   "0x70028DFB": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Head",
     "weapon_type": "Helmet",
     "weight": "0.1"
   },
@@ -3152,10 +3865,13 @@
     "weapon_type": "Docent"
   },
   "0x70028E24": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "1 cp",
     "critical": "20 / x2",
     "damage": "[4] + 0 Bludgeon",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -3164,24 +3880,28 @@
   },
   "0x70028E25": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cosmetic Cloak",
     "weight": "0.0"
   },
   "0x70028E51": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028E57": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028E5C": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3195,14 +3915,18 @@
   "0x70028E71": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x70028E7D": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "1 cp",
     "critical": "20 / x2",
     "damage": "[4] + 0 Bludgeon",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -3218,13 +3942,17 @@
   "0x70028EB2": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028EB4": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.20[1d6+2] + 15 Pierce, Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -3234,6 +3962,7 @@
   "0x70028EC0": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3247,6 +3976,7 @@
   "0x70028EC5": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
@@ -3257,24 +3987,28 @@
   },
   "0x70028ED2": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cloak",
     "weight": "0.0"
   },
   "0x70028ED4": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70028EE1": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028EE4": {
     "augment_count": 1,
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
@@ -3295,18 +4029,21 @@
   "0x70028EFC": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70028F08": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028F13": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
@@ -3318,11 +4055,13 @@
   },
   "0x70028F17": {
     "material": "None",
+    "slot": "Cosmetic Armor",
     "weapon_type": "Cosmetic Armor"
   },
   "0x70028F19": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
@@ -3336,13 +4075,17 @@
   "0x70028F1E": {
     "augment_count": 2,
     "material": "Leather",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x70028F4B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "5.90[1d6+2] + 15 Slash, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -3355,10 +4098,13 @@
     "weapon_type": "Docent"
   },
   "0x70028F5A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "1 cp",
     "critical": "20 / x2",
     "damage": "[4] + 0 Bludgeon",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -3368,37 +4114,45 @@
   "0x70028F5C": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x70028F67": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028F6A": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70028F72": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028F73": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x70028F75": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.20[1d6] + 5 Pierce, Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Cloth",
     "proficiency": "Exotic",
@@ -3408,13 +4162,17 @@
   "0x70028F7A": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028F7F": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "5.40[1d8+2] + 15 Bludgeon, Good, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -3438,6 +4196,7 @@
   "0x70028F8D": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
@@ -3457,13 +4216,17 @@
   "0x70028FA8": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x70028FC8": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "5.40[1d8+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -3478,24 +4241,28 @@
   "0x70028FCF": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Head",
     "weapon_type": "Helmet",
     "weight": "0.1"
   },
   "0x70028FEB": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70028FFA": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70028FFE": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3516,12 +4283,14 @@
   "0x7002900B": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70029012": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
@@ -3534,18 +4303,21 @@
   "0x70029017": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x7002901E": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Head",
     "weapon_type": "Helmet",
     "weight": "0.1"
   },
   "0x70029027": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3559,12 +4331,14 @@
   "0x7002903A": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7002903C": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3578,11 +4352,13 @@
   "0x70029044": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70029047": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cloak"
   },
   "0x70029049": {
@@ -3593,12 +4369,14 @@
   "0x70029058": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x70029060": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
@@ -3612,12 +4390,14 @@
   "0x70029067": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x70029069": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
@@ -3636,12 +4416,14 @@
   "0x70029072": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x7002907A": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3655,31 +4437,37 @@
   "0x7002909C": {
     "augment_count": 2,
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x700290A2": {
     "material": "N/A",
+    "slot": "Cosmetic Headwear",
     "weapon_type": "Cosmetic Helm"
   },
   "0x700290B2": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x700290B9": {
     "material": "None",
+    "slot": "Cosmetic Armor",
     "weapon_type": "Cosmetic Armor"
   },
   "0x700290C3": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x700290CC": {
     "material": "N/A",
+    "slot": "Cosmetic Headwear",
     "weapon_type": "Cosmetic Helm"
   },
   "0x700290D7": {
@@ -3698,12 +4486,14 @@
   "0x70029106": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x7002910E": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
@@ -3717,6 +4507,7 @@
   "0x7002911A": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
@@ -3733,10 +4524,13 @@
     "weight": "50.0"
   },
   "0x70029127": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "1 cp",
     "critical": "20 / x2",
     "damage": "[4] + 0 Bludgeon",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Wood",
     "proficiency": "Simple",
@@ -3760,6 +4554,7 @@
   "0x70029147": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
@@ -3772,12 +4567,14 @@
   "0x7002915C": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x7002915E": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3791,30 +4588,35 @@
   "0x70029168": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70029184": {
     "augment_count": 1,
     "material": "Gem",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x70029186": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x70029189": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x70029198": {
     "augment_count": 2,
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
@@ -3828,24 +4630,28 @@
   "0x700291F6": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x700291FE": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x70029207": {
     "augment_count": 1,
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
   "0x7002920B": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3878,13 +4684,17 @@
   "0x7002921C": {
     "augment_count": 2,
     "material": "Leather",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x70029239": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "5.40[1d6+4] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Densewood",
     "proficiency": "Simple",
@@ -3894,6 +4704,7 @@
   "0x7002923D": {
     "augment_count": 2,
     "material": "Gem",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -3918,25 +4729,31 @@
   "0x7002924B": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x70029258": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Hand",
     "weapon_type": "Gloves",
     "weight": "0.1"
   },
   "0x7002925D": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
   "0x700292D8": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "6.10[1d6+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -3944,9 +4761,12 @@
     "weight": "4.0"
   },
   "0x700292DA": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d4] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -3954,9 +4774,12 @@
     "weight": "0.5"
   },
   "0x700292E1": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "6.10[1d6+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -3964,9 +4787,12 @@
     "weight": "3.0"
   },
   "0x700292E2": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x3",
     "damage": "1.60[1d6] + 5 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -3974,9 +4800,12 @@
     "weight": "2.0"
   },
   "0x700292F0": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d4+2] + 15 Pierce, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -3984,9 +4813,12 @@
     "weight": "0.5"
   },
   "0x700292F2": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "17-20 / x2",
     "damage": "1.60[1d4] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -3994,9 +4826,12 @@
     "weight": "1.0"
   },
   "0x700292F6": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d6+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4004,9 +4839,12 @@
     "weight": "2.0"
   },
   "0x700292F9": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d2+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4014,9 +4852,12 @@
     "weight": "0.5"
   },
   "0x700292FA": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "17-20 / x2",
     "damage": "1.60[1d8] + 5 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4024,9 +4865,12 @@
     "weight": "4.0"
   },
   "0x700292FC": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "17-20 / x2",
     "damage": "5.60[1d8+2] + 15 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4034,9 +4878,12 @@
     "weight": "6.0"
   },
   "0x70029303": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "2.10[2d8] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4044,9 +4891,12 @@
     "weight": "12.0"
   },
   "0x70029305": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.10[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4054,9 +4904,12 @@
     "weight": "4.0"
   },
   "0x7002930B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.10[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4064,9 +4917,12 @@
     "weight": "0.5"
   },
   "0x7002930C": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "17-20 / x2",
     "damage": "5.60[1d10+2] + 15 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4074,9 +4930,12 @@
     "weight": "12.0"
   },
   "0x7002930D": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.10[1d4] + 5 Pierce, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4084,16 +4943,23 @@
     "weight": "0.5"
   },
   "0x7002930F": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.10[1d6] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
-    "proficiency": "Martial"
+    "proficiency": "Martial",
+    "slot": "Back"
   },
   "0x70029317": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "15-20 / x2",
     "damage": "1.60[2d8] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4101,9 +4967,12 @@
     "weight": "12.0"
   },
   "0x7002931A": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d8+2] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4111,9 +4980,12 @@
     "weight": "6.0"
   },
   "0x70029320": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x3",
     "damage": "1.60[1d10] + 5 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4121,9 +4993,12 @@
     "weight": "8.0"
   },
   "0x70029321": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x3",
     "damage": "1.60[1d12] + 5 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4131,9 +5006,12 @@
     "weight": "12.0"
   },
   "0x70029323": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "6.10[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4141,9 +5019,12 @@
     "weight": "12.0"
   },
   "0x7002932F": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.10[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4151,9 +5032,12 @@
     "weight": "4.0"
   },
   "0x7002933F": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d6+4] + 15 Bludgeon, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4161,9 +5045,12 @@
     "weight": "4.0"
   },
   "0x70029340": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "17-20 / x2",
     "damage": "5.60[1d4+2] + 15 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4171,9 +5058,12 @@
     "weight": "1.0"
   },
   "0x70029348": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "17-20 / x2",
     "damage": "1.60[1d6] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4181,9 +5071,12 @@
     "weight": "2.0"
   },
   "0x7002934A": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "17-20 / x2",
     "damage": "1.60[1d10] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4191,9 +5084,12 @@
     "weight": "12.0"
   },
   "0x7002934D": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.10[1d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4201,9 +5097,12 @@
     "weight": "2.0"
   },
   "0x70029350": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4211,9 +5110,12 @@
     "weight": "4.0"
   },
   "0x70029353": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d4+2] + 15 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4221,9 +5123,12 @@
     "weight": "1.0"
   },
   "0x70029355": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d4+2] + 15 Bludgeon, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4231,9 +5136,12 @@
     "weight": "2.0"
   },
   "0x70029358": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d10+4] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4241,9 +5149,12 @@
     "weight": "8.0"
   },
   "0x70029359": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "15-20 / x2",
     "damage": "5.60[1d6+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4251,9 +5162,12 @@
     "weight": "4.0"
   },
   "0x7002935A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "17-20 / x2",
     "damage": "1.60[2d6] + 5 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4261,9 +5175,12 @@
     "weight": "8.0"
   },
   "0x70029360": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "15-20 / x2",
     "damage": "1.60[1d6] + 5 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4271,9 +5188,12 @@
     "weight": "4.0"
   },
   "0x70029364": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d10+4] + 5 Bludgeon, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4281,9 +5201,12 @@
     "weight": "8.0"
   },
   "0x70029366": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d8+2] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4298,9 +5221,12 @@
     "weight": "30.0"
   },
   "0x7002936C": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.10[1d12] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4308,9 +5234,12 @@
     "weight": "12.0"
   },
   "0x7002936F": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "17-20 / x2",
     "damage": "1.60[1d10] + 5 Slash, Good, Evil, Chaotic, Lawful, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4318,9 +5247,12 @@
     "weight": "6.0"
   },
   "0x70029386": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x4",
     "damage": "6.10[1d4+2] + 15 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4328,9 +5260,12 @@
     "weight": "3.0"
   },
   "0x70029388": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.20[1d8+3] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Bone",
     "proficiency": "Simple",
@@ -4338,9 +5273,12 @@
     "weight": "8.0"
   },
   "0x7002938A": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "5.60[1d8+2] +15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4348,9 +5286,12 @@
     "weight": "6.0"
   },
   "0x7002938F": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "17-20 / x2",
     "damage": "5.60[1d8+2] + 15 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4358,9 +5299,12 @@
     "weight": "4.0"
   },
   "0x70029390": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "2.10[1d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4368,9 +5312,12 @@
     "weight": "4.0"
   },
   "0x700293A7": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d6] + 5 Bludgeon, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4378,9 +5325,12 @@
     "weight": "4.0"
   },
   "0x700293A9": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "5.60[1d6+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4388,9 +5338,12 @@
     "weight": "3.0"
   },
   "0x700293AA": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d6+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4398,9 +5351,12 @@
     "weight": "2.0"
   },
   "0x700293AB": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "6.10[2d4+4] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4408,9 +5364,12 @@
     "weight": "8.0"
   },
   "0x700293AC": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.10[1d2] + 5 Slash, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4418,6 +5377,7 @@
     "weight": "0.5"
   },
   "0x700293AD": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "base_value": "12,804pp",
     "critical": "18-20 / x3",
@@ -4427,10 +5387,13 @@
     "weight": "5.0"
   },
   "0x700293B9": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "base_value": "12,400pp, 6gp",
     "critical": "20 / x3",
     "damage": "5.20[1d6+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Silver",
     "proficiency": "Martial",
@@ -4438,9 +5401,12 @@
     "weight": "3.0"
   },
   "0x700293C0": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x3",
     "damage": "1.60[1d8] + 5 Bludgeon, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4448,9 +5414,12 @@
     "weight": "5.0"
   },
   "0x700293C1": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d10+2] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4458,9 +5427,12 @@
     "weight": "12.0"
   },
   "0x700293C6": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d4] + 5 Bludgeon, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4468,9 +5440,12 @@
     "weight": "2.0"
   },
   "0x700293CA": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "15-20 / x2",
     "damage": "5.60[1d4+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4478,9 +5453,12 @@
     "weight": "2.0"
   },
   "0x700293CF": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "15-20 / x2",
     "damage": "1.60[1d4] + 5 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4488,9 +5466,12 @@
     "weight": "2.0"
   },
   "0x700293D0": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "5.60[1d6+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4498,9 +5479,12 @@
     "weight": "2.0"
   },
   "0x700293D1": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x4",
     "damage": "1.60[1d4] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4508,9 +5492,12 @@
     "weight": "3.0"
   },
   "0x700293D6": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.10[1d10] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4518,9 +5505,12 @@
     "weight": "12.0"
   },
   "0x700293D7": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.10[1d4] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4528,9 +5518,12 @@
     "weight": "2.0"
   },
   "0x700293DC": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d6+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4538,9 +5531,12 @@
     "weight": "2.0"
   },
   "0x700293DF": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.10[1d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4548,9 +5544,12 @@
     "weight": "3.0"
   },
   "0x700293E1": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d8+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4558,9 +5557,12 @@
     "weight": "6.0"
   },
   "0x700293E2": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x3",
     "damage": "1.60[1d8] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4568,9 +5570,12 @@
     "weight": "3.0"
   },
   "0x700293E4": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d10+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4578,9 +5583,12 @@
     "weight": "6.0"
   },
   "0x700293E6": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "5.60[1d10+4] + 15 Bludgeon, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4588,9 +5596,12 @@
     "weight": "10.0"
   },
   "0x700293F5": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "6.10[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4598,9 +5609,12 @@
     "weight": "6.0"
   },
   "0x700293F7": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.10[1d8] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4608,9 +5622,12 @@
     "weight": "6.0"
   },
   "0x70029402": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "6.10[1d10+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4618,9 +5635,12 @@
     "weight": "8.0"
   },
   "0x70029404": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x4",
     "damage": "1.60[1d6] + 5 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4628,9 +5648,12 @@
     "weight": "6.0"
   },
   "0x70029408": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "5.60[1d10+2] + 15 Slash, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4640,13 +5663,17 @@
   "0x7002940E": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7002940F": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "6.10[1d4+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4654,9 +5681,12 @@
     "weight": "2.0"
   },
   "0x7002941E": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d4+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4664,9 +5694,12 @@
     "weight": "2.0"
   },
   "0x70029426": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "5.60[1d6+2] + 15 Pierce, Good, Evil, Lawful, Chaotic, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4674,9 +5707,12 @@
     "weight": "2.0"
   },
   "0x7002942A": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "5.20[1d4+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Bone",
     "proficiency": "Martial",
@@ -4684,9 +5720,12 @@
     "weight": "2.0"
   },
   "0x70029472": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d10+4] + 15 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4694,9 +5733,12 @@
     "weight": "8.0"
   },
   "0x70029473": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "5.40[1d8+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4704,9 +5746,12 @@
     "weight": "3.0"
   },
   "0x70029476": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d4+2] + 15 Bludgeon, Evil, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4714,9 +5759,12 @@
     "weight": "2.0"
   },
   "0x7002947A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x4",
     "damage": "2.60[1d6] + 5 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4724,9 +5772,12 @@
     "weight": "6.0"
   },
   "0x7002947C": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x3",
     "damage": "2.60[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4734,9 +5785,12 @@
     "weight": "12.0"
   },
   "0x70029480": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d4] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4744,9 +5798,12 @@
     "weight": "2.0"
   },
   "0x70029482": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -4754,9 +5811,12 @@
     "weight": "3.0"
   },
   "0x70029485": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.60[1d6] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4764,9 +5824,12 @@
     "weight": "3.0"
   },
   "0x7002948A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.60[1d12] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4774,9 +5837,12 @@
     "weight": "12.0"
   },
   "0x7002948D": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d4] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4784,9 +5850,12 @@
     "weight": "2.0"
   },
   "0x70029490": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "2.60[2d8] + 5 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4794,9 +5863,12 @@
     "weight": "12.0"
   },
   "0x70029491": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.40[1d6+2] + 15 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4804,9 +5876,12 @@
     "weight": "2.0"
   },
   "0x70029492": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x4",
     "damage": "5.40[1d4+2] + 15 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4814,9 +5889,12 @@
     "weight": "3.0"
   },
   "0x70029493": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x4",
     "damage": "5.40[1d4+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4824,9 +5902,12 @@
     "weight": "3.0"
   },
   "0x70029494": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x4",
     "damage": "2.60[1d4] + 5 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4834,9 +5915,12 @@
     "weight": "3.0"
   },
   "0x70029495": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -4844,9 +5928,12 @@
     "weight": "3.0"
   },
   "0x70029498": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x3",
     "damage": "5.40[1d8+2] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4854,9 +5941,12 @@
     "weight": "12.0"
   },
   "0x70029499": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d2] + 5 Slash, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4864,9 +5954,12 @@
     "weight": "0.5"
   },
   "0x7002949B": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.40[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4874,9 +5967,12 @@
     "weight": "4.0"
   },
   "0x700294A0": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -4884,9 +5980,12 @@
     "weight": "3.0"
   },
   "0x700294A1": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "5.40[1d8+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4894,9 +5993,12 @@
     "weight": "5.0"
   },
   "0x700294A3": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d4] + 5 Pierce, Evil, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4904,9 +6006,12 @@
     "weight": "0.5"
   },
   "0x700294A4": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "2.60[1d4] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4914,9 +6019,12 @@
     "weight": "2.0"
   },
   "0x700294A5": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4924,9 +6032,12 @@
     "weight": "4.0"
   },
   "0x700294A7": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -4934,9 +6045,12 @@
     "weight": "3.0"
   },
   "0x700294AA": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "5.40[1d10+2] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4944,9 +6058,12 @@
     "weight": "8.0"
   },
   "0x700294AB": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d4+2] + 15 Bludgeon, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4954,9 +6071,12 @@
     "weight": "2.0"
   },
   "0x700294B0": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -4964,9 +6084,12 @@
     "weight": "3.0"
   },
   "0x700294B1": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -4974,9 +6097,12 @@
     "weight": "4.0"
   },
   "0x700294B3": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.60[1d6] + 5 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -4984,9 +6110,12 @@
     "weight": "2.0"
   },
   "0x700294B5": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.60[1d10] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -4994,9 +6123,12 @@
     "weight": "12.0"
   },
   "0x700294B6": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.40[1d6+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5004,9 +6136,12 @@
     "weight": "2.0"
   },
   "0x700294B7": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "5.40[1d12+4] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5014,9 +6149,12 @@
     "weight": "12.0"
   },
   "0x700294B9": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.60[1d8] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5024,9 +6162,12 @@
     "weight": "4.0"
   },
   "0x700294BB": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.40[1d8+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5034,9 +6175,12 @@
     "weight": "4.0"
   },
   "0x700294BC": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.60[1d10] + 5 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5044,9 +6188,12 @@
     "weight": "8.0"
   },
   "0x700294C5": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d8] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5054,9 +6201,12 @@
     "weight": "6.0"
   },
   "0x700294C8": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.60[1d8] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5064,9 +6214,12 @@
     "weight": "5.0"
   },
   "0x700294C9": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "5.40[1d6+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5074,9 +6227,12 @@
     "weight": "2.0"
   },
   "0x700294CF": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.40[1d4+2] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5084,9 +6240,12 @@
     "weight": "1.0"
   },
   "0x700294D3": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.60[1d10] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5094,9 +6253,12 @@
     "weight": "10.0"
   },
   "0x700294D5": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.40[2d6+4] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5104,9 +6266,12 @@
     "weight": "8.0"
   },
   "0x700294D6": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.60[1d8] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5114,9 +6279,12 @@
     "weight": "6.0"
   },
   "0x700294D7": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d6] + 5 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5124,9 +6292,12 @@
     "weight": "2.0"
   },
   "0x700294D8": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d2] + 5 Slash, Evil, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -5134,9 +6305,12 @@
     "weight": "0.5"
   },
   "0x700294DB": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.60[2d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5144,9 +6318,12 @@
     "weight": "8.0"
   },
   "0x700294DD": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5154,9 +6331,12 @@
     "weight": "3.0"
   },
   "0x700294DF": {
+    "attack_mod": "STR, DEX",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d6] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5164,9 +6344,12 @@
     "weight": "2.0"
   },
   "0x700294E2": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5174,9 +6357,12 @@
     "weight": "3.0"
   },
   "0x700294E3": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d8] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5184,9 +6370,12 @@
     "weight": "8.0"
   },
   "0x700294E4": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d6] + 5 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5194,9 +6383,12 @@
     "weight": "3.0"
   },
   "0x700294E5": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5204,9 +6396,12 @@
     "weight": "3.0"
   },
   "0x700294E6": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5214,9 +6409,12 @@
     "weight": "3.0"
   },
   "0x700294E8": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.60[1d10] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5224,9 +6422,12 @@
     "weight": "8.0"
   },
   "0x700294E9": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.60[1d8] + 5 Pierce, Evil, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5234,9 +6435,12 @@
     "weight": "3.0"
   },
   "0x700294EB": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "20 / x2",
     "damage": "2.60[1d10] + 5 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5244,9 +6448,12 @@
     "weight": "8.0"
   },
   "0x700294EC": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+2] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5254,9 +6461,12 @@
     "weight": "3.0"
   },
   "0x700294F0": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "2.60[1d10] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -5264,9 +6474,12 @@
     "weight": "6.0"
   },
   "0x700294F3": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "5.40[1d6+2] + 15 Slash, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5274,9 +6487,12 @@
     "weight": "2.0"
   },
   "0x700294F7": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "20 / x3",
     "damage": "2.60[1d6] + 5 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5284,9 +6500,12 @@
     "weight": "2.0"
   },
   "0x700294F9": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.40[1d8+2] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -5294,9 +6513,12 @@
     "weight": "6.0"
   },
   "0x70029C93": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "5.40[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5304,9 +6526,12 @@
     "weight": "6.0"
   },
   "0x70029CCB": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.40[1d6+4] + 15 Bludgeon, Evil, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5314,9 +6539,12 @@
     "weight": "4.0"
   },
   "0x70029CD3": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "5.40[2d4+4] + 15 Slash, Evil, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5348,60 +6576,70 @@
   "0x7002A3F1": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x7002A3F4": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x7002A3F8": {
     "augment_count": 2,
     "material": "Leather",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7002A3FB": {
     "augment_count": 2,
     "material": "Leather",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7002A3FD": {
     "augment_count": 2,
     "material": "Platinum",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x7002A404": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x7002A408": {
     "augment_count": 1,
     "material": "Platinum",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
   "0x7002A40F": {
     "augment_count": 1,
     "material": "Leather",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7002A412": {
     "augment_count": 2,
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
   "0x7002A413": {
     "augment_count": 1,
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
@@ -5419,9 +6657,12 @@
     "weight": "0.25"
   },
   "0x7002AD64": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5431,6 +6672,7 @@
   "0x7002AD81": {
     "augment_count": 1,
     "material": "Cloth",
+    "slot": "Back",
     "weapon_type": "Cloak",
     "weight": "0.1"
   },
@@ -5448,9 +6690,12 @@
     "weight": "30.0"
   },
   "0x7002ADF8": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5458,9 +6703,12 @@
     "weight": "4.0"
   },
   "0x7002ADF9": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5468,9 +6716,12 @@
     "weight": "4.0"
   },
   "0x7002ADFC": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5492,9 +6743,12 @@
     "weight": "0.0"
   },
   "0x7002AE15": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5509,9 +6763,12 @@
     "weight": "0.0"
   },
   "0x7002AE17": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5519,9 +6776,12 @@
     "weight": "4.0"
   },
   "0x7002B125": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5552,13 +6812,17 @@
     "augment_count": 1,
     "base_value": "5,201 pp",
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x7002B12A": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5566,9 +6830,12 @@
     "weight": "4.0"
   },
   "0x7002B12B": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "critical": "19-20 / x2",
     "damage": "1.60[1d8] + 5 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5576,9 +6843,12 @@
     "weight": "4.0"
   },
   "0x7002B12C": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+2] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5596,6 +6866,7 @@
     "augment_count": 3,
     "base_value": "13,201 pp",
     "material": "Leather",
+    "slot": "Finger",
     "weapon_type": "Ring",
     "weight": "0.1"
   },
@@ -5607,9 +6878,12 @@
     "weight": "30.0"
   },
   "0x7002B13E": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5617,9 +6891,12 @@
     "weight": "4.0"
   },
   "0x7002B140": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "6.10[1d8+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5627,9 +6904,12 @@
     "weight": "6.0"
   },
   "0x7002B141": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "6.10[1d10+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -5637,9 +6917,12 @@
     "weight": "8.0"
   },
   "0x7002B142": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5647,9 +6930,12 @@
     "weight": "4.0"
   },
   "0x7002B143": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d4+3] + 15 Bludgeon, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5657,9 +6943,12 @@
     "weight": "2.0"
   },
   "0x7002B147": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d6+3] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "Simple",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -5670,13 +6959,17 @@
     "augment_count": 3,
     "base_value": "13,201 pp",
     "material": "Leather",
+    "slot": "Feet",
     "weapon_type": "Boots",
     "weight": "0.1"
   },
   "0x7002B14B": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "6.10[1d8+3] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5687,13 +6980,17 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7002B14F": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d6+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5704,13 +7001,17 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7002B152": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d4+3] + 15 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5721,6 +7022,7 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Leather",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
@@ -5728,6 +7030,7 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
@@ -5735,13 +7038,17 @@
     "augment_count": 3,
     "base_value": "13,201 pp",
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
   "0x7002B157": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "6.10[1d4+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5749,9 +7056,12 @@
     "weight": "2.0"
   },
   "0x7002B159": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "20 / x3",
     "damage": "6.10[1d6+3] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5759,9 +7069,12 @@
     "weight": "2.0"
   },
   "0x7002B15A": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d4+3] + 15 Pierce, Adamantine, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Adamantine",
     "proficiency": "Simple",
@@ -5772,13 +7085,17 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
   "0x7002B15D": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5786,9 +7103,12 @@
     "weight": "4.0"
   },
   "0x7002B15F": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "5.60[1d8+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5796,9 +7116,12 @@
     "weight": "4.0"
   },
   "0x7002B161": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "6.10[1d4+3] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5809,13 +7132,17 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7002B165": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "18-20 / x2",
     "damage": "6.10[1d6+3] + 15 Pierce, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5823,9 +7150,12 @@
     "weight": "2.0"
   },
   "0x7002B166": {
+    "attack_mod": "DEX",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "6.10[1d8+3] + 15 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5833,9 +7163,12 @@
     "weight": "4.0"
   },
   "0x7002B167": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "critical": "20 / x2",
     "damage": "5.60[1d2+3] + 15 Slash, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -5844,16 +7177,21 @@
   },
   "0x7002B2D2": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cosmetic Cloak"
   },
   "0x7002B2D6": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cosmetic Cloak"
   },
   "0x7002B2D8": {
+    "attack_mod": "STR",
     "base_value": "10,003pp 5gp",
     "critical": "17-20 / x2",
     "damage": "[1d10] + 7 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -5870,10 +7208,12 @@
   },
   "0x7002B31D": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cosmetic Cloak"
   },
   "0x7002B345": {
     "material": "none",
+    "slot": "Cosmetic Cloak",
     "weapon_type": "Cosmetic Cloak"
   },
   "0x7002B347": {},
@@ -5901,13 +7241,16 @@
     "augment_count": 1,
     "base_value": "1,601 pp",
     "material": "Gem",
+    "slot": "Head",
     "weapon_type": "Helm",
     "weight": "0.1"
   },
   "0x7002B422": {
     "augment_count": 1,
     "base_value": "11,220 pp",
+    "damage_class": "Goggles",
     "material": "Leather",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
@@ -5915,6 +7258,7 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Leather",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },
@@ -5922,6 +7266,7 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Steel",
+    "slot": "Eye",
     "weapon_type": "Goggles",
     "weight": "0.1"
   },
@@ -5929,12 +7274,15 @@
     "augment_count": 2,
     "base_value": "13,201 pp",
     "material": "Steel",
+    "slot": "Wrist",
     "weapon_type": "Bracers",
     "weight": "0.1"
   },
   "0x7002B68E": {
+    "attack_mod": "INT",
     "augment_count": 1,
     "critical": "19-20 / x2",
+    "damage_mod": "CHA",
     "material": "Wood",
     "proficiency": "Magical Training",
     "weapon_type": "Orb",
@@ -5944,6 +7292,7 @@
     "augment_count": 1,
     "base_value": "1,601 pp",
     "material": "Steel",
+    "slot": "Waist",
     "weapon_type": "Belt",
     "weight": "0.1"
   },
@@ -5951,6 +7300,7 @@
     "augment_count": 1,
     "base_value": "1,601 pp",
     "material": "Gem",
+    "slot": "Neck",
     "weapon_type": "Necklace",
     "weight": "0.1"
   },
@@ -5965,9 +7315,12 @@
     "weapon_type": "Cosmetic Armor"
   },
   "0x70030891": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "critical": "18-20 / x2",
     "damage": "[2d8] + 2 Pierce, Cold Iron, Magic, Crystal",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Crystal",
     "proficiency": "Exotic",
@@ -5975,10 +7328,13 @@
     "weight": "12.0"
   },
   "0x7003517B": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11,600pp 2gp",
     "critical": "19-20 / x2",
     "damage": "4.80[1d4+3] + 15 Pierce, Good, Magic",
+    "damage_class": "Thrown",
+    "damage_mod": "STR, DEX",
     "handedness": "Thrown",
     "material": "Steel",
     "proficiency": "Simple",
@@ -5986,10 +7342,13 @@
     "weight": "1.0"
   },
   "0x7003517E": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11,601 pp",
     "critical": "19-20 / x2",
     "damage": "4.80[1d6+3] + 15 Pierce, Evil, Magic",
+    "damage_class": "Piercing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -5997,9 +7356,12 @@
     "weight": "2.0"
   },
   "0x7003517F": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "critical": "19-20 / x2",
     "damage": "4.80[1d8+3] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -6013,10 +7375,13 @@
     "weight": "0.0"
   },
   "0x70035183": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "11,903 pp",
     "critical": "20 / x3",
     "damage": "4.80[1d10+3] + 15 Slash, Adamantine, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Adamantine",
     "proficiency": "Exotic",
@@ -6024,10 +7389,13 @@
     "weight": "8.0"
   },
   "0x70035186": {
+    "attack_mod": "STR",
     "augment_count": 1,
     "base_value": "11,600.002pp",
     "critical": "20 / x2",
     "damage": "4.80[1d6+6] + 15 Bludgeon, Magic",
+    "damage_class": "Bludgeoning",
+    "damage_mod": "STR",
     "handedness": "Two-handed",
     "material": "Steel",
     "proficiency": "Simple",
@@ -6035,10 +7403,13 @@
     "weight": "4.0"
   },
   "0x70035187": {
+    "attack_mod": "DEX",
     "augment_count": 1,
     "base_value": "2,820 pp",
     "critical": "18-20 / x2",
     "damage": "[2d8] + 3 Pierce, Magic",
+    "damage_class": "Ranged",
+    "damage_mod": "DEX",
     "handedness": "Ranged",
     "material": "Steel",
     "proficiency": "Exotic",
@@ -6046,10 +7417,13 @@
     "weight": "12.0"
   },
   "0x70035188": {
+    "attack_mod": "STR",
     "augment_count": 2,
     "base_value": "11,601 pp, 9gp",
     "critical": "20 / x3",
     "damage": "4.80[1d8+3] + 15 Slash, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR",
     "handedness": "One-handed",
     "material": "Steel",
     "proficiency": "Martial",
@@ -6057,10 +7431,13 @@
     "weight": "6.0"
   },
   "0x7003518A": {
+    "attack_mod": "STR, DEX",
     "augment_count": 2,
     "base_value": "11,602pp",
     "critical": "15-20 / x2",
     "damage": "4.80[1d6+3] + 15 Slash, Pierce, Magic",
+    "damage_class": "Slashing",
+    "damage_mod": "STR, DEX",
     "handedness": "One-handed",
     "material": "Glass",
     "proficiency": "Martial",
@@ -6070,6 +7447,7 @@
   "0x7003518E": {
     "base_value": "2820pp",
     "material": "Adamantine",
+    "slot": "Trinket",
     "weapon_type": "Trinket",
     "weight": "0.1"
   },

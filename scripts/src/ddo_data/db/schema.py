@@ -195,7 +195,6 @@ CREATE TABLE IF NOT EXISTS items (
     cooldown_seconds  REAL,
     internal_level    INTEGER,
     tier_multiplier   REAL,
-    race_required     TEXT,
     wiki_url          TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_items_name ON items(name);

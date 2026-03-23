@@ -106,7 +106,6 @@ _WIKI_ONLY_FIELDS = [
     "damage_class",
     "attack_mod",
     "damage_mod",
-    "race_required",
 ]
 
 
@@ -542,7 +541,8 @@ def parse_items(
                 continue
             # Overlay FID-resolved fields where item has None
             for field in ("material", "damage", "augment_count", "weight", "binding",
-                         "base_value", "handedness", "proficiency", "weapon_type", "critical"):
+                         "base_value", "handedness", "proficiency", "weapon_type", "critical",
+                         "damage_class", "attack_mod", "damage_mod", "slot"):
                 if item.get(field) is None and field in fid_data:
                     item[field] = fid_data[field]
                     fid_item_resolved += 1
