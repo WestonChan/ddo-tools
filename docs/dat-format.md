@@ -978,6 +978,46 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - [ ] Enhancement effect_ref chain decoding — if enhancement entries have effect_ref chains like items, apply FID lookup + type-167 localization to extract per-rank bonuses from binary. Would provide exact stat values per rank without wiki.
 - [ ] Parse enhancement_ranks.description for structured bonuses — wiki already stores rank descriptions like "Passive: +1 Strength" in the DB. Parse these into `enhancement_bonuses` junction rows using existing `_parse_enchantment` regex. Quickest path to enhancement bonus data.
 
+### FID mapping gap summary (as of 2026-03-23)
+
+**Mapped FID lookups:**
+- EFFECT_FID_LOOKUP: 100 FIDs → (stat, bonus_type), 98% verified accuracy
+- fid_item_lookup.json: 793 FIDs → 14 fields (material, weapon_type, weight, augment_count, damage_mod, proficiency, critical, damage_class, attack_mod, handedness, damage, base_value, slot, binding)
+
+**Coverage:**
+- 73,778 total items in binary
+- 27,835 (37%) have a primary effect_ref
+- 10,947 (14%) resolved via FID item lookup
+- 4,533 (6%) resolved via FID stat lookup
+- 7,067 unmapped effect_ref FIDs (items with effect_ref but no lookup entry — need more wiki-to-binary name matches)
+- 45,943 (63%) have NO effect_ref at all
+
+**66 unknown FID-bearing property keys** (0x70XXXXXX values not in EFFECT_REF_KEYS):
+- 0x1000191F: 4,242 items
+- 0x10006394: 4,024 items
+- 0x1000C187: 1,508 items
+- 0x10001CBB: 1,292 items
+- 0x10006393: 1,112 items
+- 0x10000E27: 761 items
+- 0x10002A70: 692 items
+- Plus 59 more keys with <500 items each
+- These are undiscovered effect_ref slots — may encode additional fields or serve as supplementary discriminators
+
+**Fields still without binary source:**
+- Bonus values (+7, +13) — type-167 localization has partial coverage via name parsing, but NOT the actual numeric value from binary content
+- Set membership (set_name) — not in any property or FID
+- Enhancement bonus (enhancement_bonus) — most items don't have this wiki field
+- Enhancement tree structure/ranks/bonuses — no binary parser, wiki-only
+- Feat prerequisites (structured) — text parsed but not into junction tables
+- Epic destiny data — no binary or wiki parser
+- Spell damage dice formulas — in description text, not structured
+
+**Fields confirmed NOT in binary (exhaustively searched):**
+- Class stats (hit die, BAB, skills, spell circles) — 9 classes searched, zero byte/u16/float matches
+- Bonus values as numbers — 0% correlation with any binary field or formula
+- Augment slot colors — not in dup-triple properties or FID
+- Set membership — group_ref is NOT set data
+
 ### Wiki parser improvements (complete before pre-frontend gates)
 - [x] Fix augment slot extraction — augment slots were `{{Augment|Color}}` templates embedded in the enhancements field. Parser now extracts them (5,748/8,600 items). Also handles legacy `augmentslot=` field format.
 - [x] Fix `_parse_bool` for HTML comments — wiki templates have `metamagic=yes\n<!--class-->` which silently failed. All 9 metamagic feats (Empower, Maximize, Quicken, Heighten, Enlarge, Extend, Accelerate, Intensify, Empower Healing) now parse correctly. Also fixes `active=yes` with comments.
