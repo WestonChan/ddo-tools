@@ -975,6 +975,12 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - [x] Fix `_parse_bool` for HTML comments — wiki templates have `metamagic=yes\n<!--class-->` which silently failed. All 9 metamagic feats (Empower, Maximize, Quicken, Heighten, Enlarge, Extend, Accelerate, Intensify, Empower Healing) now parse correctly. Also fixes `active=yes` with comments.
 - [x] Re-probe binary after wiki improvements — metamagic: 11 feats now parsed (was 1), but **no metamagic-correlating binary keys** (metamagic feat names like "Empower Spell" don't match binary entries). Active: 198 feats (was 191). Active flag keys confirmed: 0x10000D81, 0x10000829, 0x10002878 all 100% (N=7-10), plus 0x100008E2, 0x100020D0/D1, 0x100059F6, 0x10006F7C/7D — a cluster of ~10 keys that ALL appear only on active feats.
 
+### Wiki data population (complete before pre-frontend gates)
+- [ ] Populate feat_prereq_* tables from wiki (feat_prereq_feats, feat_prereq_stats, feat_prereq_classes, feat_prereq_races, feat_prereq_skills)
+- [ ] Populate class progression tables from wiki or binary (class_bonus_feat_slots, class_spell_slots, class_spells_known, class_skills, class_auto_feats)
+- [ ] Populate race tables from wiki (race_ability_bonuses, race_feats)
+- [ ] Populate enhancement prerequisite tables from wiki (enhancement_tree_ap_thresholds, enhancement_prereqs, enhancement_prereq_classes, enhancement_prereq_races, enhancement_feat_links)
+
 ### Pre-frontend gates
 - [ ] **PRE-FRONTEND GATE:** Opaque binary audit — catalog all sections of binary data that remain undecoded or partially understood. For each: (a) what data is there, (b) how large is it, (c) what format does it use, (d) what would decoding yield for the build planner, (e) estimated effort. Known opaque sections: Type-2 complex-partial VLE bodies (class entries, ~35K entries total), Type-1 behavior scripts (6,838 entries), 0x70 type-167 sub-effect containers (45K entries), effect mechanism classifiers (stat_def_ids 1254/1440/551/2114 covering 64K entries). Goal: ensure we have a complete inventory of undecoded data before frontend work begins, so we can prioritize what to decode later without missing anything.
 - [x] **PRE-FRONTEND GATE:** Binary coverage audit (2026-03-22) — systematically ran all correlators against full wiki catalogs. Results by entity:
@@ -994,12 +1000,6 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
   5. **Normalization**: review all tables for row duplication patterns (like the old bonuses table had) — check if effects, item_effects, spells, enhancements, or other tables should be normalized with shared definitions + M2M junctions
   6. **Column usage audit**: for every column across all tables, check population rate (% of rows with non-NULL values). Flag columns that are never or rarely populated (<5%). For each flagged column: determine if it should be eliminated (dead code), kept (intentionally sparse for future use), or investigated (should be populated but isn't due to a bug)
   7. **Output**: present a structured report to the user with findings grouped by severity (critical/warning/info) before making any changes
-
-### Wiki data population (complete before pre-frontend gates)
-- [ ] Populate feat_prereq_* tables from wiki (feat_prereq_feats, feat_prereq_stats, feat_prereq_classes, feat_prereq_races, feat_prereq_skills)
-- [ ] Populate class progression tables from wiki or binary (class_bonus_feat_slots, class_spell_slots, class_spells_known, class_skills, class_auto_feats)
-- [ ] Populate race tables from wiki (race_ability_bonuses, race_feats)
-- [ ] Populate enhancement prerequisite tables from wiki (enhancement_tree_ap_thresholds, enhancement_prereqs, enhancement_prereq_classes, enhancement_prereq_races, enhancement_feat_links)
 
 ### Asset extraction
 - [x] DDS texture extraction from client_general.dat
