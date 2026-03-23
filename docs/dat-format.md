@@ -989,7 +989,7 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - 27,835 (37%) have a primary effect_ref
 - 10,947 (14%) resolved via FID item lookup
 - 4,533 (6%) resolved via FID stat lookup
-- 7,067 unmapped effect_ref FIDs (items with effect_ref but no lookup entry — need more wiki-to-binary name matches)
+- **0 wiki-matched items with unmapped FIDs** — every item that matches wiki IS in the lookup. The ~17K "unmapped" entries are: 7,537 with no name, 9,351 non-item game objects (NPCs "Jannek[mn]", quests "Pressure Plate[E]", deeds "Crab Exterminator I"). Real item FID coverage is 100% of wiki-matched items with effect_ref.
 - 45,943 (63%) have NO effect_ref at all
 
 **66 unknown FID-bearing property keys** (0x70XXXXXX values not in EFFECT_REF_KEYS):
