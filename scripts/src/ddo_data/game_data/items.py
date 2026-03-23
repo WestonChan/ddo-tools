@@ -460,28 +460,58 @@ def parse_items(
 
     # Resolve bonuses from type-167 localization names
     # Type-167 entries are referenced via effect_ref_11/12/13 and their
-    # localization names contain human-readable bonuses like "+10 Seeker"
+    # localization names contain human-readable bonuses like "+10 Seeker".
+    # Only accept names matching known stat names from the DB seed.
+    _known_stats = {
+        "Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma",
+        "Melee Power", "Ranged Power", "Attack Bonus", "Damage Bonus", "Hit Points",
+        "Sneak Attack Dice", "Seeker", "Deadly", "Accuracy", "Deception", "Speed",
+        "Doublestrike", "Doubleshot", "Combat Mastery", "Armor Class",
+        "Physical Resistance Rating", "Magical Resistance Rating", "Fortification",
+        "Dodge", "Fortitude Save", "Reflex Save", "Will Save", "Spell Resistance",
+        "Physical Sheltering", "Magical Sheltering", "Sheltering", "Natural Armor",
+        "Protection", "Resistance", "Spell Points", "Spell Penetration",
+        "Universal Spell Power", "Fire Spell Power", "Cold Spell Power",
+        "Electric Spell Power", "Acid Spell Power", "Sonic Spell Power",
+        "Light Spell Power", "Force Spell Power", "Negative Spell Power",
+        "Positive Spell Power", "Repair Spell Power", "Wizardry",
+        "Healing Amplification", "Repair Amplification", "Well Rounded",
+        "Enhancement Bonus", "Spell Focus Mastery",
+    }
+    _known_bonus_types = {
+        "Enhancement", "Insightful", "Insight", "Quality", "Exceptional",
+        "Competence", "Luck", "Sacred", "Profane", "Artifact",
+    }
     type167_resolved = 0
     for item in items:
         for ref_str in item.pop("_effect_refs_167", []):
             ref_id = int(ref_str, 16)
             lower = ref_id & 0x00FFFFFF
             eff_name = string_table.get(0x25000000 | lower)
-            if not eff_name or len(eff_name) > 100:
+            if not eff_name or len(eff_name) > 80:
                 continue
-            # Parse "+N Stat" or "+N BonusType Stat" patterns
-            m = re.match(r'\+(\d+)\s+(.+)', eff_name.strip())
+            m = re.match(r'^\+(\d+)\s+(.+)$', eff_name.strip())
             if not m:
                 continue
             value = int(m.group(1))
             rest = m.group(2).strip()
-            if value < 1 or value > 100:
+            if value < 1 or value > 50:
+                continue
+            # Try "BonusType Stat" or just "Stat"
+            bonus_type = "Enhancement"
+            stat_name = rest
+            for bt in _known_bonus_types:
+                if rest.startswith(bt + " "):
+                    bonus_type = bt
+                    stat_name = rest[len(bt) + 1:]
+                    break
+            if stat_name not in _known_stats:
                 continue
             bonuses = item.setdefault("_bonuses", [])
             bonuses.append({
-                "stat": rest,
+                "stat": stat_name,
                 "magnitude": value,
-                "bonus_type": "Enhancement",
+                "bonus_type": bonus_type,
                 "_resolution_method": "type167_name",
             })
             type167_resolved += 1
