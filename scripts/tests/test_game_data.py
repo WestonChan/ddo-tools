@@ -198,7 +198,7 @@ def test_decode_item_entry_unknown_enum() -> None:
 def test_merge_matched() -> None:
     """Matched items merge wiki fields onto binary, binary wins, has wiki_url."""
     binary = [{"id": "0x79000001", "name": "Celestia", "durability": 150, "rarity": "Rare"}]
-    wiki = [{"name": "Celestia", "durability": 200, "enchantments": ["+5 Holy"], "minimum_level": 28}]
+    wiki = [{"name": "Celestia", "durability": 200, "enchantments": ["+5 Holy"], "description": "A holy sword."}]
 
     merged = _merge_wiki_data(binary, wiki)
 
@@ -208,7 +208,7 @@ def test_merge_matched() -> None:
     assert item["durability"] == 150
     # Wiki fills in missing fields
     assert item["enchantments"] == ["+5 Holy"]
-    assert item["minimum_level"] == 28
+    assert item["description"] == "A holy sword."
     # Wiki URL present
     assert item["wiki_url"] == "https://ddowiki.com/page/Item:Celestia"
 

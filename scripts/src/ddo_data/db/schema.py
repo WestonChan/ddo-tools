@@ -15,7 +15,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS stats (
     id       INTEGER PRIMARY KEY,
     name     TEXT NOT NULL,
-    category TEXT NOT NULL  CHECK (category IN ('defensive', 'martial', 'magical', 'other'))
+    category TEXT NOT NULL  CHECK (category IN ('ability', 'defensive', 'martial', 'magical', 'skill', 'other'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_stats_name ON stats(name);
 CREATE INDEX IF NOT EXISTS idx_stats_category ON stats(category);
@@ -392,6 +392,7 @@ CREATE TABLE IF NOT EXISTS enhancement_tree_ap_thresholds (
 CREATE TABLE IF NOT EXISTS enhancements (
     id          INTEGER PRIMARY KEY,
     tree_id     INTEGER NOT NULL REFERENCES enhancement_trees(id) ON DELETE CASCADE,
+    dat_id      TEXT,
     name        TEXT NOT NULL,
     icon        TEXT,
     max_ranks   INTEGER NOT NULL DEFAULT 1,
@@ -596,6 +597,7 @@ CREATE INDEX IF NOT EXISTS idx_item_effects_effect ON item_effects(effect_id);
 CREATE TABLE IF NOT EXISTS bonuses (
     id            INTEGER PRIMARY KEY,
     name          TEXT    NOT NULL,
+    description   TEXT,
     stat_id       INTEGER REFERENCES stats(id),
     bonus_type_id INTEGER REFERENCES bonus_types(id),
     value         INTEGER
@@ -619,31 +621,34 @@ CREATE INDEX IF NOT EXISTS idx_item_bonuses_bonus ON item_bonuses(bonus_id);
 
 -- M2M: augments <-> bonuses
 CREATE TABLE IF NOT EXISTS augment_bonuses (
-    augment_id  INTEGER NOT NULL REFERENCES augments(id) ON DELETE CASCADE,
-    bonus_id    INTEGER NOT NULL REFERENCES bonuses(id),
-    sort_order  INTEGER NOT NULL DEFAULT 0,
-    data_source TEXT CHECK (data_source IN ('binary', 'wiki')),
+    augment_id        INTEGER NOT NULL REFERENCES augments(id) ON DELETE CASCADE,
+    bonus_id          INTEGER NOT NULL REFERENCES bonuses(id),
+    sort_order        INTEGER NOT NULL DEFAULT 0,
+    data_source       TEXT CHECK (data_source IN ('binary', 'wiki')),
+    resolution_method TEXT CHECK (resolution_method IN ('wiki_enchantment', 'binary_name')),
     PRIMARY KEY (augment_id, bonus_id, sort_order)
 );
 CREATE INDEX IF NOT EXISTS idx_augment_bonuses_augment ON augment_bonuses(augment_id);
 
 -- M2M: enhancements <-> bonuses (with rank activation)
 CREATE TABLE IF NOT EXISTS enhancement_bonuses (
-    enhancement_id INTEGER NOT NULL REFERENCES enhancements(id) ON DELETE CASCADE,
-    bonus_id       INTEGER NOT NULL REFERENCES bonuses(id),
-    min_rank       INTEGER NOT NULL DEFAULT 1 CHECK (min_rank >= 1),
-    data_source    TEXT CHECK (data_source IN ('binary', 'wiki')),
+    enhancement_id    INTEGER NOT NULL REFERENCES enhancements(id) ON DELETE CASCADE,
+    bonus_id          INTEGER NOT NULL REFERENCES bonuses(id),
+    min_rank          INTEGER NOT NULL DEFAULT 1 CHECK (min_rank >= 1),
+    data_source       TEXT CHECK (data_source IN ('binary', 'wiki')),
+    resolution_method TEXT CHECK (resolution_method IN ('wiki_description', 'localization_orphan', 'binary_name')),
     PRIMARY KEY (enhancement_id, bonus_id, min_rank)
 );
 CREATE INDEX IF NOT EXISTS idx_enhancement_bonuses_enh ON enhancement_bonuses(enhancement_id);
 
 -- M2M: set_bonuses <-> bonuses (with piece count threshold)
 CREATE TABLE IF NOT EXISTS set_bonus_bonuses (
-    set_id     INTEGER NOT NULL REFERENCES set_bonuses(id) ON DELETE CASCADE,
-    bonus_id   INTEGER NOT NULL REFERENCES bonuses(id),
-    min_pieces INTEGER NOT NULL CHECK (min_pieces >= 2),
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    data_source TEXT CHECK (data_source IN ('binary', 'wiki')),
+    set_id            INTEGER NOT NULL REFERENCES set_bonuses(id) ON DELETE CASCADE,
+    bonus_id          INTEGER NOT NULL REFERENCES bonuses(id),
+    min_pieces        INTEGER NOT NULL CHECK (min_pieces >= 2),
+    sort_order        INTEGER NOT NULL DEFAULT 0,
+    data_source       TEXT CHECK (data_source IN ('binary', 'wiki')),
+    resolution_method TEXT CHECK (resolution_method IN ('wiki_enchantment', 'binary_name')),
     PRIMARY KEY (set_id, bonus_id, min_pieces, sort_order)
 );
 CREATE INDEX IF NOT EXISTS idx_set_bonus_bonuses_set ON set_bonus_bonuses(set_id);
@@ -663,12 +668,12 @@ INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 _SEED_SQL = """
 -- Ability scores
 INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (1, 'Strength',     'other'),
-    (2, 'Dexterity',    'other'),
-    (3, 'Constitution', 'other'),
-    (4, 'Intelligence', 'other'),
-    (5, 'Wisdom',       'other'),
-    (6, 'Charisma',     'other');
+    (1, 'Strength',     'ability'),
+    (2, 'Dexterity',    'ability'),
+    (3, 'Constitution', 'ability'),
+    (4, 'Intelligence', 'ability'),
+    (5, 'Wisdom',       'ability'),
+    (6, 'Charisma',     'ability');
 
 -- Martial stats (melee/ranged offense, tactics)
 INSERT OR IGNORE INTO stats (id, name, category) VALUES
@@ -776,33 +781,51 @@ INSERT OR IGNORE INTO stats (id, name, category) VALUES
     (113, 'Sacred Ground Lore',       'magical'),
     (114, 'Dark Restoration Lore',    'magical');
 
--- Other stats (ability scores, skills, healing/repair amplification)
+-- Skills
 INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (41, 'Balance',               'other'),
-    (42, 'Bluff',                 'other'),
-    (43, 'Concentration',         'other'),
-    (44, 'Diplomacy',             'other'),
-    (45, 'Disable Device',        'other'),
-    (46, 'Haggle',                'other'),
-    (47, 'Heal',                  'other'),
-    (48, 'Hide',                  'other'),
-    (49, 'Intimidate',            'other'),
-    (50, 'Jump',                  'other'),
-    (51, 'Listen',                'other'),
-    (52, 'Move Silently',         'other'),
-    (53, 'Open Lock',             'other'),
-    (54, 'Perform',               'other'),
-    (55, 'Repair',                'other'),
-    (56, 'Search',                'other'),
-    (57, 'Spellcraft',            'other'),
-    (58, 'Spot',                  'other'),
-    (59, 'Swim',                  'other'),
-    (60, 'Tumble',                'other'),
-    (61, 'Use Magic Device',      'other'),
+    (41, 'Balance',               'skill'),
+    (42, 'Bluff',                 'skill'),
+    (43, 'Concentration',         'skill'),
+    (44, 'Diplomacy',             'skill'),
+    (45, 'Disable Device',        'skill'),
+    (46, 'Haggle',                'skill'),
+    (47, 'Heal',                  'skill'),
+    (48, 'Hide',                  'skill'),
+    (49, 'Intimidate',            'skill'),
+    (50, 'Jump',                  'skill'),
+    (51, 'Listen',                'skill'),
+    (52, 'Move Silently',         'skill'),
+    (53, 'Open Lock',             'skill'),
+    (54, 'Perform',               'skill'),
+    (55, 'Repair',                'skill'),
+    (56, 'Search',                'skill'),
+    (57, 'Spellcraft',            'skill'),
+    (58, 'Spot',                  'skill'),
+    (59, 'Swim',                  'skill'),
+    (60, 'Tumble',                'skill'),
+    (61, 'Use Magic Device',      'skill');
+
+-- Other stats (healing/repair amplification, misc)
+INSERT OR IGNORE INTO stats (id, name, category) VALUES
     (73, 'Healing Amplification', 'other'),
     (74, 'Repair Amplification',  'other'),
     (75, 'Well Rounded',          'other'),
-    (127, 'Linguistics',          'other');
+    (127, 'Linguistics',          'skill'),
+    (129, 'Positive Healing Amplification', 'other'),
+    (130, 'Negative Healing Amplification', 'other'),
+    (131, 'Maximum Spell Points',           'magical'),
+    (132, 'Critical Damage Multiplier',     'martial'),
+    (133, 'Critical Threat Range',          'martial'),
+    (134, 'Melee and Ranged Power',         'martial'),
+    (135, 'Physical and Magical Resistance Rating', 'defensive'),
+    (136, 'Positive and Negative Spell Power',      'magical'),
+    (137, 'Positive and Negative Healing Amplification', 'other'),
+    (138, 'Doublestrike and Doubleshot',    'martial'),
+    (140, 'Poison Spell Power',             'magical'),
+    (142, 'Temporary Hit Points',           'defensive'),
+    (143, 'Bard Songs',                     'other'),
+    (144, 'Movement Speed',                 'other'),
+    (145, 'Maximum Hit Points',             'defensive');
 
 -- Skills (key_ability_id references stats above)
 INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES
@@ -901,7 +924,13 @@ INSERT OR IGNORE INTO bonus_types (id, name, stacks_with_self) VALUES
     (18, 'Exceptional',   0),
     (19, 'Quality',       0),
     (20, 'Artifact',      0),
-    (22, 'Stacking',      1);  -- explicitly stacking bonuses
+    (22, 'Stacking',      1),  -- explicitly stacking bonuses
+    (23, 'Rage',          0),
+    (24, 'Primal',        0),
+    (25, 'Determination', 0),
+    (26, 'Implement',     0),
+    (27, 'Music',         0),
+    (28, 'Equipment',     0);
 
 -- Damage types
 INSERT OR IGNORE INTO damage_types (id, name, category) VALUES

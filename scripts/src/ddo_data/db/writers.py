@@ -190,6 +190,7 @@ def _ensure_bonus(
     stat_id: int | None,
     bonus_type_id: int | None,
     value: int | None,
+    description: str | None = None,
 ) -> int:
     """Get or create a bonus definition row. Returns the bonus id."""
     row = conn.execute(
@@ -203,10 +204,17 @@ def _ensure_bonus(
         (stat_id, bonus_type_id, value, name),
     ).fetchone()
     if row:
-        return row[0]
+        bonus_id = row[0]
+        # Update description if we have one and the existing row doesn't
+        if description:
+            conn.execute(
+                "UPDATE bonuses SET description = ? WHERE id = ? AND description IS NULL",
+                (description, bonus_id),
+            )
+        return bonus_id
     cur = conn.execute(
-        "INSERT INTO bonuses (name, stat_id, bonus_type_id, value) VALUES (?, ?, ?, ?)",
-        (name, stat_id, bonus_type_id, value),
+        "INSERT INTO bonuses (name, description, stat_id, bonus_type_id, value) VALUES (?, ?, ?, ?, ?)",
+        (name, description, stat_id, bonus_type_id, value),
     )
     return cur.lastrowid
 
@@ -367,7 +375,10 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             )
             bonus_name = f"{effect['stat']} +{effect['magnitude']}"
             resolution = effect.get("_resolution_method", "stat_def_ids")
-            bonus_id = _ensure_bonus(conn, bonus_name, stat_id, bonus_type_id, effect["magnitude"])
+            bonus_id = _ensure_bonus(
+                conn, bonus_name, stat_id, bonus_type_id, effect["magnitude"],
+                description=effect.get("_description"),
+            )
             conn.execute(
                 """
                 INSERT OR IGNORE INTO item_bonuses
@@ -397,7 +408,10 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                     conn, "bonus_types", "name", "id", parsed["bonus_type"]
                 )
                 bonus_name = f"{parsed['stat']} +{parsed['value']}"
-                bonus_id = _ensure_bonus(conn, bonus_name, stat_id, bonus_type_id, parsed["value"])
+                bonus_id = _ensure_bonus(
+                    conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
+                    description=enchantment,
+                )
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO item_bonuses
@@ -496,12 +510,25 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
             continue
         inserted += 1
         for sort_order, bonus in enumerate(set_data.get("bonuses", [])):
-            bonus_id = _ensure_bonus(conn, bonus["text"], None, None, None)
+            bonus_text = bonus["text"]
+            parsed = _parse_enchantment(bonus_text)
+            if parsed:
+                stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
+                bonus_type_id = _lookup_id(
+                    conn, "bonus_types", "name", "id", parsed["bonus_type"],
+                )
+                bonus_name = f"{parsed['stat']} +{parsed['value']}"
+                bonus_id = _ensure_bonus(
+                    conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
+                    description=bonus_text,
+                )
+            else:
+                bonus_id = _ensure_bonus(conn, bonus_text, None, None, None, description=bonus_text)
             conn.execute(
                 """
                 INSERT OR IGNORE INTO set_bonus_bonuses
-                    (set_id, bonus_id, min_pieces, sort_order, data_source)
-                VALUES (?, ?, ?, ?, 'wiki')
+                    (set_id, bonus_id, min_pieces, sort_order, data_source, resolution_method)
+                VALUES (?, ?, ?, ?, 'wiki', 'wiki_enchantment')
                 """,
                 (set_id, bonus_id, bonus["min_pieces"], sort_order),
             )
@@ -572,12 +599,15 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
                     conn, "bonus_types", "name", "id", parsed["bonus_type"]
                 )
                 bonus_name = f"{parsed['stat']} +{parsed['value']}"
-                bonus_id = _ensure_bonus(conn, bonus_name, stat_id, bonus_type_id, parsed["value"])
+                bonus_id = _ensure_bonus(
+                    conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
+                    description=enchantment,
+                )
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO augment_bonuses
-                        (augment_id, bonus_id, sort_order, data_source)
-                    VALUES (?, ?, ?, 'wiki')
+                        (augment_id, bonus_id, sort_order, data_source, resolution_method)
+                    VALUES (?, ?, ?, 'wiki', 'wiki_enchantment')
                     """,
                     (augment_id, bonus_id, sort_order),
                 )
@@ -775,6 +805,157 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict]) -> int:
     return inserted
 
 
+# ---------------------------------------------------------------------------
+# Enhancement description parsing
+# ---------------------------------------------------------------------------
+
+# Known bonus types that appear in enhancement descriptions
+_ENH_BONUS_TYPES = [
+    "Enhancement", "Insightful", "Insight", "Quality", "Competence",
+    "Profane", "Sacred", "Luck", "Morale", "Artifact", "Exceptional",
+    "Resistance", "Deflection", "Natural Armor", "Shield", "Dodge",
+    "Alchemical", "Equipment", "Festive", "Rage", "Primal",
+    "Determination", "Implement", "Music",
+]
+_ENH_BT_ALT = "|".join(sorted(_ENH_BONUS_TYPES, key=len, reverse=True))
+
+# "+N bonus_type bonus(es) to STAT"
+_ENH_PAT_TYPED = re.compile(
+    rf"\+(\d+)%?\s+({_ENH_BT_ALT})\s+bonus(?:es)?\s+to\s+(.+?)(?:\.|,|\n|$)",
+    re.IGNORECASE,
+)
+
+# "+N STAT" or "+N to [your] STAT" (no explicit bonus type)
+_ENH_PAT_PLAIN = re.compile(
+    r"\+(\d+)%?\s+(?:to\s+(?:your\s+)?)?([A-Z][A-Za-z ]+?)(?:\.|,|\n|$)"
+)
+
+# "+[N1/N2/N3] bonus_type bonus(es) to STAT"
+_ENH_PAT_RANKED_TYPED = re.compile(
+    rf"\+\[([^\]]+)\]\s+({_ENH_BT_ALT})\s+bonus(?:es)?\s+to\s+(.+?)(?:\.|,|\n|$)",
+    re.IGNORECASE,
+)
+
+# "+[N1/N2/N3] STAT"
+_ENH_PAT_RANKED_PLAIN = re.compile(
+    r"\+\[([^\]]+)\]\s+(?:to\s+)?([A-Z][A-Za-z ]+?)(?:\.|,|\n|$)"
+)
+
+_ENH_BONUS_TYPE_NORM: dict[str, str] = {
+    "insight": "Insight",
+    "insightful": "Insight",
+}
+
+
+def _parse_enhancement_description(description: str) -> list[dict]:
+    """Parse a wiki enhancement description into structured bonus dicts.
+
+    Returns a list of dicts with keys:
+        rank (int), value (int), stat (str), bonus_type (str | None)
+
+    Handles patterns like:
+        "+1 Strength"
+        "+4 Insightful bonus to Wisdom"
+        "+[1/2/3] Haggle, Concentration, and Heal"
+        "+[3/6/10] Positive Healing Amplification"
+    """
+    if not description:
+        return []
+
+    results: list[dict] = []
+    captured_spans: set[tuple[int, int]] = set()
+
+    # --- Pass 1: Ranked patterns with bonus type "+[1/2/3] Type bonus to Stat" ---
+    for m in _ENH_PAT_RANKED_TYPED.finditer(description):
+        captured_spans.add((m.start(), m.end()))
+        values_str = m.group(1)
+        raw_bt = m.group(2).strip()
+        raw_stat = m.group(3).strip()
+        bt = _ENH_BONUS_TYPE_NORM.get(raw_bt.lower(), raw_bt)
+        values = [int(v.strip()) for v in values_str.split("/") if v.strip().isdigit()]
+        # Handle comma-separated stats: "Haggle, Concentration, and Heal"
+        stats = _split_stat_list(raw_stat)
+        for stat in stats:
+            for i, val in enumerate(values):
+                rank = i + 1
+                if val > 0 and val <= 500:
+                    results.append({"rank": rank, "value": val, "stat": stat, "bonus_type": bt})
+
+    # --- Pass 2: Ranked patterns without bonus type "+[1/2/3] Stat" ---
+    for m in _ENH_PAT_RANKED_PLAIN.finditer(description):
+        if any(m.start() >= s and m.start() < e for s, e in captured_spans):
+            continue
+        captured_spans.add((m.start(), m.end()))
+        values_str = m.group(1)
+        raw_stat = m.group(2).strip()
+        # Skip if stat looks like it contains a bonus type name
+        if _stat_is_bonus_type(raw_stat):
+            continue
+        values = [int(v.strip()) for v in values_str.split("/") if v.strip().isdigit()]
+        stats = _split_stat_list(raw_stat)
+        for stat in stats:
+            for i, val in enumerate(values):
+                rank = i + 1
+                if val > 0 and val <= 500:
+                    results.append({"rank": rank, "value": val, "stat": stat, "bonus_type": None})
+
+    # --- Pass 3: Single-value with bonus type "+N Type bonus to Stat" ---
+    for m in _ENH_PAT_TYPED.finditer(description):
+        if any(m.start() >= s and m.start() < e for s, e in captured_spans):
+            continue
+        captured_spans.add((m.start(), m.end()))
+        val = int(m.group(1))
+        raw_bt = m.group(2).strip()
+        raw_stat = m.group(3).strip()
+        bt = _ENH_BONUS_TYPE_NORM.get(raw_bt.lower(), raw_bt)
+        stats = _split_stat_list(raw_stat)
+        for stat in stats:
+            if val > 0 and val <= 500:
+                # If multi-rank enhancement with single value, assign to rank 1
+                results.append({"rank": 1, "value": val, "stat": stat, "bonus_type": bt})
+
+    # --- Pass 4: Single-value plain "+N Stat" ---
+    for m in _ENH_PAT_PLAIN.finditer(description):
+        if any(m.start() >= s and m.start() < e for s, e in captured_spans):
+            continue
+        captured_spans.add((m.start(), m.end()))
+        val = int(m.group(1))
+        raw_stat = m.group(2).strip()
+        if _stat_is_bonus_type(raw_stat):
+            continue
+        stats = _split_stat_list(raw_stat)
+        for stat in stats:
+            if val > 0 and val <= 500:
+                results.append({"rank": 1, "value": val, "stat": stat, "bonus_type": None})
+
+    return results
+
+
+def _split_stat_list(raw: str) -> list[str]:
+    """Split comma/and-separated stat lists like 'Haggle, Concentration, and Heal'.
+
+    Only splits on commas. 'X and Y' without commas is treated as a single
+    compound name (e.g. 'Positive and Negative Healing Amplification', 'Melee
+    and Ranged Power').
+    """
+    if "," not in raw:
+        return [raw.strip()] if raw.strip() and len(raw.strip()) > 1 else []
+    parts = re.split(r",\s*(?:and\s+)?", raw)
+    # Final part might still have leading "and "
+    cleaned = []
+    for p in parts:
+        p = re.sub(r"^\s*and\s+", "", p).strip()
+        if p and len(p) > 1:
+            cleaned.append(p)
+    return cleaned
+
+
+def _stat_is_bonus_type(stat: str) -> bool:
+    """Check if a stat name is actually a bonus type qualifier."""
+    sl = stat.lower()
+    return any(bt.lower() == sl or sl.startswith(bt.lower() + " bonus") for bt in _ENH_BONUS_TYPES)
+
+
 def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int:
     """Insert a list of enhancement tree dicts (as produced by wiki/scraper.py).
 
@@ -868,12 +1049,13 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
             conn.execute(
                 """
                 INSERT OR IGNORE INTO enhancements
-                    (tree_id, name, icon, max_ranks, ap_cost, progression,
+                    (tree_id, dat_id, name, icon, max_ranks, ap_cost, progression,
                      tier, level_req, prerequisite)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     tree_id,
+                    enh.get("dat_id"),
                     enh_name,
                     enh.get("icon"),
                     enh.get("ranks") or 1,
@@ -905,6 +1087,30 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
                     """,
                     (enh_id, description),
                 )
+
+            # --- enhancement_bonuses from parsed description ---
+            if description:
+                parsed_bonuses = _parse_enhancement_description(description)
+                for pb in parsed_bonuses:
+                    stat_id = _lookup_id(conn, "stats", "name", "id", pb["stat"])
+                    bonus_type_id = (
+                        _lookup_id(conn, "bonus_types", "name", "id", pb["bonus_type"])
+                        if pb.get("bonus_type")
+                        else None
+                    )
+                    bonus_name = f"{pb['stat']} +{pb['value']}"
+                    bonus_id = _ensure_bonus(
+                        conn, bonus_name, stat_id, bonus_type_id, pb["value"],
+                        description=description,
+                    )
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO enhancement_bonuses
+                            (enhancement_id, bonus_id, min_rank, data_source, resolution_method)
+                        VALUES (?, ?, ?, 'wiki', 'wiki_description')
+                        """,
+                        (enh_id, bonus_id, pb["rank"]),
+                    )
 
     conn.commit()
     return inserted

@@ -789,7 +789,9 @@ def build_db(
                 _overlay_feat_binary_data(wiki_feats, ddo_path)
                 count = db.insert_feats(wiki_feats)
             elif data_type == "enhancements":
-                count = db.insert_enhancement_trees(collect_enhancements(client, limit=limit, on_progress=click.echo))
+                wiki_trees = list(collect_enhancements(client, limit=limit, on_progress=click.echo))
+                _overlay_enhancement_localization(wiki_trees)
+                count = db.insert_enhancement_trees(wiki_trees)
             elif data_type == "sets":
                 count = db.insert_set_bonus_effects(collect_set_bonuses(client, on_progress=click.echo))
             elif data_type == "augments":
@@ -916,6 +918,56 @@ def _overlay_feat_binary_data(feats: list[dict], ddo_path: Path) -> None:
                 feat["free"] = True
             matched += 1
     click.echo(f"  {matched:,} feats matched with binary data")
+
+
+def _overlay_enhancement_localization(trees: list[dict]) -> None:
+    """Overlay localization data from the FID enhancement cache.
+
+    Loads ``fid_enhancement_lookup.json`` and matches cached FIDs to wiki
+    enhancements by name+tree. Adds ``dat_id`` and ``localization_tooltips``
+    fields to matched enhancement dicts.
+    """
+    import html
+    import json
+    from collections import defaultdict
+
+    cache_path = Path(__file__).parent / "dat_parser" / "fid_enhancement_lookup.json"
+    if not cache_path.exists():
+        return
+
+    with open(cache_path) as f:
+        cache = json.load(f)
+
+    if not cache:
+        return
+
+    def _norm(s: str) -> str:
+        return html.unescape(s).strip().replace("_", " ").lower()
+
+    # Index cache by (norm_name, tree) for fast lookup
+    # Multiple FIDs may map to same enhancement (one per rank)
+    cache_by_enh: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for fid_hex, entry in cache.items():
+        key = (_norm(entry["name"]), entry["tree"])
+        cache_by_enh[key].append({"fid": fid_hex, **entry})
+
+    matched = 0
+    for tree in trees:
+        tname = tree.get("name", "")
+        for enh in tree.get("enhancements", []):
+            ename = enh.get("name", "")
+            key = (_norm(ename), tname)
+            cached = cache_by_enh.get(key)
+            if not cached:
+                continue
+            # Use the first FID as the canonical dat_id
+            enh["dat_id"] = cached[0]["fid"]
+            # TODO: wire localization_tooltips into enhancement_ranks or a
+            # tooltip column once rank disambiguation is implemented.
+            enh["localization_tooltips"] = [c["tooltip"] for c in cached]
+            matched += 1
+
+    click.echo(f"  {matched:,} enhancements matched with localization FIDs")
 
 
 def _overlay_spell_binary_data(spells: list[dict], ddo_path: Path) -> None:

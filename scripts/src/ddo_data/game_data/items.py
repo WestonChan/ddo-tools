@@ -456,6 +456,11 @@ def parse_items(
                     fid_resolved += 1
                 elif effect_desc.get("stat") is not None:
                     effect_desc["_resolution_method"] = "stat_def_ids"
+                # Grab localization name as the in-game description text
+                lower = ref_id & 0x00FFFFFF
+                eff_name = string_table.get(0x25000000 | lower)
+                if eff_name:
+                    effect_desc["_description"] = eff_name.strip()
                 bonuses.append(effect_desc)
         if bonuses:
             item["_bonuses"] = bonuses
@@ -520,6 +525,7 @@ def parse_items(
                 "magnitude": value,
                 "bonus_type": bonus_type,
                 "_resolution_method": "type167_name",
+                "_description": eff_name.strip(),
             })
             type167_resolved += 1
     if on_progress and type167_resolved:
