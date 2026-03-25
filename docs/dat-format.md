@@ -1100,7 +1100,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [x] Populate class skills — **DONE.** 15 classes x their class skills added as seed data (DDO wiki class pages). 145 class_skill rows.
 - [x] Populate race ability bonuses — **DONE.** 15 standard races with ability score modifiers as seed data. Human/Half-Elf have no fixed bonuses (player chooses +2). Iconics inherit from base race.
 - [ ] Populate remaining class progression tables (class_bonus_feat_slots, class_spell_slots, class_spells_known, class_auto_feats) — needs wiki scraping or manual seed data. Medium effort.
-- [ ] Populate race_feats — racial feat grants. Low priority for build planner.
+- [ ] Populate race_auto_feats — racial feat grants. Low priority for build planner.
 - [x] Populate enhancement prerequisite tables from wiki — **DONE.** Second-pass parser in `insert_enhancement_trees()` splits prerequisite text on commas, matches "Class Level N" patterns to `enhancement_prereq_classes`, and remaining text to `enhancement_prereqs` by name lookup within the same tree. 47 enhancement prereqs + 27 class prereqs from 5 trees. Remaining tables (enhancement_prereq_races, enhancement_feat_links, enhancement_tree_ap_thresholds) not yet populated.
 
 ### Pre-frontend gates

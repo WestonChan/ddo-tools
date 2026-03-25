@@ -958,7 +958,7 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict], **kwargs: object) 
             feat_id = _lookup_id(conn, "feats", "name", "id", feat_name)
             if feat_id:
                 conn.execute(
-                    "INSERT OR IGNORE INTO race_feats (race_id, feat_id) VALUES (?, ?)",
+                    "INSERT OR IGNORE INTO race_auto_feats (race_id, feat_id) VALUES (?, ?)",
                     (race_id, feat_id),
                 )
 
