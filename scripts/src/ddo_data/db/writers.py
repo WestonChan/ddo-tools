@@ -1240,14 +1240,30 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
             enh_id: int = enh_row[0]
 
             description = enh.get("description")
+            max_ranks = enh.get("ranks") or 1
             if description:
+                # Insert rank 1 with wiki description
                 conn.execute(
-                    """
-                    INSERT OR IGNORE INTO enhancement_ranks (enhancement_id, rank, description)
-                    VALUES (?, 1, ?)
-                    """,
+                    "INSERT OR IGNORE INTO enhancement_ranks (enhancement_id, rank, description) VALUES (?, 1, ?)",
                     (enh_id, description),
                 )
+                # Insert additional ranks from localization tooltips or per-rank patterns
+                loc_tooltips = enh.get("localization_tooltips") or []
+                if max_ranks > 1 and len(loc_tooltips) >= max_ranks:
+                    # Use localization tooltips sorted by length as per-rank descriptions
+                    for rank_idx in range(1, max_ranks):
+                        if rank_idx < len(loc_tooltips):
+                            conn.execute(
+                                "INSERT OR IGNORE INTO enhancement_ranks (enhancement_id, rank, description) VALUES (?, ?, ?)",
+                                (enh_id, rank_idx + 1, loc_tooltips[rank_idx]),
+                            )
+                elif max_ranks > 1:
+                    # No localization — just insert placeholder ranks
+                    for rank_idx in range(2, max_ranks + 1):
+                        conn.execute(
+                            "INSERT OR IGNORE INTO enhancement_ranks (enhancement_id, rank, description) VALUES (?, ?, NULL)",
+                            (enh_id, rank_idx),
+                        )
 
             # --- enhancement_bonuses from parsed description ---
             if description:

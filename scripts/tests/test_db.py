@@ -789,19 +789,21 @@ def test_insert_enhancement_trees_class_link_resolved() -> None:
 
 
 def test_insert_enhancement_trees_ranks() -> None:
-    """Each enhancement gets an enhancement_ranks row (rank=1) from its description."""
+    """Multi-rank enhancements get one row per rank in enhancement_ranks."""
     with GameDB(":memory:") as db:
         db.create_schema()
         db.insert_enhancement_trees([KENSEI_TREE])
         ranks = db.conn.execute(
             "SELECT er.rank, er.description FROM enhancement_ranks er "
             "JOIN enhancements e ON er.enhancement_id = e.id "
-            "WHERE e.name = ?",
+            "WHERE e.name = ? ORDER BY er.rank",
             ("Weapon Specialization",),
         ).fetchall()
-    assert len(ranks) == 1
-    assert ranks[0][0] == 1
-    assert ranks[0][1] == "You gain Weapon Specialization."
+    # Weapon Specialization has max_ranks=3 -> 3 rank rows
+    assert len(ranks) == 3
+    assert ranks[0] == (1, "You gain Weapon Specialization.")
+    assert ranks[1][0] == 2  # rank 2 (description may be NULL or from localization)
+    assert ranks[2][0] == 3  # rank 3
 
 
 def test_insert_enhancement_trees_max_ranks() -> None:
