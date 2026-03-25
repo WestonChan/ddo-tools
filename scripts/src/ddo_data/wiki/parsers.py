@@ -273,6 +273,7 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
         ("attack_mod", ["attackmod"]),
         ("damage_mod", ["damagemod"]),
         ("race_required", ["race"]),
+        ("icon", ["picdesc", "pic", "icon"]),
     ]:
         raw = ""
         for fn in field_names:
@@ -411,6 +412,9 @@ def parse_spell_wikitext(wikitext: str) -> dict[str, Any] | None:
     cost_str = fields.get("cost", "").strip()
     spell["spell_points"] = _parse_int(cost_str) if cost_str else None
     spell["cooldown"] = clean_wikitext(fields.get("cooldown", "")) or None
+
+    # Icon
+    spell["icon"] = clean_wikitext(fields.get("icon", "")) or clean_wikitext(fields.get("image", "")) or None
 
     # Description, components, range, target, duration, save, SR
     for key, field_name in [

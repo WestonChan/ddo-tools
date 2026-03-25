@@ -202,6 +202,7 @@ CREATE TABLE IF NOT EXISTS items (
     binding           TEXT,                                        -- wt: bind field; fl: fallback
     base_value        TEXT,                                        -- wt: basevalue field; fl: fallback
     race_required     TEXT,                                        -- wt: race field (e.g., "Warforged")
+    icon              TEXT,                                        -- wt: picdesc or pic field (wiki image filename)
     description       TEXT,                                        -- wt: description field
     tooltip           TEXT,                                        -- lt: 0x25 tooltip sub-entry
     enchant_name      TEXT,                                        -- ln: 0x25 enchant_name sub-entry
@@ -507,6 +508,7 @@ CREATE INDEX IF NOT EXISTS idx_quest_loot_item ON quest_loot(item_id);
 CREATE TABLE IF NOT EXISTS spells (
     id               INTEGER PRIMARY KEY,                        -- c: autoincrement
     name             TEXT NOT NULL,                               -- wt: {{Infobox-spell|name=...}}
+    icon             TEXT,                                        -- wt: icon or image field
     school_id        INTEGER REFERENCES spell_schools(id),       -- bp: hash lookup on ref slot; wt: fallback
     spell_points     INTEGER,                                    -- bp: stat 553/554 in ref list/body; wt: cost field fallback
     cooldown         TEXT,                                        -- wt: cooldown field (text)

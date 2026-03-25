@@ -274,10 +274,10 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 name, dat_id, rarity, slot_id, equipment_slot, item_category,
                 level, durability, item_type, minimum_level, enhancement_bonus,
                 hardness, weight, material, binding, base_value,
-                race_required, description, tooltip,
+                race_required, icon, description, tooltip,
                 enchant_name, enchant_suffix, effect_value,
                 cooldown_seconds, internal_level, tier_multiplier, wiki_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
@@ -297,6 +297,7 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 item.get("binding"),
                 item.get("base_value"),
                 item.get("race_required"),
+                item.get("icon"),
                 item.get("description"),
                 item.get("tooltip"),
                 item.get("enchant_name"),
@@ -662,13 +663,14 @@ def insert_spells(conn: sqlite3.Connection, spells: list[dict]) -> int:
         cur = conn.execute(
             """
             INSERT OR IGNORE INTO spells
-                (name, school_id, spell_points, cooldown, cooldown_seconds,
+                (name, icon, school_id, spell_points, cooldown, cooldown_seconds,
                  tick_count, description, components, range, target, duration,
                  saving_throw, save_type, save_effect, spell_resistance)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
+                spell.get("icon"),
                 school_id,
                 spell.get("spell_points"),
                 spell.get("cooldown"),
