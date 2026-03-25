@@ -89,6 +89,20 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         ["name", "equipment_slot"],
     ),
     (
+        "weapons_have_handedness",
+        "Weapons should have handedness set",
+        "warning",
+        """
+        SELECT i.name, ws.weapon_type, ws.proficiency
+        FROM items i
+        JOIN item_weapon_stats ws ON ws.item_id = i.id
+        WHERE ws.handedness IS NULL
+          AND i.wiki_url IS NOT NULL
+        LIMIT 20
+        """,
+        ["name", "weapon_type", "proficiency"],
+    ),
+    (
         "item_bonus_stat_resolved",
         "Item bonuses from wiki should have resolved stat_id",
         "warning",
