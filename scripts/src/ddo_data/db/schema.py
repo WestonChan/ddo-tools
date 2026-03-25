@@ -897,7 +897,7 @@ INSERT OR IGNORE INTO classes (id, name, parent_class_id, is_archetype) VALUES
     (19, 'Wild Mage',          9,  1),   -- Wizard archetype
     (20, 'Stormsinger',        2,  1),   -- Bard archetype
     (21, 'Dark Apostate',      3,  1),   -- Cleric archetype
-    (22, 'Blight Caster',     13,  1),   -- Druid archetype (was Blightcaster)
+    (22, 'Blightcaster',      13,  1),   -- Druid archetype
     (23, 'Sacred Fist',        5,  1),   -- Paladin archetype
     (24, 'Dark Hunter',        6,  1),   -- Ranger archetype
     (25, 'Acolyte of the Skin',14, 1);   -- Warlock archetype

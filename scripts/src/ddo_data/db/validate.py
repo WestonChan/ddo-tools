@@ -215,6 +215,28 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         """,
         ["race_name"],
     ),
+    # --- Past life cross-reference ---
+    (
+        "past_life_classes_seeded",
+        "Past Life feat names should match seeded classes/archetypes",
+        "error",
+        """
+        SELECT REPLACE(f.name, 'Past Life: ', '') AS past_life_name
+        FROM feats f
+        WHERE f.name LIKE 'Past Life: %'
+          AND REPLACE(f.name, 'Past Life: ', '') NOT IN (SELECT name FROM classes)
+          AND REPLACE(f.name, 'Past Life: ', '') NOT IN (
+              'Arcane Initiate', 'Arcane Prodigy', 'Bardic Dilettante',
+              'Berserker''s Fury', 'Delver of the Forbidden',
+              'Disciple of the Fist', 'Harbinger of Nature''s Wrath',
+              'Initiate of the Faith', 'Mixer of Magics',
+              'Sneak of Shadows', 'Soldier of the Faith',
+              'Student of Artifice', 'Student of the Sword',
+              'Warrior of the Wild', 'Acolyte of Divine Secrets'
+          )
+        """,
+        ["past_life_name"],
+    ),
     # --- Population checks ---
     (
         "tables_not_empty",
