@@ -33,6 +33,22 @@ https://ddowiki.com/api.php?action=query&list=categorymembers&cmtitle=Category:C
 - Enhancement trees: `Tree_Name_enhancements` (e.g., `Kensei_enhancements`, `Elf_enhancements`)
 - Quests: direct name (e.g., `The_Vault_of_Night`)
 
+## Icons / Images
+
+Wiki images are hosted at `https://images.ddowiki.com/`. The `icon` column in the DB stores the filename (e.g., `Icon Feat Cleave.png`). To construct the full URL:
+
+```
+https://images.ddowiki.com/Icon%20Feat%20Cleave.png
+```
+
+Naming conventions vary by entity type:
+- **Feat icons:** `Icon Feat <Name>.png` or `Icon_Feat_<Name>.png`
+- **Enhancement icons:** `<TreePrefix><AbilityName>.png` (e.g., `KenseiStrikeWithNoThought.png`)
+- **Item icons:** `<Item Name> shown.jpg` or `<Item Name>.png` (inconsistent)
+- **Spell icons:** varies widely
+
+Not all filenames follow these patterns — always use the `icon` column value from the DB, not a constructed name.
+
 ## Usage
 
 - URL-encode page titles (spaces → underscores or `%20`)
