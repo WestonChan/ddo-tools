@@ -550,8 +550,9 @@ def _parse_template_advancement(rows: list[dict[str, str]]) -> list[dict[str, An
 def _parse_wiki_table_advancement(wikitext: str) -> list[dict[str, Any]]:
     """Parse advancement data from a wiki table (Fighter/Bard/Sorcerer style).
 
-    Handles both | and ! cell markers, inline || and !! separators,
-    and identifies the SP column vs spell slot columns from the header.
+    Uses the header row to determine column semantics rather than relying
+    on fixed positional indices.  Handles both ``|`` and ``!`` cell markers
+    as well as inline ``||`` / ``!!`` separators.
     """
     # Find the advancement table (contains "Base Attack Bonus" header)
     tables = list(re.finditer(r'\{\|.*?\|\}', wikitext, re.DOTALL))
@@ -563,61 +564,107 @@ def _parse_wiki_table_advancement(wikitext: str) -> list[dict[str, Any]]:
     if not adv_table:
         return []
 
-    # Split into rows by |-
     rows = re.split(r'\|-', adv_table)
 
-    # Determine column layout from header row
-    has_sp_col = "Spell point" in adv_table or "spell point" in adv_table.lower()
+    # --- Identify the header row and build column mapping ---
+    header_idx: dict[str, int] = {}
+    spell_slot_cols: dict[int, int] = {}  # col_index -> spell level
+    header_found = False
 
+    for row in rows:
+        cells = _extract_wiki_cells(row)
+        # The header row contains "Level" and "Base Attack Bonus" (or "BAB")
+        cell_lower = [c.lower().strip() for c in cells]
+        if not any("level" == cl for cl in cell_lower):
+            continue
+        if not any("base attack" in cl or "bab" in cl for cl in cell_lower):
+            continue
+        header_found = True
+        for i, raw in enumerate(cells):
+            cl = raw.lower().strip()
+            if cl == "level":
+                header_idx["level"] = i
+            elif "base attack" in cl or cl == "bab":
+                header_idx["bab"] = i
+            elif "fort" in cl:
+                header_idx["fort"] = i
+            elif "ref" in cl:
+                header_idx["ref"] = i
+            elif "will" in cl:
+                header_idx["will"] = i
+            elif "special" in cl:
+                header_idx["special"] = i
+            elif "spell point" in cl or "sp" == cl:
+                header_idx["sp"] = i
+            else:
+                # Check for spell level headers like "1st", "2nd", ... "9th"
+                sl_match = re.search(r'(\d+)(?:st|nd|rd|th)', cl)
+                if sl_match:
+                    spell_slot_cols[i] = int(sl_match.group(1))
+        break
+
+    if not header_found:
+        return []
+
+    # --- Parse data rows using the column map ---
     levels = []
     for row in rows:
         cells = _extract_wiki_cells(row)
         if len(cells) < 5:
             continue
 
-        # Parse level from first cell
-        level_text = cells[0].strip()
+        # Level
+        li = header_idx.get("level", 0)
+        if li >= len(cells):
+            continue
+        level_text = cells[li].strip()
         m = _ORDINAL_RE.match(level_text)
         if not m:
             continue
         level = int(m.group(1))
-
         entry: dict[str, Any] = {"level": level}
 
-        # BAB (cell 1)
-        bab_match = re.search(r'\+?(\d+)', cells[1])
-        if bab_match:
-            entry["bab"] = int(bab_match.group(1))
+        # BAB
+        bi = header_idx.get("bab")
+        if bi is not None and bi < len(cells):
+            bab_match = re.search(r'\+?(\d+)', cells[bi])
+            if bab_match:
+                entry["bab"] = int(bab_match.group(1))
 
-        # Fort/Ref/Will saves (cells 2-4)
-        for i, save in enumerate(("fort", "ref", "will"), 2):
-            if i < len(cells):
-                save_match = re.search(r'\+?(\d+)', cells[i])
+        # Saves
+        for save in ("fort", "ref", "will"):
+            si = header_idx.get(save)
+            if si is not None and si < len(cells):
+                save_match = re.search(r'\+?(\d+)', cells[si])
                 if save_match:
                     entry[save] = save_match.group(0)
 
-        # Special/feats (cell 5)
-        if len(cells) > 5:
-            feats_raw = cells[5]
+        # Special / feats
+        fi = header_idx.get("special")
+        if fi is not None and fi < len(cells):
+            feats_raw = cells[fi]
             if feats_raw and feats_raw != "-":
                 entry["feats"] = [
                     f.strip() for f in re.split(r',\s*', feats_raw)
                     if f.strip() and f.strip() != "-"
                 ]
 
-        # SP and spell slots
-        if has_sp_col and len(cells) > 6:
-            # Cell 6 = SP, cells 7+ = spell slots
-            sp_val = _parse_int(cells[6].replace(",", ""))
+        # SP
+        spi = header_idx.get("sp")
+        if spi is not None and spi < len(cells):
+            sp_val = _parse_int(cells[spi].replace(",", ""))
             if sp_val is not None:
                 entry["sp"] = sp_val
-            spell_slots = {}
-            for j, cell in enumerate(cells[7:], 1):
-                parsed = _parse_int(cell.strip())
+
+        # Spell slots (keyed by header-identified spell level)
+        spell_slots = {}
+        for col_idx, spell_level in spell_slot_cols.items():
+            if col_idx < len(cells):
+                parsed = _parse_int(cells[col_idx].strip())
                 if parsed is not None and parsed > 0:
-                    spell_slots[j] = parsed
-            if spell_slots:
-                entry["spell_slots"] = spell_slots
+                    spell_slots[spell_level] = parsed
+        if spell_slots:
+            entry["spell_slots"] = spell_slots
 
         levels.append(entry)
     return levels
