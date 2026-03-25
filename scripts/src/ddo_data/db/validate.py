@@ -277,11 +277,13 @@ def validate_seed_against_wiki(conn: sqlite3.Connection) -> list[ValidationResul
             "Drow": "Drow Elf",
             "Sun Elf (Morninglord)": "Morninglord",
             "Purple Dragon Knight (Iconic)": "Purple Dragon Knight",
+            "PDK": "Purple Dragon Knight",
         }
+        _SKIP_RACES = {"Kalashtar", "Elven Arcane Archer"}  # not playable races
         for title in client.iter_category_members("Races"):
             if title.startswith("Category:") or title in _NON_RACE_PAGES:
                 continue
-            if "(speculation)" in title:
+            if "(speculation)" in title or title in _SKIP_RACES:
                 continue
             wiki_races.add(_RACE_ALIASES.get(title, title))
 

@@ -84,6 +84,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_spell_schools_name ON spell_schools(name);
 CREATE TABLE IF NOT EXISTS classes (
     id                     INTEGER PRIMARY KEY,                  -- sd
     name                   TEXT NOT NULL,                         -- sd
+    parent_class_id        INTEGER REFERENCES classes(id),       -- sd: NULL for base, set for archetypes
+    is_archetype           INTEGER NOT NULL DEFAULT 0 CHECK (is_archetype IN (0, 1)), -- sd
     hit_die                INTEGER,                              -- sd
     bab_progression        TEXT CHECK (bab_progression IN ('full', 'three_quarter', 'half')), -- sd
     skill_points_per_level INTEGER,                              -- sd
@@ -887,6 +889,19 @@ INSERT OR IGNORE INTO classes (id, name, hit_die, bab_progression, skill_points_
     (14, 'Warlock',         6, 'three_quarter',  2, 'poor', 'poor', 'good', 'full',  'arcane'),
     (15, 'Alchemist',       8, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'arcane');
 
+-- Archetypes (modify a base class; inherit most stats from parent)
+INSERT OR IGNORE INTO classes (id, name, parent_class_id, is_archetype) VALUES
+    (16, 'Dragon Lord',        4,  1),   -- Fighter archetype
+    (17, 'Dragon Disciple',    8,  1),   -- Sorcerer archetype
+    (18, 'Arcane Trickster',   7,  1),   -- Rogue archetype
+    (19, 'Wild Mage',          9,  1),   -- Wizard archetype
+    (20, 'Stormsinger',        2,  1),   -- Bard archetype
+    (21, 'Dark Apostate',      3,  1),   -- Cleric archetype
+    (22, 'Blight Caster',     13,  1),   -- Druid archetype (was Blightcaster)
+    (23, 'Sacred Fist',        5,  1),   -- Paladin archetype
+    (24, 'Dark Hunter',        6,  1),   -- Ranger archetype
+    (25, 'Acolyte of the Skin',14, 1);   -- Warlock archetype
+
 -- Races (standard + iconic)
 INSERT OR IGNORE INTO races (id, name) VALUES
     (1,  'Human'),
@@ -917,9 +932,7 @@ INSERT OR IGNORE INTO races (id, name) VALUES
     (25, 'Tiefling Scoundrel'),
     (26, 'Tabaxi Trailblazer'),
     (27, 'Eladrin Chaosmancer'),
-    (28, 'Dhampir Dark Bargainer'),
-    (29, 'Elven Arcane Archer'),
-    (30, 'Kalashtar');
+    (28, 'Dhampir Dark Bargainer');
 
 -- Bonus types (stacks_with_self=1 means same-type bonuses from different sources stack)
 INSERT OR IGNORE INTO bonus_types (id, name, stacks_with_self) VALUES
