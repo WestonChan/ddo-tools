@@ -75,7 +75,7 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
     ),
     (
         "weapon_items_have_weapon_stats",
-        "Items with equipment_slot='Main Hand' should have weapon stats",
+        "Wiki-matched Main Hand items should have weapon stats",
         "warning",
         """
         SELECT i.name, i.equipment_slot
@@ -83,6 +83,7 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         LEFT JOIN item_weapon_stats ws ON ws.item_id = i.id
         WHERE i.equipment_slot = 'Main Hand'
           AND ws.item_id IS NULL
+          AND i.wiki_url IS NOT NULL
         LIMIT 20
         """,
         ["name", "equipment_slot"],

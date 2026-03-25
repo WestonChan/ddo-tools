@@ -1304,7 +1304,7 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
                     "SELECT id FROM enhancements WHERE tree_id = ? AND name = ?",
                     (tree_id, p),
                 ).fetchone()
-                if req_row:
+                if req_row and req_row[0] != enh_id:
                     conn.execute(
                         "INSERT OR IGNORE INTO enhancement_prereqs "
                         "(enhancement_id, required_enhancement_id) VALUES (?, ?)",

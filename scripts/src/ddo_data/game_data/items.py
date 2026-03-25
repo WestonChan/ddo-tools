@@ -403,6 +403,17 @@ def parse_items(
             skipped += 1
             continue
 
+        # Filter non-item game objects by name pattern:
+        # [m]/[mn] = male NPC, [f]/[fn] = female NPC, [v] = creature/vendor,
+        # [E] = interactable/quest object, eff_ = effect definition
+        stripped = name.strip()
+        if stripped.endswith(("[m]", "[mn]", "[f]", "[fn]", "[v]", "[E]", "[n]", "[in]")):
+            skipped += 1
+            continue
+        if stripped.startswith("eff_"):
+            skipped += 1
+            continue
+
         try:
             data = read_entry_data(gamelogic_archive, entry)
         except (ValueError, OSError):
