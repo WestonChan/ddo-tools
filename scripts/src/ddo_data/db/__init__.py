@@ -6,6 +6,7 @@ import sqlite3
 from pathlib import Path
 
 from .schema import create_schema
+from .validate import format_validation, validate_database
 from .writers import insert_augments, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, insert_set_bonus_effects, insert_spells
 
 __all__ = ["GameDB"]
@@ -81,3 +82,8 @@ class GameDB:
     def insert_filigrees(self, filigrees: list[dict]) -> int:
         """Insert filigree dicts (from wiki scraper).  Returns row count."""
         return insert_filigrees(self.conn, filigrees)
+
+    def validate(self) -> str:
+        """Run post-import validation assertions.  Returns formatted report."""
+        results = validate_database(self.conn)
+        return format_validation(results)

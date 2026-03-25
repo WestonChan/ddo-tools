@@ -811,6 +811,11 @@ def build_db(
 
     click.echo(f"Database written to {output}")
 
+    # Post-import validation
+    with GameDB(output) as db:
+        report = db.validate()
+        click.echo(f"\n{report}")
+
 
 def _overlay_item_binary_data(items: list[dict], ddo_path: Path) -> None:
     """Overlay binary data onto wiki item dicts (in-place).
