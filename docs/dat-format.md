@@ -1097,10 +1097,16 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 
 ### Wiki data population (complete before pre-frontend gates)
 - [x] Populate feat_prereq_* tables from wiki — **DONE.** `_parse_feat_prerequisites()` in writers.py parses free-text prerequisite strings into 5 junction tables: feat_prereq_feats (required feats by name lookup), feat_prereq_stats (ability score minimums), feat_prereq_classes (class level requirements), feat_prereq_races (race restrictions), feat_prereq_skills (skill rank minimums). Also sets feats.min_bab from BAB patterns. Two-pass insertion: all feats first, then prereqs (so feat-to-feat lookups resolve).
-- [x] Populate class skills — **DONE.** 15 classes x their class skills added as seed data (DDO wiki class pages). 145 class_skill rows.
-- [x] Populate race ability bonuses — **DONE.** 15 standard races with ability score modifiers as seed data. Human/Half-Elf have no fixed bonuses (player chooses +2). Iconics inherit from base race.
-- [ ] Populate remaining class progression tables (class_bonus_feat_slots, class_spell_slots, class_spells_known, class_auto_feats) — needs wiki scraping or manual seed data. Medium effort.
-- [ ] Populate race_auto_feats — racial feat grants. Low priority for build planner.
+- [x] Populate class skills — **DONE as seed data.** 15 classes x their class skills (145 rows). **TODO: replace with wiki scraper** — class pages use `{{Class Skills}}` template which queries `Category:Skills & <Class>` via DPL. DPL categories not exposed via standard API; needs rendered HTML scraping or manual maintenance.
+- [x] Populate race ability bonuses — **DONE as seed data.** 15 standard races with ability score modifiers. **TODO: replace with wiki scraper** — race pages have structured ability bonus tables.
+- [x] Populate race_auto_feats — **DONE via wiki scraper.** `collect_race_feats()` queries `Category:<Race> feats` pages via MediaWiki API. 16 races covered.
+- [ ] Populate class_auto_feats from wiki — feats auto-granted at each class level (e.g., Barbarian Rage at level 1). Needs wiki class page scraping or `Category:<Class> feats` (currently empty — may need rendered HTML). Same pattern as race_auto_feats but with `class_level` column.
+- [ ] Populate class_bonus_feat_slots from wiki — which class levels grant bonus feat choices (e.g., Fighter 1/2/4/6/8...). Static per class; seed data or wiki scrape.
+- [ ] Populate class_spell_slots from wiki — spell slots per class level per spell level. 10 caster classes x 20 levels x 9 spell levels. Large table; needs wiki class page scraping or seed data.
+- [ ] Populate class_spells_known from wiki — spells known per level for spontaneous casters (Sorcerer, Bard, Favored Soul). Similar structure to spell_slots.
+- [ ] Replace class base stats seed data with wiki scraper — classes table (hit_die, BAB, saves, skill_points, caster_type) is currently hardcoded. Wiki class pages have all this data.
+- [ ] Replace class_skills seed data with wiki scraper — DPL-based categories need rendered HTML or alternative data source.
+- [ ] Replace race_ability_bonuses seed data with wiki scraper — race pages have structured ability bonus sections.
 - [x] Populate enhancement prerequisite tables from wiki — **DONE.** Second-pass parser in `insert_enhancement_trees()` splits prerequisite text on commas, matches "Class Level N" patterns to `enhancement_prereq_classes`, and remaining text to `enhancement_prereqs` by name lookup within the same tree. 47 enhancement prereqs + 27 class prereqs from 5 trees. Remaining tables (enhancement_prereq_races, enhancement_feat_links, enhancement_tree_ap_thresholds) not yet populated.
 
 ### Pre-frontend gates
