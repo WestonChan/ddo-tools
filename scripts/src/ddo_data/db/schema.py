@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS races (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_races_name ON races(name);
 
-CREATE TABLE IF NOT EXISTS race_ability_bonuses (             -- unpopulated (future: wt)
+CREATE TABLE IF NOT EXISTS race_ability_bonuses (             -- sd: from DDO wiki race pages
     race_id  INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
     stat_id  INTEGER NOT NULL REFERENCES stats(id),
     modifier INTEGER NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS race_ability_bonuses (             -- unpopulated (fu
 );
 CREATE INDEX IF NOT EXISTS idx_race_ability_bonuses_stat ON race_ability_bonuses(stat_id);
 
-CREATE TABLE IF NOT EXISTS class_skills (                     -- unpopulated (future: wt)
+CREATE TABLE IF NOT EXISTS class_skills (                     -- sd: from DDO wiki class pages
     class_id       INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
     skill_id       INTEGER NOT NULL REFERENCES skills(id),
     is_class_skill INTEGER NOT NULL DEFAULT 1 CHECK (is_class_skill IN (0, 1)),
@@ -1007,6 +1007,81 @@ INSERT OR IGNORE INTO spell_schools (id, name) VALUES
     (7, 'Necromancy'),
     (8, 'Transmutation'),
     (9, 'Universal');
+
+-- Class skills (sd: from DDO wiki class pages)
+-- class_id: 1=Barbarian 2=Bard 3=Cleric 4=Fighter 5=Paladin 6=Ranger 7=Rogue
+--           8=Sorcerer 9=Wizard 10=Monk 11=FvS 12=Artificer 13=Druid 14=Warlock 15=Alchemist
+-- skill_id: 1=Balance 2=Bluff 3=Concentration 4=Diplomacy 5=DisableDevice 6=Haggle
+--           7=Heal 8=Hide 9=Intimidate 10=Jump 11=Listen 12=MoveSilently 13=OpenLock
+--           14=Perform 15=Repair 16=Search 17=Spellcraft 18=Spot 19=Swim 20=Tumble 21=UMD
+INSERT OR IGNORE INTO class_skills (class_id, skill_id) VALUES
+    -- Barbarian: Balance, Intimidate, Jump, Listen, Swim
+    (1,1),(1,9),(1,10),(1,11),(1,19),
+    -- Bard: Balance, Bluff, Concentration, Diplomacy, Haggle, Hide, Jump, Listen,
+    --       Move Silently, Open Lock, Perform, Repair, Spellcraft, Swim, Tumble, UMD
+    (2,1),(2,2),(2,3),(2,4),(2,6),(2,8),(2,10),(2,11),(2,12),(2,13),(2,14),(2,15),(2,17),(2,19),(2,20),(2,21),
+    -- Cleric: Concentration, Diplomacy, Heal, Spellcraft
+    (3,3),(3,4),(3,7),(3,17),
+    -- Fighter: Balance, Intimidate, Jump, Repair, Swim
+    (4,1),(4,9),(4,10),(4,15),(4,19),
+    -- Paladin: Balance, Concentration, Diplomacy, Heal, Intimidate, Jump, Swim
+    (5,1),(5,3),(5,4),(5,7),(5,9),(5,10),(5,19),
+    -- Ranger: Balance, Concentration, Heal, Hide, Jump, Listen, Move Silently, Search, Spot, Swim
+    (6,1),(6,3),(6,7),(6,8),(6,10),(6,11),(6,12),(6,16),(6,18),(6,19),
+    -- Rogue: Balance, Bluff, Diplomacy, Disable Device, Haggle, Hide, Intimidate, Jump, Listen,
+    --        Move Silently, Open Lock, Perform, Repair, Search, Spot, Swim, Tumble, UMD
+    (7,1),(7,2),(7,4),(7,5),(7,6),(7,8),(7,9),(7,10),(7,11),(7,12),(7,13),(7,14),(7,15),(7,16),(7,18),(7,19),(7,20),(7,21),
+    -- Sorcerer: Bluff, Concentration, Spellcraft
+    (8,2),(8,3),(8,17),
+    -- Wizard: Concentration, Repair, Spellcraft
+    (9,3),(9,15),(9,17),
+    -- Monk: Balance, Concentration, Diplomacy, Hide, Jump, Listen, Move Silently, Spot, Swim, Tumble
+    (10,1),(10,3),(10,4),(10,8),(10,10),(10,11),(10,12),(10,18),(10,19),(10,20),
+    -- Favored Soul: Concentration, Diplomacy, Heal, Jump, Spellcraft
+    (11,3),(11,4),(11,7),(11,10),(11,17),
+    -- Artificer: Balance, Concentration, Disable Device, Haggle, Open Lock, Repair, Search, Spellcraft, UMD
+    (12,1),(12,3),(12,5),(12,6),(12,13),(12,15),(12,16),(12,17),(12,21),
+    -- Druid: Balance, Concentration, Diplomacy, Heal, Hide, Listen, Spellcraft, Spot, Swim
+    (13,1),(13,3),(13,4),(13,7),(13,8),(13,11),(13,17),(13,18),(13,19),
+    -- Warlock: Bluff, Concentration, Intimidate, Spellcraft, UMD
+    (14,2),(14,3),(14,9),(14,17),(14,21),
+    -- Alchemist: Balance, Concentration, Disable Device, Heal, Repair, Search, Spellcraft, UMD
+    (15,1),(15,3),(15,5),(15,7),(15,15),(15,16),(15,17),(15,21);
+
+-- Race ability bonuses (sd: from DDO wiki race pages)
+-- Standard races only (iconics inherit from base race + class)
+-- stat_id: 1=STR 2=DEX 3=CON 4=INT 5=WIS 6=CHA
+INSERT OR IGNORE INTO race_ability_bonuses (race_id, stat_id, modifier) VALUES
+    -- Human: no bonuses (choose +2 to any one)
+    -- Elf: +2 DEX, -2 CON
+    (3, 2, 2), (3, 3, -2),
+    -- Dwarf: +2 CON, -2 CHA
+    (4, 3, 2), (4, 6, -2),
+    -- Halfling: +2 DEX, -2 STR
+    (5, 2, 2), (5, 1, -2),
+    -- Half-Elf: no bonuses (choose +2 to any one)
+    -- Half-Orc: +2 STR, -2 INT, -2 CHA
+    (7, 1, 2), (7, 4, -2), (7, 6, -2),
+    -- Warforged: +2 CON, -2 WIS, -2 CHA
+    (8, 3, 2), (8, 5, -2), (8, 6, -2),
+    -- Drow Elf: +2 DEX, +2 INT, +2 CHA, -2 CON
+    (9, 2, 2), (9, 4, 2), (9, 6, 2), (9, 3, -2),
+    -- Gnome: +2 INT, -2 STR
+    (10, 4, 2), (10, 1, -2),
+    -- Aasimar: +2 WIS, +2 CHA
+    (11, 5, 2), (11, 6, 2),
+    -- Dragonborn: +2 STR, +2 CHA, -2 DEX
+    (12, 1, 2), (12, 6, 2), (12, 2, -2),
+    -- Tiefling: +2 CHA, +2 INT, -2 WIS (Scoundrel variant may differ)
+    (13, 6, 2), (13, 4, 2), (13, 5, -2),
+    -- Shifter: +2 DEX, +2 WIS, -2 INT
+    (14, 2, 2), (14, 5, 2), (14, 4, -2),
+    -- Tabaxi: +2 DEX, +2 CHA, -2 WIS
+    (15, 2, 2), (15, 6, 2), (15, 5, -2),
+    -- Eladrin: +2 INT, +2 CHA, -2 CON
+    (16, 4, 2), (16, 6, 2), (16, 3, -2),
+    -- Deep Gnome: +2 INT, +2 WIS, -2 STR, -2 CHA
+    (17, 4, 2), (17, 5, 2), (17, 1, -2), (17, 6, -2);
 """
 
 

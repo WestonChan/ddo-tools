@@ -1097,8 +1097,10 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 
 ### Wiki data population (complete before pre-frontend gates)
 - [x] Populate feat_prereq_* tables from wiki — **DONE.** `_parse_feat_prerequisites()` in writers.py parses free-text prerequisite strings into 5 junction tables: feat_prereq_feats (required feats by name lookup), feat_prereq_stats (ability score minimums), feat_prereq_classes (class level requirements), feat_prereq_races (race restrictions), feat_prereq_skills (skill rank minimums). Also sets feats.min_bab from BAB patterns. Two-pass insertion: all feats first, then prereqs (so feat-to-feat lookups resolve).
-- [ ] Populate class progression tables from wiki or binary (class_bonus_feat_slots, class_spell_slots, class_spells_known, class_skills, class_auto_feats)
-- [ ] Populate race tables from wiki (race_ability_bonuses, race_feats)
+- [x] Populate class skills — **DONE.** 15 classes x their class skills added as seed data (DDO wiki class pages). 145 class_skill rows.
+- [x] Populate race ability bonuses — **DONE.** 15 standard races with ability score modifiers as seed data. Human/Half-Elf have no fixed bonuses (player chooses +2). Iconics inherit from base race.
+- [ ] Populate remaining class progression tables (class_bonus_feat_slots, class_spell_slots, class_spells_known, class_auto_feats) — needs wiki scraping or manual seed data. Medium effort.
+- [ ] Populate race_feats — racial feat grants. Low priority for build planner.
 - [x] Populate enhancement prerequisite tables from wiki — **DONE.** Second-pass parser in `insert_enhancement_trees()` splits prerequisite text on commas, matches "Class Level N" patterns to `enhancement_prereq_classes`, and remaining text to `enhancement_prereqs` by name lookup within the same tree. 47 enhancement prereqs + 27 class prereqs from 5 trees. Remaining tables (enhancement_prereq_races, enhancement_feat_links, enhancement_tree_ap_thresholds) not yet populated.
 
 ### Pre-frontend gates
