@@ -791,9 +791,12 @@ def build_db(
                 race_feats = collect_race_feats(client, on_progress=click.echo)
                 count = db.insert_feats(wiki_feats, race_feats=race_feats)
             elif data_type == "enhancements":
+                from .wiki.scraper import collect_epic_destinies
                 wiki_trees = list(collect_enhancements(client, limit=limit, on_progress=click.echo))
-                _overlay_enhancement_localization(wiki_trees)
-                count = db.insert_enhancement_trees(wiki_trees)
+                epic_trees = collect_epic_destinies(client, limit=limit, on_progress=click.echo)
+                all_trees = wiki_trees + epic_trees
+                _overlay_enhancement_localization(all_trees)
+                count = db.insert_enhancement_trees(all_trees)
             elif data_type == "sets":
                 count = db.insert_set_bonus_effects(collect_set_bonuses(client, on_progress=click.echo))
             elif data_type == "augments":

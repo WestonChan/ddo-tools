@@ -551,12 +551,14 @@ _TIER_WORD_MAP = {
     "four": "4", "five": "5",
 }
 
-# Template names used for enhancement entries on DDO Wiki.
+# Template names used for enhancement/destiny entries on DDO Wiki.
 # Longer name first: "itemwlvl" must be checked before "item" since
 # "item" is a prefix match that would also capture "itemwlvl" entries.
 _ENHANCEMENT_TEMPLATES = [
     "Enhancement table/itemwlvl",
     "Enhancement table/item",
+    "Epic destiny table/itemwlvl",
+    "Epic destiny table/item",
 ]
 
 def _detect_tier_sections(wikitext: str) -> list[tuple[int, str]]:

@@ -863,7 +863,7 @@ Use `ddo-data dat-probe`, `ddo-data dat-survey`, `ddo-data dat-dump --id <hex>`,
 - [x] Enhancements binary parser — deferred (game_data/enhancements.py stub removed from priority; wiki scraper provides full tree coverage with 88 class + 27 racial + 6 universal + 84 reaper = 205 trees)
 - [x] Augments parser (778 augments scraped from wiki {{Item Augment}} template; 535 structured bonuses with source_type='augment')
 - [x] Spells parser (497 spells scraped from wiki {{Infobox-spell}} template; class spell levels, schools, damage types, metamagic flags)
-- [ ] Epic destinies parser — wiki pages don't use Enhancement table templates; needs custom parser.
+- [x] Epic destinies parser — **DONE.** `collect_epic_destinies()` scrapes from `Category:Epic Destinies`. Uses same template parser as enhancements (`{{Epic destiny table/itemwlvl}}` has identical fields). 15 destinies with ~29 abilities each. Stored in enhancement_trees with `tree_type='destiny'`.
 - [x] Filigrees parser (~380 filigrees scraped from Sentient Weapon/Filigrees wiki page; name, set_name, rare_bonus, bonus)
 - [x] Past lives parser (58 past life feats detected and annotated with past_life_type/class during scraping)
 - [x] Reaper enhancements parser (84 enhancements from Reaper enhancements wiki page via direct tree fetch)
@@ -976,7 +976,7 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 - [x] Feat prerequisites — **CLOSED.** Chain pointers are engine infrastructure (confirmed). Wiki prerequisite text parsing is the correct path (now implemented).
 - [x] Set bonus identification — group_ref (0x10000A48) is NOT set membership. Set membership IS via `eff_setbonus_*` effect_ref FIDs and wiki `{{Named item sets}}`.
 - [x] Enhancement tree structure from binary — **CLOSED.** Enhancement abilities are localization-only (no gamelogic entry). Wiki provides full tree coverage.
-- [ ] Epic destiny data — wiki pages use different format. Check if epic destiny abilities appear in binary as 0x79 entries with identifiable properties.
+- [x] Epic destiny data — **DONE via wiki.** `collect_epic_destinies()` scrapes from category. Binary check: epic destiny abilities are localization-only (same as enhancements).
 
 **Enhancement binary investigation (DO NOT mark complete without implementation):**
 - [x] Enhancement binary property decoding — **MAJOR FINDING: enhancement abilities are localization-only entities.** 19% of localization entries (25,412) are "orphans" with NO gamelogic counterpart — this is normal. Enhancement abilities like Brilliance exist only at 0x2501E362 (tooltip: "Your Aura provides Determination bonus to Temporary HP") with no 0x7901E362 in gamelogic. The 14,276 entries we found via ENH_KEYS are NOT enhancement abilities — they're weapon enchantments and feat effects sharing the same names (false positives). **True enhancement data is in the orphan localization entries.** Needs: (a) systematically find orphan entries whose tooltips match wiki enhancement descriptions, (b) match by tooltip text rather than name (names collide), (c) parse tooltip text for structured bonus data.
@@ -1150,7 +1150,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [ ] DDO Wiki scraper — quests
 - [x] DDO Wiki scraper — augments (`ddo-data build-db --type augments`)
 - [x] DDO Wiki scraper — spells (`ddo-data build-db --type spells`)
-- [ ] DDO Wiki scraper — epic destinies
+- [x] DDO Wiki scraper — epic destinies (`collect_epic_destinies()` from Category:Epic Destinies)
 - [x] Data merging (game files + wiki data -- items via `_merge_wiki_data`)
 
 ### CLI

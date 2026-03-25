@@ -537,3 +537,69 @@ def collect_race_feats(
     return results
 
 
+# Non-tree pages in the Epic Destinies category
+_EPIC_DESTINY_SKIP = {
+    "Destiny Point", "Epic Destinies", "Epic Destinies (Historical)",
+    "Epic Destiny Point", "Epic mantle", "Epic strike",
+}
+
+
+def collect_epic_destinies(
+    client: WikiClient,
+    *,
+    limit: int = 0,
+    on_progress: Callable[[str], None] | None = None,
+) -> list[dict]:
+    """Collect epic destiny trees from DDO Wiki.
+
+    Discovers destiny names from Category:Epic Destinies, fetches each
+    tree page, and parses using the same template parser as enhancements
+    (epic destinies use ``{{Epic destiny table/itemwlvl}}`` which has
+    the same fields as enhancement templates).
+
+    Returns list of tree dicts in the same format as collect_enhancements,
+    with ``type='destiny'``.
+    """
+    trees: list[dict] = []
+    visited: set[str] = set()
+
+    # Get destiny names from category
+    destiny_names = []
+    for title in client.iter_category_members("Epic Destinies"):
+        if title.startswith("Category:") or title in _EPIC_DESTINY_SKIP:
+            continue
+        if title.startswith("User:"):
+            continue
+        if title not in visited:
+            destiny_names.append(title)
+            visited.add(title)
+
+    if on_progress:
+        on_progress(f"  Found {len(destiny_names)} epic destinies from category")
+
+    count = 0
+    for title in destiny_names:
+        if 0 < limit <= count:
+            break
+
+        wikitext = client.get_wikitext(title)
+        if wikitext is None:
+            continue
+
+        parsed = parse_enhancement_tree_wikitext(wikitext, title)
+        if parsed is None or not parsed.get("enhancements"):
+            continue
+
+        parsed["type"] = "destiny"
+        trees.append(parsed)
+        count += 1
+
+        if on_progress and count % 5 == 0:
+            on_progress(f"  ... {count} destinies processed")
+
+    if on_progress:
+        on_progress(f"  {len(trees)} epic destiny trees parsed")
+
+    return trees
+
+
