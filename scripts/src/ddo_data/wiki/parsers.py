@@ -135,6 +135,8 @@ def clean_wikitext(value: str) -> str:
     """
     # Handle wiki links: [[target|display]] -> display, [[simple]] -> simple
     text = _LINK_RE.sub(r"\1", value)
+    # Strip bold/italic markup (''' and '')
+    text = text.replace("'''", "").replace("''", "")
     # Remove HTML comments (<!-- ... -->)
     text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
     # Replace HTML tags with space (preserves word boundaries around <br/> etc.)
@@ -456,6 +458,198 @@ def parse_spell_wikitext(wikitext: str) -> dict[str, Any] | None:
     spell["metamagics"] = metamagics
 
     return spell
+
+
+# ---------------------------------------------------------------------------
+# Class page parser
+# ---------------------------------------------------------------------------
+
+_WIKI_TABLE_ROW_RE = re.compile(r"^\|\s*'''?(.+?)'''?\s*$", re.MULTILINE)
+_ORDINAL_RE = re.compile(r"^(\d+)(?:st|nd|rd|th)$")
+
+
+def parse_class_wikitext(wikitext: str, class_name: str) -> dict[str, Any] | None:
+    """Parse a DDO Wiki class page into structured progression data.
+
+    Returns a dict with:
+        name, hit_die, levels (list of dicts with level/bab/fort/ref/will/feats/sp/spell_slots)
+    """
+    result: dict[str, Any] = {"name": class_name}
+
+    # Hit die: look for "d4", "d6", "d8", "d10", "d12" near "Hit die" or "Hit Die"
+    hd_match = re.search(r"[Hh]it\s+[Dd]ie[^d]*?d(\d+)", wikitext[:2000])
+    if not hd_match:
+        hd_match = re.search(r"d(\d+)\s+(?:per|hit)", wikitext[:2000], re.IGNORECASE)
+    if not hd_match:
+        hd_match = re.search(r"'''d(\d+)'''", wikitext[:2000])
+    if hd_match:
+        result["hit_die"] = int(hd_match.group(1))
+
+    # Try template-based advancement table first (Wizard style)
+    template_rows = extract_all_templates(wikitext, "Class advancement table")
+    if template_rows:
+        result["levels"] = _parse_template_advancement(template_rows)
+        return result
+
+    # Fall back to wiki table parsing
+    wiki_levels = _parse_wiki_table_advancement(wikitext)
+    if wiki_levels:
+        result["levels"] = wiki_levels
+
+    return result
+
+
+def _parse_template_advancement(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
+    """Parse {{Class advancement table}} template rows."""
+    levels = []
+    for row in rows:
+        level_str = row.get("level", "")
+        if not level_str.strip():
+            continue
+        level = _parse_int(level_str)
+        if level is None or level < 1:
+            continue
+
+        entry: dict[str, Any] = {"level": level}
+
+        # Saves (0 = poor, 1 = good)
+        for save in ("fort", "ref", "will"):
+            val = row.get(save, "").strip()
+            if val in ("0", "1"):
+                entry[save] = val
+
+        # SP
+        sp = row.get("sp", "").strip().replace(",", "")
+        if sp:
+            entry["sp"] = _parse_int(sp)
+
+        # Feats
+        feats_raw = row.get("feats", "").strip()
+        if feats_raw and feats_raw != "-":
+            entry["feats"] = [
+                clean_wikitext(f).strip()
+                for f in feats_raw.split(",")
+                if clean_wikitext(f).strip() and clean_wikitext(f).strip() != "-"
+            ]
+
+        # Spell slots (level 1 through level 9)
+        spell_slots = {}
+        for i in range(1, 10):
+            val = row.get(f"level {i}", "").strip()
+            if val:
+                parsed = _parse_int(val)
+                if parsed is not None:
+                    spell_slots[i] = parsed
+        if spell_slots:
+            entry["spell_slots"] = spell_slots
+
+        levels.append(entry)
+    return levels
+
+
+def _parse_wiki_table_advancement(wikitext: str) -> list[dict[str, Any]]:
+    """Parse advancement data from a wiki table (Fighter/Bard/Sorcerer style).
+
+    Handles both | and ! cell markers, inline || and !! separators,
+    and identifies the SP column vs spell slot columns from the header.
+    """
+    # Find the advancement table (contains "Base Attack Bonus" header)
+    tables = list(re.finditer(r'\{\|.*?\|\}', wikitext, re.DOTALL))
+    adv_table = None
+    for m in tables:
+        if "Base Attack Bonus" in m.group() or "BAB" in m.group():
+            adv_table = m.group()
+            break
+    if not adv_table:
+        return []
+
+    # Split into rows by |-
+    rows = re.split(r'\|-', adv_table)
+
+    # Determine column layout from header row
+    has_sp_col = "Spell point" in adv_table or "spell point" in adv_table.lower()
+
+    levels = []
+    for row in rows:
+        cells = _extract_wiki_cells(row)
+        if len(cells) < 5:
+            continue
+
+        # Parse level from first cell
+        level_text = cells[0].strip()
+        m = _ORDINAL_RE.match(level_text)
+        if not m:
+            continue
+        level = int(m.group(1))
+
+        entry: dict[str, Any] = {"level": level}
+
+        # BAB (cell 1)
+        bab_match = re.search(r'\+?(\d+)', cells[1])
+        if bab_match:
+            entry["bab"] = int(bab_match.group(1))
+
+        # Fort/Ref/Will saves (cells 2-4)
+        for i, save in enumerate(("fort", "ref", "will"), 2):
+            if i < len(cells):
+                save_match = re.search(r'\+?(\d+)', cells[i])
+                if save_match:
+                    entry[save] = save_match.group(0)
+
+        # Special/feats (cell 5)
+        if len(cells) > 5:
+            feats_raw = cells[5]
+            if feats_raw and feats_raw != "-":
+                entry["feats"] = [
+                    f.strip() for f in re.split(r',\s*', feats_raw)
+                    if f.strip() and f.strip() != "-"
+                ]
+
+        # SP and spell slots
+        if has_sp_col and len(cells) > 6:
+            # Cell 6 = SP, cells 7+ = spell slots
+            sp_val = _parse_int(cells[6].replace(",", ""))
+            if sp_val is not None:
+                entry["sp"] = sp_val
+            spell_slots = {}
+            for j, cell in enumerate(cells[7:], 1):
+                parsed = _parse_int(cell.strip())
+                if parsed is not None and parsed > 0:
+                    spell_slots[j] = parsed
+            if spell_slots:
+                entry["spell_slots"] = spell_slots
+
+        levels.append(entry)
+    return levels
+
+
+def _extract_wiki_cells(row_text: str) -> list[str]:
+    """Extract cells from a wiki table row, handling | and ! markers."""
+    cells = []
+    for line in row_text.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        # Skip structural lines
+        if line.startswith("{|") or line.startswith("|}"):
+            continue
+        # Handle header cells (!) and data cells (|)
+        if line.startswith("|") or line.startswith("!"):
+            # Determine separator
+            sep = "||" if "||" in line else ("!!" if "!!" in line else None)
+            if sep:
+                parts = line.split(sep)
+                for part in parts:
+                    part = part.strip().lstrip("|!").strip()
+                    if part.startswith("colspan") or part.startswith("style") or part.startswith("class="):
+                        continue
+                    cells.append(clean_wikitext(part))
+            else:
+                cell = line.lstrip("|!").strip()
+                if cell.startswith("colspan") or cell.startswith("style") or cell.startswith("class="):
+                    continue
+                cells.append(clean_wikitext(cell))
+    return cells
 
 
 # ---------------------------------------------------------------------------

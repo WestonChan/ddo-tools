@@ -1000,9 +1000,9 @@ This means stat identity, augment configuration, weapon damage, etc. are NOT in 
 **Build-relevant orphan data**: ~2,765 entries (enhancements + enchantments + bonuses) containing structured bonus text parseable with `+N Stat` regex. These exist NOWHERE else in the binary or gamelogic.
 
 - [x] Parse orphan localization for enhancement bonuses — **INVESTIGATED.** 892 real enhancement orphans (after filtering item descriptions). 280 with parseable bonuses (335 total), 612 are active abilities. FID locality does NOT work (entries scattered across 50K-135K FID range per tree, NOT clustered). Text-matching approach used. Wiki description parsing is primary path (implemented in `_parse_enhancement_description`). Localization overlay deferred (would add FIDs + tooltip verification but requires rank disambiguation).
-- [ ] Parse orphan localization for item enchantment text — 1,018 entries with set bonus and enchantment descriptions. Cross-reference against known set/enchantment names.
-- [ ] Parse orphan bonus descriptions — 579 entries like "+4 Shield", "+5 Armor". Structured bonus text directly parseable.
-- [ ] Catalog all orphan entries by build relevance — the 13,953 "other with tooltip" entries may contain additional enhancement abilities, spell descriptions, or feat text not captured by the simple categorization.
+- [x] Parse orphan localization for item enchantment text — **INVESTIGATED.** 31,233 total orphans. 419 parseable as "+N Stat" bonuses, but mostly legacy enchantment names ("Cloak of Charisma", "Gauntlets of Ogre Power") and old-format item descriptions. Only 20% match known stats. Useful bonus data is already captured through FID lookup, type-167 name parsing, and wiki enchantment parsing. Not worth wiring into DB.
+- [x] Parse orphan bonus descriptions — see above; 3 structured bonuses with bonus_type, 416 simple "+N Stat" patterns. Legacy data, not additive to current pipeline.
+- [x] Catalog all orphan entries by build relevance — **INVESTIGATED.** 30,295 text entries are spell names, monster names, system messages, and legacy game text. Not build-relevant data. The 419 parseable bonuses are old enchantment names already covered by wiki parsing.
 
 ### Property key identifications (2026-03-23)
 
@@ -1037,7 +1037,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [x] Filter augment entries OUT of `items` table — **DONE.** Added filter in `_decode_item_entry()`: entries with `item_subtype` but no `equipment_slot` are excluded as augment gems.
 - [x] Cross-reference `item_subtype` values on augment entries against wiki augment slot_color — **INVESTIGATED.** item_subtype does NOT encode slot_color (purity 18-61%, all colors mixed in every subtype). Slot color is wiki-only.
 - [x] Parse augment gem effect_refs for structured bonus data — **DONE.** `_overlay_augment_binary_data` reads effect_ref localization names via FID lookup and "+N Stat" name parsing. Binary bonuses stored in augment_bonuses with `resolution_method='binary_name'` or `'fid_lookup'`.
-- [ ] Distinguish augment slot vs gem entry schemas programmatically (by property key signatures).
+- [x] Distinguish augment slot vs gem entry schemas programmatically — **INVESTIGATED.** No property keys are unique to gems vs slots. They share identical key signatures (same keys at same frequencies). The binary makes NO structural distinction between augment gems and augment slots. Differentiation is by name only ("Diamond of X" = gem, "Augment Slot" = slot) and usage context.
 
 ### FID mapping gap summary (as of 2026-03-23)
 
@@ -1094,6 +1094,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [x] Expand `stats` seed table with common enhancement stat names — **DONE.** Added 17 new stats: Positive/Negative Healing Amplification, Maximum Spell Points, Critical Damage Multiplier, Critical Threat Range, compound stats (Melee and Ranged Power, etc.), Poison Spell Power, Temporary Hit Points, Bard Songs, Movement Speed, Maximum Hit Points. Resolution improved from 37% to 48%.
 - [x] Enhancement rank disambiguation — **DONE.** Multi-rank enhancements now get one row per rank in `enhancement_ranks`. Rank 1 gets wiki description. Ranks 2+ get localization tooltips (when available from FID cache) or NULL placeholders. Per-rank bonuses from `+[1/2/3]` patterns already parsed by `_parse_enhancement_description`.
 - [ ] Manual override system for unparseable bonuses — add a `data/overrides.json` file where users can provide corrections for specific enhancement/item/augment bonuses that the parser got wrong or couldn't parse.
+- [ ] Decode composite bonus stats — some wiki enchantment descriptions reference composite stats like "Fortitude, Reflex, and Will Saving Throws vs. Traps" or "Armor Class and Armor Maximum Dexterity Bonus". These need to be split into individual bonus rows (one per stat) rather than stored as a single unparseable string. Add a composite-stat expansion step in the bonus writer.
 
 ### Wiki data population (complete before pre-frontend gates)
 - [x] Populate feat_prereq_* tables from wiki — **DONE.** `_parse_feat_prerequisites()` in writers.py parses free-text prerequisite strings into 5 junction tables: feat_prereq_feats (required feats by name lookup), feat_prereq_stats (ability score minimums), feat_prereq_classes (class level requirements), feat_prereq_races (race restrictions), feat_prereq_skills (skill rank minimums). Also sets feats.min_bab from BAB patterns. Two-pass insertion: all feats first, then prereqs (so feat-to-feat lookups resolve).
