@@ -919,22 +919,22 @@ INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES
     (21, 'Use Magic Device', 6);   -- CHA
 
 -- Classes
-INSERT OR IGNORE INTO classes (id, name, hit_die, bab_progression, skill_points_per_level, fort_save_progression, ref_save_progression, will_save_progression, caster_type, spell_tradition, alignment) VALUES
-    (1,  'Barbarian',      12, 'full',          4, 'good', 'poor', 'poor', 'none',  NULL,     'any non-lawful'),
-    (2,  'Bard',            8, 'three_quarter',  6, 'poor', 'good', 'good', 'full',  'arcane', 'any'),
-    (3,  'Cleric',          8, 'three_quarter',  2, 'good', 'poor', 'good', 'full',  'divine', 'any'),
-    (4,  'Fighter',        10, 'full',           2, 'good', 'poor', 'poor', 'none',  NULL,     'any'),
-    (5,  'Paladin',        10, 'full',           2, 'good', 'poor', 'poor', 'half',  'divine', 'lawful good'),
-    (6,  'Ranger',         10, 'full',           6, 'good', 'good', 'poor', 'half',  'divine', 'any'),
-    (7,  'Rogue',           8, 'three_quarter',  8, 'poor', 'good', 'poor', 'none',  NULL,     'any'),
-    (8,  'Sorcerer',        6, 'half',           2, 'poor', 'poor', 'good', 'full',  'arcane', 'any'),
-    (9,  'Wizard',          6, 'half',           2, 'poor', 'poor', 'good', 'full',  'arcane', 'any'),
-    (10, 'Monk',            8, 'three_quarter',  4, 'good', 'good', 'good', 'none',  NULL,     'any lawful'),
-    (11, 'Favored Soul',    8, 'three_quarter',  2, 'good', 'poor', 'good', 'full',  'divine', 'any'),
-    (12, 'Artificer',       8, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'arcane', 'any'),
-    (13, 'Druid',           8, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'divine', 'any neutral'),
-    (14, 'Warlock',         6, 'three_quarter',  2, 'poor', 'poor', 'good', 'full',  'arcane', 'any'),
-    (15, 'Alchemist',       6, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'arcane', 'any');
+INSERT OR IGNORE INTO classes (id, name, hit_die, bab_progression, skill_points_per_level, fort_save_progression, ref_save_progression, will_save_progression, caster_type, spell_tradition, alignment, icon) VALUES
+    (1,  'Barbarian',      12, 'full',          4, 'good', 'poor', 'poor', 'none',  NULL,     'any non-lawful', 'Barbarian.png'),
+    (2,  'Bard',            8, 'three_quarter',  6, 'poor', 'good', 'good', 'full',  'arcane', 'any',            'Bard.png'),
+    (3,  'Cleric',          8, 'three_quarter',  2, 'good', 'poor', 'good', 'full',  'divine', 'any',            'Cleric.png'),
+    (4,  'Fighter',        10, 'full',           2, 'good', 'poor', 'poor', 'none',  NULL,     'any',            'Fighter.png'),
+    (5,  'Paladin',        10, 'full',           2, 'good', 'poor', 'poor', 'half',  'divine', 'lawful good',    'Paladin.png'),
+    (6,  'Ranger',         10, 'full',           6, 'good', 'good', 'poor', 'half',  'divine', 'any',            'Ranger.png'),
+    (7,  'Rogue',           8, 'three_quarter',  8, 'poor', 'good', 'poor', 'none',  NULL,     'any',            'Rogue.png'),
+    (8,  'Sorcerer',        6, 'half',           2, 'poor', 'poor', 'good', 'full',  'arcane', 'any',            'Sorcerer.png'),
+    (9,  'Wizard',          6, 'half',           2, 'poor', 'poor', 'good', 'full',  'arcane', 'any',            'Wizard.png'),
+    (10, 'Monk',            8, 'three_quarter',  4, 'good', 'good', 'good', 'none',  NULL,     'any lawful',     'Monk.png'),
+    (11, 'Favored Soul',    8, 'three_quarter',  2, 'good', 'poor', 'good', 'full',  'divine', 'any',            'Favored Soul.png'),
+    (12, 'Artificer',       8, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'arcane', 'any',            'Artificer.png'),
+    (13, 'Druid',           8, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'divine', 'any neutral',    'Druid.png'),
+    (14, 'Warlock',         6, 'three_quarter',  2, 'poor', 'poor', 'good', 'full',  'arcane', 'any',            'Warlock.png'),
+    (15, 'Alchemist',       6, 'three_quarter',  4, 'good', 'poor', 'good', 'full',  'arcane', 'any',            'Alchemist.png');
 
 -- Archetypes (modify a base class; inherit most stats from parent)
 INSERT OR IGNORE INTO classes (id, name, parent_class_id, is_archetype) VALUES
@@ -950,38 +950,38 @@ INSERT OR IGNORE INTO classes (id, name, parent_class_id, is_archetype) VALUES
     (25, 'Acolyte of the Skin',14, 1);   -- Warlock archetype
 
 -- Races (standard + iconic)
-INSERT OR IGNORE INTO races (id, name, race_type) VALUES
+INSERT OR IGNORE INTO races (id, name, race_type, icon) VALUES
     -- Free races
-    (1,  'Human',         'free'),
-    (2,  'Elf',           'free'),
-    (3,  'Dwarf',         'free'),
-    (4,  'Halfling',      'free'),
-    (5,  'Warforged',     'free'),
-    (6,  'Drow Elf',      'free'),
-    (7,  'Half-Elf',      'free'),
-    (8,  'Half-Orc',      'free'),
-    (9,  'Gnome',         'free'),
-    (10, 'Dragonborn',    'free'),
-    (11, 'Tiefling',      'free'),
-    (12, 'Wood Elf',      'free'),
+    (1,  'Human',         'free',    'HumanIcon.png'),
+    (2,  'Elf',           'free',    'ElfIcon.png'),
+    (3,  'Dwarf',         'free',    'Dwarf_race_icon.png'),
+    (4,  'Halfling',      'free',    'HalflingIcon.png'),
+    (5,  'Warforged',     'free',    'Warforged_race_icon.png'),
+    (6,  'Drow Elf',      'free',    'DrowTree.png'),
+    (7,  'Half-Elf',      'free',    'Half-Elf_race_icon.png'),
+    (8,  'Half-Orc',      'free',    'Half-Orc_race_icon.png'),
+    (9,  'Gnome',         'free',    'Gnome_race_icon.png'),
+    (10, 'Dragonborn',    'free',    'Dragonborn_race_icon.png'),
+    (11, 'Tiefling',      'free',    'Tiefling_race_icon.png'),
+    (12, 'Wood Elf',      'free',    NULL),
     -- Premium races
-    (13, 'Aasimar',       'premium'),
-    (14, 'Tabaxi',        'premium'),
-    (15, 'Shifter',       'premium'),
-    (16, 'Eladrin',       'premium'),
-    (17, 'Dhampir',       'premium'),
+    (13, 'Aasimar',       'premium', 'Aasimar_race_icon.png'),
+    (14, 'Tabaxi',        'premium', 'Tabaxi_race_icon.png'),
+    (15, 'Shifter',       'premium', 'Shifter_race_icon.png'),
+    (16, 'Eladrin',       'premium', 'Eladrin_race_icon.png'),
+    (17, 'Dhampir',       'premium', 'Dhampir_race_icon.png'),
     -- Iconic races (start at class level, have a parent base race)
-    (18, 'Bladeforged',          'iconic'),
-    (19, 'Purple Dragon Knight', 'iconic'),
-    (20, 'Morninglord',          'iconic'),
-    (21, 'Shadar-kai',           'iconic'),
-    (22, 'Deep Gnome',           'iconic'),
-    (23, 'Aasimar Scourge',      'iconic'),
-    (24, 'Razorclaw Shifter',    'iconic'),
-    (25, 'Tiefling Scoundrel',   'iconic'),
-    (26, 'Tabaxi Trailblazer',   'iconic'),
-    (27, 'Eladrin Chaosmancer',  'iconic'),
-    (28, 'Dhampir Dark Bargainer','iconic');
+    (18, 'Bladeforged',          'iconic', 'Bladeforged_race_icon.png'),
+    (19, 'Purple Dragon Knight', 'iconic', 'Purple_Dragon_Knight_race_icon.png'),
+    (20, 'Morninglord',          'iconic', 'Morninglord_race_icon.png'),
+    (21, 'Shadar-kai',           'iconic', NULL),
+    (22, 'Deep Gnome',           'iconic', 'Deep_Gnome_race_icon.png'),
+    (23, 'Aasimar Scourge',      'iconic', 'Aasimar_Scourge_race_icon.png'),
+    (24, 'Razorclaw Shifter',    'iconic', 'Razorclaw_Shifter_race_icon.png'),
+    (25, 'Tiefling Scoundrel',   'iconic', 'Tiefling_Scoundrel_race_icon.png'),
+    (26, 'Tabaxi Trailblazer',   'iconic', 'Tabaxi_Trailblazer_race_icon.png'),
+    (27, 'Eladrin Chaosmancer',  'iconic', 'Eladrin_Chaosmancer_race_icon.png'),
+    (28, 'Dhampir Dark Bargainer','iconic', NULL);
 
 -- Bonus types (stacks_with_self=1 means same-type bonuses from different sources stack)
 INSERT OR IGNORE INTO bonus_types (id, name, stacks_with_self) VALUES
