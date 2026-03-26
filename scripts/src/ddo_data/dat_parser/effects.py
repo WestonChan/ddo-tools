@@ -160,7 +160,6 @@ _SAVE_TEMPLATE_RE = re.compile(
 # Save abbreviations
 _SAVE_ABBREVS: dict[str, str] = {
     "e": "Enchantment Save",
-    "i": "Illusion Save",
     "s": "Sleep Save",
     "a": "Saving Throws",
     "all": "Saving Throws",
