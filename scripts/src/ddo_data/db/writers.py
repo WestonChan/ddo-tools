@@ -203,6 +203,37 @@ def _normalize_stat_name(raw: str) -> list[str]:
         "armor class": "Armor Class",
         "critical range": "Critical Threat Range",
         "attack speed": "Attack Speed",
+        # Set bonus common aliases
+        "mrr cap": "Magical Resistance Rating Cap",
+        "magical resistance rating cap": "Magical Resistance Rating Cap",
+        "prr and mrr": "Physical and Magical Resistance Rating",
+        "negative amplification": "Negative Healing Amplification",
+        "positive amplification": "Positive Healing Amplification",
+        "repair amplification": "Repair Amplification",
+        "threat generation": "Threat Generation",
+        "melee threat generation": "Melee Threat Generation",
+        "threat reduction": "Threat Reduction",
+        "all spell dcs": "Universal Spell Focus",
+        "all tactical dcs": "Tactics",
+        "all tactical dcs and assassinate": "Tactics",
+        "tactical feat dcs": "Tactics",
+        "tactical abilities": "Tactics",
+        "all saving throws": "Saving Throws",
+        "missile deflection": "Missile Deflection",
+        "offhand strike chance": "Offhand Strike Chance",
+        "strikethrough chance": "Strikethrough",
+        "critical multiplier on a roll of 19-20": "Critical Multiplier",
+        "shield armor class": "Shield Armor Class",
+        "rune arm dcs": "Rune Arm DC",
+        "assassinate dcs": "Assassinate DC",
+        "dodge cap": "Dodge Cap",
+        "helplessness damage": "Helpless Damage",
+        "damage vs. helpless opponents": "Helpless Damage",
+        "damage vs the helpless": "Helpless Damage",
+        "damage versus the helpless": "Helpless Damage",
+        "damage vs. helpless": "Helpless Damage",
+        "attack and damage": "Attack Bonus",
+        "all ability scores": "all ability scores",  # handled by composite split
     }
     lower = s.lower()
     if lower in _ALIASES:
@@ -269,6 +300,14 @@ def _normalize_stat_name(raw: str) -> list[str]:
             "Melee Power", "Ranged Power",
         ] + _ALL_SPELL_POWERS,
         "additional damage to helpless targets": ["Helpless Damage"],
+        # Multi-element spell power/lore/crit
+        "intelligence, wisdom, and charisma": ["Intelligence", "Wisdom", "Charisma"],
+        "int/wis/cha": ["Intelligence", "Wisdom", "Charisma"],
+        "melee power/ranged power": ["Melee Power", "Ranged Power"],
+        "mrr/prr": ["Magical Resistance Rating", "Physical Resistance Rating"],
+        "spell saves": ["Spell Resistance"],
+        "sneak attack and sneak attack damage": ["Sneak Attack Dice"],
+        "critical confirmation and critical damage": ["Critical Confirmation"],
         # Potency / Universal = split into all elements.
         # Stacking is handled by bonus_type, not stat identity.
         "potency": _ALL_SPELL_POWERS,
@@ -281,13 +320,40 @@ def _normalize_stat_name(raw: str) -> list[str]:
     if lower in _COMPOSITE_SPLITS:
         return _COMPOSITE_SPLITS[lower]
 
+    # Comma-separated list: "Fire, Cold, Acid, and Electric Spell Critical Chance"
+    # or "Light, Alignment, and Positive Spellcrit Chance"
+    comma_match = re.match(
+        r"((?:\w+,\s*)+(?:and\s+)?\w+)\s+(Spell (?:Power|Crit(?:ical)? Chance|Lore)|"
+        r"Spellcrit Chance|Spellpower|Absorption|Amplification|Resistance)", s,
+    )
+    if comma_match:
+        elements_str = comma_match.group(1).strip()
+        suffix = comma_match.group(2).strip()
+        # Normalize suffix
+        suffix = suffix.replace("Spellcrit Chance", "Spell Lore")
+        suffix = suffix.replace("Spell Crit Chance", "Spell Lore")
+        suffix = suffix.replace("Spell Critical Chance", "Spell Lore")
+        suffix = suffix.replace("Spellpower", "Spell Power")
+        # Split elements
+        elements = [e.strip().rstrip(",") for e in re.split(r",\s*(?:and\s+)?|\s+and\s+", elements_str)]
+        elements = [e for e in elements if e]
+        if elements:
+            return [f"{e} {suffix}" for e in elements]
+
     # Generic composite: "X and Y <suffix>" where suffix applies to both
-    and_match = re.match(r"(.+?)\s+and\s+(.+?)(\s+Spell (?:Power|Critical Damage|Lore)|\s+Resistance)?$", s)
+    and_match = re.match(
+        r"(.+?)\s+and\s+(.+?)"
+        r"(\s+Spell (?:Power|Critical Damage|Lore|Crit Chance)"
+        r"|\s+Spellcrit Chance|\s+Spellpower|\s+Resistance|\s+Amplification)?$",
+        s,
+    )
     if and_match:
         left = and_match.group(1).strip()
         right = and_match.group(2).strip()
         suffix = (and_match.group(3) or "").strip()
         if suffix:
+            suffix = suffix.replace("Spellcrit Chance", "Spell Lore")
+            suffix = suffix.replace("Spellpower", "Spell Power")
             return [f"{left} {suffix}", f"{right} {suffix}"]
         # No shared suffix — just two separate stats
         return [left, right]

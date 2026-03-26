@@ -899,7 +899,7 @@ def parse_enchantment_string(text: str) -> dict | None:
             bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
             return {"value": value, "bonus_type": bonus_type, "stat": stat}
 
-    # Fallback: plain text "+7 Enhancement bonus to Strength"
+    # Fallback: plain text "+7 Enhancement bonus to Strength" or "+15% Artifact bonus to X"
     match = _ENCHANTMENT_RE.match(text)
     if match:
         value = int(match.group(1))
@@ -907,6 +907,41 @@ def parse_enchantment_string(text: str) -> dict | None:
         stat = match.group(3).strip()
         bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
         return {"value": value, "bonus_type": bonus_type, "stat": stat}
+
+    # Extended: handles +N% and "Bonus" (capital B)
+    pct_bonus = re.match(
+        r"[+-]?(\d+)%?\s+(\w+)\s+[Bb]onus\s+to\s+(.+)",
+        text, re.IGNORECASE,
+    )
+    if pct_bonus:
+        value = int(pct_bonus.group(1))
+        raw_bonus_type = pct_bonus.group(2).strip()
+        stat = pct_bonus.group(3).strip().rstrip(".")
+        bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
+        return {"value": value, "bonus_type": bonus_type, "stat": stat}
+
+    # Last resort: "+N Stat" without "bonus to" (e.g., "+3 Artifact bonus to all Saving Throws (all tier)")
+    simple = re.match(r"[+-]?(\d+)%?\s+(.+)", text)
+    if simple:
+        value_str = simple.group(1)
+        rest = simple.group(2).strip()
+        value = int(value_str)
+        # Try to extract bonus type from first word
+        words = rest.split()
+        if len(words) >= 2 and words[0] in _BONUS_TYPE_ALIASES:
+            bonus_type = _BONUS_TYPE_ALIASES[words[0]]
+            stat = " ".join(words[1:]).strip().rstrip(".")
+        elif len(words) >= 2 and words[0][0].isupper():
+            # Guess first word is bonus type
+            bonus_type = _BONUS_TYPE_ALIASES.get(words[0], words[0])
+            stat = " ".join(words[1:]).strip().rstrip(".")
+        else:
+            bonus_type = "Enhancement"
+            stat = rest.strip().rstrip(".")
+        # Clean trailing parentheticals like "(all tier)"
+        stat = re.sub(r"\s*\(.*?\)\s*$", "", stat).strip()
+        if stat:
+            return {"value": value, "bonus_type": bonus_type, "stat": stat}
 
     return None
 

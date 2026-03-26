@@ -940,7 +940,25 @@ INSERT OR IGNORE INTO stats (id, name, category) VALUES
     (183, 'Positive Spell Lore',           'magical'),
     (184, 'Negative Spell Lore',           'magical'),
     (185, 'Force Spell Lore',              'magical'),
-    (186, 'Repair Spell Lore',             'magical');
+    (186, 'Repair Spell Lore',             'magical'),
+    -- Set bonus stats
+    (187, 'Magical Resistance Rating Cap', 'defensive'),
+    (188, 'Threat Generation',             'martial'),
+    (189, 'Melee Threat Generation',       'martial'),
+    (190, 'Threat Reduction',              'martial'),
+    (191, 'Missile Deflection',            'defensive'),
+    (192, 'Offhand Strike Chance',         'martial'),
+    (193, 'Strikethrough',                 'martial'),
+    (194, 'Critical Multiplier',           'martial'),
+    (195, 'Shield Armor Class',            'defensive'),
+    (196, 'Rune Arm DC',                   'magical'),
+    (197, 'Assassinate DC',                'martial'),
+    (198, 'Tactics',                        'martial'),
+    (199, 'Dodge Cap',                     'defensive'),
+    (200, 'Critical Confirmation',         'martial'),
+    (201, 'Spell Critical Damage',         'magical'),
+    (202, 'Maximum Spell Points',          'magical'),
+    (203, 'Armor Class Percentage',        'defensive');
 
 -- Skills (key_ability_id references stats above)
 INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES
