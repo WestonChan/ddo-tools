@@ -171,7 +171,7 @@ _SAVE_ABBREVS: dict[str, str] = {
     "ref": "Reflex Save",
     "fortitude": "Fortitude Save",
     "reflex": "Reflex Save",
-    "spell": "Spell Save",
+    "spell": "Spell Resistance",
     "enchantment": "Enchantment Save",
     "illusion": "Illusion Save",
     "fear": "Fear Save",
@@ -318,6 +318,7 @@ _HEALINGAMP_RE = re.compile(
 
 # Spell power display names → stat table names
 _SPELLPOWER_STATS: dict[str, str] = {
+    # Standard DDO spell power names
     "Devotion": "Positive Spell Power",
     "Impulse": "Force Spell Power",
     "Combustion": "Fire Spell Power",
@@ -329,8 +330,49 @@ _SPELLPOWER_STATS: dict[str, str] = {
     "Nullification": "Negative Spell Power",
     "Reconstruction": "Repair Spell Power",
     "Potency": "Universal Spell Power",
-    "Devotion,Heal": "Positive Spell Power",  # alternate form
-    "Universal Spell Power": "Universal Spell Power",  # prevent double "Spell Power"
+    "Devotion,Heal": "Positive Spell Power",
+    "Universal Spell Power": "Universal Spell Power",
+    # Lowercase variants
+    "corrosion": "Acid Spell Power",
+    "combustion": "Fire Spell Power",
+    "glaciation": "Cold Spell Power",
+    "magnetism": "Electric Spell Power",
+    "resonance": "Sonic Spell Power",
+    "radiance": "Light Spell Power",
+    "devotion": "Positive Spell Power",
+    "nullification": "Negative Spell Power",
+    "impulse": "Force Spell Power",
+    "potency": "Universal Spell Power",
+    "reconstruction": "Repair Spell Power",
+}
+
+# Named set spell powers/lore that affect MULTIPLE elements (composite).
+# These can't be stored as a single stat — the writer should split them.
+# Format: name -> list of stat names
+COMPOSITE_SPELLPOWER: dict[str, list[str]] = {
+    "Power of the Silver Flame": ["Light Spell Power", "Positive Spell Power"],
+    "Power of the Frozen Depths": ["Cold Spell Power"],
+    "Power of the Firestorm": ["Fire Spell Power"],
+    "Power of the Flames of Purity": ["Light Spell Power", "Positive Spell Power"],
+    "Power of the Blight": ["Acid Spell Power", "Negative Spell Power"],
+    "Power of Creeping Dust": ["Acid Spell Power"],
+    "Power of the Frozen Storm": ["Cold Spell Power"],
+    "Power of the Thunderstorm": ["Electric Spell Power", "Sonic Spell Power"],
+    "Power of the Dark Restoration": ["Negative Spell Power"],
+    "Power of the Sacred Ground": ["Positive Spell Power"],
+}
+
+COMPOSITE_SPELLLORE: dict[str, list[str]] = {
+    "Silver Flame": ["Light Spell Lore", "Positive Spell Lore"],
+    "Frozen Depths": ["Cold Spell Lore"],
+    "Firestorm": ["Fire Spell Lore"],
+    "Flames of Purity": ["Light Spell Lore", "Positive Spell Lore"],
+    "Blighted": ["Acid Spell Lore", "Negative Spell Lore"],
+    "Creeping Dust": ["Acid Spell Lore"],
+    "Frozen Storm": ["Cold Spell Lore"],
+    "Thunderstorm": ["Electric Spell Lore", "Sonic Spell Lore"],
+    "Dark Restoration": ["Negative Spell Lore"],
+    "Sacred Ground": ["Positive Spell Lore"],
 }
 
 # Wiki element name aliases → canonical seed names
@@ -732,13 +774,29 @@ def parse_enchantment_string(text: str) -> dict | None:
         raw_school = match.group(1).strip()
         value = _parse_int(match.group(2))
         if value is not None:
-            school = _ELEMENT_ALIASES.get(raw_school.lower(), raw_school)
-            if school.lower() in ("spell", "universal", "universal spell"):
-                stat = "Universal Spell Lore"
-            elif school.lower() in ("sacred ground", "dark restoration"):
-                stat = f"{school} Lore"
+            # Named lore → element-based lore
+            _LORE_NAMES: dict[str, str] = {
+                "silver flame": "Light",
+                "frozen depths": "Cold",
+                "firestorm": "Fire",
+                "flames of purity": "Light",
+                "blighted": "Acid",
+                "creeping dust": "Acid",
+                "frozen storm": "Cold",
+                "thunderstorm": "Electric",
+                "dark restoration": "Negative",
+                "sacred ground": "Positive",
+            }
+            school_lower = raw_school.lower()
+            mapped = _LORE_NAMES.get(school_lower)
+            if mapped:
+                stat = f"{mapped} Spell Lore"
             else:
-                stat = f"{school} Spell Lore"
+                school = _ELEMENT_ALIASES.get(school_lower, raw_school)
+                if school.lower() in ("spell", "universal", "universal spell"):
+                    stat = "Universal Spell Lore"
+                else:
+                    stat = f"{school} Spell Lore"
             return {"value": value, "bonus_type": "Enhancement", "stat": stat}
 
     # {{Tactics|Combat Mastery|6|Insight}} → Combat Mastery +6
@@ -790,6 +848,40 @@ def parse_enchantment_string(text: str) -> dict | None:
         return {"value": value, "bonus_type": bonus_type, "stat": stat}
 
     return None
+
+
+def parse_enchantment_string_multi(text: str) -> list[dict]:
+    """Like parse_enchantment_string but returns multiple results for composites.
+
+    Handles:
+    - Named set spell powers that map to multiple elements
+    - Named set spell lore that map to multiple elements
+    - Regular enchantments (returns a 1-element list)
+    - Non-parseable text (returns empty list)
+    """
+    result = parse_enchantment_string(text)
+    if result is None:
+        return []
+
+    stat = result["stat"]
+
+    # Check if the stat is a composite spell power
+    for sp_name, stat_list in COMPOSITE_SPELLPOWER.items():
+        if stat == f"{sp_name} Spell Power":
+            return [
+                {"value": result["value"], "bonus_type": result["bonus_type"], "stat": s}
+                for s in stat_list
+            ]
+
+    # Check if the stat is a composite spell lore
+    for lore_name, stat_list in COMPOSITE_SPELLLORE.items():
+        if stat == f"{lore_name} Spell Lore":
+            return [
+                {"value": result["value"], "bonus_type": result["bonus_type"], "stat": s}
+                for s in stat_list
+            ]
+
+    return [result]
 
 
 # ---------------------------------------------------------------------------

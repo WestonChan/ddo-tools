@@ -75,14 +75,15 @@ def _normalise_handedness(raw: str | None) -> str | None:
     return _HANDEDNESS_MAP.get(raw.strip().lower())
 
 
-def _parse_enchantment(text: str) -> dict | None:
-    """Parse a wiki enchantment string into a structured bonus dict.
+def _parse_enchantment(text: str) -> list[dict]:
+    """Parse a wiki enchantment string into structured bonus dicts.
 
-    Deferred import to avoid circular dependency at module load time.
+    Returns a list (handles composite stats that split into multiple bonuses).
+    Returns empty list if unparseable.
     """
-    from ..dat_parser.effects import parse_enchantment_string
+    from ..dat_parser.effects import parse_enchantment_string_multi
 
-    return parse_enchantment_string(text)
+    return parse_enchantment_string_multi(text)
 
 
 def _parse_effect(text: str) -> dict | None:
@@ -162,6 +163,92 @@ _CLASS_ABBREV: dict[str, str] = {
     "art": "Artificer", "alc": "Alchemist", "wlk": "Warlock", "mnk": "Monk",
     "rog": "Rogue", "ftr": "Fighter", "brb": "Barbarian",
 }
+
+
+def _normalize_stat_name(raw: str) -> list[str]:
+    """Normalize a stat name and split composites into individual stat names.
+
+    Returns a list of stat names (usually 1, but multiple for composites).
+
+    Examples:
+        "Will Saving Throws" -> ["Will Save"]
+        "Positive and Negative Spell Critical Damage" -> ["Positive Spell Critical Damage", "Negative Spell Critical Damage"]
+        "Spellcraft and Use Magic Device" -> ["Spellcraft", "Use Magic Device"]
+        "AC" -> ["Armor Class"]
+        "Conjuration DCs" -> ["Conjuration Spell Focus"]
+        "Fire" -> ["Fire Spell Power"]
+    """
+    s = raw.strip()
+
+    # Direct aliases
+    _ALIASES: dict[str, str] = {
+        "ac": "Armor Class",
+        "hp": "Hit Points",
+        "sp": "Spell Points",
+        "mr": "Magical Resistance Rating",
+        "prr": "Physical Resistance Rating",
+        "mrr": "Magical Resistance Rating",
+    }
+    lower = s.lower()
+    if lower in _ALIASES:
+        return [_ALIASES[lower]]
+
+    # Save normalization: "Will Saving Throws" -> "Will Save", "Fortitude save" -> "Fortitude Save"
+    import re
+    save_match = re.match(r"(Will|Reflex|Fortitude)\s+[Ss]av(?:ing\s+[Tt]hrows?|es?)", s, re.IGNORECASE)
+    if save_match:
+        return [f"{save_match.group(1).title()} Save"]
+
+    # DC normalization: "Conjuration DCs" -> "Conjuration Spell Focus"
+    dc_match = re.match(r"(?:To\s+)?(\w+)\s+DCs?", s, re.IGNORECASE)
+    if dc_match:
+        return [f"{dc_match.group(1).title()} Spell Focus"]
+
+    # Known composite stats → explicit splits
+    _COMPOSITE_SPLITS: dict[str, list[str]] = {
+        "sheltering": ["Physical Sheltering", "Magical Sheltering"],
+        "saving throws": ["Fortitude Save", "Reflex Save", "Will Save"],
+        "melee and ranged power": ["Melee Power", "Ranged Power"],
+        "physical and magical resistance rating": [
+            "Physical Resistance Rating", "Magical Resistance Rating",
+        ],
+        "positive and negative spell power": [
+            "Positive Spell Power", "Negative Spell Power",
+        ],
+        "positive and negative healing amplification": [
+            "Positive Healing Amplification", "Negative Healing Amplification",
+        ],
+        "doublestrike and doubleshot": ["Doublestrike", "Doubleshot"],
+    }
+    if lower in _COMPOSITE_SPLITS:
+        return _COMPOSITE_SPLITS[lower]
+
+    # Generic composite: "X and Y <suffix>" where suffix applies to both
+    and_match = re.match(r"(.+?)\s+and\s+(.+?)(\s+Spell (?:Power|Critical Damage|Lore)|\s+Resistance)?$", s)
+    if and_match:
+        left = and_match.group(1).strip()
+        right = and_match.group(2).strip()
+        suffix = (and_match.group(3) or "").strip()
+        if suffix:
+            return [f"{left} {suffix}", f"{right} {suffix}"]
+        # No shared suffix — just two separate stats
+        return [left, right]
+
+    # Short element name: "Fire" -> "Fire Spell Power" (in enhancement context)
+    _ELEMENT_STATS: set[str] = {
+        "fire", "cold", "electric", "acid", "sonic", "light",
+        "positive", "negative", "force", "repair",
+    }
+    if lower in _ELEMENT_STATS:
+        return [f"{s.title()} Spell Power"]
+
+    # Resistance: "Resistance to Fire" -> "Fire Resistance"
+    resist_match = re.match(r"Resistance to (\w+)", s, re.IGNORECASE)
+    if resist_match:
+        return [f"{resist_match.group(1).title()} Resistance"]
+
+    # No transformation needed
+    return [s]
 
 
 def _ensure_effect(conn: sqlite3.Connection, name: str, modifier: str | None) -> int | None:
@@ -430,27 +517,30 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             if not enchantment:
                 continue
 
-            # 1. Stat bonus → item_bonuses junction
-            parsed = _parse_enchantment(enchantment)
-            if parsed:
-                stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
-                bonus_type_id = _lookup_id(
-                    conn, "bonus_types", "name", "id", parsed["bonus_type"]
-                )
-                bonus_name = f"{parsed['stat']} +{parsed['value']}"
-                bonus_id = _ensure_bonus(
-                    conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
-                    description=enchantment,
-                )
-                conn.execute(
-                    """
-                    INSERT OR IGNORE INTO item_bonuses
-                        (item_id, bonus_id, sort_order, data_source, resolution_method)
-                    VALUES (?, ?, ?, 'wiki', 'wiki_enchantment')
-                    """,
-                    (item_id, bonus_id, pass_a_count + bonus_offset),
-                )
-                bonus_offset += 1
+            # 1. Stat bonus → item_bonuses junction (supports composite stats)
+            parsed_list = _parse_enchantment(enchantment)
+            if parsed_list:
+                for parsed in parsed_list:
+                    normalized = _normalize_stat_name(parsed["stat"])
+                    for norm_stat in normalized:
+                        stat_id = _lookup_id(conn, "stats", "name", "id", norm_stat)
+                        bonus_type_id = _lookup_id(
+                            conn, "bonus_types", "name", "id", parsed["bonus_type"]
+                        )
+                        bonus_name = f"{norm_stat} +{parsed['value']}"
+                        bonus_id = _ensure_bonus(
+                            conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
+                            description=enchantment,
+                        )
+                        conn.execute(
+                            """
+                            INSERT OR IGNORE INTO item_bonuses
+                                (item_id, bonus_id, sort_order, data_source, resolution_method)
+                            VALUES (?, ?, ?, 'wiki', 'wiki_enchantment')
+                            """,
+                            (item_id, bonus_id, pass_a_count + bonus_offset),
+                        )
+                        bonus_offset += 1
                 continue
 
             # 2. Weapon/armor effect → item_effects table
@@ -541,17 +631,19 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
         inserted += 1
         for sort_order, bonus in enumerate(set_data.get("bonuses", [])):
             bonus_text = bonus["text"]
-            parsed = _parse_enchantment(bonus_text)
-            if parsed:
-                stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
-                bonus_type_id = _lookup_id(
-                    conn, "bonus_types", "name", "id", parsed["bonus_type"],
-                )
-                bonus_name = f"{parsed['stat']} +{parsed['value']}"
-                bonus_id = _ensure_bonus(
-                    conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
-                    description=bonus_text,
-                )
+            parsed_list = _parse_enchantment(bonus_text)
+            if parsed_list:
+                for parsed in parsed_list:
+                    for norm_stat in _normalize_stat_name(parsed["stat"]):
+                        stat_id = _lookup_id(conn, "stats", "name", "id", norm_stat)
+                        bonus_type_id = _lookup_id(
+                            conn, "bonus_types", "name", "id", parsed["bonus_type"],
+                        )
+                        bonus_name = f"{norm_stat} +{parsed['value']}"
+                        bonus_id = _ensure_bonus(
+                            conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
+                            description=bonus_text,
+                        )
             else:
                 bonus_id = _ensure_bonus(conn, bonus_text, None, None, None, description=bonus_text)
             conn.execute(
@@ -622,25 +714,26 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
         for sort_order, enchantment in enumerate(augment.get("enchantments") or []):
             if not enchantment:
                 continue
-            parsed = _parse_enchantment(enchantment)
-            if parsed:
-                stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
-                bonus_type_id = _lookup_id(
-                    conn, "bonus_types", "name", "id", parsed["bonus_type"]
-                )
-                bonus_name = f"{parsed['stat']} +{parsed['value']}"
-                bonus_id = _ensure_bonus(
-                    conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
-                    description=enchantment,
-                )
-                conn.execute(
-                    """
-                    INSERT OR IGNORE INTO augment_bonuses
-                        (augment_id, bonus_id, sort_order, data_source, resolution_method)
-                    VALUES (?, ?, ?, 'wiki', 'wiki_enchantment')
-                    """,
-                    (augment_id, bonus_id, sort_order),
-                )
+            parsed_list = _parse_enchantment(enchantment)
+            for parsed in parsed_list:
+                for norm_stat in _normalize_stat_name(parsed["stat"]):
+                    stat_id = _lookup_id(conn, "stats", "name", "id", norm_stat)
+                    bonus_type_id = _lookup_id(
+                        conn, "bonus_types", "name", "id", parsed["bonus_type"]
+                    )
+                    bonus_name = f"{norm_stat} +{parsed['value']}"
+                    bonus_id = _ensure_bonus(
+                        conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
+                        description=enchantment,
+                    )
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO augment_bonuses
+                            (augment_id, bonus_id, sort_order, data_source, resolution_method)
+                        VALUES (?, ?, ?, 'wiki', 'wiki_enchantment')
+                        """,
+                        (augment_id, bonus_id, sort_order),
+                    )
 
         # Binary bonuses from effect_ref localization names
         for sort_order_b, bb in enumerate(augment.get("_binary_bonuses") or []):

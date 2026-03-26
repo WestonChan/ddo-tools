@@ -917,7 +917,20 @@ INSERT OR IGNORE INTO stats (id, name, category) VALUES
     -- Tactics (from {{Tactics}} template)
     (164, 'Shatter',                       'martial'),
     (165, 'Prudent',                        'martial'),
-    (166, 'Astute',                         'martial');
+    (166, 'Astute',                         'martial'),
+    -- Elemental resistance (from {{Elemental Resistance}} template)
+    (167, 'Negative Energy Resistance',    'defensive'),
+    (168, 'Elemental Resistance',          'defensive'),
+    -- Save subtypes (from {{Save}} template)
+    (169, 'Enchantment Save',              'defensive'),
+    (170, 'Illusion Save',                 'defensive'),
+    (171, 'Fear Save',                     'defensive'),
+    (172, 'Poison Save',                   'defensive'),
+    (173, 'Disease Save',                  'defensive'),
+    (174, 'Curse Save',                    'defensive'),
+    (175, 'Sleep Save',                    'defensive'),
+    (176, 'Trap Save',                     'defensive'),
+    (177, 'Spell Save',                    'defensive');
 
 -- Skills (key_ability_id references stats above)
 INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES
