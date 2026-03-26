@@ -1419,8 +1419,15 @@ def insert_class_progression(
                 if not feat_name_clean:
                     continue
 
-                # Bonus feat slots
-                if "bonus feat" in feat_name_clean.lower():
+                # Bonus feat slots — detect various patterns:
+                # "Fighter bonus feats", "Wizard bonus feat", "Martial Arts Feat",
+                # "Artificer bonus feat", "Warlock bonus feat"
+                fn_lower = feat_name_clean.lower()
+                is_bonus_slot = (
+                    "bonus feat" in fn_lower
+                    or fn_lower == "martial arts feat"
+                )
+                if is_bonus_slot:
                     cursor.execute(
                         """INSERT OR IGNORE INTO class_bonus_feat_slots
                            (class_id, class_level, sort_order, feat_category)

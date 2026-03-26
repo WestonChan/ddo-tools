@@ -974,6 +974,7 @@ INSERT OR IGNORE INTO bonus_types (id, name, stacks_with_self) VALUES
     (18, 'Exceptional',   0),
     (19, 'Quality',       0),
     (20, 'Artifact',      0),
+    (21, 'Inherent',      0),
     (22, 'Stacking',      1),  -- explicitly stacking bonuses
     (23, 'Rage',          0),
     (24, 'Primal',        0),

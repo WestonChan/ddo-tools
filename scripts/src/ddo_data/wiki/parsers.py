@@ -589,7 +589,8 @@ def _parse_wiki_table_advancement(wikitext: str) -> list[dict[str, Any]]:
             continue
         header_found = True
         for i, raw in enumerate(cells):
-            cl = raw.lower().strip()
+            # Strip wiki style attrs like "width=100|..." before matching
+            cl = re.sub(r'^[^|]*\|', '', raw).lower().strip()
             if cl == "level":
                 header_idx["level"] = i
             elif "base attack" in cl or cl == "bab":
@@ -600,9 +601,9 @@ def _parse_wiki_table_advancement(wikitext: str) -> list[dict[str, Any]]:
                 header_idx["ref"] = i
             elif "will" in cl:
                 header_idx["will"] = i
-            elif "special" in cl:
+            elif "special" in cl or "auto-granted" in cl or "granted feat" in cl:
                 header_idx["special"] = i
-            elif "spell point" in cl or "sp" == cl:
+            elif "spell point" in cl or cl == "sp":
                 header_idx["sp"] = i
             else:
                 # Check for spell level headers like "1st", "2nd", ... "9th"
@@ -665,12 +666,22 @@ def _parse_wiki_table_advancement(wikitext: str) -> list[dict[str, Any]]:
                 entry["sp"] = sp_val
 
         # Spell slots (keyed by header-identified spell level)
+        # Handle "N+M" format (base + bonus slots) by summing
         spell_slots = {}
         for col_idx, spell_level in spell_slot_cols.items():
             if col_idx < len(cells):
-                parsed = _parse_int(cells[col_idx].strip())
-                if parsed is not None and parsed > 0:
-                    spell_slots[spell_level] = parsed
+                cell_text = cells[col_idx].strip()
+                # Handle "2+2" format: sum the parts
+                parts = cell_text.split("+")
+                total = 0
+                valid = False
+                for part in parts:
+                    p = _parse_int(part.strip())
+                    if p is not None:
+                        total += p
+                        valid = True
+                if valid and total > 0:
+                    spell_slots[spell_level] = total
         if spell_slots:
             entry["spell_slots"] = spell_slots
 
