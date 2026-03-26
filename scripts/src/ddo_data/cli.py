@@ -817,10 +817,11 @@ def build_db(
                 continue
             click.echo(f"  {count:,} {data_type} inserted")
 
-    # Second-pass: fetch missing icons for items with wiki_url
+    # Second-pass: fetch missing icons
     click.echo("Fixing missing icons...")
     with GameDB(output) as db:
         _fix_missing_item_icons(db.conn, client)
+        _resolve_race_class_icons(db.conn, client)
 
     click.echo(f"Database written to {output}")
 
@@ -828,6 +829,71 @@ def build_db(
     with GameDB(output) as db:
         report = db.validate()
         click.echo(f"\n{report}")
+
+
+def _resolve_race_class_icons(
+    conn: "sqlite3.Connection",
+    client: "WikiClient",
+) -> None:
+    """Resolve race and class icons via MediaWiki allimages API.
+
+    For races: searches for ``<Name>_race_icon.png`` (or .jpg).
+    For classes: searches for ``<Name>.png``.
+    Only updates rows where icon IS NULL (doesn't overwrite seed values).
+    """
+    import json
+    import logging
+    import sqlite3
+    from urllib.parse import quote
+    from urllib.request import urlopen
+
+    logger = logging.getLogger(__name__)
+
+    def _find_wiki_image(search_prefix: str) -> str | None:
+        """Search MediaWiki allimages API for a file starting with prefix."""
+        url = (
+            f"https://ddowiki.com/api.php?action=query&list=allimages"
+            f"&aifrom={quote(search_prefix)}&ailimit=5&format=json"
+        )
+        try:
+            resp = urlopen(url, timeout=10)
+            data = json.loads(resp.read())
+            for img in data.get("query", {}).get("allimages", []):
+                name = img["name"]
+                if name.lower().startswith(search_prefix.lower()):
+                    return name
+        except Exception:
+            pass
+        return None
+
+    fixed = 0
+
+    # Races: search for <Name>_race_icon
+    for row in conn.execute("SELECT id, name FROM races WHERE icon IS NULL"):
+        race_id, name = row
+        clean = name.replace(" ", "_")
+        # Try _race_icon.png first, then broader search
+        icon = _find_wiki_image(f"{clean}_race_icon")
+        if not icon:
+            # Try without underscores for hyphenated names
+            icon = _find_wiki_image(f"{name}_race_icon")
+        if icon:
+            conn.execute("UPDATE races SET icon = ? WHERE id = ?", (icon, race_id))
+            fixed += 1
+
+    # Classes: search for <Name>.png (base classes only)
+    for row in conn.execute(
+        "SELECT id, name FROM classes WHERE icon IS NULL AND is_archetype = 0"
+    ):
+        class_id, name = row
+        icon = _find_wiki_image(name)
+        if icon and icon.lower() == f"{name.lower()}.png":
+            conn.execute("UPDATE classes SET icon = ? WHERE id = ?", (icon, class_id))
+            fixed += 1
+
+    conn.commit()
+    if fixed:
+        logger.info("Resolved %d race/class icons via wiki API", fixed)
 
 
 @cli.command(name="validate-db")

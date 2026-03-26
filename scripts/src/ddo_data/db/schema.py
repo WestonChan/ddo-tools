@@ -951,7 +951,7 @@ INSERT OR IGNORE INTO classes (id, name, parent_class_id, is_archetype) VALUES
 
 -- Races (standard + iconic)
 INSERT OR IGNORE INTO races (id, name, race_type, icon) VALUES
-    -- Free races
+    -- Free races (icons resolved at build time via MediaWiki allimages API)
     (1,  'Human',         'free',    'Human_race_icon.png'),
     (2,  'Elf',           'free',    'Elf_race_icon.png'),
     (3,  'Dwarf',         'free',    'Dwarf_race_icon.png'),
