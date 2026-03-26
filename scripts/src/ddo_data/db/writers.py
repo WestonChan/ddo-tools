@@ -273,6 +273,16 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             else:
                 continue
 
+        # Skip binary-only entries without equipment_slot — these are enchantment
+        # effects, quest rewards, and crafting materials miscategorized as gear.
+        # Keep items from wiki (wiki_url set) or with explicit equipment_slot.
+        # Also keep items without dat_id (test/manual items).
+        has_slot = bool(item.get("equipment_slot"))
+        has_wiki = bool(item.get("wiki_url"))
+        is_binary_only = bool(item.get("dat_id")) and not has_wiki
+        if is_binary_only and not has_slot:
+            continue
+
         # Resolve slot_id FK from equipment_slot name (set by EQUIPMENT_SLOTS enum)
         equipment_slot = item.get("equipment_slot")
         slot_id = _lookup_id(conn, "equipment_slots", "name", "id", equipment_slot)
