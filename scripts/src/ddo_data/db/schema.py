@@ -892,7 +892,32 @@ INSERT OR IGNORE INTO stats (id, name, category) VALUES
     (142, 'Temporary Hit Points',           'defensive'),
     (143, 'Bard Songs',                     'other'),
     (144, 'Movement Speed',                 'other'),
-    (145, 'Maximum Hit Points',             'defensive');
+    (145, 'Maximum Hit Points',             'defensive'),
+    -- Absorption stats (from {{Absorption}} wiki template)
+    (146, 'Fire Absorption',               'defensive'),
+    (147, 'Cold Absorption',               'defensive'),
+    (148, 'Electric Absorption',           'defensive'),
+    (149, 'Acid Absorption',               'defensive'),
+    (150, 'Sonic Absorption',              'defensive'),
+    (151, 'Light Absorption',              'defensive'),
+    (152, 'Negative Energy Absorption',    'defensive'),
+    (153, 'Law Absorption',                'defensive'),
+    (154, 'Chaos Absorption',              'defensive'),
+    (155, 'Good Absorption',               'defensive'),
+    (156, 'Evil Absorption',               'defensive'),
+    (157, 'Elemental Absorption',          'defensive'),
+    (158, 'Alignment Absorption',          'defensive'),
+    (159, 'Spell Absorption',              'defensive'),
+    (160, 'Curse Absorption',              'defensive'),
+    -- Save (from {{Save}} template)
+    (161, 'Saving Throws',                 'defensive'),
+    -- Spell Focus (from {{Spell Focus}} template)
+    (162, 'Universal Spell Focus',         'magical'),
+    (163, 'Breath Weapon Spell Focus',     'magical'),
+    -- Tactics (from {{Tactics}} template)
+    (164, 'Shatter',                       'martial'),
+    (165, 'Prudent',                        'martial'),
+    (166, 'Astute',                         'martial');
 
 -- Skills (key_ability_id references stats above)
 INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES

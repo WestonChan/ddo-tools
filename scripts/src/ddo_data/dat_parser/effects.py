@@ -159,6 +159,9 @@ _SAVE_TEMPLATE_RE = re.compile(
 
 # Save abbreviations
 _SAVE_ABBREVS: dict[str, str] = {
+    "e": "Saving Throws",
+    "a": "Saving Throws",
+    "all": "Saving Throws",
     "f": "Fortitude Save",
     "r": "Reflex Save",
     "w": "Will Save",
@@ -169,6 +172,11 @@ _SAVE_ABBREVS: dict[str, str] = {
     "reflex": "Reflex Save",
     "spell": "Spell Resistance",
     "enchantment": "Enchantment Save",
+    "illusion": "Illusion Save",
+    "fear": "Fear Save",
+    "poison": "Poison Save",
+    "disease": "Disease Save",
+    "trap": "Trap Save",
     "curse": "Curse Save",
 }
 
@@ -183,7 +191,16 @@ _STAT_NAMES_FOR_TYPE17: frozenset[str] = frozenset({
 # Skill abbreviations used in {{Skills}} templates
 _SKILL_ABBREVS: dict[str, str] = {
     "intim": "Intimidate",
+    "intimidate": "Intimidate",
     "haggle": "Haggle",
+    # Ability abbreviations sometimes appear in {{Skills}} template
+    "str": "Strength",
+    "dex": "Dexterity",
+    "con": "Constitution",
+    "int": "Intelligence",
+    "wis": "Wisdom",
+    "cha": "Charisma",
+    "command": "Intimidate",  # Command is DDO alias for Intimidate DC
     "concentration": "Concentration",
     "spellcraft": "Spellcraft",
     "spot": "Spot",
@@ -324,6 +341,21 @@ _ELEMENT_ALIASES: dict[str, str] = {
     "radiance": "Light",
     "chaos": "Force",
     "electricity": "Electric",
+    "electrical": "Electric",
+    "elemental": "Elemental",
+    "spell": "Spell",
+    "negative energy": "Negative Energy",
+    "negative": "Negative Energy",
+    "alignment": "Alignment",
+    "law": "Law",
+    "cold": "Cold",
+    "fire": "Fire",
+    "acid": "Acid",
+    "sonic": "Sonic",
+    "light": "Light",
+    "good": "Good",
+    "evil": "Evil",
+    "curse": "Curse",
 }
 
 
@@ -583,6 +615,9 @@ def parse_enchantment_string(text: str) -> dict | None:
         value = _parse_int(match.group(2))
         if value is not None:
             raw_bonus_type = (match.group(3) or "Enhancement").strip()
+            # Filter wiki metadata params (nocat=TRUE, etc.)
+            if "=" in raw_bonus_type:
+                raw_bonus_type = "Enhancement"
             bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
             stat = _SPELLPOWER_STATS.get(sp_name, f"{sp_name} Spell Power")
             return {"value": value, "bonus_type": bonus_type, "stat": stat}
@@ -635,7 +670,7 @@ def parse_enchantment_string(text: str) -> dict | None:
             if value is not None:
                 raw_bonus_type = (match.group(3) or "Enhancement").strip()
                 bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
-                stat = _SKILL_ABBREVS.get(raw_skill.lower(), raw_skill)
+                stat = _SKILL_ABBREVS.get(raw_skill.lower(), raw_skill.title())
                 return {"value": value, "bonus_type": bonus_type, "stat": stat}
 
     # Simple numeric templates: {{Accuracy|7}}, {{Deception|3}}, {{Speed|30}}, etc.
@@ -680,7 +715,9 @@ def parse_enchantment_string(text: str) -> dict | None:
             school_lower = school.lower()
             if school_lower == "mastery":
                 stat = "Spell Focus Mastery"
-            elif "mastery" in school_lower or "spell" in school_lower:
+            elif school_lower == "spell":
+                stat = "Universal Spell Focus"
+            elif "mastery" in school_lower:
                 stat = school
             else:
                 stat = f"{school} Spell Focus"
