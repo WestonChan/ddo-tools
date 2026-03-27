@@ -318,7 +318,9 @@ _HEALINGAMP_RE = re.compile(
 
 # Spell power display names → stat table names
 _SPELLPOWER_STATS: dict[str, str] = {
-    # Standard DDO spell power names
+    # Standard DDO spell power names (single-element map to primary element;
+    # some affect secondary elements too but those are handled via game engine,
+    # not stored as separate DB rows)
     "Devotion": "Positive Spell Power",
     "Impulse": "Force Spell Power",
     "Combustion": "Fire Spell Power",
@@ -329,7 +331,7 @@ _SPELLPOWER_STATS: dict[str, str] = {
     "Radiance": "Light Spell Power",
     "Nullification": "Negative Spell Power",
     "Reconstruction": "Repair Spell Power",
-    "Potency": "Potency",
+    "Potency": "Potency",  # composite: split in COMPOSITE_SPELLPOWER
     "Devotion,Heal": "Positive Spell Power",
     "Universal Spell Power": "Universal Spell Power",
     # Lowercase variants
@@ -350,29 +352,38 @@ _SPELLPOWER_STATS: dict[str, str] = {
 # These can't be stored as a single stat — the writer should split them.
 # Format: name -> list of stat names
 COMPOSITE_SPELLPOWER: dict[str, list[str]] = {
+    # Potency = all element spell powers (stacking via bonus_type)
+    "Potency": [
+        "Fire Spell Power", "Cold Spell Power", "Electric Spell Power",
+        "Acid Spell Power", "Sonic Spell Power", "Light Spell Power",
+        "Negative Spell Power", "Positive Spell Power", "Force Spell Power",
+        "Repair Spell Power",
+    ],
+    # Named set spell powers (from ddowiki.com/page/Spell_Power)
     "Power of the Silver Flame": ["Light Spell Power", "Positive Spell Power"],
-    "Power of the Frozen Depths": ["Cold Spell Power"],
-    "Power of the Firestorm": ["Fire Spell Power"],
+    "Power of the Frozen Depths": ["Cold Spell Power", "Negative Spell Power"],
+    "Power of the Firestorm": ["Fire Spell Power", "Electric Spell Power"],
     "Power of the Flames of Purity": ["Light Spell Power", "Positive Spell Power"],
     "Power of the Blight": ["Acid Spell Power", "Negative Spell Power"],
-    "Power of Creeping Dust": ["Acid Spell Power"],
-    "Power of the Frozen Storm": ["Cold Spell Power"],
+    "Power of Creeping Dust": ["Acid Spell Power", "Cold Spell Power"],
+    "Power of the Frozen Storm": ["Cold Spell Power", "Electric Spell Power"],
     "Power of the Thunderstorm": ["Electric Spell Power", "Sonic Spell Power"],
-    "Power of the Dark Restoration": ["Negative Spell Power"],
-    "Power of the Sacred Ground": ["Positive Spell Power"],
+    "Power of the Dark Restoration": ["Positive Spell Power", "Negative Spell Power"],
+    "Power of the Sacred Ground": ["Acid Spell Power", "Light Spell Power"],
 }
 
 COMPOSITE_SPELLLORE: dict[str, list[str]] = {
+    # Named set spell lore (same elements as corresponding spell power)
     "Silver Flame": ["Light Spell Lore", "Positive Spell Lore"],
-    "Frozen Depths": ["Cold Spell Lore"],
-    "Firestorm": ["Fire Spell Lore"],
+    "Frozen Depths": ["Cold Spell Lore", "Negative Spell Lore"],
+    "Firestorm": ["Fire Spell Lore", "Electric Spell Lore"],
     "Flames of Purity": ["Light Spell Lore", "Positive Spell Lore"],
     "Blighted": ["Acid Spell Lore", "Negative Spell Lore"],
-    "Creeping Dust": ["Acid Spell Lore"],
-    "Frozen Storm": ["Cold Spell Lore"],
+    "Creeping Dust": ["Acid Spell Lore", "Cold Spell Lore"],
+    "Frozen Storm": ["Cold Spell Lore", "Electric Spell Lore"],
     "Thunderstorm": ["Electric Spell Lore", "Sonic Spell Lore"],
-    "Dark Restoration": ["Negative Spell Lore"],
-    "Sacred Ground": ["Positive Spell Lore"],
+    "Dark Restoration": ["Positive Spell Lore", "Negative Spell Lore"],
+    "Sacred Ground": ["Acid Spell Lore", "Light Spell Lore"],
 }
 
 # Wiki element name aliases → canonical seed names
@@ -384,7 +395,7 @@ _ELEMENT_ALIASES: dict[str, str] = {
     "void": "Negative",
     "kinetic": "Force",
     "radiance": "Light",
-    "chaos": "Force",
+    "chaos": "Chaos",
     "electricity": "Electric",
     "electrical": "Electric",
     "elemental": "Elemental",

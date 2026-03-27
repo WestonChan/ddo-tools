@@ -395,6 +395,23 @@ def _normalize_stat_name(raw: str) -> list[str]:
             "Melee Power", "Ranged Power",
         ] + _ALL_SPELL_POWERS,
         "additional damage to helpless targets": ["Helpless Damage"],
+        # Elemental = Fire + Cold + Electric + Acid
+        "elemental absorption": [
+            "Fire Absorption", "Cold Absorption", "Electric Absorption", "Acid Absorption",
+        ],
+        "elemental resistance": [
+            "Fire Resistance", "Cold Resistance", "Electric Resistance", "Acid Resistance",
+        ],
+        # Spell = all spell types (absorption/resistance)
+        "spell absorption": [
+            "Fire Absorption", "Cold Absorption", "Electric Absorption", "Acid Absorption",
+            "Sonic Absorption", "Light Absorption", "Negative Energy Absorption",
+            "Force Absorption",
+        ],
+        # Alignment = Good + Evil + Law + Chaos
+        "alignment absorption": [
+            "Good Absorption", "Evil Absorption", "Law Absorption", "Chaos Absorption",
+        ],
         # Multi-element spell power/lore/crit
         "intelligence, wisdom, and charisma": ["Intelligence", "Wisdom", "Charisma"],
         "int/wis/cha": ["Intelligence", "Wisdom", "Charisma"],
