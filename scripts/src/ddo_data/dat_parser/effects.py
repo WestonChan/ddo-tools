@@ -869,9 +869,14 @@ def parse_enchantment_string(text: str) -> dict | None:
                 value = v
                 break
         if value is not None and rest:
+            # Strip wiki links from rest text
+            rest = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", rest)
+            rest = rest.replace("'''", "").replace("''", "")
+            rest = rest.strip()
             # Parse "Profane bonus to Melee and Ranged Power"
+            # Also handles "Quality bonus bonus to Strength" (double "bonus")
             bt_stat_match = re.match(
-                r"(\w+)\s+[Bb]onus\s+to\s+(.*)", rest
+                r"(\w+(?:\s+bonus)?)\s+[Bb]onus\s+to\s+(.*)", rest
             )
             if bt_stat_match:
                 raw_bonus_type = bt_stat_match.group(1).strip()
@@ -882,6 +887,8 @@ def parse_enchantment_string(text: str) -> dict | None:
                 stat = re.sub(r"'''[^']*'''.*", "", stat)  # strip '''Bug:''' and after
                 stat = re.sub(r"\s*''.*", "", stat)  # strip italic notes
                 stat = re.sub(r"\s*\(.*?\)\s*$", "", stat)  # strip trailing (notes)
+                stat = re.sub(r"\}\}+$", "", stat)  # strip trailing }}
+                stat = re.sub(r"\{\{[^}]*$", "", stat)  # strip incomplete templates
                 stat = stat.strip().rstrip(".")
                 bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
                 return {"value": value, "bonus_type": bonus_type, "stat": stat}

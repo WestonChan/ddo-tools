@@ -267,6 +267,50 @@ def _normalize_stat_name(raw: str) -> list[str]:
         "melee threat reduction": "Threat Reduction",
         "threat decrease with both melee and ranged attacks": "Threat Reduction",
         "critical damage": "Critical Damage",
+        "dcs": "Universal Spell Focus",
+        "dcs.": "Universal Spell Focus",
+        "positive spellcrit chance": "Positive Spell Lore",
+        "negative spellcrit chance": "Negative Spell Lore",
+        "positive spellpower": "Positive Spell Power",
+        "negative spellpower": "Negative Spell Power",
+        "your tactical abilities": "Tactics",
+        "attack": "Attack Bonus",
+        "damage": "Damage Bonus",
+        "positive and negative amplification": "positive, negative, and repair healing amplification",
+        "fire, cold, electric, and acid spellcrit chance": "fire, cold, acid, and electric spell crit chance",
+        "sonic, force, light, acid spell crit chance": "Sonic Spell Lore",  # will be split by comma handler
+        # Spellpower/Spellcrit single-element variants
+        "force spellcrit chance": "Force Spell Lore",
+        "fire spellcrit chance": "Fire Spell Lore",
+        "electric spellcrit chance": "Electric Spell Lore",
+        "positive spellcrit chance": "Positive Spell Lore",
+        "force spellpower": "Force Spell Power",
+        "fire spellpower": "Fire Spell Power",
+        "electric spellpower": "Electric Spell Power",
+        "acid spellpower": "Acid Spell Power",
+        "cold spellpower": "Cold Spell Power",
+        "sonic spellpower": "Sonic Spell Power",
+        "light spellpower": "Light Spell Power",
+        "positive spellpower": "Positive Spell Power",
+        "negative spellpower": "Negative Spell Power",
+        "repair spellpower": "Repair Spell Power",
+        # "your" prefix variants
+        "your maximum hit points": "Hit Points",
+        "your maximum spell points": "Maximum Spell Points",
+        "your tactical abilities": "Tactics",
+        "imbue dice.": "Imbue Dice",
+        # Conditional bonuses (store as-is, stat won't resolve but name is preserved)
+        "hit and damage vs. evil creatures": "Attack Bonus",
+        "saves vs. evil creatures": "Saving Throws",
+        "threat reduction from all sources": "Threat Reduction",
+        "hit on sneak attack": "Sneak Attack Hit",
+        "damage on sneak attack": "Sneak Attack Damage",
+        "offhand strike chance": "Offhand Strike Chance",
+        "assassinate dcs": "Assassinate DC",
+        "evocation spell dcs": "Evocation Spell Focus",
+        "sneak attack": "Sneak Attack Dice",
+        "critical multiplier on a 19-20": "Critical Multiplier",
+        "quality bonus": "Quality",
     }
     # Strip trailing parentheticals and wiki notes before normalization
     s = re.sub(r"\s*\(.*?\)\s*$", "", s).strip()
@@ -370,6 +414,36 @@ def _normalize_stat_name(raw: str) -> list[str]:
         ],
         "electric, fire, force, and repair spell crit chance": [
             "Electric Spell Lore", "Fire Spell Lore", "Force Spell Lore", "Repair Spell Lore",
+        ],
+        "fire, cold, acid, and electric spell crit chance": [
+            "Fire Spell Lore", "Cold Spell Lore", "Acid Spell Lore", "Electric Spell Lore",
+        ],
+        "fire, cold, electric, and acid spellcrit chance": [
+            "Fire Spell Lore", "Cold Spell Lore", "Electric Spell Lore", "Acid Spell Lore",
+        ],
+        "negative, poison, and force spell crit chance": [
+            "Negative Spell Lore", "Acid Spell Lore", "Force Spell Lore",
+        ],
+        "light, alignment, and positive spellcrit chance": [
+            "Light Spell Lore", "Positive Spell Lore",
+        ],
+        "light, alignment, and positive spell crit chance": [
+            "Light Spell Lore", "Positive Spell Lore",
+        ],
+        "sonic, force, light, acid spell power": [
+            "Sonic Spell Power", "Force Spell Power", "Light Spell Power", "Acid Spell Power",
+        ],
+        "sonic, force, light, acid spell crit chance": [
+            "Sonic Spell Lore", "Force Spell Lore", "Light Spell Lore", "Acid Spell Lore",
+        ],
+        "fire, cold, electric, and acid spellpower": [
+            "Fire Spell Power", "Cold Spell Power", "Electric Spell Power", "Acid Spell Power",
+        ],
+        "negative and poison spellcrit chance": [
+            "Negative Spell Lore", "Acid Spell Lore",
+        ],
+        "light, alignment, and positive spellpower": [
+            "Light Spell Power", "Positive Spell Power",
         ],
         # Potency / Universal = split into all elements.
         # Stacking is handled by bonus_type, not stat identity.
