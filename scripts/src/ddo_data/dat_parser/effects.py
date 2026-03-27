@@ -390,7 +390,7 @@ COMPOSITE_SPELLLORE: dict[str, list[str]] = {
 _ELEMENT_ALIASES: dict[str, str] = {
     "lightning": "Electric",
     "ice": "Cold",
-    "poison": "Acid",
+    "poison": "Poison",
     "healing": "Positive",
     "void": "Negative",
     "kinetic": "Force",
@@ -1020,24 +1020,28 @@ def parse_enchantment_string(text: str) -> dict | None:
 # Stat name normalization and composite splitting
 # ---------------------------------------------------------------------------
 
-_ALL_SPELL_POWERS = [
-    "Fire Spell Power", "Cold Spell Power", "Electric Spell Power",
-    "Acid Spell Power", "Sonic Spell Power", "Light Spell Power",
-    "Negative Spell Power", "Positive Spell Power", "Force Spell Power",
-    "Repair Spell Power",
+_SPELL_ELEMENTS = [
+    "Fire", "Cold", "Electric", "Acid", "Sonic", "Light",
+    "Negative", "Positive", "Force", "Repair", "Poison",
 ]
-_ALL_SPELL_LORE = [
-    "Fire Spell Lore", "Cold Spell Lore", "Electric Spell Lore",
-    "Acid Spell Lore", "Sonic Spell Lore", "Light Spell Lore",
-    "Negative Spell Lore", "Positive Spell Lore", "Force Spell Lore",
-    "Repair Spell Lore",
-]
+_ELEMENTAL_ELEMENTS = ["Fire", "Cold", "Electric", "Acid"]
+_ALIGNMENT_ELEMENTS = ["Good", "Evil", "Law", "Chaos"]
+
+_ALL_SPELL_POWERS = [f"{e} Spell Power" for e in _SPELL_ELEMENTS]
+_ALL_SPELL_LORE = [f"{e} Spell Lore" for e in _SPELL_ELEMENTS]
 _ALL_SPELL_SCHOOLS = [
     "Abjuration Spell Focus", "Conjuration Spell Focus",
     "Divination Spell Focus", "Enchantment Spell Focus",
     "Evocation Spell Focus", "Illusion Spell Focus",
     "Necromancy Spell Focus", "Transmutation Spell Focus",
 ]
+_ALL_ABSORPTIONS = [f"{e} Absorption" for e in _SPELL_ELEMENTS]
+_ALL_RESISTANCES = [f"{e} Resistance" for e in _SPELL_ELEMENTS]
+_ELEMENTAL_ABSORPTIONS = [f"{e} Absorption" for e in _ELEMENTAL_ELEMENTS]
+_ELEMENTAL_RESISTANCES = [f"{e} Resistance" for e in _ELEMENTAL_ELEMENTS]
+_ALIGNMENT_ABSORPTIONS = [f"{e} Absorption" for e in _ALIGNMENT_ELEMENTS]
+_ALIGNMENT_SPELL_POWERS = [f"{e} Spell Power" for e in _ALIGNMENT_ELEMENTS]
+_ALIGNMENT_SPELL_LORE = [f"{e} Spell Lore" for e in _ALIGNMENT_ELEMENTS]
 
 # Direct name aliases (lowercase key -> canonical name)
 _STAT_ALIASES: dict[str, str] = {
@@ -1202,23 +1206,13 @@ _COMPOSITE_STATS: dict[str, list[str]] = {
         "Positive Healing Amplification", "Negative Healing Amplification",
     ],
     "melee, ranged, and universal spell power": [
-        "Melee Power", "Ranged Power",
-    ] + _ALL_SPELL_POWERS,
+        "Melee Power", "Ranged Power", "Universal Spell Power",
+    ],
     # Elemental / Spell / Alignment composites
-    "elemental absorption": [
-        "Fire Absorption", "Cold Absorption", "Electric Absorption", "Acid Absorption",
-    ],
-    "elemental resistance": [
-        "Fire Resistance", "Cold Resistance", "Electric Resistance", "Acid Resistance",
-    ],
-    "spell absorption": [
-        "Fire Absorption", "Cold Absorption", "Electric Absorption", "Acid Absorption",
-        "Sonic Absorption", "Light Absorption", "Negative Energy Absorption",
-        "Force Absorption",
-    ],
-    "alignment absorption": [
-        "Good Absorption", "Evil Absorption", "Law Absorption", "Chaos Absorption",
-    ],
+    "elemental absorption": _ELEMENTAL_ABSORPTIONS,
+    "elemental resistance": _ELEMENTAL_RESISTANCES,
+    "spell absorption": _ALL_ABSORPTIONS,
+    "alignment absorption": _ALIGNMENT_ABSORPTIONS,
     # Multi-element spell power/lore/crit from specific sets
     "intelligence, wisdom, and charisma": ["Intelligence", "Wisdom", "Charisma"],
     "int/wis/cha": ["Intelligence", "Wisdom", "Charisma"],
@@ -1229,20 +1223,21 @@ _COMPOSITE_STATS: dict[str, list[str]] = {
     "all tactical dcs and assassinate": ["Tactics", "Assassinate DC"],
     "attack and damage": ["Attack Bonus", "Damage Bonus"],
     "critical confirmation and critical damage": ["Critical Confirmation"],
-    "positive and light/alignment spell power": [
-        "Positive Spell Power", "Light Spell Power",
-    ],
-    "positive and light/alignment spell crit chance": [
-        "Positive Spell Lore", "Light Spell Lore",
-    ],
-    "positive and light/alignment spellcrit chance": [
-        "Positive Spell Lore", "Light Spell Lore",
-    ],
+    "positive and light/alignment spell power":
+        ["Positive Spell Power", "Light Spell Power"] + _ALIGNMENT_SPELL_POWERS,
+    "positive and light/alignment spell crit chance":
+        ["Positive Spell Lore", "Light Spell Lore"] + _ALIGNMENT_SPELL_LORE,
+    "positive and light/alignment spellcrit chance":
+        ["Positive Spell Lore", "Light Spell Lore"] + _ALIGNMENT_SPELL_LORE,
+    "light, alignment, and positive spellpower":
+        ["Light Spell Power", "Positive Spell Power"] + _ALIGNMENT_SPELL_POWERS,
+    "light, alignment, and positive spellcrit chance":
+        ["Light Spell Lore", "Positive Spell Lore"] + _ALIGNMENT_SPELL_LORE,
     "fire, force, light and positive spell crit chance": [
         "Fire Spell Lore", "Force Spell Lore", "Light Spell Lore", "Positive Spell Lore",
     ],
     "negative, poison, and force spell crit chance": [
-        "Negative Spell Lore", "Acid Spell Lore", "Force Spell Lore",
+        "Negative Spell Lore", "Poison Spell Lore", "Force Spell Lore",
     ],
     "electric, fire, force, and repair spell crit chance": [
         "Electric Spell Lore", "Fire Spell Lore", "Force Spell Lore", "Repair Spell Lore",
@@ -1253,12 +1248,7 @@ _COMPOSITE_STATS: dict[str, list[str]] = {
     "fire, cold, electric, and acid spellcrit chance": [
         "Fire Spell Lore", "Cold Spell Lore", "Electric Spell Lore", "Acid Spell Lore",
     ],
-    "light, alignment, and positive spellcrit chance": [
-        "Light Spell Lore", "Positive Spell Lore",
-    ],
-    "light, alignment, and positive spell crit chance": [
-        "Light Spell Lore", "Positive Spell Lore",
-    ],
+    # (light/alignment/positive spellcrit variants handled above with _ALIGNMENT_SPELL_LORE)
     "sonic, force, light, acid spell power": [
         "Sonic Spell Power", "Force Spell Power", "Light Spell Power", "Acid Spell Power",
     ],
@@ -1271,17 +1261,17 @@ _COMPOSITE_STATS: dict[str, list[str]] = {
     "negative and poison spellcrit chance": [
         "Negative Spell Lore", "Acid Spell Lore",
     ],
-    "light, alignment, and positive spellpower": [
-        "Light Spell Power", "Positive Spell Power",
-    ],
+    # (light/alignment/positive spellpower variant handled above with _ALIGNMENT_SPELL_POWERS)
     "additional damage to helpless targets": ["Helpless Damage"],
     # Potency / Universal = split into all elements
     "potency": _ALL_SPELL_POWERS,
-    "universal spell power": _ALL_SPELL_POWERS,
-    "universal spell lore": _ALL_SPELL_LORE,
-    "spell lore": _ALL_SPELL_LORE,
-    "universal spell focus": _ALL_SPELL_SCHOOLS,
-    "spell focus": _ALL_SPELL_SCHOOLS,
+    # Universal SP/Lore/Focus are NOT split — they're unique bonus types
+    # that stack additively with everything. Only Potency splits.
+    # "universal spell power" — stays as single stat
+    # "universal spell lore" — stays as single stat
+    # "universal spell focus" — stays as single stat
+    "spell lore": _ALL_SPELL_LORE,  # generic "Spell Lore" = Potency equivalent for lore
+    "spell focus": _ALL_SPELL_SCHOOLS,  # generic "Spell Focus" = all schools
 }
 
 
