@@ -203,7 +203,7 @@ _SKILL_ABBREVS: dict[str, str] = {
     "int": "Intelligence",
     "wis": "Wisdom",
     "cha": "Charisma",
-    "command": "Tactics",  # Command = tactical DC (Trip, Stun, etc.)
+    "command": "Command",  # Bonus to all Charisma-based skills
     "concentration": "Concentration",
     "spellcraft": "Spellcraft",
     "spot": "Spot",
@@ -230,7 +230,7 @@ _SKILL_ABBREVS: dict[str, str] = {
     "ol": "Open Lock",
     "bal": "Balance",
     "diplo": "Diplomacy",
-    "persuasion": "Persuasion",
+    "persuasion": "Persuasion",  # Bonus to all Charisma-based skills
 }
 
 # Stat name normalization for simple numeric templates
@@ -1056,7 +1056,7 @@ _STAT_ALIASES: dict[str, str] = {
     "imbue dice": "Imbue Dice",
     "imbue dice.": "Imbue Dice",
     "sneak attack dice": "Sneak Attack Dice",
-    "sneak attack": "Sneak Attack Bonus",
+    "sneak attack": "Sneak Attack",
     "sneak attack damage": "Sneak Attack Damage",
     "fortification bypass": "Fortification Bypass",
     "spell penetration": "Spell Penetration",
