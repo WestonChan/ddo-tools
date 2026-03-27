@@ -1127,8 +1127,8 @@ _STAT_ALIASES: dict[str, str] = {
     # Amplification variants
     # amplification composites handled in _COMPOSITE_STATS below
     # Conditional bonuses
-    "hit and damage vs. evil creatures": "Attack Bonus",
-    "saves vs. evil creatures": "Saving Throws",
+    "hit and damage vs. evil creatures": "Attack and Damage vs Evil",
+    "saves vs. evil creatures": "Saves vs Evil",
     "hit on sneak attack": "Sneak Attack Hit",
     "damage on sneak attack": "Sneak Attack Damage",
     "your magical resistance rating cap is raised by": "Magical Resistance Rating Cap",
