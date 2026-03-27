@@ -1113,23 +1113,19 @@ _STAT_ALIASES: dict[str, str] = {
     "damage vs the helpless": "Helpless Damage",
     "damage versus the helpless": "Helpless Damage",
     "damage vs. helpless": "Helpless Damage",
-    "attack and damage": "Attack Bonus",
+    # "attack and damage" handled as composite below
     "attack": "Attack Bonus",
     "damage": "Damage Bonus",
     "ability stats": "all ability scores",
     "all of your ability scores": "all ability scores",
     "to all ability scores": "all ability scores",
-    "dcs": "Spell DCs",
-    "dcs.": "Spell DCs",
-    "dcs (": "Spell DCs",
+    # Bare "DCs" kept as-is — context-dependent (could be spell or tactical)
     "dcs ''(note: tactical dcs are not affected, only spell dcs)": "Spell DCs",
     "spell power": "Potency",
-    "spell crit chance": "Universal Spell Lore",
+    "spell crit chance": "Spell Lore",  # generic, not specifically universal
     "quality bonus": "Quality",
     # Amplification variants
-    "positive, negative, and repair amplification": "positive, negative, and repair healing amplification",
-    "healing, repair, and negative amplification": "positive, negative, and repair healing amplification",
-    "positive and negative amplification": "positive, negative, and repair healing amplification",
+    # amplification composites handled in _COMPOSITE_STATS below
     # Conditional bonuses
     "hit and damage vs. evil creatures": "Attack Bonus",
     "saves vs. evil creatures": "Saving Throws",
@@ -1194,6 +1190,17 @@ _COMPOSITE_STATS: dict[str, list[str]] = {
         "Positive Healing Amplification", "Negative Healing Amplification",
         "Repair Amplification",
     ],
+    "positive, negative, and repair amplification": [
+        "Positive Healing Amplification", "Negative Healing Amplification",
+        "Repair Amplification",
+    ],
+    "healing, repair, and negative amplification": [
+        "Positive Healing Amplification", "Negative Healing Amplification",
+        "Repair Amplification",
+    ],
+    "positive and negative amplification": [
+        "Positive Healing Amplification", "Negative Healing Amplification",
+    ],
     "melee, ranged, and universal spell power": [
         "Melee Power", "Ranged Power",
     ] + _ALL_SPELL_POWERS,
@@ -1220,6 +1227,7 @@ _COMPOSITE_STATS: dict[str, list[str]] = {
     "spell saves": ["Spell Resistance"],
     "sneak attack and sneak attack damage": ["Sneak Attack Dice", "Sneak Attack Damage"],
     "all tactical dcs and assassinate": ["Tactics", "Assassinate DC"],
+    "attack and damage": ["Attack Bonus", "Damage Bonus"],
     "critical confirmation and critical damage": ["Critical Confirmation"],
     "positive and light/alignment spell power": [
         "Positive Spell Power", "Light Spell Power",
