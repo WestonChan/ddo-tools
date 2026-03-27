@@ -233,14 +233,55 @@ def _normalize_stat_name(raw: str) -> list[str]:
         "damage versus the helpless": "Helpless Damage",
         "damage vs. helpless": "Helpless Damage",
         "attack and damage": "Attack Bonus",
-        "all ability scores": "all ability scores",  # handled by composite split
+        "ability stats": "all ability scores",
+        "all of your ability scores": "all ability scores",
+        # Spell crit/lore variants
+        "universal spell critical chance": "Universal Spell Lore",
+        "universal spell critical damage": "Spell Critical Damage",
+        "spell critical damage": "Spell Critical Damage",
+        "maximum spellpoints": "Maximum Spell Points",
+        "maximum spell points": "Maximum Spell Points",
+        "movement speed": "Movement Speed",
+        "natural armor bonus": "Natural Armor",
+        # Amplification variants (missing "Healing")
+        "positive amplification": "Positive Healing Amplification",
+        "negative amplification": "Negative Healing Amplification",
+        "positive, negative, and repair amplification": "positive, negative, and repair healing amplification",
+        "healing, repair, and negative amplification": "positive, negative, and repair healing amplification",
+        # Spell crit/power name variants
+        "fire spellcrit chance": "Fire Spell Lore",
+        "negative spell crit chance": "Negative Spell Lore",
+        "acid spell crit chance": "Acid Spell Lore",
+        "cold spell crit chance": "Cold Spell Lore",
+        "electric spell crit chance": "Electric Spell Lore",
+        "sonic spell crit chance": "Sonic Spell Lore",
+        "light spell crit chance": "Light Spell Lore",
+        "force spell crit chance": "Force Spell Lore",
+        "positive spell crit chance": "Positive Spell Lore",
+        "repair spell crit chance": "Repair Spell Lore",
+        "spell power": "Potency",  # generic "Spell Power" = all elements
+        "spell crit chance": "Universal Spell Lore",
+        "sneak attack damage": "Sneak Attack Dice",
+        "threat from melee attacks": "Melee Threat Generation",
+        "threat generation with melee attacks": "Melee Threat Generation",
+        "melee threat reduction": "Threat Reduction",
+        "threat decrease with both melee and ranged attacks": "Threat Reduction",
+        "critical damage": "Critical Damage",
     }
+    # Strip trailing parentheticals and wiki notes before normalization
+    s = re.sub(r"\s*\(.*?\)\s*$", "", s).strip()
+    s = re.sub(r"\s*''.*$", "", s).strip()  # italic wiki notes
+
     lower = s.lower()
+
+    # Aliases first — resolve to canonical name
     if lower in _ALIASES:
-        return [_ALIASES[lower]]
+        resolved = _ALIASES[lower]
+        if resolved.lower() != lower:  # prevent infinite recursion
+            return _normalize_stat_name(resolved)
+        return [resolved]
 
     # Save normalization: "Will Saving Throws" -> "Will Save", "Fortitude save" -> "Fortitude Save"
-    import re
     save_match = re.match(r"(Will|Reflex|Fortitude)\s+[Ss]av(?:ing\s+[Tt]hrows?|es?)", s, re.IGNORECASE)
     if save_match:
         return [f"{save_match.group(1).title()} Save"]
@@ -308,6 +349,28 @@ def _normalize_stat_name(raw: str) -> list[str]:
         "spell saves": ["Spell Resistance"],
         "sneak attack and sneak attack damage": ["Sneak Attack Dice"],
         "critical confirmation and critical damage": ["Critical Confirmation"],
+        "positive, negative, and repair healing amplification": [
+            "Positive Healing Amplification", "Negative Healing Amplification",
+            "Repair Amplification",
+        ],
+        "positive and light/alignment spell power": [
+            "Positive Spell Power", "Light Spell Power",
+        ],
+        "positive and light/alignment spell crit chance": [
+            "Positive Spell Lore", "Light Spell Lore",
+        ],
+        "positive and light/alignment spellcrit chance": [
+            "Positive Spell Lore", "Light Spell Lore",
+        ],
+        "fire, force, light and positive spell crit chance": [
+            "Fire Spell Lore", "Force Spell Lore", "Light Spell Lore", "Positive Spell Lore",
+        ],
+        "negative, poison, and force spell crit chance": [
+            "Negative Spell Lore", "Acid Spell Lore", "Force Spell Lore",
+        ],
+        "electric, fire, force, and repair spell crit chance": [
+            "Electric Spell Lore", "Fire Spell Lore", "Force Spell Lore", "Repair Spell Lore",
+        ],
         # Potency / Universal = split into all elements.
         # Stacking is handled by bonus_type, not stat identity.
         "potency": _ALL_SPELL_POWERS,

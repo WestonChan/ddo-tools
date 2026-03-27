@@ -958,7 +958,10 @@ INSERT OR IGNORE INTO stats (id, name, category) VALUES
     (200, 'Critical Confirmation',         'martial'),
     (201, 'Spell Critical Damage',         'magical'),
     (202, 'Maximum Spell Points',          'magical'),
-    (203, 'Armor Class Percentage',        'defensive');
+    (203, 'Armor Class Percentage',        'defensive'),
+    (204, 'Sneak Attack Damage',           'martial'),
+    (205, 'Critical Damage',               'martial'),
+    (206, 'Spell Point Cost Reduction',    'magical');
 
 -- Skills (key_ability_id references stats above)
 INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES

@@ -841,6 +841,12 @@ def parse_enchantment_string(text: str) -> dict | None:
             stat = "Repair Amplification" if amp_type == "r" else "Healing Amplification"
             return {"value": value, "bonus_type": bonus_type, "stat": stat}
 
+    # Unwrap nested {{InlineWht|dark=y|{{HELstats|...}} text}} → {{HELstats|...}} text
+    if "InlineWht" in text and "HELstats" in text:
+        inner = re.search(r"\{\{InlineWht\|[^|]*\|(.*)\}\}", text, re.IGNORECASE)
+        if inner:
+            text = inner.group(1).strip()
+
     # {{HELstats|+5|L=+15}} Profane bonus to Melee and Ranged Power
     # Extract highest tier value and parse the surrounding text for bonus_type + stat
     hel_match = re.search(
@@ -873,6 +879,9 @@ def parse_enchantment_string(text: str) -> dict | None:
                 # Clean wiki markup from stat
                 stat = re.sub(r"\[\[[^\]]*\|([^\]]+)\]\]", r"\1", stat)
                 stat = re.sub(r"\[\[([^\]]+)\]\]", r"\1", stat)
+                stat = re.sub(r"'''[^']*'''.*", "", stat)  # strip '''Bug:''' and after
+                stat = re.sub(r"\s*''.*", "", stat)  # strip italic notes
+                stat = re.sub(r"\s*\(.*?\)\s*$", "", stat)  # strip trailing (notes)
                 stat = stat.strip().rstrip(".")
                 bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
                 return {"value": value, "bonus_type": bonus_type, "stat": stat}
@@ -880,6 +889,8 @@ def parse_enchantment_string(text: str) -> dict | None:
             stat = rest.strip()
             stat = re.sub(r"\[\[[^\]]*\|([^\]]+)\]\]", r"\1", stat)
             stat = re.sub(r"\[\[([^\]]+)\]\]", r"\1", stat)
+            stat = re.sub(r"'''[^']*'''.*", "", stat)
+            stat = re.sub(r"\s*\(.*?\)\s*$", "", stat)
             stat = stat.strip().rstrip(".")
             if stat:
                 return {"value": value, "bonus_type": "Enhancement", "stat": stat}
@@ -908,7 +919,7 @@ def parse_enchantment_string(text: str) -> dict | None:
         bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
         return {"value": value, "bonus_type": bonus_type, "stat": stat}
 
-    # Extended: handles +N% and "Bonus" (capital B)
+    # Extended: handles +N% and "Bonus" (capital B) — "bonus to stat"
     pct_bonus = re.match(
         r"[+-]?(\d+)%?\s+(\w+)\s+[Bb]onus\s+to\s+(.+)",
         text, re.IGNORECASE,
@@ -917,8 +928,43 @@ def parse_enchantment_string(text: str) -> dict | None:
         value = int(pct_bonus.group(1))
         raw_bonus_type = pct_bonus.group(2).strip()
         stat = pct_bonus.group(3).strip().rstrip(".")
+        stat = re.sub(r"\s*\(.*?\)\s*$", "", stat)  # strip trailing (notes)
         bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
         return {"value": value, "bonus_type": bonus_type, "stat": stat}
+
+    # "+3 Insight Natural Armor Bonus" — bonus_type + stat + trailing "Bonus"
+    trailing_bonus = re.match(
+        r"[+-]?(\d+)%?\s+(\w+)\s+(.+?)\s+[Bb]onus$",
+        text, re.IGNORECASE,
+    )
+    if trailing_bonus:
+        value = int(trailing_bonus.group(1))
+        raw_bonus_type = trailing_bonus.group(2).strip()
+        stat = trailing_bonus.group(3).strip()
+        bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
+        return {"value": value, "bonus_type": bonus_type, "stat": stat}
+
+    # "+30 Bonus to MRR Cap" — generic "Bonus to" without named type
+    generic_bonus = re.match(
+        r"[+-]?(\d+)%?\s+[Bb]onus\s+to\s+(.+)",
+        text, re.IGNORECASE,
+    )
+    if generic_bonus:
+        value = int(generic_bonus.group(1))
+        stat = generic_bonus.group(2).strip().rstrip(".")
+        return {"value": value, "bonus_type": "Enhancement", "stat": stat}
+
+    # "-10% Enhancement discount to Spell Point Cost" → negative bonus
+    discount = re.match(
+        r"-(\d+)%?\s+(\w+)\s+discount\s+to\s+(.+)",
+        text, re.IGNORECASE,
+    )
+    if discount:
+        value = int(discount.group(1))
+        raw_bonus_type = discount.group(2).strip()
+        stat = discount.group(3).strip().rstrip(".")
+        bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
+        return {"value": value, "bonus_type": bonus_type, "stat": f"{stat} Reduction"}
 
     # Last resort: "+N Stat" without "bonus to" (e.g., "+3 Artifact bonus to all Saving Throws (all tier)")
     simple = re.match(r"[+-]?(\d+)%?\s+(.+)", text)
