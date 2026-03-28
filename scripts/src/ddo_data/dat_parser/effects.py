@@ -414,47 +414,37 @@ NAMED_ENCHANTMENT_EFFECTS: dict[str, list[dict]] = {
     "Blood": [
         {"stat": "Healing Amplification", "value": 20, "bonus_type": "Enhancement"},
     ],
-    "Bloodrage Defense": [
-        {"stat": "Physical Resistance Rating", "value": 10, "bonus_type": "Profane"},
-        {"stat": "Magical Resistance Rating", "value": 10, "bonus_type": "Profane"},
-    ],
-    # Cannith Combat Infusion: CONDITIONAL (proc, 10s on hit). Not a permanent bonus.
-    # "Soul of the Elements": CONDITIONAL (Mountain Stance only). Not a permanent bonus.
+    # Bloodrage Defense: CONDITIONAL (two-handed weapon only). Removed.
+    # Removed conditional/proc effects:
+    # - Cannith Combat Infusion: proc (10s on hit)
+    # - Soul of the Elements: Mountain Stance only
+    # - Faeryfire Curse: proc on Illusion spells
+    # - Sea/Sky/Static Attunement: elemental form only
+    # - Spell Resonance: 30s proc on Sonic cast
+    # - Sticky Goo Guard: proc
+    # - Unbalancing: proc on enemy hit
+    # - Stealer of Souls: uncertain
+    # - Litany of the Dead: uncertain
+    # - Embrace of the Spider Queen: WRONG — wiki says +6 Fort vs Poison (benefit)
+    # - Bloodrage Defense: two-handed weapon only
     "Dragonshard Focus: Sentinel": [
         {"stat": "Armor Class", "value": 1, "bonus_type": "Insight"},
         {"stat": "Fortitude Save", "value": 1, "bonus_type": "Insight"},
     ],
-    "Faeryfire Curse": [
-        {"stat": "Hide", "value": -40, "bonus_type": "Enhancement", "is_penalty": True},
-    ],
     "Finesse": [
         {"stat": "Dexterity", "value": 2, "bonus_type": "Enhancement"},
     ],
-    "Litany of the Dead - Combat Bonus": [
-        {"stat": "Attack Bonus", "value": 1, "bonus_type": "Profane"},
-        {"stat": "Damage Bonus", "value": 1, "bonus_type": "Profane"},
-    ],
+    # Litany of the Dead: UNCERTAIN. Removed pending verification.
     "Overfocus": [
         {"stat": "Search", "value": -10, "bonus_type": "Enhancement", "is_penalty": True},
         {"stat": "Spot", "value": -10, "bonus_type": "Enhancement", "is_penalty": True},
     ],
-    "Sea Attunement": [
-        {"stat": "Cold Spell Power", "value": 10, "bonus_type": "Exceptional"},
-    ],
-    "Sky Attunement": [
-        {"stat": "Fire Spell Power", "value": 10, "bonus_type": "Exceptional"},
-    ],
-    "Static Attraction": [
-        {"stat": "Electric Spell Power", "value": 10, "bonus_type": "Exceptional"},
-        {"stat": "Electric Spell Lore", "value": 5, "bonus_type": "Exceptional"},
-    ],
+    # Sea/Sky/Static Attunement: CONDITIONAL (elemental form only). Removed.
     "Songblade": [
         {"stat": "Perform", "value": 2, "bonus_type": "Enhancement"},
     ],
     # Soul of the Elements: CONDITIONAL (Mountain Stance only). Removed.
-    "Spell Resonance": [
-        {"stat": "Sonic Spell Power", "value": 20, "bonus_type": "Alchemical"},
-    ],
+    # Spell Resonance: CONDITIONAL (30s proc on Sonic cast). Removed.
     "Voice of Deceit": [
         {"stat": "Bluff", "value": 20, "bonus_type": "Competence"},
     ],
@@ -464,21 +454,12 @@ NAMED_ENCHANTMENT_EFFECTS: dict[str, list[dict]] = {
     "Undying": [
         {"stat": "Unconsciousness Range", "value": 100, "bonus_type": "Enhancement"},
     ],
-    "Weighty Asset": [
-        {"stat": "Unconsciousness Range", "value": 100, "bonus_type": "Enhancement"},
-    ],
-    "Stealer of Souls": [
-        {"stat": "Damage Bonus", "value": 1, "bonus_type": "Profane"},
-    ],
-    "Sticky Goo Guard": [
-        {"stat": "Reflex Save", "value": -2, "bonus_type": "Enhancement", "is_penalty": True},
-    ],
-    "Unbalancing": [
-        {"stat": "Armor Class", "value": -2, "bonus_type": "Enhancement", "is_penalty": True},
-    ],
-    "Embrace of the Spider Queen": [
-        {"stat": "Poison Save", "value": -6, "bonus_type": "Enhancement", "is_penalty": True},
-    ],
+    # Weighty Asset: +100 unconsciousness range — appears permanent, but needs verification.
+    # Keeping for now.
+    # Stealer of Souls: UNCERTAIN. Removed.
+    # Sticky Goo Guard: CONDITIONAL (proc). Removed.
+    # Unbalancing: CONDITIONAL (proc on enemy hit). Removed.
+    # Embrace of the Spider Queen: WRONG (wiki says +6 benefit, not -6 penalty). Removed.
 }
 
 
