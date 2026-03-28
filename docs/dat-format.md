@@ -1151,7 +1151,8 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [x] DDO Wiki scraper — items (`ddo-data build-db --type items`)
 - [x] DDO Wiki scraper — feats (`ddo-data build-db --type feats`)
 - [x] DDO Wiki scraper — enhancements (`ddo-data build-db --type enhancements`)
-- [ ] DDO Wiki scraper — quests
+- [ ] DDO Wiki scraper — quests (item source tracking via wiki_url)
+- [ ] DDO Wiki scraper — crafting systems (see ddowiki.com/page/Crafting for all systems). Includes: craftable enchantment options per slot, crafting material requirements, base item templates. Enables build planner to show craftable items and calculate material costs.
 - [x] DDO Wiki scraper — augments (`ddo-data build-db --type augments`)
 - [x] DDO Wiki scraper — spells (`ddo-data build-db --type spells`)
 - [x] DDO Wiki scraper — epic destinies (`collect_epic_destinies()` from Category:Epic Destinies)
