@@ -87,6 +87,7 @@ class GameDB:
         """Insert class progression data (spell slots, auto feats, bonus feat slots)."""
         return insert_class_progression(self.conn, classes)
 
+
     def validate(self) -> str:
         """Run post-import validation assertions.  Returns formatted report."""
         results = validate_database(self.conn)

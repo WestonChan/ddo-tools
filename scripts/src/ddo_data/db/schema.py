@@ -5,12 +5,13 @@ from __future__ import annotations
 import sqlite3
 
 from ddo_data.enums import (
-    S, AbilityModSource, Alignment, ApPool, BabProgression, BonusTypeName,
-    CasterType, DamageCategory, DamageTypeName, DataSource, EnhancementTier,
-    EquipmentSlot, FeatTier, Handedness, ItemCategory, LinkType, PastLifeType,
-    ProficiencyCategory, RaceType, Rarity, ResolutionMethod, SaveEffect,
-    SaveProgression, SaveType, SkillName, SlotCategory, SlotTier, SlotType,
-    SpellSchool, SpellTradition, StatCategory, TreeType,
+    S, AbilityModSource, Alignment, ApPool, Archetype,
+    BabProgression, BonusType, CasterType, Class,
+    DamageCategory, DamageType, DataSource, EnhancementTier, EquipmentSlot,
+    FeatTier, Handedness, ItemCategory, LinkType, PastLifeType,
+    ProficiencyCategory, Race, RaceType, Rarity, ResolutionMethod,
+    SaveEffect, SaveProgression, SaveType, Skill, SlotCategory, SlotTier,
+    SlotType, SpellSchool, SpellTradition, StatCategory, TreeType,
 )
 
 
@@ -152,7 +153,7 @@ CREATE INDEX IF NOT EXISTS idx_race_ability_modifiers_stat ON race_ability_modif
 CREATE VIEW IF NOT EXISTS race_ability_bonuses AS
     SELECT race_id, stat_id, modifier
     FROM race_ability_modifiers
-    WHERE source = 'innate';
+    WHERE source = '{AbilityModSource.INNATE}';
 
 CREATE TABLE IF NOT EXISTS class_skills (                     -- sd: from DDO wiki class pages
     class_id       INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
@@ -166,7 +167,7 @@ CREATE TABLE IF NOT EXISTS class_bonus_feat_slots (           -- wt: from class 
     class_id      INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
     class_level   INTEGER NOT NULL CHECK (class_level BETWEEN 1 AND 30),
     sort_order    INTEGER NOT NULL DEFAULT 0,
-    slot_type     TEXT NOT NULL DEFAULT 'class_bonus'
+    slot_type     TEXT NOT NULL DEFAULT '{SlotType.CLASS_BONUS}'
                   CHECK (slot_type {_check(SlotType)}),
     slot_label    TEXT,                                          -- wt: raw wiki text (display fallback)
     PRIMARY KEY (class_id, class_level, sort_order)
@@ -456,11 +457,11 @@ CREATE TABLE IF NOT EXISTS enhancement_trees (
     class_id  INTEGER REFERENCES classes(id),                    -- c: joined from class name
     race_id   INTEGER REFERENCES races(id),                      -- c: joined from race name
     CHECK (
-        (tree_type = 'class'     AND ap_pool = 'heroic'    AND class_id IS NOT NULL AND race_id IS NULL) OR
-        (tree_type = 'racial'    AND ap_pool = 'racial'    AND race_id  IS NOT NULL AND class_id IS NULL) OR
-        (tree_type = 'universal' AND ap_pool = 'heroic'    AND class_id IS NULL     AND race_id IS NULL) OR
-        (tree_type = 'reaper'    AND ap_pool = 'reaper'    AND class_id IS NULL     AND race_id IS NULL) OR
-        (tree_type = 'destiny'   AND ap_pool = 'legendary' AND class_id IS NULL     AND race_id IS NULL)
+        (tree_type = '{TreeType.CLASS}'     AND ap_pool = '{ApPool.HEROIC}'    AND class_id IS NOT NULL AND race_id IS NULL) OR
+        (tree_type = '{TreeType.RACIAL}'    AND ap_pool = '{ApPool.RACIAL}'    AND race_id  IS NOT NULL AND class_id IS NULL) OR
+        (tree_type = '{TreeType.UNIVERSAL}' AND ap_pool = '{ApPool.HEROIC}'    AND class_id IS NULL     AND race_id IS NULL) OR
+        (tree_type = '{TreeType.REAPER}'    AND ap_pool = '{ApPool.REAPER}'    AND class_id IS NULL     AND race_id IS NULL) OR
+        (tree_type = '{TreeType.DESTINY}'   AND ap_pool = '{ApPool.LEGENDARY}' AND class_id IS NULL     AND race_id IS NULL)
     )
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_enhancement_trees_name ON enhancement_trees(name);
@@ -758,631 +759,329 @@ INSERT OR IGNORE INTO schema_version (version) VALUES (1);
 # ---------------------------------------------------------------------------
 
 _SEED_SQL = f"""
--- Ability scores
-INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (1, '{S.STRENGTH}',     '{StatCategory.ABILITY}'),
-    (2, '{S.DEXTERITY}',    '{StatCategory.ABILITY}'),
-    (3, '{S.CONSTITUTION}', '{StatCategory.ABILITY}'),
-    (4, '{S.INTELLIGENCE}', '{StatCategory.ABILITY}'),
-    (5, '{S.WISDOM}',       '{StatCategory.ABILITY}'),
-    (6, '{S.CHARISMA}',     '{StatCategory.ABILITY}');
+-- stats: generated from S enum in _seed_from_enums()
 
--- Martial stats (melee/ranged offense, tactics)
-INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (7,  '{S.MELEE_POWER}',       '{StatCategory.MARTIAL}'),
-    (8,  '{S.RANGED_POWER}',      '{StatCategory.MARTIAL}'),
-    (9,  '{S.ATTACK_BONUS}',      '{StatCategory.MARTIAL}'),
-    (10, '{S.DAMAGE_BONUS}',      '{StatCategory.MARTIAL}'),
-    (11, '{S.HIT_POINTS}',        '{StatCategory.MARTIAL}'),
-    (12, '{S.SNEAK_ATTACK_DICE}', '{StatCategory.MARTIAL}'),
-    (36, '{S.TRIP_DC}',           '{StatCategory.MARTIAL}'),
-    (37, '{S.SUNDER_DC}',         '{StatCategory.MARTIAL}'),
-    (38, '{S.STUN_DC}',           '{StatCategory.MARTIAL}'),
-    (39, '{S.ASSASSINATE_DC}',    '{StatCategory.MARTIAL}'),
-    (40, '{S.HELPLESS_DAMAGE}',   '{StatCategory.MARTIAL}'),
-    (63, '{S.SEEKER}',            '{StatCategory.MARTIAL}'),
-    (64, '{S.DEADLY}',            '{StatCategory.MARTIAL}'),
-    (65, '{S.ACCURACY}',          '{StatCategory.MARTIAL}'),
-    (66, '{S.DECEPTION_STAT}',         '{StatCategory.MARTIAL}'),
-    (67, '{S.SPEED}',             '{StatCategory.MARTIAL}'),
-    (68, '{S.DOUBLESTRIKE}',      '{StatCategory.MARTIAL}'),
-    (69, '{S.DOUBLESHOT}',        '{StatCategory.MARTIAL}'),
-    (118, '{S.COMBAT_MASTERY}',   '{StatCategory.MARTIAL}'),
-    (119, '{S.TENDON_SLICE}',     '{StatCategory.MARTIAL}'),
-    (124, '{S.NIMBLE}',           '{StatCategory.MARTIAL}'),
-    (125, '{S.ALLURING}',         '{StatCategory.MARTIAL}');
-
--- Defensive stats (AC, saves, resistances, sheltering, absorption)
-INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (13, '{S.ARMOR_CLASS}',                '{StatCategory.DEFENSIVE}'),
-    (14, '{S.PHYSICAL_RESISTANCE_RATING}', '{StatCategory.DEFENSIVE}'),
-    (15, '{S.MAGICAL_RESISTANCE_RATING}',  '{StatCategory.DEFENSIVE}'),
-    (16, '{S.FORTIFICATION}',              '{StatCategory.DEFENSIVE}'),
-    (17, '{S.DODGE}',                      '{StatCategory.DEFENSIVE}'),
-    (18, '{S.FORTITUDE_SAVE}',             '{StatCategory.DEFENSIVE}'),
-    (19, '{S.REFLEX_SAVE}',               '{StatCategory.DEFENSIVE}'),
-    (20, '{S.WILL_SAVE}',                  '{StatCategory.DEFENSIVE}'),
-    (21, '{S.SPELL_RESISTANCE}',           '{StatCategory.DEFENSIVE}'),
-    (62, '{S.SAVING_THROWS_VS_TRAPS}',     '{StatCategory.DEFENSIVE}'),
-    (70, '{S.PHYSICAL_SHELTERING}',        '{StatCategory.DEFENSIVE}'),
-    (71, '{S.MAGICAL_SHELTERING}',         '{StatCategory.DEFENSIVE}'),
-    (72, '{S.CONCEALMENT}',                '{StatCategory.DEFENSIVE}'),
-    (115, '{S.NATURAL_ARMOR}',             '{StatCategory.DEFENSIVE}'),
-    (116, '{S.PROTECTION}',                '{StatCategory.DEFENSIVE}'),
-    (117, '{S.SHELTERING}',                '{StatCategory.DEFENSIVE}'),
-    (120, '{S.RESISTANCE}',                '{StatCategory.DEFENSIVE}'),
-    (121, 'Enchantment Save',          '{StatCategory.DEFENSIVE}'),
-    (122, 'Curse Save',                '{StatCategory.DEFENSIVE}'),
-    (123, '{S.POISON_RESISTANCE}',         '{StatCategory.DEFENSIVE}'),
-    (128, '{S.ELEMENTAL_RESISTANCE_STAT}',      '{StatCategory.DEFENSIVE}'),
-    (76, '{S.FIRE_RESISTANCE}',            '{StatCategory.DEFENSIVE}'),
-    (77, '{S.COLD_RESISTANCE}',            '{StatCategory.DEFENSIVE}'),
-    (78, '{S.ELECTRIC_RESISTANCE}',        '{StatCategory.DEFENSIVE}'),
-    (79, '{S.ACID_RESISTANCE}',            '{StatCategory.DEFENSIVE}'),
-    (80, '{S.SONIC_RESISTANCE}',           '{StatCategory.DEFENSIVE}'),
-    (81, '{S.LIGHT_RESISTANCE}',           '{StatCategory.DEFENSIVE}'),
-    (82, '{S.FORCE_RESISTANCE}',           '{StatCategory.DEFENSIVE}'),
-    (83, '{S.NEGATIVE_RESISTANCE}',        '{StatCategory.DEFENSIVE}'),
-    (84, '{S.FIRE_ABSORPTION}',            '{StatCategory.DEFENSIVE}'),
-    (85, '{S.COLD_ABSORPTION}',            '{StatCategory.DEFENSIVE}'),
-    (86, '{S.ELECTRIC_ABSORPTION}',        '{StatCategory.DEFENSIVE}'),
-    (87, '{S.ACID_ABSORPTION}',            '{StatCategory.DEFENSIVE}'),
-    (88, '{S.SONIC_ABSORPTION}',           '{StatCategory.DEFENSIVE}'),
-    (89, '{S.LIGHT_ABSORPTION}',           '{StatCategory.DEFENSIVE}'),
-    (90, '{S.FORCE_ABSORPTION}',           '{StatCategory.DEFENSIVE}'),
-    (91, '{S.NEGATIVE_ABSORPTION}',        '{StatCategory.DEFENSIVE}');
-
--- Magical stats (spell power, spell focus, spell penetration)
-INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (22, '{S.SPELL_POINTS}',              '{StatCategory.MAGICAL}'),
-    (23, '{S.SPELL_PENETRATION}',         '{StatCategory.MAGICAL}'),
-    (24, '{S.UNIVERSAL_SPELL_POWER}',     '{StatCategory.MAGICAL}'),
-    (25, '{S.FIRE_SPELL_POWER}',          '{StatCategory.MAGICAL}'),
-    (26, '{S.COLD_SPELL_POWER}',          '{StatCategory.MAGICAL}'),
-    (27, '{S.ELECTRIC_SPELL_POWER}',      '{StatCategory.MAGICAL}'),
-    (28, '{S.ACID_SPELL_POWER}',          '{StatCategory.MAGICAL}'),
-    (29, '{S.SONIC_SPELL_POWER}',         '{StatCategory.MAGICAL}'),
-    (30, '{S.LIGHT_SPELL_POWER}',         '{StatCategory.MAGICAL}'),
-    (31, '{S.FORCE_SPELL_POWER}',         '{StatCategory.MAGICAL}'),
-    (32, '{S.NEGATIVE_SPELL_POWER}',      '{StatCategory.MAGICAL}'),
-    (33, '{S.POSITIVE_SPELL_POWER}',      '{StatCategory.MAGICAL}'),
-    (34, '{S.REPAIR_SPELL_POWER}',        '{StatCategory.MAGICAL}'),
-    (35, '{S.ALIGNMENT_SPELL_POWER}',     '{StatCategory.MAGICAL}'),
-    (92, '{S.ABJURATION_SPELL_FOCUS}',    '{StatCategory.MAGICAL}'),
-    (93, '{S.CONJURATION_SPELL_FOCUS}',   '{StatCategory.MAGICAL}'),
-    (94, '{S.ENCHANTMENT_SPELL_FOCUS}',   '{StatCategory.MAGICAL}'),
-    (95, '{S.EVOCATION_SPELL_FOCUS}',     '{StatCategory.MAGICAL}'),
-    (96, '{S.ILLUSION_SPELL_FOCUS}',      '{StatCategory.MAGICAL}'),
-    (97, '{S.NECROMANCY_SPELL_FOCUS}',    '{StatCategory.MAGICAL}'),
-    (98, '{S.TRANSMUTATION_SPELL_FOCUS}', '{StatCategory.MAGICAL}'),
-    (99, '{S.WIZARDRY}',                  '{StatCategory.MAGICAL}'),
-    (100, '{S.SPELL_FOCUS_MASTERY}',      '{StatCategory.MAGICAL}'),
-    (126, '{S.RUNE_ARM_SPELL_FOCUS}',    '{StatCategory.MAGICAL}'),
-    (101, '{S.FIRE_SPELL_LORE}',          '{StatCategory.MAGICAL}'),
-    (102, '{S.COLD_SPELL_LORE}',          '{StatCategory.MAGICAL}'),
-    (103, '{S.ELECTRIC_SPELL_LORE}',      '{StatCategory.MAGICAL}'),
-    (104, '{S.ACID_SPELL_LORE}',          '{StatCategory.MAGICAL}'),
-    (105, '{S.SONIC_SPELL_LORE}',         '{StatCategory.MAGICAL}'),
-    (106, '{S.LIGHT_SPELL_LORE}',         '{StatCategory.MAGICAL}'),
-    (107, '{S.FORCE_SPELL_LORE}',         '{StatCategory.MAGICAL}'),
-    (108, '{S.NEGATIVE_SPELL_LORE}',      '{StatCategory.MAGICAL}'),
-    (109, '{S.POSITIVE_SPELL_LORE}',      '{StatCategory.MAGICAL}'),
-    (110, '{S.REPAIR_SPELL_LORE}',        '{StatCategory.MAGICAL}'),
-    (111, '{S.UNIVERSAL_SPELL_LORE}',     '{StatCategory.MAGICAL}'),
-    (112, '{S.SPELL_LORE}',              '{StatCategory.MAGICAL}'),
-    (113, '{S.SACRED_GROUND_LORE}',       '{StatCategory.MAGICAL}'),
-    (114, '{S.DARK_RESTORATION_LORE}',    '{StatCategory.MAGICAL}');
-
--- Skills
-INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (41, 'Balance',               '{StatCategory.SKILL}'),
-    (42, '{S.BLUFF}',                 '{StatCategory.SKILL}'),
-    (43, 'Concentration',         '{StatCategory.SKILL}'),
-    (44, 'Diplomacy',             '{StatCategory.SKILL}'),
-    (45, 'Disable Device',        '{StatCategory.SKILL}'),
-    (46, 'Haggle',                '{StatCategory.SKILL}'),
-    (47, 'Heal',                  '{StatCategory.SKILL}'),
-    (48, '{S.HIDE}',                  '{StatCategory.SKILL}'),
-    (49, '{S.INTIMIDATE}',            '{StatCategory.SKILL}'),
-    (50, 'Jump',                  '{StatCategory.SKILL}'),
-    (51, 'Listen',                '{StatCategory.SKILL}'),
-    (52, 'Move Silently',         '{StatCategory.SKILL}'),
-    (53, 'Open Lock',             '{StatCategory.SKILL}'),
-    (54, '{S.PERFORM}',               '{StatCategory.SKILL}'),
-    (55, 'Repair',                '{StatCategory.SKILL}'),
-    (56, '{S.SEARCH}',                '{StatCategory.SKILL}'),
-    (57, 'Spellcraft',            '{StatCategory.SKILL}'),
-    (58, '{S.SPOT}',                  '{StatCategory.SKILL}'),
-    (59, 'Swim',                  '{StatCategory.SKILL}'),
-    (60, 'Tumble',                '{StatCategory.SKILL}'),
-    (61, 'Use Magic Device',      '{StatCategory.SKILL}');
-
--- Other stats (healing/repair amplification, misc)
-INSERT OR IGNORE INTO stats (id, name, category) VALUES
-    (73, '{S.HEALING_AMPLIFICATION}', '{StatCategory.OTHER}'),
-    (74, '{S.REPAIR_AMPLIFICATION}',  '{StatCategory.OTHER}'),
-    (75, '{S.WELL_ROUNDED}',          '{StatCategory.OTHER}'),
-    (127, '{S.LINGUISTICS}',          '{StatCategory.SKILL}'),
-    (129, '{S.POSITIVE_HEALING_AMPLIFICATION}', '{StatCategory.OTHER}'),
-    (130, '{S.NEGATIVE_HEALING_AMPLIFICATION}', '{StatCategory.OTHER}'),
-    (131, '{S.MAXIMUM_SPELL_POINTS}',           '{StatCategory.MAGICAL}'),
-    (132, '{S.CRITICAL_DAMAGE_MULTIPLIER}',     '{StatCategory.MARTIAL}'),
-    (133, '{S.CRITICAL_THREAT_RANGE}',          '{StatCategory.MARTIAL}'),
-    (134, '{S.MELEE_AND_RANGED_POWER}',         '{StatCategory.MARTIAL}'),
-    (135, '{S.PHYSICAL_AND_MAGICAL_RESISTANCE_RATING}', '{StatCategory.DEFENSIVE}'),
-    (136, '{S.POSITIVE_AND_NEGATIVE_SPELL_POWER}',      '{StatCategory.MAGICAL}'),
-    (137, '{S.POSITIVE_AND_NEGATIVE_HEALING_AMP}', '{StatCategory.OTHER}'),
-    (138, '{S.DOUBLESTRIKE_AND_DOUBLESHOT}',    '{StatCategory.MARTIAL}'),
-    (140, '{S.POISON_SPELL_POWER}',             '{StatCategory.MAGICAL}'),
-    (142, '{S.TEMPORARY_HIT_POINTS}',           '{StatCategory.DEFENSIVE}'),
-    (143, '{S.BARD_SONGS}',                     '{StatCategory.OTHER}'),
-    (144, '{S.MOVEMENT_SPEED}',                 '{StatCategory.OTHER}'),
-    (145, '{S.MAXIMUM_HIT_POINTS}',             '{StatCategory.DEFENSIVE}'),
-    -- Absorption stats (from {{Absorption}} wiki template)
-    (146, '{S.FIRE_ABSORPTION}',               '{StatCategory.DEFENSIVE}'),
-    (147, '{S.COLD_ABSORPTION}',               '{StatCategory.DEFENSIVE}'),
-    (148, '{S.ELECTRIC_ABSORPTION}',           '{StatCategory.DEFENSIVE}'),
-    (149, '{S.ACID_ABSORPTION}',               '{StatCategory.DEFENSIVE}'),
-    (150, '{S.SONIC_ABSORPTION}',              '{StatCategory.DEFENSIVE}'),
-    (151, '{S.LIGHT_ABSORPTION}',              '{StatCategory.DEFENSIVE}'),
-    (152, '{S.NEGATIVE_ENERGY_ABSORPTION}',    '{StatCategory.DEFENSIVE}'),
-    (153, '{S.LAW_ABSORPTION}',                '{StatCategory.DEFENSIVE}'),
-    (154, '{S.CHAOS_ABSORPTION}',              '{StatCategory.DEFENSIVE}'),
-    (155, '{S.GOOD_ABSORPTION}',               '{StatCategory.DEFENSIVE}'),
-    (156, '{S.EVIL_ABSORPTION}',               '{StatCategory.DEFENSIVE}'),
-    (157, '{S.ELEMENTAL_ABSORPTION_STAT}',          '{StatCategory.DEFENSIVE}'),
-    (158, '{S.ALIGNMENT_ABSORPTION}',          '{StatCategory.DEFENSIVE}'),
-    (159, '{S.SPELL_ABSORPTION_STAT}',              '{StatCategory.DEFENSIVE}'),
-    (160, '{S.CURSE_ABSORPTION}',              '{StatCategory.DEFENSIVE}'),
-    -- Save (from {{Save}} template)
-    (161, '{S.SAVING_THROWS}',                 '{StatCategory.DEFENSIVE}'),
-    -- Spell Focus (from {{Spell Focus}} template)
-    (162, 'Universal Spell Focus',         '{StatCategory.MAGICAL}'),
-    (163, 'Breath Weapon Spell Focus',     '{StatCategory.MAGICAL}'),
-    -- Tactics (from {{Tactics}} template)
-    (164, 'Shatter',                       '{StatCategory.MARTIAL}'),
-    (165, 'Prudent',                        '{StatCategory.MARTIAL}'),
-    (166, 'Astute',                         '{StatCategory.MARTIAL}'),
-    -- Elemental resistance (from {{Elemental Resistance}} template)
-    (167, '{S.NEGATIVE_ENERGY_RESISTANCE}',    '{StatCategory.DEFENSIVE}'),
-    (168, '{S.ELEMENTAL_RESISTANCE_STAT}',          '{StatCategory.DEFENSIVE}'),
-    -- Save subtypes (from {{Save}} template)
-    (169, 'Enchantment Save',              '{StatCategory.DEFENSIVE}'),
-    (170, 'Illusion Save',                 '{StatCategory.DEFENSIVE}'),
-    (171, '{S.FEAR_SAVE}',                     '{StatCategory.DEFENSIVE}'),
-    (172, '{S.POISON_SAVE}',                   '{StatCategory.DEFENSIVE}'),
-    (173, '{S.DISEASE_SAVE}',                  '{StatCategory.DEFENSIVE}'),
-    (174, 'Curse Save',                    '{StatCategory.DEFENSIVE}'),
-    (175, '{S.SLEEP_SAVE}',                    '{StatCategory.DEFENSIVE}'),
-    (176, '{S.TRAP_SAVE}',                     '{StatCategory.DEFENSIVE}'),
-    (177, '{S.SPELL_SAVE}',                    '{StatCategory.DEFENSIVE}'),
-    -- Potency (acts as all element spell powers but different stacking than Universal SP)
-    (178, '{S.POTENCY}',                       '{StatCategory.MAGICAL}'),
-    (179, '{S.HELPLESS_DAMAGE}',               '{StatCategory.MARTIAL}'),
-    (180, '{S.IMBUE_DICE}',                    '{StatCategory.MARTIAL}'),
-    (181, '{S.FORTIFICATION_BYPASS}',          '{StatCategory.MARTIAL}'),
-    (182, '{S.ATTACK_SPEED}',                  '{StatCategory.MARTIAL}'),
-    (183, '{S.POSITIVE_SPELL_LORE}',           '{StatCategory.MAGICAL}'),
-    (184, '{S.NEGATIVE_SPELL_LORE}',           '{StatCategory.MAGICAL}'),
-    (185, '{S.FORCE_SPELL_LORE}',              '{StatCategory.MAGICAL}'),
-    (186, '{S.REPAIR_SPELL_LORE}',             '{StatCategory.MAGICAL}'),
-    -- Set bonus stats
-    (187, '{S.MAGICAL_RESISTANCE_RATING_CAP}', '{StatCategory.DEFENSIVE}'),
-    (188, '{S.THREAT_GENERATION}',             '{StatCategory.MARTIAL}'),
-    (189, '{S.MELEE_THREAT_GENERATION}',       '{StatCategory.MARTIAL}'),
-    (190, '{S.THREAT_REDUCTION}',              '{StatCategory.MARTIAL}'),
-    (191, '{S.MISSILE_DEFLECTION}',            '{StatCategory.DEFENSIVE}'),
-    (192, '{S.OFFHAND_STRIKE_CHANCE}',         '{StatCategory.MARTIAL}'),
-    (193, '{S.STRIKETHROUGH}',                 '{StatCategory.MARTIAL}'),
-    (194, 'Critical Multiplier',           '{StatCategory.MARTIAL}'),
-    (195, '{S.SHIELD_ARMOR_CLASS}',            '{StatCategory.DEFENSIVE}'),
-    (196, '{S.RUNE_ARM_DC}',                   '{StatCategory.MAGICAL}'),
-    (197, '{S.ASSASSINATE_DC}',                '{StatCategory.MARTIAL}'),
-    (198, '{S.TACTICS}',                        '{StatCategory.MARTIAL}'),
-    (199, '{S.DODGE_CAP}',                     '{StatCategory.DEFENSIVE}'),
-    (200, '{S.CRITICAL_CONFIRMATION}',         '{StatCategory.MARTIAL}'),
-    (201, '{S.SPELL_CRITICAL_DAMAGE}',         '{StatCategory.MAGICAL}'),
-    (202, '{S.MAXIMUM_SPELL_POINTS}',          '{StatCategory.MAGICAL}'),
-    (203, '{S.ARMOR_CLASS_PERCENTAGE}',        '{StatCategory.DEFENSIVE}'),
-    (204, '{S.SNEAK_ATTACK_DAMAGE}',           '{StatCategory.MARTIAL}'),
-    (205, '{S.CRITICAL_DAMAGE}',               '{StatCategory.MARTIAL}'),
-    (206, '{S.SPELL_POINT_COST_REDUCTION}',    '{StatCategory.MAGICAL}'),
-    (207, '{S.SNEAK_ATTACK_HIT}',              '{StatCategory.MARTIAL}'),
-    (208, '{S.DAMAGE_BONUS}',                  '{StatCategory.MARTIAL}'),
-    -- Missing stats found during enum migration
-    (209, '{S.SPELL_DCS}',                     '{StatCategory.MAGICAL}'),
-    (210, '{S.COMMAND}',                       '{StatCategory.SKILL}'),
-    (211, '{S.PERSUASION}',                    '{StatCategory.SKILL}'),
-    (212, '{S.UNIVERSAL_SPELL_CRITICAL_DAMAGE}', '{StatCategory.MAGICAL}'),
-    (213, '{S.SNEAK_ATTACK}',                  '{StatCategory.MARTIAL}'),
-    (214, '{S.SNEAK_ATTACK_BONUS}',            '{StatCategory.MARTIAL}'),
-    (215, '{S.POISON_SPELL_POWER}',            '{StatCategory.MAGICAL}'),
-    (216, '{S.POISON_SPELL_LORE}',             '{StatCategory.MAGICAL}'),
-    (217, '{S.POISON_ABSORPTION}',             '{StatCategory.DEFENSIVE}'),
-    (218, '{S.CHAOS_SPELL_POWER}',             '{StatCategory.MAGICAL}'),
-    (219, '{S.CHAOS_SPELL_LORE}',              '{StatCategory.MAGICAL}'),
-    (220, '{S.GOOD_SPELL_POWER}',              '{StatCategory.MAGICAL}'),
-    (221, '{S.GOOD_SPELL_LORE}',               '{StatCategory.MAGICAL}'),
-    (222, '{S.EVIL_SPELL_POWER}',              '{StatCategory.MAGICAL}'),
-    (223, '{S.EVIL_SPELL_LORE}',               '{StatCategory.MAGICAL}'),
-    (224, '{S.LAW_SPELL_POWER}',               '{StatCategory.MAGICAL}'),
-    (225, '{S.LAW_SPELL_LORE}',                '{StatCategory.MAGICAL}'),
-    (226, '{S.MELEE_AND_RANGED_THREAT_REDUCTION}', '{StatCategory.MARTIAL}'),
-    (227, '{S.RANGED_THREAT_REDUCTION}',       '{StatCategory.MARTIAL}'),
-    (228, '{S.SAVES_VS_EVIL}',                 '{StatCategory.DEFENSIVE}'),
-    (229, '{S.ATTACK_AND_DAMAGE_VS_EVIL}',     '{StatCategory.MARTIAL}'),
-    (230, '{S.DAMAGE_VS_EVIL}',                '{StatCategory.MARTIAL}');
-
--- Skills (key_ability_id references stats above)
-INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES
-    (1,  '{SkillName.BALANCE}',          2),   -- DEX
-    (2,  '{SkillName.BLUFF}',            6),   -- CHA
-    (3,  '{SkillName.CONCENTRATION}',    3),   -- CON
-    (4,  '{SkillName.DIPLOMACY}',        6),   -- CHA
-    (5,  '{SkillName.DISABLE_DEVICE}',   4),   -- INT
-    (6,  '{SkillName.HAGGLE}',           6),   -- CHA
-    (7,  '{SkillName.HEAL_SKILL}',             5),   -- WIS
-    (8,  '{SkillName.HIDE_SKILL}',             2),   -- DEX
-    (9,  '{SkillName.INTIMIDATE_SKILL}',       6),   -- CHA
-    (10, '{SkillName.JUMP}',             1),   -- STR
-    (11, '{SkillName.LISTEN}',           5),   -- WIS
-    (12, '{SkillName.MOVE_SILENTLY}',    2),   -- DEX
-    (13, '{SkillName.OPEN_LOCK}',        2),   -- DEX
-    (14, '{SkillName.PERFORM_SKILL}',          6),   -- CHA
-    (15, '{SkillName.REPAIR_SKILL}',           4),   -- INT
-    (16, '{SkillName.SEARCH_SKILL}',           4),   -- INT
-    (17, '{SkillName.SPELLCRAFT}',       4),   -- INT
-    (18, '{SkillName.SPOT_SKILL}',             5),   -- WIS
-    (19, '{SkillName.SWIM}',             1),   -- STR
-    (20, '{SkillName.TUMBLE}',           2),   -- DEX
-    (21, '{SkillName.USE_MAGIC_DEVICE}', 6);   -- CHA
+-- skills: generated from Skill enum in _seed_from_enums()
 
 -- Classes
 INSERT OR IGNORE INTO classes (id, name, hit_die, bab_progression, skill_points_per_level, fort_save_progression, ref_save_progression, will_save_progression, caster_type, spell_tradition, alignment, icon) VALUES
-    (1,  'Barbarian',      12, '{BabProgression.FULL}',          4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY_NON_LAWFUL}', 'Barbarian.png'),
-    (2,  'Bard',            8, '{BabProgression.THREE_QUARTER}',  6, '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Bard.png'),
-    (3,  'Cleric',          8, '{BabProgression.THREE_QUARTER}',  2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.DIVINE}', '{Alignment.ANY}',            'Cleric.png'),
-    (4,  'Fighter',        10, '{BabProgression.FULL}',           2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY}',            'Fighter.png'),
-    (5,  'Paladin',        10, '{BabProgression.FULL}',           2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{CasterType.HALF}',  '{SpellTradition.DIVINE}', '{Alignment.LAWFUL_GOOD}',    'Paladin.png'),
-    (6,  'Ranger',         10, '{BabProgression.FULL}',           6, '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{CasterType.HALF}',  '{SpellTradition.DIVINE}', '{Alignment.ANY}',            'Ranger.png'),
-    (7,  'Rogue',           8, '{BabProgression.THREE_QUARTER}',  8, '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY}',            'Rogue.png'),
-    (8,  'Sorcerer',        6, '{BabProgression.HALF}',           2, '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Sorcerer.png'),
-    (9,  'Wizard',          6, '{BabProgression.HALF}',           2, '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Wizard.png'),
-    (10, 'Monk',            8, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY_LAWFUL}',     'Monk.png'),
-    (11, 'Favored Soul',    8, '{BabProgression.THREE_QUARTER}',  2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.DIVINE}', '{Alignment.ANY}',            'Favored Soul.png'),
-    (12, 'Artificer',       8, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Artificer.png'),
-    (13, 'Druid',           8, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.DIVINE}', '{Alignment.ANY_NEUTRAL}',    'Druid.png'),
-    (14, 'Warlock',         6, '{BabProgression.THREE_QUARTER}',  2, '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Warlock.png'),
-    (15, 'Alchemist',       6, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Alchemist.png');
+    (1,  '{Class.BARBARIAN}',   12, '{BabProgression.FULL}',          4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY_NON_LAWFUL}', 'Barbarian.png'),
+    (2,  '{Class.BARD}',         8, '{BabProgression.THREE_QUARTER}',  6, '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Bard.png'),
+    (3,  '{Class.CLERIC}',       8, '{BabProgression.THREE_QUARTER}',  2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.DIVINE}', '{Alignment.ANY}',            'Cleric.png'),
+    (4,  '{Class.FIGHTER}',     10, '{BabProgression.FULL}',           2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY}',            'Fighter.png'),
+    (5,  '{Class.PALADIN}',     10, '{BabProgression.FULL}',           2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{CasterType.HALF}',  '{SpellTradition.DIVINE}', '{Alignment.LAWFUL_GOOD}',    'Paladin.png'),
+    (6,  '{Class.RANGER}',      10, '{BabProgression.FULL}',           6, '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{CasterType.HALF}',  '{SpellTradition.DIVINE}', '{Alignment.ANY}',            'Ranger.png'),
+    (7,  '{Class.ROGUE}',        8, '{BabProgression.THREE_QUARTER}',  8, '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY}',            'Rogue.png'),
+    (8,  '{Class.SORCERER}',     6, '{BabProgression.HALF}',           2, '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Sorcerer.png'),
+    (9,  '{Class.WIZARD}',       6, '{BabProgression.HALF}',           2, '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Wizard.png'),
+    (10, '{Class.MONK}',         8, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{SaveProgression.GOOD}', '{CasterType.NONE}',  NULL,     '{Alignment.ANY_LAWFUL}',     'Monk.png'),
+    (11, '{Class.FAVORED_SOUL}', 8, '{BabProgression.THREE_QUARTER}',  2, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.DIVINE}', '{Alignment.ANY}',            'Favored Soul.png'),
+    (12, '{Class.ARTIFICER}',    8, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Artificer.png'),
+    (13, '{Class.DRUID}',        8, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.DIVINE}', '{Alignment.ANY_NEUTRAL}',    'Druid.png'),
+    (14, '{Class.WARLOCK}',      6, '{BabProgression.THREE_QUARTER}',  2, '{SaveProgression.POOR}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Warlock.png'),
+    (15, '{Class.ALCHEMIST}',    6, '{BabProgression.THREE_QUARTER}',  4, '{SaveProgression.GOOD}', '{SaveProgression.POOR}', '{SaveProgression.GOOD}', '{CasterType.FULL}',  '{SpellTradition.ARCANE}', '{Alignment.ANY}',            'Alchemist.png');
 
 -- Archetypes (modify a base class; inherit most stats from parent)
 INSERT OR IGNORE INTO classes (id, name, parent_class_id, is_archetype) VALUES
-    (16, 'Dragon Lord',        4,  1),   -- Fighter archetype
-    (17, 'Dragon Disciple',    8,  1),   -- Sorcerer archetype
-    (18, 'Arcane Trickster',   7,  1),   -- Rogue archetype
-    (19, 'Wild Mage',          9,  1),   -- Wizard archetype
-    (20, 'Stormsinger',        2,  1),   -- Bard archetype
-    (21, 'Dark Apostate',      3,  1),   -- Cleric archetype
-    (22, 'Blightcaster',      13,  1),   -- Druid archetype
-    (23, 'Sacred Fist',        5,  1),   -- Paladin archetype
-    (24, 'Dark Hunter',        6,  1),   -- Ranger archetype
-    (25, 'Acolyte of the Skin',14, 1);   -- Warlock archetype
+    (16, '{Archetype.DRAGON_LORD}',          4,  1),   -- Fighter archetype
+    (17, '{Archetype.DRAGON_DISCIPLE}',      8,  1),   -- Sorcerer archetype
+    (18, '{Archetype.ARCANE_TRICKSTER}',     7,  1),   -- Rogue archetype
+    (19, '{Archetype.WILD_MAGE}',            9,  1),   -- Wizard archetype
+    (20, '{Archetype.STORMSINGER}',          2,  1),   -- Bard archetype
+    (21, '{Archetype.DARK_APOSTATE}',        3,  1),   -- Cleric archetype
+    (22, '{Archetype.BLIGHTCASTER}',        13,  1),   -- Druid archetype
+    (23, '{Archetype.SACRED_FIST}',          5,  1),   -- Paladin archetype
+    (24, '{Archetype.DARK_HUNTER}',          6,  1),   -- Ranger archetype
+    (25, '{Archetype.ACOLYTE_OF_THE_SKIN}', 14,  1);   -- Warlock archetype
 
 -- Races (standard + iconic)
 INSERT OR IGNORE INTO races (id, name, race_type, icon) VALUES
     -- Free races (icons resolved at build time via MediaWiki allimages API)
-    (1,  'Human',         '{RaceType.FREE}',    'Human_race_icon.png'),
-    (2,  'Elf',           '{RaceType.FREE}',    'Elf_race_icon.png'),
-    (3,  'Dwarf',         '{RaceType.FREE}',    'Dwarf_race_icon.png'),
-    (4,  'Halfling',      '{RaceType.FREE}',    'Halfling_race_icon.png'),
-    (5,  'Warforged',     '{RaceType.FREE}',    'Warforged_race_icon.png'),
-    (6,  'Drow Elf',      '{RaceType.FREE}',    'Drow_race_icon.png'),
-    (7,  'Half-Elf',      '{RaceType.FREE}',    'Half-Elf_race_icon.png'),
-    (8,  'Half-Orc',      '{RaceType.FREE}',    'Half-Orc_race_icon.png'),
-    (9,  'Gnome',         '{RaceType.FREE}',    'Gnome_race_icon.png'),
-    (10, 'Dragonborn',    '{RaceType.FREE}',    'Dragonborn_race_icon.png'),
-    (11, 'Tiefling',      '{RaceType.FREE}',    'Tiefling_race_icon.png'),
-    (12, 'Wood Elf',      '{RaceType.FREE}',    'Wood_Elf_race_icon.jpg'),
+    (1,  '{Race.HUMAN}',      '{RaceType.FREE}',    'Human_race_icon.png'),
+    (2,  '{Race.ELF}',        '{RaceType.FREE}',    'Elf_race_icon.png'),
+    (3,  '{Race.DWARF}',      '{RaceType.FREE}',    'Dwarf_race_icon.png'),
+    (4,  '{Race.HALFLING}',   '{RaceType.FREE}',    'Halfling_race_icon.png'),
+    (5,  '{Race.WARFORGED}',  '{RaceType.FREE}',    'Warforged_race_icon.png'),
+    (6,  '{Race.DROW_ELF}',   '{RaceType.FREE}',    'Drow_race_icon.png'),
+    (7,  '{Race.HALF_ELF}',   '{RaceType.FREE}',    'Half-Elf_race_icon.png'),
+    (8,  '{Race.HALF_ORC}',   '{RaceType.FREE}',    'Half-Orc_race_icon.png'),
+    (9,  '{Race.GNOME}',      '{RaceType.FREE}',    'Gnome_race_icon.png'),
+    (10, '{Race.DRAGONBORN}', '{RaceType.FREE}',    'Dragonborn_race_icon.png'),
+    (11, '{Race.TIEFLING}',   '{RaceType.FREE}',    'Tiefling_race_icon.png'),
+    (12, '{Race.WOOD_ELF}',   '{RaceType.FREE}',    'Wood_Elf_race_icon.jpg'),
     -- Premium races
-    (13, 'Aasimar',       '{RaceType.PREMIUM}', 'Aasimar_race_icon.png'),
-    (14, 'Tabaxi',        '{RaceType.PREMIUM}', 'Tabaxi_race_icon.png'),
-    (15, 'Shifter',       '{RaceType.PREMIUM}', 'Shifter_race_icon.png'),
-    (16, 'Eladrin',       '{RaceType.PREMIUM}', 'Eladrin_race_icon.png'),
-    (17, 'Dhampir',       '{RaceType.PREMIUM}', 'Dhampir_race_icon.png'),
+    (13, '{Race.AASIMAR}',    '{RaceType.PREMIUM}', 'Aasimar_race_icon.png'),
+    (14, '{Race.TABAXI}',     '{RaceType.PREMIUM}', 'Tabaxi_race_icon.png'),
+    (15, '{Race.SHIFTER}',    '{RaceType.PREMIUM}', 'Shifter_race_icon.png'),
+    (16, '{Race.ELADRIN}',    '{RaceType.PREMIUM}', 'Eladrin_race_icon.png'),
+    (17, '{Race.DHAMPIR}',    '{RaceType.PREMIUM}', 'Dhampir_race_icon.png'),
     -- Iconic races (start at class level, have a parent base race)
-    (18, 'Bladeforged',          '{RaceType.ICONIC}', 'Bladeforged_race_icon.png'),
-    (19, 'Purple Dragon Knight', '{RaceType.ICONIC}', 'Purple_Dragon_Knight_race_icon.png'),
-    (20, 'Morninglord',          '{RaceType.ICONIC}', 'Morninglord_race_icon.png'),
-    (21, 'Shadar-kai',           '{RaceType.ICONIC}', 'Shadar-Kai_race_icon.png'),
-    (22, 'Deep Gnome',           '{RaceType.ICONIC}', 'Deep_Gnome_race_icon.png'),
-    (23, 'Aasimar Scourge',      '{RaceType.ICONIC}', 'Aasimar_Scourge_race_icon.png'),
-    (24, 'Razorclaw Shifter',    '{RaceType.ICONIC}', 'Razorclaw_Shifter_race_icon.png'),
-    (25, 'Tiefling Scoundrel',   '{RaceType.ICONIC}', 'Tiefling_Scoundrel_race_icon.png'),
-    (26, 'Tabaxi Trailblazer',   '{RaceType.ICONIC}', 'Tabaxi_Trailblazer_race_icon.png'),
-    (27, 'Eladrin Chaosmancer',  '{RaceType.ICONIC}', 'Eladrin_Chaosmancer_race_icon.png'),
-    (28, 'Dhampir Dark Bargainer','{RaceType.ICONIC}', NULL);
+    (18, '{Race.BLADEFORGED}',           '{RaceType.ICONIC}', 'Bladeforged_race_icon.png'),
+    (19, '{Race.PURPLE_DRAGON_KNIGHT}',  '{RaceType.ICONIC}', 'Purple_Dragon_Knight_race_icon.png'),
+    (20, '{Race.MORNINGLORD}',           '{RaceType.ICONIC}', 'Morninglord_race_icon.png'),
+    (21, '{Race.SHADAR_KAI}',            '{RaceType.ICONIC}', 'Shadar-Kai_race_icon.png'),
+    (22, '{Race.DEEP_GNOME}',            '{RaceType.ICONIC}', 'Deep_Gnome_race_icon.png'),
+    (23, '{Race.AASIMAR_SCOURGE}',       '{RaceType.ICONIC}', 'Aasimar_Scourge_race_icon.png'),
+    (24, '{Race.RAZORCLAW_SHIFTER}',     '{RaceType.ICONIC}', 'Razorclaw_Shifter_race_icon.png'),
+    (25, '{Race.TIEFLING_SCOUNDREL}',    '{RaceType.ICONIC}', 'Tiefling_Scoundrel_race_icon.png'),
+    (26, '{Race.TABAXI_TRAILBLAZER}',    '{RaceType.ICONIC}', 'Tabaxi_Trailblazer_race_icon.png'),
+    (27, '{Race.ELADRIN_CHAOSMANCER}',   '{RaceType.ICONIC}', 'Eladrin_Chaosmancer_race_icon.png'),
+    (28, '{Race.DHAMPIR_DARK_BARGAINER}','{RaceType.ICONIC}', NULL);
 
--- Bonus types (stacks_with_self=1 means same-type bonuses from different sources stack)
-INSERT OR IGNORE INTO bonus_types (id, name, stacks_with_self) VALUES
-    (1,  '{BonusTypeName.ENHANCEMENT}',   0),
-    (2,  '{BonusTypeName.COMPETENCE}',    0),
-    (3,  '{BonusTypeName.INSIGHT}',       0),
-    (4,  '{BonusTypeName.SACRED}',        0),
-    (5,  '{BonusTypeName.PROFANE}',       0),
-    (6,  '{BonusTypeName.LUCK}',          0),
-    (7,  '{BonusTypeName.MORALE}',        0),
-    (8,  '{BonusTypeName.ALCHEMICAL}',    0),
-    (9,  '{BonusTypeName.DODGE_BT}',         1),  -- dodge bonuses stack
-    (10, '{BonusTypeName.ARMOR_BT}',         0),
-    (11, '{BonusTypeName.NATURAL_ARMOR_BT}', 0),
-    (12, '{BonusTypeName.DEFLECTION}',    0),
-    (13, '{BonusTypeName.SHIELD_BT}',        0),
-    (14, '{BonusTypeName.SIZE}',          0),
-    (15, '{BonusTypeName.RACIAL_BT}',        0),
-    (16, '{BonusTypeName.RESISTANCE_BT}',    0),
-    (17, '{BonusTypeName.FESTIVE}',       0),
-    (18, '{BonusTypeName.EXCEPTIONAL}',   0),
-    (19, '{BonusTypeName.QUALITY_BT}',       0),
-    (20, '{BonusTypeName.ARTIFACT}',      0),
-    (21, '{BonusTypeName.INHERENT}',      0),
-    (22, '{BonusTypeName.STACKING}',      1),  -- explicitly stacking bonuses
-    (23, '{BonusTypeName.RAGE}',          0),
-    (24, '{BonusTypeName.PRIMAL}',        0),
-    (25, '{BonusTypeName.DETERMINATION}', 0),
-    (26, '{BonusTypeName.IMPLEMENT}',     0),
-    (27, '{BonusTypeName.MUSIC}',         0),
-    (28, '{BonusTypeName.EQUIPMENT}',     0);
+-- bonus_types: generated from BonusType enum in _seed_from_enums()
 
--- Damage types
-INSERT OR IGNORE INTO damage_types (id, name, category) VALUES
-    (1,  '{DamageTypeName.SLASHING}',    '{DamageCategory.PHYSICAL}'),
-    (2,  '{DamageTypeName.PIERCING}',    '{DamageCategory.PHYSICAL}'),
-    (3,  '{DamageTypeName.BLUDGEONING}', '{DamageCategory.PHYSICAL}'),
-    (4,  '{DamageTypeName.FIRE}',        '{DamageCategory.ELEMENTAL}'),
-    (5,  '{DamageTypeName.COLD}',        '{DamageCategory.ELEMENTAL}'),
-    (6,  '{DamageTypeName.ELECTRIC}',    '{DamageCategory.ELEMENTAL}'),
-    (7,  '{DamageTypeName.ACID}',        '{DamageCategory.ELEMENTAL}'),
-    (8,  '{DamageTypeName.SONIC}',       '{DamageCategory.ELEMENTAL}'),
-    (9,  '{DamageTypeName.GOOD}',        '{DamageCategory.ALIGNMENT}'),
-    (10, '{DamageTypeName.EVIL}',        '{DamageCategory.ALIGNMENT}'),
-    (11, '{DamageTypeName.LAWFUL}',      '{DamageCategory.ALIGNMENT}'),
-    (12, '{DamageTypeName.CHAOTIC}',     '{DamageCategory.ALIGNMENT}'),
-    (13, '{DamageTypeName.NEGATIVE}',    '{DamageCategory.ENERGY}'),
-    (14, '{DamageTypeName.POSITIVE}',    '{DamageCategory.ENERGY}'),
-    (15, '{DamageTypeName.FORCE}',       '{DamageCategory.ENERGY}'),
-    (16, '{DamageTypeName.LIGHT}',       '{DamageCategory.ENERGY}'),
-    (17, '{DamageTypeName.POISON}',      '{DamageCategory.ENERGY}'),
-    (18, '{DamageTypeName.UNTYPED}',     '{DamageCategory.UNTYPED}');
+-- damage_types: generated from DamageType enum in _seed_from_enums()
 
--- Weapon proficiencies
-INSERT OR IGNORE INTO weapon_proficiencies (id, name, category) VALUES
-    (1, 'Simple',  '{ProficiencyCategory.SIMPLE}'),
-    (2, 'Martial', '{ProficiencyCategory.MARTIAL}'),
-    (3, 'Exotic',  '{ProficiencyCategory.EXOTIC}');
+-- Weapon proficiencies: generated from ProficiencyCategory enum in _seed_from_enums()
 
--- Equipment slots (binary codes 2–17 from EQUIPMENT_SLOTS enum; seed PKs are independent)
-INSERT OR IGNORE INTO equipment_slots (id, name, sort_order, category) VALUES
-    (1,  '{EquipmentSlot.MAIN_HAND}',  1,  '{SlotCategory.WEAPON}'),
-    (2,  '{EquipmentSlot.OFF_HAND}',   2,  '{SlotCategory.WEAPON}'),
-    (3,  '{EquipmentSlot.RANGED}',     3,  '{SlotCategory.WEAPON}'),
-    (4,  '{EquipmentSlot.QUIVER}',     4,  '{SlotCategory.WEAPON}'),
-    (5,  '{EquipmentSlot.HEAD}',       5,  '{SlotCategory.ARMOR}'),
-    (6,  '{EquipmentSlot.NECK}',       6,  '{SlotCategory.ACCESSORY}'),
-    (7,  '{EquipmentSlot.TRINKET}',    7,  '{SlotCategory.ACCESSORY}'),
-    (8,  '{EquipmentSlot.BACK}',       8,  '{SlotCategory.ARMOR}'),
-    (9,  '{EquipmentSlot.WRISTS}',     9,  '{SlotCategory.ARMOR}'),
-    (10, '{EquipmentSlot.ARMS}',       10, '{SlotCategory.ARMOR}'),
-    (11, '{EquipmentSlot.BODY}',       11, '{SlotCategory.ARMOR}'),
-    (12, '{EquipmentSlot.WAIST}',      12, '{SlotCategory.ARMOR}'),
-    (13, '{EquipmentSlot.FEET}',       13, '{SlotCategory.ARMOR}'),
-    (14, '{EquipmentSlot.GOGGLES}',    14, '{SlotCategory.ACCESSORY}'),
-    (15, '{EquipmentSlot.RING}',       15, '{SlotCategory.ACCESSORY}'),
-    (16, '{EquipmentSlot.RUNEARM}',    16, '{SlotCategory.WEAPON}');
+-- equipment_slots: generated from EquipmentSlot enum in _seed_from_enums()
 
--- Spell schools
-INSERT OR IGNORE INTO spell_schools (id, name) VALUES
-    (1, '{SpellSchool.ABJURATION}'),
-    (2, '{SpellSchool.CONJURATION}'),
-    (3, '{SpellSchool.DIVINATION}'),
-    (4, '{SpellSchool.ENCHANTMENT}'),
-    (5, '{SpellSchool.EVOCATION}'),
-    (6, '{SpellSchool.ILLUSION}'),
-    (7, '{SpellSchool.NECROMANCY}'),
-    (8, '{SpellSchool.TRANSMUTATION}'),
-    (9, '{SpellSchool.UNIVERSAL}');
+-- Spell schools: generated from SpellSchool enum in _seed_from_enums()
 
 -- Class skills (sd: from DDO wiki class pages)
--- class_id: 1=Barbarian 2=Bard 3=Cleric 4=Fighter 5=Paladin 6=Ranger 7=Rogue
---           8=Sorcerer 9=Wizard 10=Monk 11=FvS 12=Artificer 13=Druid 14=Warlock 15=Alchemist
--- skill_id: 1=Balance 2=Bluff 3=Concentration 4=Diplomacy 5=DisableDevice 6=Haggle
---           7=Heal 8=Hide 9=Intimidate 10=Jump 11=Listen 12=MoveSilently 13=OpenLock
---           14=Perform 15=Repair 16=Search 17=Spellcraft 18=Spot 19=Swim 20=Tumble 21=UMD
 INSERT OR IGNORE INTO class_skills (class_id, skill_id) VALUES
     -- Barbarian: Balance, Intimidate, Jump, Listen, Swim
-    (1,1),(1,9),(1,10),(1,11),(1,19),
+    ({Class.BARBARIAN.id},{Skill.BALANCE.id}),({Class.BARBARIAN.id},{Skill.INTIMIDATE_SKILL.id}),({Class.BARBARIAN.id},{Skill.JUMP.id}),({Class.BARBARIAN.id},{Skill.LISTEN.id}),({Class.BARBARIAN.id},{Skill.SWIM.id}),
     -- Bard: Balance, Bluff, Concentration, Diplomacy, Haggle, Hide, Jump, Listen,
     --       Move Silently, Open Lock, Perform, Repair, Spellcraft, Swim, Tumble, UMD
-    (2,1),(2,2),(2,3),(2,4),(2,6),(2,8),(2,10),(2,11),(2,12),(2,13),(2,14),(2,15),(2,17),(2,19),(2,20),(2,21),
+    ({Class.BARD.id},{Skill.BALANCE.id}),({Class.BARD.id},{Skill.BLUFF.id}),({Class.BARD.id},{Skill.CONCENTRATION.id}),({Class.BARD.id},{Skill.DIPLOMACY.id}),({Class.BARD.id},{Skill.HAGGLE.id}),({Class.BARD.id},{Skill.HIDE_SKILL.id}),({Class.BARD.id},{Skill.JUMP.id}),({Class.BARD.id},{Skill.LISTEN.id}),({Class.BARD.id},{Skill.MOVE_SILENTLY.id}),({Class.BARD.id},{Skill.OPEN_LOCK.id}),({Class.BARD.id},{Skill.PERFORM_SKILL.id}),({Class.BARD.id},{Skill.REPAIR_SKILL.id}),({Class.BARD.id},{Skill.SPELLCRAFT.id}),({Class.BARD.id},{Skill.SWIM.id}),({Class.BARD.id},{Skill.TUMBLE.id}),({Class.BARD.id},{Skill.USE_MAGIC_DEVICE.id}),
     -- Cleric: Concentration, Diplomacy, Heal, Spellcraft
-    (3,3),(3,4),(3,7),(3,17),
+    ({Class.CLERIC.id},{Skill.CONCENTRATION.id}),({Class.CLERIC.id},{Skill.DIPLOMACY.id}),({Class.CLERIC.id},{Skill.HEAL_SKILL.id}),({Class.CLERIC.id},{Skill.SPELLCRAFT.id}),
     -- Fighter: Balance, Intimidate, Jump, Repair, Swim
-    (4,1),(4,9),(4,10),(4,15),(4,19),
+    ({Class.FIGHTER.id},{Skill.BALANCE.id}),({Class.FIGHTER.id},{Skill.INTIMIDATE_SKILL.id}),({Class.FIGHTER.id},{Skill.JUMP.id}),({Class.FIGHTER.id},{Skill.REPAIR_SKILL.id}),({Class.FIGHTER.id},{Skill.SWIM.id}),
     -- Paladin: Balance, Concentration, Diplomacy, Heal, Intimidate, Jump, Swim
-    (5,1),(5,3),(5,4),(5,7),(5,9),(5,10),(5,19),
+    ({Class.PALADIN.id},{Skill.BALANCE.id}),({Class.PALADIN.id},{Skill.CONCENTRATION.id}),({Class.PALADIN.id},{Skill.DIPLOMACY.id}),({Class.PALADIN.id},{Skill.HEAL_SKILL.id}),({Class.PALADIN.id},{Skill.INTIMIDATE_SKILL.id}),({Class.PALADIN.id},{Skill.JUMP.id}),({Class.PALADIN.id},{Skill.SWIM.id}),
     -- Ranger: Balance, Concentration, Heal, Hide, Jump, Listen, Move Silently, Search, Spot, Swim
-    (6,1),(6,3),(6,7),(6,8),(6,10),(6,11),(6,12),(6,16),(6,18),(6,19),
+    ({Class.RANGER.id},{Skill.BALANCE.id}),({Class.RANGER.id},{Skill.CONCENTRATION.id}),({Class.RANGER.id},{Skill.HEAL_SKILL.id}),({Class.RANGER.id},{Skill.HIDE_SKILL.id}),({Class.RANGER.id},{Skill.JUMP.id}),({Class.RANGER.id},{Skill.LISTEN.id}),({Class.RANGER.id},{Skill.MOVE_SILENTLY.id}),({Class.RANGER.id},{Skill.SEARCH_SKILL.id}),({Class.RANGER.id},{Skill.SPOT_SKILL.id}),({Class.RANGER.id},{Skill.SWIM.id}),
     -- Rogue: Balance, Bluff, Diplomacy, Disable Device, Haggle, Hide, Intimidate, Jump, Listen,
     --        Move Silently, Open Lock, Perform, Repair, Search, Spot, Swim, Tumble, UMD
-    (7,1),(7,2),(7,4),(7,5),(7,6),(7,8),(7,9),(7,10),(7,11),(7,12),(7,13),(7,14),(7,15),(7,16),(7,18),(7,19),(7,20),(7,21),
+    ({Class.ROGUE.id},{Skill.BALANCE.id}),({Class.ROGUE.id},{Skill.BLUFF.id}),({Class.ROGUE.id},{Skill.DIPLOMACY.id}),({Class.ROGUE.id},{Skill.DISABLE_DEVICE.id}),({Class.ROGUE.id},{Skill.HAGGLE.id}),({Class.ROGUE.id},{Skill.HIDE_SKILL.id}),({Class.ROGUE.id},{Skill.INTIMIDATE_SKILL.id}),({Class.ROGUE.id},{Skill.JUMP.id}),({Class.ROGUE.id},{Skill.LISTEN.id}),({Class.ROGUE.id},{Skill.MOVE_SILENTLY.id}),({Class.ROGUE.id},{Skill.OPEN_LOCK.id}),({Class.ROGUE.id},{Skill.PERFORM_SKILL.id}),({Class.ROGUE.id},{Skill.REPAIR_SKILL.id}),({Class.ROGUE.id},{Skill.SEARCH_SKILL.id}),({Class.ROGUE.id},{Skill.SPOT_SKILL.id}),({Class.ROGUE.id},{Skill.SWIM.id}),({Class.ROGUE.id},{Skill.TUMBLE.id}),({Class.ROGUE.id},{Skill.USE_MAGIC_DEVICE.id}),
     -- Sorcerer: Bluff, Concentration, Spellcraft
-    (8,2),(8,3),(8,17),
+    ({Class.SORCERER.id},{Skill.BLUFF.id}),({Class.SORCERER.id},{Skill.CONCENTRATION.id}),({Class.SORCERER.id},{Skill.SPELLCRAFT.id}),
     -- Wizard: Concentration, Repair, Spellcraft
-    (9,3),(9,15),(9,17),
+    ({Class.WIZARD.id},{Skill.CONCENTRATION.id}),({Class.WIZARD.id},{Skill.REPAIR_SKILL.id}),({Class.WIZARD.id},{Skill.SPELLCRAFT.id}),
     -- Monk: Balance, Concentration, Diplomacy, Hide, Jump, Listen, Move Silently, Spot, Swim, Tumble
-    (10,1),(10,3),(10,4),(10,8),(10,10),(10,11),(10,12),(10,18),(10,19),(10,20),
+    ({Class.MONK.id},{Skill.BALANCE.id}),({Class.MONK.id},{Skill.CONCENTRATION.id}),({Class.MONK.id},{Skill.DIPLOMACY.id}),({Class.MONK.id},{Skill.HIDE_SKILL.id}),({Class.MONK.id},{Skill.JUMP.id}),({Class.MONK.id},{Skill.LISTEN.id}),({Class.MONK.id},{Skill.MOVE_SILENTLY.id}),({Class.MONK.id},{Skill.SPOT_SKILL.id}),({Class.MONK.id},{Skill.SWIM.id}),({Class.MONK.id},{Skill.TUMBLE.id}),
     -- Favored Soul: Concentration, Diplomacy, Heal, Jump, Spellcraft
-    (11,3),(11,4),(11,7),(11,10),(11,17),
+    ({Class.FAVORED_SOUL.id},{Skill.CONCENTRATION.id}),({Class.FAVORED_SOUL.id},{Skill.DIPLOMACY.id}),({Class.FAVORED_SOUL.id},{Skill.HEAL_SKILL.id}),({Class.FAVORED_SOUL.id},{Skill.JUMP.id}),({Class.FAVORED_SOUL.id},{Skill.SPELLCRAFT.id}),
     -- Artificer: Balance, Concentration, Disable Device, Haggle, Open Lock, Repair, Search, Spellcraft, UMD
-    (12,1),(12,3),(12,5),(12,6),(12,13),(12,15),(12,16),(12,17),(12,21),
+    ({Class.ARTIFICER.id},{Skill.BALANCE.id}),({Class.ARTIFICER.id},{Skill.CONCENTRATION.id}),({Class.ARTIFICER.id},{Skill.DISABLE_DEVICE.id}),({Class.ARTIFICER.id},{Skill.HAGGLE.id}),({Class.ARTIFICER.id},{Skill.OPEN_LOCK.id}),({Class.ARTIFICER.id},{Skill.REPAIR_SKILL.id}),({Class.ARTIFICER.id},{Skill.SEARCH_SKILL.id}),({Class.ARTIFICER.id},{Skill.SPELLCRAFT.id}),({Class.ARTIFICER.id},{Skill.USE_MAGIC_DEVICE.id}),
     -- Druid: Balance, Concentration, Diplomacy, Heal, Hide, Listen, Spellcraft, Spot, Swim
-    (13,1),(13,3),(13,4),(13,7),(13,8),(13,11),(13,17),(13,18),(13,19),
+    ({Class.DRUID.id},{Skill.BALANCE.id}),({Class.DRUID.id},{Skill.CONCENTRATION.id}),({Class.DRUID.id},{Skill.DIPLOMACY.id}),({Class.DRUID.id},{Skill.HEAL_SKILL.id}),({Class.DRUID.id},{Skill.HIDE_SKILL.id}),({Class.DRUID.id},{Skill.LISTEN.id}),({Class.DRUID.id},{Skill.SPELLCRAFT.id}),({Class.DRUID.id},{Skill.SPOT_SKILL.id}),({Class.DRUID.id},{Skill.SWIM.id}),
     -- Warlock: Bluff, Concentration, Intimidate, Spellcraft, UMD
-    (14,2),(14,3),(14,9),(14,17),(14,21),
+    ({Class.WARLOCK.id},{Skill.BLUFF.id}),({Class.WARLOCK.id},{Skill.CONCENTRATION.id}),({Class.WARLOCK.id},{Skill.INTIMIDATE_SKILL.id}),({Class.WARLOCK.id},{Skill.SPELLCRAFT.id}),({Class.WARLOCK.id},{Skill.USE_MAGIC_DEVICE.id}),
     -- Alchemist: Balance, Concentration, Disable Device, Heal, Repair, Search, Spellcraft, UMD
-    (15,1),(15,3),(15,5),(15,7),(15,15),(15,16),(15,17),(15,21);
+    ({Class.ALCHEMIST.id},{Skill.BALANCE.id}),({Class.ALCHEMIST.id},{Skill.CONCENTRATION.id}),({Class.ALCHEMIST.id},{Skill.DISABLE_DEVICE.id}),({Class.ALCHEMIST.id},{Skill.HEAL_SKILL.id}),({Class.ALCHEMIST.id},{Skill.REPAIR_SKILL.id}),({Class.ALCHEMIST.id},{Skill.SEARCH_SKILL.id}),({Class.ALCHEMIST.id},{Skill.SPELLCRAFT.id}),({Class.ALCHEMIST.id},{Skill.USE_MAGIC_DEVICE.id});
 
 -- Race ability bonuses (sd: from DDO wiki race pages)
 -- Standard races only (iconics inherit from base race + class)
--- stat_id: 1=STR 2=DEX 3=CON 4=INT 5=WIS 6=CHA
 -- Innate racial ability modifiers (from ddowiki.com/page/Races stat range columns)
--- stat IDs: 1=STR, 2=DEX, 3=CON, 4=INT, 5=WIS, 6=CHA
 INSERT OR IGNORE INTO race_ability_modifiers (race_id, stat_id, modifier, source) VALUES
     -- 1=Human: no innate mods
     -- 2=Elf: +2 DEX, -2 CON
-    (2, 2, 2, '{AbilityModSource.INNATE}'), (2, 3, -2, '{AbilityModSource.INNATE}'),
+    ({Race.ELF.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'), ({Race.ELF.id}, {S.CONSTITUTION.id}, -2, '{AbilityModSource.INNATE}'),
     -- 3=Dwarf: +2 CON, -2 CHA
-    (3, 3, 2, '{AbilityModSource.INNATE}'), (3, 6, -2, '{AbilityModSource.INNATE}'),
+    ({Race.DWARF.id}, {S.CONSTITUTION.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DWARF.id}, {S.CHARISMA.id}, -2, '{AbilityModSource.INNATE}'),
     -- 4=Halfling: +2 DEX, -2 STR
-    (4, 2, 2, '{AbilityModSource.INNATE}'), (4, 1, -2, '{AbilityModSource.INNATE}'),
+    ({Race.HALFLING.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'), ({Race.HALFLING.id}, {S.STRENGTH.id}, -2, '{AbilityModSource.INNATE}'),
     -- 5=Warforged: +2 CON, -2 WIS, -2 CHA
-    (5, 3, 2, '{AbilityModSource.INNATE}'), (5, 5, -2, '{AbilityModSource.INNATE}'), (5, 6, -2, '{AbilityModSource.INNATE}'),
+    ({Race.WARFORGED.id}, {S.CONSTITUTION.id}, 2, '{AbilityModSource.INNATE}'), ({Race.WARFORGED.id}, {S.WISDOM.id}, -2, '{AbilityModSource.INNATE}'), ({Race.WARFORGED.id}, {S.CHARISMA.id}, -2, '{AbilityModSource.INNATE}'),
     -- 6=Drow Elf: +2 DEX, +2 INT, +2 CHA, -2 CON
-    (6, 2, 2, '{AbilityModSource.INNATE}'), (6, 4, 2, '{AbilityModSource.INNATE}'), (6, 6, 2, '{AbilityModSource.INNATE}'), (6, 3, -2, '{AbilityModSource.INNATE}'),
+    ({Race.DROW_ELF.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DROW_ELF.id}, {S.INTELLIGENCE.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DROW_ELF.id}, {S.CHARISMA.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DROW_ELF.id}, {S.CONSTITUTION.id}, -2, '{AbilityModSource.INNATE}'),
     -- 7=Half-Elf: no innate mods
     -- 8=Half-Orc: +2 STR, -2 INT, -2 CHA
-    (8, 1, 2, '{AbilityModSource.INNATE}'), (8, 4, -2, '{AbilityModSource.INNATE}'), (8, 6, -2, '{AbilityModSource.INNATE}'),
+    ({Race.HALF_ORC.id}, {S.STRENGTH.id}, 2, '{AbilityModSource.INNATE}'), ({Race.HALF_ORC.id}, {S.INTELLIGENCE.id}, -2, '{AbilityModSource.INNATE}'), ({Race.HALF_ORC.id}, {S.CHARISMA.id}, -2, '{AbilityModSource.INNATE}'),
     -- 9=Gnome: +2 INT, -2 STR
-    (9, 4, 2, '{AbilityModSource.INNATE}'), (9, 1, -2, '{AbilityModSource.INNATE}'),
+    ({Race.GNOME.id}, {S.INTELLIGENCE.id}, 2, '{AbilityModSource.INNATE}'), ({Race.GNOME.id}, {S.STRENGTH.id}, -2, '{AbilityModSource.INNATE}'),
     -- 10=Dragonborn: +2 STR, +2 CHA, -2 DEX
-    (10, 1, 2, '{AbilityModSource.INNATE}'), (10, 6, 2, '{AbilityModSource.INNATE}'), (10, 2, -2, '{AbilityModSource.INNATE}'),
+    ({Race.DRAGONBORN.id}, {S.STRENGTH.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DRAGONBORN.id}, {S.CHARISMA.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DRAGONBORN.id}, {S.DEXTERITY.id}, -2, '{AbilityModSource.INNATE}'),
     -- 11=Tiefling: +2 CHA
-    (11, 6, 2, '{AbilityModSource.INNATE}'),
+    ({Race.TIEFLING.id}, {S.CHARISMA.id}, 2, '{AbilityModSource.INNATE}'),
     -- 12=Wood Elf: +2 DEX, -2 INT
-    (12, 2, 2, '{AbilityModSource.INNATE}'), (12, 4, -2, '{AbilityModSource.INNATE}'),
+    ({Race.WOOD_ELF.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'), ({Race.WOOD_ELF.id}, {S.INTELLIGENCE.id}, -2, '{AbilityModSource.INNATE}'),
     -- 13=Aasimar: +2 WIS
-    (13, 5, 2, '{AbilityModSource.INNATE}'),
+    ({Race.AASIMAR.id}, {S.WISDOM.id}, 2, '{AbilityModSource.INNATE}'),
     -- 14=Tabaxi: +2 DEX
-    (14, 2, 2, '{AbilityModSource.INNATE}'),
+    ({Race.TABAXI.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'),
     -- 15=Shifter: +2 DEX, -2 INT
-    (15, 2, 2, '{AbilityModSource.INNATE}'), (15, 4, -2, '{AbilityModSource.INNATE}'),
+    ({Race.SHIFTER.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'), ({Race.SHIFTER.id}, {S.INTELLIGENCE.id}, -2, '{AbilityModSource.INNATE}'),
     -- 16=Eladrin: +2 DEX
-    (16, 2, 2, '{AbilityModSource.INNATE}'),
+    ({Race.ELADRIN.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'),
     -- 17=Dhampir: +2 STR
-    (17, 1, 2, '{AbilityModSource.INNATE}'),
+    ({Race.DHAMPIR.id}, {S.STRENGTH.id}, 2, '{AbilityModSource.INNATE}'),
     -- 18=Bladeforged: +2 CON, -2 DEX, -2 WIS
-    (18, 3, 2, '{AbilityModSource.INNATE}'), (18, 2, -2, '{AbilityModSource.INNATE}'), (18, 5, -2, '{AbilityModSource.INNATE}'),
+    ({Race.BLADEFORGED.id}, {S.CONSTITUTION.id}, 2, '{AbilityModSource.INNATE}'), ({Race.BLADEFORGED.id}, {S.DEXTERITY.id}, -2, '{AbilityModSource.INNATE}'), ({Race.BLADEFORGED.id}, {S.WISDOM.id}, -2, '{AbilityModSource.INNATE}'),
     -- 19=Purple Dragon Knight: no innate mods
     -- 20=Morninglord: +2 INT, -2 CON
-    (20, 4, 2, '{AbilityModSource.INNATE}'), (20, 3, -2, '{AbilityModSource.INNATE}'),
+    ({Race.MORNINGLORD.id}, {S.INTELLIGENCE.id}, 2, '{AbilityModSource.INNATE}'), ({Race.MORNINGLORD.id}, {S.CONSTITUTION.id}, -2, '{AbilityModSource.INNATE}'),
     -- 21=Shadar-kai: +2 DEX, -2 CHA
-    (21, 2, 2, '{AbilityModSource.INNATE}'), (21, 6, -2, '{AbilityModSource.INNATE}'),
+    ({Race.SHADAR_KAI.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'), ({Race.SHADAR_KAI.id}, {S.CHARISMA.id}, -2, '{AbilityModSource.INNATE}'),
     -- 22=Deep Gnome: +2 INT, +2 WIS, -2 STR, -2 CHA
-    (22, 4, 2, '{AbilityModSource.INNATE}'), (22, 5, 2, '{AbilityModSource.INNATE}'), (22, 1, -2, '{AbilityModSource.INNATE}'), (22, 6, -2, '{AbilityModSource.INNATE}'),
+    ({Race.DEEP_GNOME.id}, {S.INTELLIGENCE.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DEEP_GNOME.id}, {S.WISDOM.id}, 2, '{AbilityModSource.INNATE}'), ({Race.DEEP_GNOME.id}, {S.STRENGTH.id}, -2, '{AbilityModSource.INNATE}'), ({Race.DEEP_GNOME.id}, {S.CHARISMA.id}, -2, '{AbilityModSource.INNATE}'),
     -- 23=Aasimar Scourge: +2 WIS
-    (23, 5, 2, '{AbilityModSource.INNATE}'),
+    ({Race.AASIMAR_SCOURGE.id}, {S.WISDOM.id}, 2, '{AbilityModSource.INNATE}'),
     -- 24=Razorclaw Shifter: +2 STR, -2 INT
-    (24, 1, 2, '{AbilityModSource.INNATE}'), (24, 4, -2, '{AbilityModSource.INNATE}'),
+    ({Race.RAZORCLAW_SHIFTER.id}, {S.STRENGTH.id}, 2, '{AbilityModSource.INNATE}'), ({Race.RAZORCLAW_SHIFTER.id}, {S.INTELLIGENCE.id}, -2, '{AbilityModSource.INNATE}'),
     -- 25=Tiefling Scoundrel: +2 CHA
-    (25, 6, 2, '{AbilityModSource.INNATE}'),
+    ({Race.TIEFLING_SCOUNDREL.id}, {S.CHARISMA.id}, 2, '{AbilityModSource.INNATE}'),
     -- 26=Tabaxi Trailblazer: +2 DEX
-    (26, 2, 2, '{AbilityModSource.INNATE}'),
+    ({Race.TABAXI_TRAILBLAZER.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.INNATE}'),
     -- 27=Eladrin Chaosmancer: +2 CHA
-    (27, 6, 2, '{AbilityModSource.INNATE}'),
+    ({Race.ELADRIN_CHAOSMANCER.id}, {S.CHARISMA.id}, 2, '{AbilityModSource.INNATE}'),
     -- 28=Dhampir Dark Bargainer: +1 CHA, +1 INT
-    (28, 6, 1, '{AbilityModSource.INNATE}'), (28, 4, 1, '{AbilityModSource.INNATE}');
+    ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.CHARISMA.id}, 1, '{AbilityModSource.INNATE}'), ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.INTELLIGENCE.id}, 1, '{AbilityModSource.INNATE}');
 
 -- Enhancement racial ability modifiers (from racial enhancement trees, ddowiki.com/page/Races)
 -- Fixed bonuses from core abilities; choice-based from racial tree picks
 -- is_choice=1 means player distributes choice_pool points among marked stats
 INSERT OR IGNORE INTO race_ability_modifiers (race_id, stat_id, modifier, source, is_choice, choice_pool) VALUES
     -- 1=Human: choose +1 to any stat, +1 to a different stat (pool=1 each pick)
-    (1, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (1, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
-    (1, 3, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (1, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
-    (1, 5, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (1, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
+    ({Race.HUMAN.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.HUMAN.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
+    ({Race.HUMAN.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.HUMAN.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
+    ({Race.HUMAN.id}, {S.WISDOM.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.HUMAN.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
     -- 2=Elf: +2 DEX
-    (2, 2, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.ELF.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 3=Dwarf: +2 CON
-    (3, 3, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.DWARF.id}, {S.CONSTITUTION.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 4=Halfling: +2 DEX
-    (4, 2, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.HALFLING.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 5=Warforged: +2 CON
-    (5, 3, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.WARFORGED.id}, {S.CONSTITUTION.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 6=Drow Elf: +2 total from DEX/INT/CHA
-    (6, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (6, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (6, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.DROW_ELF.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DROW_ELF.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DROW_ELF.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 7=Half-Elf: as Elf or Human (choice)
-    (7, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (7, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
-    (7, 3, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (7, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
-    (7, 5, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (7, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.HALF_ELF.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.HALF_ELF.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.HALF_ELF.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.HALF_ELF.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.HALF_ELF.id}, {S.WISDOM.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.HALF_ELF.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 8=Half-Orc: +2 STR
-    (8, 1, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.HALF_ORC.id}, {S.STRENGTH.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 9=Gnome: +2 INT
-    (9, 4, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.GNOME.id}, {S.INTELLIGENCE.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 10=Dragonborn: +2 total from STR/CHA
-    (10, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (10, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.DRAGONBORN.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DRAGONBORN.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 11=Tiefling: +2 CHA
-    (11, 6, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.TIEFLING.id}, {S.CHARISMA.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 12=Wood Elf: (none parsed — wiki cell truncated)
     -- 13=Aasimar: +2 total from STR/WIS/CHA
-    (13, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (13, 5, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (13, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.AASIMAR.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.AASIMAR.id}, {S.WISDOM.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.AASIMAR.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 14=Tabaxi: +2 total from CHA/DEX
-    (14, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (14, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.TABAXI.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.TABAXI.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 15=Shifter: +2 total from STR/DEX/CON/WIS
-    (15, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (15, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
-    (15, 3, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (15, 5, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.SHIFTER.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.SHIFTER.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.SHIFTER.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.SHIFTER.id}, {S.WISDOM.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 16=Eladrin: +1 CHA (fixed) + +2 total from DEX/INT/CHA
-    (16, 6, 1, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
-    (16, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (16, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.ELADRIN.id}, {S.CHARISMA.id}, 1, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.ELADRIN.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.ELADRIN.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 17=Dhampir: +2 total from STR/CON/CHA
-    (17, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (17, 3, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (17, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.DHAMPIR.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DHAMPIR.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DHAMPIR.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 18=Bladeforged: +2 CON
-    (18, 3, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.BLADEFORGED.id}, {S.CONSTITUTION.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 19=Purple Dragon Knight: choose +1 to any stat, +1 to different stat
-    (19, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (19, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
-    (19, 3, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (19, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
-    (19, 5, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (19, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
+    ({Race.PURPLE_DRAGON_KNIGHT.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.PURPLE_DRAGON_KNIGHT.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
+    ({Race.PURPLE_DRAGON_KNIGHT.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.PURPLE_DRAGON_KNIGHT.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
+    ({Race.PURPLE_DRAGON_KNIGHT.id}, {S.WISDOM.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.PURPLE_DRAGON_KNIGHT.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
     -- 20=Morninglord: +2 INT
-    (20, 4, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.MORNINGLORD.id}, {S.INTELLIGENCE.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 21=Shadar-kai: +1 total from DEX/INT/CHA
-    (21, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (21, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), (21, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
+    ({Race.SHADAR_KAI.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.SHADAR_KAI.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1), ({Race.SHADAR_KAI.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 1),
     -- 22=Deep Gnome: +2 total from WIS/INT
-    (22, 5, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (22, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.DEEP_GNOME.id}, {S.WISDOM.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DEEP_GNOME.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 23=Aasimar Scourge: +1 CON (fixed) + +2 total from STR/WIS/CHA
-    (23, 3, 1, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
-    (23, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (23, 5, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (23, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.AASIMAR_SCOURGE.id}, {S.CONSTITUTION.id}, 1, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.AASIMAR_SCOURGE.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.AASIMAR_SCOURGE.id}, {S.WISDOM.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.AASIMAR_SCOURGE.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 24=Razorclaw Shifter: +2 total from STR/DEX/CON
-    (24, 1, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (24, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (24, 3, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.RAZORCLAW_SHIFTER.id}, {S.STRENGTH.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.RAZORCLAW_SHIFTER.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.RAZORCLAW_SHIFTER.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 25=Tiefling Scoundrel: +2 CHA
-    (25, 6, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.TIEFLING_SCOUNDREL.id}, {S.CHARISMA.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 26=Tabaxi Trailblazer: +2 DEX
-    (26, 2, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.TABAXI_TRAILBLAZER.id}, {S.DEXTERITY.id}, 2, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
     -- 27=Eladrin Chaosmancer: +1 CHA (fixed) + +2 total from DEX/INT/CHA
-    (27, 6, 1, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
-    (27, 2, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (27, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
+    ({Race.ELADRIN_CHAOSMANCER.id}, {S.CHARISMA.id}, 1, '{AbilityModSource.ENHANCEMENT}', 0, NULL),
+    ({Race.ELADRIN_CHAOSMANCER.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.ELADRIN_CHAOSMANCER.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 28=Dhampir Dark Bargainer: +2 total from CHA/CON/INT
-    (28, 6, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (28, 3, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), (28, 4, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2);
+    ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2);
 
 -- Universal feat slot schedule (every character gets these, independent of class/race)
 INSERT OR IGNORE INTO feat_slots (character_level, sort_order, slot_tier) VALUES
     -- Heroic standard feats
-    (1,  0, 'heroic'), (3,  0, 'heroic'), (6,  0, 'heroic'), (9,  0, 'heroic'),
-    (12, 0, 'heroic'), (15, 0, 'heroic'), (18, 0, 'heroic'),
+    (1,  0, '{SlotTier.HEROIC}'), (3,  0, '{SlotTier.HEROIC}'), (6,  0, '{SlotTier.HEROIC}'), (9,  0, '{SlotTier.HEROIC}'),
+    (12, 0, '{SlotTier.HEROIC}'), (15, 0, '{SlotTier.HEROIC}'), (18, 0, '{SlotTier.HEROIC}'),
     -- Epic standard feats
-    (21, 0, 'epic'), (24, 0, 'epic'), (27, 0, 'epic'),
+    (21, 0, '{SlotTier.EPIC}'), (24, 0, '{SlotTier.EPIC}'), (27, 0, '{SlotTier.EPIC}'),
     -- Epic Destiny feats (separate pool)
-    (22, 0, 'destiny'), (25, 0, 'destiny'), (28, 0, 'destiny'),
+    (22, 0, '{SlotTier.DESTINY}'), (25, 0, '{SlotTier.DESTINY}'), (28, 0, '{SlotTier.DESTINY}'),
     -- Level 30: one epic feat + one legendary feat
-    (30, 0, 'epic'), (30, 1, 'legendary');
+    (30, 0, '{SlotTier.EPIC}'), (30, 1, '{SlotTier.LEGENDARY}');
 
 -- Race bonus feat slots (races that grant extra feat choices)
 INSERT OR IGNORE INTO race_bonus_feat_slots (race_id, character_level, slot_tier) VALUES
-    (1,  1, 'heroic'),   -- Human: +1 standard feat at level 1
-    (19, 1, 'heroic');   -- Purple Dragon Knight: same as Human
+    ({Race.HUMAN.id},  1, '{SlotTier.HEROIC}'),   -- Human: +1 standard feat at level 1
+    ({Race.PURPLE_DRAGON_KNIGHT.id}, 1, '{SlotTier.HEROIC}');   -- Purple Dragon Knight: same as Human
 """
 
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
+
+def _seed_from_enums(conn: sqlite3.Connection) -> None:
+    """Generate and insert seed data from enum definitions.
+
+    Tables whose rows are 1:1 with enum members are generated here
+    rather than hardcoded in SQL. This ensures the DB stays in sync
+    with the enum definitions automatically.
+    """
+    # stats: id, name, category from S enum
+    for m in S:
+        conn.execute(
+            "INSERT OR IGNORE INTO stats (id, name, category) VALUES (?, ?, ?)",
+            (m.id, str(m), str(m.category)),
+        )
+
+    # skills: id, name, key_ability_id from Skill enum
+    for m in Skill:
+        conn.execute(
+            "INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES (?, ?, ?)",
+            (m.id, str(m), m.key_ability_id),
+        )
+
+    # bonus_types: id, name, stacks_with_self from BonusType enum
+    for m in BonusType:
+        conn.execute(
+            "INSERT OR IGNORE INTO bonus_types (id, name, stacks_with_self) VALUES (?, ?, ?)",
+            (m.id, str(m), 1 if m.stacks_with_self else 0),
+        )
+
+    # damage_types: id, name, category from DamageType enum
+    for m in DamageType:
+        conn.execute(
+            "INSERT OR IGNORE INTO damage_types (id, name, category) VALUES (?, ?, ?)",
+            (m.id, str(m), str(m.category)),
+        )
+
+    # equipment_slots: id, name, sort_order, category from EquipmentSlot enum
+    for m in EquipmentSlot:
+        conn.execute(
+            "INSERT OR IGNORE INTO equipment_slots (id, name, sort_order, category) VALUES (?, ?, ?, ?)",
+            (m.id, str(m), m.sort_order, str(m.category)),
+        )
+
+    # spell_schools: id (auto), name from SpellSchool
+    for i, member in enumerate(SpellSchool, 1):
+        conn.execute(
+            "INSERT OR IGNORE INTO spell_schools (id, name) VALUES (?, ?)",
+            (i, str(member)),
+        )
+
+    # weapon_proficiencies: id (auto), name + category from ProficiencyCategory
+    for i, member in enumerate(ProficiencyCategory, 1):
+        conn.execute(
+            "INSERT OR IGNORE INTO weapon_proficiencies (id, name, category) VALUES (?, ?, ?)",
+            (i, member.value.title(), str(member)),
+        )
+
+
 
 
 def create_schema(conn: sqlite3.Connection) -> None:
@@ -1392,5 +1091,6 @@ def create_schema(conn: sqlite3.Connection) -> None:
     and ``INSERT OR IGNORE`` throughout, so re-running is idempotent.
     """
     conn.executescript(SCHEMA_V1)
+    _seed_from_enums(conn)  # must run before _SEED_SQL (classes/races FK stats/skills)
     conn.executescript(_SEED_SQL)
     conn.commit()
