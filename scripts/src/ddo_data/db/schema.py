@@ -963,7 +963,30 @@ INSERT OR IGNORE INTO stats (id, name, category) VALUES
     (205, 'Critical Damage',               'martial'),
     (206, 'Spell Point Cost Reduction',    'magical'),
     (207, 'Sneak Attack Hit',              'martial'),
-    (208, 'Damage Bonus',                  'martial');
+    (208, 'Damage Bonus',                  'martial'),
+    -- Missing stats found during enum migration
+    (209, 'Spell DCs',                     'magical'),
+    (210, 'Command',                       'skill'),
+    (211, 'Persuasion',                    'skill'),
+    (212, 'Universal Spell Critical Damage', 'magical'),
+    (213, 'Sneak Attack',                  'martial'),
+    (214, 'Sneak Attack Bonus',            'martial'),
+    (215, 'Poison Spell Power',            'magical'),
+    (216, 'Poison Spell Lore',             'magical'),
+    (217, 'Poison Absorption',             'defensive'),
+    (218, 'Chaos Spell Power',             'magical'),
+    (219, 'Chaos Spell Lore',              'magical'),
+    (220, 'Good Spell Power',              'magical'),
+    (221, 'Good Spell Lore',               'magical'),
+    (222, 'Evil Spell Power',              'magical'),
+    (223, 'Evil Spell Lore',               'magical'),
+    (224, 'Law Spell Power',               'magical'),
+    (225, 'Law Spell Lore',                'magical'),
+    (226, 'Melee and Ranged Threat Reduction', 'martial'),
+    (227, 'Ranged Threat Reduction',       'martial'),
+    (228, 'Saves vs Evil',                 'defensive'),
+    (229, 'Attack and Damage vs Evil',     'martial'),
+    (230, 'Damage vs Evil',                'martial');
 
 -- Skills (key_ability_id references stats above)
 INSERT OR IGNORE INTO skills (id, name, key_ability_id) VALUES

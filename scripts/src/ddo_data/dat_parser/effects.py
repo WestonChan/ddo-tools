@@ -1095,7 +1095,11 @@ def parse_enchantment_string(text: str) -> dict | None:
                 stat = re.sub(r"\s*\(.*?\)\s*$", "", stat)  # strip trailing (notes)
                 stat = re.sub(r"\}\}+$", "", stat)  # strip trailing }}
                 stat = re.sub(r"\{\{[^}]*$", "", stat)  # strip incomplete templates
-                stat = stat.strip().rstrip(".")
+                stat = stat.strip().rstrip(".").rstrip("(").strip()
+                # Bare "DCs" from HELstats context = Spell DCs
+                # (wiki notes on these entries confirm: "Tactical DCs are not affected")
+                if stat.lower() in ("dcs", "all spell dcs"):
+                    stat = str(S.SPELL_DCS)
                 bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
                 return {"value": value, "bonus_type": bonus_type, "stat": stat}
             # No "bonus to" — might be just a stat name (e.g., "Magical Resistance Rating Cap")
@@ -1104,7 +1108,10 @@ def parse_enchantment_string(text: str) -> dict | None:
             stat = re.sub(r"\[\[([^\]]+)\]\]", r"\1", stat)
             stat = re.sub(r"'''.*", "", stat)
             stat = re.sub(r"\s*\(.*?\)\s*$", "", stat)
-            stat = stat.strip().rstrip(".")
+            stat = stat.strip().rstrip(".").rstrip("(").strip()
+            # Bare "DCs" from HELstats = Spell DCs
+            if stat.lower() in ("dcs", "all spell dcs"):
+                stat = str(S.SPELL_DCS)
             # Reject non-stat text (proc descriptions, narrative)
             _NON_STAT_WORDS = {"times", "seconds", "chance", "when", "each", "stack", "cast", "struck"}
             if stat and not any(w in stat.lower().split() for w in _NON_STAT_WORDS):
@@ -1340,6 +1347,8 @@ _STAT_ALIASES: dict[str, str] = {
     "spell saves": S.SPELL_RESISTANCE,
     "additional damage to helpless targets": S.HELPLESS_DAMAGE,
     "damage on sneak attack": S.SNEAK_ATTACK_DAMAGE,
+    "damage vs evil": "Damage vs Evil",  # just damage, not attack+damage
+    "ranged threat reduction": "Ranged Threat Reduction",
     "your magical resistance rating cap is raised by": S.MAGICAL_RESISTANCE_RATING_CAP,
     "your maximum hit points": S.HIT_POINTS,
     "your maximum spell points": S.MAXIMUM_SPELL_POINTS,
@@ -1495,9 +1504,10 @@ def normalize_stat_name(raw: str) -> list[str]:
     """
     s = raw.strip()
 
-    # Strip trailing parentheticals and wiki notes
+    # Strip trailing parentheticals, wiki notes, and periods
     s = re.sub(r"\s*\(.*?\)\s*$", "", s).strip()
     s = re.sub(r"\s*''.*$", "", s).strip()
+    s = s.rstrip(".")
 
     lower = s.lower()
 
