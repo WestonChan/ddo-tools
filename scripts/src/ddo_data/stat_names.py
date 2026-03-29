@@ -325,3 +325,80 @@ class SpellTradition(str, Enum):
     def __str__(self) -> str: return self.value
     ARCANE = "arcane"
     DIVINE = "divine"
+
+
+class EquipmentSlot(str, Enum):
+    """Equipment slot for gear items."""
+    def __str__(self) -> str: return self.value
+    MAIN_HAND = "Main Hand"
+    OFF_HAND = "Off Hand"
+    RANGED = "Ranged"
+    QUIVER = "Quiver"
+    HEAD = "Head"
+    NECK = "Neck"
+    TRINKET = "Trinket"
+    BACK = "Back"
+    WRISTS = "Wrists"
+    ARMS = "Arms"
+    BODY = "Body"
+    WAIST = "Waist"
+    FEET = "Feet"
+    GOGGLES = "Goggles"
+    RING = "Ring"
+    RUNEARM = "Runearm"
+
+
+class ResolutionMethod(str, Enum):
+    """How a bonus stat was resolved."""
+    def __str__(self) -> str: return self.value
+    FID_LOOKUP = "fid_lookup"
+    TYPE167_NAME = "type167_name"
+    STAT_DEF_IDS = "stat_def_ids"
+    WIKI_ENCHANTMENT = "wiki_enchantment"
+    NAMED_ENCHANTMENT = "named_enchantment"
+    WIKI_DESCRIPTION = "wiki_description"
+    BINARY_NAME = "binary_name"
+    LOCALIZATION_ORPHAN = "localization_orphan"
+    FID_LOOKUP_AUGMENT = "fid_lookup"
+
+
+class AugmentColor(str, Enum):
+    """Augment slot color."""
+    def __str__(self) -> str: return self.value
+    COLORLESS = "colorless"
+    BLUE = "blue"
+    YELLOW = "yellow"
+    RED = "red"
+    GREEN = "green"
+    ORANGE = "orange"
+    PURPLE = "purple"
+    SUN = "sun"
+    MOON = "moon"
+
+
+class DamageCategory(str, Enum):
+    """Damage type category."""
+    def __str__(self) -> str: return self.value
+    PHYSICAL = "physical"
+    ELEMENTAL = "elemental"
+    ALIGNMENT = "alignment"
+    ENERGY = "energy"
+    UNTYPED = "untyped"
+
+
+class SlotType(str, Enum):
+    """Bonus feat slot type."""
+    def __str__(self) -> str: return self.value
+    CLASS_BONUS = "class_bonus"
+    MARTIAL_ARTS = "martial_arts"
+    CLASS_CHOICE = "class_choice"
+
+
+class PastLifeType(str, Enum):
+    """Past life feat category."""
+    def __str__(self) -> str: return self.value
+    HEROIC = "heroic"
+    RACIAL = "racial"
+    ICONIC = "iconic"
+    EPIC = "epic"
+    LEGENDARY = "legendary"
