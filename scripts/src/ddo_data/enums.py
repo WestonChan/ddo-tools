@@ -411,3 +411,81 @@ class PastLifeType(str, Enum):
     ICONIC = "iconic"
     EPIC = "epic"
     LEGENDARY = "legendary"
+
+
+class StatCategory(str, Enum):
+    """Stat seed category."""
+    def __str__(self) -> str: return self.value
+    ABILITY = "ability"
+    DEFENSIVE = "defensive"
+    MARTIAL = "martial"
+    MAGICAL = "magical"
+    SKILL = "skill"
+    OTHER = "other"
+
+
+class ProficiencyCategory(str, Enum):
+    """Weapon proficiency category."""
+    def __str__(self) -> str: return self.value
+    SIMPLE = "simple"
+    MARTIAL = "martial"
+    EXOTIC = "exotic"
+
+
+class SlotCategory(str, Enum):
+    """Equipment slot category."""
+    def __str__(self) -> str: return self.value
+    WEAPON = "weapon"
+    ARMOR = "armor"
+    ACCESSORY = "accessory"
+
+
+class AbilityModSource(str, Enum):
+    """Race ability modifier source."""
+    def __str__(self) -> str: return self.value
+    INNATE = "innate"
+    ENHANCEMENT = "enhancement"
+
+
+class SlotTier(str, Enum):
+    """Feat/bonus slot tier."""
+    def __str__(self) -> str: return self.value
+    HEROIC = "heroic"
+    EPIC = "epic"
+    LEGENDARY = "legendary"
+    DESTINY = "destiny"
+
+
+class ApPool(str, Enum):
+    """Action point pool type."""
+    def __str__(self) -> str: return self.value
+    HEROIC = "heroic"
+    RACIAL = "racial"
+    REAPER = "reaper"
+    LEGENDARY = "legendary"
+
+
+class LinkType(str, Enum):
+    """Enhancement/spell link type."""
+    def __str__(self) -> str: return self.value
+    REQUIRES = "requires"
+    GRANTS = "grants"
+    EXCLUDES = "excludes"
+    MODIFIES = "modifies"
+
+
+class SaveType(str, Enum):
+    """Saving throw type."""
+    def __str__(self) -> str: return self.value
+    FORTITUDE = "Fortitude"
+    REFLEX = "Reflex"
+    WILL = "Will"
+
+
+class SaveEffect(str, Enum):
+    """Saving throw effect on success."""
+    def __str__(self) -> str: return self.value
+    NEGATES = "negates"
+    HALF = "half"
+    PARTIAL = "partial"
+    SPECIAL = "special"

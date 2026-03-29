@@ -5,9 +5,11 @@ from __future__ import annotations
 import sqlite3
 
 from ddo_data.enums import (
-    Alignment, BabProgression, CasterType, DataSource, FeatTier,
-    Handedness, ItemCategory, PastLifeType, RaceType, Rarity,
-    ResolutionMethod, SaveProgression, SlotType, SpellTradition, TreeType,
+    AbilityModSource, Alignment, ApPool, BabProgression, CasterType,
+    DamageCategory, DataSource, EnhancementTier, FeatTier, Handedness,
+    ItemCategory, LinkType, PastLifeType, ProficiencyCategory, RaceType,
+    Rarity, ResolutionMethod, SaveEffect, SaveProgression, SaveType,
+    SlotCategory, SlotTier, SlotType, SpellTradition, StatCategory, TreeType,
 )
 
 
@@ -47,7 +49,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS stats (
     id       INTEGER PRIMARY KEY,                                -- sd
     name     TEXT NOT NULL,                                      -- sd
-    category TEXT NOT NULL  CHECK (category IN ('ability', 'defensive', 'martial', 'magical', 'skill', 'other')) -- sd
+    category TEXT NOT NULL  CHECK (category {_check(StatCategory)}) -- sd
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_stats_name ON stats(name);
 CREATE INDEX IF NOT EXISTS idx_stats_category ON stats(category);
@@ -69,14 +71,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_skills_name ON skills(name);
 CREATE TABLE IF NOT EXISTS damage_types (
     id       INTEGER PRIMARY KEY,                                -- sd
     name     TEXT NOT NULL,                                      -- sd
-    category TEXT NOT NULL  CHECK (category IN ('physical', 'elemental', 'alignment', 'energy', 'untyped')) -- sd
+    category TEXT NOT NULL  CHECK (category {_check(DamageCategory)}) -- sd
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_damage_types_name ON damage_types(name);
 
 CREATE TABLE IF NOT EXISTS weapon_proficiencies (
     id       INTEGER PRIMARY KEY,                                -- sd
     name     TEXT NOT NULL,                                      -- sd
-    category TEXT NOT NULL  CHECK (category IN ('simple', 'martial', 'exotic')) -- sd
+    category TEXT NOT NULL  CHECK (category {_check(ProficiencyCategory)}) -- sd
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_weapon_proficiencies_name ON weapon_proficiencies(name);
 
@@ -93,7 +95,7 @@ CREATE TABLE IF NOT EXISTS equipment_slots (
     id         INTEGER PRIMARY KEY,                              -- sd
     name       TEXT NOT NULL,                                     -- sd
     sort_order INTEGER NOT NULL DEFAULT 0,                       -- sd
-    category   TEXT NOT NULL CHECK (category IN ('weapon', 'armor', 'accessory')) -- sd
+    category   TEXT NOT NULL CHECK (category {_check(SlotCategory)}) -- sd
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_slots_name ON equipment_slots(name);
 
@@ -138,7 +140,7 @@ CREATE TABLE IF NOT EXISTS race_ability_modifiers (           -- sd/wt: from ddo
     race_id     INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
     stat_id     INTEGER NOT NULL REFERENCES stats(id),
     modifier    INTEGER NOT NULL,
-    source      TEXT NOT NULL CHECK (source IN ('innate', 'enhancement')), -- not a general enum; specific to race_ability_modifiers -- innate=at creation, enhancement=racial tree
+    source      TEXT NOT NULL CHECK (source {_check(AbilityModSource)}), -- innate=at creation, enhancement=racial tree
     is_choice   INTEGER NOT NULL DEFAULT 0 CHECK (is_choice IN (0, 1)),   -- 1=player picks from options
     choice_pool INTEGER,                                         -- total points to distribute (when is_choice=1)
     PRIMARY KEY (race_id, stat_id, source, is_choice)
@@ -173,7 +175,7 @@ CREATE INDEX IF NOT EXISTS idx_class_bonus_feat_slots_level ON class_bonus_feat_
 CREATE TABLE IF NOT EXISTS feat_slots (                            -- sd: universal feat slot schedule
     character_level INTEGER NOT NULL CHECK (character_level BETWEEN 1 AND 30),
     sort_order      INTEGER NOT NULL DEFAULT 0,
-    slot_tier       TEXT NOT NULL CHECK (slot_tier IN ('heroic', 'epic', 'legendary', 'destiny')),
+    slot_tier       TEXT NOT NULL CHECK (slot_tier {_check(SlotTier)}),
     PRIMARY KEY (character_level, sort_order)
 );
 
@@ -439,7 +441,7 @@ CREATE INDEX IF NOT EXISTS idx_race_auto_feats_feat ON race_auto_feats(feat_id);
 CREATE TABLE IF NOT EXISTS race_bonus_feat_slots (                   -- sd
     race_id         INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
     character_level INTEGER NOT NULL CHECK (character_level BETWEEN 1 AND 30),
-    slot_tier       TEXT NOT NULL CHECK (slot_tier IN ('heroic', 'epic', 'legendary')),
+    slot_tier       TEXT NOT NULL CHECK (slot_tier {_check_subset(SlotTier.HEROIC, SlotTier.EPIC, SlotTier.LEGENDARY)}),
     PRIMARY KEY (race_id, character_level)
 );
 
@@ -449,7 +451,7 @@ CREATE TABLE IF NOT EXISTS enhancement_trees (
     dat_id    TEXT,                                               -- ln: FID from fid_enhancement_lookup.json
     name      TEXT NOT NULL,                                      -- wt: wiki tree page title
     tree_type TEXT NOT NULL CHECK (tree_type {_check(TreeType)}), -- wt: from index category
-    ap_pool   TEXT NOT NULL CHECK (ap_pool IN ('heroic', 'racial', 'reaper', 'legendary')), -- c: derived from tree_type
+    ap_pool   TEXT NOT NULL CHECK (ap_pool {_check(ApPool)}), -- c: derived from tree_type
     class_id  INTEGER REFERENCES classes(id),                    -- c: joined from class name
     race_id   INTEGER REFERENCES races(id),                      -- c: joined from race name
     CHECK (
@@ -466,7 +468,7 @@ CREATE INDEX IF NOT EXISTS idx_enhancement_trees_race ON enhancement_trees(race_
 
 CREATE TABLE IF NOT EXISTS enhancement_tree_ap_thresholds (
     tree_id             INTEGER NOT NULL REFERENCES enhancement_trees(id) ON DELETE CASCADE,
-    tier                TEXT    NOT NULL CHECK (tier IN ('1', '2', '3', '4', '5')),
+    tier                TEXT    NOT NULL CHECK (tier {_check_subset(EnhancementTier.T1, EnhancementTier.T2, EnhancementTier.T3, EnhancementTier.T4, EnhancementTier.T5)}),
     ap_required         INTEGER NOT NULL CHECK (ap_required >= 0),
     min_character_level INTEGER,
     PRIMARY KEY (tree_id, tier)
@@ -481,7 +483,7 @@ CREATE TABLE IF NOT EXISTS enhancements (
     max_ranks   INTEGER NOT NULL DEFAULT 1,                      -- wt: ranks field
     ap_cost     INTEGER NOT NULL DEFAULT 1,                      -- wt: ap field
     progression INTEGER NOT NULL DEFAULT 0,                      -- wt: pg field
-    tier        TEXT NOT NULL CHECK (tier IN ('core', '1', '2', '3', '4', '5', 'unknown')), -- wt: from section headers
+    tier        TEXT NOT NULL CHECK (tier {_check(EnhancementTier)}), -- wt: from section headers
     level_req   TEXT,                                            -- wt: level field
     prerequisite TEXT                                             -- wt: prereq field
 );
@@ -521,7 +523,7 @@ CREATE INDEX IF NOT EXISTS idx_enhancement_prereq_races_race ON enhancement_prer
 CREATE TABLE IF NOT EXISTS enhancement_feat_links (             -- unpopulated (future: wt)
     enhancement_id INTEGER NOT NULL REFERENCES enhancements(id) ON DELETE CASCADE,
     feat_id        INTEGER NOT NULL REFERENCES feats(id),
-    link_type      TEXT NOT NULL CHECK (link_type IN ('requires', 'grants', 'excludes')),
+    link_type      TEXT NOT NULL CHECK (link_type {_check(LinkType)}),
     min_rank       INTEGER NOT NULL DEFAULT 1,                   -- rank at which this link becomes active
     PRIMARY KEY (enhancement_id, feat_id, link_type)
 );
@@ -587,8 +589,8 @@ CREATE TABLE IF NOT EXISTS spells (
     target           TEXT,                                        -- wt: target field
     duration         TEXT,                                        -- wt: duration field
     saving_throw     TEXT,                                        -- wt: save field
-    save_type        TEXT CHECK (save_type IS NULL OR save_type IN ('Fortitude', 'Reflex', 'Will')), -- c: parsed from saving_throw
-    save_effect      TEXT CHECK (save_effect IS NULL OR save_effect IN ('negates', 'half', 'partial', 'special')), -- c: parsed from saving_throw
+    save_type        TEXT CHECK (save_type IS NULL OR save_type {_check(SaveType)}), -- c: parsed from saving_throw
+    save_effect      TEXT CHECK (save_effect IS NULL OR save_effect {_check(SaveEffect)}), -- c: parsed from saving_throw
     spell_resistance TEXT                                         -- wt: sr field
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_spells_name ON spells(name);
@@ -636,7 +638,7 @@ CREATE INDEX IF NOT EXISTS idx_item_spell_links_spell ON item_spell_links(spell_
 CREATE TABLE IF NOT EXISTS enhancement_spell_links (            -- unpopulated (future: wt)
     enhancement_id INTEGER NOT NULL REFERENCES enhancements(id) ON DELETE CASCADE,
     spell_id       INTEGER NOT NULL REFERENCES spells(id),
-    link_type      TEXT NOT NULL DEFAULT 'grants' CHECK (link_type IN ('grants', 'modifies')),
+    link_type      TEXT NOT NULL DEFAULT '{LinkType.GRANTS}' CHECK (link_type {_check_subset(LinkType.GRANTS, LinkType.MODIFIES)}),
     min_rank       INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (enhancement_id, spell_id, link_type)
 );
