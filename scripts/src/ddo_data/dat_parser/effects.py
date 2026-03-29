@@ -16,7 +16,7 @@ import html
 import logging
 import re
 
-from ddo_data.stat_names import S
+from ddo_data.enums import S
 import struct
 from collections.abc import Callable
 from dataclasses import dataclass, field
