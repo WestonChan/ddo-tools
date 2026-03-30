@@ -831,6 +831,13 @@ def build_db(
             seeded = db.seed_crafting_data()
             click.echo(f"  {seeded:,} crafting seed rows")
 
+    # Seed class feat data (must run after feats and classes are loaded)
+    if "feats" in data_types and "classes" in data_types:
+        click.echo("Seeding class feat data (bonus feats, wildshape, choices)...")
+        with GameDB(output) as db:
+            seeded = db.seed_class_feat_data()
+            click.echo(f"  {seeded:,} class feat seed rows")
+
     # Second-pass: fetch missing icons
     click.echo("Fixing missing icons...")
     with GameDB(output) as db:

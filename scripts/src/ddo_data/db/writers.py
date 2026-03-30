@@ -1450,15 +1450,27 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
 
             # --- enhancement_bonuses from parsed description ---
             if description:
+                from ..dat_parser.effects import normalize_stat_name
                 parsed_bonuses = _parse_enhancement_description(description)
                 for pb in parsed_bonuses:
-                    stat_id = _lookup_id(conn, "stats", "name", "id", pb["stat"])
+                    raw_stat = pb["stat"]
+                    # Normalize through stat alias system (handles "Will Saving Throws" -> "Will Save", etc.)
+                    normalized = normalize_stat_name(raw_stat)
+                    resolved_stat = normalized[0] if normalized else raw_stat
+                    stat_id = _lookup_id(conn, "stats", "name", "id", resolved_stat)
+                    if stat_id is None and len(normalized) > 1:
+                        # Composite stat — use first resolved component
+                        for ns in normalized:
+                            stat_id = _lookup_id(conn, "stats", "name", "id", ns)
+                            if stat_id is not None:
+                                resolved_stat = ns
+                                break
                     bonus_type_id = (
                         _lookup_id(conn, "bonus_types", "name", "id", pb["bonus_type"])
                         if pb.get("bonus_type")
                         else None
                     )
-                    bonus_name = f"{pb['stat']} +{pb['value']}"
+                    bonus_name = f"{resolved_stat} +{pb['value']}"
                     bonus_id = _ensure_bonus(
                         conn, bonus_name, stat_id, bonus_type_id, pb["value"],
                         description=description,
@@ -1807,6 +1819,93 @@ def insert_crafting_options(
 
     conn.commit()
     logger.info("Inserted %d crafting option rows", inserted)
+    return inserted
+
+
+def seed_class_feat_data(conn: sqlite3.Connection) -> int:
+    """Seed class choice feats and bonus feat lists from static wiki-scraped data.
+
+    Populates class_choice_feats (FvS/Druid) and feat_bonus_classes
+    (Fighter/Wizard/Artificer/Alchemist) from ``class_feat_data.json``.
+    """
+    import json
+    from pathlib import Path
+
+    data_path = Path(__file__).parent.parent / "wiki" / "class_feat_data.json"
+    if not data_path.exists():
+        logger.warning("class_feat_data.json not found, skipping")
+        return 0
+
+    data = json.loads(data_path.read_text())
+    inserted = 0
+
+    # Build lookups
+    class_ids = dict(conn.execute("SELECT name, id FROM classes").fetchall())
+    feat_ids = dict(conn.execute("SELECT name, id FROM feats").fetchall())
+
+    # --- FvS level 7 choices ---
+    fvs_id = class_ids.get("Favored Soul")
+    if fvs_id:
+        for feat_name in data.get("favored_soul_level7", []):
+            feat_id = feat_ids.get(feat_name)
+            if not feat_id:
+                conn.execute("INSERT OR IGNORE INTO feats (name) VALUES (?)", (feat_name,))
+                row = conn.execute("SELECT id FROM feats WHERE name = ?", (feat_name,)).fetchone()
+                if row:
+                    feat_id = row[0]
+                    feat_ids[feat_name] = feat_id
+            if feat_id:
+                conn.execute(
+                    "INSERT OR IGNORE INTO class_choice_feats (class_id, class_level, feat_id) VALUES (?, 7, ?)",
+                    (fvs_id, feat_id),
+                )
+                inserted += 1
+
+    # --- Druid wildshape choices ---
+    druid_id = class_ids.get("Druid")
+    if druid_id:
+        for level_str, forms in data.get("druid_wildshape", {}).items():
+            level = int(level_str)
+            for form_name in forms:
+                feat_id = feat_ids.get(form_name)
+                if not feat_id:
+                    # Create stub feat for wildshape forms
+                    conn.execute(
+                        "INSERT OR IGNORE INTO feats (name) VALUES (?)",
+                        (form_name,),
+                    )
+                    row = conn.execute("SELECT id FROM feats WHERE name = ?", (form_name,)).fetchone()
+                    if row:
+                        feat_id = row[0]
+                if feat_id:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO class_choice_feats (class_id, class_level, feat_id) VALUES (?, ?, ?)",
+                        (druid_id, level, feat_id),
+                    )
+                    inserted += 1
+
+    # --- Bonus feat lists (Fighter, Wizard, Artificer, Alchemist) ---
+    bonus_map = {
+        "Fighter": data.get("fighter_bonus_feats", []),
+        "Wizard": data.get("wizard_bonus_feats", []),
+        "Artificer": data.get("artificer_bonus_feats", []),
+        "Alchemist": data.get("alchemist_bonus_feats", []),
+    }
+    for class_name, feat_names in bonus_map.items():
+        cid = class_ids.get(class_name)
+        if not cid:
+            continue
+        for feat_name in feat_names:
+            fid = feat_ids.get(feat_name)
+            if fid:
+                conn.execute(
+                    "INSERT OR IGNORE INTO feat_bonus_classes (feat_id, class_id) VALUES (?, ?)",
+                    (fid, cid),
+                )
+                inserted += 1
+
+    conn.commit()
+    logger.info("Seeded %d class feat data rows", inserted)
     return inserted
 
 
