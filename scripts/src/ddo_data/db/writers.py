@@ -50,6 +50,8 @@ _HANDEDNESS_MAP: dict[str, str] = {
     "off hand":    Handedness.OFF_HAND,
     "offhand":     Handedness.OFF_HAND,
     "thrown":      Handedness.THROWN,
+    "ranged":      Handedness.TWO_HANDED,  # bows/crossbows are two-handed
+    "simple":      Handedness.ONE_HANDED,  # handwraps tagged as "simple" in FID data
 }
 
 # ap_pool derived from tree_type
@@ -73,10 +75,75 @@ def _normalise_item_category(raw: str | None) -> str | None:
     return _ITEM_CATEGORY_MAP.get(raw.strip().lower())
 
 
-def _normalise_handedness(raw: str | None) -> str | None:
-    if not raw:
-        return None
-    return _HANDEDNESS_MAP.get(raw.strip().lower())
+# Weapon types that imply a specific handedness when wiki doesn't specify one
+_WEAPON_TYPE_HANDEDNESS: dict[str, str] = {
+    "repeating light crossbow": Handedness.TWO_HANDED,
+    "repeating heavy crossbow": Handedness.TWO_HANDED,
+    "light crossbow": Handedness.TWO_HANDED,
+    "heavy crossbow": Handedness.TWO_HANDED,
+    "great crossbow": Handedness.TWO_HANDED,
+    "short bow": Handedness.TWO_HANDED,
+    "longbow": Handedness.TWO_HANDED,
+    "handwrap": Handedness.ONE_HANDED,
+    "collar": Handedness.ONE_HANDED,
+    "greatsword": Handedness.TWO_HANDED,
+    "greataxe": Handedness.TWO_HANDED,
+    "greatclub": Handedness.TWO_HANDED,
+    "maul": Handedness.TWO_HANDED,
+    "falchion": Handedness.TWO_HANDED,
+    "quarterstaff": Handedness.TWO_HANDED,
+    "rune arm": Handedness.OFF_HAND,
+    "orb": Handedness.OFF_HAND,
+    "shuriken": Handedness.THROWN,
+    "throwing dagger": Handedness.THROWN,
+    "throwing hammer": Handedness.THROWN,
+    "throwing axe": Handedness.THROWN,
+    "dart": Handedness.THROWN,
+    # Shields
+    "buckler": Handedness.OFF_HAND,
+    "small": Handedness.OFF_HAND,
+    "large": Handedness.OFF_HAND,
+    "tower": Handedness.OFF_HAND,
+    "small shield": Handedness.OFF_HAND,
+    "large shield": Handedness.OFF_HAND,
+    "tower shield": Handedness.OFF_HAND,
+    # One-handed weapons
+    "bastard sword": Handedness.ONE_HANDED,
+    "handaxe": Handedness.ONE_HANDED,
+    "hand axe": Handedness.ONE_HANDED,
+    "light mace": Handedness.ONE_HANDED,
+    "heavy mace": Handedness.ONE_HANDED,
+    "sickle": Handedness.ONE_HANDED,
+    "longsword": Handedness.ONE_HANDED,
+    "shortsword": Handedness.ONE_HANDED,
+    "rapier": Handedness.ONE_HANDED,
+    "scimitar": Handedness.ONE_HANDED,
+    "warhammer": Handedness.ONE_HANDED,
+    "light hammer": Handedness.ONE_HANDED,
+    "light pick": Handedness.ONE_HANDED,
+    "heavy pick": Handedness.ONE_HANDED,
+    "battle axe": Handedness.ONE_HANDED,
+    "dagger": Handedness.ONE_HANDED,
+    "club": Handedness.ONE_HANDED,
+    "kukri": Handedness.ONE_HANDED,
+    "khopesh": Handedness.ONE_HANDED,
+    "kama": Handedness.ONE_HANDED,
+    "morningstar": Handedness.ONE_HANDED,
+    "dwarven waraxe": Handedness.ONE_HANDED,
+    "scepter": Handedness.ONE_HANDED,
+    "sceptre": Handedness.ONE_HANDED,
+}
+
+
+def _normalise_handedness(raw: str | None, weapon_type: str | None = None) -> str | None:
+    """Map wiki handedness strings to CHECK-valid values, with weapon_type fallback."""
+    if raw:
+        result = _HANDEDNESS_MAP.get(raw.strip().lower())
+        if result:
+            return result
+    if weapon_type:
+        return _WEAPON_TYPE_HANDEDNESS.get(weapon_type.strip().lower())
+    return None
 
 
 def _parse_enchantment(text: str) -> list[dict]:
@@ -388,7 +455,7 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
         weapon_fields = ("damage", "critical", "weapon_type", "proficiency", "handedness",
                          "damage_class", "attack_mod", "damage_mod")
         if any(item.get(f) for f in weapon_required):
-            handedness = _normalise_handedness(item.get("handedness"))
+            handedness = _normalise_handedness(item.get("handedness"), item.get("weapon_type"))
             conn.execute(
                 f"""
                 INSERT OR IGNORE INTO item_weapon_stats

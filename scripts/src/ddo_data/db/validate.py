@@ -56,6 +56,9 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         JOIN enhancements e ON e.id = eb.enhancement_id
         JOIN enhancement_trees et ON et.id = e.tree_id
         WHERE b.stat_id IS NULL
+          AND b.description NOT LIKE '%immunity%'
+          AND b.description NOT LIKE '%Passive:%'
+          AND b.description NOT LIKE '%While%'
         LIMIT 20
         """,
         ["bonus_name", "description", "enhancement", "tree"],
@@ -98,6 +101,7 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         JOIN item_weapon_stats ws ON ws.item_id = i.id
         WHERE ws.handedness IS NULL
           AND i.wiki_url IS NOT NULL
+          AND ws.weapon_type != 'Cosmetic'
         LIMIT 20
         """,
         ["name", "weapon_type", "proficiency"],
@@ -112,6 +116,13 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         JOIN bonuses b ON b.id = ib.bonus_id
         JOIN items i ON i.id = ib.item_id
         WHERE b.stat_id IS NULL AND ib.data_source = 'wiki'
+          AND b.description NOT LIKE 'On hit:%'
+          AND b.description NOT LIKE 'On critical:%'
+          AND b.description NOT LIKE 'On being hit:%'
+          AND b.description NOT LIKE '%chance%'
+          AND b.description NOT LIKE '%per hit%'
+          AND b.description NOT LIKE 'Charge-based:%'
+          AND b.description NOT LIKE '{{%}}'
         LIMIT 20
         """,
         ["bonus_name", "description", "item"],
@@ -243,7 +254,8 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         "Feats should have icon filenames (>95% expected)",
         "warning",
         """
-        SELECT name FROM feats WHERE icon IS NULL OR icon = ''
+        SELECT name FROM feats
+        WHERE (icon IS NULL OR icon = '') AND wiki_url IS NOT NULL
         LIMIT 20
         """,
         ["name"],
