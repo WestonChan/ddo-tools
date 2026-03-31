@@ -39,33 +39,6 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         JOIN enhancements e ON e.id = eb.enhancement_id
         JOIN enhancement_trees et ON et.id = e.tree_id
         WHERE b.stat_id IS NULL
-          AND b.description NOT LIKE '%immunity%'
-          AND b.description NOT LIKE '%Passive:%'
-          AND b.description NOT LIKE '%While%'
-          AND b.description NOT LIKE '%as long as%'
-          AND b.description NOT LIKE '%per rest%'
-          AND b.description NOT LIKE '%with %bows%'
-          AND b.description NOT LIKE '%with %words%'
-          AND b.description NOT LIKE '%with %ammers%'
-          AND b.description NOT LIKE '%Caster Level%'
-          AND b.description NOT LIKE '%Burning Ambition%'
-          AND b.description NOT LIKE '%for one minute%'
-          AND b.description NOT LIKE '%File:%'
-          AND b.name NOT LIKE '%with %'
-          AND b.name NOT LIKE '%when %'
-          AND b.name NOT LIKE '%Action Boost%'
-          AND b.name NOT LIKE '%per hit%'
-          AND b.name NOT LIKE '%per character%'
-          AND b.name NOT LIKE '%resist Energy%'
-          AND b.name NOT LIKE '%DC to your%'
-          AND b.name NOT LIKE '%for every%'
-          AND b.description NOT LIKE '%When you%'
-          AND b.description NOT LIKE '%per rest%'
-          AND b.description NOT LIKE '%regardless%'
-          AND b.description NOT LIKE '%Temporary%'
-          AND b.name NOT LIKE 'Attack %'
-          AND b.name NOT LIKE '%Temporary%'
-          AND b.name NOT LIKE '%Sacred Temporary%'
         LIMIT 20
         """,
         ["bonus_name", "description", "enhancement", "tree"],

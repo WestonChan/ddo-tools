@@ -1191,6 +1191,7 @@ _ENH_BONUS_TYPE_NORM: dict[str, str] = {
 }
 
 
+
 def _parse_enhancement_description(description: str) -> list[dict]:
     """Parse a wiki enhancement description into structured bonus dicts.
 
@@ -1431,7 +1432,8 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
                 parsed_bonuses = _parse_enhancement_description(description)
                 for pb in parsed_bonuses:
                     raw_stat = pb["stat"]
-                    # Normalize through stat alias system (handles "Will Saving Throws" -> "Will Save", etc.)
+                    # Normalize through shared stat alias system (handles conditional
+                    # stripping, abbreviations, Will Saving Throws -> Will Save, etc.)
                     normalized = normalize_stat_name(raw_stat)
                     resolved_stat = normalized[0] if normalized else raw_stat
                     stat_id = _lookup_id(conn, "stats", "name", "id", resolved_stat)

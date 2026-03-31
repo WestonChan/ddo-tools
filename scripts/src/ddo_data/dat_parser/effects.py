@@ -1267,10 +1267,92 @@ _STAT_ALIASES: dict[str, str] = {
     "magical resistance rating": S.MAGICAL_RESISTANCE_RATING,
     "incapacitation range": S.UNCONSCIOUSNESS_RANGE,
     "positive spell crit damage": S.SPELL_CRITICAL_DAMAGE,
+    "positive spell critical damage": S.SPELL_CRITICAL_DAMAGE,
     "positive energy spell power": S.POSITIVE_SPELL_POWER,
+    "positive energy spell critical chance": S.UNIVERSAL_SPELL_LORE,
+    "positive spell critical chance": S.UNIVERSAL_SPELL_LORE,
+    "spell critical chance": S.UNIVERSAL_SPELL_LORE,
     "maximum hitpoints": S.HIT_POINTS,
-    "maximum hit points": S.HIT_POINTS,
+    "maximum hit points": S.MAXIMUM_HIT_POINTS,
+    "max hit points": S.MAXIMUM_HIT_POINTS,
     "hit points": S.HIT_POINTS,
+    "hit point": S.HIT_POINTS,
+    # Enhancement abbreviations
+    "int": S.INTELLIGENCE,
+    "str": S.STRENGTH,
+    "dex": S.DEXTERITY,
+    "con": S.CONSTITUTION,
+    "wis": S.WISDOM,
+    "cha": S.CHARISMA,
+    "hit": S.ATTACK_BONUS,
+    "attack": S.ATTACK_BONUS,
+    "attack damage": S.DAMAGE_BONUS,
+    "damage": S.DAMAGE_BONUS,
+    "saves": S.SAVING_THROWS,
+    "save": S.SAVING_THROWS,
+    "sneak attack die": S.SNEAK_ATTACK_DICE,
+    "sneak attack dice": S.SNEAK_ATTACK_DICE,
+    "critical hit confirmation": S.CRITICAL_CONFIRMATION,
+    "critical hit damage": S.CRITICAL_DAMAGE,
+    "critical multiplier": S.CRITICAL_DAMAGE_MULTIPLIER,
+    "critical damage multiplier": S.CRITICAL_DAMAGE_MULTIPLIER,
+    "critical threat range": S.CRITICAL_THREAT_RANGE,
+    "dodge cap": S.DODGE_CAP,
+    "character dodge cap": S.DODGE_CAP,
+    "maximum dexterity bonus": S.DODGE_CAP,
+    "armor maximum dexterity bonus": S.DODGE_CAP,
+    "tower shield maximum dexterity bonus": S.DODGE_CAP,
+    "doubleshot chance": S.DOUBLESHOT,
+    "doublestrike chance": S.DOUBLESTRIKE,
+    "strikethrough chance": S.STRIKETHROUGH,
+    "melee attack speed": S.ATTACK_SPEED,
+    "dodge bypass": S.FORTIFICATION_BYPASS,
+    "bard songs per rest": S.BARD_SONGS,
+    "bard songs": S.BARD_SONGS,
+    "all spell dc": S.SPELL_DCS,
+    "dc for your spells": S.SPELL_DCS,
+    "assassinate dcs": S.ASSASSINATE_DC,
+    "magical resistance cap": S.MAGICAL_RESISTANCE_RATING_CAP,
+    "additional saving throws": S.SAVING_THROWS,
+    "diplomacy skill": S.DIPLOMACY,
+    "disable device skill": S.DISABLE_DEVICE,
+    "saving throws versus poison": S.POISON_SAVE,
+    "saves against fear": S.FEAR_SAVE,
+    "saves vs fear": S.FEAR_SAVE,
+    "saving throws against poison": S.POISON_SAVE,
+    "saves against poison": S.POISON_SAVE,
+    "stacking incorpreality": S.CONCEALMENT,
+    "attack rolls": S.ATTACK_BONUS,
+    "critical chance": S.UNIVERSAL_SPELL_LORE,
+    "evocation": S.EVOCATION_SPELL_FOCUS,
+    "conjuration": S.CONJURATION_SPELL_FOCUS,
+    "necromancy": S.NECROMANCY_SPELL_FOCUS,
+    "transmutation": S.TRANSMUTATION_SPELL_FOCUS,
+    "enchantment": S.ENCHANTMENT_SPELL_FOCUS,
+    "illusion": S.ILLUSION_SPELL_FOCUS,
+    "abjuration": S.ABJURATION_SPELL_FOCUS,
+    "cl": S.SPELL_PENETRATION,
+    "dcs": S.SPELL_DCS,
+    "pact die": S.SNEAK_ATTACK_DICE,
+    "spellsword dice": S.SNEAK_ATTACK_DICE,
+    "ki": S.SPELL_POINTS,  # Ki is spell points for monks
+    "rage uses": S.BARD_SONGS,  # Uses-per-rest resources map to same concept
+    "force damage": S.FORCE_SPELL_POWER,
+    "sonic damage": S.SONIC_SPELL_POWER,
+    "cold damage": S.COLD_SPELL_POWER,
+    "fire damage": S.FIRE_SPELL_POWER,
+    "acid damage": S.ACID_SPELL_POWER,
+    "electric damage": S.ELECTRIC_SPELL_POWER,
+    "light damage": S.LIGHT_SPELL_POWER,
+    "negative damage": S.NEGATIVE_SPELL_POWER,
+    "positive damage": S.POSITIVE_SPELL_POWER,
+    "warlock": S.SPELL_PENETRATION,  # "Warlock +1" = caster level for warlocks
+    "fortitude": S.FORTITUDE_SAVE,
+    "reflex": S.REFLEX_SAVE,
+    "will": S.WILL_SAVE,
+    "saves vs": S.SAVING_THROWS,  # incomplete "Saves vs X" after conditional stripping
+    "tactics spell focus": S.TACTICS,  # "Trip/Tactics Spell Focus" misparse
+    "trip spell focus": S.TRIP_DC,
     "universal spellpower": S.UNIVERSAL_SPELL_POWER,
     "spell dcs": S.SPELL_DCS,
     "hit and damage": S.MELEE_POWER,
@@ -1515,6 +1597,83 @@ def normalize_stat_name(raw: str) -> list[str]:
     s = re.sub(r"\s*\(.*?\)\s*$", "", s).strip()
     s = re.sub(r"\s*''.*$", "", s).strip()
     s = s.rstrip(".")
+
+    # Check aliases FIRST (before stripping conditionals, so "saves against Fear" matches)
+    lower = s.lower()
+    if lower in _STAT_ALIASES:
+        resolved = _STAT_ALIASES[lower]
+        if resolved.lower() != lower:
+            return normalize_stat_name(resolved)
+        return [resolved]
+
+    # Strip conditional phrases: "while Centered", "when raging", "in Reaper Difficulty",
+    # "with Longbows", "against Favored Enemies", "per rest", "for 12 seconds", etc.
+    s = re.sub(
+        r"\s+(?:"
+        r"while [\w\s]+|when [\w\s]+|during [\w\s]+|"
+        r"in [\w\s]+ [Dd]ifficulty|in [\w\s]+ form|in [\w\s]+ armor|"
+        r"if you [\w\s]+|as long as [\w\s]+|"
+        r"per [\w\s]+|for [\w\s]+ seconds|for [\w\s]+ minutes|"
+        r"with [\w\s]+|against [\w\s]+|"
+        r"versus [\w\s]+|until [\w\s]+|the same [\w\s]+"
+        r")$",
+        "", s, flags=re.IGNORECASE,
+    ).strip()
+
+    # "Action Boost bonus to X" / "Destiny bonus to X" / "Combat Style bonus to X" -> X
+    m = re.match(r"(?:Action Boost|Destiny|Combat Style)\s+[Bb]onus\s+to\s+(.+)", s, re.IGNORECASE)
+    if m:
+        s = m.group(1).strip()
+
+    # "your total X" -> X
+    m = re.match(r"your total (.+)", s, re.IGNORECASE)
+    if m:
+        s = m.group(1).strip()
+
+    # "X Spell Critical Chance" -> "X Spell Lore"
+    m = re.match(r"(\w+)\s+Spell Critical Chance", s, re.IGNORECASE)
+    if m:
+        s = f"{m.group(1)} Spell Lore"
+
+    # "Critical Chance with X" -> "X Spell Lore"
+    m = re.match(r"Critical Chance with (\w+)", s, re.IGNORECASE)
+    if m:
+        s = f"{m.group(1)} Spell Lore"
+
+    # "DCs with X spells" / "DC to X" -> "X Spell Focus" (only for spell schools)
+    _SPELL_SCHOOLS = {"abjuration", "conjuration", "divination", "enchantment",
+                      "evocation", "illusion", "necromancy", "transmutation"}
+    m = re.match(r"(?:DCs with |DC to |Bonus to )(\w+)\s*(?:spells?)?$", s, re.IGNORECASE)
+    if m and m.group(1).lower() in _SPELL_SCHOOLS:
+        s = f"{m.group(1)} Spell Focus"
+
+    # "DC to spells from the X school" -> "X Spell Focus"
+    m = re.match(r"DC to spells from the (\w+) school", s, re.IGNORECASE)
+    if m:
+        s = f"{m.group(1)} Spell Focus"
+
+    # "Enchantment DC" / "Enchantment spell DC" / "X DC" for schools -> "X Spell Focus"
+    m = re.match(r"(\w+)\s+(?:spell\s+)?DC$", s, re.IGNORECASE)
+    if m and m.group(1).lower() in _SPELL_SCHOOLS:
+        s = f"{m.group(1)} Spell Focus"
+
+    # "X damage per caster level" -> "X Spell Power"
+    m = re.match(r"(\w+)\s+damage per caster level", s, re.IGNORECASE)
+    if m:
+        s = f"{m.group(1)} Spell Power"
+
+    # "Caster Level..." -> Spell Penetration
+    if re.match(r"(?:Caster Level|Maximum Caster Level)", s, re.IGNORECASE):
+        s = "Spell Penetration"
+
+    # "X or Y" ability choices -> first ability (handles abbreviations too)
+    m = re.match(
+        r"(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma|STR|DEX|CON|INT|WIS|CHA)"
+        r"\s+or\s+\w+",
+        s, re.IGNORECASE,
+    )
+    if m:
+        s = m.group(1)
 
     lower = s.lower()
 
