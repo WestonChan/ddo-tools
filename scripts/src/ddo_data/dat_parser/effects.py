@@ -1299,65 +1299,59 @@ _STAT_ALIASES: dict[str, str] = {
     "critical threat range": S.CRITICAL_THREAT_RANGE,
     "dodge cap": S.DODGE_CAP,
     "character dodge cap": S.DODGE_CAP,
-    "maximum dexterity bonus": S.DODGE_CAP,
-    "armor maximum dexterity bonus": S.DODGE_CAP,
-    "tower shield maximum dexterity bonus": S.DODGE_CAP,
+    # --- Unambiguous mappings only ---
     "doubleshot chance": S.DOUBLESHOT,
     "doublestrike chance": S.DOUBLESTRIKE,
     "strikethrough chance": S.STRIKETHROUGH,
-    "melee attack speed": S.ATTACK_SPEED,
-    "dodge bypass": S.FORTIFICATION_BYPASS,
     "bard songs per rest": S.BARD_SONGS,
     "bard songs": S.BARD_SONGS,
     "all spell dc": S.SPELL_DCS,
+    "all spell dcs": S.SPELL_DCS,
     "dc for your spells": S.SPELL_DCS,
     "assassinate dcs": S.ASSASSINATE_DC,
     "magical resistance cap": S.MAGICAL_RESISTANCE_RATING_CAP,
     "additional saving throws": S.SAVING_THROWS,
     "diplomacy skill": S.DIPLOMACY,
     "disable device skill": S.DISABLE_DEVICE,
+    "intimidate skill": S.INTIMIDATE,
     "saving throws versus poison": S.POISON_SAVE,
     "saves against fear": S.FEAR_SAVE,
     "saves vs fear": S.FEAR_SAVE,
     "saving throws against poison": S.POISON_SAVE,
     "saves against poison": S.POISON_SAVE,
-    "stacking incorpreality": S.CONCEALMENT,
     "attack rolls": S.ATTACK_BONUS,
-    "critical chance": S.UNIVERSAL_SPELL_LORE,
-    "evocation": S.EVOCATION_SPELL_FOCUS,
-    "conjuration": S.CONJURATION_SPELL_FOCUS,
-    "necromancy": S.NECROMANCY_SPELL_FOCUS,
-    "transmutation": S.TRANSMUTATION_SPELL_FOCUS,
-    "enchantment": S.ENCHANTMENT_SPELL_FOCUS,
-    "illusion": S.ILLUSION_SPELL_FOCUS,
-    "abjuration": S.ABJURATION_SPELL_FOCUS,
-    "cl": S.SPELL_PENETRATION,
     "dcs": S.SPELL_DCS,
-    "pact die": S.SNEAK_ATTACK_DICE,
-    "spellsword dice": S.SNEAK_ATTACK_DICE,
-    "ki": S.SPELL_POINTS,  # Ki is spell points for monks
-    "rage uses": S.BARD_SONGS,  # Uses-per-rest resources map to same concept
-    "force damage": S.FORCE_SPELL_POWER,
-    "sonic damage": S.SONIC_SPELL_POWER,
-    "cold damage": S.COLD_SPELL_POWER,
-    "fire damage": S.FIRE_SPELL_POWER,
-    "acid damage": S.ACID_SPELL_POWER,
-    "electric damage": S.ELECTRIC_SPELL_POWER,
-    "light damage": S.LIGHT_SPELL_POWER,
-    "negative damage": S.NEGATIVE_SPELL_POWER,
-    "positive damage": S.POSITIVE_SPELL_POWER,
-    "warlock": S.SPELL_PENETRATION,  # "Warlock +1" = caster level for warlocks
     "electrical spell power": S.ELECTRIC_SPELL_POWER,
+    "negative energy spellpower": S.NEGATIVE_SPELL_POWER,
     "healing amp": S.HEALING_AMPLIFICATION,
     "healing amplification": S.HEALING_AMPLIFICATION,
     "hitpoints": S.HIT_POINTS,
     "hitpoint": S.HIT_POINTS,
     "damage to all weapon attacks": S.DAMAGE_BONUS,
-    "evil damage": S.EVIL_SPELL_POWER,
+    "melee damage": S.MELEE_POWER,
+    "melee power": S.MELEE_POWER,
+    "ranged alacrity": S.ATTACK_SPEED,
+    "incorporeal miss chance": S.CONCEALMENT,
+    "incorporeality": S.CONCEALMENT,
+    "max hp": S.MAXIMUM_HIT_POINTS,
+    "maximum hp": S.MAXIMUM_HIT_POINTS,
+    "maximum dodge": S.DODGE_CAP,
+    "maximum dodge bonus": S.DODGE_CAP,
+    "melee threat": S.MELEE_THREAT_GENERATION,
+    "threat range": S.CRITICAL_THREAT_RANGE,
+    "multiplier": S.CRITICAL_DAMAGE_MULTIPLIER,
+    "sunder": S.SUNDER_DC,
+    "strength": S.STRENGTH,
+    "your hp": S.HIT_POINTS,
+    "your movement speed": S.MOVEMENT_SPEED,
+    "your spell dc's": S.SPELL_DCS,
+    "spell dc's": S.SPELL_DCS,
+    "atk/dmg": S.ATTACK_BONUS,
+    "sneak speed": S.MOVEMENT_SPEED,
     "fortitude": S.FORTITUDE_SAVE,
     "reflex": S.REFLEX_SAVE,
     "will": S.WILL_SAVE,
-    "saves vs": S.SAVING_THROWS,  # incomplete "Saves vs X" after conditional stripping
+    # "saves vs" omitted — stripping loses specificity (fear/poison/etc.)
     "tactics spell focus": S.TACTICS,  # "Trip/Tactics Spell Focus" misparse
     "trip spell focus": S.TRIP_DC,
     "universal spellpower": S.UNIVERSAL_SPELL_POWER,
@@ -1627,15 +1621,11 @@ def normalize_stat_name(raw: str) -> list[str]:
         "", s, flags=re.IGNORECASE,
     ).strip()
 
-    # "Action Boost bonus to X" / "Destiny bonus to X" / "Combat Style bonus to X" -> X
-    m = re.match(r"(?:Action Boost|Destiny|Combat Style)\s+[Bb]onus\s+to\s+(.+)", s, re.IGNORECASE)
+    # "Destiny bonus to X" / "Combat Style bonus to X" -> X (these are bonus TYPES, not conditions)
+    m = re.match(r"(?:Destiny|Combat Style|Harper)\s+[Bb]onus\s+to\s+(.+)", s, re.IGNORECASE)
     if m:
         s = m.group(1).strip()
-
-    # "your total X" -> X
-    m = re.match(r"your total (.+)", s, re.IGNORECASE)
-    if m:
-        s = m.group(1).strip()
+    # "Action Boost bonus to X" is CONDITIONAL (temporary) — leave unresolved
 
     # "X Spell Critical Chance" -> "X Spell Lore"
     m = re.match(r"(\w+)\s+Spell Critical Chance", s, re.IGNORECASE)
@@ -1665,14 +1655,9 @@ def normalize_stat_name(raw: str) -> list[str]:
     if m and m.group(1).lower() in _SPELL_SCHOOLS:
         s = f"{m.group(1)} Spell Focus"
 
-    # "X damage per caster level" -> "X Spell Power"
-    m = re.match(r"(\w+)\s+damage per caster level", s, re.IGNORECASE)
-    if m:
-        s = f"{m.group(1)} Spell Power"
-
-    # "Caster Level..." -> Spell Penetration
-    if re.match(r"(?:Caster Level|Maximum Caster Level)", s, re.IGNORECASE):
-        s = "Spell Penetration"
+    # "X damage per caster level" — NOT spell power (weapon damage scaling)
+    # "Caster Level" — NOT spell penetration (affects spell damage/duration)
+    # Both need their own stat entries — leave unresolved
 
     # "X or Y" ability choices -> first ability (handles abbreviations too)
     m = re.match(
