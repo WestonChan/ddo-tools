@@ -1383,6 +1383,13 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
             continue
         tree_id: int = row[0]
 
+        # --- AP thresholds (standard: 0/5/10/20/30 for tiers 1-5) ---
+        for tier_num, ap_req in [("1", 0), ("2", 5), ("3", 10), ("4", 20), ("5", 30)]:
+            conn.execute(
+                "INSERT OR IGNORE INTO enhancement_tree_ap_thresholds (tree_id, tier, ap_required) VALUES (?, ?, ?)",
+                (tree_id, tier_num, ap_req),
+            )
+
         # --- enhancements ---
         for enh in tree.get("enhancements") or []:
             enh_name = enh.get("name")
