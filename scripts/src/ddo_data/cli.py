@@ -838,6 +838,12 @@ def build_db(
             seeded = db.seed_class_feat_data()
             click.echo(f"  {seeded:,} class feat seed rows")
 
+    # Populate weapon types (must run after items are loaded)
+    if "items" in data_types:
+        with GameDB(output) as db:
+            wt = db.populate_weapon_types()
+            click.echo(f"  {wt} weapon types populated")
+
     # Populate stat sources (must run after enhancements are loaded)
     if "enhancements" in data_types:
         with GameDB(output) as db:

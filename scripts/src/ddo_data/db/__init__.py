@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .schema import create_schema
 from .validate import format_validation, validate_database
-from .writers import insert_augments, insert_class_progression, insert_crafting, insert_crafting_options, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, populate_stat_sources, seed_class_feat_data, seed_crafting_data, insert_set_bonus_effects, insert_spells
+from .writers import insert_augments, insert_class_progression, insert_crafting, insert_crafting_options, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, populate_stat_sources, populate_weapon_types, seed_class_feat_data, seed_crafting_data, insert_set_bonus_effects, insert_spells
 
 __all__ = ["GameDB"]
 
@@ -94,6 +94,10 @@ class GameDB:
     def insert_crafting_options(self, options: list[dict]) -> int:
         """Insert named crafting system options (Green Steel, Thunder-Forged, etc.)."""
         return insert_crafting_options(self.conn, options)
+
+    def populate_weapon_types(self) -> int:
+        """Populate weapon_types from item_weapon_stats data."""
+        return populate_weapon_types(self.conn)
 
     def populate_stat_sources(self) -> int:
         """Populate stat_sources from enhancement bonus data."""

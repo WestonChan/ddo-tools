@@ -1808,6 +1808,59 @@ def insert_crafting_options(
     return inserted
 
 
+def populate_weapon_types(conn: sqlite3.Connection) -> int:
+    """Populate weapon_types from distinct values in item_weapon_stats.
+
+    Must run after items are loaded.
+    """
+    # Normalize weapon type names (wiki has both "Greataxe" and "Great Axe")
+    _NORMALIZE = {
+        "Great Axe": "Greataxe",
+        "Great Club": "Greatclub",
+        "Great Sword": "Greatsword",
+        "Long Sword": "Longsword",
+        "Short Sword": "Shortsword",
+        "Long Bow": "Longbow",
+        "Short Bow": "Shortbow",
+        "Hand Axe": "Handaxe",
+        "War Hammer": "Warhammer",
+        "Dwarven War Axe": "Dwarven Waraxe",
+    }
+
+    # First normalize existing weapon_stats entries
+    for old, new in _NORMALIZE.items():
+        conn.execute(
+            "UPDATE item_weapon_stats SET weapon_type = ? WHERE weapon_type = ?",
+            (new, old),
+        )
+
+    # Insert distinct weapon types
+    types = conn.execute(
+        "SELECT DISTINCT weapon_type FROM item_weapon_stats WHERE weapon_type IS NOT NULL ORDER BY weapon_type"
+    ).fetchall()
+
+    inserted = 0
+    for (wtype,) in types:
+        if wtype.startswith("Cosmetic"):
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO weapon_types (name) VALUES (?)",
+            (wtype,),
+        )
+        inserted += 1
+
+    # Update weapon_type_id FK on item_weapon_stats
+    conn.execute("""
+        UPDATE item_weapon_stats
+        SET weapon_type_id = (SELECT id FROM weapon_types WHERE name = item_weapon_stats.weapon_type)
+        WHERE weapon_type IN (SELECT name FROM weapon_types)
+    """)
+
+    conn.commit()
+    logger.info("Populated %d weapon types", inserted)
+    return inserted
+
+
 def populate_stat_sources(conn: sqlite3.Connection) -> int:
     """Populate stat_sources by finding which trees/classes reference class-specific stats.
 

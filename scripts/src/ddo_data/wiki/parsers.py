@@ -265,8 +265,8 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
     item["enhancement_bonus"] = _parse_int(fields.get("enchantmentbonus", ""))
     item["durability"] = _parse_int(fields.get("durability", ""))
     item["hardness"] = _parse_int(fields.get("hardness", ""))
-    item["armor_bonus"] = _parse_int(fields.get("armorbonus", ""))
-    item["max_dex_bonus"] = _parse_int(fields.get("maxdex", ""))
+    item["armor_bonus"] = _parse_int(fields.get("armorbonus", "") or fields.get("ac", ""))
+    item["max_dex_bonus"] = _parse_int(fields.get("maxdex", "") or fields.get("maxdexbonus", ""))
 
     # Float fields
     item["weight"] = _parse_float(fields.get("weight", ""))
