@@ -1347,6 +1347,13 @@ _STAT_ALIASES: dict[str, str] = {
     "negative damage": S.NEGATIVE_SPELL_POWER,
     "positive damage": S.POSITIVE_SPELL_POWER,
     "warlock": S.SPELL_PENETRATION,  # "Warlock +1" = caster level for warlocks
+    "electrical spell power": S.ELECTRIC_SPELL_POWER,
+    "healing amp": S.HEALING_AMPLIFICATION,
+    "healing amplification": S.HEALING_AMPLIFICATION,
+    "hitpoints": S.HIT_POINTS,
+    "hitpoint": S.HIT_POINTS,
+    "damage to all weapon attacks": S.DAMAGE_BONUS,
+    "evil damage": S.EVIL_SPELL_POWER,
     "fortitude": S.FORTITUDE_SAVE,
     "reflex": S.REFLEX_SAVE,
     "will": S.WILL_SAVE,
@@ -1640,10 +1647,11 @@ def normalize_stat_name(raw: str) -> list[str]:
     if m:
         s = f"{m.group(1)} Spell Lore"
 
-    # "DCs with X spells" / "DC to X" -> "X Spell Focus" (only for spell schools)
+    # "DCs with X spells" / "DC to X" / "Bonus to X" -> "X Spell Focus" (spell schools)
+    # or "DC to your X" -> "X Spell Focus" (spell schools)
     _SPELL_SCHOOLS = {"abjuration", "conjuration", "divination", "enchantment",
                       "evocation", "illusion", "necromancy", "transmutation"}
-    m = re.match(r"(?:DCs with |DC to |Bonus to )(\w+)\s*(?:spells?)?$", s, re.IGNORECASE)
+    m = re.match(r"(?:DCs with |DC to (?:your )?|Bonus to )(\w+)\s*(?:spells?)?$", s, re.IGNORECASE)
     if m and m.group(1).lower() in _SPELL_SCHOOLS:
         s = f"{m.group(1)} Spell Focus"
 
@@ -1652,7 +1660,7 @@ def normalize_stat_name(raw: str) -> list[str]:
     if m:
         s = f"{m.group(1)} Spell Focus"
 
-    # "Enchantment DC" / "Enchantment spell DC" / "X DC" for schools -> "X Spell Focus"
+    # "Enchantment DC" / "X spell DC" / "X DC" for schools -> "X Spell Focus"
     m = re.match(r"(\w+)\s+(?:spell\s+)?DC$", s, re.IGNORECASE)
     if m and m.group(1).lower() in _SPELL_SCHOOLS:
         s = f"{m.group(1)} Spell Focus"
@@ -1740,7 +1748,11 @@ def normalize_stat_name(raw: str) -> list[str]:
             suffix = suffix.replace("Spellcrit Chance", S.SPELL_LORE)
             suffix = suffix.replace("Spellpower", "Spell Power")
             return [f"{left} {suffix}", f"{right} {suffix}"]
-        return [left, right]
+        # Recursively normalize each side (e.g., "Saves and AC" -> [Saving Throws, Armor Class])
+        result = []
+        for part in [left, right]:
+            result.extend(normalize_stat_name(part))
+        return result
 
     # Short element name: "Fire" -> S.FIRE_SPELL_POWER (in enhancement context)
     _ELEMENT_STATS = {
