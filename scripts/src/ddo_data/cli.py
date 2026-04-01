@@ -838,6 +838,12 @@ def build_db(
             seeded = db.seed_class_feat_data()
             click.echo(f"  {seeded:,} class feat seed rows")
 
+    # Populate stat sources (must run after enhancements are loaded)
+    if "enhancements" in data_types:
+        with GameDB(output) as db:
+            sources = db.populate_stat_sources()
+            click.echo(f"  {sources} stat source entries")
+
     # Second-pass: fetch missing icons
     click.echo("Fixing missing icons...")
     with GameDB(output) as db:

@@ -1808,6 +1808,47 @@ def insert_crafting_options(
     return inserted
 
 
+def populate_stat_sources(conn: sqlite3.Connection) -> int:
+    """Populate stat_sources by finding which trees/classes reference class-specific stats.
+
+    Scans enhancement_bonuses to discover which enhancement trees grant
+    each class-specific stat, then records the class association.
+    Must run after enhancements and bonuses are loaded.
+    """
+    from ddo_data.enums import S
+
+    # Stats that should have source entries
+    class_stats = [
+        S.ELDRITCH_BLAST_DICE, S.PACT_DICE, S.SPELLSWORD_DICE,
+        S.BURNING_AMBITION_DICE, S.KI, S.RAGE_USES,
+        S.LAY_ON_HANDS_USES, S.TURN_UNDEAD_LEVEL, S.BARD_SONGS,
+    ]
+
+    inserted = 0
+    for stat in class_stats:
+        # Find the primary class that grants this stat (via enhancement tree class_id)
+        row = conn.execute("""
+            SELECT DISTINCT et.class_id
+            FROM enhancement_bonuses eb
+            JOIN bonuses b ON b.id = eb.bonus_id
+            JOIN enhancements e ON e.id = eb.enhancement_id
+            JOIN enhancement_trees et ON et.id = e.tree_id
+            WHERE b.stat_id = ? AND et.class_id IS NOT NULL
+            LIMIT 1
+        """, (stat.id,)).fetchone()
+
+        class_id = row[0] if row else None
+        conn.execute(
+            "INSERT OR IGNORE INTO stat_sources (stat_id, class_id) VALUES (?, ?)",
+            (stat.id, class_id),
+        )
+        inserted += 1
+
+    conn.commit()
+    logger.info("Populated %d stat source entries", inserted)
+    return inserted
+
+
 def seed_class_feat_data(conn: sqlite3.Connection) -> int:
     """Seed class choice feats and bonus feat lists from static wiki-scraped data.
 
