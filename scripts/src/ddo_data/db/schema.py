@@ -56,6 +56,14 @@ CREATE TABLE IF NOT EXISTS stats (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_stats_name ON stats(name);
 CREATE INDEX IF NOT EXISTS idx_stats_category ON stats(category);
 
+CREATE TABLE IF NOT EXISTS stat_sources (                        -- sd: links class-specific stats to their source
+    stat_id  INTEGER NOT NULL REFERENCES stats(id),
+    class_id INTEGER REFERENCES classes(id),                     -- sd: class that introduces this stat (NULL = universal)
+    tree_id  INTEGER REFERENCES enhancement_trees(id),           -- c: specific enhancement tree (NULL = class-wide)
+    feat_id  INTEGER REFERENCES feats(id),                       -- c: specific feat (NULL = not feat-based)
+    PRIMARY KEY (stat_id)
+);
+
 CREATE TABLE IF NOT EXISTS bonus_types (
     id               INTEGER PRIMARY KEY,                        -- sd
     name             TEXT NOT NULL,                               -- sd
@@ -447,6 +455,16 @@ CREATE TABLE IF NOT EXISTS race_bonus_feat_slots (                   -- sd
     PRIMARY KEY (race_id, character_level)
 );
 
+-- Feat exclusion groups (mutually exclusive feats, e.g., TWF vs THF vs SWF) --
+
+CREATE TABLE IF NOT EXISTS feat_exclusion_groups (               -- sd/wt
+    group_id   INTEGER NOT NULL,                                  -- sd: shared group ID
+    group_name TEXT,                                              -- sd: display name (e.g., "Combat Style")
+    feat_id    INTEGER NOT NULL REFERENCES feats(id) ON DELETE CASCADE,
+    PRIMARY KEY (group_id, feat_id)
+);
+CREATE INDEX IF NOT EXISTS idx_feat_exclusion_groups_feat ON feat_exclusion_groups(feat_id);
+
 -- Enhancement Trees --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS enhancement_trees (
     id        INTEGER PRIMARY KEY,                               -- c: autoincrement
@@ -515,6 +533,14 @@ CREATE TABLE IF NOT EXISTS enhancement_prereq_races (           -- unpopulated (
     PRIMARY KEY (enhancement_id, race_id)
 );
 CREATE INDEX IF NOT EXISTS idx_enhancement_prereq_races_race ON enhancement_prereq_races(race_id);
+
+CREATE TABLE IF NOT EXISTS enhancement_exclusion_groups (       -- unpopulated (future: wt)
+    group_id       INTEGER NOT NULL,
+    group_name     TEXT,                                         -- display name for the exclusion group
+    enhancement_id INTEGER NOT NULL REFERENCES enhancements(id) ON DELETE CASCADE,
+    PRIMARY KEY (group_id, enhancement_id)
+);
+CREATE INDEX IF NOT EXISTS idx_enhancement_exclusion_groups_enh ON enhancement_exclusion_groups(enhancement_id);
 
 CREATE TABLE IF NOT EXISTS enhancement_feat_links (             -- unpopulated (future: wt)
     enhancement_id INTEGER NOT NULL REFERENCES enhancements(id) ON DELETE CASCADE,
@@ -810,6 +836,7 @@ CREATE TABLE IF NOT EXISTS enhancement_bonuses (
     enhancement_id    INTEGER NOT NULL REFERENCES enhancements(id) ON DELETE CASCADE,
     bonus_id          INTEGER NOT NULL REFERENCES bonuses(id),
     min_rank          INTEGER NOT NULL DEFAULT 1 CHECK (min_rank >= 1),
+    choice_group      INTEGER,                                    -- bonuses with same non-NULL group are pick-one
     data_source       TEXT CHECK (data_source {_check(DataSource)}),
     resolution_method TEXT CHECK (resolution_method {_check(ResolutionMethod)}),
     PRIMARY KEY (enhancement_id, bonus_id, min_rank)
@@ -1082,6 +1109,8 @@ INSERT OR IGNORE INTO race_ability_modifiers (race_id, stat_id, modifier, source
     ({Race.ELADRIN_CHAOSMANCER.id}, {S.DEXTERITY.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.ELADRIN_CHAOSMANCER.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2),
     -- 28=Dhampir Dark Bargainer: +2 total from CHA/CON/INT
     ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.CHARISMA.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.CONSTITUTION.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2), ({Race.DHAMPIR_DARK_BARGAINER.id}, {S.INTELLIGENCE.id}, 0, '{AbilityModSource.ENHANCEMENT}', 1, 2);
+
+-- stat_sources: populated post-import when enhancement/feat data is available
 
 -- Universal feat slot schedule (every character gets these, independent of class/race)
 INSERT OR IGNORE INTO feat_slots (character_level, sort_order, slot_tier) VALUES
