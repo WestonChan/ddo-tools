@@ -148,6 +148,11 @@ class S(str, Enum):
     ATTACK_AND_DAMAGE_VS_EVIL               = ("Attack and Damage vs Evil", 229, _C.MARTIAL)
     DAMAGE_VS_EVIL                          = ("Damage vs Evil", 230, _C.MARTIAL)
     CRITICAL_MULTIPLIER_19_20               = ("Critical Multiplier (19-20)", 231, _C.MARTIAL)
+    # Class-specific damage dice (near Sneak Attack Dice)
+    ELDRITCH_BLAST_DICE                     = ("Eldritch Blast Dice", 245, _C.MARTIAL)
+    PACT_DICE                               = ("Pact Dice", 246, _C.MARTIAL)
+    SPELLSWORD_DICE                         = ("Spellsword Dice", 247, _C.MARTIAL)
+    BURNING_AMBITION_DICE                   = ("Burning Ambition Dice", 248, _C.MARTIAL)
 
     # --- Defensive ---
     ARMOR_CLASS                             = ("Armor Class", 13, _C.DEFENSIVE)
@@ -218,10 +223,15 @@ class S(str, Enum):
     UNCONSCIOUSNESS_RANGE                   = ("Unconsciousness Range", 232, _C.DEFENSIVE)
     POSITIVE_ABSORPTION                     = ("Positive Absorption", 234, _C.DEFENSIVE)
     REPAIR_ABSORPTION                       = ("Repair Absorption", 235, _C.DEFENSIVE)
+    # Max Dex Bonus (armor/shield restrictions, distinct from Dodge Cap)
+    MAX_DEX_BONUS_ARMOR                     = ("Max Dex Bonus (Armor)", 239, _C.DEFENSIVE)
+    MAX_DEX_BONUS_SHIELD                    = ("Max Dex Bonus (Shield)", 240, _C.DEFENSIVE)
 
     # --- Magical ---
     SPELL_POINTS                            = ("Spell Points", 22, _C.MAGICAL)
     SPELL_PENETRATION                       = ("Spell Penetration", 23, _C.MAGICAL)
+    CASTER_LEVEL                            = ("Caster Level", 237, _C.MAGICAL)
+    MAXIMUM_CASTER_LEVEL                    = ("Maximum Caster Level", 238, _C.MAGICAL)
     UNIVERSAL_SPELL_POWER                   = ("Universal Spell Power", 24, _C.MAGICAL)
     FIRE_SPELL_POWER                        = ("Fire Spell Power", 25, _C.MAGICAL)
     COLD_SPELL_POWER                        = ("Cold Spell Power", 26, _C.MAGICAL)
@@ -269,6 +279,16 @@ class S(str, Enum):
     SPELL_POINT_COST_REDUCTION              = ("Spell Point Cost Reduction", 206, _C.MAGICAL)
     SPELL_DCS                               = ("Spell DCs", 209, _C.MAGICAL)
     UNIVERSAL_SPELL_CRITICAL_DAMAGE         = ("Universal Spell Critical Damage", 212, _C.MAGICAL)
+    FIRE_SPELL_CRITICAL_DAMAGE              = ("Fire Spell Critical Damage", 249, _C.MAGICAL)
+    COLD_SPELL_CRITICAL_DAMAGE              = ("Cold Spell Critical Damage", 250, _C.MAGICAL)
+    ELECTRIC_SPELL_CRITICAL_DAMAGE          = ("Electric Spell Critical Damage", 251, _C.MAGICAL)
+    ACID_SPELL_CRITICAL_DAMAGE              = ("Acid Spell Critical Damage", 252, _C.MAGICAL)
+    SONIC_SPELL_CRITICAL_DAMAGE             = ("Sonic Spell Critical Damage", 253, _C.MAGICAL)
+    LIGHT_SPELL_CRITICAL_DAMAGE             = ("Light Spell Critical Damage", 254, _C.MAGICAL)
+    FORCE_SPELL_CRITICAL_DAMAGE             = ("Force Spell Critical Damage", 255, _C.MAGICAL)
+    NEGATIVE_SPELL_CRITICAL_DAMAGE          = ("Negative Spell Critical Damage", 256, _C.MAGICAL)
+    POSITIVE_SPELL_CRITICAL_DAMAGE          = ("Positive Spell Critical Damage", 257, _C.MAGICAL)
+    REPAIR_SPELL_CRITICAL_DAMAGE            = ("Repair Spell Critical Damage", 258, _C.MAGICAL)
     POISON_SPELL_LORE                       = ("Poison Spell Lore", 216, _C.MAGICAL)
     CHAOS_SPELL_POWER                       = ("Chaos Spell Power", 218, _C.MAGICAL)
     CHAOS_SPELL_LORE                        = ("Chaos Spell Lore", 219, _C.MAGICAL)
@@ -316,6 +336,11 @@ class S(str, Enum):
     BARD_SONGS                              = ("Bard Songs", 143, _C.OTHER)
     MOVEMENT_SPEED                          = ("Movement Speed", 144, _C.OTHER)
     QUALITY                                 = ("Quality", 236, _C.OTHER)
+    # Class resource pools
+    KI                                      = ("Ki", 241, _C.OTHER)
+    RAGE_USES                               = ("Rage Uses", 242, _C.OTHER)
+    LAY_ON_HANDS_USES                       = ("Lay on Hands Uses", 243, _C.OTHER)
+    TURN_UNDEAD_LEVEL                       = ("Turn Undead Level", 244, _C.OTHER)
 
 
 class Skill(str, Enum):
