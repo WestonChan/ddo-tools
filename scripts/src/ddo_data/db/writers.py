@@ -1808,6 +1808,41 @@ def insert_crafting_options(
     return inserted
 
 
+def populate_item_materials(conn: sqlite3.Connection) -> int:
+    """Populate item_materials from distinct material values in items table.
+
+    Also updates material_id FK on items. Must run after items are loaded.
+    """
+    # Normalize material names
+    _NORMALIZE = {
+        "Cold iron": "Cold Iron",
+        "Flametouched iron": "Flametouched Iron",
+    }
+    for old, new in _NORMALIZE.items():
+        conn.execute("UPDATE items SET material = ? WHERE material = ?", (new, old))
+
+    # Insert distinct materials
+    materials = conn.execute(
+        "SELECT DISTINCT material FROM items WHERE material IS NOT NULL AND material != '' ORDER BY material"
+    ).fetchall()
+
+    inserted = 0
+    for (mat,) in materials:
+        conn.execute("INSERT OR IGNORE INTO item_materials (name) VALUES (?)", (mat,))
+        inserted += 1
+
+    # Update material_id FK
+    conn.execute("""
+        UPDATE items SET material_id = (
+            SELECT id FROM item_materials WHERE name = items.material
+        ) WHERE material IS NOT NULL AND material != ''
+    """)
+
+    conn.commit()
+    logger.info("Populated %d item materials", inserted)
+    return inserted
+
+
 def populate_weapon_types(conn: sqlite3.Connection) -> int:
     """Populate weapon_types from distinct values in item_weapon_stats.
 
@@ -1858,6 +1893,53 @@ def populate_weapon_types(conn: sqlite3.Connection) -> int:
 
     conn.commit()
     logger.info("Populated %d weapon types", inserted)
+    return inserted
+
+
+def populate_enhancement_feat_links(conn: sqlite3.Connection) -> int:
+    """Populate enhancement_feat_links by parsing feat grants from descriptions.
+
+    Matches patterns like "You gain the X feat", "grants the X feat",
+    "You gain X" where X is a known feat name.
+    """
+    feat_ids = dict(conn.execute("SELECT name, id FROM feats").fetchall())
+    feat_names_lower = {n.lower(): (n, fid) for n, fid in feat_ids.items()}
+
+    # Known feat grant patterns
+    _GRANT_PATTERNS = [
+        re.compile(r"you gain the (\w[\w\s'-]+?) feat", re.IGNORECASE),
+        re.compile(r"grants? the (\w[\w\s'-]+?) feat", re.IGNORECASE),
+        re.compile(r"you gain (\w[\w\s'-]+?) \(", re.IGNORECASE),
+        re.compile(r"Feat:\s*(\w[\w\s'-]+?)(?:\.|,|$)", re.IGNORECASE),
+    ]
+
+    rows = conn.execute("""
+        SELECT e.id, e.description
+        FROM enhancements e
+        WHERE e.description IS NOT NULL
+    """).fetchall()
+
+    inserted = 0
+    for enh_id, desc in rows:
+        for pat in _GRANT_PATTERNS:
+            for m in pat.finditer(desc):
+                feat_name = m.group(1).strip()
+                # Try exact match, then case-insensitive
+                feat_id = feat_ids.get(feat_name)
+                if not feat_id:
+                    entry = feat_names_lower.get(feat_name.lower())
+                    if entry:
+                        feat_id = entry[1]
+                if feat_id:
+                    cur = conn.execute(
+                        "INSERT OR IGNORE INTO enhancement_feat_links "
+                        "(enhancement_id, feat_id, link_type, min_rank) VALUES (?, ?, 'grants', 1)",
+                        (enh_id, feat_id),
+                    )
+                    inserted += cur.rowcount
+
+    conn.commit()
+    logger.info("Populated %d enhancement feat links", inserted)
     return inserted
 
 

@@ -1134,17 +1134,27 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
   - [!] `item_bonus_stat_resolved` — 4 niche items (Spider Cult Mask effects)
   - [!] `feats_have_icons` — 11 feats with no wiki icon (Energy Resistance variants)
 - [ ] **PRE-FRONTEND GATE:** Schema alignment audit — comprehensive review producing a report for the user. Checks:
-- [ ] **Schema work: New stats for class-specific mechanics** — Add S enum entries for:
-  - [ ] `CASTER_LEVEL` / `MAXIMUM_CASTER_LEVEL` — spell damage/duration scaling (distinct from Spell Penetration)
-  - [ ] `MAX_DEX_BONUS_ARMOR` / `MAX_DEX_BONUS_SHIELD` — armor/shield max dex restrictions (distinct from Dodge Cap)
-  - [ ] `KI` / `RAGE_USES` / `LAY_ON_HANDS_USES` — class resource pools (distinct from Spell Points/Bard Songs)
-  - [ ] `ELDRITCH_BLAST_DICE` / `PACT_DICE` / `SPELLSWORD_DICE` / `BURNING_AMBITION_DICE` — class-specific damage dice. Link to source enhancement/feat so frontend knows when to display.
-  - [ ] Add `source_enhancement_id` or `source_feat_id` FK on stats table for class-specific stat sourcing (e.g., Burning Ambition Dice → Alchemist Bombardier tree, Pact Dice → Warlock Pact feat)
-- [ ] **Schema work: Feat/enhancement exclusion groups** — for combat style feats (TWF vs THF vs SWF) and enhancement choices (pick STR or DEX):
-  - [ ] `feat_exclusion_groups (group_id, feat_id)` — feats in same group are mutually exclusive
-  - [ ] `enhancement_bonuses.choice_group` column — bonuses with same non-NULL group are pick-one
-  - [ ] `feat_antireqs (feat_id, blocked_feat_id)` — pairwise exclusion for simpler cases
-  - [ ] Populate from wiki (combat style feat groups, enhancement "or" choices)
+- [x] **Schema work: New stats for class-specific mechanics** — 22 new S enum entries added:
+  - [x] `CASTER_LEVEL` / `MAXIMUM_CASTER_LEVEL` — spell damage/duration scaling (distinct from Spell Penetration)
+  - [x] `MAX_DEX_BONUS_ARMOR` / `MAX_DEX_BONUS_SHIELD` — armor/shield max dex restrictions (distinct from Dodge Cap)
+  - [x] `KI` / `RAGE_USES` / `LAY_ON_HANDS_USES` / `TURN_UNDEAD_LEVEL` — class resource pools
+  - [x] `ELDRITCH_BLAST_DICE` / `PACT_DICE` / `SPELLSWORD_DICE` / `BURNING_AMBITION_DICE` — class-specific damage dice
+  - [x] Per-element `*_SPELL_CRITICAL_DAMAGE` x10 (Fire/Cold/Electric/Acid/Sonic/Light/Force/Negative/Positive/Repair)
+  - [x] `stat_sources` table — links class-specific stats to source class (9 entries, populated post-import)
+- [x] **Schema work: Exclusion/choice tables** — schema added, to be populated:
+  - [x] `feat_exclusion_groups (group_id, group_name, feat_id)` — N-way mutual exclusivity
+  - [x] `enhancement_exclusion_groups (group_id, group_name, enhancement_id)` — N-way mutual exclusivity
+  - [x] `enhancement_bonuses.choice_group` column — pick-one bonuses within an enhancement
+- [x] **Fix item_armor_stats** (0 → 740 rows) — wiki field names were wrong (armorbonus→ac, maxdex→maxdexbonus)
+- [x] **Populate weapon_types** (46 types) — from distinct item_weapon_stats values, normalized duplicates
+- [x] **Populate enhancement_tree_ap_thresholds** (510 rows) — standard 0/5/10/20/30 AP per tier
+- [ ] **Populate empty tables** — 16 tables still empty, grouped by priority:
+  - [ ] Enhancement links: `enhancement_feat_links` (feat grants from descriptions), `enhancement_spell_links` (spell grants)
+  - [ ] Item data: `item_materials` (Adamantine/Mithral/etc from wiki), `item_class_min_levels`, `item_spell_links`
+  - [ ] Exclusion groups: `feat_exclusion_groups` (combat styles TWF/THF/SWF), `enhancement_exclusion_groups` (pick-one choices)
+  - [ ] Crafting: `crafting_option_bonuses` (resolve crafting option descriptions to bonuses table)
+  - [ ] Quest system: `quests`, `quest_loot`, `quest_flagging`, `adventure_packs`, `patrons` (needs quest scraper)
+  - [ ] Binary-only: `item_effect_refs` (FID refs), `item_upgrades`
   1. **Field coverage**: verify all binary-decoded fields have corresponding DB columns and correct types
   2. **Enum alignment**: verify enum code-to-seed ID mappings are consistent
   3. **Writer field-flow**: verify every parser dict key is consumed by insert_* (no silently dropped data)

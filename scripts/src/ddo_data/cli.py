@@ -838,11 +838,18 @@ def build_db(
             seeded = db.seed_class_feat_data()
             click.echo(f"  {seeded:,} class feat seed rows")
 
-    # Populate weapon types (must run after items are loaded)
+    # Populate reference tables (must run after items/enhancements are loaded)
     if "items" in data_types:
         with GameDB(output) as db:
+            click.echo("Populating reference tables...")
+            mat = db.populate_item_materials()
             wt = db.populate_weapon_types()
-            click.echo(f"  {wt} weapon types populated")
+            click.echo(f"  {mat} materials, {wt} weapon types")
+
+    if "enhancements" in data_types:
+        with GameDB(output) as db:
+            fl = db.populate_enhancement_feat_links()
+            click.echo(f"  {fl} enhancement feat links")
 
     # Populate stat sources (must run after enhancements are loaded)
     if "enhancements" in data_types:
