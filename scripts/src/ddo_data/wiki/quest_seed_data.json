@@ -1,0 +1,3627 @@
+{
+  "patrons": [
+    "Agents of Argonnessen",
+    "Cormanthor Elves",
+    "House Cannith",
+    "House Deneith",
+    "House Jorasco",
+    "House Kundarak",
+    "House Phiarlan",
+    "Keepers of Barovia",
+    "Keepers of Lamordia",
+    "Morgrave University",
+    "Purple Dragon Knights",
+    "Sharn City Council",
+    "The Coin Lords",
+    "The Free Agents",
+    "The Gatekeepers",
+    "The Harpers",
+    "The Silver Flame",
+    "The Summer Court",
+    "The Twelve",
+    "The Yugoloth"
+  ],
+  "adventure_packs": [
+    {
+      "name": "Against the Slave Lords",
+      "is_free": false
+    },
+    {
+      "name": "Amrath",
+      "is_free": false
+    },
+    {
+      "name": "Attack on Stormreach",
+      "is_free": false
+    },
+    {
+      "name": "Delera's Tomb",
+      "is_free": false
+    },
+    {
+      "name": "Demon Sands",
+      "is_free": false
+    },
+    {
+      "name": "Devil Assault",
+      "is_free": false
+    },
+    {
+      "name": "Disciples of Rage",
+      "is_free": false
+    },
+    {
+      "name": "Disciples of Shadow",
+      "is_free": false
+    },
+    {
+      "name": "Dragonblood Prophecy",
+      "is_free": false
+    },
+    {
+      "name": "Eveningstar Challenge Pack",
+      "is_free": false
+    },
+    {
+      "name": "Fables of the Feywild",
+      "is_free": false
+    },
+    {
+      "name": "Fall of the Night Brigade",
+      "is_free": false
+    },
+    {
+      "name": "Free to Play",
+      "is_free": true
+    },
+    {
+      "name": "Grip of the Hidden Hand",
+      "is_free": false
+    },
+    {
+      "name": "Harbinger of Madness",
+      "is_free": false
+    },
+    {
+      "name": "Haunted Halls of Eveningstar",
+      "is_free": false
+    },
+    {
+      "name": "Heart of Madness",
+      "is_free": false
+    },
+    {
+      "name": "Hunter and Hunted",
+      "is_free": false
+    },
+    {
+      "name": "Keep on the Borderlands",
+      "is_free": false
+    },
+    {
+      "name": "Litany of the Dead Part 1",
+      "is_free": false
+    },
+    {
+      "name": "Litany of the Dead Part 2",
+      "is_free": false
+    },
+    {
+      "name": "Litany of the Dead Part 3",
+      "is_free": false
+    },
+    {
+      "name": "Litany of the Dead Part 4",
+      "is_free": false
+    },
+    {
+      "name": "Magic of Myth Drannor",
+      "is_free": false
+    },
+    {
+      "name": "Masterminds of Sharn",
+      "is_free": false
+    },
+    {
+      "name": "Menace of the Underdark",
+      "is_free": false
+    },
+    {
+      "name": "Mists of Ravenloft",
+      "is_free": false
+    },
+    {
+      "name": "Peril of the Planar Eyes",
+      "is_free": false
+    },
+    {
+      "name": "Phiarlan Carnival",
+      "is_free": false
+    },
+    {
+      "name": "Reaver's Reach",
+      "is_free": false
+    },
+    {
+      "name": "Reign of Madness",
+      "is_free": false
+    },
+    {
+      "name": "Ruins of Gianthold",
+      "is_free": false
+    },
+    {
+      "name": "Ruins of Threnal",
+      "is_free": false
+    },
+    {
+      "name": "Secrets of the Artificers",
+      "is_free": false
+    },
+    {
+      "name": "Sentinels of Stormreach",
+      "is_free": false
+    },
+    {
+      "name": "Shadow Over Wheloon",
+      "is_free": false
+    },
+    {
+      "name": "Shadow Under Thunderholme",
+      "is_free": false
+    },
+    {
+      "name": "Shadowfell Conspiracy",
+      "is_free": false
+    },
+    {
+      "name": "Sinister Secret of Saltmarsh",
+      "is_free": false
+    },
+    {
+      "name": "Slice of Life",
+      "is_free": false
+    },
+    {
+      "name": "Sorrowdusk Isle",
+      "is_free": false
+    },
+    {
+      "name": "Tangleroot Gorge",
+      "is_free": false
+    },
+    {
+      "name": "Tavern Tales",
+      "is_free": false
+    },
+    {
+      "name": "The Catacombs",
+      "is_free": false
+    },
+    {
+      "name": "The Chill of Ravenloft",
+      "is_free": false
+    },
+    {
+      "name": "The Devil's Gambit",
+      "is_free": false
+    },
+    {
+      "name": "The Devils of Shavarath",
+      "is_free": false
+    },
+    {
+      "name": "The Dreaming Dark",
+      "is_free": false
+    },
+    {
+      "name": "The Druid's Deep",
+      "is_free": false
+    },
+    {
+      "name": "The High Road of Shadows",
+      "is_free": false
+    },
+    {
+      "name": "The Isle of Dread",
+      "is_free": false
+    },
+    {
+      "name": "The Lost Gatekeepers",
+      "is_free": false
+    },
+    {
+      "name": "The Mines of Tethyamar",
+      "is_free": false
+    },
+    {
+      "name": "The Necropolis Part 1",
+      "is_free": false
+    },
+    {
+      "name": "The Necropolis Part 2",
+      "is_free": false
+    },
+    {
+      "name": "The Necropolis Part 3",
+      "is_free": false
+    },
+    {
+      "name": "The Necropolis Part 4",
+      "is_free": false
+    },
+    {
+      "name": "The Path of Inspiration",
+      "is_free": false
+    },
+    {
+      "name": "The Reaver's Reach",
+      "is_free": false
+    },
+    {
+      "name": "The Red Fens",
+      "is_free": false
+    },
+    {
+      "name": "The Restless Isles",
+      "is_free": false
+    },
+    {
+      "name": "The Ruins of Threnal",
+      "is_free": false
+    },
+    {
+      "name": "The Seal of Shan-To-Kor",
+      "is_free": false
+    },
+    {
+      "name": "The Secret of the Storm Horns",
+      "is_free": false
+    },
+    {
+      "name": "The Sharn Syndicate",
+      "is_free": false
+    },
+    {
+      "name": "The Soul Splitter",
+      "is_free": false
+    },
+    {
+      "name": "The Subterrane",
+      "is_free": false
+    },
+    {
+      "name": "The Temple of Elemental Evil",
+      "is_free": false
+    },
+    {
+      "name": "The Vale of Twilight",
+      "is_free": false
+    },
+    {
+      "name": "The Vault of Night",
+      "is_free": false
+    },
+    {
+      "name": "Three-Barrel Cove",
+      "is_free": false
+    },
+    {
+      "name": "Trials of the Archons",
+      "is_free": false
+    },
+    {
+      "name": "Vault of Night",
+      "is_free": false
+    },
+    {
+      "name": "Vaults of the Artificers",
+      "is_free": false
+    },
+    {
+      "name": "Vecna Unleashed",
+      "is_free": false
+    },
+    {
+      "name": "White Plume Mountain and Other Tales",
+      "is_free": false
+    },
+    {
+      "name": "Zawabi's Refuge",
+      "is_free": false
+    }
+  ],
+  "quests": [
+    {
+      "name": "Caged Beast",
+      "level": 1,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Hall of the Mark",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": null
+    },
+    {
+      "name": "Heyton's Rest",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Necromancer's Doom",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Obstructing the Orcs",
+      "level": 1,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Redemption",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Redemption (quest)",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Sacrifices",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Stopping the Sahuagin",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Bugbear Bandits",
+      "level": 1,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Cannith Crystal",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Collaborator",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Curse of the Five Fangs",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": null
+    },
+    {
+      "name": "The Grotto",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": null
+    },
+    {
+      "name": "The Hobgoblin Horde",
+      "level": 1,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Storehouse's Secret",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Time Flies",
+      "level": 1,
+      "pack": "Free to Play",
+      "patron": null
+    },
+    {
+      "name": "Treasure Hunt",
+      "level": 1,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Violent Delights",
+      "level": 1,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Watch Your Step",
+      "level": 1,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Arachnophobia",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Bringing the Light",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Defend Haverdasher",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Durk's Got A Secret",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Garrison's Missing Pack",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Haverdasher",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Information is Key",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Misery's Peak",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Missing in Action",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Protect Baudry's Interests",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Recovering the Lost Tome",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Retrieve the Stolen Goods",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Stealthy Repossession",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Stop Hazadill's Shipment",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Kobolds' New Ringleader",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Miller's Debt",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Smuggler's Warehouse",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Sunken Sewer",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Total Chaos",
+      "level": 2,
+      "pack": "Keep on the Borderlands",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Walk the Butcher's Path",
+      "level": 2,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "An Explosive Situation",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Archbishop Dryden",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": null
+    },
+    {
+      "name": "Back to Basics",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Danger at Dunwater",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Down You Go",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Endgame: Marguerite",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "First Strike",
+      "level": 3,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Heart of the Problem",
+      "level": 3,
+      "pack": "The Lost Gatekeepers",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Home Sweet Sewer",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Housekeeping",
+      "level": 3,
+      "pack": "The Lost Gatekeepers",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Kobold Assault",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Redfang the Unruled",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Rest for the Night",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Return to the Sanctuary",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Rosemary's Ballad",
+      "level": 3,
+      "pack": "The Lost Gatekeepers",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Setting the Wards: The Lower Cathedral",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Setting the Wards: The Patriarchs' Crypt",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Sleeping with the Fishes",
+      "level": 3,
+      "pack": "Tavern Tales",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Swim at Your Own Risk",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Captives",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Cloven-jaw Scourge: Blockade",
+      "level": 3,
+      "pack": "The Seal of Shan-To-Kor",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Crypt of Gerard Dryden",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Final Enemy",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Friar's Niece",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Haunting of Saltmarsh",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Hijacked Haul",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Hobgoblins' Captives",
+      "level": 3,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Home of Memory",
+      "level": 3,
+      "pack": "The Lost Gatekeepers",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Kobold's Den: Clan Gnashtooth",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Kobold's Den: Rescuing Arlos",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Old Archives",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Sacred Bounty",
+      "level": 3,
+      "pack": "The Lost Gatekeepers",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Sacred Helm",
+      "level": 3,
+      "pack": "The Seal of Shan-To-Kor",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Swiped Signet",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "To Find a Witness",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "To Find a Witness: Archbishop Dryden",
+      "level": 3,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Under the Cover of Darkness",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "What Sleeps Below",
+      "level": 3,
+      "pack": "Sinister Secret of Saltmarsh",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Where There's Smoke...",
+      "level": 3,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Catastrophe",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Come Out and Slay",
+      "level": 4,
+      "pack": "The Sharn Syndicate",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Dirty Laundry",
+      "level": 4,
+      "pack": "The Sharn Syndicate",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Dr. Rushmore's Mansion: Behind the Door",
+      "level": 4,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Endgame: The Archbishop's Fate",
+      "level": 4,
+      "pack": "The Catacombs",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Freshen the Air",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Irestone Inlet",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Kobold Island: Kobold Chaos",
+      "level": 4,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Lava Caves: Circles of Power",
+      "level": 4,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Proof is in the Poison",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Rats in a Cage",
+      "level": 4,
+      "pack": "Fall of the Night Brigade",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Repossession",
+      "level": 4,
+      "pack": "The Sharn Syndicate",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Rest for the Restless",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Stand Your Ground",
+      "level": 4,
+      "pack": "The Sharn Syndicate",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Bookbinder Rescue",
+      "level": 4,
+      "pack": "The Sharn Syndicate",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Cloven-jaw Scourge: The Caverns of Shaagh",
+      "level": 4,
+      "pack": "The Seal of Shan-To-Kor",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Covered Culvert",
+      "level": 4,
+      "pack": "Tavern Tales",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Darkness and the Light",
+      "level": 4,
+      "pack": "Fall of the Night Brigade",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "The Depths of Darkness",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Depths of Despair",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Knife's Edge",
+      "level": 4,
+      "pack": "Fall of the Night Brigade",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "The Stormreaver Fresco",
+      "level": 4,
+      "pack": "The Sharn Syndicate",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Wizard's Labyrinth",
+      "level": 4,
+      "pack": "Fall of the Night Brigade",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Venn's Trail: Clan Tunnelworm",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Venn's Trail: Venn's Fate",
+      "level": 4,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Whisperdoom's Spawn",
+      "level": 4,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Yarkuch's War-plans",
+      "level": 4,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "A Frosty Reception",
+      "level": 5,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "A Small Problem",
+      "level": 5,
+      "pack": "Phiarlan Carnival",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Archer Point Defense",
+      "level": 5,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Brood of Flame",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Combatting Corruption",
+      "level": 5,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Ghost of a Chance",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Guard Duty",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Halls of Shan-To-Kor",
+      "level": 5,
+      "pack": "The Seal of Shan-To-Kor",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Legend of Two-Toed Tobias",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Make Believe",
+      "level": 5,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Partycrashers",
+      "level": 5,
+      "pack": "Phiarlan Carnival",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Prove Your Worth",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Chamber of Insanity",
+      "level": 5,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Deadly Package: Agent of the Darguul",
+      "level": 5,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Deadly Package: The Stronghold Key",
+      "level": 5,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Depths of Discord",
+      "level": 5,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Depths of Doom",
+      "level": 5,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Endless Revels",
+      "level": 5,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "The Fire Caves: Brood of Flame",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Fire Caves: The Stones Run Red",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Halls of Shan-To-Kor",
+      "level": 5,
+      "pack": "The Seal of Shan-To-Kor",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Lair of Summoning",
+      "level": 5,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Legend of Two-Toed Tobias",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Legend of the Lost Locket",
+      "level": 5,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "The Mystery of Delera's Tomb",
+      "level": 5,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Snitch",
+      "level": 5,
+      "pack": "Phiarlan Carnival",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Stones Run Red",
+      "level": 5,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Toil and Trouble",
+      "level": 5,
+      "pack": "Tavern Tales",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Tomb of the Burning Heart",
+      "level": 5,
+      "pack": "Litany of the Dead Part 1",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Crimson Heart",
+      "level": 5,
+      "pack": "Litany of the Dead Part 1",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Immortal Heart",
+      "level": 5,
+      "pack": "Litany of the Dead Part 1",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Sanguine Heart",
+      "level": 5,
+      "pack": "Litany of the Dead Part 1",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Under the Big Top",
+      "level": 5,
+      "pack": "Phiarlan Carnival",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Wake Me Up Inside",
+      "level": 5,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Witch Hunt",
+      "level": 5,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Another Man's Treasure",
+      "level": 6,
+      "pack": "White Plume Mountain and Other Tales",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Caged Trolls",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Dead Girl's Spellbook",
+      "level": 6,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Dead Predators",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Devil Assault",
+      "level": 6,
+      "pack": "Devil Assault",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Devil Assault (quest)",
+      "level": 6,
+      "pack": "Devil Assault",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Doom of the Witch-doctor: The Way to Zulkash",
+      "level": 6,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Doom of the Witch-doctor: Zulkash, Herald of Woe",
+      "level": 6,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Dread Sea Scrolls",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Freeing Achka",
+      "level": 6,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Garl's Tomb: The Troglodytes' Get",
+      "level": 6,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Gladewatch Outpost Defense",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Immortality Lessons",
+      "level": 6,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Justice for Grus",
+      "level": 6,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Justice for Grust",
+      "level": 6,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Kind of a Big Deal",
+      "level": 6,
+      "pack": "White Plume Mountain and Other Tales",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Memory Lapse",
+      "level": 6,
+      "pack": "White Plume Mountain and Other Tales",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Mirra's Sleepless Nights",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Needle in a Fey Stack",
+      "level": 6,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Purge the Heretics",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Quid Pro Quo",
+      "level": 6,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Redwillow's Ruins",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Return to Delera's Tomb",
+      "level": 6,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Return to Delera's Tomb (Quest)",
+      "level": 6,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Return to Delera's Tomb (quest)",
+      "level": 6,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Ruined Halls",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Bloody Crypt",
+      "level": 6,
+      "pack": "Litany of the Dead Part 1",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Bounty Hunter",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Chronoscope",
+      "level": 6,
+      "pack": "Devil Assault",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Forgotten Caverns",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Icemount Curse",
+      "level": 6,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "The Iron Mines: Freeing Achka",
+      "level": 6,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Iron Mines: Justice for Grust",
+      "level": 6,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Knight Who Cried Windmill",
+      "level": 6,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "The Price of Freedom",
+      "level": 6,
+      "pack": "White Plume Mountain and Other Tales",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Promise of Fire",
+      "level": 6,
+      "pack": "Free to Play",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "The Thornwright",
+      "level": 6,
+      "pack": "Fables of the Feywild",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "The Troglodytes' Get",
+      "level": 6,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Valak's Mausoleum",
+      "level": 6,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "All Hail the King",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Bargain of Blood",
+      "level": 7,
+      "pack": "Sentinels of Stormreach",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Bullywugs and Booby Traps",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Captive of the Hidden God",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Extermination",
+      "level": 7,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Free Delera",
+      "level": 7,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Garl's Tomb: Old Grey Garl",
+      "level": 7,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Gwylan's Stand",
+      "level": 7,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Old Grey Garl",
+      "level": 7,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "One Dame Thing After Another",
+      "level": 7,
+      "pack": "Hunter and Hunted",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Plundering Pirates' Point",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Spiders and Flies",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Storm the Beaches",
+      "level": 7,
+      "pack": "Sentinels of Stormreach",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Storming the Beaches",
+      "level": 7,
+      "pack": "Sentinels of Stormreach",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Taming the Flames",
+      "level": 7,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Temple of Elemental Evil Part One",
+      "level": 7,
+      "pack": "The Temple of Elemental Evil",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Temple of Elemental Evil Part Two",
+      "level": 7,
+      "pack": "The Temple of Elemental Evil",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Black Loch",
+      "level": 7,
+      "pack": "Sentinels of Stormreach",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Curse and the Captive Crustacean",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Graverobber",
+      "level": 7,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Grey Moon's Den: Extermination",
+      "level": 7,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Grey Moon's Den: The Trollish Scourge",
+      "level": 7,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Last Move: The Way to Yarkuch",
+      "level": 7,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Last Move: Yarkuch's Last Stand",
+      "level": 7,
+      "pack": "Tangleroot Gorge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Missing Party",
+      "level": 7,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Pit",
+      "level": 7,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Scoundrel's Run",
+      "level": 7,
+      "pack": "Three-Barrel Cove",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Stone Crypt Chronicle",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Tear of Dhakaan",
+      "level": 7,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Tide Turns",
+      "level": 7,
+      "pack": "Sentinels of Stormreach",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Trollish Scourge",
+      "level": 7,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Trouble with Tar Pits",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Through the Tulgey Wood",
+      "level": 7,
+      "pack": "Hunter and Hunted",
+      "patron": "The Summer Court"
+    },
+    {
+      "name": "Trials of the Triceratops",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Whispers of Return",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Wild Thing",
+      "level": 7,
+      "pack": "The Isle of Dread",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "A Light in the Attic",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "A Miner Sacrifice",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Assault on the Aerie of the Slave Lords",
+      "level": 8,
+      "pack": "Against the Slave Lords",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Beneath the City Streets",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Body and Mind",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Captives of the Cult",
+      "level": 8,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Caverns of Korromar",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Cold Snap",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Dr. Rushmore's Mansion: Moving Targets",
+      "level": 8,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Ends and Means",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Extraplanar Palace: The Dragon's Hoard",
+      "level": 8,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Faithful Departed",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Haunted Library",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "In Need of Supplies",
+      "level": 8,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Kobold Island: The Disruptor",
+      "level": 8,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Lava Caves: Colossal Crystals",
+      "level": 8,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Locked Away (Part One)",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Locked Away (Part Two)",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Secret of the Slavers' Stockade",
+      "level": 8,
+      "pack": "Against the Slave Lords",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Slave Pits of the Undercity",
+      "level": 8,
+      "pack": "Against the Slave Lords",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Snowfall and Sunlight",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Special Delivery",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Spies in the House",
+      "level": 8,
+      "pack": "Sentinels of Stormreach",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Stormcleave Outpost",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Stromvauld's Mine",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Tharashk Arena",
+      "level": 8,
+      "pack": "Vault of Night",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Body Snatchers",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "The Faithful Departed",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Libram of the Six",
+      "level": 8,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Path to Madness",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Prisoner",
+      "level": 8,
+      "pack": "Vault of Night",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Proper Authorities",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "The Rescue",
+      "level": 8,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Temple Outpost: Captives of the Cult",
+      "level": 8,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Temple Outpost: The Libram of the Six",
+      "level": 8,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Wish",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "The Xorian Cipher",
+      "level": 8,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Thrall of the Necromancer",
+      "level": 8,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Tomb of the Shadow Guard",
+      "level": 8,
+      "pack": "Litany of the Dead Part 2",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Shadow King",
+      "level": 8,
+      "pack": "Litany of the Dead Part 2",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Shadow Knight",
+      "level": 8,
+      "pack": "Litany of the Dead Part 2",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Shadow Lord",
+      "level": 8,
+      "pack": "Litany of the Dead Part 2",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Zoo Creeper",
+      "level": 8,
+      "pack": "The Chill of Ravenloft",
+      "patron": "Keepers of Lamordia"
+    },
+    {
+      "name": "Cleansing the Temple",
+      "level": 9,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Entering the Gate Chamber",
+      "level": 9,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Fall of the Prelate",
+      "level": 9,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Fathom the Depths",
+      "level": 9,
+      "pack": "The Red Fens",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Gateway to Khyber",
+      "level": 9,
+      "pack": "Vault of Night",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Haywire Foundry",
+      "level": 9,
+      "pack": "Vault of Night",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Into the Deep",
+      "level": 9,
+      "pack": "The Red Fens",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Church and the Cult",
+      "level": 9,
+      "pack": "Free to Play",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Claw of Vulkoor",
+      "level": 9,
+      "pack": "The Red Fens",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Fane of the Six: Cleansing the Temple",
+      "level": 9,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Fane of the Six: Fall of the Prelate",
+      "level": 9,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Giant Lieutenants",
+      "level": 9,
+      "pack": "Ruins of Threnal",
+      "patron": null
+    },
+    {
+      "name": "The Giants' Lair",
+      "level": 9,
+      "pack": "Ruins of Threnal",
+      "patron": null
+    },
+    {
+      "name": "The Jungle of Khyber",
+      "level": 9,
+      "pack": "Vault of Night",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Keeper's Sanctuary",
+      "level": 9,
+      "pack": "Delera's Tomb",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Last Stand",
+      "level": 9,
+      "pack": "The Red Fens",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "The Library of Threnal",
+      "level": 9,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Missing Expedition",
+      "level": 9,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Shadow Crypt",
+      "level": 9,
+      "pack": "Litany of the Dead Part 2",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Threnal Arena",
+      "level": 9,
+      "pack": "Ruins of Threnal",
+      "patron": null
+    },
+    {
+      "name": "White Plume Mountain",
+      "level": 9,
+      "pack": "White Plume Mountain and Other Tales",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "An Invitation to Dinner",
+      "level": 10,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Black and Blue",
+      "level": 10,
+      "pack": "Dragonblood Prophecy",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Bring Me the Head of Ghola-Fan!",
+      "level": 10,
+      "pack": "The Restless Isles",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Church of the Fury",
+      "level": 10,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Death House",
+      "level": 10,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Escort the Expedition",
+      "level": 10,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Fresh-baked Dreams",
+      "level": 10,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Hiding in Plain Sight",
+      "level": 10,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Hold for Reinforcements",
+      "level": 10,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Into the Mists",
+      "level": 10,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Plane of Night",
+      "level": 10,
+      "pack": "Vault of Night",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Quench the Flames",
+      "level": 10,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Reclamation",
+      "level": 10,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Secure the Area",
+      "level": 10,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Slavers of the Shrieking Mines",
+      "level": 10,
+      "pack": "The Restless Isles",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Sykros' Jewel",
+      "level": 10,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Tempest's Spine",
+      "level": 10,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Chamber of Rahmat",
+      "level": 10,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Gate Chamber",
+      "level": 10,
+      "pack": "Ruins of Threnal",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Giants' Supplies",
+      "level": 10,
+      "pack": "Ruins of Threnal",
+      "patron": null
+    },
+    {
+      "name": "The Newcomers",
+      "level": 10,
+      "pack": "Dragonblood Prophecy",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "The Sanctum: Church of the Fury",
+      "level": 10,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Sanctum: Quench the Flames",
+      "level": 10,
+      "pack": "Sorrowdusk Isle",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "The Vault of Night",
+      "level": 10,
+      "pack": "Vault of Night",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "A Raven at the Door",
+      "level": 11,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "An Offering of Blood",
+      "level": 11,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "And the Dead Shall Rise...",
+      "level": 11,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Desert Caravan",
+      "level": 11,
+      "pack": "Zawabi's Refuge",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "Dreams of Insanity",
+      "level": 11,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "From Beyond the Grave",
+      "level": 11,
+      "pack": "Delera's Tomb",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Mad Tea Party",
+      "level": 11,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Made to Order",
+      "level": 11,
+      "pack": "Free to Play",
+      "patron": "House Kundarak"
+    },
+    {
+      "name": "Maraud the Mines",
+      "level": 11,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Oath of Vengeance",
+      "level": 11,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Purge the Fallen Shrine",
+      "level": 11,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Raid the Vulkoorim",
+      "level": 11,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Sealed in Amber",
+      "level": 11,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "The Chamber of Kourush",
+      "level": 11,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Enemy Within",
+      "level": 11,
+      "pack": "Free to Play",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Spawn of Whisperdoom",
+      "level": 11,
+      "pack": "Free to Play",
+      "patron": "House Phiarlan"
+    },
+    {
+      "name": "The Twilight Forge",
+      "level": 11,
+      "pack": "The Restless Isles",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Tomb of the Blighted",
+      "level": 11,
+      "pack": "Litany of the Dead Part 3",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Forbidden",
+      "level": 11,
+      "pack": "Litany of the Dead Part 3",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Tormented",
+      "level": 11,
+      "pack": "Litany of the Dead Part 3",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Tomb of the Unhallowed",
+      "level": 11,
+      "pack": "Litany of the Dead Part 3",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "A Relic of a Sovereign Past",
+      "level": 12,
+      "pack": "Free to Play",
+      "patron": "House Deneith"
+    },
+    {
+      "name": "Against the Demon Queen",
+      "level": 12,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Against the Demon Queen (quest)",
+      "level": 12,
+      "pack": "Demon Sands",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "An Element of Chaos",
+      "level": 12,
+      "pack": "Peril of the Planar Eyes",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Beautiful Nightmares",
+      "level": 12,
+      "pack": "Peril of the Planar Eyes",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Chains of Flame",
+      "level": 12,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Diplomatic Impunity",
+      "level": 12,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Extraplanar Palace: Buying Time",
+      "level": 12,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Eye Know Whodunnit",
+      "level": 12,
+      "pack": "Peril of the Planar Eyes",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Eyes of Stone",
+      "level": 12,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Frame Work",
+      "level": 12,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Invaders!",
+      "level": 12,
+      "pack": "Free to Play",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Ravens' Bane",
+      "level": 12,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Seizing the Dawn",
+      "level": 12,
+      "pack": "Peril of the Planar Eyes",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Sunrise",
+      "level": 12,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "The Chamber of Raiyum",
+      "level": 12,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "The Cursed Crypt",
+      "level": 12,
+      "pack": "Litany of the Dead Part 3",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Final Vintage",
+      "level": 12,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "The Titan Awakes",
+      "level": 12,
+      "pack": "The Restless Isles",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Wrath of the Earth",
+      "level": 12,
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    },
+    {
+      "name": "Zawabi's Revenge",
+      "level": 12,
+      "pack": "Zawabi's Refuge",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "A Cry for Help",
+      "level": 13,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Assault on Summerfield",
+      "level": 13,
+      "pack": "Attack on Stormreach",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Blockade Buster",
+      "level": 13,
+      "pack": "Attack on Stormreach",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Book Burning",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Death Hosts This Banquet",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Defiler of the Just",
+      "level": 13,
+      "pack": "Trials of the Archons",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Demon Assault",
+      "level": 13,
+      "pack": "Trials of the Archons",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Dinosaur Crisis",
+      "level": 13,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Ettercap Incursion",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Feast or Famine",
+      "level": 13,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Foundation of Discord",
+      "level": 13,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Mired in Kobolds",
+      "level": 13,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Oghma's Song",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Portal to Below",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Secrets of the Red Wizards",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Seeds of Decay",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Siegebreaker",
+      "level": 13,
+      "pack": "Attack on Stormreach",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Archons' Trial",
+      "level": 13,
+      "pack": "Trials of the Archons",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Devil's Details",
+      "level": 13,
+      "pack": "Trials of the Archons",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The House of Gems",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "The Key to the Mythal",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "The Maze of Madness",
+      "level": 13,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "The Safehold",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "The Zulkir's Plan",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Times Long Past",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "Trial by Fire",
+      "level": 13,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Undermine",
+      "level": 13,
+      "pack": "Attack on Stormreach",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Voices of the Dead",
+      "level": 13,
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "name": "A Cabal for One",
+      "level": 14,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Desecrated Temple of Vol",
+      "level": 14,
+      "pack": "Litany of the Dead Part 4",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Extraplanar Palace: Labor Shortage",
+      "level": 14,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Flesh Maker's Laboratory",
+      "level": 14,
+      "pack": "Litany of the Dead Part 4",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Ghosts of Perdition",
+      "level": 14,
+      "pack": "Litany of the Dead Part 4",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Gianthold Tor",
+      "level": 14,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Grim and Barett",
+      "level": 14,
+      "pack": "The Devil's Gambit",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Inferno of the Damned",
+      "level": 14,
+      "pack": "Litany of the Dead Part 4",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Madstone Crater",
+      "level": 14,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Multitude of Menace",
+      "level": 14,
+      "pack": "The Devil's Gambit",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Night Falls on Stormreach",
+      "level": 14,
+      "pack": "Disciples of Rage",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Quarantine",
+      "level": 14,
+      "pack": "Disciples of Rage",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "Subversion",
+      "level": 14,
+      "pack": "The Devil's Gambit",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "Tavern Brawl",
+      "level": 14,
+      "pack": "The Devil's Gambit",
+      "patron": "The Gatekeepers"
+    },
+    {
+      "name": "The Age of Rage",
+      "level": 14,
+      "pack": "Disciples of Rage",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Crucible",
+      "level": 14,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "The Madness of Crowds",
+      "level": 14,
+      "pack": "Disciples of Rage",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "The Prison of the Planes",
+      "level": 14,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "The Reaver's Fate",
+      "level": 14,
+      "pack": "Ruins of Gianthold",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Tower of Frost",
+      "level": 14,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Toxic Treatment",
+      "level": 14,
+      "pack": "Disciples of Rage",
+      "patron": "House Jorasco"
+    },
+    {
+      "name": "A Sharn Welcome",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Acid Wit",
+      "level": 15,
+      "pack": "Free to Play",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Best Laid Plans",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Delirium",
+      "level": 15,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Desire in the Dark",
+      "level": 15,
+      "pack": "The Mines of Tethyamar",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Disciples of Shar",
+      "level": 15,
+      "pack": "Free to Play",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Dr. Rushmore's Mansion: Picture Portals",
+      "level": 15,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Escape Plan",
+      "level": 15,
+      "pack": "Free to Play",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Fear Factory",
+      "level": 15,
+      "pack": "Harbinger of Madness",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Graveyard Shift",
+      "level": 15,
+      "pack": "The Mines of Tethyamar",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "In The Flesh",
+      "level": 15,
+      "pack": "Harbinger of Madness",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Just Business",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Kobold Island: Short Cuts",
+      "level": 15,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Lava Caves: Time is Money",
+      "level": 15,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Litany of the Dead",
+      "level": 15,
+      "pack": "Litany of the Dead Part 4",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Lost at Sea",
+      "level": 15,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Missing",
+      "level": 15,
+      "pack": "Harbinger of Madness",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Records of the Past",
+      "level": 15,
+      "pack": "The Mines of Tethyamar",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Red Rain",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Ruinous Schemes",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Search and Rescue",
+      "level": 15,
+      "pack": "Free to Play",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Shadow of a Doubt",
+      "level": 15,
+      "pack": "Free to Play",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Sinister Storage",
+      "level": 15,
+      "pack": "Harbinger of Madness",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Smash and Burn",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Strike Back",
+      "level": 15,
+      "pack": "The Mines of Tethyamar",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "The Same Old Song",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "The Wraithcallers",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Third Time's a Charm",
+      "level": 15,
+      "pack": "The Mines of Tethyamar",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Thralls of the Fungus Lord",
+      "level": 15,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "A Lesson in Deception",
+      "level": 16,
+      "pack": "Shadow Over Wheloon",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Army of Eternal Night",
+      "level": 16,
+      "pack": "Grip of the Hidden Hand",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Army of Shadow",
+      "level": 16,
+      "pack": "Shadow Over Wheloon",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Beyond the Rift",
+      "level": 16,
+      "pack": "Free to Play",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Blown Deadline",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Friends in Low Places",
+      "level": 16,
+      "pack": "Shadow Over Wheloon",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Growing Pains",
+      "level": 16,
+      "pack": "Grip of the Hidden Hand",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "House of Pain",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Let Sleeping Dust Lie",
+      "level": 16,
+      "pack": "The Vale of Twilight",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "No Refunds",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Order in the Court!",
+      "level": 16,
+      "pack": "Grip of the Hidden Hand",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Rainbow in the Dark",
+      "level": 16,
+      "pack": "The Vale of Twilight",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Reach for the Sky",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Ritual Sacrifice",
+      "level": 16,
+      "pack": "The Vale of Twilight",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Roll Call",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Running with the Devils",
+      "level": 16,
+      "pack": "The Vale of Twilight",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Scavenger Hunt",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Security Detail",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Servants of the Overlord",
+      "level": 16,
+      "pack": "Free to Play",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Coalescence Chamber",
+      "level": 16,
+      "pack": "The Vale of Twilight",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Hand and the Eyes",
+      "level": 16,
+      "pack": "Grip of the Hidden Hand",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "The Lords of Dust",
+      "level": 16,
+      "pack": "Free to Play",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Magma Must Flow",
+      "level": 16,
+      "pack": "Masterminds of Sharn",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "The Mask of Deception",
+      "level": 16,
+      "pack": "Free to Play",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "The Spinner of Shadows",
+      "level": 16,
+      "pack": "Free to Play",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "The Thrill of the Hunt",
+      "level": 16,
+      "pack": "Shadow Over Wheloon",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Three Paths to Battle",
+      "level": 16,
+      "pack": "Grip of the Hidden Hand",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Through a Mirror Darkly",
+      "level": 16,
+      "pack": "Shadow Over Wheloon",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Acute Delirium",
+      "level": 17,
+      "pack": "Reign of Madness",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Ascension Chamber",
+      "level": 17,
+      "pack": "Litany of the Dead Part 4",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Enter the Kobold",
+      "level": 17,
+      "pack": "Reaver's Reach",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Finding Dorris",
+      "level": 17,
+      "pack": "The Soul Splitter",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Good Intentions",
+      "level": 17,
+      "pack": "Free to Play",
+      "patron": "The Free Agents"
+    },
+    {
+      "name": "Members Only",
+      "level": 17,
+      "pack": "The Soul Splitter",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Monastery of the Scorpion",
+      "level": 17,
+      "pack": "Reaver's Reach",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Outbreak",
+      "level": 17,
+      "pack": "The Druid's Deep",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Overgrowth",
+      "level": 17,
+      "pack": "The Druid's Deep",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Prey on the Hunter",
+      "level": 17,
+      "pack": "Reaver's Reach",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Safety in Numbers",
+      "level": 17,
+      "pack": "The Soul Splitter",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Soul Survivor",
+      "level": 17,
+      "pack": "The Soul Splitter",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Stealer of Souls",
+      "level": 17,
+      "pack": "Reaver's Reach",
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "The Druid's Curse",
+      "level": 17,
+      "pack": "The Druid's Deep",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "The Lord of Eyes",
+      "level": 17,
+      "pack": "Reign of Madness",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Lord of Stone",
+      "level": 17,
+      "pack": "Reign of Madness",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Offshore Account",
+      "level": 17,
+      "pack": "The Soul Splitter",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "The Sane Asylum",
+      "level": 17,
+      "pack": "Reign of Madness",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Shroud",
+      "level": 17,
+      "pack": "The Vale of Twilight",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Underlane Assignment",
+      "level": 17,
+      "pack": "The Soul Splitter",
+      "patron": "Sharn City Council"
+    },
+    {
+      "name": "Thorn and Paw",
+      "level": 17,
+      "pack": "The Druid's Deep",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "A Stay at the Inn",
+      "level": 18,
+      "pack": "The High Road of Shadows",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "A Vision of Destruction",
+      "level": 18,
+      "pack": "The Subterrane",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Detour",
+      "level": 18,
+      "pack": "The High Road of Shadows",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Dream Conspiracy",
+      "level": 18,
+      "pack": "The Path of Inspiration",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Enemy of My Enemy",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Fashion Madness",
+      "level": 18,
+      "pack": "Heart of Madness",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Finding the Path",
+      "level": 18,
+      "pack": "The Path of Inspiration",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Fred's First Date",
+      "level": 18,
+      "pack": "Slice of Life",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Grand Theft Aureon",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Hound of Xoriat",
+      "level": 18,
+      "pack": "The Subterrane",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "I Dream of Jeets",
+      "level": 18,
+      "pack": "The Path of Inspiration",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "In the Demon's Den",
+      "level": 18,
+      "pack": "Free to Play",
+      "patron": "The Silver Flame"
+    },
+    {
+      "name": "Kill Ten Rats",
+      "level": 18,
+      "pack": "Free to Play",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Law and Order",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Lost in the Swamp",
+      "level": 18,
+      "pack": "The High Road of Shadows",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Palace of Stone",
+      "level": 18,
+      "pack": "Heart of Madness",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "Paper Trail",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Party 101",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Rest Stop",
+      "level": 18,
+      "pack": "The High Road of Shadows",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Taken in Hand",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Terminal Delirium",
+      "level": 18,
+      "pack": "Heart of Madness",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Bark and the Blade",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "The Devils to Pay",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "The End of the Road",
+      "level": 18,
+      "pack": "The High Road of Shadows",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "The Evil We Know",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "The Mindsunder",
+      "level": 18,
+      "pack": "The Path of Inspiration",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Shipwrecked Spy",
+      "level": 18,
+      "pack": "The Path of Inspiration",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "This Old Haunt",
+      "level": 18,
+      "pack": "Slice of Life",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Too Many Cooks",
+      "level": 18,
+      "pack": "Slice of Life",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Turn the Page",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Vecna Denied",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Vecna Unleashed",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "What Dreams May Come",
+      "level": 18,
+      "pack": "Vecna Unleashed",
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "A Break In the Ice",
+      "level": 19,
+      "pack": "The Secret of the Storm Horns",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "A New Invasion",
+      "level": 19,
+      "pack": "Amrath",
+      "patron": "The Yugoloth"
+    },
+    {
+      "name": "Bastion of Power",
+      "level": 19,
+      "pack": "Amrath",
+      "patron": "The Yugoloth"
+    },
+    {
+      "name": "Blown to Bits",
+      "level": 19,
+      "pack": "Secrets of the Artificers",
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Breaking the Ranks",
+      "level": 19,
+      "pack": "The Secret of the Storm Horns",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Eye of the Titan",
+      "level": 19,
+      "pack": "The Dreaming Dark",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Genesis Point",
+      "level": 19,
+      "pack": "Amrath",
+      "patron": "The Yugoloth"
+    },
+    {
+      "name": "Lines of Supply",
+      "level": 19,
+      "pack": "The Secret of the Storm Horns",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Mining for Ancient Secrets",
+      "level": 19,
+      "pack": "The Dreaming Dark",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Murder by Night",
+      "level": 19,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Power Play",
+      "level": 19,
+      "pack": "Secrets of the Artificers",
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Raiding the Giants' Vault",
+      "level": 19,
+      "pack": "The Dreaming Dark",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Reclaiming Memories",
+      "level": 19,
+      "pack": "The Dreaming Dark",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "Schemes of the Enemy",
+      "level": 19,
+      "pack": "Secrets of the Artificers",
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Sins of Attrition",
+      "level": 19,
+      "pack": "Amrath",
+      "patron": "The Yugoloth"
+    },
+    {
+      "name": "The Master Artificer",
+      "level": 19,
+      "pack": "Secrets of the Artificers",
+      "patron": "House Cannith"
+    },
+    {
+      "name": "The Riddle",
+      "level": 19,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "The Tracker's Trap",
+      "level": 19,
+      "pack": "The Secret of the Storm Horns",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "The Weapons Shipment",
+      "level": 19,
+      "pack": "Amrath",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "What Goes Up",
+      "level": 19,
+      "pack": "The Secret of the Storm Horns",
+      "patron": "The Harpers"
+    },
+    {
+      "name": "Wrath of the Flame",
+      "level": 19,
+      "pack": "Amrath",
+      "patron": "The Twelve"
+    },
+    {
+      "name": "The Dreaming Dark",
+      "level": 20,
+      "pack": "The Dreaming Dark",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Dreaming Dark (quest)",
+      "level": 20,
+      "pack": "The Dreaming Dark",
+      "patron": "The Coin Lords"
+    },
+    {
+      "name": "The Lord of Blades",
+      "level": 20,
+      "pack": "Secrets of the Artificers",
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Tower of Despair",
+      "level": 20,
+      "pack": "Amrath",
+      "patron": "The Yugoloth"
+    },
+    {
+      "name": "Dr. Rushmore's Mansion: Moving Targets - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Dr. Rushmore's Mansion: Picture Portals - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Extraplanar Palace: Buying Time - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Extraplanar Palace: Labor Shortage - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Extraplanar Palace: The Dragon's Hoard - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Impossible Demands",
+      "level": 21,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Kobold Island: Short Cuts - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Kobold Island: The Disruptor - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Lava Caves: Colossal Crystals - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "Lava Caves: Time is Money - EPIC",
+      "level": 21,
+      "patron": "House Cannith"
+    },
+    {
+      "name": "The Battle for Eveningstar",
+      "level": 21,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "The Lost Thread",
+      "level": 21,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "The Unquiet Graves",
+      "level": 21,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "In the Belly of the Beast",
+      "level": 22,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "The House of Broken Chains",
+      "level": 22,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "The Portal Opens",
+      "level": 22,
+      "pack": "Menace of the Underdark",
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Fire on Thunder Peak",
+      "level": 30,
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Temple of the Deathwyrm",
+      "level": 30,
+      "patron": "Purple Dragon Knights"
+    },
+    {
+      "name": "Killing Time",
+      "level": 32,
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Riding the Storm Out",
+      "level": 32,
+      "patron": "Agents of Argonnessen"
+    },
+    {
+      "name": "Fire Over Morgrave",
+      "level": 34,
+      "patron": "Morgrave University"
+    },
+    {
+      "name": "Relentless",
+      "level": 36,
+      "patron": "Keepers of Lamordia"
+    }
+  ]
+}
