@@ -837,6 +837,13 @@ def build_db(
             cob = db.populate_crafting_option_bonuses()
             click.echo(f"  {cob} crafting option bonus links")
 
+    # Seed quest data (quests, adventure packs, patrons)
+    if "items" in data_types:
+        click.echo("Seeding quest data...")
+        with GameDB(output) as db:
+            qd = db.seed_quest_data()
+            click.echo(f"  {qd} quest data rows")
+
     # Seed class feat data (must run after feats and classes are loaded)
     if "feats" in data_types and "classes" in data_types:
         click.echo("Seeding class feat data (bonus feats, wildshape, choices)...")

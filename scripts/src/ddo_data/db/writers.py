@@ -2155,6 +2155,80 @@ def populate_crafting_option_bonuses(conn: sqlite3.Connection) -> int:
     return inserted
 
 
+def seed_quest_data(conn: sqlite3.Connection) -> int:
+    """Seed quest, adventure pack, and patron data from static wiki-scraped data.
+
+    Loads ``quest_seed_data.json`` and populates:
+    - patrons, adventure_packs, quests, quest_loot
+    """
+    import json
+    from pathlib import Path
+
+    data_path = Path(__file__).parent.parent / "wiki" / "quest_seed_data.json"
+    if not data_path.exists():
+        logger.warning("quest_seed_data.json not found, skipping")
+        return 0
+
+    data = json.loads(data_path.read_text())
+    inserted = 0
+
+    # Patrons
+    for patron_name in data.get("patrons", []):
+        conn.execute("INSERT OR IGNORE INTO patrons (name) VALUES (?)", (patron_name,))
+        inserted += 1
+
+    # Adventure packs
+    for pack in data.get("adventure_packs", []):
+        conn.execute(
+            "INSERT OR IGNORE INTO adventure_packs (name, is_free_to_play) VALUES (?, ?)",
+            (pack["name"], 1 if pack.get("is_free") else 0),
+        )
+        inserted += 1
+
+    conn.commit()
+
+    # Build lookups
+    patron_ids = dict(conn.execute("SELECT name, id FROM patrons").fetchall())
+    pack_ids = dict(conn.execute("SELECT name, id FROM adventure_packs").fetchall())
+    item_ids = dict(conn.execute("SELECT name, id FROM items").fetchall())
+
+    # Quests
+    for quest in data.get("quests", []):
+        qname = quest.get("name")
+        if not qname:
+            continue
+        pack_id = pack_ids.get(quest.get("pack")) if quest.get("pack") else None
+        patron_id = patron_ids.get(quest.get("patron")) if quest.get("patron") else None
+        conn.execute(
+            """INSERT OR IGNORE INTO quests (name, level, pack_id, patron_id, zone)
+               VALUES (?, ?, ?, ?, ?)""",
+            (qname, quest.get("level"), pack_id, patron_id, quest.get("zone")),
+        )
+        inserted += 1
+
+    conn.commit()
+
+    # Quest loot — match quest names to items that reference them
+    quest_ids = dict(conn.execute("SELECT name, id FROM quests").fetchall())
+    for quest in data.get("quests", []):
+        qname = quest.get("name")
+        qid = quest_ids.get(qname)
+        if not qid:
+            continue
+        for item_name in quest.get("loot", []):
+            item_id = item_ids.get(item_name)
+            if item_id:
+                conn.execute(
+                    "INSERT OR IGNORE INTO quest_loot (quest_id, item_id) VALUES (?, ?)",
+                    (qid, item_id),
+                )
+                inserted += 1
+
+    conn.commit()
+    logger.info("Seeded %d quest data rows", inserted)
+    return inserted
+
+
 def seed_class_feat_data(conn: sqlite3.Connection) -> int:
     """Seed class choice feats and bonus feat lists from static wiki-scraped data.
 
