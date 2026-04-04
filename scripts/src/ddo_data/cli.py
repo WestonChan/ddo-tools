@@ -831,6 +831,12 @@ def build_db(
             seeded = db.seed_crafting_data()
             click.echo(f"  {seeded:,} crafting seed rows")
 
+    if "crafting" in data_types:
+        click.echo("Resolving crafting option bonuses...")
+        with GameDB(output) as db:
+            cob = db.populate_crafting_option_bonuses()
+            click.echo(f"  {cob} crafting option bonus links")
+
     # Seed class feat data (must run after feats and classes are loaded)
     if "feats" in data_types and "classes" in data_types:
         click.echo("Seeding class feat data (bonus feats, wildshape, choices)...")

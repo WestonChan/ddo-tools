@@ -2106,6 +2106,55 @@ def populate_stat_sources(conn: sqlite3.Connection) -> int:
     return inserted
 
 
+def populate_crafting_option_bonuses(conn: sqlite3.Connection) -> int:
+    """Resolve crafting option descriptions to bonuses table entries.
+
+    Parses stat bonuses from crafting option descriptions using the
+    shared enchantment parser, creating bonuses rows and linking via
+    crafting_option_bonuses junction.
+    """
+    from ..dat_parser.effects import parse_enchantment_string_multi
+
+    rows = conn.execute("""
+        SELECT co.id, co.description
+        FROM crafting_options co
+        WHERE co.description IS NOT NULL AND co.description != ''
+          AND NOT EXISTS (SELECT 1 FROM crafting_option_bonuses cob WHERE cob.option_id = co.id)
+    """).fetchall()
+
+    inserted = 0
+    for opt_id, desc in rows:
+        parsed = parse_enchantment_string_multi(desc)
+        for i, bonus_dict in enumerate(parsed):
+            stat_name = bonus_dict.get("stat")
+            if not stat_name:
+                continue
+            stat_id = _lookup_id(conn, "stats", "name", "id", stat_name)
+            bonus_type = bonus_dict.get("bonus_type")
+            bonus_type_id = (
+                _lookup_id(conn, "bonus_types", "name", "id", bonus_type)
+                if bonus_type else None
+            )
+            value = bonus_dict.get("value")
+            if value is None:
+                continue
+
+            bonus_name = f"{stat_name} +{value}"
+            bonus_id = _ensure_bonus(
+                conn, bonus_name, stat_id, bonus_type_id, value,
+                description=desc,
+            )
+            conn.execute(
+                "INSERT OR IGNORE INTO crafting_option_bonuses (option_id, bonus_id, sort_order) VALUES (?, ?, ?)",
+                (opt_id, bonus_id, i),
+            )
+            inserted += 1
+
+    conn.commit()
+    logger.info("Populated %d crafting option bonus links", inserted)
+    return inserted
+
+
 def seed_class_feat_data(conn: sqlite3.Connection) -> int:
     """Seed class choice feats and bonus feat lists from static wiki-scraped data.
 
