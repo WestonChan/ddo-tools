@@ -1975,6 +1975,96 @@ def populate_enhancement_feat_links(conn: sqlite3.Connection) -> int:
     return inserted
 
 
+def populate_enhancement_spell_links(conn: sqlite3.Connection) -> int:
+    """Populate enhancement_spell_links by matching SLA names to spells table.
+
+    Parses "SLA: X", "Spell-Like Ability: X" patterns from descriptions.
+    """
+    spell_ids = dict(conn.execute("SELECT name, id FROM spells").fetchall())
+    spell_lower = {n.lower(): (n, sid) for n, sid in spell_ids.items()}
+
+    _SLA_PATS = [
+        re.compile(r"SLA:\s*(\w[\w\s'-]+?)(?:\s*\(|\s*Meta|\s*Spell Point|\s*$)", re.IGNORECASE),
+        re.compile(r"Spell-Like Ability:\s*(?:\*\s*)?(?:F:\w+\.png\s+)?(\w[\w\s'-]+?)(?:\s*:|$)", re.IGNORECASE),
+        re.compile(r"grants? the (\w[\w\s'-]+?) spell", re.IGNORECASE),
+    ]
+
+    rows = conn.execute("""
+        SELECT e.id, e.description FROM enhancements e
+        WHERE e.description IS NOT NULL
+          AND (e.description LIKE '%SLA:%'
+            OR e.description LIKE '%Spell-Like Ability%'
+            OR e.description LIKE '%Spell Like Ability%'
+            OR e.description LIKE '%grants the%spell%')
+    """).fetchall()
+
+    inserted = 0
+    for enh_id, desc in rows:
+        for pat in _SLA_PATS:
+            for m in pat.finditer(desc):
+                spell_name = m.group(1).strip()
+                sid = spell_ids.get(spell_name)
+                if not sid:
+                    entry = spell_lower.get(spell_name.lower())
+                    if entry:
+                        sid = entry[1]
+                if sid:
+                    cur = conn.execute(
+                        "INSERT OR IGNORE INTO enhancement_spell_links "
+                        "(enhancement_id, spell_id, link_type, min_rank) VALUES (?, ?, 'grants', 1)",
+                        (enh_id, sid),
+                    )
+                    inserted += cur.rowcount
+
+    conn.commit()
+    logger.info("Populated %d enhancement spell links", inserted)
+    return inserted
+
+
+def populate_enhancement_exclusion_groups(conn: sqlite3.Connection) -> int:
+    """Populate enhancement_exclusion_groups from "Choose/Select" patterns.
+
+    Finds enhancements with "Choose between X and Y" or "Select one" patterns
+    and groups the choices as mutually exclusive within the same enhancement.
+    """
+    rows = conn.execute("""
+        SELECT e.id, e.name, e.description, e.tree_id
+        FROM enhancements e
+        WHERE e.description IS NOT NULL
+          AND (e.description LIKE '%Choose between%'
+            OR e.description LIKE '%Choose One%'
+            OR e.description LIKE '%Choose one%')
+    """).fetchall()
+
+    inserted = 0
+    group_id = 1
+
+    for enh_id, enh_name, desc, tree_id in rows:
+        # "Choose between X and Y" pattern
+        m = re.search(r"Choose between (\w[\w\s'-]+?) and (\w[\w\s'-]+?)[\.\:]", desc)
+        if m:
+            choice_a = m.group(1).strip()
+            choice_b = m.group(2).strip()
+            # Find enhancements with these names in the same tree
+            for choice_name in [choice_a, choice_b]:
+                choice_row = conn.execute(
+                    "SELECT id FROM enhancements WHERE tree_id = ? AND name LIKE ?",
+                    (tree_id, f"%{choice_name}%"),
+                ).fetchone()
+                if choice_row:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO enhancement_exclusion_groups "
+                        "(group_id, group_name, enhancement_id) VALUES (?, ?, ?)",
+                        (group_id, f"{enh_name} choice", choice_row[0]),
+                    )
+                    inserted += 1
+            group_id += 1
+
+    conn.commit()
+    logger.info("Populated %d enhancement exclusion group entries", inserted)
+    return inserted
+
+
 def populate_stat_sources(conn: sqlite3.Connection) -> int:
     """Populate stat_sources by finding which trees/classes reference class-specific stats.
 

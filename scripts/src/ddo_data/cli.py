@@ -849,7 +849,9 @@ def build_db(
     if "enhancements" in data_types:
         with GameDB(output) as db:
             fl = db.populate_enhancement_feat_links()
-            click.echo(f"  {fl} enhancement feat links")
+            sl = db.populate_enhancement_spell_links()
+            eg = db.populate_enhancement_exclusion_groups()
+            click.echo(f"  {fl} enhancement feat links, {sl} spell links, {eg} exclusion groups")
 
     if "feats" in data_types:
         with GameDB(output) as db:
