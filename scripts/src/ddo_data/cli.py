@@ -851,6 +851,11 @@ def build_db(
             fl = db.populate_enhancement_feat_links()
             click.echo(f"  {fl} enhancement feat links")
 
+    if "feats" in data_types:
+        with GameDB(output) as db:
+            eg = db.populate_feat_exclusion_groups()
+            click.echo(f"  {eg} feat exclusion group entries")
+
     # Populate stat sources (must run after enhancements are loaded)
     if "enhancements" in data_types:
         with GameDB(output) as db:

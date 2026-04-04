@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .schema import create_schema
 from .validate import format_validation, validate_database
-from .writers import insert_augments, insert_class_progression, insert_crafting, insert_crafting_options, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, populate_enhancement_feat_links, populate_item_materials, populate_stat_sources, populate_weapon_types, seed_class_feat_data, seed_crafting_data, insert_set_bonus_effects, insert_spells
+from .writers import insert_augments, insert_class_progression, insert_crafting, insert_crafting_options, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, populate_enhancement_feat_links, populate_feat_exclusion_groups, populate_item_materials, populate_stat_sources, populate_weapon_types, seed_class_feat_data, seed_crafting_data, insert_set_bonus_effects, insert_spells
 
 __all__ = ["GameDB"]
 
@@ -106,6 +106,10 @@ class GameDB:
     def populate_enhancement_feat_links(self) -> int:
         """Populate enhancement_feat_links from enhancement descriptions."""
         return populate_enhancement_feat_links(self.conn)
+
+    def populate_feat_exclusion_groups(self) -> int:
+        """Populate feat_exclusion_groups with known mutual exclusions."""
+        return populate_feat_exclusion_groups(self.conn)
 
     def populate_stat_sources(self) -> int:
         """Populate stat_sources from enhancement bonus data."""

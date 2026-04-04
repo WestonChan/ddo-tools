@@ -1896,6 +1896,38 @@ def populate_weapon_types(conn: sqlite3.Connection) -> int:
     return inserted
 
 
+def populate_feat_exclusion_groups(conn: sqlite3.Connection) -> int:
+    """Populate feat_exclusion_groups with known mutual exclusions.
+
+    Combat style feats: SWF, TWF, THF are mutually exclusive.
+    """
+    feat_ids = dict(conn.execute("SELECT name, id FROM feats").fetchall())
+
+    groups = [
+        # Group 1: Combat styles (SWF/TWF/THF are mutually exclusive)
+        (1, "Combat Style", [
+            "Single Weapon Fighting",
+            "Two Weapon Fighting",
+            "Two Handed Fighting",
+        ]),
+    ]
+
+    inserted = 0
+    for group_id, group_name, feat_names in groups:
+        for feat_name in feat_names:
+            fid = feat_ids.get(feat_name)
+            if fid:
+                conn.execute(
+                    "INSERT OR IGNORE INTO feat_exclusion_groups (group_id, group_name, feat_id) VALUES (?, ?, ?)",
+                    (group_id, group_name, fid),
+                )
+                inserted += 1
+
+    conn.commit()
+    logger.info("Populated %d feat exclusion group entries", inserted)
+    return inserted
+
+
 def populate_enhancement_feat_links(conn: sqlite3.Connection) -> int:
     """Populate enhancement_feat_links by parsing feat grants from descriptions.
 
