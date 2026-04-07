@@ -857,14 +857,16 @@ def build_db(
             click.echo("Populating reference tables...")
             mat = db.populate_item_materials()
             wt = db.populate_weapon_types()
-            click.echo(f"  {mat} materials, {wt} weapon types")
+            iu = db.populate_item_upgrades()
+            click.echo(f"  {mat} materials, {wt} weapon types, {iu} item upgrades")
 
     if "enhancements" in data_types:
         with GameDB(output) as db:
+            rp = db.populate_enhancement_prereq_races()
             fl = db.populate_enhancement_feat_links()
             sl = db.populate_enhancement_spell_links()
             eg = db.populate_enhancement_exclusion_groups()
-            click.echo(f"  {fl} enhancement feat links, {sl} spell links, {eg} exclusion groups")
+            click.echo(f"  {rp} race prereqs, {fl} feat links, {sl} spell links, {eg} exclusion groups")
 
     if "feats" in data_types:
         with GameDB(output) as db:

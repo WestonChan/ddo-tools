@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .schema import create_schema
 from .validate import format_validation, validate_database
-from .writers import insert_augments, insert_class_progression, insert_crafting, insert_crafting_options, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, populate_crafting_option_bonuses, populate_enhancement_exclusion_groups, populate_enhancement_feat_links, populate_enhancement_spell_links, populate_feat_exclusion_groups, populate_item_materials, populate_stat_sources, populate_weapon_types, seed_class_feat_data, seed_crafting_data, seed_quest_data, insert_set_bonus_effects, insert_spells
+from .writers import insert_augments, insert_class_progression, insert_crafting, insert_crafting_options, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, populate_crafting_option_bonuses, populate_enhancement_exclusion_groups, populate_enhancement_feat_links, populate_enhancement_prereq_races, populate_enhancement_spell_links, populate_feat_exclusion_groups, populate_item_materials, populate_item_upgrades, populate_stat_sources, populate_weapon_types, seed_class_feat_data, seed_crafting_data, seed_quest_data, insert_set_bonus_effects, insert_spells
 
 __all__ = ["GameDB"]
 
@@ -103,9 +103,17 @@ class GameDB:
         """Populate weapon_types from item_weapon_stats data."""
         return populate_weapon_types(self.conn)
 
+    def populate_enhancement_prereq_races(self) -> int:
+        """Populate enhancement_prereq_races from prereq text."""
+        return populate_enhancement_prereq_races(self.conn)
+
     def populate_enhancement_feat_links(self) -> int:
         """Populate enhancement_feat_links from enhancement descriptions."""
         return populate_enhancement_feat_links(self.conn)
+
+    def populate_item_upgrades(self) -> int:
+        """Populate item_upgrades (heroic->epic->legendary name pairs)."""
+        return populate_item_upgrades(self.conn)
 
     def populate_feat_exclusion_groups(self) -> int:
         """Populate feat_exclusion_groups with known mutual exclusions."""

@@ -1928,6 +1928,84 @@ def populate_feat_exclusion_groups(conn: sqlite3.Connection) -> int:
     return inserted
 
 
+def populate_enhancement_prereq_races(conn: sqlite3.Connection) -> int:
+    """Populate enhancement_prereq_races by parsing race names from prereq text."""
+    race_ids = dict(conn.execute("SELECT name, id FROM races").fetchall())
+
+    rows = conn.execute("""
+        SELECT e.id, e.prerequisite, et.tree_type
+        FROM enhancements e
+        JOIN enhancement_trees et ON et.id = e.tree_id
+        WHERE e.prerequisite IS NOT NULL
+    """).fetchall()
+
+    inserted = 0
+    for enh_id, prereq, tree_type in rows:
+        for race_name, race_id in race_ids.items():
+            if race_name in prereq:
+                conn.execute(
+                    "INSERT OR IGNORE INTO enhancement_prereq_races "
+                    "(enhancement_id, race_id) VALUES (?, ?)",
+                    (enh_id, race_id),
+                )
+                inserted += 1
+                break  # one race per enhancement
+
+    conn.commit()
+    logger.info("Populated %d enhancement prereq races", inserted)
+    return inserted
+
+
+def populate_item_upgrades(conn: sqlite3.Connection) -> int:
+    """Populate item_upgrades by matching heroic->epic->legendary name pairs.
+
+    Schema: item_id=upgraded version, base_item_id=original, upgrade_tier=1/2/3.
+    Tier 1 = Epic, Tier 2 = Legendary, Tier 3 = Perfected.
+    """
+    inserted = 0
+
+    # Epic versions: "Epic X" base is "X", tier 1
+    conn.execute("""
+        INSERT OR IGNORE INTO item_upgrades (item_id, base_item_id, upgrade_tier)
+        SELECT b.id, a.id, 1
+        FROM items a
+        JOIN items b ON b.name = 'Epic ' || a.name
+        WHERE a.name NOT LIKE 'Epic %'
+          AND a.name NOT LIKE 'Legendary %'
+          AND a.name NOT LIKE 'Perfected %'
+    """)
+    epic = conn.execute("SELECT changes()").fetchone()[0]
+    inserted += epic
+
+    # Legendary versions: "Legendary X" base is "X", tier 2
+    conn.execute("""
+        INSERT OR IGNORE INTO item_upgrades (item_id, base_item_id, upgrade_tier)
+        SELECT b.id, a.id, 2
+        FROM items a
+        JOIN items b ON b.name = 'Legendary ' || a.name
+        WHERE a.name NOT LIKE 'Legendary %'
+          AND a.name NOT LIKE 'Perfected %'
+    """)
+    legendary = conn.execute("SELECT changes()").fetchone()[0]
+    inserted += legendary
+
+    # Perfected versions: "Perfected X" base is "Epic X", tier 3
+    conn.execute("""
+        INSERT OR IGNORE INTO item_upgrades (item_id, base_item_id, upgrade_tier)
+        SELECT b.id, a.id, 3
+        FROM items a
+        JOIN items b ON b.name = 'Perfected ' || SUBSTR(a.name, 6)
+        WHERE a.name LIKE 'Epic %'
+    """)
+    perfected = conn.execute("SELECT changes()").fetchone()[0]
+    inserted += perfected
+
+    conn.commit()
+    logger.info("Populated %d item upgrades (%d epic, %d legendary, %d perfected)",
+                inserted, epic, legendary, perfected)
+    return inserted
+
+
 def populate_enhancement_feat_links(conn: sqlite3.Connection) -> int:
     """Populate enhancement_feat_links by parsing feat grants from descriptions.
 
