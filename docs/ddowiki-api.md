@@ -49,6 +49,25 @@ Naming conventions vary by entity type:
 
 Not all filenames follow these patterns — always use the `icon` column value from the DB, not a constructed name.
 
+## Bulk Data Pages
+
+These wiki pages contain comprehensive lists useful for data scraping:
+
+- **Named items by update:** `Update_N_named_items` (e.g., `Update_5_named_items`, `Update_75_named_items`) — each page lists all named items added in that update, with links to individual item pages
+- **All quests:** `Quests_by_level`, `All_quests_in_a_single_table`
+- **Adventure packs:** `Adventure_Packs`
+- **Patrons:** `Patrons`
+- **Crafting systems:** `Crafting`, `Cannith_Crafting`, `Green_Steel_items`
+- **Enhancement trees:** `Category:Enhancement_trees`
+- **Feats by category:** `Category:Fighter_bonus_feats`, `Category:Wizard_bonus_feats`, etc.
+- **Races:** `Races` (stat modifiers chart)
+- **Class progression:** individual class pages (`Wizard`, `Fighter`, etc.) have level-by-level tables
+
+**API pattern for named items by update:**
+```
+https://ddowiki.com/api.php?action=parse&page=Update_75_named_items&prop=wikitext&format=json
+```
+
 ## Usage
 
 - URL-encode page titles (spaces → underscores or `%20`)
