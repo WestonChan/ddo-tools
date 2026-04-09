@@ -1156,7 +1156,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
   - [x] `item_materials` (55 distinct materials, FK updated)
   - [x] `crafting_option_bonuses` (419 links resolved from descriptions)
   - [ ] Quest system: `quests`, `quest_loot`, `quest_flagging`, `adventure_packs`, `patrons`
-  - Intentionally empty: `item_class_min_levels` (DDO has no per-class ML), `item_spell_links` (clickies in bonus text), `enhancement_prereq_races` (enforced via tree), `item_effect_refs` (binary-only), `item_upgrades` (binary-only)
+  - Intentionally empty: `enhancement_prereq_races` (enforced via tree), `item_upgrades` (binary-only)
   1. **Field coverage**: verify all binary-decoded fields have corresponding DB columns and correct types
   2. **Enum alignment**: verify enum code-to-seed ID mappings are consistent
   3. **Writer field-flow**: verify every parser dict key is consumed by insert_* (no silently dropped data)

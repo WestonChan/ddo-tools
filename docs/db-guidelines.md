@@ -12,7 +12,7 @@ Tables are grouped by prefix so related tables sort together:
 
 | Prefix | Tables |
 |--------|--------|
-| `item_` | `item_weapon_stats`, `item_armor_stats`, `item_augment_slots`, `item_class_min_levels`, `item_spell_links`, `item_upgrades`, `item_effect_refs` |
+| `item_` | `item_weapon_stats`, `item_armor_stats`, `item_augment_slots`, `item_spell_links`, `item_upgrades` |
 | `feat_` | `feat_bonus_classes`, `feat_prereq_feats`, `feat_prereq_stats`, `feat_prereq_classes`, `feat_prereq_races`, `feat_prereq_skills` |
 | `class_` | `class_skills`, `class_bonus_feat_slots`, `class_spell_slots`, `class_spells_known`, `class_auto_feats` |
 | `race_` | `race_ability_bonuses`, `race_feats` |

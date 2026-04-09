@@ -309,13 +309,6 @@ CREATE TABLE IF NOT EXISTS item_augment_slots (
 );
 CREATE INDEX IF NOT EXISTS idx_item_augment_slots_type ON item_augment_slots(slot_type);
 
-CREATE TABLE IF NOT EXISTS item_class_min_levels (
-    item_id   INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
-    class_id  INTEGER NOT NULL REFERENCES classes(id),
-    min_level INTEGER NOT NULL CHECK (min_level >= 1),
-    PRIMARY KEY (item_id, class_id)
-);
-CREATE INDEX IF NOT EXISTS idx_item_class_min_levels_class ON item_class_min_levels(class_id);
 
 -- item_spell_links defined after Spells block (forward reference to spells)
 
@@ -327,11 +320,6 @@ CREATE TABLE IF NOT EXISTS item_upgrades (
 );
 CREATE INDEX IF NOT EXISTS idx_item_upgrades_base ON item_upgrades(base_item_id);
 
-CREATE TABLE IF NOT EXISTS item_effect_refs (
-    item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
-    ref_id  TEXT NOT NULL,
-    PRIMARY KEY (item_id, ref_id)
-);
 
 -- Feats --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS feats (
