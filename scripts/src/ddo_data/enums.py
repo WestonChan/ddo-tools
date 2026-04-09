@@ -682,6 +682,7 @@ class DataSource(str, Enum):
     def __str__(self) -> str: return self.value
     BINARY = "binary"
     WIKI = "wiki"
+    OVERRIDE = "override"
 
 
 class Alignment(str, Enum):

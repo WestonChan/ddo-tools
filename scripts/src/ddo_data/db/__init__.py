@@ -171,6 +171,10 @@ class GameDB:
         """Return tree page titles in wiki but not in DB."""
         return discover_new_enhancement_trees(self.conn, wiki_tree_names)
 
+    def apply_overrides(self, overrides_path: str | None = None) -> int:
+        """Apply manual bonus/effect overrides from JSON."""
+        return apply_overrides(self.conn, overrides_path)
+
     def validate(self) -> str:
         """Run post-import validation assertions.  Returns formatted report."""
         results = validate_database(self.conn)

@@ -935,6 +935,12 @@ def build_db(
             ql = db.insert_quest_loot(quest_loot)
             click.echo(f"  {ql} quest loot links")
 
+    # --- Apply manual overrides ---
+    with GameDB(output) as db:
+        overrides = db.apply_overrides()
+        if overrides:
+            click.echo(f"  {overrides} manual override rows applied")
+
     # Populate stat sources (must run after enhancements are loaded)
     if "enhancements" in data_types:
         with GameDB(output) as db:

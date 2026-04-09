@@ -1,0 +1,5 @@
+{
+  "_comment": "Manual corrections for items the parser gets wrong. Loaded by apply_overrides().",
+  "item_bonuses": {},
+  "item_effects": {}
+}

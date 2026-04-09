@@ -2395,6 +2395,97 @@ def discover_new_enhancement_trees(
     return new_titles
 
 
+def apply_overrides(conn: sqlite3.Connection, overrides_path: str | None = None) -> int:
+    """Apply manual bonus/effect overrides from a JSON file.
+
+    The overrides file has this structure::
+
+        {
+          "item_bonuses": {
+            "Item Name": [
+              {"stat": "Melee Power", "value": 15, "bonus_type": "Artifact"}
+            ]
+          },
+          "item_effects": {
+            "Item Name": [
+              {"effect": "Vorpal", "modifier": "Sovereign"}
+            ]
+          }
+        }
+
+    Returns total rows inserted.
+    """
+    import json
+    from pathlib import Path
+    from ..enums import DataSource
+
+    if overrides_path is None:
+        overrides_path = str(Path(__file__).parent.parent / "data" / "overrides.json")
+
+    path = Path(overrides_path)
+    if not path.exists():
+        return 0
+
+    data = json.loads(path.read_text())
+    inserted = 0
+
+    # Apply item_bonuses overrides
+    for item_name, bonuses in data.get("item_bonuses", {}).items():
+        item_row = conn.execute("SELECT id FROM items WHERE name = ?", (item_name,)).fetchone()
+        if item_row is None:
+            logger.warning("Override: item '%s' not found", item_name)
+            continue
+        item_id = item_row[0]
+
+        # Get current max sort_order for this item
+        max_sort = conn.execute(
+            "SELECT COALESCE(MAX(sort_order), -1) FROM item_bonuses WHERE item_id = ?",
+            (item_id,),
+        ).fetchone()[0]
+
+        for i, bonus in enumerate(bonuses):
+            stat_id = _lookup_id(conn, "stats", "name", "id", bonus.get("stat"))
+            bonus_type_id = _lookup_id(conn, "bonus_types", "name", "id", bonus.get("bonus_type"))
+            value = bonus.get("value")
+            name = f"{bonus.get('stat', '?')} +{value}" if value else bonus.get("stat", "override")
+
+            bonus_id = _ensure_bonus(conn, name, stat_id, bonus_type_id, value)
+            if bonus_id is not None:
+                conn.execute(
+                    f"INSERT OR IGNORE INTO item_bonuses (item_id, bonus_id, sort_order, data_source) VALUES (?, ?, ?, '{DataSource.OVERRIDE}')",
+                    (item_id, bonus_id, max_sort + 1 + i),
+                )
+                inserted += 1
+
+    # Apply item_effects overrides
+    for item_name, effects in data.get("item_effects", {}).items():
+        item_row = conn.execute("SELECT id FROM items WHERE name = ?", (item_name,)).fetchone()
+        if item_row is None:
+            logger.warning("Override: item '%s' not found", item_name)
+            continue
+        item_id = item_row[0]
+
+        max_sort = conn.execute(
+            "SELECT COALESCE(MAX(sort_order), -1) FROM item_effects WHERE item_id = ?",
+            (item_id,),
+        ).fetchone()[0]
+
+        for i, effect in enumerate(effects):
+            effect_id = _ensure_effect(conn, effect["effect"], effect.get("modifier"))
+            if effect_id is not None:
+                conn.execute(
+                    f"INSERT OR IGNORE INTO item_effects (item_id, effect_id, value, sort_order, data_source) VALUES (?, ?, ?, ?, '{DataSource.OVERRIDE}')",
+                    (item_id, effect_id, effect.get("value"), max_sort + 1 + i),
+                )
+                inserted += 1
+
+    conn.commit()
+    if inserted:
+        logger.info("Applied %d override rows", inserted)
+    return inserted
+
+
+
 def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int:
     """Insert quest-to-item loot mappings from wiki category data.
 
