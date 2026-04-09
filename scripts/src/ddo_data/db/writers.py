@@ -266,6 +266,24 @@ _CLASS_ABBREV: dict[str, str] = {
 # happens in parse_enchantment_string_multi() at the parser level.
 
 
+# Disambiguation suffixes stripped when matching clicky spell names to spells table
+_CLICKY_SPELL_SUFFIXES = (" (spell)", " (Item Effect)", " (clicky)", " (effect)")
+
+
+def _resolve_clicky_spell(conn: sqlite3.Connection, modifier: str) -> int | None:
+    """Match a clicky modifier string to a spell ID in the spells table."""
+    row = conn.execute("SELECT id FROM spells WHERE name = ?", (modifier,)).fetchone()
+    if row:
+        return row[0]
+    for suffix in _CLICKY_SPELL_SUFFIXES:
+        clean = modifier.replace(suffix, "")
+        if clean != modifier:
+            row = conn.execute("SELECT id FROM spells WHERE name = ?", (clean,)).fetchone()
+            if row:
+                return row[0]
+    return None
+
+
 def _ensure_effect(conn: sqlite3.Connection, name: str, modifier: str | None) -> int | None:
     """Get or create an effects row, returning its id."""
     coalesced = modifier or ""
@@ -609,6 +627,16 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                         (item_id, effect_id, effect["value"], effect_offset),
                     )
                     effect_offset += 1
+
+                # 2a. Clicky effects → item_spell_links
+                if effect.get("modifier") and effect["effect"].lower() in ("clicky", "clickie"):
+                    spell_id = _resolve_clicky_spell(conn, effect["modifier"])
+                    if spell_id is not None:
+                        charges = effect.get("charges")
+                        conn.execute(
+                            "INSERT OR IGNORE INTO item_spell_links (item_id, spell_id, charges) VALUES (?, ?, ?)",
+                            (item_id, spell_id, charges),
+                        )
                 continue
 
             # 3. Metadata — skip (augments, sets, materials already stored)

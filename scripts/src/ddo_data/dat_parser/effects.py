@@ -1881,11 +1881,21 @@ def parse_effect_template(text: str) -> dict | None:
                 value = int(p)
                 break
 
-    return {
+    result: dict = {
         "effect": name,
         "modifier": modifier,
         "value": value,
     }
+
+    # Clicky templates: {{Clicky|SpellName|CasterLevel|Charges[|extra]}}
+    # param 0 = spell name, param 1 = caster level (-> value), param 2 = charges
+    if name_lower in ("clicky", "clickie") and len(params) >= 3:
+        try:
+            result["charges"] = int(params[2])
+        except ValueError:
+            pass
+
+    return result
 
 
 def is_metadata_template(text: str) -> bool:
