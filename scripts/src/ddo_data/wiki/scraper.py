@@ -402,6 +402,8 @@ def collect_enhancements(
     # Direct tree pages (single trees not discovered from index pages)
     _DIRECT_TREES = [
         ("Reaper enhancements", "reaper", None),
+        ("Dragon Lord enhancements", "class", "Fighter"),
+        ("Wild Mage enhancements", "class", "Wizard"),
     ]
     for page_title, tree_type, parent in _DIRECT_TREES:
         if page_title in visited:
