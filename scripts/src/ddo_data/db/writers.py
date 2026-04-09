@@ -2261,6 +2261,50 @@ def populate_crafting_option_bonuses(conn: sqlite3.Connection) -> int:
     return inserted
 
 
+def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int:
+    """Insert quest-to-item loot mappings from wiki category data.
+
+    Each dict has keys: quest_name, item_name, loot_type ('chest'/'reward'/'raid').
+    Processes in order so later entries (raid) overwrite earlier ones (chest) for
+    the same quest+item pair via INSERT OR REPLACE.
+
+    Returns count of rows inserted/updated.
+    """
+    # Build lookup dicts
+    quest_ids: dict[str, int] = dict(
+        conn.execute("SELECT name, id FROM quests").fetchall()
+    )
+    item_ids: dict[str, int] = dict(
+        conn.execute("SELECT name, id FROM items").fetchall()
+    )
+
+    inserted = 0
+    skipped_quest = 0
+    skipped_item = 0
+
+    for entry in loot_entries:
+        quest_id = quest_ids.get(entry["quest_name"])
+        if quest_id is None:
+            skipped_quest += 1
+            continue
+        item_id = item_ids.get(entry["item_name"])
+        if item_id is None:
+            skipped_item += 1
+            continue
+        conn.execute(
+            "INSERT OR REPLACE INTO quest_loot (quest_id, item_id, loot_type) VALUES (?, ?, ?)",
+            (quest_id, item_id, entry["loot_type"]),
+        )
+        inserted += 1
+
+    conn.commit()
+    logger.info(
+        "Inserted %d quest loot links (skipped: %d unmatched quests, %d unmatched items)",
+        inserted, skipped_quest, skipped_item,
+    )
+    return inserted
+
+
 def seed_quest_data(conn: sqlite3.Connection) -> int:
     """Seed quest, adventure pack, and patron data from static wiki-scraped data.
 

@@ -577,8 +577,9 @@ CREATE TABLE IF NOT EXISTS quest_flagging (
 );
 
 CREATE TABLE IF NOT EXISTS quest_loot (
-    quest_id INTEGER NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
-    item_id  INTEGER NOT NULL REFERENCES items(id),
+    quest_id  INTEGER NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
+    item_id   INTEGER NOT NULL REFERENCES items(id),
+    loot_type TEXT CHECK (loot_type IN ('chest', 'reward', 'raid')),
     PRIMARY KEY (quest_id, item_id)
 );
 CREATE INDEX IF NOT EXISTS idx_quest_loot_item ON quest_loot(item_id);

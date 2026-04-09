@@ -524,6 +524,80 @@ def collect_set_bonuses(
     return results
 
 
+# ---------------------------------------------------------------------------
+# Quest loot from wiki categories
+# ---------------------------------------------------------------------------
+
+# Parent categories and how to extract quest name from subcategory title
+_QUEST_LOOT_SOURCES: list[tuple[str, str, str]] = [
+    # (parent_category, suffix_to_strip, loot_type)
+    ("Chest_loot", " loot", "chest"),
+    ("Quest_rewards", " reward items", "reward"),
+    ("Raid_loot", " loot", "raid"),
+]
+
+
+def collect_quest_loot(
+    client: WikiClient,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+    limit: int = 0,
+) -> list[dict]:
+    """Collect quest-to-item loot mappings from wiki category trees.
+
+    Walks ``Chest_loot`` (617 subcats), ``Quest_rewards`` (57), and
+    ``Raid_loot`` (25).  Processes in order so that raid loot_type
+    overwrites chest for the same item+quest pair (handled by the writer).
+
+    Returns list of dicts with keys: quest_name, item_name, loot_type.
+    """
+    results: list[dict] = []
+    count = 0
+
+    for parent_cat, suffix, loot_type in _QUEST_LOOT_SOURCES:
+        if on_progress:
+            on_progress(f"  Walking Category:{parent_cat} ...")
+
+        subcats = list(client.iter_category_members(
+            parent_cat, member_type="subcat",
+        ))
+        if on_progress:
+            on_progress(f"    {len(subcats)} subcategories found")
+
+        for subcat_title in subcats:
+            # Extract quest name: "Category:A Break In the Ice loot" -> "A Break In the Ice"
+            quest_name = subcat_title.removeprefix("Category:").strip()
+            if quest_name.endswith(suffix):
+                quest_name = quest_name[: -len(suffix)].strip()
+
+            # Enumerate items in this subcategory
+            subcat_name = subcat_title.removeprefix("Category:")
+            items = list(client.iter_category_members(
+                subcat_name, namespace=500, member_type="page",
+            ))
+            for item_title in items:
+                item_name = item_title.removeprefix("Item:").strip()
+                results.append({
+                    "quest_name": quest_name,
+                    "item_name": item_name,
+                    "loot_type": loot_type,
+                })
+                count += 1
+                if 0 < limit <= count:
+                    if on_progress:
+                        on_progress(f"  Limit {limit} reached, stopping")
+                    return results
+
+        if on_progress:
+            on_progress(f"    {loot_type}: {sum(1 for r in results if r['loot_type'] == loot_type)} links so far")
+
+    if on_progress:
+        on_progress(f"  Total: {len(results)} quest loot links")
+
+    return results
+
+
+
 # Races whose feats are listed in wiki Category:<Race> feats pages.
 _RACE_FEAT_CATEGORIES: dict[str, str] = {
     "Human": "Human feats",

@@ -97,9 +97,15 @@ class WikiClient:
         category: str,
         *,
         namespace: int | None = None,
+        member_type: str | None = None,
         limit: int = 0,
     ) -> Iterator[str]:
-        """Yield page titles in a category via categorymembers API."""
+        """Yield page titles in a category via categorymembers API.
+
+        Args:
+            member_type: Filter by type: ``"subcat"``, ``"page"``, or
+                ``"subcat|page"``. None returns all types (default).
+        """
         params: dict = {
             "action": "query",
             "list": "categorymembers",
@@ -109,6 +115,8 @@ class WikiClient:
         }
         if namespace is not None:
             params["cmnamespace"] = namespace
+        if member_type is not None:
+            params["cmtype"] = member_type
         count = 0
         while True:
             data = self._api_get(params)
