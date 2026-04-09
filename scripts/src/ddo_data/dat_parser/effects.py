@@ -154,10 +154,10 @@ _FORTIFICATION_TEMPLATE_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Regex for wiki {{Save|...}} template:
+# Regex for wiki {{Save|...}} / {{Saves|...}} template:
 #   {{Save|r|11}} → +11 Reflex Save
 _SAVE_TEMPLATE_RE = re.compile(
-    r"\{\{Save\|"
+    r"\{\{Saves?\|"
     r"([^|}]+)\|"             # save type abbreviation
     r"([^|}]+)"               # magnitude
     r"(?:\|([^|}]+))?"        # optional bonus type
@@ -183,6 +183,9 @@ _SAVE_ABBREVS: dict[str, str] = {
     "spell": "Spell Resistance",
     "enchantment": "Enchantment Save",
     "illusion": "Illusion Save",
+    "saving throws vs. traps": "Saving Throws vs Traps",
+    "saving throws vs traps": "Saving Throws vs Traps",
+    "traps": "Saving Throws vs Traps",
     "fear": "Fear Save",
     "poison": "Poison Save",
     "disease": "Disease Save",
@@ -1288,6 +1291,8 @@ _STAT_ALIASES: dict[str, str] = {
     "attack": S.ATTACK_BONUS,
     "attack damage": S.DAMAGE_BONUS,
     "damage": S.DAMAGE_BONUS,
+    "saving throws vs traps": S.SAVING_THROWS_VS_TRAPS,
+    "saving throws vs. traps": S.SAVING_THROWS_VS_TRAPS,
     "saves": S.SAVING_THROWS,
     "save": S.SAVING_THROWS,
     "sneak attack die": S.SNEAK_ATTACK_DICE,
@@ -1461,6 +1466,8 @@ _STAT_ALIASES: dict[str, str] = {
     # "attack and damage" handled as composite below
     "attack": S.ATTACK_BONUS,
     "damage": S.DAMAGE_BONUS,
+    "saving throws vs traps": S.SAVING_THROWS_VS_TRAPS,
+    "saving throws vs. traps": S.SAVING_THROWS_VS_TRAPS,
     "ability stats": "all ability scores",
     "all of your ability scores": "all ability scores",
     "to all ability scores": "all ability scores",
@@ -1519,6 +1526,7 @@ _STAT_ALIASES: dict[str, str] = {
 # Composite stats → split into multiple individual stat names
 _COMPOSITE_STATS: dict[str, list[str]] = {
     "sheltering": [S.PHYSICAL_SHELTERING, S.MAGICAL_SHELTERING],
+    "physical and magical sheltering": [S.PHYSICAL_SHELTERING, S.MAGICAL_SHELTERING],
     "saving throws": [S.FORTITUDE_SAVE, S.REFLEX_SAVE, S.WILL_SAVE],
     "melee and ranged power": [S.MELEE_POWER, S.RANGED_POWER],
     "physical and magical resistance rating": [
