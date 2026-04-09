@@ -46,6 +46,19 @@ pytest scripts/                  # Run Python tests
 - **Data flow:** Python scripts extract game data → `public/data/ddo.db` (SQLite) or JSON files in `public/data/` → React app reads them at runtime.
 - **Hosting:** GitHub Pages (static only). Auto-deployed via GitHub Actions on push to `main`.
 
+## Testing
+
+- **Always write tests** for new Python pipeline code (parsers, writers, scrapers, CLI commands).
+- **Test location:** `scripts/tests/` — mirrors the source structure (e.g., `test_db.py` for `db/writers.py`, `test_cli.py` for `cli.py`).
+- **Run tests:** `pytest scripts/` before committing. All tests must pass.
+- **What to test:**
+  - New writer functions (`insert_*`, `populate_*`, `backfill_*`) — verify row counts and spot-check data.
+  - New parser functions — test with representative wiki template strings and edge cases.
+  - New CLI commands — use `CliRunner` with mocked wiki/binary data (see existing `test_cli.py` patterns).
+  - Schema changes — ensure `create_schema()` succeeds and new tables/columns exist.
+- **Mock external dependencies:** Wiki API calls, binary file reads, and filesystem access should be mocked in tests. Use `unittest.mock.patch` with `contextlib.ExitStack` for multiple mocks.
+- **Don't skip tests:** If a test breaks due to your changes, fix the test — don't delete it.
+
 ## Interaction Patterns
 
 - **Add/remove controls:** Left-click to add/increment, right-click to remove/decrement. This follows DDO in-game patterns (e.g. enhancement spending). Apply this convention to pip-based counters, stack selectors, and similar increment/decrement UI.
