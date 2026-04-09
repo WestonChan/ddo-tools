@@ -527,6 +527,72 @@ def collect_set_bonuses(
 
 
 # ---------------------------------------------------------------------------
+# Item category backfill
+# ---------------------------------------------------------------------------
+
+_SLOT_CATEGORY_MAP: dict[str, str] = {
+    "Trinket_items": "Trinket",
+    "Finger_items": "Ring",
+    "Head_items": "Head",
+    "Back_items": "Back",
+    "Neck_items": "Neck",
+    "Waist_items": "Waist",
+    "Wrist_items": "Wrists",
+    "Hand_items": "Hands",
+    "Feet_items": "Feet",
+    "Eye_items": "Goggles",
+    "Quiver_items": "Quiver",
+}
+
+
+def collect_item_slot_categories(
+    client: WikiClient,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+) -> dict[str, set[str]]:
+    """Collect item names by equipment slot from wiki categories.
+
+    Returns ``{db_slot_name: {item_name, ...}}``.
+    """
+    result: dict[str, set[str]] = {}
+    for category, db_slot in _SLOT_CATEGORY_MAP.items():
+        members = set()
+        for title in client.iter_category_members(category, namespace=500, member_type="page"):
+            members.add(title.removeprefix("Item:").strip())
+        result[db_slot] = members
+        if on_progress:
+            on_progress(f"    {category}: {len(members)} items")
+    return result
+
+
+def collect_item_material_categories(
+    client: WikiClient,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+) -> dict[str, set[str]]:
+    """Collect item names by material from wiki categories.
+
+    Walks ``Items_by_material`` subcategories. Returns ``{material_name: {item_name, ...}}``.
+    """
+    result: dict[str, set[str]] = {}
+    subcats = list(client.iter_category_members("Items_by_material", member_type="subcat"))
+    for subcat_title in subcats:
+        mat_name = subcat_title.removeprefix("Category:").strip()
+        if mat_name.endswith(" items"):
+            mat_name = mat_name[:-6].strip()
+        members = set()
+        for title in client.iter_category_members(
+            subcat_title.removeprefix("Category:"), namespace=500, member_type="page",
+        ):
+            members.add(title.removeprefix("Item:").strip())
+        if members:
+            result[mat_name] = members
+    if on_progress:
+        on_progress(f"    {len(result)} materials from {len(subcats)} categories")
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Quest loot from wiki categories
 # ---------------------------------------------------------------------------
 

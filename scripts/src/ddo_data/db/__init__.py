@@ -147,6 +147,18 @@ class GameDB:
         """Seed crafting items, ingredients, and recipes from static wiki data."""
         return seed_crafting_data(self.conn)
 
+    def insert_quest_loot(self, loot_entries: list[dict]) -> int:
+        """Insert quest loot from wiki category data."""
+        return insert_quest_loot(self.conn, loot_entries)
+
+    def backfill_item_slots(self, slot_data: dict[str, set[str]]) -> int:
+        """Backfill equipment_slot from wiki slot categories."""
+        return backfill_item_slots(self.conn, slot_data)
+
+    def backfill_item_materials(self, material_data: dict[str, set[str]]) -> int:
+        """Backfill material from wiki material categories."""
+        return backfill_item_materials(self.conn, material_data)
+
     def validate(self) -> str:
         """Run post-import validation assertions.  Returns formatted report."""
         results = validate_database(self.conn)

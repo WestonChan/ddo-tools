@@ -2261,6 +2261,68 @@ def populate_crafting_option_bonuses(conn: sqlite3.Connection) -> int:
     return inserted
 
 
+def backfill_item_slots(conn: sqlite3.Connection, slot_data: dict[str, set[str]]) -> int:
+    """Backfill equipment_slot for items using wiki slot category data.
+
+    Args:
+        slot_data: Maps DB slot name -> set of item names in that slot.
+    Returns count of items updated.
+    """
+    slot_ids: dict[str, int] = dict(
+        conn.execute("SELECT name, id FROM equipment_slots").fetchall()
+    )
+    null_items: dict[str, int] = dict(
+        conn.execute("SELECT name, id FROM items WHERE equipment_slot IS NULL").fetchall()
+    )
+
+    updated = 0
+    for db_slot, item_names in slot_data.items():
+        slot_id = slot_ids.get(db_slot)
+        for item_name in item_names:
+            item_id = null_items.pop(item_name, None)
+            if item_id is not None:
+                conn.execute(
+                    "UPDATE items SET equipment_slot = ?, slot_id = ? WHERE id = ?",
+                    (db_slot, slot_id, item_id),
+                )
+                updated += 1
+
+    conn.commit()
+    logger.info("Backfilled equipment_slot for %d items", updated)
+    return updated
+
+
+def backfill_item_materials(conn: sqlite3.Connection, material_data: dict[str, set[str]]) -> int:
+    """Backfill material for items using wiki material category data.
+
+    Args:
+        material_data: Maps material name -> set of item names with that material.
+    Returns count of items updated.
+    """
+    material_ids: dict[str, int] = dict(
+        conn.execute("SELECT name, id FROM item_materials").fetchall()
+    )
+    null_items: dict[str, int] = dict(
+        conn.execute("SELECT name, id FROM items WHERE material IS NULL").fetchall()
+    )
+
+    updated = 0
+    for mat_name, item_names in material_data.items():
+        mat_id = material_ids.get(mat_name)
+        for item_name in item_names:
+            item_id = null_items.pop(item_name, None)
+            if item_id is not None:
+                conn.execute(
+                    "UPDATE items SET material = ?, material_id = ? WHERE id = ?",
+                    (mat_name, mat_id, item_id),
+                )
+                updated += 1
+
+    conn.commit()
+    logger.info("Backfilled material for %d items", updated)
+    return updated
+
+
 def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int:
     """Insert quest-to-item loot mappings from wiki category data.
 
@@ -2279,14 +2341,26 @@ def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int
     )
 
     inserted = 0
-    skipped_quest = 0
+    created_quests = 0
     skipped_item = 0
 
     for entry in loot_entries:
         quest_id = quest_ids.get(entry["quest_name"])
         if quest_id is None:
-            skipped_quest += 1
-            continue
+            # Auto-create quest from category discovery
+            conn.execute(
+                "INSERT OR IGNORE INTO quests (name) VALUES (?)",
+                (entry["quest_name"],),
+            )
+            row = conn.execute(
+                "SELECT id FROM quests WHERE name = ?", (entry["quest_name"],)
+            ).fetchone()
+            if row:
+                quest_id = row[0]
+                quest_ids[entry["quest_name"]] = quest_id
+                created_quests += 1
+            else:
+                continue
         item_id = item_ids.get(entry["item_name"])
         if item_id is None:
             skipped_item += 1
@@ -2299,8 +2373,8 @@ def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int
 
     conn.commit()
     logger.info(
-        "Inserted %d quest loot links (skipped: %d unmatched quests, %d unmatched items)",
-        inserted, skipped_quest, skipped_item,
+        "Inserted %d quest loot links (created %d new quests, skipped %d unmatched items)",
+        inserted, created_quests, skipped_item,
     )
     return inserted
 

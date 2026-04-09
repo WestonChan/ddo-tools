@@ -5,6 +5,7 @@ Uses Click's CliRunner to invoke commands against synthetic .dat archives.
 
 import struct
 from collections import Counter
+import contextlib
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
@@ -673,26 +674,41 @@ def test_build_db_creates_database(tmp_path) -> None:
     """build-db creates a SQLite database file and reports inserted counts."""
     db_path = tmp_path / "ddo.db"
 
-    with (
-        patch("ddo_data.wiki.scraper.collect_items", return_value=[]),
-        patch("ddo_data.wiki.scraper.collect_feats", return_value=[]),
-        patch("ddo_data.wiki.scraper.collect_enhancements", return_value=[]),
-        patch("ddo_data.wiki.scraper.collect_set_bonuses", return_value=[]),
-        patch("ddo_data.wiki.scraper.collect_augments", return_value=[]),
-        patch("ddo_data.wiki.scraper.collect_spells", return_value=[]),
-        patch("ddo_data.wiki.scraper.collect_filigrees", return_value=[]),
-        patch("ddo_data.game_data.items.parse_items", side_effect=RuntimeError("no game data")),
-        patch("ddo_data.cli._overlay_feat_binary_data"),
-        patch("ddo_data.cli._overlay_spell_binary_data"),
-        patch("ddo_data.cli._overlay_augment_binary_data"),
-        patch("ddo_data.db.GameDB.insert_items", return_value=0),
-        patch("ddo_data.db.GameDB.insert_feats", return_value=0),
-        patch("ddo_data.db.GameDB.insert_enhancement_trees", return_value=0),
-        patch("ddo_data.db.GameDB.insert_set_bonus_effects", return_value=0),
-        patch("ddo_data.db.GameDB.insert_augments", return_value=0),
-        patch("ddo_data.db.GameDB.insert_spells", return_value=0),
-        patch("ddo_data.db.GameDB.insert_filigrees", return_value=0),
-    ):
+    patches = {
+        "ddo_data.wiki.scraper.collect_items": [],
+        "ddo_data.wiki.scraper.collect_feats": [],
+        "ddo_data.wiki.scraper.collect_enhancements": [],
+        "ddo_data.wiki.scraper.collect_set_bonuses": [],
+        "ddo_data.wiki.scraper.collect_augments": [],
+        "ddo_data.wiki.scraper.collect_spells": [],
+        "ddo_data.wiki.scraper.collect_filigrees": [],
+        "ddo_data.wiki.scraper.collect_item_slot_categories": {},
+        "ddo_data.wiki.scraper.collect_item_material_categories": {},
+        "ddo_data.wiki.scraper.collect_quest_loot": [],
+    }
+    db_patches = {
+        "insert_items": 0, "insert_feats": 0, "insert_enhancement_trees": 0,
+        "insert_set_bonus_effects": 0, "insert_augments": 0, "insert_spells": 0,
+        "insert_filigrees": 0, "backfill_item_slots": 0,
+        "backfill_item_materials": 0, "insert_quest_loot": 0,
+    }
+    overlay_patches = [
+        "ddo_data.cli._overlay_feat_binary_data",
+        "ddo_data.cli._overlay_spell_binary_data",
+        "ddo_data.cli._overlay_augment_binary_data",
+    ]
+
+    with contextlib.ExitStack() as stack:
+        for target, rv in patches.items():
+            stack.enter_context(patch(target, return_value=rv))
+        for method, rv in db_patches.items():
+            stack.enter_context(patch(f"ddo_data.db.GameDB.{method}", return_value=rv))
+        for target in overlay_patches:
+            stack.enter_context(patch(target))
+        stack.enter_context(
+            patch("ddo_data.game_data.items.parse_items", side_effect=RuntimeError("no game data"))
+        )
+
         runner = CliRunner()
         result = runner.invoke(cli, ["build-db", "--output", str(db_path), "--limit", "1"])
 
@@ -705,13 +721,20 @@ def test_build_db_type_filter(tmp_path) -> None:
     """build-db --type items only calls the items collector and inserter."""
     db_path = tmp_path / "ddo.db"
 
-    with (
-        patch("ddo_data.wiki.scraper.collect_items", return_value=[]) as mock_collect,
-        patch("ddo_data.wiki.scraper.collect_feats", return_value=[]) as mock_collect_feats,
-        patch("ddo_data.game_data.items.parse_items", side_effect=RuntimeError("no game data")),
-        patch("ddo_data.db.GameDB.insert_items", return_value=5) as mock_insert,
-        patch("ddo_data.db.GameDB.insert_feats", return_value=0) as mock_insert_feats,
-    ):
+    with contextlib.ExitStack() as stack:
+        mock_collect = stack.enter_context(patch("ddo_data.wiki.scraper.collect_items", return_value=[]))
+        mock_collect_feats = stack.enter_context(patch("ddo_data.wiki.scraper.collect_feats", return_value=[]))
+        stack.enter_context(patch("ddo_data.game_data.items.parse_items", side_effect=RuntimeError("no game data")))
+        mock_insert = stack.enter_context(patch("ddo_data.db.GameDB.insert_items", return_value=5))
+        mock_insert_feats = stack.enter_context(patch("ddo_data.db.GameDB.insert_feats", return_value=0))
+        # Category-based backfill mocks (run in items post-processing)
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_item_slot_categories", return_value={}))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_item_material_categories", return_value={}))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_quest_loot", return_value=[]))
+        stack.enter_context(patch("ddo_data.db.GameDB.backfill_item_slots", return_value=0))
+        stack.enter_context(patch("ddo_data.db.GameDB.backfill_item_materials", return_value=0))
+        stack.enter_context(patch("ddo_data.db.GameDB.insert_quest_loot", return_value=0))
+
         runner = CliRunner()
         result = runner.invoke(
             cli, ["build-db", "--output", str(db_path), "--type", "items", "--limit", "1"]

@@ -873,6 +873,30 @@ def build_db(
             eg = db.populate_feat_exclusion_groups()
             click.echo(f"  {eg} feat exclusion group entries")
 
+    # --- Category-based backfill (runs after all entities are loaded) ---
+
+    if "items" in data_types:
+        click.echo("Backfilling item slots from wiki categories...")
+        from .wiki.scraper import collect_item_slot_categories
+        slot_data = collect_item_slot_categories(client, on_progress=click.echo)
+        with GameDB(output) as db:
+            slots = db.backfill_item_slots(slot_data)
+            click.echo(f"  {slots} item slots backfilled")
+
+        click.echo("Backfilling item materials from wiki categories...")
+        from .wiki.scraper import collect_item_material_categories
+        mat_data = collect_item_material_categories(client, on_progress=click.echo)
+        with GameDB(output) as db:
+            mats = db.backfill_item_materials(mat_data)
+            click.echo(f"  {mats} item materials backfilled")
+
+        click.echo("Collecting quest loot from wiki categories...")
+        from .wiki.scraper import collect_quest_loot
+        quest_loot = collect_quest_loot(client, on_progress=click.echo)
+        with GameDB(output) as db:
+            ql = db.insert_quest_loot(quest_loot)
+            click.echo(f"  {ql} quest loot links")
+
     # Populate stat sources (must run after enhancements are loaded)
     if "enhancements" in data_types:
         with GameDB(output) as db:
