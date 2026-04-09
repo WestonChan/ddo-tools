@@ -1093,8 +1093,8 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [x] Wire enhancement FID cache into build-db overlay — **DONE.** `_overlay_enhancement_localization()` in cli.py loads `fid_enhancement_lookup.json`, sets `dat_id` on matched enhancements. `dat_id TEXT` column added to `enhancements` table.
 - [x] Expand `stats` seed table with common enhancement stat names — **DONE.** Added 17 new stats: Positive/Negative Healing Amplification, Maximum Spell Points, Critical Damage Multiplier, Critical Threat Range, compound stats (Melee and Ranged Power, etc.), Poison Spell Power, Temporary Hit Points, Bard Songs, Movement Speed, Maximum Hit Points. Resolution improved from 37% to 48%.
 - [x] Enhancement rank disambiguation — **DONE.** Multi-rank enhancements now get one row per rank in `enhancement_ranks`. Rank 1 gets wiki description. Ranks 2+ get localization tooltips (when available from FID cache) or NULL placeholders. Per-rank bonuses from `+[1/2/3]` patterns already parsed by `_parse_enhancement_description`.
-- [ ] Manual override system for unparseable bonuses — add a `data/overrides.json` file where users can provide corrections for specific enhancement/item/augment bonuses that the parser got wrong or couldn't parse.
-- [ ] Decode composite bonus stats — some wiki enchantment descriptions reference composite stats like "Fortitude, Reflex, and Will Saving Throws vs. Traps" or "Armor Class and Armor Maximum Dexterity Bonus". These need to be split into individual bonus rows (one per stat) rather than stored as a single unparseable string. Add a composite-stat expansion step in the bonus writer.
+- [x] Manual override system for unparseable bonuses — add a `data/overrides.json` file where users can provide corrections for specific enhancement/item/augment bonuses that the parser got wrong or couldn't parse.
+- [x] Decode composite bonus stats — some wiki enchantment descriptions reference composite stats like "Fortitude, Reflex, and Will Saving Throws vs. Traps" or "Armor Class and Armor Maximum Dexterity Bonus". These need to be split into individual bonus rows (one per stat) rather than stored as a single unparseable string. Add a composite-stat expansion step in the bonus writer.
 
 ### Wiki data population (complete before pre-frontend gates)
 - [x] Populate feat_prereq_* tables from wiki — **DONE.** `_parse_feat_prerequisites()` in writers.py parses free-text prerequisite strings into 5 junction tables: feat_prereq_feats (required feats by name lookup), feat_prereq_stats (ability score minimums), feat_prereq_classes (class level requirements), feat_prereq_races (race restrictions), feat_prereq_skills (skill rank minimums). Also sets feats.min_bab from BAB patterns. Two-pass insertion: all feats first, then prereqs (so feat-to-feat lookups resolve).
@@ -1155,7 +1155,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
   - [x] `feat_exclusion_groups` (3 entries: SWF/TWF/THF combat styles)
   - [x] `item_materials` (55 distinct materials, FK updated)
   - [x] `crafting_option_bonuses` (419 links resolved from descriptions)
-  - [ ] Quest system: `quests`, `quest_loot`, `quest_flagging`, `adventure_packs`, `patrons`
+  - [x] Quest system: `quests` (559), `quest_loot` (2,771 from wiki categories), `quest_flagging` (55), `adventure_packs` (77), `patrons` (20)
   - Intentionally empty: `enhancement_prereq_races` (enforced via tree), `item_upgrades` (binary-only)
   1. **Field coverage**: verify all binary-decoded fields have corresponding DB columns and correct types
   2. **Enum alignment**: verify enum code-to-seed ID mappings are consistent
@@ -1176,7 +1176,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [x] DDO Wiki scraper — items (`ddo-data build-db --type items`)
 - [x] DDO Wiki scraper — feats (`ddo-data build-db --type feats`)
 - [x] DDO Wiki scraper — enhancements (`ddo-data build-db --type enhancements`)
-- [ ] DDO Wiki scraper — quests (item source tracking via wiki_url)
+- [x] DDO Wiki scraper — quests (item source tracking via quest_loot category scraping)
 - [x] DDO Wiki scraper — crafting systems (`ddo-data build-db --type crafting`). 8 systems: Cannith (262 enchantments with ML 1-34 scaling values + equipment slot assignments), Green Steel (39), Legendary Green Steel (33), Thunder-Forged (28), Alchemical (72), Dragontouched (101), Dinosaur Bone (73), Slave Lords (93)
 - [x] DDO Wiki scraper — augments (`ddo-data build-db --type augments`)
 - [x] DDO Wiki scraper — spells (`ddo-data build-db --type spells`)
