@@ -2323,6 +2323,78 @@ def backfill_item_materials(conn: sqlite3.Connection, material_data: dict[str, s
     return updated
 
 
+def discover_new_races(conn: sqlite3.Connection, wiki_race_names: list[str]) -> int:
+    """Insert races found in wiki categories but not in the seed.
+
+    Only creates stub rows (name only) for genuinely new races.
+    Skips index pages, speculation pages, and known aliases.
+    """
+    _SKIP = {"Races", "Racial Variant differences", "Kobold (speculation)"}
+    _ALIASES = {
+        "Drow": "Drow Elf",
+        "Sun Elf (Morninglord)": "Morninglord",
+    }
+
+    existing = set(r[0] for r in conn.execute("SELECT name FROM races").fetchall())
+    alias_targets = set(_ALIASES.values())
+
+    created = 0
+    for name in wiki_race_names:
+        if name in _SKIP:
+            continue
+        if name in existing:
+            continue
+        if _ALIASES.get(name) in existing:
+            continue
+        conn.execute("INSERT OR IGNORE INTO races (name) VALUES (?)", (name,))
+        created += 1
+        logger.info("Discovered new race from wiki: %s", name)
+
+    if created:
+        conn.commit()
+    return created
+
+
+def discover_new_classes(conn: sqlite3.Connection, wiki_class_names: list[str]) -> int:
+    """Insert classes found in wiki categories but not in the seed.
+
+    Only creates stub rows (name only) for genuinely new classes.
+    """
+    _SKIP = {"Classes", "Psion (speculation)"}
+
+    existing = set(r[0] for r in conn.execute("SELECT name FROM classes").fetchall())
+
+    created = 0
+    for name in wiki_class_names:
+        if name in _SKIP or name in existing:
+            continue
+        conn.execute("INSERT OR IGNORE INTO classes (name) VALUES (?)", (name,))
+        created += 1
+        logger.info("Discovered new class from wiki: %s", name)
+
+    if created:
+        conn.commit()
+    return created
+
+
+def discover_new_enhancement_trees(
+    conn: sqlite3.Connection, wiki_tree_names: list[str],
+) -> list[str]:
+    """Return enhancement tree page titles found in wiki categories but not in DB.
+
+    Does NOT insert -- returns the list so the caller can fetch and parse them.
+    """
+    existing = set(r[0] for r in conn.execute("SELECT name FROM enhancement_trees").fetchall())
+
+    new_titles = []
+    for title in wiki_tree_names:
+        name = title.replace(" enhancements", "").replace("_", " ")
+        if name not in existing:
+            new_titles.append(title)
+
+    return new_titles
+
+
 def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int:
     """Insert quest-to-item loot mappings from wiki category data.
 

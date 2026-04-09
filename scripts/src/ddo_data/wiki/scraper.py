@@ -527,6 +527,62 @@ def collect_set_bonuses(
 
 
 # ---------------------------------------------------------------------------
+# Seed discovery from categories
+# ---------------------------------------------------------------------------
+
+
+def discover_races_from_categories(
+    client: WikiClient,
+) -> list[str]:
+    """Return race names from Category:Races."""
+    return [
+        title for title in client.iter_category_members("Races", member_type="page")
+    ]
+
+
+def discover_classes_from_categories(
+    client: WikiClient,
+) -> list[str]:
+    """Return class names from Category:Classes."""
+    return [
+        title for title in client.iter_category_members("Classes", member_type="page")
+    ]
+
+
+def discover_enhancement_trees_from_categories(
+    client: WikiClient,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+) -> list[str]:
+    """Return enhancement tree page titles from wiki categories.
+
+    Walks Class_enhancements, Racial_enhancements, Universal_enhancements.
+    Filters to pages ending in " enhancements" (not history pages).
+    """
+    tree_pages: list[str] = []
+    seen: set[str] = set()
+
+    for parent in ("Class_enhancements", "Racial_enhancements"):
+        subcats = list(client.iter_category_members(parent, member_type="subcat"))
+        for subcat in subcats:
+            cat_name = subcat.removeprefix("Category:")
+            for page in client.iter_category_members(cat_name, member_type="page"):
+                if page.endswith(" enhancements") and "(history)" not in page and page not in seen:
+                    tree_pages.append(page)
+                    seen.add(page)
+
+    for page in client.iter_category_members("Universal_enhancements", member_type="page"):
+        if page.endswith(" enhancements") and page not in seen:
+            tree_pages.append(page)
+            seen.add(page)
+
+    if on_progress:
+        on_progress(f"    {len(tree_pages)} tree pages found in categories")
+
+    return tree_pages
+
+
+# ---------------------------------------------------------------------------
 # Item category backfill
 # ---------------------------------------------------------------------------
 

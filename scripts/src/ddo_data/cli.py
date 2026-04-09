@@ -873,6 +873,44 @@ def build_db(
             eg = db.populate_feat_exclusion_groups()
             click.echo(f"  {eg} feat exclusion group entries")
 
+    # --- Discover new seeded entities from wiki categories ---
+    click.echo("Checking wiki categories for new races/classes/trees...")
+    from .wiki.scraper import (
+        discover_races_from_categories,
+        discover_classes_from_categories,
+        discover_enhancement_trees_from_categories,
+    )
+    wiki_races = discover_races_from_categories(client)
+    wiki_classes = discover_classes_from_categories(client)
+    with GameDB(output) as db:
+        nr = db.discover_new_races(wiki_races)
+        nc = db.discover_new_classes(wiki_classes)
+        if nr or nc:
+            click.echo(f"  Discovered {nr} new races, {nc} new classes")
+        else:
+            click.echo("  No new races or classes")
+
+    if "enhancements" in data_types:
+        wiki_trees = discover_enhancement_trees_from_categories(client, on_progress=click.echo)
+        with GameDB(output) as db:
+            new_tree_titles = db.discover_new_enhancement_trees(wiki_trees)
+        if new_tree_titles:
+            click.echo(f"  Discovered {len(new_tree_titles)} new enhancement trees, collecting...")
+            from .wiki.parsers import parse_enhancement_tree_wikitext
+            new_trees = []
+            for title in new_tree_titles:
+                wt = client.get_wikitext(title)
+                if wt is None:
+                    continue
+                parsed = parse_enhancement_tree_wikitext(wt, title)
+                if parsed and parsed.get("enhancements"):
+                    parsed["type"] = "class"  # default; will be refined if needed
+                    new_trees.append(parsed)
+            if new_trees:
+                with GameDB(output) as db:
+                    count = db.insert_enhancement_trees(new_trees)
+                    click.echo(f"  Inserted {count} new enhancement trees")
+
     # --- Category-based backfill (runs after all entities are loaded) ---
 
     if "items" in data_types:

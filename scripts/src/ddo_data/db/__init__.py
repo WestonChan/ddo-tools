@@ -159,6 +159,18 @@ class GameDB:
         """Backfill material from wiki material categories."""
         return backfill_item_materials(self.conn, material_data)
 
+    def discover_new_races(self, wiki_race_names: list[str]) -> int:
+        """Insert new races found in wiki but not in seed."""
+        return discover_new_races(self.conn, wiki_race_names)
+
+    def discover_new_classes(self, wiki_class_names: list[str]) -> int:
+        """Insert new classes found in wiki but not in seed."""
+        return discover_new_classes(self.conn, wiki_class_names)
+
+    def discover_new_enhancement_trees(self, wiki_tree_names: list[str]) -> list[str]:
+        """Return tree page titles in wiki but not in DB."""
+        return discover_new_enhancement_trees(self.conn, wiki_tree_names)
+
     def validate(self) -> str:
         """Run post-import validation assertions.  Returns formatted report."""
         results = validate_database(self.conn)

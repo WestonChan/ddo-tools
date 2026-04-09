@@ -685,12 +685,17 @@ def test_build_db_creates_database(tmp_path) -> None:
         "ddo_data.wiki.scraper.collect_item_slot_categories": {},
         "ddo_data.wiki.scraper.collect_item_material_categories": {},
         "ddo_data.wiki.scraper.collect_quest_loot": [],
+        "ddo_data.wiki.scraper.discover_races_from_categories": [],
+        "ddo_data.wiki.scraper.discover_classes_from_categories": [],
+        "ddo_data.wiki.scraper.discover_enhancement_trees_from_categories": [],
     }
     db_patches = {
         "insert_items": 0, "insert_feats": 0, "insert_enhancement_trees": 0,
         "insert_set_bonus_effects": 0, "insert_augments": 0, "insert_spells": 0,
         "insert_filigrees": 0, "backfill_item_slots": 0,
         "backfill_item_materials": 0, "insert_quest_loot": 0,
+        "discover_new_races": 0, "discover_new_classes": 0,
+        "discover_new_enhancement_trees": [],
     }
     overlay_patches = [
         "ddo_data.cli._overlay_feat_binary_data",
@@ -734,6 +739,12 @@ def test_build_db_type_filter(tmp_path) -> None:
         stack.enter_context(patch("ddo_data.db.GameDB.backfill_item_slots", return_value=0))
         stack.enter_context(patch("ddo_data.db.GameDB.backfill_item_materials", return_value=0))
         stack.enter_context(patch("ddo_data.db.GameDB.insert_quest_loot", return_value=0))
+        stack.enter_context(patch("ddo_data.wiki.scraper.discover_races_from_categories", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.discover_classes_from_categories", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.discover_enhancement_trees_from_categories", return_value=[]))
+        stack.enter_context(patch("ddo_data.db.GameDB.discover_new_races", return_value=0))
+        stack.enter_context(patch("ddo_data.db.GameDB.discover_new_classes", return_value=0))
+        stack.enter_context(patch("ddo_data.db.GameDB.discover_new_enhancement_trees", return_value=[]))
 
         runner = CliRunner()
         result = runner.invoke(
