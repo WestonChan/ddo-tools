@@ -2292,8 +2292,8 @@ def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int
             skipped_item += 1
             continue
         conn.execute(
-            "INSERT OR REPLACE INTO quest_loot (quest_id, item_id, loot_type) VALUES (?, ?, ?)",
-            (quest_id, item_id, entry["loot_type"]),
+            "INSERT OR IGNORE INTO quest_loot (quest_id, item_id) VALUES (?, ?)",
+            (quest_id, item_id),
         )
         inserted += 1
 

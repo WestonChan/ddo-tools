@@ -529,11 +529,11 @@ def collect_set_bonuses(
 # ---------------------------------------------------------------------------
 
 # Parent categories and how to extract quest name from subcategory title
-_QUEST_LOOT_SOURCES: list[tuple[str, str, str]] = [
-    # (parent_category, suffix_to_strip, loot_type)
-    ("Chest_loot", " loot", "chest"),
-    ("Quest_rewards", " reward items", "reward"),
-    ("Raid_loot", " loot", "raid"),
+_QUEST_LOOT_SOURCES: list[tuple[str, str]] = [
+    # (parent_category, suffix_to_strip)
+    ("Chest_loot", " loot"),
+    ("Quest_rewards", " reward items"),
+    ("Raid_loot", " loot"),
 ]
 
 
@@ -545,16 +545,16 @@ def collect_quest_loot(
 ) -> list[dict]:
     """Collect quest-to-item loot mappings from wiki category trees.
 
-    Walks ``Chest_loot`` (617 subcats), ``Quest_rewards`` (57), and
-    ``Raid_loot`` (25).  Processes in order so that raid loot_type
-    overwrites chest for the same item+quest pair (handled by the writer).
+    Walks ``Chest_loot``, ``Quest_rewards``, and ``Raid_loot`` category
+    trees.  Whether an item is raid loot is derived from the quest it
+    drops in, not stored on the mapping.
 
-    Returns list of dicts with keys: quest_name, item_name, loot_type.
+    Returns list of dicts with keys: quest_name, item_name.
     """
     results: list[dict] = []
     count = 0
 
-    for parent_cat, suffix, loot_type in _QUEST_LOOT_SOURCES:
+    for parent_cat, suffix in _QUEST_LOOT_SOURCES:
         if on_progress:
             on_progress(f"  Walking Category:{parent_cat} ...")
 
@@ -580,7 +580,6 @@ def collect_quest_loot(
                 results.append({
                     "quest_name": quest_name,
                     "item_name": item_name,
-                    "loot_type": loot_type,
                 })
                 count += 1
                 if 0 < limit <= count:
@@ -589,7 +588,7 @@ def collect_quest_loot(
                     return results
 
         if on_progress:
-            on_progress(f"    {loot_type}: {sum(1 for r in results if r['loot_type'] == loot_type)} links so far")
+            on_progress(f"    {parent_cat}: {len(results)} links so far")
 
     if on_progress:
         on_progress(f"  Total: {len(results)} quest loot links")
