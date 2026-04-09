@@ -145,6 +145,144 @@ Naming conventions vary by entity type:
 
 Not all filenames follow these patterns -- always use the `icon` column value from the DB, not a constructed name.
 
+## Wiki Category Reference
+
+The DDO Wiki organizes content into thousands of categories. These are the most useful for programmatic data extraction, grouped by entity type. Use `allcategories` with `acprefix` to discover categories dynamically rather than hardcoding names.
+
+### Item categories
+
+**Top-level item taxonomy (`Items_by_*`):**
+
+| Category | Subcategories | Maps to |
+|----------|--------------|---------|
+| `Items_by_equipment_slot` | 9 top-level + 11 slot-specific (see below) | `items.equipment_slot` |
+| `Items_by_material` | 48 (Adamantine, Mithral, Cold Iron, etc.) | `items.material` |
+| `Items_by_minimum_level` | 42 (ML 0 through ML 34) | `items.minimum_level` |
+| `Items_by_effect` | 559 (Vorpal, Deception, Maiming, etc.) | `item_effects` |
+| `Items_by_ability_change` | 7 (STR/DEX/CON/INT/WIS/CHA + Well Rounded) | `item_bonuses` (ability stats) |
+| `Items_by_skill_change` | 28 (Balance, Bluff, Diplomacy, etc.) | `item_bonuses` (skill stats) |
+| `Items_by_bonus_type` | 6 (Artifact, Exceptional, Festive, Insightful, Profane, Quality) | `item_bonuses.bonus_type_id` |
+| `Items_by_augment_slot` | 9 (Blue, Colorless, Green, Moon, Orange, Purple, Red, Sun, Yellow) | `item_augment_slots` |
+| `Items_by_bind_status` | 4 (Binds to, Binds on, Drops on, Exclusive) | `items.binding` |
+| `Items_by_hand` | 1 (Main hand items) | `items.handedness` |
+| `Items_by_damage_type` | 3 (Good, Magic, Pierce) | `item_weapon_stats` |
+| `Items_by_enchantment` | 10 (Armor/Weapon/Jewelry/Shield/Clothing enchantments, etc.) | `item_bonuses` |
+| `Items_by_update` | per-update | Item discovery by game update |
+| `Items_by_location` | varies | Not currently mapped |
+
+**Equipment slot categories (flat item lists, namespace 500):**
+
+| Category | ~Count | DB slot name |
+|----------|--------|-------------|
+| `Trinket_items` | 569 | Trinket |
+| `Finger_items` | 728 | Ring |
+| `Head_items` | 502 | Head |
+| `Back_items` | 598 | Back |
+| `Neck_items` | 500 | Neck |
+| `Waist_items` | 388 | Waist |
+| `Wrist_items` | 404 | Wrists |
+| `Hand_items` | 365 | Hands |
+| `Feet_items` | 335 | Feet |
+| `Eye_items` | 369 | Goggles |
+| `Quiver_items` | 16 | Quiver |
+| `Cloth_items` | 750 | Cross-slot (robes, gloves, helms, wraps) |
+
+Missing slot categories (no category or empty): Body/Chest armor, Off-hand, Shoulder.
+
+**Per-stat bonus categories:**
+
+The wiki maintains categories like `{Stat}_items` with subcategories `{Stat} +{Value} items` encoding structured bonus data. Example: `Seeker_items` contains `Seeker +2 items` through `Seeker +15 items`, plus `Insightful_Seeker_items` and `Quality_Seeker_items` for bonus type variants. The `+` in URLs must be encoded as `%2B`.
+
+```
+https://ddowiki.com/api.php?action=query&list=categorymembers&cmtitle=Category:Seeker_%2B10_items&cmnamespace=500&cmlimit=500&format=json
+```
+
+**Clickie (item spell) categories:**
+
+`Clicky_items` has 316 spell-specific subcategories (e.g., `Haste_clicky_items`, `Fireball_clicky_items`). Each contains items with that clickie spell.
+
+### Quest categories
+
+| Category | Subcategories | Maps to |
+|----------|--------------|---------|
+| `Chest_loot` | 617 (one per quest) | `quest_loot` (loot_type='chest') |
+| `Quest_rewards` | 57 | `quest_loot` (loot_type='reward') |
+| `Raid_loot` | 25 | `quest_loot` (loot_type='raid') |
+| `Quests_by_adventure_pack` | 65 | `quests.pack_id` |
+| `Quests_by_patron` | 22 | `quests.patron_id` |
+| `Quests_by_level` | varies | `quests.level` |
+| `Quests_by_story_arc` | varies | Quest chains |
+| `Quests_requiring_flagging` | 21 pages | `quest_flagging` |
+
+The wiki page `Named_chest_loot` renders `Category:Chest_loot` via `{{Category listing}}`. Each subcategory (e.g., `A_Break_In_the_Ice_loot`) contains Item: pages. Strip suffix ` loot` or ` reward items` to get quest name.
+
+### Race and class categories
+
+| Category | Members | Maps to |
+|----------|---------|---------|
+| `Races` | 32 pages (base + iconic + variants) | `races` table |
+| `{Race}_feats` | per-race (e.g., `Elf_feats` = 5) | `race_auto_feats` |
+| `{Race}_enhancements` | per-race | Enhancement tree discovery |
+| `Classes` | class pages | `classes` table |
+| `Class_enhancements` | 15 subcats (one per base class) | Enhancement tree discovery |
+| `Racial_enhancements` | per-race subcats | Enhancement tree discovery |
+| `Universal_enhancements` | subcats | Enhancement tree discovery |
+| `Capstone_enhancements` | subcats | Enhancement tree discovery |
+
+### Spell categories
+
+| Category | Subcategories | Maps to |
+|----------|--------------|---------|
+| `Spells_by_class` | 19 (15 base + 4 archetypes) | `spell_class_levels` |
+| `Spells_by_school` | 10 (8 schools + Innate Attack + SLAs) | `spells.school_id` |
+| `Spells_by_metamagic` | 11 (Accelerate, Embolden, Empower, Empower healing, Enlarge, Eschew, Extend, Heighten, Intensify, Maximize, Quicken) | `spell_metamagics` |
+| `Spells_by_component` | 8 (Verbal, Somatic, Material, Focus, Divine Focus, etc.) | Not yet in DB |
+| `Spells_by_descriptor` | varies | Spell descriptors |
+| `Spells_by_effect` | varies | Spell effects |
+
+### Feat categories
+
+| Category | Subcategories | Maps to |
+|----------|--------------|---------|
+| `Feats_by_usage` | 3 (Active, Passive, Toggled) | `feats.is_passive/is_active` |
+| `Feats_by_source` | 10 (Class, Epic, Epic Destiny, Favor, Favor reward, Heroic, Item granted, Legendary, Past life, Racial) | Feat classification |
+| `Feats_by_effect` | varies | Feat effects |
+| `{Class}_bonus_feats` | per-class (e.g., `Fighter_bonus_feats`) | `feat_bonus_classes` |
+
+### Enhancement categories
+
+| Category | Subcategories |
+|----------|--------------|
+| `Enhancements` | 9 subcats (Capstone, Class, Racial, Universal, Historical, etc.) |
+| `Class_enhancements` | 15 per-class subcats |
+| `{Class}_enhancements` | Individual trees for that class |
+| `Enhancements_by_effect` | varies |
+
+### Discovery techniques
+
+**Check if a category exists for a given name:**
+```
+https://ddowiki.com/api.php?action=query&list=allcategories&aclimit=10&acprefix=Elf_feats&format=json
+```
+
+**Walk subcategories, then enumerate each:**
+```
+# Step 1: Get subcategories
+https://ddowiki.com/api.php?action=query&list=categorymembers&cmtitle=Category:Chest_loot&cmtype=subcat&cmlimit=500&format=json
+
+# Step 2: Get items in each subcategory
+https://ddowiki.com/api.php?action=query&list=categorymembers&cmtitle=Category:A_Break_In_the_Ice_loot&cmnamespace=500&cmtype=page&cmlimit=500&format=json
+```
+
+**Reverse lookup (what categories does a page belong to):**
+```
+https://ddowiki.com/api.php?action=query&prop=categories&titles=Item:Celestia&cllimit=500&format=json
+```
+
+**Parse structured data from category names:**
+Category names like `Seeker +10 items` encode stat=Seeker, value=10. `Insightful_Seeker_items` encodes bonus_type=Insightful, stat=Seeker. Use regex to extract these fields.
+
+
 ## Bulk Data Pages
 
 These wiki pages contain comprehensive lists useful for data scraping:
