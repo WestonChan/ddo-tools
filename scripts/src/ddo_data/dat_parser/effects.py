@@ -1209,6 +1209,22 @@ def parse_enchantment_string(text: str) -> dict | None:
         if stat:
             return {"value": value, "bonus_type": bonus_type, "stat": stat}
 
+    # Generic {{StatAlias|Value|BonusType}} — catches templates like {{Stunning|15}},
+    # {{Vertigo|10}}, {{Trip|8}} where the template name is a known stat alias.
+    generic_tmpl = _GENERIC_TEMPLATE_RE.search(text)
+    if generic_tmpl:
+        tmpl_name = generic_tmpl.group(1).strip()
+        tmpl_params = generic_tmpl.group(2) or ""
+        if tmpl_name.lower() in _STAT_ALIASES:
+            parts = [p.strip() for p in tmpl_params.split("|") if p.strip() and "=" not in p]
+            if parts:
+                value = _parse_int(parts[0])
+                if value is not None:
+                    raw_bonus_type = parts[1] if len(parts) > 1 else "Enhancement"
+                    bonus_type = _BONUS_TYPE_ALIASES.get(raw_bonus_type, raw_bonus_type)
+                    stat = str(_STAT_ALIASES[tmpl_name.lower()])
+                    return {"value": value, "bonus_type": bonus_type, "stat": stat}
+
     return None
 
 
@@ -1346,6 +1362,12 @@ _STAT_ALIASES: dict[str, str] = {
     "threat range": S.CRITICAL_THREAT_RANGE,
     "multiplier": S.CRITICAL_DAMAGE_MULTIPLIER,
     "sunder": S.SUNDER_DC,
+    "stunning": S.STUN_DC,
+    "stun": S.STUN_DC,
+    "vertigo": S.STUN_DC,
+    "trip": S.TRIP_DC,
+    "assassinate": S.ASSASSINATE_DC,
+    "tendon slice": S.TENDON_SLICE,
     "strength": S.STRENGTH,
     "your hp": S.HIT_POINTS,
     "your movement speed": S.MOVEMENT_SPEED,
@@ -1859,6 +1881,12 @@ def parse_effect_template(text: str) -> dict | None:
     name_lower = name.lower()
     if name_lower in _METADATA_TEMPLATES:
         return None
+
+    # Normalize effect names (wiki template name -> canonical effect name)
+    _EFFECT_ALIASES: dict[str, str] = {
+        "ghostbane": "Ghost Touch",
+    }
+    name = _EFFECT_ALIASES.get(name_lower, name)
 
     # Parse parameters, filtering out wiki noise (nocat=TRUE, prefix=..., etc.)
     params = []
