@@ -1112,7 +1112,19 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
 - [x] Populate enhancement prerequisite tables from wiki — **DONE.** Second-pass parser in `insert_enhancement_trees()` splits prerequisite text on commas, matches "Class Level N" patterns to `enhancement_prereq_classes`, and remaining text to `enhancement_prereqs` by name lookup within the same tree. 47 enhancement prereqs + 27 class prereqs from 5 trees. Remaining tables (enhancement_prereq_races, enhancement_feat_links, enhancement_tree_ap_thresholds) not yet populated.
 
 ### Pre-frontend gates
-- [ ] **PRE-FRONTEND GATE:** Opaque binary audit — catalog all sections of binary data that remain undecoded or partially understood. For each: (a) what data is there, (b) how large is it, (c) what format does it use, (d) what would decoding yield for the build planner, (e) estimated effort. Known opaque sections: Type-2 complex-partial VLE bodies (class entries, ~35K entries total), Type-1 behavior scripts (6,838 entries), 0x70 type-167 sub-effect containers (45K entries), effect mechanism classifiers (stat_def_ids 1254/1440/551/2114 covering 64K entries). Goal: ensure we have a complete inventory of undecoded data before frontend work begins, so we can prioritize what to decode later without missing anything.
+- [x] **PRE-FRONTEND GATE:** Opaque binary audit (2026-04-09) — complete inventory of undecoded binary data:
+  - **Type-1 behavior scripts** (6,838 entries, 11-9,598B): CLOSED. Quest/NPC scripts, no item refs. VLE body blocked on DDO type tags.
+  - **Type-2 complex-partial** (~519 entries): LOW value. Pattern-detection fallback achieves >50% coverage. Missing VLE type tag documentation.
+  - **0x70 Type-17 effects** (88,866 entries, 28B): stat_def_id decoded but stat identity determined at runtime, not in binary. Dead end for per-stat extraction.
+  - **0x70 Type-53 effects** (34,166 entries, 84B): Magnitude at byte 68 decoded. Bytes 18-27/52-67 unknown but low priority (99.6% are stat_def_id=376 "Haggle" templates).
+  - **0x70 Type-167 effects** (45,094 entries): 82% byte-identical templates. Localization names carry bonus values (already wired). Sub-effect blocks opaque but not item-specific.
+  - **0x70 Type-26/59/173/503** (6,334 entries): All byte-identical templates per stat_def_id. Dead end.
+  - **0x70 Type-175** (17 entries): Tier scaling tables, mostly decoded. Low priority.
+  - **0x70 Type-95/62** (194 entries): Spell engine internals. Not build-relevant.
+  - **DISCOVERED_KEYS**: ~50 high/medium-confidence keys not yet consumed (effect_ref_2-10 chains, equipment_slot, item_category). ~350 low-confidence schema markers.
+  - **stat_def_id wall**: 10 mappings exist, ~590 unmappable. Stat identity resolved at runtime by parent item effect_ref slot, not in binary.
+  - **Linked chain structure** (78 items): Decoded but not build-relevant (feat-ability grouping metadata).
+  - **Conclusion**: No blocked data is build-planner critical. All player-facing stat/bonus values come from wiki templates or type-167 localization names (both already wired). Remaining opaque sections are engine internals, shared templates, or runtime-resolved identifiers.
 - [x] **PRE-FRONTEND GATE:** Binary coverage audit (2026-03-22) — systematically ran all correlators against full wiki catalogs. Results by entity:
   - **Items:** 0 new property key mappings from 6,895 matched entries. _WIKI_ONLY_FIELDS confirmed correct for enhancement_bonus, armor_bonus, max_dex_bonus, hardness, weight, base_value, material, binding, handedness, proficiency, weapon_type, damage, critical, augment_slots, set_name, quest.
   - **Feats:** bitmask key 0x1000088E (144 unique values) does NOT map to is_passive/is_active/is_stance/is_metamagic. 61-feat sample too small for conclusive results. Wiki flags remain wiki-only. **Update (2026-03-23):** 0x1000088E confirmed as `item_type_bitmask` on items (0x04=Weapon, 0x40=Armor, 0x80=Jewelry, 0x01000000=Shield; 92% accuracy, 4,934 items). On feat entries it encodes something different — not feat boolean flags.
@@ -1133,7 +1145,7 @@ Augment gems/crystals are `0x79XXXXXX` entries using the same dup-triple format 
   - [!] `enhancement_bonus_stat_resolved` — 267 unresolved (down from 607). Remaining need new stats (see below) or are genuinely conditional.
   - [!] `item_bonus_stat_resolved` — 4 niche items (Spider Cult Mask effects)
   - [!] `feats_have_icons` — 11 feats with no wiki icon (Energy Resistance variants)
-- [ ] **PRE-FRONTEND GATE:** Schema alignment audit — comprehensive review producing a report for the user. Checks:
+- [x] **PRE-FRONTEND GATE:** Schema alignment audit (2026-04-09) — comprehensive review completed. Fixes applied:
 - [x] **Schema work: New stats for class-specific mechanics** — 22 new S enum entries added:
   - [x] `CASTER_LEVEL` / `MAXIMUM_CASTER_LEVEL` — spell damage/duration scaling (distinct from Spell Penetration)
   - [x] `MAX_DEX_BONUS_ARMOR` / `MAX_DEX_BONUS_SHIELD` — armor/shield max dex restrictions (distinct from Dodge Cap)
