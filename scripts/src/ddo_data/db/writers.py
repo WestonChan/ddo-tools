@@ -373,7 +373,7 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
     inserted = 0
 
     # Generic names that leak through from wiki parsing artifacts
-    _SKIP_NAMES = {"sets", "Armor", "Random Loot Deconstruct"}
+    _SKIP_NAMES = {"sets", "Armor", "Weapon", "Clothing", "Jewelry", "Shield", "Random Loot Deconstruct"}
 
     for item in items:
         name = item.get("name")

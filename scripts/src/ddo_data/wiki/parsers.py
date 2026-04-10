@@ -148,6 +148,75 @@ def clean_wikitext(value: str) -> str:
     return text.strip()
 
 
+# Binding template parser: {{Bind|BtA|BoA|...}} or {{Bind|BtC|BoE|...}}
+_BIND_TEMPLATE_RE = re.compile(r"\{\{[Bb]ind\|([^}]+)\}\}")
+
+# Primary binding: who is it bound to?
+_BIND_PRIMARY = {
+    "bta": "Bound to Account",
+    "btaoa": "Bound to Account",
+    "btc": "Bound to Character",
+    "no": "Unbound",
+    "unbound": "Unbound",
+}
+
+# Timing: when does it bind?
+_BIND_TIMING = {
+    "boa": "on Acquire",
+    "boe": "on Equip",
+}
+
+
+def _parse_binding(raw: str) -> str | None:
+    """Parse a wiki binding field into a canonical binding string.
+
+    Handles ``{{Bind|BtA|BoE}}`` templates and plain text.
+    Returns None for unrecognizable values.
+    """
+    if not raw or not raw.strip():
+        return None
+
+    # Try {{Bind|...}} template
+    m = _BIND_TEMPLATE_RE.search(raw)
+    if m:
+        params = [p.strip().lower() for p in m.group(1).split("|") if p.strip() and "=" not in p]
+        primary = None
+        timing = None
+        for p in params:
+            if p in _BIND_PRIMARY and primary is None:
+                primary = _BIND_PRIMARY[p]
+            elif p in _BIND_TIMING and timing is None:
+                timing = _BIND_TIMING[p]
+        if primary:
+            if timing:
+                return f"{primary} {timing}"
+            return primary
+        return None
+
+    # Try plain text: first check common combined abbreviations
+    text = clean_wikitext(raw).strip()
+    lower = text.lower()
+    _COMBINED = {
+        "btcoe": "Bound to Character on Equip",
+        "btcoa": "Bound to Character on Acquire",
+        "btaoe": "Bound to Account on Equip",
+        "btaoa": "Bound to Account on Acquire",
+        "btc": "Bound to Character",
+        "bta": "Bound to Account",
+        "boe": "Bound to Character on Equip",
+        "boa": "Bound to Account on Acquire",
+    }
+    if lower in _COMBINED:
+        return _COMBINED[lower]
+    if "bound to account" in lower:
+        return "Bound to Account"
+    if "bound to character" in lower:
+        return "Bound to Character"
+    if "unbound" in lower:
+        return "Unbound"
+    return None
+
+
 _NOPIC_RE = re.compile(r"\{\{[Nn]opic\|([^|}]+)")
 
 
@@ -274,6 +343,9 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
     # String fields
     # Field mappings: (output_key, [template_field_names...])
     # Multiple names support both old and current wiki template conventions.
+    # Binding gets special parsing ({{Bind|BtA|BoE}} templates)
+    item["binding"] = _parse_binding(fields.get("bind", ""))
+
     for key, field_names in [
         ("damage", ["damage"]),
         ("critical", ["crit", "critical"]),
@@ -281,7 +353,6 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
         ("proficiency", ["prof", "proficiency"]),
         ("handedness", ["hand", "handedness"]),
         ("material", ["material"]),
-        ("binding", ["bind"]),
         ("base_value", ["basevalue"]),
         ("quest", ["quest"]),
         ("set_name", ["set"]),

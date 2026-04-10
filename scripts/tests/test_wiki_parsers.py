@@ -211,6 +211,44 @@ def test_clean_wikitext_combined() -> None:
 
 
 # ---------------------------------------------------------------------------
+# _parse_binding tests
+# ---------------------------------------------------------------------------
+
+
+def test_parse_binding_template() -> None:
+    """{{Bind|...}} templates produce canonical binding strings."""
+    from ddo_data.wiki.parsers import _parse_binding
+
+    assert _parse_binding("{{Bind|BtA|BoA|1}}") == "Bound to Account on Acquire"
+    assert _parse_binding("{{Bind|BtC|BoE}}") == "Bound to Character on Equip"
+    assert _parse_binding("{{Bind|BtA}}") == "Bound to Account"
+    assert _parse_binding("{{Bind|No}}") == "Unbound"
+
+
+def test_parse_binding_abbreviations() -> None:
+    """Plain text abbreviations produce canonical binding strings."""
+    from ddo_data.wiki.parsers import _parse_binding
+
+    assert _parse_binding("BtCoE") == "Bound to Character on Equip"
+    assert _parse_binding("BtCoA") == "Bound to Character on Acquire"
+    assert _parse_binding("BtAoA") == "Bound to Account on Acquire"
+    assert _parse_binding("BtA") == "Bound to Account"
+    assert _parse_binding("BtC") == "Bound to Character"
+
+
+def test_parse_binding_garbage() -> None:
+    """Garbage values return None."""
+    from ddo_data.wiki.parsers import _parse_binding
+
+    assert _parse_binding(",") is None
+    assert _parse_binding("or") is None
+    assert _parse_binding("(Part 1)") is None
+    assert _parse_binding("from chest; otherwise") is None
+    assert _parse_binding("") is None
+    assert _parse_binding(None) is None
+
+
+# ---------------------------------------------------------------------------
 # parse_item_wikitext tests
 # ---------------------------------------------------------------------------
 
@@ -232,7 +270,7 @@ def test_parse_item_wikitext_weapon() -> None:
     assert item["material"] == "Steel"
     assert item["hardness"] == 39
     assert item["weight"] == 4.0
-    assert item["binding"] == "BtCoE"
+    assert item["binding"] == "Bound to Character on Equip"
     assert item["base_value"] == "1000pp"
     assert item["set_name"] == "Slave Lords"
     assert item["quest"] == "Slave Lord Crafting"

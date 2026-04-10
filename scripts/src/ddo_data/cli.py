@@ -1087,7 +1087,9 @@ def _overlay_item_binary_data(items: list[dict], ddo_path: Path) -> None:
         if bi:
             item["dat_id"] = bi["id"]
             # Overlay binary fields where wiki has None
-            for field in ("rarity", "equipment_slot", "item_category", "durability", "minimum_level"):
+            for field in ("rarity", "equipment_slot", "item_category", "durability", "minimum_level",
+                         "level", "cooldown_seconds", "internal_level", "tier_multiplier",
+                         "effect_value", "enchant_name", "enchant_suffix"):
                 if item.get(field) is None and bi.get(field) is not None:
                     item[field] = bi[field]
             matched += 1

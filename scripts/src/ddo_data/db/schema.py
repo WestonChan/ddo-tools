@@ -208,8 +208,7 @@ CREATE TABLE IF NOT EXISTS class_spells_known (               -- wt: from class 
 -- Item Materials -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS item_materials (
     id        INTEGER PRIMARY KEY,                               -- c: autoincrement
-    name      TEXT NOT NULL,                                      -- wt: material field; fl: fallback
-    dr_bypass TEXT                                                -- unpopulated
+    name      TEXT NOT NULL                                       -- wt: material field; fl: fallback
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_item_materials_name ON item_materials(name);
 
@@ -760,8 +759,7 @@ CREATE INDEX IF NOT EXISTS idx_set_bonus_items_item ON set_bonus_items(item_id);
 CREATE TABLE IF NOT EXISTS effects (
     id          INTEGER PRIMARY KEY,                             -- c: autoincrement
     name        TEXT NOT NULL,                                    -- wt: parsed from enchantment text
-    modifier    TEXT,                                             -- wt: modifier from effect template
-    description TEXT                                              -- unpopulated
+    modifier    TEXT                                               -- wt: modifier from effect template
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_effects_name_mod
     ON effects(name, COALESCE(modifier, ''));
