@@ -65,11 +65,11 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
       - name: Install Dependencies
-        run: uv pip install -e "scripts/.[dev]" --system
+        run: uv pip install -e "scripts/.[dev]"
       - name: Test
-        run: pytest scripts/
+        run: uv run --project scripts pytest scripts/
       - name: Validate Database
-        run: ddo-data validate-db public/data/ddo.db
+        run: uv run --project scripts ddo-data validate-db public/data/ddo.db
 
   build:
     name: Build
