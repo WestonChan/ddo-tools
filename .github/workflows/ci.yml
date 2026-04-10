@@ -65,7 +65,8 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
       - name: Install Dependencies
-        run: uv pip install -e "scripts/.[dev]"
+        working-directory: scripts
+        run: uv sync --extra dev
       - name: Test
         run: uv run --project scripts pytest scripts/
       - name: Validate Database
