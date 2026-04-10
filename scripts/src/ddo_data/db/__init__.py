@@ -7,7 +7,38 @@ from pathlib import Path
 
 from .schema import create_schema
 from .validate import format_validation, validate_database
-from .writers import insert_augments, insert_class_progression, insert_crafting, insert_crafting_options, insert_enhancement_trees, insert_feats, insert_filigrees, insert_items, populate_crafting_option_bonuses, populate_enhancement_exclusion_groups, populate_enhancement_feat_links, populate_enhancement_prereq_races, populate_enhancement_spell_links, populate_feat_exclusion_groups, populate_item_materials, populate_item_upgrades, populate_stat_sources, populate_weapon_types, seed_class_feat_data, seed_crafting_data, seed_quest_data, insert_set_bonus_effects, insert_spells
+from .writers import (
+    apply_overrides,
+    backfill_item_materials,
+    backfill_item_slots,
+    discover_new_classes,
+    discover_new_enhancement_trees,
+    discover_new_races,
+    insert_augments,
+    insert_class_progression,
+    insert_crafting,
+    insert_crafting_options,
+    insert_enhancement_trees,
+    insert_feats,
+    insert_filigrees,
+    insert_items,
+    insert_quest_loot,
+    insert_set_bonus_effects,
+    insert_spells,
+    populate_crafting_option_bonuses,
+    populate_enhancement_exclusion_groups,
+    populate_enhancement_feat_links,
+    populate_enhancement_prereq_races,
+    populate_enhancement_spell_links,
+    populate_feat_exclusion_groups,
+    populate_item_materials,
+    populate_item_upgrades,
+    populate_stat_sources,
+    populate_weapon_types,
+    seed_class_feat_data,
+    seed_crafting_data,
+    seed_quest_data,
+)
 
 __all__ = ["GameDB"]
 
