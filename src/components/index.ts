@@ -18,6 +18,14 @@ export {
   GearIcon,
   CheckIcon,
   ShieldBrandIcon,
+  WarningIcon,
+  CompareIcon,
+  ScrollIcon,
+  HammerIcon,
+  WandIcon,
+  BugIcon,
+  SearchIcon,
+  ListCheckIcon,
 } from './Icons'
 export { Tooltip, TooltipWrapper } from './Tooltip'
 export type { TooltipPlacement } from './Tooltip'
