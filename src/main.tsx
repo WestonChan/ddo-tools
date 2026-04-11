@@ -5,6 +5,11 @@ import { LoadingGate } from './app/LoadingGate'
 import { CharacterProvider } from './features/character'
 import './index.css'
 
+// Register service worker for ddo.db caching
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js')
+}
+
 // GitHub Pages SPA redirect recovery.
 // 404.html saves the original path to sessionStorage, then redirects here.
 // We restore it via replaceState so the router sees the correct URL.
