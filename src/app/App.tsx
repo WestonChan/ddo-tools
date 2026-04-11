@@ -1,10 +1,15 @@
 import AppSidebar from './AppSidebar'
+import { WarningBar } from './WarningBar'
+import type { BuildWarning } from './WarningBar'
 import { useLocalStorage, useRouter } from '../hooks'
 import {
   BuildSidePanel,
   CharacterView,
 } from '../features/character'
 import './App.css'
+
+// Placeholder: no warnings until validation engine is built
+const warnings: BuildWarning[] = []
 
 const VIEWS_WITH_STATS_PANEL = new Set(['overview', 'build-plan', 'gear'])
 
@@ -54,6 +59,7 @@ function App() {
         )}
       </div>
       {showRightPanel && <BuildSidePanel />}
+      <WarningBar warnings={warnings} onNavigate={navigate} />
     </div>
   )
 }
