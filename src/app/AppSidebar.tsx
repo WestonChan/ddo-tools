@@ -4,8 +4,6 @@ import {
   SwordShieldIcon,
   PersonIcon,
   BackpackIcon,
-  TreeIcon,
-  ConstellationIcon,
   ShieldBrandIcon,
   SunIcon,
   MoonIcon,
@@ -18,14 +16,13 @@ import {
 import { useTheme, THEMES, applyAccent, restoreAccent } from '../hooks'
 import './AppSidebar.css'
 
-export type View = 'build' | 'character' | 'gear' | 'enhancements' | 'destinies'
+import type { View } from '../hooks'
 
 const NAV_ITEMS: { view: View; label: string; Icon: React.FC }[] = [
-  { view: 'character', label: 'Character', Icon: PersonIcon },
-  { view: 'build', label: 'Build', Icon: SwordShieldIcon },
+  { view: 'characters', label: 'Character', Icon: PersonIcon },
+  { view: 'build-plan', label: 'Build', Icon: SwordShieldIcon },
   { view: 'gear', label: 'Gear', Icon: BackpackIcon },
-  { view: 'enhancements', label: 'Enhancements', Icon: TreeIcon },
-  { view: 'destinies', label: 'Epic Destinies', Icon: ConstellationIcon },
+  { view: 'settings', label: 'Settings', Icon: GearIcon },
 ]
 
 interface AppSidebarProps {
@@ -165,7 +162,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
         <div className="sidebar-top">
           <button
             className="sidebar-brand"
-            onClick={() => onViewChange('build')}
+            onClick={() => onViewChange('build-plan')}
             title="DDO Builder"
           >
             <ShieldBrandIcon />
