@@ -1,0 +1,124 @@
+/* --- Loading skeleton --- */
+.loading-gate-skeleton {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.skeleton-sidebar {
+  width: 56px;
+  background: var(--bg-panel);
+  border-right: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 0;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.skeleton-content {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-panel {
+  width: 280px;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.skeleton-block {
+  background: var(--bg-input);
+  border-radius: 4px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-brand {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.skeleton-nav {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+}
+
+.skeleton-heading {
+  height: 1.5rem;
+  width: 60%;
+}
+
+.skeleton-line {
+  height: 1rem;
+  width: 90%;
+}
+
+.skeleton-line.short {
+  width: 50%;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* --- Error screen --- */
+.loading-gate-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+}
+
+.loading-gate-error h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--danger);
+}
+
+.loading-gate-error-detail {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  max-width: 500px;
+  word-break: break-word;
+}
+
+.loading-gate-error-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+}
+
+.loading-gate-retry {
+  padding: 0.5rem 1.5rem;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease-out;
+}
+
+.loading-gate-retry:hover {
+  opacity: 0.85;
+}

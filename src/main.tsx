@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './app/App'
+import { LoadingGate } from './app/LoadingGate'
 import { CharacterProvider } from './features/character'
 import './index.css'
 
@@ -16,7 +17,9 @@ if (redirect) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <CharacterProvider>
-      <App />
+      <LoadingGate>
+        <App />
+      </LoadingGate>
     </CharacterProvider>
   </StrictMode>,
 )
