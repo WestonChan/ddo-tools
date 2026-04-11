@@ -59,6 +59,13 @@ pytest scripts/                  # Run Python tests
 - **Mock external dependencies:** Wiki API calls, binary file reads, and filesystem access should be mocked in tests. Use `unittest.mock.patch` with `contextlib.ExitStack` for multiple mocks.
 - **Don't skip tests:** If a test breaks due to your changes, fix the test — don't delete it.
 
+## Commits
+
+- **Atomic commits**: Each commit is a single logical change that passes lint (`npm run lint`) and builds (`npm run build`). No broken intermediate states.
+- **Feature branches**: Implementation work happens on feature branches (e.g., `navigation-refactor`). PR back to `main` when complete.
+- **Commit per step**: When following a multi-step implementation plan, each step gets its own commit. Don't batch unrelated changes.
+- **Tests pass**: All existing tests must pass before committing. New pure logic (stats engine, validation, etc.) must include vitest unit tests.
+
 ## Interaction Patterns
 
 - **Add/remove controls:** Left-click to add/increment, right-click to remove/decrement. This follows DDO in-game patterns (e.g. enhancement spending). Apply this convention to pip-based counters, stack selectors, and similar increment/decrement UI.

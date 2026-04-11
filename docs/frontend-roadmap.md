@@ -57,20 +57,52 @@ Comparing active:
 - **Compare active**: Second line appears `vs Wizard TR [swap][x]`. `[swap]` flips primary/comparison. `[x]` deactivates.
 - **Bottom bar**: Build warning indicator. Collapsed: `[!] 3 warnings`. Expands to show details with clickable links to the relevant feature (e.g., "2 feat slots empty (L6, L12) [Levels]"). Zero warnings: hides or shows checkmark.
 - **No horizontal tab bar** -- sidebar IS the tab bar, giving full height to content.
-- Hash routing: `#characters`, `#overview`, `#build-plan`, `#gear`, `#damage-calc`, `#farm-checklist`, `#debug/:entity`, `#settings`
+- Clean URL routing (History API): `/ddo-builder/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/debug/:entity`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
 
 ### Tech Stack
 - React 19 + TypeScript + Vite (keep existing)
-- **Zustand** -- state management (complex build state + localStorage persist)
-- **TanStack Router** -- type-safe nested routing
-- **No DnD library** -- use native HTML drag/drop API for sortable lists (pinned stats, spell order). Add library later if needs grow.
-- **Base UI** (@base-ui/react) -- headless UI primitives (dropdowns, modals, tooltips, tabs, popovers). v1.0 Feb 2026, by ex-Radix creators at MUI.
+- **Zustand** -- in-memory state management. Stores are hydrated from `user.db` on load. Mutations write through to `user.db`.
+- **Clean URL routing** -- History API (`pushState` / `popstate`), no library. URLs like `/ddo-builder/build-plan`. GitHub Pages SPA support via `404.html` redirect. Use `scrollIntoView()` for Build Plan section navigation.
+- **@dnd-kit/sortable** -- drag/drop for sortable lists (pinned stats, spell order). Handles touch, keyboard, and accessibility.
+- **Base UI** (@base-ui/react) -- headless UI primitives for new components (spell picker, enhancement tooltips, gear popovers). Adopt incrementally; don't migrate existing working components.
 - **@tanstack/react-virtual** -- virtual scrolling for large lists (9K+ items, 800+ feats)
-- **sql.js** -- in-browser SQLite (keep existing)
+- **sql.js** -- in-browser SQLite for both game data (`ddo.db`, read-only) and user data (`user.db`, read/write). Run in **Web Worker** mode to avoid blocking the UI thread during gear search queries.
 - CSS modules + CSS variables (keep existing, no Tailwind)
 - **Settings** includes:
   - Theme (dark/light) + accent color (existing)
-  - **Owned content**: Toggle which adventure packs, races, classes you own. Affects available items (filtered by `quest_loot` -> `adventure_packs`), races (`race_type`: free/premium/iconic), and classes. Defaults to "all content" so nothing is hidden unless the user restricts it. Stored in localStorage.
+  - **Owned content**: Toggle which adventure packs, races, classes you own. Affects available items (filtered by `quest_loot` -> `adventure_packs`), races (`race_type`: free/premium/iconic), and classes. Defaults to "all content" so nothing is hidden unless the user restricts it. Stored in `user.db`.
+
+### Interaction Conventions
+- **Rank-based controls** (enhancements, skills, reaper, destinies): Left-click to add/increment, right-click to remove/decrement (DDO in-game pattern). Shift+click as keyboard alternative for right-click.
+- **Selection controls** (spells, gear, buffs): Toggle via click. `[x]` = selected (click to remove), `[+]` = available (click to add).
+- **Sortable lists** (pinned stats, spell order): Drag via @dnd-kit/sortable. Arrow-key reorder for keyboard users.
+- **Minimum touch targets**: 44x44px bounding box for all interactive elements (enhancement nodes, skill cells, etc.).
+- **Tooltips**: Trigger on hover AND focus (not just hover). Base UI handles this for new components.
+
+### Loading, Error, and Empty States
+
+**Loading:**
+- **DB initialization**: Full-page skeleton UI with progress indicator while `ddo.db` and `user.db` load via sql.js. Feature views do not render until both DBs are ready (loading gate).
+- **Search queries**: Inline spinner after 150ms debounce. No full-page loading for searches.
+- **Wiki preview** (Debug view): Placeholder "Loading preview..." with skeleton.
+
+**Error:**
+- **DB load failure** (WASM not supported, fetch fails): Full-page error with retry button and browser compatibility note.
+- **Wiki fetch failure**: Inline "Preview unavailable" with retry link. Does not block the rest of the detail view.
+- **user.db persistence failure**: Warning banner "Changes may not be saved" with option to export user.db manually.
+
+**Empty:**
+- **New character, no builds**: "Start by creating a build. Choose a race and class to begin."
+- **Gear slot empty**: "Click to equip" (already specified).
+- **Empty buff categories**: Hidden (don't show "Spell Buffs:" with nothing underneath).
+- **Zero search results**: "No items match your filters." with suggestion to broaden search.
+- **No past lives**: Show the past life grid with all stacks at 0, not an empty state.
+
+### Responsive Behavior
+- **Stats panel**: Auto-collapses to a thin toggle strip below 1200px viewport width. User can re-expand.
+- **Enhancement trees**: Below 900px content width, switch to single-tree view with tab switching (instead of 7 trees side-by-side).
+- **Skills grid**: Horizontal scroll with frozen first column (level numbers) and frozen header row (skill names).
+- **Sidebar**: Already has collapsed mode (56px icons only). No further changes needed.
 
 ---
 
@@ -99,7 +131,7 @@ Full-page management UI for characters and builds. Accessed via the sidebar top 
 
 ### Build Plan (single scrollable page with 6 sections)
 
-Sidebar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to sections within one page. Contains everything about the build's character progression. Gear and Build Overview are separate sidebar views. Past Lives managed in Characters view. Each section on the page (Classes/Feats, Skills, Spells, Enhancements, Destinies) is individually collapsible via its section header. All collapsed states (sidebar group + each section) persisted in localStorage.
+Sidebar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to sections within one page. Contains everything about the build's character progression. Gear and Build Overview are separate sidebar views. Past Lives managed in Characters view. Each section on the page (Classes/Feats, Skills, Spells, Enhancements, Destinies) is individually collapsible via its section header. All collapsed states (sidebar group + each section) persisted in `user.db`. **Default states**: Level Progression and Enhancements expanded; Skills, Spells, Reaper, Destinies collapsed. Each collapsed header shows a progress summary (e.g., "Skills: 0/320 allocated", "Enhancements: 42/80 AP spent").
 
 ```
 +----------------------------------------------------------+
@@ -193,10 +225,12 @@ Sidebar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to 
 
 #### Skills (below Classes & Feats, within same collapsible)
 - Grid layout: columns = skills, rows = levels 1-20 only (no epic skill points)
-- Allocate points vertically per skill across all levels
-- Shows running total per skill at bottom
-- Cross-class skills visually distinguished (half ranks, dimmer)
+- **Interaction**: Left-click cell to add 1 rank, right-click to remove 1 rank (follows DDO convention). Shift+click as keyboard alternative for right-click.
+- Cross-class skills visually distinguished (dimmer background, shows "0.5" rank increments)
 - Remaining points shown per level row
+- Shows running total per skill at bottom (ranks + ability mod + gear + enhancement + other)
+- **Sticky headers**: First column (level numbers) and header row (skill names) stay fixed during scroll
+- Horizontal scroll for the 20+ skill columns
 - Data: `class_skills`, `skills`
 
 #### Spells (collapsible section)
@@ -588,11 +622,30 @@ The landing page for a build -- shows everything at a glance and lets you config
 
 
 ### Stats Computation Engine
-- Pure function: `computeStats(buildState) => { stats, breakdowns }`
-- Inputs: level plan + gear bonuses + enhancement bonuses + destiny bonuses + buffs + race + past lives
-- Applies DDO bonus stacking (highest per type wins, untyped stacks)
-- Tracks sources for breakdown display
-- Tracks which bonus types are present vs missing per stat
+
+Pipeline of pure functions, each stage memoized independently:
+
+```
+baseStats(race, pointBuy, tomes, levelUps)
+  -> classFeatures(classes, levels)
+  -> abilityMods(baseStats)             -- STR 18 -> +4 mod
+  -> enhancementBonuses(spends, trees)  -- resolve per-rank, filter by min_rank
+  -> gearBonuses(equippedItems)         -- join item_bonuses
+  -> setBonuses(equippedItems, sets)    -- piece-count thresholds
+  -> augmentBonuses(augments)
+  -> buffBonuses(activeBuffs, stances)  -- conditional on toggle state
+  -> pastLifeBonuses(pastLives)
+  -> stackBonuses(allSources)           -- typed: highest wins; untyped: all stack
+  -> derivedStats(stacked)              -- saves, AC, DCs, skill totals, spell power
+  -> { stats, breakdowns, missing }
+```
+
+- `stackBonuses` uses `bonus_types.stacks_with_self` from DB to determine stacking rules
+- Each stage returns `{ value, sources[] }` for breakdown display
+- `breakdowns` tracks active + suppressed bonuses per stat
+- `missing` lists bonus types not present per stat (Enhancement, Insightful, etc.)
+- Target: <16ms for full recomputation (one frame budget)
+- **Unit tests required** (vitest): typed stacking, untyped stacking, derived stat chains, edge cases (empty build, single class 20, all slots empty)
 
 ---
 
@@ -620,30 +673,65 @@ The landing page for a build -- shows everything at a glance and lets you config
 
 ---
 
-## Build State (localStorage per build)
+## Persistence (user.db -- SQLite)
 
-```typescript
-interface GearSet {
-  id: string
-  name: string                       // "Melee Set", "Casting Set"
-  equippedGear: Record<string, string | null>  // slot => item ID
-  augments: Record<string, Record<number, string | null>>
-  filigrees: (string | null)[]
-  trackedStats: string[]             // stat IDs tracked in gear stats panel
-}
+All user data lives in a second SQLite database (`user.db`) managed by sql.js. The game data DB (`ddo.db`) is read-only. `user.db` is persisted to IndexedDB between sessions. Import/export = download/upload the `user.db` file.
 
-interface BuildState {
-  levelPlan: LevelEntry[]           // levels: class, feats, skills, spells
-  gearSetIds: string[]              // references to saved GearSets
-  activeGearSetId: string | null    // which gear set is active for stats
-  enhancementSpends: { treeId: number; enhId: number; ranks: number }[]
-  destinySpends: { treeId: number; enhId: number; ranks: number }[]
-  activeDestiny: string | null
-  twists: string[]
-  activeBuffs: string[]
-  activeStances: Record<string, string>
-}
+**Schema** (relational, mirrors the game DB pattern):
+```sql
+-- user.db schema (versioned, migrations via SQL)
+CREATE TABLE schema_version (version INTEGER);
+
+CREATE TABLE characters (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, server TEXT,
+  notes TEXT, created_at TEXT, updated_at TEXT
+);
+CREATE TABLE lives (
+  id TEXT PRIMARY KEY, character_id TEXT REFERENCES characters(id),
+  name TEXT, race TEXT, status TEXT, -- 'completed'|'current'|'planned'
+  reincarnation_type TEXT, epic_feat_id TEXT, completed_at TEXT,
+  sort_order INTEGER, notes TEXT
+);
+CREATE TABLE life_classes (
+  life_id TEXT REFERENCES lives(id), class_id TEXT, levels INTEGER
+);
+CREATE TABLE life_feats (life_id TEXT REFERENCES lives(id), feat_id TEXT, level INTEGER);
+CREATE TABLE life_skills (life_id TEXT REFERENCES lives(id), skill_id TEXT, level INTEGER, ranks INTEGER);
+CREATE TABLE life_spells (life_id TEXT REFERENCES lives(id), spell_id TEXT, class_id TEXT, sort_order INTEGER);
+CREATE TABLE life_enhancements (
+  life_id TEXT REFERENCES lives(id), tree_id INTEGER, enhancement_id INTEGER, ranks INTEGER
+);
+CREATE TABLE life_destinies (
+  life_id TEXT REFERENCES lives(id), tree_id INTEGER, enhancement_id INTEGER, ranks INTEGER
+);
+CREATE TABLE life_buffs (life_id TEXT REFERENCES lives(id), buff_id TEXT, active INTEGER, stack_count INTEGER);
+CREATE TABLE life_stances (life_id TEXT REFERENCES lives(id), group_id TEXT, stance_id TEXT);
+CREATE TABLE untracked_lives (character_id TEXT, category TEXT, source_id TEXT, count INTEGER);
+
+CREATE TABLE gear_sets (
+  id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at TEXT, updated_at TEXT
+);
+CREATE TABLE gear_set_items (gear_set_id TEXT REFERENCES gear_sets(id), slot TEXT, item_id TEXT);
+CREATE TABLE gear_set_augments (gear_set_id TEXT REFERENCES gear_sets(id), slot TEXT, augment_index INTEGER, augment_id TEXT);
+CREATE TABLE gear_set_filigrees (gear_set_id TEXT REFERENCES gear_sets(id), slot_index INTEGER, filigree_id TEXT);
+CREATE TABLE gear_set_tracked_stats (gear_set_id TEXT REFERENCES gear_sets(id), stat_id TEXT);
+CREATE TABLE build_gear_sets (life_id TEXT REFERENCES lives(id), gear_set_id TEXT REFERENCES gear_sets(id), active INTEGER);
+
+CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE ui_state (key TEXT PRIMARY KEY, value TEXT); -- collapsed states, pinned stats, etc.
 ```
+
+**In-memory state** (Zustand stores, hydrated from `user.db` on load):
+```typescript
+// characterStore: characters[], selection, mutations
+// buildStore: current build's level plan, enhancements, destinies, buffs
+// gearStore: gear sets, equipped items, augments
+// comparisonStore: comparison target, deltas
+```
+
+Zustand stores are the source of truth for rendering. On mutation, write through to `user.db` (async, debounced for rapid changes like skill allocation). On load, hydrate stores from `user.db`.
+
+**Name limits**: Character names max 40 chars, build names max 60 chars, gear set names max 30 chars. Truncate with ellipsis in tight spaces (sidebar label, dropdowns).
 
 ---
 
@@ -720,9 +808,9 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
   - Accumulated in a corrections log (stored in localStorage)
   - Corrections log exportable as JSON file
   - Exported JSON matches the `overrides.json` format used by the data pipeline
-  - **Submit correction button**: Per-item. Before creating, searches GitHub API for existing open issues with same item name. If found, shows "Correction already submitted (#42)" with link. If not found, creates one GitHub issue (e.g., "Data correction: Legendary Crown of Tactics"). `data-correction` label. GitHub Action on issue creation:
-    - Checks if correction already in `overrides.json` → closes with "Already applied"
-    - Checks if duplicate open issue exists for same item → closes with "Duplicate of #N"
+  - **Submit correction button**: Per-item. Opens a pre-filled GitHub issue URL (`/issues/new?title=Data+correction:+Item+Name&body=...&labels=data-correction`). The user's own GitHub session handles auth (zero infrastructure needed). The pre-filled body includes the correction JSON and item context. GitHub Action on issue creation:
+    - Checks if correction already in `overrides.json` -> closes with "Already applied"
+    - Checks if duplicate open issue exists for same item -> closes with "Duplicate of #N"
     - Otherwise applies correction, merges into `overrides.json`, creates PR, closes issue
 
 ```
@@ -803,6 +891,8 @@ src/
 2. Add sidebar top build dropdown + compare icon
 3. Update hash routing
 4. Add bottom warning bar (collapsed indicator)
+4b. DB loading gate (skeleton UI until `ddo.db` + `user.db` ready)
+4c. Service worker for `ddo.db` caching (avoid 11MB fetch on every cold load)
 
 ### Phase 2: Debug / Data Browser
 5. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
@@ -813,16 +903,17 @@ src/
 ### Phase 3: Characters View & Build Context
 9. Character/build management, switching
 10. Past lives (stacking, placeholders, reincarnation)
-11. Tomes, import/export
+11. Tomes, import/export (export = download `user.db` file)
 12. Gear set management section
-13. `BuildProvider` wrapping all feature state
-14. localStorage persistence for build state + gear sets
+13. Zustand stores (characterStore, buildStore, gearStore) hydrated from `user.db`
+14. `user.db` schema, persistence to IndexedDB, write-through on mutations
 15. Owned content settings
 
 ### Phase 4: Stats Engine
-16. `computeStats.ts` + `bonusStacking.ts` + `statSources.ts`
+16. Stats pipeline: `computeStats.ts` (pipeline stages), `bonusStacking.ts`, `statSources.ts`
 17. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
 18. Breakdown popover, search, pin, stat highlight
+18b. **vitest unit tests** for stats engine (typed/untyped stacking, derived stats, edge cases)
 
 ### Phase 5: Build Plan (single scrollable page)
 19. Build header (race, point buy, base stats, tomes)
@@ -873,3 +964,4 @@ After each phase:
 - Playwright screenshot verification per CLAUDE.md
 - `npm run lint` + `npm run build` -- no errors
 - Feature-specific: can interact with the new UI (click, search, equip)
+- **Unit tests** (vitest) for pure logic: stats engine (Phase 4), AP validation (Phase 5), feat prereqs (Phase 5), gear stacking (Phase 6), build state migrations (Phase 3)
