@@ -12,9 +12,11 @@ function renderApp() {
 }
 
 describe('App', () => {
-  it('renders the breadcrumb with character info', () => {
+  it('renders the sidebar with navigation', () => {
     renderApp()
-    expect(screen.getByText('Thordak')).toBeInTheDocument()
+    // Sidebar renders with nav buttons (collapsed shows icons only)
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.length).toBeGreaterThanOrEqual(5)
   })
 
   it('renders collapsible sections', () => {

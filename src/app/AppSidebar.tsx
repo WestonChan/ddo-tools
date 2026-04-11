@@ -1,29 +1,85 @@
-import { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useRef } from 'react'
 import {
   SwordShieldIcon,
-  PersonIcon,
   BackpackIcon,
-  ShieldBrandIcon,
-  SunIcon,
-  MoonIcon,
+  PersonIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
   GearIcon,
-  CheckIcon,
+  ScrollIcon,
+  SkillsIcon,
+  SpellIcon,
+  TreeIcon2,
+  SkullIcon,
+  ConstellationIcon,
+  CalculatorIcon,
+  ListCheckIcon,
+  SearchIcon,
+  CompareIcon,
   TooltipWrapper,
 } from '../components'
-import { useTheme, THEMES, applyAccent, restoreAccent } from '../hooks'
+import {
+  useCharacter,
+  formatClassSummary,
+  formatRace,
+} from '../features/character'
+import type { View } from '../hooks'
 import './AppSidebar.css'
 
-import type { View } from '../hooks'
+// --- Navigation structure ---
 
-const NAV_ITEMS: { view: View; label: string; Icon: React.FC }[] = [
-  { view: 'characters', label: 'Character', Icon: PersonIcon },
-  { view: 'build-plan', label: 'Build', Icon: SwordShieldIcon },
-  { view: 'gear', label: 'Gear', Icon: BackpackIcon },
-  { view: 'settings', label: 'Settings', Icon: GearIcon },
+interface NavItem {
+  id?: string
+  view: View
+  label: string
+  Icon: React.FC
+}
+
+interface NavGroup {
+  id: string
+  label: string
+  items: NavItem[]
+}
+
+type SidebarEntry = NavItem | NavGroup | 'divider'
+
+function isGroup(entry: SidebarEntry): entry is NavGroup {
+  return typeof entry === 'object' && 'items' in entry
+}
+
+function isDivider(entry: SidebarEntry): entry is 'divider' {
+  return entry === 'divider'
+}
+
+const OVERVIEW_ITEM: NavItem = { view: 'overview', label: 'Build Overview', Icon: SwordShieldIcon }
+
+const MAIN_NAV: SidebarEntry[] = [
+  {
+    id: 'build-plan',
+    label: 'Build Plan',
+    items: [
+      { id: 'levels', view: 'build-plan', label: 'Level Plan', Icon: ScrollIcon },
+      { id: 'skills', view: 'build-plan', label: 'Skills', Icon: SkillsIcon },
+      { id: 'spells', view: 'build-plan', label: 'Spells', Icon: SpellIcon },
+      { id: 'enhancements', view: 'build-plan', label: 'Enhancements', Icon: TreeIcon2 },
+      { id: 'reaper', view: 'build-plan', label: 'Reaper', Icon: SkullIcon },
+      { id: 'destinies', view: 'build-plan', label: 'Destinies', Icon: ConstellationIcon },
+      { view: 'gear', label: 'Gear', Icon: BackpackIcon },
+    ],
+  },
+  'divider',
+  {
+    id: 'tools',
+    label: 'Tools',
+    items: [
+      { view: 'damage-calc', label: 'Damage Calc', Icon: CalculatorIcon },
+      { view: 'farm-checklist', label: 'Farm Checklist', Icon: ListCheckIcon },
+      { view: 'debug', label: 'Debug', Icon: SearchIcon },
+    ],
+  },
 ]
+
+// --- Component ---
 
 interface AppSidebarProps {
   activeView: View
@@ -32,123 +88,19 @@ interface AppSidebarProps {
   onToggleExpanded: () => void
 }
 
-function getActiveAccent(): string | null {
-  try {
-    const stored = localStorage.getItem('accent')
-    if (!stored) return null
-    return JSON.parse(stored).accent ?? null
-  } catch {
-    return null
-  }
-}
-
-function SettingsPanel({
-  theme,
-  onToggleTheme,
-  activeAccent,
-  onAccentChange,
-  onClose,
-  anchorRef,
-}: {
-  theme: 'dark' | 'light'
-  onToggleTheme: () => void
-  activeAccent: string | null
-  onAccentChange: (accent: string, hover: string) => void
-  onClose: () => void
-  anchorRef: React.RefObject<HTMLButtonElement | null>
-}) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
-
-  // Position relative to anchor button
-  useEffect(() => {
-    const btn = anchorRef.current
-    const panel = panelRef.current
-    if (!btn || !panel) return
-    const rect = btn.getBoundingClientRect()
-    const panelRect = panel.getBoundingClientRect()
-    const left = rect.right + 8
-    // Align bottom of panel with bottom of button, clamp to viewport
-    let top = rect.bottom - panelRect.height
-    top = Math.max(8, Math.min(top, window.innerHeight - panelRect.height - 8))
-    setPos({ top, left })
-  }, [anchorRef])
-
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (!panelRef.current?.contains(target) && !anchorRef.current?.contains(target)) {
-        onClose()
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [onClose, anchorRef])
-
-  return (
-    <div
-      ref={panelRef}
-      className="settings-panel"
-      style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' }}
-    >
-      <div className="settings-section">
-        <div className="settings-label">Theme</div>
-        <div className="settings-theme-toggle">
-          <button
-            className={`settings-theme-opt${theme === 'light' ? ' active' : ''}`}
-            onClick={() => {
-              if (theme !== 'light') onToggleTheme()
-            }}
-          >
-            <SunIcon /> Light
-          </button>
-          <button
-            className={`settings-theme-opt${theme === 'dark' ? ' active' : ''}`}
-            onClick={() => {
-              if (theme !== 'dark') onToggleTheme()
-            }}
-          >
-            <MoonIcon /> Dark
-          </button>
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <div className="settings-label">Accent Color</div>
-        <div className="settings-accent-grid">
-          {THEMES.map((t) => (
-            <button
-              key={t.name}
-              className={`settings-accent-swatch${activeAccent === t.accent ? ' selected' : ''}`}
-              onClick={() => onAccentChange(t.accent, t.hover)}
-            >
-              <span className="settings-accent-dot" style={{ background: t.accent }} />
-              <span className="settings-accent-name">{t.name}</span>
-              {activeAccent === t.accent && (
-                <span className="settings-accent-check">
-                  <CheckIcon />
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: AppSidebarProps) {
-  const { theme, toggle } = useTheme()
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [activeAccent, setActiveAccent] = useState<string | null>(getActiveAccent)
-  const settingsBtnRef = useRef<HTMLButtonElement>(null)
+  const { character: selected, activeBuild } = useCharacter()
 
-  useEffect(() => restoreAccent(), [])
+  function groupContainsActive(group: NavGroup): boolean {
+    return group.items.some((item) => item.view === activeView)
+  }
+
+  const buildLabel = activeBuild
+    ? `${selected.name}: ${formatRace(activeBuild.race)} ${formatClassSummary(activeBuild)}`
+    : selected.name
 
   return (
     <div className={`sidebar-wrapper${expanded ? ' expanded' : ''}`}>
-      {/* Toggle handle (outside aside so overflow:hidden doesn't clip it) */}
       <button
         className="sidebar-toggle"
         onClick={onToggleExpanded}
@@ -158,63 +110,153 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
       </button>
 
       <aside className={`app-sidebar${expanded ? ' expanded' : ''}`}>
-        {/* Brand mark */}
-        <div className="sidebar-top">
-          <button
-            className="sidebar-brand"
-            onClick={() => onViewChange('build-plan')}
-            title="DDO Builder"
-          >
-            <ShieldBrandIcon />
-          </button>
+        {/* Site name / brand */}
+        <div className="sidebar-brand">
+          {expanded && <span className="sidebar-brand-text">DDO Builder</span>}
         </div>
 
-        {/* Navigation icons */}
+        {/* Build Overview (prominent) */}
+        <NavButton
+          item={OVERVIEW_ITEM}
+          active={activeView === 'overview'}
+          expanded={expanded}
+          nested={false}
+          onViewChange={onViewChange}
+        />
+
+        {/* Main navigation */}
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map(({ view, label, Icon }) => (
-            <TooltipWrapper key={view} text={label} placement={expanded ? undefined : 'right'}>
-              <button
-                className={`sidebar-nav-btn${activeView === view ? ' active' : ''}`}
-                onClick={() => onViewChange(view)}
-              >
-                <Icon />
-                {expanded && <span className="sidebar-nav-label">{label}</span>}
-              </button>
-            </TooltipWrapper>
-          ))}
+          {MAIN_NAV.map((entry, i) => {
+            if (isDivider(entry)) {
+              return <div key={`divider-${i}`} className="sidebar-group-divider" />
+            }
+            if (isGroup(entry)) {
+              const hasActive = groupContainsActive(entry)
+              return (
+                <div key={entry.id} className="sidebar-group">
+                  {expanded ? (
+                    <span className={`sidebar-group-label${hasActive ? ' has-active' : ''}`}>
+                      {entry.label}
+                    </span>
+                  ) : (
+                    <div className="sidebar-group-divider" />
+                  )}
+                  {entry.items.map((item) => (
+                    <NavButton
+                      key={item.id || item.view}
+                      item={item}
+                      active={activeView === item.view}
+                      expanded={expanded}
+                      nested={expanded}
+                      onViewChange={onViewChange}
+                    />
+                  ))}
+                </div>
+              )
+            }
+            return (
+              <NavButton
+                key={entry.view}
+                item={entry}
+                active={activeView === entry.view}
+                expanded={expanded}
+                nested={false}
+                onViewChange={onViewChange}
+              />
+            )
+          })}
         </nav>
 
-        {/* Settings */}
+        {/* Bottom section: settings, then build info */}
         <div className="sidebar-bottom">
-          <TooltipWrapper text="Settings" placement={expanded ? undefined : 'right'}>
-            <button
-              ref={settingsBtnRef}
-              className={`sidebar-nav-btn sidebar-settings-btn${settingsOpen ? ' active' : ''}`}
-              onClick={() => setSettingsOpen(!settingsOpen)}
+          <div className="sidebar-bottom-divider" />
+
+          <NavButton
+            item={{ view: 'settings', label: 'Settings', Icon: GearIcon }}
+            active={activeView === 'settings'}
+            expanded={expanded}
+            nested={false}
+            onViewChange={onViewChange}
+          />
+
+          {/* Build / character info (very bottom) */}
+          {expanded ? (
+            <div
+              className={`sidebar-build-row${activeView === 'characters' ? ' active' : ''}`}
+              onClick={() => onViewChange('characters')}
             >
-              <GearIcon />
-              {expanded && <span className="sidebar-nav-label">Settings</span>}
-            </button>
-          </TooltipWrapper>
+              <div className="sidebar-build-top-line">
+                <PersonIcon />
+                <span className="sidebar-build-name">{selected.name}</span>
+                <TooltipWrapper text="Compare builds (coming soon)" placement="right">
+                  <button className="sidebar-compare-btn" disabled onClick={(e) => e.stopPropagation()}>
+                    <CompareIcon />
+                  </button>
+                </TooltipWrapper>
+              </div>
+              {activeBuild && (
+                <div className="sidebar-build-detail">
+                  {formatRace(activeBuild.race)} {formatClassSummary(activeBuild)}
+                </div>
+              )}
+            </div>
+          ) : (
+            <TooltipWrapper text={buildLabel} placement="right">
+              <div
+                className={`sidebar-build-row${activeView === 'characters' ? ' active' : ''}`}
+                onClick={() => onViewChange('characters')}
+              >
+                <PersonIcon />
+              </div>
+            </TooltipWrapper>
+          )}
         </div>
       </aside>
-
-      {settingsOpen &&
-        createPortal(
-          <SettingsPanel
-            theme={theme}
-            onToggleTheme={toggle}
-            activeAccent={activeAccent}
-            onAccentChange={(accent, hover) => {
-              applyAccent(accent, hover)
-              setActiveAccent(accent)
-            }}
-            onClose={() => setSettingsOpen(false)}
-            anchorRef={settingsBtnRef}
-          />,
-          document.body,
-        )}
     </div>
+  )
+}
+
+function NavButton({
+  item,
+  active,
+  expanded,
+  nested,
+  onViewChange,
+  className,
+}: {
+  item: NavItem
+  active: boolean
+  expanded: boolean
+  nested: boolean
+  onViewChange: (view: View) => void
+  className?: string
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null)
+
+  const classes = [
+    'sidebar-nav-btn',
+    active && 'active',
+    nested && 'nested',
+    className,
+  ].filter(Boolean).join(' ')
+
+  const button = (
+    <button
+      ref={btnRef}
+      className={classes}
+      onClick={() => onViewChange(item.view)}
+    >
+      <item.Icon />
+      {expanded && <span className="sidebar-nav-label">{item.label}</span>}
+    </button>
+  )
+
+  if (expanded) return button
+
+  return (
+    <TooltipWrapper text={item.label} placement="right">
+      {button}
+    </TooltipWrapper>
   )
 }
 

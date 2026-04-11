@@ -26,6 +26,12 @@ export {
   BugIcon,
   SearchIcon,
   ListCheckIcon,
+  SkillsIcon,
+  SpellIcon,
+  TreeIcon2,
+  SkullIcon,
+  DiamondIcon,
+  CalculatorIcon,
 } from './Icons'
 export { Tooltip, TooltipWrapper } from './Tooltip'
 export type { TooltipPlacement } from './Tooltip'
