@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [react()],
   base: '/ddo-builder/',
   optimizeDeps: {
-    exclude: ['sql.js'], // WASM asset — must not be pre-bundled by Vite
+    // sql.js JS module must be pre-bundled (CJS -> ESM conversion).
+    // The WASM binary is loaded separately via ?url import.
   },
   test: {
     globals: true,
