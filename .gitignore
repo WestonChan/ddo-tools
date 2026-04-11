@@ -55,6 +55,11 @@ screenshots/
 # Diagnostic scripts (throwaway investigation tools)
 scripts/diag_*.py
 
+# SQLite temp files
+*.db-shm
+*.db-wal
+*.db-journal
+
 # Misc
 *.log
 docs/.obsidian/
