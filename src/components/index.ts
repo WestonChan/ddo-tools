@@ -17,7 +17,6 @@ export {
   ConstellationIcon,
   GearIcon,
   CheckIcon,
-  ShieldBrandIcon,
   WarningIcon,
   CompareIcon,
   ScrollIcon,

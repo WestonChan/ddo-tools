@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { WarningIcon, CheckIcon, ChevronDownIcon } from '../components'
+import { TriangleAlert, Check, ChevronDown } from 'lucide-react'
 import type { View } from '../hooks'
 import './WarningBar.css'
 
@@ -21,7 +21,7 @@ export function WarningBar({ warnings, onNavigate }: WarningBarProps) {
     return (
       <div className="warning-bar warning-bar--ok">
         <div className="warning-bar-summary warning-bar-summary--ok">
-          <CheckIcon />
+          <Check size={14} />
           <span>No warnings</span>
         </div>
       </div>
@@ -31,11 +31,11 @@ export function WarningBar({ warnings, onNavigate }: WarningBarProps) {
   return (
     <div className={`warning-bar${expanded ? ' expanded' : ''}`}>
       <button className="warning-bar-summary" onClick={() => setExpanded(!expanded)}>
-        <WarningIcon />
+        <TriangleAlert size={14} />
         <span>
           {warnings.length} warning{warnings.length !== 1 ? 's' : ''}
         </span>
-        <ChevronDownIcon />
+        <ChevronDown size={12} />
       </button>
       {expanded && (
         <div className="warning-bar-list">

@@ -1,23 +1,23 @@
 import { useRef } from 'react'
 import {
-  SwordShieldIcon,
-  BackpackIcon,
-  PersonIcon,
-  ChevronRightIcon,
-  ChevronLeftIcon,
-  GearIcon,
-  ScrollIcon,
-  SkillsIcon,
-  SpellIcon,
-  TreeIcon2,
-  SkullIcon,
-  ConstellationIcon,
-  CalculatorIcon,
-  ListCheckIcon,
-  SearchIcon,
-  CompareIcon,
-  TooltipWrapper,
-} from '../components'
+  Swords,
+  ShieldHalf,
+  User,
+  ChevronRight,
+  ChevronLeft,
+  Settings,
+  Scroll,
+  TableProperties,
+  Sparkles,
+  GitBranch,
+  Skull,
+  Orbit,
+  Calculator,
+  ListChecks,
+  Search,
+  Columns2,
+} from 'lucide-react'
+import { TooltipWrapper } from '../components'
 import {
   useCharacter,
   formatClassSummary,
@@ -32,7 +32,7 @@ interface NavItem {
   id?: string
   view: View
   label: string
-  Icon: React.FC
+  Icon: React.FC<{ size?: number }>
 }
 
 interface NavGroup {
@@ -51,20 +51,24 @@ function isDivider(entry: SidebarEntry): entry is 'divider' {
   return entry === 'divider'
 }
 
-const OVERVIEW_ITEM: NavItem = { view: 'overview', label: 'Build Overview', Icon: SwordShieldIcon }
+function SkillsIcon(props: { size?: number }) {
+  return <TableProperties {...props} style={{ transform: 'scaleX(-1)' }} />
+}
+
+const OVERVIEW_ITEM: NavItem = { view: 'overview', label: 'Build Overview', Icon: Swords }
 
 const MAIN_NAV: SidebarEntry[] = [
   {
     id: 'build-plan',
     label: 'Build Plan',
     items: [
-      { id: 'levels', view: 'build-plan', label: 'Level Plan', Icon: ScrollIcon },
+      { id: 'levels', view: 'build-plan', label: 'Level Plan', Icon: Scroll },
       { id: 'skills', view: 'build-plan', label: 'Skills', Icon: SkillsIcon },
-      { id: 'spells', view: 'build-plan', label: 'Spells', Icon: SpellIcon },
-      { id: 'enhancements', view: 'build-plan', label: 'Enhancements', Icon: TreeIcon2 },
-      { id: 'reaper', view: 'build-plan', label: 'Reaper', Icon: SkullIcon },
-      { id: 'destinies', view: 'build-plan', label: 'Destinies', Icon: ConstellationIcon },
-      { view: 'gear', label: 'Gear', Icon: BackpackIcon },
+      { id: 'spells', view: 'build-plan', label: 'Spells', Icon: Sparkles },
+      { id: 'enhancements', view: 'build-plan', label: 'Enhancements', Icon: GitBranch },
+      { id: 'reaper', view: 'build-plan', label: 'Reaper', Icon: Skull },
+      { id: 'destinies', view: 'build-plan', label: 'Destinies', Icon: Orbit },
+      { view: 'gear', label: 'Gear', Icon: ShieldHalf },
     ],
   },
   'divider',
@@ -72,9 +76,9 @@ const MAIN_NAV: SidebarEntry[] = [
     id: 'tools',
     label: 'Tools',
     items: [
-      { view: 'damage-calc', label: 'Damage Calc', Icon: CalculatorIcon },
-      { view: 'farm-checklist', label: 'Farm Checklist', Icon: ListCheckIcon },
-      { view: 'debug', label: 'Debug', Icon: SearchIcon },
+      { view: 'damage-calc', label: 'Damage Calc', Icon: Calculator },
+      { view: 'farm-checklist', label: 'Farm Checklist', Icon: ListChecks },
+      { view: 'debug', label: 'Debug', Icon: Search },
     ],
   },
 ]
@@ -106,7 +110,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
         onClick={onToggleExpanded}
         title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
       >
-        {expanded ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        {expanded ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
       </button>
 
       <aside className={`app-sidebar${expanded ? ' expanded' : ''}`}>
@@ -115,7 +119,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
           {expanded && <span className="sidebar-brand-text">DDO Builder</span>}
         </div>
 
-        {/* Build Overview (prominent) */}
+        {/* Build Overview */}
         <NavButton
           item={OVERVIEW_ITEM}
           active={activeView === 'overview'}
@@ -172,7 +176,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
           <div className="sidebar-bottom-divider" />
 
           <NavButton
-            item={{ view: 'settings', label: 'Settings', Icon: GearIcon }}
+            item={{ view: 'settings', label: 'Settings', Icon: Settings }}
             active={activeView === 'settings'}
             expanded={expanded}
             nested={false}
@@ -186,11 +190,11 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
               onClick={() => onViewChange('characters')}
             >
               <div className="sidebar-build-top-line">
-                <PersonIcon />
+                <User size={18} />
                 <span className="sidebar-build-name">{selected.name}</span>
                 <TooltipWrapper text="Compare builds (coming soon)" placement="right">
                   <button className="sidebar-compare-btn" disabled onClick={(e) => e.stopPropagation()}>
-                    <CompareIcon />
+                    <Columns2 size={14} />
                   </button>
                 </TooltipWrapper>
               </div>
@@ -206,7 +210,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
                 className={`sidebar-build-row${activeView === 'characters' ? ' active' : ''}`}
                 onClick={() => onViewChange('characters')}
               >
-                <PersonIcon />
+                <User size={18} />
               </div>
             </TooltipWrapper>
           )}
@@ -246,7 +250,7 @@ function NavButton({
       className={classes}
       onClick={() => onViewChange(item.view)}
     >
-      <item.Icon />
+      <item.Icon size={18} />
       {expanded && <span className="sidebar-nav-label">{item.label}</span>}
     </button>
   )

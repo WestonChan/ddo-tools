@@ -15,6 +15,7 @@
     "playwright": "npx @playwright/mcp --port 8931 --output-dir screenshots"
   },
   "dependencies": {
+    "lucide-react": "^1.8.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sql.js": "^1.14.1"

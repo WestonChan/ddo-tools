@@ -7,7 +7,8 @@ import {
   getCurrentLifeNumber,
 } from '../utils'
 import { useCharacter } from '../hooks/useCharacter'
-import { ConfirmModal, StarIcon, PlusIcon } from '../../../components'
+import { ConfirmModal } from '../../../components'
+import { Star, Plus } from 'lucide-react'
 import { PastLifeStacks } from './PastLifeStacks'
 import { LifeHistory, type ReincarnateResult } from './LifeHistory'
 import './CharacterView.css'
@@ -54,7 +55,7 @@ function CharacterView() {
               className={`character-row row-interactive ${isActive ? 'active' : ''}`}
               onClick={() => selectCharacter(char.id)}
             >
-              <span className="character-marker">{isActive ? <StarIcon /> : ''}</span>
+              <span className="character-marker">{isActive ? <Star size={14} /> : ''}</span>
               <span className="character-name">{char.name}</span>
               <span className="character-server">{char.server}</span>
               <span className="character-class-summary">
@@ -71,7 +72,7 @@ function CharacterView() {
       </div>
       <div className="character-list-actions">
         <button className="btn-ghost">
-          <PlusIcon /> New Character
+          <Plus size={14} /> New Character
         </button>
         <button className="btn-ghost">Import JSON</button>
         <button

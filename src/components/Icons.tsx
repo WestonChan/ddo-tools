@@ -243,11 +243,3 @@ export function CalculatorIcon() {
     </svg>
   )
 }
-
-export function ShieldBrandIcon() {
-  return (
-    <svg width="1.5em" height="1.5em" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M12 2L4 6v5c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4zm0 2.18l6 3v4.82c0 4.53-3.13 8.79-6 9.94-2.87-1.15-6-5.41-6-9.94V7.18l6-3zM9.5 9v6h2v-2.5h1a2.5 2.5 0 0 0 0-5h-3zm2 1.5h1a1 1 0 1 1 0 2h-1v-2z" />
-    </svg>
-  )
-}

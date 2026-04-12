@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react'
 import type { Character, Life, PastLifeCounts } from '../types'
 import { PAST_LIFE_DEFS, type PastLifeDef } from '../data/pastLifeDefs'
 import { computeHistoryStacks, EPIC_SPHERE_LIST, formatBonusList } from '../utils'
-import { TooltipWrapper, ChevronDownIcon, ChevronRightIcon } from '../../../components'
+import { TooltipWrapper } from '../../../components'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useAddRemoveInput } from '../../../hooks'
 
 // --- Normal mode StackBar (existing behavior) ---
@@ -254,7 +255,7 @@ function BonusSummary({ bonuses }: { bonuses: ActiveBonus[] }) {
     <div className="bonus-summary">
       <div className="bonus-summary-header" onClick={() => setExpanded(!expanded)}>
         <span className="bonus-toggle">
-          {expanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
+          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </span>
         <span className="section-label">Active Bonuses ({bonuses.length})</span>
       </div>
