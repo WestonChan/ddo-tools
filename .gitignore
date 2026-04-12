@@ -45,6 +45,8 @@ htmlcov/
 .claude/
 .mcp.json
 .playwright-mcp/
+test-results/
+playwright-report/
 
 # Screenshots
 screenshots/
