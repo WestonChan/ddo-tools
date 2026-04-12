@@ -40,7 +40,7 @@ pytest scripts/                  # Run Python tests
 ## Conventions
 
 - **Frontend:** React + TypeScript + Vite. Use feature-based organization. Router basename is `/ddo-builder` (for GitHub Pages).
-- **Styling:** Dark theme with gold (#c9a848) accents. Plain CSS in component directories. See CSS section below.
+- **Styling:** Dark theme with gold (#c9a848) accents. Plain CSS in component directories. See `docs/styling.md`.
 - **Icons:** Use `lucide-react` for all icons. Pass `size` prop for sizing. Single-color, inherits `currentColor`.
 - **Python:** Package lives in `scripts/` with `pyproject.toml`. Use `click` for CLI commands. Type hints required.
 - **Data flow:** Python scripts extract game data → `public/data/ddo.db` (SQLite) or JSON files in `public/data/` → React app reads them at runtime.
@@ -53,27 +53,7 @@ pytest scripts/                  # Run Python tests
 
 ## Testing
 
-- **Always write tests** for new Python pipeline code (parsers, writers, scrapers, CLI commands).
-- **Test location:** `scripts/tests/` — mirrors the source structure (e.g., `test_db.py` for `db/writers.py`, `test_cli.py` for `cli.py`).
-- **Run tests:** `pytest scripts/` before committing. All tests must pass.
-- **What to test:**
-  - New writer functions (`insert_*`, `populate_*`, `backfill_*`) — verify row counts and spot-check data.
-  - New parser functions — test with representative wiki template strings and edge cases.
-  - New CLI commands — use `CliRunner` with mocked wiki/binary data (see existing `test_cli.py` patterns).
-  - Schema changes — ensure `create_schema()` succeeds and new tables/columns exist.
-- **Mock external dependencies:** Wiki API calls, binary file reads, and filesystem access should be mocked in tests. Use `unittest.mock.patch` with `contextlib.ExitStack` for multiple mocks.
-- **Don't skip tests:** If a test breaks due to your changes, fix the test — don't delete it.
-
-### Frontend Testing (vitest + @testing-library/react)
-
-- **Run tests:** `npx vitest run` before committing. Setup file: `src/test/setup.ts`.
-- **Test location:** Co-locate test files next to source: `useRouter.test.ts` next to `useRouter.ts`, `AppSidebar.test.tsx` next to `AppSidebar.tsx`.
-- **What to test:**
-  - Hooks with pure logic (routing, stats computation, validation) — test inputs/outputs directly.
-  - Components with interaction logic (sidebar nav, enhancement trees, skill grid) — use `@testing-library/react` to render and assert on behavior.
-  - Don't test simple presentational components that just render props.
-- **Mock sql.js:** For components that use `useDatabase`, mock the hook to return a test DB or stub data. Don't load the real WASM binary in tests.
-- **Playwright for visual verification:** Use Playwright MCP (per Visual Verification section) for layout and integration checks. vitest is for unit/component logic.
+Python: `pytest scripts/` -- Frontend: `npx vitest run` -- both must pass before committing. See `docs/testing.md` for conventions, mocking patterns, and what to test.
 
 ## Commits
 
@@ -84,15 +64,7 @@ pytest scripts/                  # Run Python tests
 
 ## CSS
 
-- **Plain CSS** with native nesting (no Sass/SCSS). All modern browsers support `&` nesting.
-- **BEM naming**: Block-Element-Modifier. `sidebar-nav-btn`, `sidebar-nav-btn--active`, `sidebar-build-row`. Use `--` for modifiers, `-` for multi-word blocks/elements.
-- **CSS custom properties** for shared values: colors in `index.css` `:root`, component-scoped vars (e.g., `--icon-col`) at the component root.
-- **Nesting**: Use native CSS nesting for states (`&:hover`, `&.active`), pseudo-elements (`&::before`), child selectors (`& > svg`), and parent-context overrides (`.app-sidebar:not(.expanded) &`). Note: `&-suffix` concatenation is NOT supported in native CSS (that's Sass only). Use separate selectors instead.
-- **Shared classes** for repeated patterns: e.g., `.sidebar-collapsible` for all text that fades on collapse.
-- **No `!important`**. Fix specificity issues with nesting or more specific selectors.
-- **Co-locate CSS** with components: `AppSidebar.css` next to `AppSidebar.tsx`.
-- **Design tokens** in `index.css`: `--bg`, `--accent`, `--text`, `--border`, etc. Always use tokens, never hardcode colors.
-- **Use variables** for repeated values: dimensions (`--icon-col`), timing (`--transition-speed`), spacing. If a value appears 3+ times, extract it.
+Plain CSS with native nesting, BEM naming, co-located with components. See `docs/styling.md` for full conventions, design tokens, and responsive breakpoints.
 
 ## Interaction Patterns
 
@@ -112,6 +84,8 @@ Screenshots are saved to `screenshots/` (gitignored). Use `browser_close` when f
 
 ## Reference Docs
 
+- `docs/styling.md` — CSS conventions, design tokens, BEM naming, responsive breakpoints, layout architecture
+- `docs/testing.md` — Python and frontend testing conventions, mocking patterns, what to test
 - `docs/ddowiki-api.md` — How to look up DDO game info from ddowiki.com via WebFetch
 - `docs/dat-format.md` — DDO installation path, `.dat` file details, and archive format
 - `docs/db-guidelines.md` — SQLite schema design rules: naming conventions, index strategy, enum decisions, DDL ordering
