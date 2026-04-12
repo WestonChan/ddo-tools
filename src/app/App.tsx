@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import AppSidebar from './AppSidebar'
 import { SettingsView } from './SettingsView'
 import { BottomBar } from './BottomBar'
@@ -16,7 +17,34 @@ const VIEWS_WITH_STATS_PANEL = new Set(['build-plan'])
 
 function App() {
   const { view, navigate } = useRouter()
-  const [sidebarExpanded, setSidebarExpanded] = useLocalStorage('ddo-sidebar-expanded', true)
+  const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-sidebar-expanded', true)
+  const [sidebarExpanded, setSidebarExpanded] = useState(() =>
+    window.innerWidth < 900 ? false : storedExpanded,
+  )
+
+  // Auto-collapse sidebar when viewport crosses below 900px,
+  // restore stored preference when crossing back above 900px
+  const prevWidth = useRef(window.innerWidth)
+  useEffect(() => {
+    function handleResize() {
+      const width = window.innerWidth
+      if (prevWidth.current >= 900 && width < 900) {
+        setSidebarExpanded(false)
+      }
+      if (prevWidth.current < 900 && width >= 900) {
+        setSidebarExpanded(storedExpanded)
+      }
+      prevWidth.current = width
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [storedExpanded])
+
+  function toggleSidebar() {
+    const next = !sidebarExpanded
+    setSidebarExpanded(next)
+    setStoredExpanded(next)
+  }
 
   const showRightPanel = VIEWS_WITH_STATS_PANEL.has(view)
   return (
@@ -26,7 +54,7 @@ function App() {
           activeView={view}
           onViewChange={navigate}
           expanded={sidebarExpanded}
-          onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
+          onToggleExpanded={toggleSidebar}
         />
 
         <div className="app-content">

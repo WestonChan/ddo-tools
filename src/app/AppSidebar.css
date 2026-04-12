@@ -37,16 +37,6 @@
   }
 }
 
-/* Backdrop: dims content when sidebar overlay is open. Hidden at wide widths. */
-.sidebar-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: var(--overlay-bg);
-  cursor: pointer;
-  z-index: 39;
-}
-
 /* --- Collapsible text --- */
 .sidebar-collapsible {}
 
@@ -408,55 +398,13 @@
   display: flex;
 }
 
-/* Overlay sidebar: hidden at wide widths, shown at narrow */
-.sidebar-overlay {
-  display: none;
-}
-
-/* Narrow viewports: icon-only grid sidebar, overlay for expanded */
-@media (max-width: 900px) {
-  /* Always hide text in the grid sidebar at narrow widths */
-  .app-sidebar .sidebar-collapsible,
-  .app-sidebar .sidebar-brand,
-  .app-sidebar .sidebar-group-label-text {
-    display: none;
-  }
-
-  .app-sidebar .sidebar-group-label::before {
-    display: none;
-  }
-
-  .app-sidebar .sidebar-collapse-btn .sidebar-nav-label {
-    display: none;
-  }
-
-  /* Show overlay when expanded */
-  .sidebar-overlay {
-    display: flex;
+/* --- Narrow viewport: expanded sidebar goes full-screen --- */
+@media (max-width: 599px) {
+  .app-sidebar.expanded {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 220px;
+    inset: 0;
     z-index: 40;
-    background: var(--bg-panel);
-    border-right: 1px solid var(--border);
-    box-shadow: 4px 0 16px var(--shadow-color);
-    flex-direction: column;
-    padding: 0.5rem 0 0 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .sidebar-backdrop {
-    display: block;
   }
 }
 
-@media (max-width: 600px) {
-  .sidebar-overlay {
-    width: 80vw;
-    max-width: 280px;
-  }
-}
 

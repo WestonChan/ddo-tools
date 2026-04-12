@@ -19,20 +19,22 @@ vi.mock('../features/character', () => ({
 }))
 
 const mockNavigate = vi.fn()
+const mockToggle = vi.fn()
 
-function renderSidebar() {
+function renderSidebar(expanded = true) {
   return render(
     <AppSidebar
       activeView="build-plan"
       onViewChange={mockNavigate}
-      expanded={true}
-      onToggleExpanded={() => {}}
+      expanded={expanded}
+      onToggleExpanded={mockToggle}
     />,
   )
 }
 
 beforeEach(() => {
   mockNavigate.mockClear()
+  mockToggle.mockClear()
 })
 
 describe('AppSidebar', () => {
@@ -61,7 +63,7 @@ describe('AppSidebar', () => {
     expect(screen.getByText('Debug')).toBeInTheDocument()
   })
 
-  it('renders character name in sidebar', () => {
+  it('renders character name', () => {
     renderSidebar()
     expect(screen.getByText('Thordak')).toBeInTheDocument()
   })
@@ -74,7 +76,6 @@ describe('AppSidebar', () => {
   it('navigates when a nav item is clicked', async () => {
     const user = userEvent.setup()
     renderSidebar()
-
     await user.click(screen.getByText('Gear'))
     expect(mockNavigate).toHaveBeenCalledWith('gear')
   })
@@ -82,11 +83,35 @@ describe('AppSidebar', () => {
   it('navigates to characters when character name is clicked', async () => {
     const user = userEvent.setup()
     renderSidebar()
-
     await user.click(screen.getByText('Thordak'))
     expect(mockNavigate).toHaveBeenCalledWith('characters')
   })
 
-  // Note: icon position stability (no vertical shift on collapse/expand) is verified
-  // via Playwright, not vitest. jsdom doesn't compute CSS layouts.
+  it('closes sidebar on navigate at narrow widths', async () => {
+    const original = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { value: 500, writable: true })
+
+    const user = userEvent.setup()
+    renderSidebar(true)
+    await user.click(screen.getByText('Gear'))
+
+    expect(mockNavigate).toHaveBeenCalledWith('gear')
+    expect(mockToggle).toHaveBeenCalled()
+
+    Object.defineProperty(window, 'innerWidth', { value: original, writable: true })
+  })
+
+  it('does not close sidebar on navigate at wide widths', async () => {
+    const original = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true })
+
+    const user = userEvent.setup()
+    renderSidebar(true)
+    await user.click(screen.getByText('Gear'))
+
+    expect(mockNavigate).toHaveBeenCalledWith('gear')
+    expect(mockToggle).not.toHaveBeenCalled()
+
+    Object.defineProperty(window, 'innerWidth', { value: original, writable: true })
+  })
 })

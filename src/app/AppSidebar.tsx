@@ -86,96 +86,74 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
     return group.items.some((item) => item.view === activeView)
   }
 
-  // Close overlay sidebar on nav when at narrow widths
+  // At narrow widths the expanded sidebar is full-screen; auto-close on navigate
   function handleNavigate(view: View) {
     onViewChange(view)
-    if (expanded && window.innerWidth <= 900) {
+    if (expanded && window.innerWidth < 600) {
       onToggleExpanded()
     }
   }
 
-  const sidebarContent = (forceExpanded?: boolean) => (
-    <>
-      <div className="sidebar-brand">
-        <span className={`sidebar-brand-text${forceExpanded ? '' : ' sidebar-collapsible'}`}>DDO<br />Builder</span>
-      </div>
-
-      <nav className="sidebar-nav">
-        {MAIN_NAV.map((entry) => {
-          if (isGroup(entry)) {
-            const hasActive = groupContainsActive(entry)
-            return (
-              <div key={entry.id} className="sidebar-group">
-                <span className={`sidebar-group-label${hasActive ? ' has-active' : ''}`}>
-                  <span className={`sidebar-group-label-text${forceExpanded ? '' : ' sidebar-collapsible'}`}>{entry.label}</span>
-                </span>
-                {entry.items.map((item, i) => {
-                  const isFirstMatch = entry.items.findIndex(it => it.view === item.view) === i
-                  return (
-                    <NavButton
-                      key={item.id || `${item.view}-${i}`}
-                      item={item}
-                      active={activeView === item.view && isFirstMatch}
-                      onViewChange={handleNavigate}
-                      forceExpanded={forceExpanded}
-                    />
-                  )
-                })}
-              </div>
-            )
-          }
-          return (
-            <NavButton
-              key={entry.view}
-              item={entry}
-              active={activeView === entry.view}
-              onViewChange={handleNavigate}
-              forceExpanded={forceExpanded}
-            />
-          )
-        })}
-      </nav>
-
-      <div className="sidebar-bottom">
-        <div className="sidebar-bottom-divider" />
-        <NavButton
-          item={{ view: 'settings', label: 'Settings', Icon: Settings }}
-          active={activeView === 'settings'}
-          onViewChange={handleNavigate}
-          forceExpanded={forceExpanded}
-        />
-        <div
-          className={`sidebar-build-row${activeView === 'characters' ? ' active' : ''}`}
-          onClick={() => handleNavigate('characters')}
-        >
-          <User size={18} />
-          <span className={`sidebar-nav-label${forceExpanded ? '' : ' sidebar-collapsible'}`}>{selected.name}</span>
-        </div>
-        <button className="sidebar-collapse-btn" onClick={onToggleExpanded}>
-          {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-          <span className={`sidebar-nav-label${forceExpanded ? '' : ' sidebar-collapsible'}`}>{expanded ? 'Collapse' : ''}</span>
-        </button>
-      </div>
-    </>
-  )
-
   return (
-    <>
-    {/* Grid sidebar (always rendered, collapsed at narrow widths) */}
     <aside className={`app-sidebar${expanded ? ' expanded' : ''}`}>
-      {sidebarContent()}
-    </aside>
+        <div className="sidebar-brand">
+          <span className="sidebar-brand-text sidebar-collapsible">DDO<br />Builder</span>
+        </div>
 
-    {/* Overlay copy (only at narrow widths when expanded) */}
-    {expanded && (
-      <>
-        <div className="sidebar-backdrop" onClick={onToggleExpanded} />
-        <aside className="sidebar-overlay">
-          {sidebarContent(true)}
-        </aside>
-      </>
-    )}
-    </>
+        <nav className="sidebar-nav">
+          {MAIN_NAV.map((entry) => {
+            if (isGroup(entry)) {
+              const hasActive = groupContainsActive(entry)
+              return (
+                <div key={entry.id} className="sidebar-group">
+                  <span className={`sidebar-group-label${hasActive ? ' has-active' : ''}`}>
+                    <span className="sidebar-group-label-text sidebar-collapsible">{entry.label}</span>
+                  </span>
+                  {entry.items.map((item, i) => {
+                    const isFirstMatch = entry.items.findIndex(it => it.view === item.view) === i
+                    return (
+                      <NavButton
+                        key={item.id || `${item.view}-${i}`}
+                        item={item}
+                        active={activeView === item.view && isFirstMatch}
+                        onViewChange={handleNavigate}
+                      />
+                    )
+                  })}
+                </div>
+              )
+            }
+            return (
+              <NavButton
+                key={entry.view}
+                item={entry}
+                active={activeView === entry.view}
+                onViewChange={handleNavigate}
+              />
+            )
+          })}
+        </nav>
+
+        <div className="sidebar-bottom">
+          <div className="sidebar-bottom-divider" />
+          <NavButton
+            item={{ view: 'settings', label: 'Settings', Icon: Settings }}
+            active={activeView === 'settings'}
+            onViewChange={handleNavigate}
+          />
+          <div
+            className={`sidebar-build-row${activeView === 'characters' ? ' active' : ''}`}
+            onClick={() => handleNavigate('characters')}
+          >
+            <User size={18} />
+            <span className="sidebar-nav-label sidebar-collapsible">{selected.name}</span>
+          </div>
+          <button className="sidebar-collapse-btn" onClick={onToggleExpanded}>
+            {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+            <span className="sidebar-nav-label sidebar-collapsible">{expanded ? 'Collapse' : ''}</span>
+          </button>
+        </div>
+      </aside>
   )
 }
 
@@ -183,12 +161,10 @@ function NavButton({
   item,
   active,
   onViewChange,
-  forceExpanded,
 }: {
   item: NavItem
   active: boolean
   onViewChange: (view: View) => void
-  forceExpanded?: boolean
 }) {
   return (
     <button
@@ -196,7 +172,7 @@ function NavButton({
       onClick={() => onViewChange(item.view)}
     >
       <item.Icon size={18} />
-      <span className={`sidebar-nav-label${forceExpanded ? '' : ' sidebar-collapsible'}`}>{item.label}</span>
+      <span className="sidebar-nav-label sidebar-collapsible">{item.label}</span>
     </button>
   )
 }

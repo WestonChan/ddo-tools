@@ -35,36 +35,3 @@
   color: var(--text-muted);
   font-size: 0.9rem;
 }
-
-/* Medium: sidebar icon-only in grid, expands as overlay */
-@media (max-width: 900px) {
-  .app,
-  .app.app--sidebar-collapsed,
-  .app.app--no-stats,
-  .app.app--sidebar-collapsed.app--no-stats {
-    grid-template-columns: 56px 1fr;
-  }
-
-  .app > .side-panel {
-    grid-column: 1 / -1;
-    height: auto;
-    max-height: 40vh;
-    overflow-y: auto;
-    border-left: none;
-    border-top: 1px solid var(--border);
-  }
-}
-
-/* Small mobile: icon sidebar only, no stats */
-@media (max-width: 600px) {
-  .app,
-  .app.app--sidebar-collapsed,
-  .app.app--no-stats,
-  .app.app--sidebar-collapsed.app--no-stats {
-    grid-template-columns: 56px 1fr;
-  }
-
-  .app > .side-panel {
-    display: none;
-  }
-}
