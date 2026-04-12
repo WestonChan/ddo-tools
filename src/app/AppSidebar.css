@@ -70,21 +70,19 @@
   width: 100%;
 }
 
-.sidebar-nav-btn {
+/* --- Shared sidebar row layout --- */
+.sidebar-nav-btn,
+.sidebar-build-row,
+.sidebar-collapse-btn {
   width: 100%;
   height: 40px;
   min-height: 40px;
   display: grid;
   grid-template-columns: var(--icon-col) 1fr;
   align-items: center;
-  border: none;
   background: transparent;
-  color: var(--text-secondary);
-  border-radius: 0;
   cursor: pointer;
-  position: relative;
   font-size: 1.1rem;
-  white-space: nowrap;
   transition:
     color 0.15s ease-out,
     background 0.15s ease-out;
@@ -97,6 +95,14 @@
     color: var(--text);
     background: var(--hover-bg);
   }
+}
+
+/* Nav buttons and build row share interactive styling */
+.sidebar-nav-btn,
+.sidebar-build-row {
+  color: var(--text-secondary);
+  position: relative;
+  white-space: nowrap;
 
   &.active {
     color: var(--accent);
@@ -112,6 +118,11 @@
       background: var(--accent);
     }
   }
+}
+
+.sidebar-nav-btn {
+  border: none;
+  border-radius: 0;
 }
 
 .sidebar-nav-label {
@@ -176,226 +187,12 @@
   background: var(--border);
 }
 
-/* --- Build row (same style as nav buttons) --- */
-.sidebar-build-row {
-  width: 100%;
-  height: 40px;
-  min-height: 40px;
-  display: grid;
-  grid-template-columns: var(--icon-col) 1fr;
-  align-items: center;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  position: relative;
-  font-size: 1.1rem;
-  white-space: nowrap;
-  transition:
-    color 0.15s ease-out,
-    background 0.15s ease-out;
-
-  & > svg {
-    justify-self: center;
-  }
-
-  &:hover {
-    color: var(--text);
-    background: var(--hover-bg);
-  }
-
-  &.active {
-    color: var(--accent);
-    background: var(--accent-bg-subtle);
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: var(--accent);
-    }
-  }
-}
-
 /* --- Collapse toggle --- */
 .sidebar-collapse-btn {
-  width: 100%;
-  height: 40px;
-  min-height: 40px;
   flex-shrink: 0;
-  display: grid;
-  grid-template-columns: var(--icon-col) 1fr;
-  align-items: center;
   border: none;
   border-top: 1px solid var(--border);
-  background: transparent;
   color: var(--text-muted);
-  cursor: pointer;
-  font-size: 1.1rem;
-  transition:
-    color 0.15s ease-out,
-    background 0.15s ease-out;
-
-  & > svg {
-    justify-self: center;
-  }
-
-  &:hover {
-    color: var(--text);
-    background: var(--hover-bg);
-  }
-}
-
-/* === Settings panel === */
-.settings-panel {
-  position: fixed;
-  width: 210px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-accent);
-  border-radius: 10px;
-  padding: 0.65rem;
-  box-shadow:
-    0 8px 32px var(--shadow-color),
-    0 0 0 1px var(--accent-glow);
-  z-index: 30;
-  animation: settings-in 0.18s ease-out;
-}
-
-@keyframes settings-in {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.settings-section {
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-
-  &:last-child {
-    padding-bottom: 0;
-    margin-bottom: 0;
-    border-bottom: none;
-  }
-}
-
-.settings-label {
-  font-family: var(--font-display);
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.4rem;
-}
-
-.settings-theme-toggle {
-  display: flex;
-  gap: 4px;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px;
-}
-
-.settings-theme-opt {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.5rem;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color 0.15s ease-out,
-    background 0.15s ease-out,
-    box-shadow 0.15s ease-out;
-
-  &:hover {
-    color: var(--text-secondary);
-    background: var(--hover-bg);
-  }
-
-  &.active {
-    color: var(--accent);
-    background: var(--accent-bg-subtle);
-    box-shadow: 0 0 6px var(--accent-glow);
-  }
-
-  & svg {
-    font-size: 0.85rem;
-  }
-}
-
-.settings-accent-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.settings-accent-swatch {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  width: 100%;
-  padding: 0.28rem 0.4rem;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.15s ease-out;
-
-  &:hover {
-    background: var(--hover-bg);
-
-    & .settings-accent-dot {
-      box-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
-    }
-  }
-
-  &.selected {
-    background: var(--accent-bg-subtle);
-
-    & .settings-accent-dot {
-      box-shadow:
-        0 0 0 2px var(--bg-panel),
-        0 0 0 3.5px currentColor;
-    }
-
-    & .settings-accent-name {
-      color: var(--accent);
-      font-weight: 600;
-    }
-  }
-}
-
-.settings-accent-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.08);
-  transition: box-shadow 0.15s ease-out;
-}
-
-.settings-accent-name {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.settings-accent-check {
-  margin-left: auto;
-  font-size: 0.7rem;
-  color: var(--accent);
-  display: flex;
 }
 
 /* --- Narrow viewport: expanded sidebar goes full-screen --- */
