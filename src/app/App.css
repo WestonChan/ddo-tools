@@ -1,22 +1,33 @@
+/* Shell: vertical stack filling the viewport */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* App area: 3-column grid filling available space */
 .app {
-  min-height: 100vh;
-  margin-left: 56px;
-  margin-right: 280px;
-  padding-bottom: 2.5rem;
-  transition: margin-left 0.2s ease-out;
-}
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
 
-.app.app--sidebar-expanded {
-  margin-left: 220px;
-}
+  &.app--sidebar-collapsed {
+    grid-template-columns: 56px 1fr 280px;
+  }
 
-.app.app--no-sidebar {
-  margin-right: 0;
+  &.app--no-stats {
+    grid-template-columns: 220px 1fr;
+  }
+
+  &.app--sidebar-collapsed.app--no-stats {
+    grid-template-columns: 56px 1fr;
+  }
 }
 
 .app-content {
-  display: flex;
-  flex-direction: column;
+  overflow: auto;
+  min-width: 0;
 }
 
 .section-placeholder {
@@ -25,8 +36,35 @@
   font-size: 0.9rem;
 }
 
-@media (max-width: 768px) {
-  .app {
-    margin-left: 0;
+/* Medium: sidebar icon-only in grid, expands as overlay */
+@media (max-width: 900px) {
+  .app,
+  .app.app--sidebar-collapsed,
+  .app.app--no-stats,
+  .app.app--sidebar-collapsed.app--no-stats {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .app > .side-panel {
+    grid-column: 1 / -1;
+    height: auto;
+    max-height: 40vh;
+    overflow-y: auto;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* Small mobile: icon sidebar only, no stats */
+@media (max-width: 600px) {
+  .app,
+  .app.app--sidebar-collapsed,
+  .app.app--no-stats,
+  .app.app--sidebar-collapsed.app--no-stats {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .app > .side-panel {
+    display: none;
   }
 }

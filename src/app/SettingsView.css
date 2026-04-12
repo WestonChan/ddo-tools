@@ -1,0 +1,122 @@
+.settings-view {
+  padding: 1.5rem;
+  max-width: 400px;
+}
+
+.settings-view-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+}
+
+.settings-view-section {
+  margin-bottom: 1.5rem;
+}
+
+.settings-view-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+/* Theme toggle */
+.settings-view-theme-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.settings-view-theme-opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color 0.15s ease-out,
+    background 0.15s ease-out;
+
+  &:hover {
+    color: var(--text-secondary);
+    background: var(--hover-bg);
+  }
+
+  &.active {
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+  }
+}
+
+/* Accent color grid */
+.settings-view-accent-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-view-accent-swatch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+
+  &.selected {
+    background: var(--accent-bg-subtle);
+  }
+}
+
+.settings-view-accent-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.08);
+}
+
+.settings-view-accent-swatch.selected .settings-view-accent-dot {
+  box-shadow:
+    0 0 0 2px var(--bg-panel),
+    0 0 0 3.5px currentColor;
+}
+
+.settings-view-accent-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.settings-view-accent-swatch.selected .settings-view-accent-name {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.settings-view-accent-check {
+  margin-left: auto;
+  color: var(--accent);
+  display: flex;
+}

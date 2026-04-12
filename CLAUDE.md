@@ -40,11 +40,16 @@ pytest scripts/                  # Run Python tests
 ## Conventions
 
 - **Frontend:** React + TypeScript + Vite. Use feature-based organization. Router basename is `/ddo-builder` (for GitHub Pages).
-- **Styling:** Dark theme with gold (#c9a848) accents. CSS modules or plain CSS in component directories.
-- **Icons:** Use inline SVG icons with flat color (no emoji). Keep icons single-color, inheriting `currentColor` where possible.
+- **Styling:** Dark theme with gold (#c9a848) accents. Plain CSS in component directories. See CSS section below.
+- **Icons:** Use `lucide-react` for all icons. Pass `size` prop for sizing. Single-color, inherits `currentColor`.
 - **Python:** Package lives in `scripts/` with `pyproject.toml`. Use `click` for CLI commands. Type hints required.
 - **Data flow:** Python scripts extract game data → `public/data/ddo.db` (SQLite) or JSON files in `public/data/` → React app reads them at runtime.
 - **Hosting:** GitHub Pages (static only). Auto-deployed via GitHub Actions on push to `main`.
+
+## Code Quality
+
+- **Keep code clean.** When working in a file, improve adjacent code that is messy, inconsistent, or overly complex. Don't leave a file worse than you found it.
+- **Refactor freely.** Extract shared logic, simplify conditionals, improve naming, remove dead code. If a refactor makes the code meaningfully better, do it — don't wait to be asked. Follow refactors wherever they lead; don't artificially limit scope.
 
 ## Testing
 
@@ -76,6 +81,18 @@ pytest scripts/                  # Run Python tests
 - **Feature branches**: Implementation work happens on feature branches (e.g., `navigation-refactor`). PR back to `main` when complete.
 - **Commit per step**: When following a multi-step implementation plan, each step gets its own commit. Don't batch unrelated changes.
 - **Tests pass**: All existing tests must pass before committing. New pure logic (stats engine, validation, etc.) must include vitest unit tests.
+
+## CSS
+
+- **Plain CSS** with native nesting (no Sass/SCSS). All modern browsers support `&` nesting.
+- **BEM naming**: Block-Element-Modifier. `sidebar-nav-btn`, `sidebar-nav-btn--active`, `sidebar-build-row`. Use `--` for modifiers, `-` for multi-word blocks/elements.
+- **CSS custom properties** for shared values: colors in `index.css` `:root`, component-scoped vars (e.g., `--icon-col`) at the component root.
+- **Nesting**: Use native CSS nesting for states (`&:hover`, `&.active`), pseudo-elements (`&::before`), child selectors (`& > svg`), and parent-context overrides (`.app-sidebar:not(.expanded) &`). Note: `&-suffix` concatenation is NOT supported in native CSS (that's Sass only). Use separate selectors instead.
+- **Shared classes** for repeated patterns: e.g., `.sidebar-collapsible` for all text that fades on collapse.
+- **No `!important`**. Fix specificity issues with nesting or more specific selectors.
+- **Co-locate CSS** with components: `AppSidebar.css` next to `AppSidebar.tsx`.
+- **Design tokens** in `index.css`: `--bg`, `--accent`, `--text`, `--border`, etc. Always use tokens, never hardcode colors.
+- **Use variables** for repeated values: dimensions (`--icon-col`), timing (`--transition-speed`), spacing. If a value appears 3+ times, extract it.
 
 ## Interaction Patterns
 

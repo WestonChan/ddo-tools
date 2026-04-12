@@ -1,9 +1,4 @@
 .side-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 280px;
   background: var(--bg-panel);
   border-left: 1px solid var(--border-accent);
   box-shadow: -4px 0 16px var(--shadow-color);

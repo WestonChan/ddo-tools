@@ -743,6 +743,7 @@ Zustand stores are the source of truth for rendering. On mutation, write through
 - Show breakdown by damage source
 - Full formula breakdown: dice, ability mod, enhancement, power, doublestrike/doubleshot, crit profile
 - **Comparison mode**: When active, show +/- deltas on each stat contributing to the calculation AND on the final damage output
+- **Back navigation**: When navigated from Build Overview (via ability card click), show a "Back to Build Overview" link at the top. Browser back button must also return to Build Overview correctly (ensured by `pushState` routing). The referrer context (which view the user came from) should be passed via navigation state so the link label is contextual (e.g., "Back to Build Overview").
 
 ### Item Optimizer
 - Target a stat to maximize (e.g., "maximize Spell Power")
@@ -893,6 +894,12 @@ src/
 4. Add bottom warning bar (collapsed indicator)
 4b. DB loading gate (skeleton UI until `ddo.db` + `user.db` ready)
 4c. Service worker for `ddo.db` caching (avoid 11MB fetch on every cold load)
+
+### Phase 1.5: Index / Landing View
+- Design a proper index/landing page for the app (what the user sees at `/ddo-builder/` or when no specific view is selected)
+- Should orient new users and provide quick access to key features
+- Consider: recent builds, quick-start actions, build summary cards, or a dashboard-style overview
+- Determine whether this is a distinct view or if an existing view (e.g., Characters, Build Overview) serves as the default
 
 ### Phase 2: Debug / Data Browser
 5. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets

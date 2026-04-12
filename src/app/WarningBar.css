@@ -1,11 +1,7 @@
 .warning-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 30;
-  background: var(--bg-panel);
+  flex-shrink: 0;
   border-top: 1px solid var(--border);
+  background: var(--bg-panel);
 }
 
 .warning-bar-summary {
@@ -21,29 +17,29 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease-out;
+
+  &:hover {
+    background: var(--hover-bg);
+  }
+
+  & svg:last-child {
+    margin-left: auto;
+    font-size: 0.65rem;
+    transition: transform 0.15s ease-out;
+  }
 }
 
-.warning-bar-summary:hover {
-  background: var(--hover-bg);
+.warning-bar.expanded .warning-bar-summary svg:last-child {
+  transform: rotate(180deg);
 }
 
 .warning-bar-summary--ok {
   cursor: default;
   color: var(--text-muted);
-}
 
-.warning-bar-summary--ok svg {
-  color: var(--accent);
-}
-
-.warning-bar-summary svg:last-child {
-  margin-left: auto;
-  font-size: 0.65rem;
-  transition: transform 0.15s ease-out;
-}
-
-.warning-bar.expanded .warning-bar-summary svg:last-child {
-  transform: rotate(180deg);
+  & svg {
+    color: var(--accent);
+  }
 }
 
 .warning-bar-list {
@@ -65,11 +61,11 @@
   cursor: pointer;
   text-align: left;
   transition: background 0.15s ease-out;
-}
 
-.warning-item:hover {
-  background: var(--hover-bg);
-  color: var(--text);
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text);
+  }
 }
 
 .warning-item--error {
@@ -78,12 +74,4 @@
 
 .warning-item--warning {
   color: var(--accent);
-}
-
-@media (max-width: 768px) {
-  .warning-bar {
-    left: 0;
-    right: 0;
-    bottom: 56px;
-  }
 }
