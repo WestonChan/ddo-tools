@@ -65,7 +65,7 @@ export function PlusIcon() {
   )
 }
 
-// --- Navigation icons for sidebar ---
+// --- Navigation icons for nav bar ---
 
 export function SwordShieldIcon() {
   return (

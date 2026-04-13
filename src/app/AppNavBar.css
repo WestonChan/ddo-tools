@@ -1,5 +1,5 @@
-/* === Sidebar === */
-.app-sidebar {
+/* === Nav Bar === */
+.app-nav-bar {
   --icon-col: 54px;
 
   background: var(--bg-panel);
@@ -15,7 +15,7 @@
 
   /* --- Collapsed state --- */
   &:not(.expanded) {
-    & .sidebar-collapsible {
+    & .nav-bar-collapsible {
       opacity: 0;
       max-width: 0;
       max-height: 0;
@@ -24,21 +24,21 @@
       overflow: hidden;
     }
 
-    & .sidebar-group-label-text {
+    & .nav-bar-group-label-text {
       opacity: 0;
       max-width: 0;
       padding: 0;
       overflow: hidden;
     }
 
-    & .sidebar-group-label::before {
+    & .nav-bar-group-label::before {
       display: none;
     }
   }
 }
 
 /* --- Scrollable content area (everything except collapse button) --- */
-.sidebar-scroll {
+.nav-bar-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -48,10 +48,10 @@
 }
 
 /* --- Collapsible text --- */
-.sidebar-collapsible {}
+.nav-bar-collapsible {}
 
 /* --- Brand --- */
-.sidebar-brand {
+.nav-bar-brand {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,7 +61,7 @@
   padding: 0 0.75rem;
 }
 
-.sidebar-brand-text {
+.nav-bar-brand-text {
   font-family: inherit;
   font-size: 1.1rem;
   font-weight: 700;
@@ -73,7 +73,7 @@
 }
 
 /* --- Character card: two build slots + divider --- */
-.sidebar-character-card {
+.nav-bar-character-card {
   --card-h: 140px;
 
   position: relative;
@@ -89,7 +89,7 @@
 }
 
 /* Swap button: small square overlapping the divider, centered at icon column */
-.sidebar-character-swap-btn {
+.nav-bar-character-swap-btn {
   position: absolute;
   top: 50%;
   left: calc((var(--icon-col) - 0.8rem - 24px) / 2);
@@ -116,7 +116,7 @@
   }
 }
 
-.sidebar-character-slot {
+.nav-bar-character-slot {
   flex: 1;
   display: grid;
   grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
@@ -139,26 +139,26 @@
 
 }
 
-.sidebar-character-slot--empty {
+.nav-bar-character-slot--empty {
   /* Compare button takes over the slot layout */
   display: block;
 }
 
 /* Reusable 1px horizontal divider */
-.sidebar-divider {
+.nav-bar-divider {
   height: 1px;
   background: var(--border);
   flex-shrink: 0;
 }
 
-.sidebar-character-info {
+.nav-bar-character-info {
   display: flex;
   flex-direction: column;
   min-width: 0;
   padding-right: 0.5rem;
 }
 
-.sidebar-character-name {
+.nav-bar-character-name {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text);
@@ -169,7 +169,7 @@
 }
 
 /* Compare button fills the entire slot with icon aligned to nav column */
-.sidebar-compare-btn {
+.nav-bar-compare-btn {
   display: grid;
   grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
   align-items: center;
@@ -196,7 +196,7 @@
 }
 
 /* Placeholder dashed lines in the compare slot (where race/classes would go) */
-.sidebar-character-build-placeholder {
+.nav-bar-character-build-placeholder {
   height: 0.65rem;
   margin: 1px 0;
   border-bottom: 1px dashed var(--border);
@@ -207,7 +207,7 @@
   }
 }
 
-.sidebar-character-build {
+.nav-bar-character-build {
   font-size: 0.65rem;
   color: var(--text-muted);
   line-height: 1.3;
@@ -217,17 +217,17 @@
 }
 
 /* --- Nav --- */
-.sidebar-nav {
+.nav-bar-items {
   display: flex;
   flex-direction: column;
   gap: 2px;
   width: 100%;
 }
 
-/* --- Shared sidebar row layout --- */
-.sidebar-nav-btn,
-.sidebar-build-row,
-.sidebar-collapse-btn {
+/* --- Shared nav bar row layout --- */
+.nav-bar-btn,
+.nav-bar-build-row,
+.nav-bar-collapse-btn {
   width: 100%;
   height: 40px;
   min-height: 40px;
@@ -252,8 +252,8 @@
 }
 
 /* Nav buttons and build row share interactive styling */
-.sidebar-nav-btn,
-.sidebar-build-row {
+.nav-bar-btn,
+.nav-bar-build-row {
   color: var(--text-secondary);
   position: relative;
   white-space: nowrap;
@@ -261,9 +261,9 @@
 
 /* Shared active state: accent color/background + 3px left accent bar.
    Parent elements must establish a positioning context (position: relative). */
-.sidebar-character-slot.active,
-.sidebar-nav-btn.active,
-.sidebar-build-row.active {
+.nav-bar-character-slot.active,
+.nav-bar-btn.active,
+.nav-bar-build-row.active {
   color: var(--accent);
   background: var(--accent-bg-subtle);
 
@@ -278,7 +278,7 @@
   }
 }
 
-.sidebar-nav-btn {
+.nav-bar-btn {
   border: none;
   border-radius: 0;
 }
@@ -286,17 +286,17 @@
 /* Compact variant for sub-items within a group (e.g., build-plan sections).
    Same 40px height as regular items (prevents icon shift on collapse).
    Uses bottom underline instead of left bar to differentiate from parent. */
-.sidebar-nav-btn--compact {
+.nav-bar-btn--compact {
   & > svg {
     opacity: 0.6;
   }
 
-  & .sidebar-nav-label {
+  & .nav-bar-label {
     font-size: 0.78rem;
     color: var(--text-muted);
   }
 
-  &:hover .sidebar-nav-label {
+  &:hover .nav-bar-label {
     color: var(--text);
   }
 
@@ -304,13 +304,13 @@
     opacity: 1;
   }
 
-  &.active .sidebar-nav-label {
+  &.active .nav-bar-label {
     color: var(--accent);
   }
 
 }
 
-.sidebar-nav-label {
+.nav-bar-label {
   font-size: 0.88rem;
   font-weight: 500;
   text-align: left;
@@ -319,11 +319,11 @@
 }
 
 /* --- Groups --- */
-.sidebar-group {
+.nav-bar-group {
   width: 100%;
 }
 
-.sidebar-group-label {
+.nav-bar-group-label {
   display: flex;
   align-items: center;
   height: 28px;
@@ -350,7 +350,7 @@
   }
 }
 
-.sidebar-group-label-text {
+.nav-bar-group-label-text {
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -360,7 +360,7 @@
 }
 
 /* --- Bottom section --- */
-.sidebar-bottom {
+.nav-bar-bottom {
   margin-top: auto;
   flex-shrink: 0;
   width: 100%;
@@ -368,16 +368,16 @@
 }
 
 /* --- Collapse toggle --- */
-.sidebar-collapse-btn {
+.nav-bar-collapse-btn {
   flex-shrink: 0;
   border: none;
   border-top: 1px solid var(--border);
   color: var(--text-muted);
 }
 
-/* --- Narrow viewport: expanded sidebar goes full-screen --- */
+/* --- Narrow viewport: expanded nav bar goes full-screen --- */
 @media (max-width: 599px) {
-  .app-sidebar.expanded {
+  .app-nav-bar.expanded {
     position: fixed;
     inset: 0;
     z-index: 40;

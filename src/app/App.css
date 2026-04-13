@@ -12,7 +12,7 @@
   display: grid;
   grid-template-columns: 220px 1fr 280px;
 
-  &.app--sidebar-collapsed {
+  &.app--nav-bar-collapsed {
     grid-template-columns: 56px 1fr 280px;
   }
 
@@ -20,7 +20,7 @@
     grid-template-columns: 220px 1fr;
   }
 
-  &.app--sidebar-collapsed.app--no-stats {
+  &.app--nav-bar-collapsed.app--no-stats {
     grid-template-columns: 56px 1fr;
   }
 }

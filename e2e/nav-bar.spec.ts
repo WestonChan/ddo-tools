@@ -1,42 +1,42 @@
 import { test, expect } from '@playwright/test'
 
-// Clear sidebar state before each test so breakpoint defaults are predictable
+// Clear nav bar state before each test so breakpoint defaults are predictable
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem('ddo-sidebar-expanded'))
+  await page.addInitScript(() => localStorage.removeItem('ddo-nav-bar-expanded'))
 })
 
 // --- Icon position stability ---
 
 test.describe('icon position stability', () => {
-  test('sidebar position does not shift when toggling expand/collapse', async ({ page }) => {
+  test('nav bar position does not shift when toggling expand/collapse', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    const expandedBox = await page.locator('.app-sidebar').boundingBox()
+    const expandedBox = await page.locator('.app-nav-bar').boundingBox()
     expect(expandedBox).not.toBeNull()
 
-    await page.click('.sidebar-collapse-btn')
+    await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
 
-    const collapsedBox = await page.locator('.app-sidebar').boundingBox()
+    const collapsedBox = await page.locator('.app-nav-bar').boundingBox()
     expect(collapsedBox).not.toBeNull()
 
-    // Sidebar should stay pinned at top-left
+    // Nav bar should stay pinned at top-left
     expect(collapsedBox!.x).toBe(expandedBox!.x)
     expect(collapsedBox!.y).toBe(expandedBox!.y)
   })
 
-  test('icons do not shift vertically when collapsing the sidebar', async ({ page }) => {
+  test('icons do not shift vertically when collapsing the nav bar', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-nav-btn').first().waitFor()
+    await page.locator('.nav-bar-btn').first().waitFor()
 
-    // Sidebar starts expanded (default stored pref removed, width >= 900)
+    // Nav bar starts expanded (default stored pref removed, width >= 900)
     const expandedPositions = await getIconCenters(page)
     expect(expandedPositions.length).toBeGreaterThan(0)
 
     // Collapse
-    await page.click('.sidebar-collapse-btn')
+    await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
 
     const collapsedPositions = await getIconCenters(page)
@@ -48,12 +48,12 @@ test.describe('icon position stability', () => {
     }
   })
 
-  test('icons do not shift horizontally when collapsing the sidebar', async ({ page }) => {
+  test('icons do not shift horizontally when collapsing the nav bar', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
     const expandedPositions = await getIconCenters(page)
-    await page.click('.sidebar-collapse-btn')
+    await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
     const collapsedPositions = await getIconCenters(page)
 
@@ -66,86 +66,86 @@ test.describe('icon position stability', () => {
 // --- Responsive breakpoints ---
 
 test.describe('responsive breakpoints', () => {
-  test('sidebar is expanded by default at >= 900px', async ({ page }) => {
+  test('nav bar is expanded by default at >= 900px', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    const sidebar = page.locator('.app-sidebar')
-    await expect(sidebar).toHaveClass(/expanded/)
+    const navBar = page.locator('.app-nav-bar')
+    await expect(navBar).toHaveClass(/expanded/)
     // Should show nav labels
-    await expect(page.locator('.sidebar-nav-label').first()).toBeVisible()
+    await expect(page.locator('.nav-bar-label').first()).toBeVisible()
   })
 
-  test('sidebar auto-collapses at < 900px', async ({ page }) => {
+  test('nav bar auto-collapses at < 900px', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 800 })
     await page.goto('/')
 
-    const sidebar = page.locator('.app-sidebar')
-    await expect(sidebar).not.toHaveClass(/expanded/)
+    const navBar = page.locator('.app-nav-bar')
+    await expect(navBar).not.toHaveClass(/expanded/)
   })
 
-  test('sidebar collapses when resizing from wide to narrow', async ({ page }) => {
+  test('nav bar collapses when resizing from wide to narrow', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
     // Resize below 900px
     await page.setViewportSize({ width: 800, height: 800 })
-    await expect(page.locator('.app-sidebar')).not.toHaveClass(/expanded/)
+    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
   })
 
-  test('sidebar re-expands when resizing back above 900px', async ({ page }) => {
+  test('nav bar re-expands when resizing back above 900px', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
     // Collapse by crossing threshold
     await page.setViewportSize({ width: 800, height: 800 })
-    await expect(page.locator('.app-sidebar')).not.toHaveClass(/expanded/)
+    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
 
     // Cross back above 900
     await page.setViewportSize({ width: 1000, height: 800 })
-    await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
   })
 
-  test('expanded sidebar is full-screen at < 600px', async ({ page }) => {
+  test('expanded nav bar is full-screen at < 600px', async ({ page }) => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Sidebar starts expanded at <600 (default pref is true)
-    await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
+    // Nav bar starts expanded at <600 (default pref is true)
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
-    // Sidebar should cover the full viewport (position: fixed, inset: 0)
-    const box = await page.locator('.app-sidebar').boundingBox()
+    // Nav bar should cover the full viewport (position: fixed, inset: 0)
+    const box = await page.locator('.app-nav-bar').boundingBox()
     expect(box).not.toBeNull()
     expect(box!.x).toBe(0)
     expect(box!.y).toBe(0)
     expect(box!.width).toBe(500)
   })
 
-  test('sidebar auto-closes on navigate at < 600px', async ({ page }) => {
+  test('nav bar auto-closes on navigate at < 600px', async ({ page }) => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Sidebar starts expanded at <600
-    await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
+    // Nav bar starts expanded at <600
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
     // Click a nav item
     await page.getByRole('button', { name: 'Gear' }).click()
 
-    // Sidebar should auto-close
-    await expect(page.locator('.app-sidebar')).not.toHaveClass(/expanded/)
+    // Nav bar should auto-close
+    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
   })
 
-  test('sidebar does NOT auto-close on navigate at >= 600px', async ({ page }) => {
+  test('nav bar does NOT auto-close on navigate at >= 600px', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
     await page.getByRole('button', { name: 'Gear' }).click()
 
-    // Sidebar should stay expanded
-    await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
+    // Nav bar should stay expanded
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
   })
 })
 
@@ -178,11 +178,11 @@ test.describe('layout', () => {
     await expect(page.locator('.side-panel')).not.toBeVisible()
   })
 
-  test('sidebar width is 220px when expanded', async ({ page }) => {
+  test('nav bar width is 220px when expanded', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    const box = await page.locator('.app-sidebar').boundingBox()
+    const box = await page.locator('.app-nav-bar').boundingBox()
     expect(box).not.toBeNull()
     expect(box!.width).toBe(220)
   })
@@ -191,7 +191,7 @@ test.describe('layout', () => {
     await page.setViewportSize({ width: 1200, height: 400 })
     await page.goto('/')
 
-    const collapse = page.locator('.sidebar-collapse-btn')
+    const collapse = page.locator('.nav-bar-collapse-btn')
     await expect(collapse).toBeVisible()
 
     // Collapse button should be within the viewport
@@ -204,30 +204,30 @@ test.describe('layout', () => {
     await page.setViewportSize({ width: 1200, height: 400 })
     await page.goto('/')
 
-    const card = page.locator('.sidebar-character-card')
+    const card = page.locator('.nav-bar-character-card')
     const box = await card.boundingBox()
     expect(box).not.toBeNull()
     expect(box!.height).toBeGreaterThan(50)
   })
 
-  test('sidebar nav scrolls at small viewport height', async ({ page }) => {
+  test('nav bar scrolls at small viewport height', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 400 })
     await page.goto('/')
-    await page.locator('.sidebar-nav-btn').first().waitFor()
+    await page.locator('.nav-bar-btn').first().waitFor()
 
     // The scroll wrapper should have overflow (scrollHeight > clientHeight)
     const isScrollable = await page.evaluate(() => {
-      const scroll = document.querySelector('.sidebar-scroll')
+      const scroll = document.querySelector('.nav-bar-scroll')
       return scroll ? scroll.scrollHeight > scroll.clientHeight : false
     })
     expect(isScrollable).toBe(true)
   })
 
-  test('sidebar width is 56px when collapsed', async ({ page }) => {
+  test('nav bar width is 56px when collapsed', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 800 })
     await page.goto('/')
 
-    const box = await page.locator('.app-sidebar').boundingBox()
+    const box = await page.locator('.app-nav-bar').boundingBox()
     expect(box).not.toBeNull()
     expect(box!.width).toBe(56)
   })
@@ -252,16 +252,16 @@ test.describe('navigation', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await page.locator('.sidebar-character-slot:not(.sidebar-character-slot--empty)').click()
+    await page.locator('.nav-bar-character-slot:not(.nav-bar-character-slot--empty)').click()
     await expect(page).toHaveURL(/\/characters$/)
   })
 
   test('character slot shows active accent bar on characters view', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-character-slot').first().click()
+    await page.locator('.nav-bar-character-slot').first().click()
 
-    const slot = page.locator('.sidebar-character-slot').first()
+    const slot = page.locator('.nav-bar-character-slot').first()
     await expect(slot).toHaveClass(/active/)
 
     // Active state should have a ::before accent bar
@@ -274,9 +274,9 @@ test.describe('navigation', () => {
   test('compare slot stays neutral when characters view is active', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-character-slot').first().click()
+    await page.locator('.nav-bar-character-slot').first().click()
 
-    const compareSlot = page.locator('.sidebar-character-slot--empty')
+    const compareSlot = page.locator('.nav-bar-character-slot--empty')
     await expect(compareSlot).not.toHaveClass(/active/)
   })
 
@@ -285,7 +285,7 @@ test.describe('navigation', () => {
     await page.goto('/')
 
     // Build Plan parent + Level Plan sub-item are both active on build-plan view
-    const activeBtns = page.locator('.sidebar-nav-btn.active')
+    const activeBtns = page.locator('.nav-bar-btn.active')
     await expect(activeBtns).toHaveCount(2)
     await expect(activeBtns.first()).toContainText('Build Plan')
     await expect(activeBtns.last()).toContainText('Level Plan')
@@ -298,11 +298,11 @@ test.describe('compact sub-items', () => {
   test('compact items are same height as regular items (prevents icon shift)', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-nav-btn').first().waitFor()
+    await page.locator('.nav-bar-btn').first().waitFor()
 
     const heights = await page.evaluate(() => {
-      const compact = document.querySelector('.sidebar-nav-btn--compact')
-      const regular = document.querySelector('.sidebar-nav-btn:not(.sidebar-nav-btn--compact)')
+      const compact = document.querySelector('.nav-bar-btn--compact')
+      const regular = document.querySelector('.nav-bar-btn:not(.nav-bar-btn--compact)')
       return {
         compact: compact?.getBoundingClientRect().height ?? 0,
         regular: regular?.getBoundingClientRect().height ?? 0,
@@ -317,10 +317,10 @@ test.describe('compact sub-items', () => {
   test('compact items have muted styling', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-nav-btn').first().waitFor()
+    await page.locator('.nav-bar-btn').first().waitFor()
 
     const opacity = await page.evaluate(() => {
-      const icon = document.querySelector('.sidebar-nav-btn--compact:not(.active) svg')
+      const icon = document.querySelector('.nav-bar-btn--compact:not(.active) svg')
       return icon ? getComputedStyle(icon).opacity : '1'
     })
 
@@ -336,27 +336,27 @@ test.describe('group hierarchy', () => {
     await page.goto('/')
 
     // The group should have both a label and a parent nav button
-    const group = page.locator('.sidebar-group').first()
-    await expect(group.locator('.sidebar-group-label-text')).toContainText('Build Plan')
-    await expect(group.locator('.sidebar-nav-btn').first()).toContainText('Build Plan')
+    const group = page.locator('.nav-bar-group').first()
+    await expect(group.locator('.nav-bar-group-label-text')).toContainText('Build Plan')
+    await expect(group.locator('.nav-bar-btn').first()).toContainText('Build Plan')
   })
 
   test('character card icon does not shift when collapsing', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-character-slot > svg').first().waitFor()
+    await page.locator('.nav-bar-character-slot > svg').first().waitFor()
 
     const expandedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.sidebar-character-slot > svg')
+      const icon = document.querySelector('.nav-bar-character-slot > svg')
       const rect = icon?.getBoundingClientRect()
       return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
     })
 
-    await page.click('.sidebar-collapse-btn')
+    await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
 
     const collapsedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.sidebar-character-slot > svg')
+      const icon = document.querySelector('.nav-bar-character-slot > svg')
       const rect = icon?.getBoundingClientRect()
       return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
     })
@@ -370,10 +370,10 @@ test.describe('group hierarchy', () => {
   test('swap button has border and background', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-character-swap-btn').waitFor()
+    await page.locator('.nav-bar-character-swap-btn').waitFor()
 
     const styles = await page.evaluate(() => {
-      const btn = document.querySelector('.sidebar-character-swap-btn')
+      const btn = document.querySelector('.nav-bar-character-swap-btn')
       if (!btn) return null
       const s = getComputedStyle(btn)
       return {
@@ -394,19 +394,19 @@ test.describe('group hierarchy', () => {
   test('swap button icon does not shift when collapsing', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-character-swap-btn svg').waitFor()
+    await page.locator('.nav-bar-character-swap-btn svg').waitFor()
 
     const expandedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.sidebar-character-swap-btn svg')
+      const icon = document.querySelector('.nav-bar-character-swap-btn svg')
       const rect = icon?.getBoundingClientRect()
       return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
     })
 
-    await page.click('.sidebar-collapse-btn')
+    await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
 
     const collapsedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.sidebar-character-swap-btn svg')
+      const icon = document.querySelector('.nav-bar-character-swap-btn svg')
       const rect = icon?.getBoundingClientRect()
       return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
     })
@@ -420,11 +420,11 @@ test.describe('group hierarchy', () => {
   test('character card icon aligns with nav icons when collapsed', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-nav-btn').first().waitFor()
+    await page.locator('.nav-bar-btn').first().waitFor()
 
     const positions = await page.evaluate(() => {
-      const cardIcon = document.querySelector('.sidebar-character-slot > svg')
-      const navIcon = document.querySelector('.sidebar-nav-btn svg')
+      const cardIcon = document.querySelector('.nav-bar-character-slot > svg')
+      const navIcon = document.querySelector('.nav-bar-btn svg')
       const cardRect = cardIcon?.getBoundingClientRect()
       const navRect = navIcon?.getBoundingClientRect()
       return {
@@ -443,9 +443,9 @@ test.describe('group hierarchy', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await expect(page.locator('.sidebar-character-card')).toBeVisible()
-    await expect(page.locator('.sidebar-character-name').first()).toContainText('Thordak')
-    await expect(page.locator('.sidebar-character-build').first()).toBeVisible()
+    await expect(page.locator('.nav-bar-character-card')).toBeVisible()
+    await expect(page.locator('.nav-bar-character-name').first()).toContainText('Thordak')
+    await expect(page.locator('.nav-bar-character-build').first()).toBeVisible()
   })
 })
 
@@ -453,7 +453,7 @@ test.describe('group hierarchy', () => {
 
 async function getIconCenters(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    const icons = document.querySelectorAll('.app-sidebar .sidebar-character-slot > svg, .app-sidebar .sidebar-nav-btn svg, .app-sidebar .sidebar-collapse-btn svg')
+    const icons = document.querySelectorAll('.app-nav-bar .nav-bar-character-slot > svg, .app-nav-bar .nav-bar-btn svg, .app-nav-bar .nav-bar-collapse-btn svg')
     return Array.from(icons).map((el) => {
       const rect = el.getBoundingClientRect()
       return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

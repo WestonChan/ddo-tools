@@ -22,7 +22,7 @@ export function LoadingGate({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <div className="loading-gate-skeleton">
-        <div className="skeleton-sidebar">
+        <div className="skeleton-nav-bar">
           <div className="skeleton-block skeleton-brand" />
           <div className="skeleton-block skeleton-nav" />
           <div className="skeleton-block skeleton-nav" />

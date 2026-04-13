@@ -17,7 +17,7 @@ function renderApp() {
 }
 
 describe('App', () => {
-  it('renders the sidebar with navigation', () => {
+  it('renders the nav bar with navigation', () => {
     renderApp()
     const buttons = screen.getAllByRole('button')
     expect(buttons.length).toBeGreaterThanOrEqual(5)
@@ -28,7 +28,7 @@ describe('App', () => {
     expect(screen.getByText(/Build Plan coming/)).toBeInTheDocument()
   })
 
-  it('renders the stats sidebar on build-plan view', () => {
+  it('renders the stats panel on build-plan view', () => {
     renderApp()
     expect(screen.getByText('Stats')).toBeInTheDocument()
     expect(screen.getByText('Feats')).toBeInTheDocument()

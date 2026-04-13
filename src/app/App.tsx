@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import AppSidebar from './AppSidebar'
+import AppNavBar from './AppNavBar'
 import { SettingsView } from './SettingsView'
 import { BottomBar } from './BottomBar'
 import type { BuildWarning } from './BottomBar'
@@ -17,25 +17,25 @@ const VIEWS_WITH_STATS_PANEL = new Set(['build-plan'])
 
 function App() {
   const { view, navigate } = useRouter()
-  const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-sidebar-expanded', true)
-  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+  const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-nav-bar-expanded', true)
+  const [navBarExpanded, setNavBarExpanded] = useState(() => {
     const width = window.innerWidth
     // 600-899: auto-collapse to icons. <600 and >=900: respect stored preference.
     if (width >= 600 && width < 900) return false
     return storedExpanded
   })
 
-  // Auto-collapse sidebar when viewport crosses below 900px,
+  // Auto-collapse nav bar when viewport crosses below 900px,
   // restore stored preference when crossing back above 900px
   const prevWidth = useRef(window.innerWidth)
   useEffect(() => {
     function handleResize() {
       const width = window.innerWidth
       if (prevWidth.current >= 900 && width < 900) {
-        setSidebarExpanded(false)
+        setNavBarExpanded(false)
       }
       if (prevWidth.current < 900 && width >= 900) {
-        setSidebarExpanded(storedExpanded)
+        setNavBarExpanded(storedExpanded)
       }
       prevWidth.current = width
     }
@@ -43,21 +43,21 @@ function App() {
     return () => window.removeEventListener('resize', handleResize)
   }, [storedExpanded])
 
-  function toggleSidebar() {
-    const next = !sidebarExpanded
-    setSidebarExpanded(next)
+  function toggleNavBar() {
+    const next = !navBarExpanded
+    setNavBarExpanded(next)
     setStoredExpanded(next)
   }
 
   const showRightPanel = VIEWS_WITH_STATS_PANEL.has(view)
   return (
     <div className="app-shell">
-      <div className={`app${sidebarExpanded ? '' : ' app--sidebar-collapsed'}${showRightPanel ? '' : ' app--no-stats'}`}>
-        <AppSidebar
+      <div className={`app${navBarExpanded ? '' : ' app--nav-bar-collapsed'}${showRightPanel ? '' : ' app--no-stats'}`}>
+        <AppNavBar
           activeView={view}
           onViewChange={navigate}
-          expanded={sidebarExpanded}
-          onToggleExpanded={toggleSidebar}
+          expanded={navBarExpanded}
+          onToggleExpanded={toggleNavBar}
         />
 
         <div className="app-content">

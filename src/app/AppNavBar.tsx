@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 import { useCharacter, formatClassSummary, formatRace } from '../features/character'
 import type { View } from '../hooks'
-import './AppSidebar.css'
+import './AppNavBar.css'
 
 // --- Navigation structure ---
 
@@ -39,9 +39,9 @@ interface NavGroup {
   items: NavItem[]
 }
 
-type SidebarEntry = NavItem | NavGroup
+type NavBarEntry = NavItem | NavGroup
 
-function isGroup(entry: SidebarEntry): entry is NavGroup {
+function isGroup(entry: NavBarEntry): entry is NavGroup {
   return typeof entry === 'object' && 'items' in entry
 }
 
@@ -49,7 +49,7 @@ function SkillsIcon(props: { size?: number }) {
   return <TableProperties {...props} style={{ transform: 'scaleX(-1)' }} />
 }
 
-const MAIN_NAV: SidebarEntry[] = [
+const MAIN_NAV: NavBarEntry[] = [
   {
     id: 'build-plan',
     label: 'Build Plan',
@@ -79,14 +79,14 @@ const MAIN_NAV: SidebarEntry[] = [
 
 // --- Component ---
 
-interface AppSidebarProps {
+interface AppNavBarProps {
   activeView: View
   onViewChange: (view: View) => void
   expanded: boolean
   onToggleExpanded: () => void
 }
 
-function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: AppSidebarProps) {
+function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: AppNavBarProps) {
   const { character: selected, activeBuild } = useCharacter()
   const raceLabel = activeBuild ? formatRace(activeBuild.race) : ''
   const classLabel = activeBuild ? formatClassSummary(activeBuild) : ''
@@ -95,7 +95,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
     return group.items.some((item) => item.view === activeView)
   }
 
-  // At narrow widths the expanded sidebar is full-screen; auto-close on navigate
+  // At narrow widths the expanded nav bar is full-screen; auto-close on navigate
   function handleNavigate(view: View) {
     onViewChange(view)
     if (expanded && window.innerWidth < 600) {
@@ -104,56 +104,56 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
   }
 
   return (
-    <aside className={`app-sidebar${expanded ? ' expanded' : ''}`}>
-      <div className="sidebar-scroll">
-        <div className="sidebar-brand">
-          <span className="sidebar-brand-text sidebar-collapsible">DDO<br />Builder</span>
+    <aside className={`app-nav-bar${expanded ? ' expanded' : ''}`}>
+      <div className="nav-bar-scroll">
+        <div className="nav-bar-brand">
+          <span className="nav-bar-brand-text nav-bar-collapsible">DDO<br />Builder</span>
         </div>
 
         <div
-          className="sidebar-character-card"
+          className="nav-bar-character-card"
           onClick={() => handleNavigate('characters')}
         >
-          <div className={`sidebar-character-slot${activeView === 'characters' ? ' active' : ''}`}>
+          <div className={`nav-bar-character-slot${activeView === 'characters' ? ' active' : ''}`}>
             <User size={18} />
-            <div className="sidebar-character-info sidebar-collapsible">
-              <span className="sidebar-character-name">{selected.name}</span>
-              {raceLabel && <span className="sidebar-character-build">{raceLabel}</span>}
-              {classLabel && <span className="sidebar-character-build">{classLabel}</span>}
+            <div className="nav-bar-character-info nav-bar-collapsible">
+              <span className="nav-bar-character-name">{selected.name}</span>
+              {raceLabel && <span className="nav-bar-character-build">{raceLabel}</span>}
+              {classLabel && <span className="nav-bar-character-build">{classLabel}</span>}
             </div>
           </div>
-          <div className="sidebar-divider" />
+          <div className="nav-bar-divider" />
           <button
-            className="sidebar-character-swap-btn"
+            className="nav-bar-character-swap-btn"
             title="Swap active and comparison build"
             onClick={(e) => e.stopPropagation()}
           >
             <ArrowUpDown size={14} />
           </button>
-          <div className="sidebar-character-slot sidebar-character-slot--empty">
+          <div className="nav-bar-character-slot nav-bar-character-slot--empty">
             <button
-              className="sidebar-compare-btn"
+              className="nav-bar-compare-btn"
               title="Compare builds (coming soon)"
               onClick={(e) => e.stopPropagation()}
             >
               <GitCompareArrows size={18} />
-              <div className="sidebar-character-info sidebar-collapsible">
-                <span className="sidebar-character-name">Compare</span>
-                <span className="sidebar-character-build-placeholder" />
-                <span className="sidebar-character-build-placeholder" />
+              <div className="nav-bar-character-info nav-bar-collapsible">
+                <span className="nav-bar-character-name">Compare</span>
+                <span className="nav-bar-character-build-placeholder" />
+                <span className="nav-bar-character-build-placeholder" />
               </div>
             </button>
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="nav-bar-items">
           {MAIN_NAV.map((entry) => {
             if (isGroup(entry)) {
               const hasActive = groupContainsActive(entry)
               return (
-                <div key={entry.id} className="sidebar-group">
-                  <span className={`sidebar-group-label${hasActive ? ' has-active' : ''}`}>
-                    <span className="sidebar-group-label-text sidebar-collapsible">{entry.label}</span>
+                <div key={entry.id} className="nav-bar-group">
+                  <span className={`nav-bar-group-label${hasActive ? ' has-active' : ''}`}>
+                    <span className="nav-bar-group-label-text nav-bar-collapsible">{entry.label}</span>
                   </span>
                   {entry.view && entry.Icon && (
                     <NavButton
@@ -189,7 +189,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
           })}
         </nav>
 
-        <div className="sidebar-bottom">
+        <div className="nav-bar-bottom">
           <NavButton
             item={{ view: 'settings', label: 'Settings', Icon: Settings }}
             active={activeView === 'settings'}
@@ -198,9 +198,9 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
         </div>
       </div>
 
-      <button className="sidebar-collapse-btn" onClick={onToggleExpanded}>
+      <button className="nav-bar-collapse-btn" onClick={onToggleExpanded}>
         {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-        <span className="sidebar-nav-label sidebar-collapsible">{expanded ? 'Collapse' : ''}</span>
+        <span className="nav-bar-label nav-bar-collapsible">{expanded ? 'Collapse' : ''}</span>
       </button>
     </aside>
   )
@@ -220,10 +220,10 @@ function NavButton({
   header?: boolean
 }) {
   const cls = [
-    'sidebar-nav-btn',
+    'nav-bar-btn',
     active && 'active',
-    compact && 'sidebar-nav-btn--compact',
-    header && 'sidebar-nav-btn--header',
+    compact && 'nav-bar-btn--compact',
+    header && 'nav-bar-btn--header',
   ]
     .filter(Boolean)
     .join(' ')
@@ -231,9 +231,9 @@ function NavButton({
   return (
     <button className={cls} onClick={() => onViewChange(item.view)}>
       <item.Icon size={compact ? 16 : 18} />
-      <span className="sidebar-nav-label sidebar-collapsible">{item.label}</span>
+      <span className="nav-bar-label nav-bar-collapsible">{item.label}</span>
     </button>
   )
 }
 
-export default AppSidebar
+export default AppNavBar

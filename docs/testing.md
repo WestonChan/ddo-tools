@@ -18,10 +18,10 @@ Testing conventions for both the Python data pipeline and the React frontend.
 ## Frontend (vitest + @testing-library/react)
 
 - **Run tests:** `npx vitest run` before committing. Setup file: `src/test/setup.ts`.
-- **Test location:** Co-locate test files next to source: `useRouter.test.ts` next to `useRouter.ts`, `AppSidebar.test.tsx` next to `AppSidebar.tsx`.
+- **Test location:** Co-locate test files next to source: `useRouter.test.ts` next to `useRouter.ts`, `AppNavBar.test.tsx` next to `AppNavBar.tsx`.
 - **What to test:**
   - Hooks with pure logic (routing, stats computation, validation) -- test inputs/outputs directly.
-  - Components with interaction logic (sidebar nav, enhancement trees, skill grid) -- use `@testing-library/react` to render and assert on behavior.
+  - Components with interaction logic (nav bar, enhancement trees, skill grid) -- use `@testing-library/react` to render and assert on behavior.
   - Don't test simple presentational components that just render props.
 - **Mock sql.js:** For components that use `useDatabase`, mock the hook to return a test DB or stub data. Don't load the real WASM binary in tests.
 - **Playwright for visual verification:** Use Playwright MCP (per Visual Verification section in CLAUDE.md) for layout and integration checks. vitest is for unit/component logic.

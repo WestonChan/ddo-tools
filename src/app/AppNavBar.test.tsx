@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import AppSidebar from './AppSidebar'
+import AppNavBar from './AppNavBar'
 
 vi.mock('../features/character', () => ({
   useCharacter: () => ({
@@ -21,9 +21,9 @@ vi.mock('../features/character', () => ({
 const mockNavigate = vi.fn()
 const mockToggle = vi.fn()
 
-function renderSidebar(expanded = true) {
+function renderNavBar(expanded = true) {
   return render(
-    <AppSidebar
+    <AppNavBar
       activeView="build-plan"
       onViewChange={mockNavigate}
       expanded={expanded}
@@ -37,22 +37,22 @@ beforeEach(() => {
   mockToggle.mockClear()
 })
 
-describe('AppSidebar', () => {
+describe('AppNavBar', () => {
   it('renders top-level nav items', () => {
-    renderSidebar()
+    renderNavBar()
     expect(screen.getByText('Gear')).toBeInTheDocument()
     expect(screen.getByText('Build Overview')).toBeInTheDocument()
   })
 
   it('renders group labels', () => {
-    renderSidebar()
+    renderNavBar()
     // Build Plan appears as both group label and parent nav button
     expect(screen.getAllByText('Build Plan').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Tools')).toBeInTheDocument()
   })
 
   it('shows all group items', () => {
-    renderSidebar()
+    renderNavBar()
     expect(screen.getByText('Level Plan')).toBeInTheDocument()
     expect(screen.getByText('Skills')).toBeInTheDocument()
     expect(screen.getByText('Spells')).toBeInTheDocument()
@@ -65,35 +65,35 @@ describe('AppSidebar', () => {
   })
 
   it('renders character name', () => {
-    renderSidebar()
+    renderNavBar()
     expect(screen.getByText('Thordak')).toBeInTheDocument()
   })
 
   it('renders settings', () => {
-    renderSidebar()
+    renderNavBar()
     expect(screen.getByText('Settings')).toBeInTheDocument()
   })
 
   it('navigates when a nav item is clicked', async () => {
     const user = userEvent.setup()
-    renderSidebar()
+    renderNavBar()
     await user.click(screen.getByText('Gear'))
     expect(mockNavigate).toHaveBeenCalledWith('gear')
   })
 
   it('navigates to characters when character name is clicked', async () => {
     const user = userEvent.setup()
-    renderSidebar()
+    renderNavBar()
     await user.click(screen.getByText('Thordak'))
     expect(mockNavigate).toHaveBeenCalledWith('characters')
   })
 
-  it('closes sidebar on navigate at narrow widths', async () => {
+  it('closes nav bar on navigate at narrow widths', async () => {
     const original = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { value: 500, writable: true })
 
     const user = userEvent.setup()
-    renderSidebar(true)
+    renderNavBar(true)
     await user.click(screen.getByText('Gear'))
 
     expect(mockNavigate).toHaveBeenCalledWith('gear')
@@ -102,12 +102,12 @@ describe('AppSidebar', () => {
     Object.defineProperty(window, 'innerWidth', { value: original, writable: true })
   })
 
-  it('does not close sidebar on navigate at wide widths', async () => {
+  it('does not close nav bar on navigate at wide widths', async () => {
     const original = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true })
 
     const user = userEvent.setup()
-    renderSidebar(true)
+    renderNavBar(true)
     await user.click(screen.getByText('Gear'))
 
     expect(mockNavigate).toHaveBeenCalledWith('gear')

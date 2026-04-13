@@ -845,7 +845,7 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
 ```
 src/
   app/
-    App.tsx, AppSidebar.tsx          -- modified (feature nav sidebar)
+    App.tsx, AppNavBar.tsx           -- modified (feature nav bar)
   features/
     character/                       -- EXISTING (enhance for Characters view + past lives)
     build-plan/                      -- NEW (single scrollable page)

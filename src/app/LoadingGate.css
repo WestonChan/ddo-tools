@@ -5,7 +5,7 @@
   background: var(--bg);
 }
 
-.skeleton-sidebar {
+.skeleton-nav-bar {
   width: 56px;
   background: var(--bg-panel);
   border-right: 2px solid var(--border);
