@@ -112,8 +112,7 @@ test.describe('responsive breakpoints', () => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Expand the sidebar
-    await page.click('.sidebar-collapse-btn')
+    // Sidebar starts expanded at <600 (default pref is true)
     await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
 
     // Sidebar should cover the full viewport (position: fixed, inset: 0)
@@ -128,8 +127,7 @@ test.describe('responsive breakpoints', () => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Expand
-    await page.click('.sidebar-collapse-btn')
+    // Sidebar starts expanded at <600
     await expect(page.locator('.app-sidebar')).toHaveClass(/expanded/)
 
     // Click a nav item
@@ -218,7 +216,7 @@ test.describe('navigation', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await page.locator('.sidebar-build-row').click()
+    await page.locator('.sidebar-character-card').click()
     await expect(page).toHaveURL(/\/characters$/)
   })
 
@@ -256,30 +254,17 @@ test.describe('compact sub-items', () => {
     expect(heights.regular).toBe(40)
   })
 
-  test('compact items are indented when expanded', async ({ page }) => {
+  test('compact items have muted styling', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
     await page.locator('.sidebar-nav-btn').first().waitFor()
 
-    const padding = await page.evaluate(() => {
-      const btn = document.querySelector('.sidebar-nav-btn--compact')
-      return btn ? getComputedStyle(btn).paddingLeft : '0px'
+    const opacity = await page.evaluate(() => {
+      const icon = document.querySelector('.sidebar-nav-btn--compact:not(.active) svg')
+      return icon ? getComputedStyle(icon).opacity : '1'
     })
 
-    expect(parseInt(padding)).toBeGreaterThan(0)
-  })
-
-  test('compact items are NOT indented when collapsed', async ({ page }) => {
-    await page.setViewportSize({ width: 800, height: 800 })
-    await page.goto('/')
-    await page.locator('.sidebar-nav-btn').first().waitFor()
-
-    const padding = await page.evaluate(() => {
-      const btn = document.querySelector('.sidebar-nav-btn--compact')
-      return btn ? getComputedStyle(btn).paddingLeft : '0px'
-    })
-
-    expect(parseInt(padding)).toBe(0)
+    expect(parseFloat(opacity)).toBeLessThan(1)
   })
 })
 
@@ -296,12 +281,38 @@ test.describe('group hierarchy', () => {
     await expect(group.locator('.sidebar-nav-btn').first()).toContainText('Build Plan')
   })
 
-  test('character name in bottom section', async ({ page }) => {
+  test('character card icon does not shift when collapsing', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-character-header svg').first().waitFor()
+
+    const expandedPos = await page.evaluate(() => {
+      const icon = document.querySelector('.sidebar-character-header svg:first-child')
+      const rect = icon?.getBoundingClientRect()
+      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
+    })
+
+    await page.click('.sidebar-collapse-btn')
+    await page.waitForTimeout(100)
+
+    const collapsedPos = await page.evaluate(() => {
+      const icon = document.querySelector('.sidebar-character-header svg:first-child')
+      const rect = icon?.getBoundingClientRect()
+      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
+    })
+
+    expect(expandedPos).not.toBeNull()
+    expect(collapsedPos).not.toBeNull()
+    expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
+  })
+
+  test('character card shows name and build info', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await expect(page.locator('.sidebar-build-row')).toBeVisible()
-    await expect(page.locator('.sidebar-build-row')).toContainText('Thordak')
+    await expect(page.locator('.sidebar-character-card')).toBeVisible()
+    await expect(page.locator('.sidebar-character-name')).toContainText('Thordak')
+    await expect(page.locator('.sidebar-character-build').first()).toBeVisible()
   })
 })
 
@@ -309,7 +320,7 @@ test.describe('group hierarchy', () => {
 
 async function getIconCenters(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    const icons = document.querySelectorAll('.app-sidebar .sidebar-nav-btn svg, .app-sidebar .sidebar-build-row svg, .app-sidebar .sidebar-collapse-btn svg')
+    const icons = document.querySelectorAll('.app-sidebar .sidebar-character-header svg:first-child, .app-sidebar .sidebar-nav-btn svg, .app-sidebar .sidebar-collapse-btn svg')
     return Array.from(icons).map((el) => {
       const rect = el.getBoundingClientRect()
       return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

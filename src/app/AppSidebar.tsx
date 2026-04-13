@@ -15,8 +15,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   NotepadText,
+  GitCompareArrows,
 } from 'lucide-react'
-import { useCharacter } from '../features/character'
+import { useCharacter, formatClassSummary, formatRace } from '../features/character'
 import type { View } from '../hooks'
 import './AppSidebar.css'
 
@@ -85,7 +86,9 @@ interface AppSidebarProps {
 }
 
 function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: AppSidebarProps) {
-  const { character: selected } = useCharacter()
+  const { character: selected, activeBuild } = useCharacter()
+  const raceLabel = activeBuild ? formatRace(activeBuild.race) : ''
+  const classLabel = activeBuild ? formatClassSummary(activeBuild) : ''
 
   function groupContainsActive(group: NavGroup): boolean {
     return group.items.some((item) => item.view === activeView)
@@ -103,6 +106,27 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
     <aside className={`app-sidebar${expanded ? ' expanded' : ''}`}>
         <div className="sidebar-brand">
           <span className="sidebar-brand-text sidebar-collapsible">DDO<br />Builder</span>
+        </div>
+
+        <div
+          className={`sidebar-character-card${activeView === 'characters' ? ' active' : ''}`}
+          onClick={() => handleNavigate('characters')}
+        >
+          <div className="sidebar-character-header">
+            <User size={18} />
+            <span className="sidebar-character-name sidebar-collapsible">{selected.name}</span>
+            <button
+              className="sidebar-compare-btn sidebar-collapsible"
+              title="Compare builds (coming soon)"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GitCompareArrows size={14} />
+            </button>
+          </div>
+          <div className="sidebar-character-details sidebar-collapsible">
+            {raceLabel && <span className="sidebar-character-build">{raceLabel}</span>}
+            {classLabel && <span className="sidebar-character-build">{classLabel}</span>}
+          </div>
         </div>
 
         <nav className="sidebar-nav">
@@ -154,13 +178,6 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
             active={activeView === 'settings'}
             onViewChange={handleNavigate}
           />
-          <div
-            className={`sidebar-build-row${activeView === 'characters' ? ' active' : ''}`}
-            onClick={() => handleNavigate('characters')}
-          >
-            <User size={18} />
-            <span className="sidebar-nav-label sidebar-collapsible">{selected.name}</span>
-          </div>
           <button className="sidebar-collapse-btn" onClick={onToggleExpanded}>
             {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
             <span className="sidebar-nav-label sidebar-collapsible">{expanded ? 'Collapse' : ''}</span>

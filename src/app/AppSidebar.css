@@ -34,6 +34,18 @@
     & .sidebar-group-label::before {
       display: none;
     }
+
+    & .sidebar-character-card {
+      margin: 0.35rem auto;
+      width: 40px;
+      height: var(--card-h);
+    }
+
+    & .sidebar-character-header {
+      display: flex;
+      justify-content: center;
+      height: 40px;
+    }
   }
 }
 
@@ -60,6 +72,99 @@
   text-align: center;
   line-height: 1.15;
   color: var(--accent);
+}
+
+/* --- Character card --- */
+.sidebar-character-card {
+  --card-h: 75px;
+
+  display: flex;
+  flex-direction: column;
+  height: var(--card-h);
+  margin: 0.35rem 0.4rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease-out,
+    background 0.15s ease-out;
+
+  &:hover {
+    border-color: var(--accent);
+    background: var(--hover-bg);
+  }
+
+  &.active {
+    border-color: var(--accent);
+    background: var(--accent-bg-subtle);
+  }
+}
+
+/* Top row: icon | name | compare button */
+.sidebar-character-header {
+  display: grid;
+  grid-template-columns: var(--icon-col) 1fr auto;
+  align-items: center;
+  height: 40px;
+  min-height: 40px;
+
+  & > svg {
+    justify-self: center;
+    color: var(--text-secondary);
+  }
+}
+
+.sidebar-character-card.active .sidebar-character-header > svg {
+  color: var(--accent);
+}
+
+.sidebar-character-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-compare-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-right: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease-out,
+    border-color 0.15s ease-out;
+
+  &:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+}
+
+/* Build details: race + classes below the header */
+.sidebar-character-details {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.5rem 0.4rem var(--icon-col);
+}
+
+.sidebar-character-build {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* --- Nav --- */
