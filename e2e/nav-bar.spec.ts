@@ -248,33 +248,37 @@ test.describe('navigation', () => {
     await expect(page).toHaveURL(/\/settings$/)
   })
 
-  test('clicking character name navigates to characters view', async ({ page }) => {
+  test('clicking the card navigates to characters view', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await page.locator('.nav-bar-character-slot:not(.nav-bar-character-slot--empty)').click()
+    // Any click on the card routes to characters view
+    await page.locator('.nav-bar-character-card').click()
     await expect(page).toHaveURL(/\/characters$/)
   })
 
-  test('character slot shows active accent bar on characters view', async ({ page }) => {
+  test('character strip shows active accent bar on characters view', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.nav-bar-character-slot').first().click()
+    await page.locator('.nav-bar-character-strip').click()
 
-    const slot = page.locator('.nav-bar-character-slot').first()
-    await expect(slot).toHaveClass(/active/)
+    const strip = page.locator('.nav-bar-character-strip')
+    await expect(strip).toHaveClass(/active/)
 
     // Active state should have a ::before accent bar
-    const beforeWidth = await slot.evaluate(
+    const beforeWidth = await strip.evaluate(
       (el) => getComputedStyle(el, '::before').width,
     )
     expect(parseInt(beforeWidth)).toBe(3)
   })
 
-  test('compare slot stays neutral when characters view is active', async ({ page }) => {
+  test('build slot stays neutral on characters view (no active state yet)', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.nav-bar-character-slot').first().click()
+    await page.locator('.nav-bar-character-strip').click()
+
+    const buildSlot = page.locator('.nav-bar-character-slot').first()
+    await expect(buildSlot).not.toHaveClass(/active/)
 
     const compareSlot = page.locator('.nav-bar-character-slot--empty')
     await expect(compareSlot).not.toHaveClass(/active/)
@@ -341,30 +345,38 @@ test.describe('group hierarchy', () => {
     await expect(group.locator('.nav-bar-btn').first()).toContainText('Build Plan')
   })
 
-  test('character card icon does not shift when collapsing', async ({ page }) => {
+  test('character card icons do not shift when collapsing', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.nav-bar-character-slot > svg').first().waitFor()
+    await page.locator('.nav-bar-character-card svg').first().waitFor()
 
-    const expandedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.nav-bar-character-slot > svg')
-      const rect = icon?.getBoundingClientRect()
-      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
-    })
+    const getCardIconCenters = () =>
+      page.evaluate(() => {
+        // Character strip icon, current build slot icon, compare button icon
+        const selectors = [
+          '.nav-bar-character-strip > svg',
+          '.nav-bar-character-slot > svg',
+          '.nav-bar-compare-btn > svg',
+        ]
+        return selectors.map((sel) => {
+          const el = document.querySelector(sel)
+          const rect = el?.getBoundingClientRect()
+          return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
+        })
+      })
 
+    const expandedPositions = await getCardIconCenters()
     await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
+    const collapsedPositions = await getCardIconCenters()
 
-    const collapsedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.nav-bar-character-slot > svg')
-      const rect = icon?.getBoundingClientRect()
-      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
-    })
-
-    expect(expandedPos).not.toBeNull()
-    expect(collapsedPos).not.toBeNull()
-    expect(collapsedPos!.x).toBeCloseTo(expandedPos!.x, 0)
-    expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
+    expect(expandedPositions).toHaveLength(3)
+    for (let i = 0; i < expandedPositions.length; i++) {
+      expect(collapsedPositions[i]).not.toBeNull()
+      expect(expandedPositions[i]).not.toBeNull()
+      expect(collapsedPositions[i]!.x).toBeCloseTo(expandedPositions[i]!.x, 0)
+      expect(collapsedPositions[i]!.y).toBeCloseTo(expandedPositions[i]!.y, 0)
+    }
   })
 
   test('swap button has border and background', async ({ page }) => {
@@ -417,34 +429,38 @@ test.describe('group hierarchy', () => {
     expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
   })
 
-  test('character card icon aligns with nav icons when collapsed', async ({ page }) => {
+  test('character card icons align with nav icons when collapsed', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 800 })
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
     const positions = await page.evaluate(() => {
-      const cardIcon = document.querySelector('.nav-bar-character-slot > svg')
       const navIcon = document.querySelector('.nav-bar-btn svg')
-      const cardRect = cardIcon?.getBoundingClientRect()
+      const stripIcon = document.querySelector('.nav-bar-character-strip > svg')
+      const slotIcon = document.querySelector('.nav-bar-character-slot > svg')
       const navRect = navIcon?.getBoundingClientRect()
       return {
-        cardX: cardRect ? cardRect.x + cardRect.width / 2 : null,
         navX: navRect ? navRect.x + navRect.width / 2 : null,
+        stripX: stripIcon ? stripIcon.getBoundingClientRect().x + stripIcon.getBoundingClientRect().width / 2 : null,
+        slotX: slotIcon ? slotIcon.getBoundingClientRect().x + slotIcon.getBoundingClientRect().width / 2 : null,
       }
     })
 
-    expect(positions.cardX).not.toBeNull()
     expect(positions.navX).not.toBeNull()
-    // Card icon should align with nav icons (within 2px for border)
-    expect(Math.abs(positions.cardX! - positions.navX!)).toBeLessThanOrEqual(2)
+    // Card icons should align with nav icons (within 2px for border)
+    expect(Math.abs(positions.stripX! - positions.navX!)).toBeLessThanOrEqual(2)
+    expect(Math.abs(positions.slotX! - positions.navX!)).toBeLessThanOrEqual(2)
   })
 
-  test('character card shows name and build info', async ({ page }) => {
+  test('character card shows character name, build name, and race/class', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
     await expect(page.locator('.nav-bar-character-card')).toBeVisible()
-    await expect(page.locator('.nav-bar-character-name').first()).toContainText('Thordak')
+    // Character name lives in the strip
+    await expect(page.locator('.nav-bar-character-strip-name')).toContainText('Thordak')
+    // Build name + race/class live in the slot
+    await expect(page.locator('.nav-bar-character-name').first()).toBeVisible()
     await expect(page.locator('.nav-bar-character-build').first()).toBeVisible()
   })
 })
@@ -453,7 +469,7 @@ test.describe('group hierarchy', () => {
 
 async function getIconCenters(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    const icons = document.querySelectorAll('.app-nav-bar .nav-bar-character-slot > svg, .app-nav-bar .nav-bar-btn svg, .app-nav-bar .nav-bar-collapse-btn svg')
+    const icons = document.querySelectorAll('.app-nav-bar .nav-bar-character-strip > svg, .app-nav-bar .nav-bar-character-slot > svg, .app-nav-bar .nav-bar-btn svg, .app-nav-bar .nav-bar-collapse-btn svg')
     return Array.from(icons).map((el) => {
       const rect = el.getBoundingClientRect()
       return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

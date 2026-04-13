@@ -124,7 +124,7 @@
 
 /* Shared active state: accent color/background + 3px left accent bar.
    Parent elements must establish a positioning context (position: relative). */
-.nav-bar-character-slot.active,
+.nav-bar-character-strip.active,
 .nav-bar-btn.active,
 .nav-bar-build-row.active {
   color: var(--accent);

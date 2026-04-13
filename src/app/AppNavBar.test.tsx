@@ -7,12 +7,14 @@ vi.mock('../features/character', () => ({
     character: { id: '1', name: 'Thordak', server: 'Thrane' },
     activeBuild: {
       id: 'b1',
+      name: '',
       race: 'human',
       classes: [
         { classId: 'paladin', levels: 18 },
         { classId: 'rogue', levels: 2 },
       ],
     },
+    lifeNumbers: new Map([['b1', 3]]),
   }),
   formatClassSummary: () => '18 Paladin / 2 Rogue',
   formatRace: () => 'Human',

@@ -1,9 +1,10 @@
 /* === Nav Bar Character Card === */
-/* Two build slots (current + future compare) separated by a divider,
-   with a swap button overlapping the divider at the icon column. */
+/* Three stacked sections: character strip + current build slot + compare slot.
+   Dividers separate each section; the middle divider hosts the swap button. */
 
 .nav-bar-character-card {
-  --card-h: 140px;
+  --card-h: 184px;
+  --strip-h: 40px;
 
   position: relative;
   display: flex;
@@ -17,7 +18,49 @@
   cursor: pointer;
 }
 
-/* Swap button: small square overlapping the divider, centered at icon column */
+/* Character strip: compact header showing the owning character's name.
+   Gets the active accent bar when the characters view is active. */
+.nav-bar-character-strip {
+  display: grid;
+  grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
+  align-items: center;
+  height: var(--strip-h);
+  flex-shrink: 0;
+  position: relative;
+  color: var(--text-secondary);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+
+  & > svg {
+    justify-self: center;
+  }
+
+  &:hover {
+    color: var(--text);
+    background: var(--hover-bg);
+  }
+}
+
+.nav-bar-character-strip-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 0.5rem;
+}
+
+/* Divider variant that hosts the swap button.
+   Gives the absolutely-positioned swap button a 1px-tall anchor. */
+.nav-bar-divider--swap {
+  position: relative;
+  overflow: visible;
+}
+
+/* Swap button: small square overlapping the middle divider, centered at icon column */
 .nav-bar-character-swap-btn {
   position: absolute;
   top: 50%;
@@ -45,8 +88,7 @@
   }
 }
 
-/* Slot: one row of the card (current build or compare placeholder).
-   Active state lives in AppNavBar.css as part of the shared active-bar pattern. */
+/* Slot: one row of the card (current build or compare placeholder). */
 .nav-bar-character-slot {
   flex: 1;
   display: grid;
@@ -101,20 +143,12 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: inherit;
   cursor: pointer;
   text-align: left;
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
 
   & > svg {
     justify-self: center;
-  }
-
-  &:hover {
-    color: var(--text);
-    background: var(--hover-bg);
   }
 }
 
