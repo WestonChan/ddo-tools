@@ -256,6 +256,30 @@ test.describe('navigation', () => {
     await expect(page).toHaveURL(/\/characters$/)
   })
 
+  test('character slot shows active accent bar on characters view', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-character-slot').first().click()
+
+    const slot = page.locator('.sidebar-character-slot').first()
+    await expect(slot).toHaveClass(/active/)
+
+    // Active state should have a ::before accent bar
+    const beforeWidth = await slot.evaluate(
+      (el) => getComputedStyle(el, '::before').width,
+    )
+    expect(parseInt(beforeWidth)).toBe(3)
+  })
+
+  test('compare slot stays neutral when characters view is active', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-character-slot').first().click()
+
+    const compareSlot = page.locator('.sidebar-character-slot--empty')
+    await expect(compareSlot).not.toHaveClass(/active/)
+  })
+
   test('active nav items have accent indicator', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
@@ -341,6 +365,30 @@ test.describe('group hierarchy', () => {
     expect(collapsedPos).not.toBeNull()
     expect(collapsedPos!.x).toBeCloseTo(expandedPos!.x, 0)
     expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
+  })
+
+  test('swap button has border and background', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-character-swap-btn').waitFor()
+
+    const styles = await page.evaluate(() => {
+      const btn = document.querySelector('.sidebar-character-swap-btn')
+      if (!btn) return null
+      const s = getComputedStyle(btn)
+      return {
+        borderWidth: s.borderTopWidth,
+        hasBackground: s.backgroundColor !== 'rgba(0, 0, 0, 0)',
+        width: btn.getBoundingClientRect().width,
+        height: btn.getBoundingClientRect().height,
+      }
+    })
+
+    expect(styles).not.toBeNull()
+    expect(parseInt(styles!.borderWidth)).toBe(1)
+    expect(styles!.hasBackground).toBe(true)
+    expect(styles!.width).toBe(24)
+    expect(styles!.height).toBe(24)
   })
 
   test('swap button icon does not shift when collapsing', async ({ page }) => {
