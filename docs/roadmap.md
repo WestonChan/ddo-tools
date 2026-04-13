@@ -10,7 +10,7 @@ All 5 pre-frontend gate audits are complete. The DB has 78 tables, 9,452 items, 
 
 ```
 +-------------------+---------------------+---+
-| [Weston: Pal 20 v] [vs]                 | S |
+| [Weston: Pal 20 v]                      | S |
 |-------------------|                     | t |
 | [Build Overview]  |  Main Content       | a |
 | v BUILD PLAN      |  (single scrollable | t |
@@ -41,7 +41,7 @@ All 5 pre-frontend gate audits are complete. The DB has 78 tables, 9,452 items, 
 
 Comparing active:
 +-------------------+
-| [Weston: Pal 20 v] [vs]
+| [Weston: Pal 20 v]
 | vs Wizard TR [sw][x]
 |-------------------|
 | [Build Overview]  |
@@ -53,7 +53,7 @@ Comparing active:
 
 **Key design decisions:**
 - Sidebar is feature navigation: Build Overview, Build Plan (collapsible: classes/feats, skills, spells, enhancements, reaper, destinies), Gear, TOOLS (collapsible: Damage Calc, Farm Checklist, Debug), Settings
-- **Sidebar top**: `[Weston: Pal 20 v]` dropdown for Manage Characters/Builds and Manage Gear Sets. `[vs]` icon next to it opens compare picker.
+- **Sidebar top**: `[Weston: Pal 20 v]` dropdown for Manage Characters/Builds and Manage Gear Sets. Comparison is entered from the Characters view (click a second build) -- no picker lives in the sidebar.
 - **Compare active**: Second line appears `vs Wizard TR [swap][x]`. `[swap]` flips primary/comparison. `[x]` deactivates.
 - **Bottom bar**: Build warning indicator. Collapsed: `[!] 3 warnings`. Expands to show details with clickable links to the relevant feature (e.g., "2 feat slots empty (L6, L12) [Levels]"). Zero warnings: hides or shows checkmark.
 - **No horizontal tab bar** -- sidebar IS the tab bar, giving full height to content.
@@ -118,7 +118,11 @@ Full-page management UI for characters and builds. Accessed via the sidebar top 
   - Planned builds (renamable, not tied to character)
   - **Past Lives**: Stacking grid + reincarnation workflow (existing PastLifeStacks + LifeHistory UI). Placeholder management: set count of undetailed lives, assign past life feats by type. Placeholders show as single row "Placeholders (N lives)" in life history.
 - "Edit Build" button jumps to the Levels view for the selected build
-- Compare setup: compare icons next to each build
+- **Click to activate / compare**:
+  - Click a build to make it the active build.
+  - Click a second build while one is already active to mark it as the comparison target. A connector line is drawn from the comparison build pointing at the active build, making the direction of comparison visually explicit (deltas read "comparison -> active").
+  - Clicking a selected build again deselects it. Clicking the active build while a comparison is set clears comparison mode entirely.
+  - Strict 1v1: selecting a third build replaces the existing comparison target. (Swap direction via the sidebar `[swap]` button, not by re-clicking.)
 - **Import/Export**:
   - **Import from DDO Builder v2**: Load `.xml` files from the legacy DDO character planner. Parses class splits, feats, enhancements, gear into our build format.
   - **Import custom format**: Load our own `.json` save format (full build state including gear, enhancements, buffs, past lives).
@@ -658,8 +662,8 @@ baseStats(race, pointBuy, tomes, levelUps)
 - Build switching happens in the Characters view (click a build to make it active)
 
 ### Comparison
-- **Compare icon** `[vs]` next to the build label in sidebar top. Opens a comprehensive build picker showing ALL builds across ALL characters + standalone planned builds. Select one to activate comparison mode.
-- **Compare active**: Second line below build label: `vs Wizard TR [swap][x]`.
+- **Entering comparison**: Activate a build in the Characters view, then click a second build to mark it as the comparison target (see [Characters View](#characters-view-characters) > Click to activate / compare). The Characters view is the only entry point -- there is no separate sidebar picker.
+- **Compare active**: Second line below the sidebar build label: `vs Wizard TR [swap][x]`.
 - **Swap button** `[swap]`: Flips which build is primary (editable) and which is comparison (read-only). Sidebar label updates, stats deltas flip sign.
 - **"What if" copy**: A `[Try variant]` button creates a temporary copy of the current build. Enters comparison mode with the copy as editable primary and the original as comparison target. When done: "Keep variant" (replaces original), "Save as new build" (keeps both), or "Discard" (reverts to original).
 - **Compare past lives**: Comparing against a character's life inherits that character's past lives for stat calculation. Standalone planned builds default to zero past lives.
@@ -889,7 +893,7 @@ src/
 
 ### Phase 1: Layout Restructuring
 1. Redesign sidebar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
-2. Add sidebar top build dropdown + compare icon
+2. Add sidebar top build dropdown (compare-active indicator added in Phase 7)
 3. Update hash routing
 4. Add bottom warning bar (collapsed indicator)
 4b. DB loading gate (skeleton UI until `ddo.db` + `user.db` ready)
@@ -938,7 +942,7 @@ src/
 29. Gear set management (per-build + standalone)
 
 ### Phase 7: Comparison Mode
-30. Compare picker + sidebar indicator
+30. Click-to-compare in Characters view (connector line from comparison -> active build) + sidebar `vs X [swap][x]` indicator
 31. Comparison display for stats panel, build overview, and gear
 32. Swap button + "What if" copy workflow
 33. Past life warning for comparison
