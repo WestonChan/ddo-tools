@@ -966,9 +966,16 @@ src/
 45. Ability cards (min/max/avg, click -> damage calc)
 46. Buffs (spell buffs, conditionals, stances, external, stacks)
 
----
+### Phase 11: Settings View Cleanup
+Currently the Settings view is a minimal placeholder with just Theme (Light/Dark) + Accent picker. Belongs at the end of the roadmap because it benefits from having all features built first — knowing what *needs* a setting is a function of what features exist.
 
-## Verification
+47. **Restructure into clear sections**: Display (theme, accent, density), Game Content (owned packs/expansions — references Phase 3 item 15), Data Management (export `user.db`, reset, storage usage), About (version, changelog link, GitHub link)
+48. **Wire to Zustand stores**: replace direct `localStorage` access (current `getActiveAccent` reads JSON manually) with the stores introduced in Phase 3
+49. **Owned content settings** (lifted from Phase 3 item 15): toggleable list of adventure packs / expansions; affects which items, quests, feats are surfaced in pickers
+50. **Data management**: export `user.db` (already in Characters view per Phase 3 — promote here as a global "Export all data" action), import-replace, "reset all data" with confirm modal, IndexedDB storage usage indicator
+51. **About / metadata**: app version, build commit, link to roadmap + GitHub issues
+52. **Responsive layout**: current `max-width: 400px` is a fixed narrow column; consider section-based grid that adapts to viewport
+53. **Audit against the design system tokens** (post-css-refactor merge): make sure every value uses `--text-*`, `--space-*`, `--accent-*` tokens — this view was built before the token system landed
 
 After each phase:
 - `npm run dev` -- verify layout renders correctly
