@@ -4,6 +4,8 @@
   box-shadow: -4px 0 16px var(--shadow-color);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
   z-index: 10;
 }
 

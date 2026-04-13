@@ -10,8 +10,8 @@
   padding: 0.5rem 0 0 0;
   z-index: 20;
   box-shadow: 4px 0 12px var(--shadow-color);
-  overflow-x: hidden;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
 
   /* --- Collapsed state --- */
   &:not(.expanded) {
@@ -36,17 +36,20 @@
     }
 
     & .sidebar-character-card {
-      margin: 0.35rem auto;
-      width: 40px;
-      height: var(--card-h);
-    }
-
-    & .sidebar-character-header {
-      display: flex;
-      justify-content: center;
-      height: 40px;
+      margin-left: 0;
+      margin-right: 0;
     }
   }
+}
+
+/* --- Scrollable content area (everything except collapse button) --- */
+.sidebar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- Collapsible text --- */
@@ -81,6 +84,7 @@
   display: flex;
   flex-direction: column;
   height: var(--card-h);
+  flex-shrink: 0;
   margin: 0.35rem 0.4rem;
   background: var(--bg-input);
   border: 1px solid var(--border);

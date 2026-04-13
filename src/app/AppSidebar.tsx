@@ -104,6 +104,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
 
   return (
     <aside className={`app-sidebar${expanded ? ' expanded' : ''}`}>
+      <div className="sidebar-scroll">
         <div className="sidebar-brand">
           <span className="sidebar-brand-text sidebar-collapsible">DDO<br />Builder</span>
         </div>
@@ -178,12 +179,14 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
             active={activeView === 'settings'}
             onViewChange={handleNavigate}
           />
-          <button className="sidebar-collapse-btn" onClick={onToggleExpanded}>
-            {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-            <span className="sidebar-nav-label sidebar-collapsible">{expanded ? 'Collapse' : ''}</span>
-          </button>
         </div>
-      </aside>
+      </div>
+
+      <button className="sidebar-collapse-btn" onClick={onToggleExpanded}>
+        {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+        <span className="sidebar-nav-label sidebar-collapsible">{expanded ? 'Collapse' : ''}</span>
+      </button>
+    </aside>
   )
 }
 

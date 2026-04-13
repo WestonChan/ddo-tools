@@ -187,6 +187,42 @@ test.describe('layout', () => {
     expect(box!.width).toBe(220)
   })
 
+  test('collapse button is visible at small viewport height', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 400 })
+    await page.goto('/')
+
+    const collapse = page.locator('.sidebar-collapse-btn')
+    await expect(collapse).toBeVisible()
+
+    // Collapse button should be within the viewport
+    const box = await collapse.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.y + box!.height).toBeLessThanOrEqual(400)
+  })
+
+  test('character card visible at small viewport height', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 400 })
+    await page.goto('/')
+
+    const card = page.locator('.sidebar-character-card')
+    const box = await card.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.height).toBeGreaterThan(50)
+  })
+
+  test('sidebar nav scrolls at small viewport height', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 400 })
+    await page.goto('/')
+    await page.locator('.sidebar-nav-btn').first().waitFor()
+
+    // The scroll wrapper should have overflow (scrollHeight > clientHeight)
+    const isScrollable = await page.evaluate(() => {
+      const scroll = document.querySelector('.sidebar-scroll')
+      return scroll ? scroll.scrollHeight > scroll.clientHeight : false
+    })
+    expect(isScrollable).toBe(true)
+  })
+
   test('sidebar width is 56px when collapsed', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 800 })
     await page.goto('/')
@@ -281,7 +317,7 @@ test.describe('group hierarchy', () => {
     await expect(group.locator('.sidebar-nav-btn').first()).toContainText('Build Plan')
   })
 
-  test('character card icon does not shift when collapsing', async ({ page }) => {
+  test('character card icon Y does not shift when collapsing', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
     await page.locator('.sidebar-character-header svg').first().waitFor()
@@ -306,6 +342,28 @@ test.describe('group hierarchy', () => {
     expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
   })
 
+  test('character card icon aligns with nav icons when collapsed', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-nav-btn').first().waitFor()
+
+    const positions = await page.evaluate(() => {
+      const cardIcon = document.querySelector('.sidebar-character-header svg:first-child')
+      const navIcon = document.querySelector('.sidebar-nav-btn svg')
+      const cardRect = cardIcon?.getBoundingClientRect()
+      const navRect = navIcon?.getBoundingClientRect()
+      return {
+        cardX: cardRect ? cardRect.x + cardRect.width / 2 : null,
+        navX: navRect ? navRect.x + navRect.width / 2 : null,
+      }
+    })
+
+    expect(positions.cardX).not.toBeNull()
+    expect(positions.navX).not.toBeNull()
+    // Card icon should align with nav icons (within 2px for border)
+    expect(Math.abs(positions.cardX! - positions.navX!)).toBeLessThanOrEqual(2)
+  })
+
   test('character card shows name and build info', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
@@ -320,7 +378,9 @@ test.describe('group hierarchy', () => {
 
 async function getIconCenters(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    const icons = document.querySelectorAll('.app-sidebar .sidebar-character-header svg:first-child, .app-sidebar .sidebar-nav-btn svg, .app-sidebar .sidebar-collapse-btn svg')
+    // Character card icon has dedicated tests — exclude it here since it
+    // intentionally shifts X when collapsing to align with nav icons.
+    const icons = document.querySelectorAll('.app-sidebar .sidebar-nav-btn svg, .app-sidebar .sidebar-collapse-btn svg')
     return Array.from(icons).map((el) => {
       const rect = el.getBoundingClientRect()
       return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
