@@ -31,8 +31,8 @@ export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterC
       </div>
       <div className="nav-bar-divider" />
 
-      {/* Current build slot — always highlighted in accent to indicate the active build */}
-      <div className="nav-bar-character-slot nav-bar-character-slot--current">
+      {/* Current build slot */}
+      <div className="nav-bar-character-slot">
         <UserPen size={18} />
         <div className="nav-bar-character-info nav-bar-collapsible">
           <span className="nav-bar-character-name">{buildLabel}</span>

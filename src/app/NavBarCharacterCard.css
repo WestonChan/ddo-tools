@@ -88,15 +88,13 @@
   }
 }
 
-/* Slot: one row of the card (current build or compare placeholder).
-   position:relative anchors the slot--current's ::before accent bar. */
+/* Slot: one row of the card (current build or compare placeholder). */
 .nav-bar-character-slot {
   flex: 1;
   display: grid;
   grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
   align-items: center;
   min-height: 0;
-  position: relative;
 
   & > svg {
     justify-self: center;
@@ -120,21 +118,24 @@
   white-space: nowrap;
 }
 
-/* The current build slot is always highlighted like an active nav element
-   (accent color + subtle bg + left bar are inherited from the shared
-   active-state rule in AppNavBar.css). Override the child colors so the
-   name + race/class text all pick up the accent. */
-.nav-bar-character-slot--current {
-  & .nav-bar-character-name,
-  & .nav-bar-character-build {
-    color: var(--accent);
-  }
+/* When the characters view is active, the strip (icon + name) turns accent
+   so the top of the card matches the card-level active bar. The strip-name
+   needs its own rule because its default color is --text (overrides inherit). */
+.nav-bar-character-card.active .nav-bar-character-strip {
+  color: var(--accent);
 }
 
-/* When the characters view is active, the strip's character name also turns
-   accent so the top of the card aligns with the card-level active bar. */
 .nav-bar-character-card.active .nav-bar-character-strip-name {
   color: var(--accent);
+}
+
+/* Top divider (between strip and current build slot) turns accent so the
+   card's internal structure echoes the accent-framed border. The middle
+   --swap divider is left neutral so the swap button anchored there still
+   reads as a distinct interactive affordance rather than blending into
+   the active accent band. */
+.nav-bar-character-card.active .nav-bar-divider:not(.nav-bar-divider--swap) {
+  background: var(--accent);
 }
 
 /* Placeholder dashed lines in the compare slot.
