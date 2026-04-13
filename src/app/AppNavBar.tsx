@@ -1,7 +1,6 @@
 import {
   Swords,
   ShieldHalf,
-  User,
   Settings,
   TableProperties,
   Sparkles,
@@ -15,11 +14,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   NotepadText,
-  GitCompareArrows,
-  ArrowUpDown,
 } from 'lucide-react'
-import { useCharacter, formatClassSummary, formatRace } from '../features/character'
 import type { View } from '../hooks'
+import { NavBarCharacterCard } from './NavBarCharacterCard'
 import './AppNavBar.css'
 
 // --- Navigation structure ---
@@ -87,10 +84,6 @@ interface AppNavBarProps {
 }
 
 function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: AppNavBarProps) {
-  const { character: selected, activeBuild } = useCharacter()
-  const raceLabel = activeBuild ? formatRace(activeBuild.race) : ''
-  const classLabel = activeBuild ? formatClassSummary(activeBuild) : ''
-
   function groupContainsActive(group: NavGroup): boolean {
     return group.items.some((item) => item.view === activeView)
   }
@@ -110,41 +103,7 @@ function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: App
           <span className="nav-bar-brand-text nav-bar-collapsible">DDO<br />Builder</span>
         </div>
 
-        <div
-          className="nav-bar-character-card"
-          onClick={() => handleNavigate('characters')}
-        >
-          <div className={`nav-bar-character-slot${activeView === 'characters' ? ' active' : ''}`}>
-            <User size={18} />
-            <div className="nav-bar-character-info nav-bar-collapsible">
-              <span className="nav-bar-character-name">{selected.name}</span>
-              {raceLabel && <span className="nav-bar-character-build">{raceLabel}</span>}
-              {classLabel && <span className="nav-bar-character-build">{classLabel}</span>}
-            </div>
-          </div>
-          <div className="nav-bar-divider" />
-          <button
-            className="nav-bar-character-swap-btn"
-            title="Swap active and comparison build"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ArrowUpDown size={14} />
-          </button>
-          <div className="nav-bar-character-slot nav-bar-character-slot--empty">
-            <button
-              className="nav-bar-compare-btn"
-              title="Compare builds (coming soon)"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GitCompareArrows size={18} />
-              <div className="nav-bar-character-info nav-bar-collapsible">
-                <span className="nav-bar-character-name">Compare</span>
-                <span className="nav-bar-character-build-placeholder" />
-                <span className="nav-bar-character-build-placeholder" />
-              </div>
-            </button>
-          </div>
-        </div>
+        <NavBarCharacterCard activeView={activeView} onNavigate={handleNavigate} />
 
         <nav className="nav-bar-items">
           {MAIN_NAV.map((entry) => {
