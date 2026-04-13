@@ -137,20 +137,6 @@
     background: var(--hover-bg);
   }
 
-  &.active {
-    color: var(--accent);
-    background: var(--accent-bg-subtle);
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: var(--accent);
-    }
-  }
 }
 
 .sidebar-character-slot--empty {
@@ -271,20 +257,24 @@
   color: var(--text-secondary);
   position: relative;
   white-space: nowrap;
+}
 
-  &.active {
-    color: var(--accent);
-    background: var(--accent-bg-subtle);
+/* Shared active state: accent color/background + 3px left accent bar.
+   Parent elements must establish a positioning context (position: relative). */
+.sidebar-character-slot.active,
+.sidebar-nav-btn.active,
+.sidebar-build-row.active {
+  color: var(--accent);
+  background: var(--accent-bg-subtle);
 
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: var(--accent);
-    }
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
   }
 }
 
