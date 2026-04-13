@@ -3,17 +3,18 @@ import {
   ShieldHalf,
   User,
   Settings,
-  Scroll,
   TableProperties,
   Sparkles,
   GitBranch,
   Skull,
   Orbit,
   Calculator,
-  ListChecks,
+  ListOrdered,
+  ListTodo,
   Search,
   PanelLeftClose,
   PanelLeftOpen,
+  NotepadText,
 } from 'lucide-react'
 import { useCharacter } from '../features/character'
 import type { View } from '../hooks'
@@ -31,6 +32,8 @@ interface NavItem {
 interface NavGroup {
   id: string
   label: string
+  view?: View
+  Icon?: React.FC<{ size?: number }>
   items: NavItem[]
 }
 
@@ -48,8 +51,10 @@ const MAIN_NAV: SidebarEntry[] = [
   {
     id: 'build-plan',
     label: 'Build Plan',
+    view: 'build-plan',
+    Icon: NotepadText,
     items: [
-      { id: 'levels', view: 'build-plan', label: 'Level Plan', Icon: Scroll },
+      { id: 'levels', view: 'build-plan', label: 'Level Plan', Icon: ListOrdered },
       { id: 'skills', view: 'build-plan', label: 'Skills', Icon: SkillsIcon },
       { id: 'spells', view: 'build-plan', label: 'Spells', Icon: Sparkles },
       { id: 'enhancements', view: 'build-plan', label: 'Enhancements', Icon: GitBranch },
@@ -64,7 +69,7 @@ const MAIN_NAV: SidebarEntry[] = [
     label: 'Tools',
     items: [
       { view: 'damage-calc', label: 'Damage Calc', Icon: Calculator },
-      { view: 'farm-checklist', label: 'Farm Checklist', Icon: ListChecks },
+      { view: 'farm-checklist', label: 'Farm Checklist', Icon: ListTodo },
       { view: 'debug', label: 'Debug', Icon: Search },
     ],
   },
@@ -109,6 +114,14 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
                   <span className={`sidebar-group-label${hasActive ? ' has-active' : ''}`}>
                     <span className="sidebar-group-label-text sidebar-collapsible">{entry.label}</span>
                   </span>
+                  {entry.view && entry.Icon && (
+                    <NavButton
+                      item={{ view: entry.view, label: entry.label, Icon: entry.Icon }}
+                      active={entry.items.some((item) => item.id && item.view === activeView)}
+                      onViewChange={handleNavigate}
+                      header
+                    />
+                  )}
                   {entry.items.map((item, i) => {
                     const isFirstMatch = entry.items.findIndex(it => it.view === item.view) === i
                     return (
@@ -117,6 +130,7 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
                         item={item}
                         active={activeView === item.view && isFirstMatch}
                         onViewChange={handleNavigate}
+                        compact={!!item.id}
                       />
                     )
                   })}
@@ -135,7 +149,6 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="sidebar-bottom-divider" />
           <NavButton
             item={{ view: 'settings', label: 'Settings', Icon: Settings }}
             active={activeView === 'settings'}
@@ -161,17 +174,27 @@ function NavButton({
   item,
   active,
   onViewChange,
+  compact,
+  header,
 }: {
   item: NavItem
   active: boolean
   onViewChange: (view: View) => void
+  compact?: boolean
+  header?: boolean
 }) {
+  const cls = [
+    'sidebar-nav-btn',
+    active && 'active',
+    compact && 'sidebar-nav-btn--compact',
+    header && 'sidebar-nav-btn--header',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <button
-      className={`sidebar-nav-btn${active ? ' active' : ''}`}
-      onClick={() => onViewChange(item.view)}
-    >
-      <item.Icon size={18} />
+    <button className={cls} onClick={() => onViewChange(item.view)}>
+      <item.Icon size={compact ? 16 : 18} />
       <span className="sidebar-nav-label sidebar-collapsible">{item.label}</span>
     </button>
   )

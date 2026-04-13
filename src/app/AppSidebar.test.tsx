@@ -46,7 +46,8 @@ describe('AppSidebar', () => {
 
   it('renders group labels', () => {
     renderSidebar()
-    expect(screen.getByText('Build Plan')).toBeInTheDocument()
+    // Build Plan appears as both group label and parent nav button
+    expect(screen.getAllByText('Build Plan').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Tools')).toBeInTheDocument()
   })
 

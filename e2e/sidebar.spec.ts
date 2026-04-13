@@ -222,14 +222,86 @@ test.describe('navigation', () => {
     await expect(page).toHaveURL(/\/characters$/)
   })
 
-  test('active nav item has accent indicator', async ({ page }) => {
+  test('active nav items have accent indicator', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    // Level Plan should be active (first item matching build-plan view)
-    const activeBtn = page.locator('.sidebar-nav-btn.active')
-    await expect(activeBtn).toHaveCount(1)
-    await expect(activeBtn).toContainText('Level Plan')
+    // Build Plan parent + Level Plan sub-item are both active on build-plan view
+    const activeBtns = page.locator('.sidebar-nav-btn.active')
+    await expect(activeBtns).toHaveCount(2)
+    await expect(activeBtns.first()).toContainText('Build Plan')
+    await expect(activeBtns.last()).toContainText('Level Plan')
+  })
+})
+
+// --- Compact sub-items ---
+
+test.describe('compact sub-items', () => {
+  test('compact items are same height as regular items (prevents icon shift)', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-nav-btn').first().waitFor()
+
+    const heights = await page.evaluate(() => {
+      const compact = document.querySelector('.sidebar-nav-btn--compact')
+      const regular = document.querySelector('.sidebar-nav-btn:not(.sidebar-nav-btn--compact)')
+      return {
+        compact: compact?.getBoundingClientRect().height ?? 0,
+        regular: regular?.getBoundingClientRect().height ?? 0,
+      }
+    })
+
+    // Same height prevents vertical shift when toggling expand/collapse
+    expect(heights.compact).toBe(40)
+    expect(heights.regular).toBe(40)
+  })
+
+  test('compact items are indented when expanded', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-nav-btn').first().waitFor()
+
+    const padding = await page.evaluate(() => {
+      const btn = document.querySelector('.sidebar-nav-btn--compact')
+      return btn ? getComputedStyle(btn).paddingLeft : '0px'
+    })
+
+    expect(parseInt(padding)).toBeGreaterThan(0)
+  })
+
+  test('compact items are NOT indented when collapsed', async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-nav-btn').first().waitFor()
+
+    const padding = await page.evaluate(() => {
+      const btn = document.querySelector('.sidebar-nav-btn--compact')
+      return btn ? getComputedStyle(btn).paddingLeft : '0px'
+    })
+
+    expect(parseInt(padding)).toBe(0)
+  })
+})
+
+// --- Group hierarchy ---
+
+test.describe('group hierarchy', () => {
+  test('group parent button shows for build-plan group', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+
+    // The group should have both a label and a parent nav button
+    const group = page.locator('.sidebar-group').first()
+    await expect(group.locator('.sidebar-group-label-text')).toContainText('Build Plan')
+    await expect(group.locator('.sidebar-nav-btn').first()).toContainText('Build Plan')
+  })
+
+  test('character name in bottom section', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+
+    await expect(page.locator('.sidebar-build-row')).toBeVisible()
+    await expect(page.locator('.sidebar-build-row')).toContainText('Thordak')
   })
 })
 

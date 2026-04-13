@@ -125,6 +125,33 @@
   border-radius: 0;
 }
 
+/* Compact variant for sub-items within a group (e.g., build-plan sections).
+   Same 40px height as regular items (prevents icon shift on collapse).
+   Uses bottom underline instead of left bar to differentiate from parent. */
+.sidebar-nav-btn--compact {
+  & > svg {
+    opacity: 0.6;
+  }
+
+  & .sidebar-nav-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  &:hover .sidebar-nav-label {
+    color: var(--text);
+  }
+
+  &.active > svg {
+    opacity: 1;
+  }
+
+  &.active .sidebar-nav-label {
+    color: var(--accent);
+  }
+
+}
+
 .sidebar-nav-label {
   font-size: 0.88rem;
   font-weight: 500;
@@ -179,12 +206,7 @@
   margin-top: auto;
   flex-shrink: 0;
   width: 100%;
-}
 
-.sidebar-bottom-divider {
-  height: 1px;
-  margin: 0.75rem 0;
-  background: var(--border);
 }
 
 /* --- Collapse toggle --- */

@@ -18,9 +18,12 @@ const VIEWS_WITH_STATS_PANEL = new Set(['build-plan'])
 function App() {
   const { view, navigate } = useRouter()
   const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-sidebar-expanded', true)
-  const [sidebarExpanded, setSidebarExpanded] = useState(() =>
-    window.innerWidth < 900 ? false : storedExpanded,
-  )
+  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+    const width = window.innerWidth
+    // 600-899: auto-collapse to icons. <600 and >=900: respect stored preference.
+    if (width >= 600 && width < 900) return false
+    return storedExpanded
+  })
 
   // Auto-collapse sidebar when viewport crosses below 900px,
   // restore stored preference when crossing back above 900px
