@@ -17,20 +17,22 @@ export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterC
     activeBuild?.name ||
     (activeBuild ? `Life ${lifeNumbers.get(activeBuild.id) ?? '?'}` : 'No build')
 
+  const isActive = activeView === 'characters'
+
   return (
     <div
-      className="nav-bar-character-card"
+      className={`nav-bar-character-card${isActive ? ' active' : ''}`}
       onClick={() => onNavigate('characters')}
     >
       {/* Character strip — identifies the owning character */}
-      <div className={`nav-bar-character-strip${activeView === 'characters' ? ' active' : ''}`}>
+      <div className="nav-bar-character-strip">
         <User size={18} />
         <span className="nav-bar-character-strip-name nav-bar-collapsible">{selected.name}</span>
       </div>
       <div className="nav-bar-divider" />
 
-      {/* Current build slot */}
-      <div className="nav-bar-character-slot">
+      {/* Current build slot — always highlighted in accent to indicate the active build */}
+      <div className="nav-bar-character-slot nav-bar-character-slot--current">
         <UserPen size={18} />
         <div className="nav-bar-character-info nav-bar-collapsible">
           <span className="nav-bar-character-name">{buildLabel}</span>
@@ -50,18 +52,13 @@ export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterC
       </div>
 
       {/* Compare slot (placeholder for Phase 7 compare mode) */}
-      <div className="nav-bar-character-slot nav-bar-character-slot--empty">
-        <button
-          className="nav-bar-compare-btn"
-          title="Compare builds (coming soon)"
-        >
-          <GitCompareArrows size={18} />
-          <div className="nav-bar-character-info nav-bar-collapsible">
-            <span className="nav-bar-character-name">Compare</span>
-            <span className="nav-bar-character-build-placeholder" />
-            <span className="nav-bar-character-build-placeholder" />
-          </div>
-        </button>
+      <div className="nav-bar-character-slot">
+        <GitCompareArrows size={18} />
+        <div className="nav-bar-character-info nav-bar-collapsible">
+          <span className="nav-bar-character-name">Compare</span>
+          <span className="nav-bar-character-build-placeholder" />
+          <span className="nav-bar-character-build-placeholder" />
+        </div>
       </div>
     </div>
   )

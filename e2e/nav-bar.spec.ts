@@ -257,31 +257,19 @@ test.describe('navigation', () => {
     await expect(page).toHaveURL(/\/characters$/)
   })
 
-  test('character strip shows active accent bar on characters view', async ({ page }) => {
+  test('card shows active accent bar on characters view', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.nav-bar-character-strip').click()
+    await page.locator('.nav-bar-character-card').click()
 
-    const strip = page.locator('.nav-bar-character-strip')
-    await expect(strip).toHaveClass(/active/)
+    const card = page.locator('.nav-bar-character-card')
+    await expect(card).toHaveClass(/active/)
 
-    // Active state should have a ::before accent bar
-    const beforeWidth = await strip.evaluate(
+    // Active state should have a ::before accent bar spanning the card
+    const beforeWidth = await card.evaluate(
       (el) => getComputedStyle(el, '::before').width,
     )
     expect(parseInt(beforeWidth)).toBe(3)
-  })
-
-  test('build slot stays neutral on characters view (no active state yet)', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.goto('/')
-    await page.locator('.nav-bar-character-strip').click()
-
-    const buildSlot = page.locator('.nav-bar-character-slot').first()
-    await expect(buildSlot).not.toHaveClass(/active/)
-
-    const compareSlot = page.locator('.nav-bar-character-slot--empty')
-    await expect(compareSlot).not.toHaveClass(/active/)
   })
 
   test('active nav items have accent indicator', async ({ page }) => {
@@ -352,16 +340,11 @@ test.describe('group hierarchy', () => {
 
     const getCardIconCenters = () =>
       page.evaluate(() => {
-        // Character strip icon, current build slot icon, compare button icon
-        const selectors = [
-          '.nav-bar-character-strip > svg',
-          '.nav-bar-character-slot > svg',
-          '.nav-bar-compare-btn > svg',
-        ]
-        return selectors.map((sel) => {
-          const el = document.querySelector(sel)
-          const rect = el?.getBoundingClientRect()
-          return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
+        // Character strip icon + both build slot icons
+        const icons = document.querySelectorAll('.nav-bar-character-strip > svg, .nav-bar-character-slot > svg')
+        return Array.from(icons).map((el) => {
+          const rect = el.getBoundingClientRect()
+          return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
         })
       })
 
@@ -371,11 +354,10 @@ test.describe('group hierarchy', () => {
     const collapsedPositions = await getCardIconCenters()
 
     expect(expandedPositions).toHaveLength(3)
+    expect(collapsedPositions).toHaveLength(3)
     for (let i = 0; i < expandedPositions.length; i++) {
-      expect(collapsedPositions[i]).not.toBeNull()
-      expect(expandedPositions[i]).not.toBeNull()
-      expect(collapsedPositions[i]!.x).toBeCloseTo(expandedPositions[i]!.x, 0)
-      expect(collapsedPositions[i]!.y).toBeCloseTo(expandedPositions[i]!.y, 0)
+      expect(collapsedPositions[i].x).toBeCloseTo(expandedPositions[i].x, 0)
+      expect(collapsedPositions[i].y).toBeCloseTo(expandedPositions[i].y, 0)
     }
   })
 
@@ -447,7 +429,7 @@ test.describe('group hierarchy', () => {
     })
 
     expect(positions.navX).not.toBeNull()
-    // Card icons should align with nav icons (within 2px for border)
+    // All card icons should align with nav icons (within 2px for border)
     expect(Math.abs(positions.stripX! - positions.navX!)).toBeLessThanOrEqual(2)
     expect(Math.abs(positions.slotX! - positions.navX!)).toBeLessThanOrEqual(2)
   })

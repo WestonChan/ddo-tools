@@ -124,9 +124,9 @@
 
 /* Shared active state: accent color/background + 3px left accent bar.
    Parent elements must establish a positioning context (position: relative). */
-.nav-bar-character-strip.active,
 .nav-bar-btn.active,
-.nav-bar-build-row.active {
+.nav-bar-build-row.active,
+.nav-bar-character-slot--current {
   color: var(--accent);
   background: var(--accent-bg-subtle);
 
@@ -139,6 +139,18 @@
     width: 3px;
     background: var(--accent);
   }
+}
+
+/* Card-level active: full-height accent bar spanning the card when on
+   the characters view. Overlaps the current-slot bar at identical position. */
+.nav-bar-character-card.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
 }
 
 .nav-bar-btn {

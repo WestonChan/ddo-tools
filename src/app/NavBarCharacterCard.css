@@ -1,6 +1,6 @@
 /* === Nav Bar Character Card === */
-/* Three stacked sections: character strip + current build slot + compare slot.
-   Dividers separate each section; the middle divider hosts the swap button. */
+/* Acts as a single nav item to the characters view. Internal dividers
+   provide visual structure but hover/active state applies card-wide. */
 
 .nav-bar-character-card {
   --card-h: 184px;
@@ -15,30 +15,29 @@
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: 6px;
+  color: var(--text-secondary);
   cursor: pointer;
+  overflow: hidden;
+  transition: background var(--transition-fast);
+
+  /* Hover shifts only the background — keeping content colors stable so
+     icons don't flash brighter on hover while the current-slot icon stays
+     locked to accent. */
+  &:hover {
+    background: var(--hover-bg);
+  }
 }
 
-/* Character strip: compact header showing the owning character's name.
-   Gets the active accent bar when the characters view is active. */
+/* Character strip: compact header showing the owning character's name */
 .nav-bar-character-strip {
   display: grid;
   grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
   align-items: center;
   height: var(--strip-h);
   flex-shrink: 0;
-  position: relative;
-  color: var(--text-secondary);
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
 
   & > svg {
     justify-self: center;
-  }
-
-  &:hover {
-    color: var(--text);
-    background: var(--hover-bg);
   }
 }
 
@@ -60,7 +59,8 @@
   overflow: visible;
 }
 
-/* Swap button: small square overlapping the middle divider, centered at icon column */
+/* Swap button: small square overlapping the middle divider, centered at icon column.
+   Independent hover state since it has its own intent (swap builds). */
 .nav-bar-character-swap-btn {
   position: absolute;
   top: 50%;
@@ -88,7 +88,8 @@
   }
 }
 
-/* Slot: one row of the card (current build or compare placeholder). */
+/* Slot: one row of the card (current build or compare placeholder).
+   position:relative anchors the slot--current's ::before accent bar. */
 .nav-bar-character-slot {
   flex: 1;
   display: grid;
@@ -96,24 +97,10 @@
   align-items: center;
   min-height: 0;
   position: relative;
-  color: var(--text-secondary);
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
 
   & > svg {
     justify-self: center;
   }
-
-  &:hover {
-    color: var(--text);
-    background: var(--hover-bg);
-  }
-}
-
-.nav-bar-character-slot--empty {
-  /* Compare button takes over the slot layout */
-  display: block;
 }
 
 .nav-bar-character-info {
@@ -133,30 +120,29 @@
   white-space: nowrap;
 }
 
-/* Compare button fills the entire slot with icon aligned to nav column */
-.nav-bar-compare-btn {
-  display: grid;
-  grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-
-  & > svg {
-    justify-self: center;
+/* The current build slot is always highlighted like an active nav element
+   (accent color + subtle bg + left bar are inherited from the shared
+   active-state rule in AppNavBar.css). Override the child colors so the
+   name + race/class text all pick up the accent. */
+.nav-bar-character-slot--current {
+  & .nav-bar-character-name,
+  & .nav-bar-character-build {
+    color: var(--accent);
   }
 }
 
-/* Placeholder dashed lines in the compare slot (where race/classes would go) */
+/* When the characters view is active, the strip's character name also turns
+   accent so the top of the card aligns with the card-level active bar. */
+.nav-bar-character-card.active .nav-bar-character-strip-name {
+  color: var(--accent);
+}
+
+/* Placeholder dashed lines in the compare slot.
+   Uses --text-muted so the dashes match the build description text color. */
 .nav-bar-character-build-placeholder {
   height: 0.65rem;
   margin: 1px 0;
-  border-bottom: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--text-muted);
   max-width: 70%;
 
   &:last-child {
