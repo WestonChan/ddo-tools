@@ -23,6 +23,11 @@
   --accent-bg-subtle: rgba(184, 163, 123, 0.1);
   --btn-ghost-bg: rgba(255, 255, 255, 0.04);
   --btn-ghost-bg-hover: rgba(255, 255, 255, 0.08);
+
+  /* Interaction timing */
+  --transition-fast: var(--transition-fast);
+  --transition-std: var(--transition-std);
+
   color-scheme: dark;
 
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -131,11 +136,11 @@ h1 {
   font-weight: 500;
   cursor: pointer;
   transition:
-    color 0.2s ease-out,
-    border-color 0.2s ease-out,
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
+    color var(--transition-std),
+    border-color var(--transition-std),
+    background var(--transition-std),
+    box-shadow var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-ghost:hover {
@@ -161,11 +166,11 @@ h1 {
   font-weight: 500;
   cursor: pointer;
   transition:
-    color 0.2s ease-out,
-    border-color 0.2s ease-out,
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
+    color var(--transition-std),
+    border-color var(--transition-std),
+    background var(--transition-std),
+    box-shadow var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-ghost-sm:hover {
@@ -191,9 +196,9 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   transition:
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
+    background var(--transition-std),
+    box-shadow var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-primary:hover {
@@ -224,9 +229,9 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   transition:
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
+    background var(--transition-std),
+    box-shadow var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-primary-sm:hover {
@@ -243,7 +248,7 @@ h1 {
 .row-interactive {
   border-radius: 3px;
   cursor: pointer;
-  transition: background 0.2s ease-out;
+  transition: background var(--transition-std);
 }
 
 .row-interactive:hover {

@@ -48,8 +48,8 @@
   font-weight: 500;
   cursor: pointer;
   transition:
-    color 0.15s ease-out,
-    background 0.15s ease-out;
+    color var(--transition-fast),
+    background var(--transition-fast);
 
   &:hover {
     color: var(--text-secondary);
@@ -79,7 +79,7 @@
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  transition: background 0.15s ease-out;
+  transition: background var(--transition-fast);
 
   &:hover {
     background: var(--hover-bg);

@@ -18,7 +18,7 @@
   border-left: 3px solid var(--accent);
   width: 100%;
   text-align: left;
-  transition: background 0.2s ease-out;
+  transition: background var(--transition-std);
 }
 
 .collapsible-header:hover {

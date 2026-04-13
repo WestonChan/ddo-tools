@@ -26,8 +26,8 @@
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition:
-    color 0.2s ease-out,
-    border-color 0.2s ease-out;
+    color var(--transition-std),
+    border-color var(--transition-std);
 }
 
 .side-panel-tab:hover {

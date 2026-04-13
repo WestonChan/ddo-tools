@@ -116,7 +116,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s ease-out;
+  transition: opacity var(--transition-fast);
 }
 
 .loading-gate-retry:hover {

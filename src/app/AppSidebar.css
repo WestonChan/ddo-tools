@@ -107,8 +107,8 @@
   color: var(--text-muted);
   cursor: pointer;
   transition:
-    color 0.15s ease-out,
-    border-color 0.15s ease-out;
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 
   &:hover {
     color: var(--accent);
@@ -125,8 +125,8 @@
   position: relative;
   color: var(--text-secondary);
   transition:
-    color 0.15s ease-out,
-    background 0.15s ease-out;
+    color var(--transition-fast),
+    background var(--transition-fast);
 
   & > svg {
     justify-self: center;
@@ -196,8 +196,8 @@
   cursor: pointer;
   text-align: left;
   transition:
-    color 0.15s ease-out,
-    background 0.15s ease-out;
+    color var(--transition-fast),
+    background var(--transition-fast);
 
   & > svg {
     justify-self: center;
@@ -252,8 +252,8 @@
   cursor: pointer;
   font-size: 1.1rem;
   transition:
-    color 0.15s ease-out,
-    background 0.15s ease-out;
+    color var(--transition-fast),
+    background var(--transition-fast);
 
   & > svg {
     justify-self: center;
