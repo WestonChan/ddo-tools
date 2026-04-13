@@ -252,7 +252,7 @@ test.describe('navigation', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await page.locator('.sidebar-character-card').click()
+    await page.locator('.sidebar-character-slot:not(.sidebar-character-slot--empty)').click()
     await expect(page).toHaveURL(/\/characters$/)
   })
 
@@ -317,13 +317,13 @@ test.describe('group hierarchy', () => {
     await expect(group.locator('.sidebar-nav-btn').first()).toContainText('Build Plan')
   })
 
-  test('character card icon Y does not shift when collapsing', async ({ page }) => {
+  test('character card icon does not shift when collapsing', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
-    await page.locator('.sidebar-character-header svg').first().waitFor()
+    await page.locator('.sidebar-character-slot > svg').first().waitFor()
 
     const expandedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.sidebar-character-header svg:first-child')
+      const icon = document.querySelector('.sidebar-character-slot > svg')
       const rect = icon?.getBoundingClientRect()
       return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
     })
@@ -332,13 +332,40 @@ test.describe('group hierarchy', () => {
     await page.waitForTimeout(100)
 
     const collapsedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.sidebar-character-header svg:first-child')
+      const icon = document.querySelector('.sidebar-character-slot > svg')
       const rect = icon?.getBoundingClientRect()
       return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
     })
 
     expect(expandedPos).not.toBeNull()
     expect(collapsedPos).not.toBeNull()
+    expect(collapsedPos!.x).toBeCloseTo(expandedPos!.x, 0)
+    expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
+  })
+
+  test('swap button icon does not shift when collapsing', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await page.locator('.sidebar-character-swap-btn svg').waitFor()
+
+    const expandedPos = await page.evaluate(() => {
+      const icon = document.querySelector('.sidebar-character-swap-btn svg')
+      const rect = icon?.getBoundingClientRect()
+      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
+    })
+
+    await page.click('.sidebar-collapse-btn')
+    await page.waitForTimeout(100)
+
+    const collapsedPos = await page.evaluate(() => {
+      const icon = document.querySelector('.sidebar-character-swap-btn svg')
+      const rect = icon?.getBoundingClientRect()
+      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
+    })
+
+    expect(expandedPos).not.toBeNull()
+    expect(collapsedPos).not.toBeNull()
+    expect(collapsedPos!.x).toBeCloseTo(expandedPos!.x, 0)
     expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
   })
 
@@ -348,7 +375,7 @@ test.describe('group hierarchy', () => {
     await page.locator('.sidebar-nav-btn').first().waitFor()
 
     const positions = await page.evaluate(() => {
-      const cardIcon = document.querySelector('.sidebar-character-header svg:first-child')
+      const cardIcon = document.querySelector('.sidebar-character-slot > svg')
       const navIcon = document.querySelector('.sidebar-nav-btn svg')
       const cardRect = cardIcon?.getBoundingClientRect()
       const navRect = navIcon?.getBoundingClientRect()
@@ -369,7 +396,7 @@ test.describe('group hierarchy', () => {
     await page.goto('/')
 
     await expect(page.locator('.sidebar-character-card')).toBeVisible()
-    await expect(page.locator('.sidebar-character-name')).toContainText('Thordak')
+    await expect(page.locator('.sidebar-character-name').first()).toContainText('Thordak')
     await expect(page.locator('.sidebar-character-build').first()).toBeVisible()
   })
 })
@@ -378,9 +405,7 @@ test.describe('group hierarchy', () => {
 
 async function getIconCenters(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    // Character card icon has dedicated tests — exclude it here since it
-    // intentionally shifts X when collapsing to align with nav icons.
-    const icons = document.querySelectorAll('.app-sidebar .sidebar-nav-btn svg, .app-sidebar .sidebar-collapse-btn svg')
+    const icons = document.querySelectorAll('.app-sidebar .sidebar-character-slot > svg, .app-sidebar .sidebar-nav-btn svg, .app-sidebar .sidebar-collapse-btn svg')
     return Array.from(icons).map((el) => {
       const rect = el.getBoundingClientRect()
       return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

@@ -34,11 +34,6 @@
     & .sidebar-group-label::before {
       display: none;
     }
-
-    & .sidebar-character-card {
-      margin-left: 0;
-      margin-right: 0;
-    }
   }
 }
 
@@ -77,10 +72,11 @@
   color: var(--accent);
 }
 
-/* --- Character card --- */
+/* --- Character card: two build slots + divider --- */
 .sidebar-character-card {
-  --card-h: 75px;
+  --card-h: 140px;
 
+  position: relative;
   display: flex;
   flex-direction: column;
   height: var(--card-h);
@@ -90,59 +86,24 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
-  overflow: hidden;
-  transition:
-    border-color 0.15s ease-out,
-    background 0.15s ease-out;
-
-  &:hover {
-    border-color: var(--accent);
-    background: var(--hover-bg);
-  }
-
-  &.active {
-    border-color: var(--accent);
-    background: var(--accent-bg-subtle);
-  }
 }
 
-/* Top row: icon | name | compare button */
-.sidebar-character-header {
-  display: grid;
-  grid-template-columns: var(--icon-col) 1fr auto;
-  align-items: center;
-  height: 40px;
-  min-height: 40px;
-
-  & > svg {
-    justify-self: center;
-    color: var(--text-secondary);
-  }
-}
-
-.sidebar-character-card.active .sidebar-character-header > svg {
-  color: var(--accent);
-}
-
-.sidebar-character-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-compare-btn {
+/* Swap button: small square overlapping the divider, centered at icon column */
+.sidebar-character-swap-btn {
+  position: absolute;
+  top: 50%;
+  left: calc((var(--icon-col) - 0.8rem - 24px) / 2);
+  transform: translateY(-50%);
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  margin-right: 0.4rem;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 3px;
-  background: transparent;
+  background: var(--bg-input);
   color: var(--text-muted);
   cursor: pointer;
   transition:
@@ -155,11 +116,109 @@
   }
 }
 
-/* Build details: race + classes below the header */
-.sidebar-character-details {
+.sidebar-character-slot {
+  flex: 1;
+  display: grid;
+  grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
+  align-items: center;
+  min-height: 0;
+  position: relative;
+  color: var(--text-secondary);
+  transition:
+    color 0.15s ease-out,
+    background 0.15s ease-out;
+
+  & > svg {
+    justify-self: center;
+  }
+
+  &:hover {
+    color: var(--text);
+    background: var(--hover-bg);
+  }
+
+  &.active {
+    color: var(--accent);
+    background: var(--accent-bg-subtle);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+    }
+  }
+}
+
+.sidebar-character-slot--empty {
+  /* Compare button takes over the slot layout */
+  display: block;
+}
+
+/* Reusable 1px horizontal divider */
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-character-info {
   display: flex;
   flex-direction: column;
-  padding: 0 0.5rem 0.4rem var(--icon-col);
+  min-width: 0;
+  padding-right: 0.5rem;
+}
+
+.sidebar-character-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Compare button fills the entire slot with icon aligned to nav column */
+.sidebar-compare-btn {
+  display: grid;
+  grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    color 0.15s ease-out,
+    background 0.15s ease-out;
+
+  & > svg {
+    justify-self: center;
+  }
+
+  &:hover {
+    color: var(--text);
+    background: var(--hover-bg);
+  }
+}
+
+/* Placeholder dashed lines in the compare slot (where race/classes would go) */
+.sidebar-character-build-placeholder {
+  height: 0.65rem;
+  margin: 1px 0;
+  border-bottom: 1px dashed var(--border);
+  max-width: 70%;
+
+  &:last-child {
+    max-width: 55%;
+  }
 }
 
 .sidebar-character-build {

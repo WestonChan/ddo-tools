@@ -16,6 +16,7 @@ import {
   PanelLeftOpen,
   NotepadText,
   GitCompareArrows,
+  ArrowUpDown,
 } from 'lucide-react'
 import { useCharacter, formatClassSummary, formatRace } from '../features/character'
 import type { View } from '../hooks'
@@ -110,23 +111,38 @@ function AppSidebar({ activeView, onViewChange, expanded, onToggleExpanded }: Ap
         </div>
 
         <div
-          className={`sidebar-character-card${activeView === 'characters' ? ' active' : ''}`}
+          className="sidebar-character-card"
           onClick={() => handleNavigate('characters')}
         >
-          <div className="sidebar-character-header">
+          <div className={`sidebar-character-slot${activeView === 'characters' ? ' active' : ''}`}>
             <User size={18} />
-            <span className="sidebar-character-name sidebar-collapsible">{selected.name}</span>
+            <div className="sidebar-character-info sidebar-collapsible">
+              <span className="sidebar-character-name">{selected.name}</span>
+              {raceLabel && <span className="sidebar-character-build">{raceLabel}</span>}
+              {classLabel && <span className="sidebar-character-build">{classLabel}</span>}
+            </div>
+          </div>
+          <div className="sidebar-divider" />
+          <button
+            className="sidebar-character-swap-btn"
+            title="Swap active and comparison build"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ArrowUpDown size={14} />
+          </button>
+          <div className="sidebar-character-slot sidebar-character-slot--empty">
             <button
-              className="sidebar-compare-btn sidebar-collapsible"
+              className="sidebar-compare-btn"
               title="Compare builds (coming soon)"
               onClick={(e) => e.stopPropagation()}
             >
-              <GitCompareArrows size={14} />
+              <GitCompareArrows size={18} />
+              <div className="sidebar-character-info sidebar-collapsible">
+                <span className="sidebar-character-name">Compare</span>
+                <span className="sidebar-character-build-placeholder" />
+                <span className="sidebar-character-build-placeholder" />
+              </div>
             </button>
-          </div>
-          <div className="sidebar-character-details sidebar-collapsible">
-            {raceLabel && <span className="sidebar-character-build">{raceLabel}</span>}
-            {classLabel && <span className="sidebar-character-build">{classLabel}</span>}
           </div>
         </div>
 

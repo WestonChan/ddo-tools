@@ -48,6 +48,9 @@ htmlcov/
 test-results/
 playwright-report/
 
+# Continue (VS Code AI extension)
+.continue/
+
 # Screenshots
 screenshots/
 
