@@ -899,6 +899,17 @@ src/
 5. DB loading gate (skeleton UI until `ddo.db` ready)
 6. Service worker for `ddo.db` caching (stale-while-revalidate)
 
+### Phase 1b: CSS Refactor (branch: `css-refactor`)
+Companion to Phase 1 — design-system token infrastructure. Can merge independently.
+
+- `color-mix()` derivatives: `--accent-glow`, `--accent-bg-subtle` track `--accent` on theme switch
+- Flush panel chrome: nav bar, bottom bar, stats panel use `--bg` + hairline border (no `--bg-panel`, no shadow)
+- Active state polish: `cursor: default`, hover suppression, weight bump on active nav items + card border accent
+- Typography tokens (`--text-xs` through `--text-3xl`): Tailwind default scale, migrated across all CSS files
+- Spacing tokens (`--space-px` through `--space-8`): Tailwind default scale, migrated padding/margin/gap
+- Align default `--accent` with Gold theme
+- **Post-merge: verify `docs/styling.md` token table and Design Principles section match the code.** The styling guide was updated on `navigation-refactor` to describe the target state (flat chrome, color-mix, etc.) before the css-refactor code landed — confirm no drift.
+
 ### Phase 2: Index / Landing View
 7. Design landing page for `/ddo-builder/` (recent builds, quick-start actions, or dashboard overview)
 8. Determine whether this is a distinct view or an existing view (e.g., Characters, Build Overview) serves as default
