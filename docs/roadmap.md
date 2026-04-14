@@ -977,6 +977,23 @@ Currently the Settings view is a minimal placeholder with just Theme (Light/Dark
 52. **Responsive layout**: current `max-width: 400px` is a fixed narrow column; consider section-based grid that adapts to viewport
 53. **Audit against the design system tokens** (post-css-refactor merge): make sure every value uses `--text-*`, `--space-*`, `--accent-*` tokens — this view was built before the token system landed
 
+### Phase 12: Error Reporting & Resilience
+
+Move from a top-level loading gate to per-view error handling. The app shell (nav bar, bottom bar) should always render; only the content area gates on the DB or shows errors.
+
+54. **ErrorBoundary component**: class component that catches rendering errors in a subtree, shows a fallback. Reports caught errors to a global error collector.
+55. **Per-view DB loading**: remove the top-level `LoadingGate` wrapper. Views that need `ddo.db` call `useDatabase()` and show their own loading/error state. Views that don't need the DB (Settings, Characters) render instantly while the 11MB download happens in the background.
+56. **ErrorScreen extraction**: reusable full-page error display with categorized headings, monospace error detail, action buttons, and GitHub issue links (search for duplicates + pre-filled new issue with stack trace). Already prototyped in the `error-reporting` branch.
+57. **ErrorCard**: compact inline error display for item-level failures in lists (e.g., one broken item in the data browser doesn't take down the whole list).
+58. **Global error collector**: React context that collects errors from any ErrorBoundary. Drives a nav-bar bug icon: always visible, shows badge when errors exist. No errors = link to GitHub issues page. Errors = expandable panel listing each error with location context + report link.
+59. **GitHub issue integration**: `labels` prop per error source (e.g., `db-loading`, `user-db`, `runtime`). Labels must be pre-created in the GitHub repo. Search link scoped to label. New-issue link pre-fills title, body (error + stack trace + browser + URL), and labels.
+
+WIP code: `error-reporting` branch (prototyped ErrorBoundary, ErrorScreen, ErrorCard, ErrorReportContext, BugReportFab).
+
+---
+
+## Verification
+
 After each phase:
 - `npm run dev` -- verify layout renders correctly
 - Playwright screenshot verification per CLAUDE.md
