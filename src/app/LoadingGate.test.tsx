@@ -37,9 +37,10 @@ describe('LoadingGate', () => {
       </LoadingGate>,
     )
 
-    expect(screen.getByText('Failed to load game database')).toBeInTheDocument()
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     expect(screen.getByText('WASM not supported')).toBeInTheDocument()
     expect(screen.getByText('Retry')).toBeInTheDocument()
+    expect(screen.getByText('Clear Cached Data & Retry')).toBeInTheDocument()
     expect(screen.queryByText('App content')).not.toBeInTheDocument()
   })
 
@@ -53,6 +54,6 @@ describe('LoadingGate', () => {
     )
 
     expect(screen.getByText('App content')).toBeInTheDocument()
-    expect(screen.queryByText('Failed to load game database')).not.toBeInTheDocument()
+    expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument()
   })
 })
