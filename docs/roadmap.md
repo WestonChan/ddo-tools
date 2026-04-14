@@ -891,104 +891,104 @@ src/
 
 ## Implementation Order
 
-### Phase 1: Layout Restructuring
+### Phase 1: Layout Restructuring (done)
 1. Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
-2. Add nav bar top build dropdown (compare-active indicator added in Phase 7)
-3. Update hash routing
-4. Add bottom warning bar (collapsed indicator)
-4b. DB loading gate (skeleton UI until `ddo.db` + `user.db` ready)
-4c. Service worker for `ddo.db` caching (avoid 11MB fetch on every cold load)
+2. Nav bar top build dropdown (compare-active indicator added in Phase 9)
+3. Clean URL routing (History API + 404.html SPA redirect)
+4. Bottom warning bar (collapsed indicator)
+5. DB loading gate (skeleton UI until `ddo.db` ready)
+6. Service worker for `ddo.db` caching (stale-while-revalidate)
 
-### Phase 1.5: Index / Landing View
-- Design a proper index/landing page for the app (what the user sees at `/ddo-builder/` or when no specific view is selected)
-- Should orient new users and provide quick access to key features
-- Consider: recent builds, quick-start actions, build summary cards, or a dashboard-style overview
-- Determine whether this is a distinct view or if an existing view (e.g., Characters, Build Overview) serves as the default
+### Phase 2: Index / Landing View
+7. Design landing page for `/ddo-builder/` (recent builds, quick-start actions, or dashboard overview)
+8. Determine whether this is a distinct view or an existing view (e.g., Characters, Build Overview) serves as default
 
-### Phase 2: Debug / Data Browser
-5. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
-6. Wiki preview via MediaWiki API
-7. Inline correction system + local DB updates
-8. GitHub issue submission with duplicate detection
+### Phase 3: Error Reporting & Resilience
+Infrastructure for per-view error handling. Built early so every subsequent phase gets error boundaries from day one. WIP code: `error-reporting` branch.
 
-### Phase 3: Characters View & Build Context
-9. Character/build management, switching
-10. Past lives (stacking, placeholders, reincarnation)
-11. Tomes, import/export (export = download `user.db` file)
-12. Gear set management section
-13. Zustand stores (characterStore, buildStore, gearStore) hydrated from `user.db`
-14. `user.db` schema, persistence to IndexedDB, write-through on mutations
-15. Owned content settings
+9. ErrorBoundary component: catches rendering errors, shows fallback, reports to global collector
+10. Per-view DB loading: remove top-level `LoadingGate` — views that need `ddo.db` call `useDatabase()` and handle their own loading/error; Settings and Characters render instantly
+11. ErrorScreen + ErrorCard: full-page and compact inline error displays with GitHub issue links
+12. Nav-bar bug icon: always visible, links to GitHub issues when no errors; badge + expandable error panel when errors detected
+13. GitHub issue integration: per-source labels (`db-loading`, `user-db`, `runtime`), duplicate search, pre-filled new-issue with stack trace
 
-### Phase 4: Stats Engine
-16. Stats pipeline: `computeStats.ts` (pipeline stages), `bonusStacking.ts`, `statSources.ts`
-17. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
-18. Breakdown popover, search, pin, stat highlight
-18b. **vitest unit tests** for stats engine (typed/untyped stacking, derived stats, edge cases)
+### Phase 4: Debug / Data Browser
+14. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
+15. Wiki preview via MediaWiki API
+16. Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update, override indicators app-wide with deep-link to debug view)
+17. GitHub issue submission with duplicate detection
 
-### Phase 5: Build Plan (single scrollable page)
-19. Build header (race, point buy, base stats, tomes)
-20. Level progression (classes/feats + skills)
-21. Spells (card display + picker modal)
-22. Enhancements (N-tree side-by-side, DDO layout)
-23. Reaper enhancements
-24. Destinies (destiny selector + twist bar)
+### Phase 5: Characters View & Build Context
 
-### Phase 6: Gear
-25. Full overview + side-by-side slot editor
-26. Item search with stacking indicators
-27. Augment/filigree/crafting/upgrade inline
-28. Gear stats panel (bonus type tracking)
-29. Gear set management (per-build + standalone)
+**Persistence stack (build first):**
+18. `user.db` schema via sql.js + `initUserDb()`
+19. IndexedDB round-trip: `db.export()` to Uint8Array, debounced write-through (~200ms)
+20. `VACUUM` after schema changes or bulk imports
+21. Zustand stores (`characterStore`, `buildStore`, `gearStore`) hydrated from `user.db`
 
-### Phase 7: Comparison Mode
-30. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
-31. Comparison display for stats panel, build overview, and gear
-32. Swap button + "What if" copy workflow
-33. Past life warning for comparison
-34. Build warning calculation + bottom bar
+**Features:**
+22. Character/build management, switching
+23. Past lives (stacking, placeholders, reincarnation)
+24. Tomes, import/export (export = download raw `user.db` file)
+25. Gear set management section
+26. Owned content settings
 
-### Phase 8: Farm Checklist
-35. Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
-36. Acquisition path selector per item (farm / craft / purchase)
-37. Materials summary (summed across all crafting paths, deducted when acquired)
-38. Purchasable augments (DB pipeline addition)
+### Phase 6: Stats Engine
+27. Stats pipeline: `computeStats.ts`, `bonusStacking.ts`, `statSources.ts`
+28. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
+29. Breakdown popover, search, pin, stat highlight
+30. Vitest unit tests for stats engine (typed/untyped stacking, derived stats, edge cases)
 
-### Phase 9: DB Pipeline -- SLAs, Abilities, Purchasable Augments
-39. Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
-40. Schema: metamagic applicability for SLAs
-41. Schema: purchasable augments (vendor, cost, location)
-42. Wiki scraper for SLA/ability data from enhancement + feat descriptions
-43. Populate via `build_db` pipeline
+### Phase 7: Build Plan (single scrollable page)
+31. Build header (race, point buy, base stats, tomes)
+32. Level progression (classes/feats + skills)
+33. Spells (card display + picker modal)
+34. Enhancements (N-tree side-by-side, DDO layout)
+35. Reaper enhancements
+36. Destinies (destiny selector + twist bar)
 
-### Phase 10: Build Overview
-44. Feats (passive + active with sources)
-45. Ability cards (min/max/avg, click -> damage calc)
-46. Buffs (spell buffs, conditionals, stances, external, stacks)
+### Phase 8: Gear
+37. Full overview + side-by-side slot editor
+38. Item search with stacking indicators
+39. Augment/filigree/crafting/upgrade inline
+40. Gear stats panel (bonus type tracking)
+41. Gear set management (per-build + standalone)
 
-### Phase 11: Settings View Cleanup
-Currently the Settings view is a minimal placeholder with just Theme (Light/Dark) + Accent picker. Belongs at the end of the roadmap because it benefits from having all features built first — knowing what *needs* a setting is a function of what features exist.
+### Phase 9: Comparison Mode
+42. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
+43. Comparison display for stats panel, build overview, and gear
+44. Swap button + "What if" copy workflow
+45. Past life warning for comparison
+46. Build warning calculation + bottom bar
 
-47. **Restructure into clear sections**: Display (theme, accent, density), Game Content (owned packs/expansions — references Phase 3 item 15), Data Management (export `user.db`, reset, storage usage), About (version, changelog link, GitHub link)
-48. **Wire to Zustand stores**: replace direct `localStorage` access (current `getActiveAccent` reads JSON manually) with the stores introduced in Phase 3
-49. **Owned content settings** (lifted from Phase 3 item 15): toggleable list of adventure packs / expansions; affects which items, quests, feats are surfaced in pickers
-50. **Data management**: export `user.db` (already in Characters view per Phase 3 — promote here as a global "Export all data" action), import-replace, "reset all data" with confirm modal, IndexedDB storage usage indicator
-51. **About / metadata**: app version, build commit, link to roadmap + GitHub issues
-52. **Responsive layout**: current `max-width: 400px` is a fixed narrow column; consider section-based grid that adapts to viewport
-53. **Audit against the design system tokens** (post-css-refactor merge): make sure every value uses `--text-*`, `--space-*`, `--accent-*` tokens — this view was built before the token system landed
+### Phase 10: Farm Checklist
+47. Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
+48. Acquisition path selector per item (farm / craft / purchase)
+49. Materials summary (summed across all crafting paths, deducted when acquired)
+50. Purchasable augments (DB pipeline addition)
 
-### Phase 12: Error Reporting & Resilience
+### Phase 11: DB Pipeline -- SLAs, Abilities, Purchasable Augments
+51. Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
+52. Schema: metamagic applicability for SLAs
+53. Schema: purchasable augments (vendor, cost, location)
+54. Wiki scraper for SLA/ability data from enhancement + feat descriptions
+55. Populate via `build_db` pipeline
 
-Move from a top-level loading gate to per-view error handling. The app shell (nav bar, bottom bar) should always render; only the content area gates on the DB or shows errors.
+### Phase 12: Build Overview
+56. Feats (passive + active with sources)
+57. Ability cards (min/max/avg, click -> damage calc)
+58. Buffs (spell buffs, conditionals, stances, external, stacks)
 
-54. **ErrorBoundary component**: class component that catches rendering errors in a subtree, shows a fallback. Reports caught errors to a global error collector.
-55. **Per-view DB loading**: remove the top-level `LoadingGate` wrapper. Views that need `ddo.db` call `useDatabase()` and show their own loading/error state. Views that don't need the DB (Settings, Characters) render instantly while the 11MB download happens in the background.
-56. **ErrorScreen extraction**: reusable full-page error display with categorized headings, monospace error detail, action buttons, and GitHub issue links (search for duplicates + pre-filled new issue with stack trace). Already prototyped in the `error-reporting` branch.
-57. **ErrorCard**: compact inline error display for item-level failures in lists (e.g., one broken item in the data browser doesn't take down the whole list).
-58. **Global error collector**: React context that collects errors from any ErrorBoundary. Drives a nav-bar bug icon: always visible, shows badge when errors exist. No errors = link to GitHub issues page. Errors = expandable panel listing each error with location context + report link.
-59. **GitHub issue integration**: `labels` prop per error source (e.g., `db-loading`, `user-db`, `runtime`). Labels must be pre-created in the GitHub repo. Search link scoped to label. New-issue link pre-fills title, body (error + stack trace + browser + URL), and labels.
+### Phase 13: Settings View Cleanup
+Currently a minimal placeholder (theme + accent picker). Belongs late because knowing what *needs* a setting depends on what features exist.
 
-WIP code: `error-reporting` branch (prototyped ErrorBoundary, ErrorScreen, ErrorCard, ErrorReportContext, BugReportFab).
+59. Restructure into sections: Display, Game Content, Data Management, About
+60. Wire to Zustand stores (replace direct localStorage access)
+61. Owned content settings (adventure packs / expansions)
+62. Data management (export/import `user.db`, reset, storage usage)
+63. About / metadata (version, build commit, GitHub links)
+64. Responsive layout (current `max-width: 400px` is too narrow)
+65. Audit against design-system tokens (post-css-refactor merge)
 
 ---
 
