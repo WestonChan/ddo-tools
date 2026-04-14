@@ -2,6 +2,14 @@
 
 CSS conventions, design tokens, layout architecture, and responsive breakpoints for the DDO Build Planner frontend.
 
+## Design Principles
+
+- **Flat chrome, no panel contrast.** The nav bar, bottom bar, and stats side panel use `var(--bg)` (page background) — not `--bg-panel`. They sit flush with the page. Separation is carried entirely by hairline borders (`1px solid var(--border)`). This gives a continuous canvas feel split by thin edges, rather than floating panels.
+- **No shadows on coplanar surfaces.** `box-shadow` implies z-axis elevation — only use it on genuinely floating elements (tooltips, modals, popovers). A flush surface with a shadow is a visual contradiction. `--bg-panel` + `box-shadow` is reserved for elevated UI (tooltip portals, confirm modals, the bottom-bar tooltip).
+- **Active state = color + weight.** Nav items signal active via accent color + one weight-step bump (500 -> 600). The character card adds an accent border + accent top divider. Active items get `cursor: default` and suppress hover background changes — clicking the already-active item is a no-op.
+- **Accent derivatives use `color-mix()`.** Tokens like `--accent-bg-subtle`, `--accent-glow` are derived from `--accent` via `color-mix(in srgb, var(--accent) N%, transparent)` so they track the active accent theme automatically. Never declare accent derivatives as static `rgba()` — that freezes them to one theme.
+- **Identity vs navigation.** The character card's active state uses border + weight + color (emphasizing identity); nav buttons use left accent bar + weight + color (standard navigation). Different element types earn different active patterns.
+
 ## Conventions
 
 - **Plain CSS** with native nesting (no Sass/SCSS). All modern browsers support `&` nesting.
@@ -19,7 +27,7 @@ Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (li
 | Token | Dark | Light | Usage |
 |-------|------|-------|-------|
 | `--bg` | `#18181b` | `#f4f4f5` | Page background |
-| `--bg-panel` | `#27272a` | `#ffffff` | Nav bar, cards, panels |
+| `--bg-panel` | `#27272a` | `#ffffff` | Elevated surfaces only (tooltips, modals). Chrome surfaces (nav, bottom bar, stats) use `--bg` instead. |
 | `--bg-input` | `#1c1c1f` | `#e8e8eb` | Input fields |
 | `--accent` | `#b8a37b` | `#8b7335` | Gold accent color |
 | `--accent-hover` | `#d0bd9b` | `#6e5a28` | Accent hover state |
@@ -30,9 +38,10 @@ Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (li
 | `--border-accent` | `#52525b` | `#a1a1aa` | Emphasized borders |
 | `--hover-bg` | `#323236` | `#e4e4e7` | Hover backgrounds |
 | `--danger` | `#ef4444` | `#ef4444` | Error/warning red |
-| `--shadow-color` | `rgba(0,0,0,0.3)` | `rgba(0,0,0,0.1)` | Box shadows |
-| `--accent-glow` | `rgba(184,163,123,0.3)` | `rgba(139,115,53,0.2)` | Accent glow effects |
-| `--accent-bg-subtle` | `rgba(184,163,123,0.1)` | `rgba(139,115,53,0.1)` | Active item backgrounds |
+| `--shadow-color` | `rgba(0,0,0,0.3)` | `rgba(0,0,0,0.1)` | Box shadows (elevated surfaces only — see Design Principles) |
+| `--accent-glow` | `color-mix(accent 30%, transparent)` | `color-mix(accent 20%, transparent)` | Accent glow effects (button hover shadows) |
+| `--accent-glow-strong` | `color-mix(accent 50%, transparent)` | `color-mix(accent 35%, transparent)` | Stronger glow (primary button hover) |
+| `--accent-bg-subtle` | `color-mix(accent 10%, transparent)` | `color-mix(accent 10%, transparent)` | Active item backgrounds |
 
 Always use tokens, never hardcode colors. Use variables for repeated dimensions (`--icon-col`), timing, and spacing. If a value appears 3+ times, extract it.
 
