@@ -18,9 +18,9 @@
   --shadow-color: rgba(0, 0, 0, 0.3);
   --overlay-bg: rgba(0, 0, 0, 0.25);
   --font-display: 'Vollkorn', Georgia, serif;
-  --accent-glow: rgba(184, 163, 123, 0.3);
-  --accent-glow-strong: rgba(184, 163, 123, 0.5);
-  --accent-bg-subtle: rgba(184, 163, 123, 0.1);
+  --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
+  --accent-glow-strong: color-mix(in srgb, var(--accent) 50%, transparent);
+  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
   --btn-ghost-bg: rgba(255, 255, 255, 0.04);
   --btn-ghost-bg-hover: rgba(255, 255, 255, 0.08);
 
@@ -60,9 +60,9 @@
   --pip-missing-border: #e74c3c;
   --shadow-color: rgba(0, 0, 0, 0.1);
   --overlay-bg: rgba(0, 0, 0, 0.3);
-  --accent-glow: rgba(139, 115, 53, 0.2);
-  --accent-glow-strong: rgba(139, 115, 53, 0.35);
-  --accent-bg-subtle: rgba(139, 115, 53, 0.1);
+  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-glow-strong: color-mix(in srgb, var(--accent) 35%, transparent);
+  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
   --btn-ghost-bg: rgba(0, 0, 0, 0.04);
   --btn-ghost-bg-hover: rgba(0, 0, 0, 0.08);
   color-scheme: light;
