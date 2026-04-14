@@ -52,11 +52,11 @@ Comparing active:
 ```
 
 **Key design decisions:**
-- Sidebar is feature navigation: Build Overview, Build Plan (collapsible: classes/feats, skills, spells, enhancements, reaper, destinies), Gear, TOOLS (collapsible: Damage Calc, Farm Checklist, Debug), Settings
-- **Sidebar top**: `[Weston: Pal 20 v]` dropdown for Manage Characters/Builds and Manage Gear Sets. Comparison is entered from the Characters view (click a second build) -- no picker lives in the sidebar.
+- Nav bar is feature navigation: Build Overview, Build Plan (collapsible: classes/feats, skills, spells, enhancements, reaper, destinies), Gear, TOOLS (collapsible: Damage Calc, Farm Checklist, Debug), Settings
+- **Nav bar top**: `[Weston: Pal 20 v]` dropdown for Manage Characters/Builds and Manage Gear Sets. Comparison is entered from the Characters view (click a second build) -- no picker lives in the nav bar.
 - **Compare active**: Second line appears `vs Wizard TR [swap][x]`. `[swap]` flips primary/comparison. `[x]` deactivates.
 - **Bottom bar**: Build warning indicator. Collapsed: `[!] 3 warnings`. Expands to show details with clickable links to the relevant feature (e.g., "2 feat slots empty (L6, L12) [Levels]"). Zero warnings: hides or shows checkmark.
-- **No horizontal tab bar** -- sidebar IS the tab bar, giving full height to content.
+- **No horizontal tab bar** -- nav bar IS the tab bar, giving full height to content.
 - Clean URL routing (History API): `/ddo-builder/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/debug/:entity`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
 
 ### Tech Stack
@@ -102,13 +102,13 @@ Comparing active:
 - **Stats panel**: Auto-collapses to a thin toggle strip below 1200px viewport width. User can re-expand.
 - **Enhancement trees**: Below 900px content width, switch to single-tree view with tab switching (instead of 7 trees side-by-side).
 - **Skills grid**: Horizontal scroll with frozen first column (level numbers) and frozen header row (skill names).
-- **Sidebar**: Already has collapsed mode (56px icons only). No further changes needed.
+- **Nav bar**: Already has collapsed mode (56px icons only). No further changes needed.
 
 ---
 
 ## Characters View (`#characters`)
 
-Full-page management UI for characters and builds. Accessed via the sidebar top link.
+Full-page management UI for characters and builds. Accessed via the nav bar top link.
 - Character list with create/delete
 - Selected character shows:
   - Current build summary
@@ -122,7 +122,7 @@ Full-page management UI for characters and builds. Accessed via the sidebar top 
   - Click a build to make it the active build.
   - Click a second build while one is already active to mark it as the comparison target. A connector line is drawn from the comparison build pointing at the active build, making the direction of comparison visually explicit (deltas read "comparison -> active").
   - Clicking a selected build again deselects it. Clicking the active build while a comparison is set clears comparison mode entirely.
-  - Strict 1v1: selecting a third build replaces the existing comparison target. (Swap direction via the sidebar `[swap]` button, not by re-clicking.)
+  - Strict 1v1: selecting a third build replaces the existing comparison target. (Swap direction via the nav bar `[swap]` button, not by re-clicking.)
 - **Import/Export**:
   - **Import from DDO Builder v2**: Load `.xml` files from the legacy DDO character planner. Parses class splits, feats, enhancements, gear into our build format.
   - **Import custom format**: Load our own `.json` save format (full build state including gear, enhancements, buffs, past lives).
@@ -135,7 +135,7 @@ Full-page management UI for characters and builds. Accessed via the sidebar top 
 
 ### Build Plan (single scrollable page with 6 sections)
 
-Sidebar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to sections within one page. Contains everything about the build's character progression. Gear and Build Overview are separate sidebar views. Past Lives managed in Characters view. Each section on the page (Classes/Feats, Skills, Spells, Enhancements, Destinies) is individually collapsible via its section header. All collapsed states (sidebar group + each section) persisted in `user.db`. **Default states**: Level Progression and Enhancements expanded; Skills, Spells, Reaper, Destinies collapsed. Each collapsed header shows a progress summary (e.g., "Skills: 0/320 allocated", "Enhancements: 42/80 AP spent").
+Nav bar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to sections within one page. Contains everything about the build's character progression. Gear and Build Overview are separate nav bar views. Past Lives managed in Characters view. Each section on the page (Classes/Feats, Skills, Spells, Enhancements, Destinies) is individually collapsible via its section header. All collapsed states (nav bar group + each section) persisted in `user.db`. **Default states**: Level Progression and Enhancements expanded; Skills, Spells, Reaper, Destinies collapsed. Each collapsed header shows a progress summary (e.g., "Skills: 0/320 allocated", "Enhancements: 42/80 AP spent").
 
 ```
 +----------------------------------------------------------+
@@ -348,7 +348,7 @@ Two states:
 - Gear sets are saved independently from builds. A build references multiple gear sets by ID.
 - Gear set tab dropdown on each set: Rename, Duplicate, Delete, Remove from build.
 - `[+ Add Set]` to create new or add an existing gear set to the current build.
-- **Standalone gear set editing**: Accessible via "Manage Gear Sets" in the sidebar top dropdown. Opens gear set management where you can create/edit/delete gear sets using the same Gear view UI.
+- **Standalone gear set editing**: Accessible via "Manage Gear Sets" in the nav bar top dropdown. Opens gear set management where you can create/edit/delete gear sets using the same Gear view UI.
 
 **Full overview (no slot selected)** -- full width, detailed per slot:
 ```
@@ -456,7 +456,7 @@ Two states:
 
 ### Build Overview (`#overview`)
 
-The landing page for a build -- shows everything at a glance and lets you configure active abilities and buffs. Positioned first in sidebar (above Build Plan).
+The landing page for a build -- shows everything at a glance and lets you configure active abilities and buffs. Positioned first in nav bar (above Build Plan).
 
 ```
 +----------------------------------------------------------+
@@ -656,15 +656,15 @@ baseStats(race, pointBuy, tomes, levelUps)
 ## Build Switching & Comparison
 
 ### Switching
-- **Sidebar top dropdown**: `[Weston: Pal 20 v]` -- dropdown shows:
+- **Nav bar top dropdown**: `[Weston: Pal 20 v]` -- dropdown shows:
   - `Manage Characters / Builds` -- opens Characters view where you switch builds, manage characters, past lives, etc.
   - `Manage Gear Sets` -- opens gear set management (same Gear view UI, no build context)
 - Build switching happens in the Characters view (click a build to make it active)
 
 ### Comparison
-- **Entering comparison**: Activate a build in the Characters view, then click a second build to mark it as the comparison target (see [Characters View](#characters-view-characters) > Click to activate / compare). The Characters view is the only entry point -- there is no separate sidebar picker.
-- **Compare active**: Second line below the sidebar build label: `vs Wizard TR [swap][x]`.
-- **Swap button** `[swap]`: Flips which build is primary (editable) and which is comparison (read-only). Sidebar label updates, stats deltas flip sign.
+- **Entering comparison**: Activate a build in the Characters view, then click a second build to mark it as the comparison target (see [Characters View](#characters-view-characters) > Click to activate / compare). The Characters view is the only entry point -- there is no separate nav bar picker.
+- **Compare active**: Second line below the nav bar build label: `vs Wizard TR [swap][x]`.
+- **Swap button** `[swap]`: Flips which build is primary (editable) and which is comparison (read-only). Nav bar label updates, stats deltas flip sign.
 - **"What if" copy**: A `[Try variant]` button creates a temporary copy of the current build. Enters comparison mode with the copy as editable primary and the original as comparison target. When done: "Keep variant" (replaces original), "Save as new build" (keeps both), or "Discard" (reverts to original).
 - **Compare past lives**: Comparing against a character's life inherits that character's past lives for stat calculation. Standalone planned builds default to zero past lives.
 - **Past life warning**: If comparison target has different past lives than current build's character, show a warning indicator.
@@ -672,7 +672,7 @@ baseStats(race, pointBuy, tomes, levelUps)
   - **Stats panel**: +/- deltas inline on each stat (green better, red worse)
   - **Build Overview**: Feats show missing/extra. Abilities present in both builds show +/- damage diff on cards. Buffs show different active states.
   - **Gear**: Side-by-side (your slots left, comparison right)
-  - Other views (Level Plan, Enhancements, Destinies) are unaffected -- swap builds via sidebar to inspect those.
+  - Other views (Level Plan, Enhancements, Destinies) are unaffected -- swap builds via nav bar to inspect those.
 - **Deactivate**: Click `[x]`. If temporary copy active, prompts keep/save/discard first.
 
 ---
@@ -735,7 +735,7 @@ CREATE TABLE ui_state (key TEXT PRIMARY KEY, value TEXT); -- collapsed states, p
 
 Zustand stores are the source of truth for rendering. On mutation, write through to `user.db` (async, debounced for rapid changes like skill allocation). On load, hydrate stores from `user.db`.
 
-**Name limits**: Character names max 40 chars, build names max 60 chars, gear set names max 30 chars. Truncate with ellipsis in tight spaces (sidebar label, dropdowns).
+**Name limits**: Character names max 40 chars, build names max 60 chars, gear set names max 30 chars. Truncate with ellipsis in tight spaces (nav bar label, dropdowns).
 
 ---
 
@@ -797,7 +797,7 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
 **Data sources**: `quest_loot`, `crafting_recipes`, `crafting_recipe_ingredients`, `crafting_system_items`, `crafting_ingredients`
 
 ### Debug / Data Browser (collapsible TOOLS sub-group)
-- Collapsible sidebar group under TOOLS with sub-items:
+- Collapsible nav bar group under TOOLS with sub-items:
   - **Items**: Browse/search all items, view full bonuses, effects, augment slots, set membership
   - **Spells**: Browse all spells, view class levels, school, components, damage
   - **Enhancements**: Browse all trees and enhancements, view bonuses, prereqs
@@ -892,8 +892,8 @@ src/
 ## Implementation Order
 
 ### Phase 1: Layout Restructuring
-1. Redesign sidebar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
-2. Add sidebar top build dropdown (compare-active indicator added in Phase 7)
+1. Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
+2. Add nav bar top build dropdown (compare-active indicator added in Phase 7)
 3. Update hash routing
 4. Add bottom warning bar (collapsed indicator)
 4b. DB loading gate (skeleton UI until `ddo.db` + `user.db` ready)
@@ -942,7 +942,7 @@ src/
 29. Gear set management (per-build + standalone)
 
 ### Phase 7: Comparison Mode
-30. Click-to-compare in Characters view (connector line from comparison -> active build) + sidebar `vs X [swap][x]` indicator
+30. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
 31. Comparison display for stats panel, build overview, and gear
 32. Swap button + "What if" copy workflow
 33. Past life warning for comparison

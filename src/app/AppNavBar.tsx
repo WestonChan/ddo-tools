@@ -122,18 +122,27 @@ function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: App
                       header
                     />
                   )}
-                  {entry.items.map((item, i) => {
-                    const isFirstMatch = entry.items.findIndex(it => it.view === item.view) === i
-                    return (
-                      <NavButton
-                        key={item.id || `${item.view}-${i}`}
-                        item={item}
-                        active={activeView === item.view && isFirstMatch}
-                        onViewChange={handleNavigate}
-                        compact={!!item.id}
-                      />
-                    )
-                  })}
+                  {/* Precompute first index per view so the active-state lookup is O(1)
+                      inside the map instead of O(n²). Several sub-items share the same
+                      view (e.g., build-plan sub-sections); only the first one lights up. */}
+                  {(() => {
+                    const firstIndexByView = new Map<View, number>()
+                    entry.items.forEach((it, i) => {
+                      if (!firstIndexByView.has(it.view)) firstIndexByView.set(it.view, i)
+                    })
+                    return entry.items.map((item, i) => {
+                      const isFirstMatch = firstIndexByView.get(item.view) === i
+                      return (
+                        <NavButton
+                          key={item.id || `${item.view}-${i}`}
+                          item={item}
+                          active={activeView === item.view && isFirstMatch}
+                          onViewChange={handleNavigate}
+                          compact={!!item.id}
+                        />
+                      )
+                    })
+                  })()}
                 </div>
               )
             }

@@ -7,7 +7,13 @@ import './index.css'
 
 // Register service worker for ddo.db caching
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js')
+  navigator.serviceWorker
+    .register(import.meta.env.BASE_URL + 'sw.js')
+    .catch((err) => {
+      // SW registration can fail in private-browsing contexts, non-HTTPS,
+      // or sandboxed iframes — log and continue (app still works without SW).
+      console.warn('Service worker registration failed:', err)
+    })
 }
 
 // GitHub Pages SPA redirect recovery.

@@ -4,9 +4,15 @@
 <body>
 <script>
   // GitHub Pages returns 404.html for unknown paths.
-  // Save the path and redirect to index.html where the SPA router picks it up.
-  sessionStorage.setItem('spa-redirect', window.location.pathname + window.location.search);
-  window.location.replace('/ddo-builder/');
+  // Save the path (incl. hash) and redirect to the app root where the SPA
+  // router picks it up. Base path is derived from the current URL's first
+  // path segment so this works under any repo name / fork / custom base.
+  sessionStorage.setItem(
+    'spa-redirect',
+    window.location.pathname + window.location.search + window.location.hash
+  );
+  var base = '/' + (window.location.pathname.split('/')[1] || '') + '/';
+  window.location.replace(base);
 </script>
 </body>
 </html>
