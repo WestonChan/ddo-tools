@@ -22,9 +22,14 @@
 
   /* Hover shifts only the background — keeping content colors stable so
      icons don't flash brighter on hover while the current-slot icon stays
-     locked to accent. */
-  &:hover {
+     locked to accent. Skipped when active: the card is already the
+     current view, so no hover feedback is needed. */
+  &:hover:not(.active) {
     background: var(--hover-bg);
+  }
+
+  &.active {
+    cursor: default;
   }
 }
 
@@ -118,9 +123,17 @@
   white-space: nowrap;
 }
 
-/* When the characters view is active, the strip (icon + name) turns accent
-   so the top of the card matches the card-level active bar. The strip-name
-   needs its own rule because its default color is --text (overrides inherit). */
+/* Active state: accent border frames the card, strip turns accent. */
+.nav-bar-character-card.active {
+  border-color: var(--accent);
+}
+
+/* Lift the ::before left accent bar above internal dividers so it reads
+   as one continuous stripe without notches at divider intersections. */
+.nav-bar-character-card.active::before {
+  z-index: 1;
+}
+
 .nav-bar-character-card.active .nav-bar-character-strip {
   color: var(--accent);
 }
