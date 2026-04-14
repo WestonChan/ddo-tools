@@ -908,7 +908,7 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 
 9. ErrorBoundary component: catches rendering errors, shows fallback, reports to global collector
 10. Per-view DB loading: remove top-level `LoadingGate` — views that need `ddo.db` call `useDatabase()` and handle their own loading/error; Settings and Characters render instantly
-11. ErrorScreen + ErrorCard: full-page and compact inline error displays with GitHub issue links
+11. ErrorScreen + ErrorCard: full-page and compact inline error displays with GitHub issue links. ErrorScreen doubles as the app's catch-all 500 page — wrap the app root in an ErrorBoundary that renders ErrorScreen for any unhandled crash. Reuses the same categorized heading, monospace detail, stack trace, and issue-reporting links from LoadingGate's error UI.
 12. Nav-bar bug icon: always visible, links to GitHub issues when no errors; badge + expandable error panel when errors detected
 13. GitHub issue integration: per-source labels (`db-loading`, `user-db`, `runtime`), duplicate search, pre-filled new-issue with stack trace
 
