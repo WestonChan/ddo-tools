@@ -29,8 +29,8 @@ Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (li
 | `--bg` | `#18181b` | `#f4f4f5` | Page background |
 | `--bg-panel` | `#27272a` | `#ffffff` | Elevated surfaces only (tooltips, modals). Chrome surfaces (nav, bottom bar, stats) use `--bg` instead. |
 | `--bg-input` | `#1c1c1f` | `#e8e8eb` | Input fields |
-| `--accent` | `#b8a37b` | `#8b7335` | Gold accent color |
-| `--accent-hover` | `#d0bd9b` | `#6e5a28` | Accent hover state |
+| `--accent` | `#b8962e` | `#8b7335` | Gold accent color (matches Gold theme in `theme.ts`) |
+| `--accent-hover` | `#d4ad3a` | `#6e5a28` | Accent hover state |
 | `--text` | `#fafafa` | `#18181b` | Primary text |
 | `--text-secondary` | `#a1a1aa` | `#52525b` | Secondary text |
 | `--text-muted` | `#71717a` | `#71717a` | Muted/disabled text |

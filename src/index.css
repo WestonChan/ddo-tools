@@ -2,8 +2,8 @@
   --bg: #18181b;
   --bg-panel: #27272a;
   --bg-input: #1c1c1f;
-  --accent: #b8a37b;
-  --accent-hover: #d0bd9b;
+  --accent: #b8962e;
+  --accent-hover: #d4ad3a;
   --text: #fafafa;
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
@@ -44,7 +44,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: var(--text);
-  background: radial-gradient(ellipse at center, var(--bg) 0%, #111113 100%);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -76,7 +76,7 @@
   --btn-ghost-bg: rgba(0, 0, 0, 0.04);
   --btn-ghost-bg-hover: rgba(0, 0, 0, 0.08);
   color-scheme: light;
-  background: radial-gradient(ellipse at center, var(--bg) 0%, #e4e4e7 100%);
+  background: var(--bg);
 }
 
 * {

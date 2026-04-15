@@ -19,7 +19,14 @@ export function applyAccent(accent: string, hover: string) {
 export function restoreAccent() {
   try {
     const stored = localStorage.getItem('accent')
-    if (!stored) return
+    if (!stored) {
+      // No stored preference — apply the default theme so the CSS :root
+      // values don't need to be kept in sync with THEMES manually.
+      const { accent, hover } = THEMES[0]
+      document.documentElement.style.setProperty('--accent', accent)
+      document.documentElement.style.setProperty('--accent-hover', hover)
+      return
+    }
     const { accent, hover } = JSON.parse(stored)
     if (accent && hover) {
       document.documentElement.style.setProperty('--accent', accent)
