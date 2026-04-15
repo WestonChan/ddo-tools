@@ -24,7 +24,7 @@
 .confirm-modal-title {
   font-family: var(--font-display);
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 600;
   letter-spacing: 0.02em;
   margin-bottom: 0.5rem;
@@ -32,7 +32,7 @@
 
 .confirm-modal-message {
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
   margin-bottom: 1rem;
 }
@@ -44,7 +44,7 @@
 .confirm-modal-input label {
   display: block;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   margin-bottom: 0.35rem;
 }
 
@@ -59,7 +59,7 @@
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 0.35rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   box-sizing: border-box;
 }
 
@@ -76,10 +76,10 @@
 
 .confirm-modal-actions .btn-ghost {
   padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
 }
 
 .confirm-modal-actions .btn-primary {
   padding: 0.35rem 1rem;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
 }

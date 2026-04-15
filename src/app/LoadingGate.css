@@ -88,13 +88,13 @@
 }
 
 .loading-gate-error h1 {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   color: var(--danger);
 }
 
 .loading-gate-error-detail {
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -107,7 +107,7 @@
 }
 
 .loading-gate-error-hint {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   max-width: 400px;
 }
@@ -118,7 +118,7 @@
   color: var(--bg);
   border: none;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
 }
@@ -141,6 +141,6 @@
 }
 
 .loading-gate-report {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }

@@ -34,5 +34,5 @@
 .section-placeholder {
   padding: 1.5rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }

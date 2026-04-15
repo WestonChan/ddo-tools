@@ -23,7 +23,7 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   white-space: nowrap;
   transition: opacity var(--transition-fast);
 
@@ -87,7 +87,7 @@
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 6px;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
   white-space: nowrap;
   box-shadow: 0 4px 12px var(--shadow-color);
@@ -120,7 +120,7 @@
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   cursor: pointer;
   text-align: left;
   transition: background var(--transition-fast);

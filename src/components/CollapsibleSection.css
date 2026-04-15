@@ -11,7 +11,7 @@
   color: var(--accent);
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   letter-spacing: 0.03em;
   cursor: pointer;
   border: none;
@@ -25,7 +25,7 @@
 }
 
 .collapsible-header .chevron {
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
 }
 
 .collapsible-header .chevron.expanded {
