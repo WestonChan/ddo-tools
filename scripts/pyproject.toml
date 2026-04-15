@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ddo-data"
 version = "0.1.0"
-description = "Data pipeline for DDO Build Planner - parses game files and scrapes wiki"
+description = "Data pipeline for DDO Tools - parses game files and scrapes wiki"
 requires-python = ">=3.10"
 dependencies = [
     "click>=8.0",

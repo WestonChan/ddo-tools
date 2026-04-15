@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react'
 import { useRouter } from './useRouter'
 import type { View } from './useRouter'
 
-// In vitest, import.meta.env.BASE_URL is '/' (not '/ddo-builder/')
+// In vitest, import.meta.env.BASE_URL is '/' (not '/ddo-tools/')
 // so BASE in useRouter resolves to '' (empty string after trailing slash strip).
 // Paths in tests use just '/{view}'.
 

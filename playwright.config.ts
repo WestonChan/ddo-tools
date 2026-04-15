@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: 'http://localhost:5173/ddo-builder/',
+    baseURL: 'http://localhost:5173/ddo-tools/',
     trace: 'on-first-retry',
   },
   projects: [
@@ -19,7 +19,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:5173/ddo-builder/',
+    url: 'http://localhost:5173/ddo-tools/',
     reuseExistingServer: !process.env.CI,
   },
 })

@@ -1,8 +1,8 @@
-# DDO Build Planner
+# DDO Tools
 
-A full build planner for [Dungeons & Dragons Online](https://www.ddo.com/) — plan character builds and gear sets.
+A toolkit for [Dungeons & Dragons Online](https://www.ddo.com/) — plan character builds and gear sets.
 
-**Live site:** [westonchan.github.io/ddo-builder](https://westonchan.github.io/ddo-builder/)
+**Live site:** [westonchan.github.io/ddo-tools](https://westonchan.github.io/ddo-tools/)
 
 ## Features (Planned)
 

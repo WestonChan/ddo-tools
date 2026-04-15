@@ -1,12 +1,12 @@
-# DDO Build Planner
+# DDO Tools
 
-A full build planner for Dungeons & Dragons Online (DDO) — character builds and gear planning.
+A toolkit for Dungeons & Dragons Online (DDO) — character builds and gear planning.
 
 ## Quick Reference
 
 ```bash
 # Frontend
-npm run dev          # Dev server at http://localhost:5173/ddo-builder/
+npm run dev          # Dev server at http://localhost:5173/ddo-tools/
 npm run build        # Production build
 npm run lint         # ESLint
 npm run format       # Prettier
@@ -41,7 +41,7 @@ pytest scripts/                  # Run Python tests
 
 ## Conventions
 
-- **Frontend:** React + TypeScript + Vite. Use feature-based organization. Router basename is `/ddo-builder` (for GitHub Pages).
+- **Frontend:** React + TypeScript + Vite. Use feature-based organization. Router basename is `/ddo-tools` (for GitHub Pages).
 - **Styling:** Dark theme with gold (#c9a848) accents. Plain CSS in component directories. See `docs/styling.md`.
 - **Icons:** Use `lucide-react` for all icons. Pass `size` prop for sizing. Single-color, inherits `currentColor`.
 - **Python:** Package lives in `scripts/` with `pyproject.toml`. Use `click` for CLI commands. Type hints required.
@@ -77,7 +77,7 @@ Plain CSS with native nesting, BEM naming, co-located with components. See `docs
 After implementing or modifying frontend features, use Playwright (via MCP tools) to verify the result:
 
 1. Ensure the dev server (`npm run dev`) and Playwright MCP server (`npm run playwright`) are running.
-2. Navigate to the relevant page with `browser_navigate` (base URL: `http://localhost:5173/ddo-builder/`).
+2. Navigate to the relevant page with `browser_navigate` (base URL: `http://localhost:5173/ddo-tools/`).
 3. Take a screenshot with `browser_take_screenshot` to inspect the rendered UI. Use a descriptive filename (e.g. `filename: "feature-name.png"`).
 4. Use `browser_snapshot` to inspect the accessibility tree when verifying element structure or finding interactive elements.
 5. Verify: correct layout, dark theme with gold (#c9a848) accents, no rendering errors, and that the feature works as intended.

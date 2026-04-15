@@ -31,7 +31,7 @@ class WikiClient:
         self.use_cache = use_cache
         self.delay = delay
         self._session = requests.Session()
-        self._session.headers["User-Agent"] = "ddo-data/0.1 (DDO Build Planner)"
+        self._session.headers["User-Agent"] = "ddo-data/0.1 (DDO Tools)"
         self._last_request_time = 0.0
 
     def get_wikitext(self, page_title: str) -> str | None:

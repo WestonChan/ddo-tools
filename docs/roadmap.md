@@ -57,12 +57,12 @@ Comparing active:
 - **Compare active**: Second line appears `vs Wizard TR [swap][x]`. `[swap]` flips primary/comparison. `[x]` deactivates.
 - **Bottom bar**: Build warning indicator. Collapsed: `[!] 3 warnings`. Expands to show details with clickable links to the relevant feature (e.g., "2 feat slots empty (L6, L12) [Levels]"). Zero warnings: hides or shows checkmark.
 - **No horizontal tab bar** -- nav bar IS the tab bar, giving full height to content.
-- Clean URL routing (History API): `/ddo-builder/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/debug/:entity`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
+- Clean URL routing (History API): `/ddo-tools/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/debug/:entity`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
 
 ### Tech Stack
 - React 19 + TypeScript + Vite (keep existing)
 - **Zustand** -- in-memory state management. Stores are hydrated from `user.db` on load. Mutations write through to `user.db`.
-- **Clean URL routing** -- History API (`pushState` / `popstate`), no library. URLs like `/ddo-builder/build-plan`. GitHub Pages SPA support via `404.html` redirect. Use `scrollIntoView()` for Build Plan section navigation.
+- **Clean URL routing** -- History API (`pushState` / `popstate`), no library. URLs like `/ddo-tools/build-plan`. GitHub Pages SPA support via `404.html` redirect. Use `scrollIntoView()` for Build Plan section navigation.
 - **@dnd-kit/sortable** -- drag/drop for sortable lists (pinned stats, spell order). Handles touch, keyboard, and accessibility.
 - **Base UI** (@base-ui/react) -- headless UI primitives for new components (spell picker, enhancement tooltips, gear popovers). Adopt incrementally; don't migrate existing working components.
 - **@tanstack/react-virtual** -- virtual scrolling for large lists (9K+ items, 800+ feats)
@@ -925,13 +925,13 @@ Replace custom `useRouter` hook with `@tanstack/react-router`. Needed before Pha
 - Define route tree with typed routes for all existing views + `not-found`
 - Migrate `App.tsx` view switching to route-based rendering
 - Migrate `AppNavBar` and `BottomBar` navigation from `navigate(view)` to router `Link`/`useNavigate`
-- Configure `basePath: '/ddo-builder'` for GitHub Pages
+- Configure `basePath: '/ddo-tools'` for GitHub Pages
 - Update `404.html` SPA redirect if needed
 - Remove `src/hooks/useRouter.ts` and `useRouter.test.ts`
 - Verify all Playwright e2e tests pass (URL assertions, navigation, view switching)
 
 ### Phase 2: Index / Landing View
-7. Design landing page for `/ddo-builder/` (recent builds, quick-start actions, or dashboard overview)
+7. Design landing page for `/ddo-tools/` (recent builds, quick-start actions, or dashboard overview)
 8. Determine whether this is a distinct view or an existing view (e.g., Characters, Build Overview) serves as default
 
 ### Phase 3: Error Reporting & Resilience
@@ -1036,7 +1036,7 @@ Share builds via URL links without a backend. Complement to the file-based impor
 73. Optional tier: gear set (items + augments + filigrees) — included when total URL stays under safe limits (~2,000 chars)
 
 **Share route & view**:
-74. `/ddo-builder/share?b=<compressed>` route handled by router
+74. `/ddo-tools/share?b=<compressed>` route handled by router
 75. Read-only build summary (ShareView) with "Import to My Builds" action — shared build shows unsaved badge (from step 47) until imported
 76. Graceful error state for invalid/corrupted/truncated links
 

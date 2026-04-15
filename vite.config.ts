@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/ddo-builder/',
+  base: '/ddo-tools/',
   optimizeDeps: {
     // sql.js JS module must be pre-bundled (CJS -> ESM conversion).
     // The WASM binary is loaded separately via ?url import.

@@ -1,6 +1,6 @@
 # Styling Guide
 
-CSS conventions, design tokens, layout architecture, and responsive breakpoints for the DDO Build Planner frontend.
+CSS conventions, design tokens, layout architecture, and responsive breakpoints for the DDO Tools frontend.
 
 ## Design Principles
 

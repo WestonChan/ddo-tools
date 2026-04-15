@@ -22,7 +22,7 @@ const VALID_VIEWS: View[] = [
   'settings',
 ]
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '') // '/ddo-builder'
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '') // '/ddo-tools'
 
 function getViewFromPath(): View {
   const path = window.location.pathname

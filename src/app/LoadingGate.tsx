@@ -1,7 +1,7 @@
 import { useDatabase } from '../hooks'
 import './LoadingGate.css'
 
-const REPO_URL = 'https://github.com/WestonChan/ddo-builder'
+const REPO_URL = 'https://github.com/WestonChan/ddo-tools'
 
 function clearSiteData() {
   // Wipe SW caches (covers corrupt ddo.db), then reload
@@ -37,7 +37,7 @@ export function LoadingGate({ children }: { children: React.ReactNode }) {
       hint = 'The game database file could not be found. The site may be mid-deploy — try again in a minute.'
     } else if (isWasmError) {
       heading = 'Browser not supported'
-      hint = 'The DDO Build Planner requires WebAssembly support. Make sure your browser is up to date.'
+      hint = 'DDO Tools requires WebAssembly support. Make sure your browser is up to date.'
     }
     const issueBody = [
       `**Error:** ${msg}`,

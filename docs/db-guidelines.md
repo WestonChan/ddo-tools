@@ -1,6 +1,6 @@
 # DDO Database Design Guidelines
 
-Design decisions for `public/data/ddo.db` — the SQLite database powering the DDO Build Planner.
+Design decisions for `public/data/ddo.db` — the SQLite database powering the DDO Tools.
 
 ---
 
