@@ -1,113 +1,38 @@
+/* Shell: vertical stack filling the viewport */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* App area: 3-column grid filling available space */
 .app {
-  min-height: 100vh;
-  margin-left: 56px;
-  margin-right: 280px;
-  padding-bottom: 2rem;
-  transition: margin-left 0.2s ease-out;
-}
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 220px 1fr 280px;
 
-.app.app--sidebar-expanded {
-  margin-left: 180px;
-}
+  &.app--nav-bar-collapsed {
+    grid-template-columns: 56px 1fr 280px;
+  }
 
-.app.app--no-sidebar {
-  margin-right: 0;
-}
+  &.app--no-stats {
+    grid-template-columns: 220px 1fr;
+  }
 
-/* --- Breadcrumb bar --- */
-.breadcrumb {
-  position: fixed;
-  bottom: 0;
-  left: 56px;
-  right: 280px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  padding: 0.35rem 1rem;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border);
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  transition: left 0.2s ease-out;
-}
-
-.app--sidebar-expanded .breadcrumb {
-  left: 180px;
-}
-
-.app--no-sidebar .breadcrumb {
-  right: 0;
-}
-
-.breadcrumb-link {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  transition: background 0.15s ease-out;
-}
-
-.breadcrumb-link:hover {
-  background: var(--hover-bg);
-}
-
-.breadcrumb-name {
-  font-weight: 700;
-  color: var(--text);
-  font-size: 0.8rem;
-}
-
-.breadcrumb-race {
-  font-weight: 700;
-  color: var(--accent);
-  font-size: 0.75rem;
-}
-
-.breadcrumb-classes {
-  color: var(--text);
-  font-weight: 600;
-  font-size: 0.75rem;
-}
-
-.breadcrumb-life {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-}
-
-.breadcrumb-tag {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 3px;
-  padding: 0 0.3rem;
-  line-height: 1.4;
-  opacity: 0.8;
+  &.app--nav-bar-collapsed.app--no-stats {
+    grid-template-columns: 56px 1fr;
+  }
 }
 
 .app-content {
-  display: flex;
-  flex-direction: column;
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
 }
 
 .section-placeholder {
   padding: 1.5rem;
   color: var(--text-muted);
   font-size: 0.9rem;
-}
-
-@media (max-width: 768px) {
-  .app {
-    margin-left: 0;
-    margin-bottom: 56px;
-  }
-
-  .breadcrumb {
-    left: 0;
-    right: 0;
-  }
 }

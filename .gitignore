@@ -45,6 +45,11 @@ htmlcov/
 .claude/
 .mcp.json
 .playwright-mcp/
+test-results/
+playwright-report/
+
+# Continue (VS Code AI extension)
+.continue/
 
 # Screenshots
 screenshots/

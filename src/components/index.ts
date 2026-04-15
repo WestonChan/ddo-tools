@@ -17,7 +17,20 @@ export {
   ConstellationIcon,
   GearIcon,
   CheckIcon,
-  ShieldBrandIcon,
+  WarningIcon,
+  CompareIcon,
+  ScrollIcon,
+  HammerIcon,
+  WandIcon,
+  BugIcon,
+  SearchIcon,
+  ListCheckIcon,
+  SkillsIcon,
+  SpellIcon,
+  TreeIcon2,
+  SkullIcon,
+  DiamondIcon,
+  CalculatorIcon,
 } from './Icons'
 export { Tooltip, TooltipWrapper } from './Tooltip'
 export type { TooltipPlacement } from './Tooltip'

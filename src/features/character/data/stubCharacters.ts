@@ -74,10 +74,11 @@ const STUB_LIVES: Life[] = [
   {
     id: '3b',
     name: '',
-    race: 'human',
+    race: 'eladrin-chaosmancer',
     classes: [
-      { classId: 'paladin', levels: 18 },
-      { classId: 'rogue', levels: 2 },
+      { classId: 'favored-soul', levels: 12 },
+      { classId: 'artificer', levels: 6 },
+      { classId: 'alchemist', levels: 2 },
     ],
     feats: [],
     enhancements: [],

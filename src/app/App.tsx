@@ -1,116 +1,100 @@
-import { useEffect, useState } from 'react'
-import AppSidebar from './AppSidebar'
-import type { View } from './AppSidebar'
-import { useLocalStorage } from '../hooks'
-import { CollapsibleSection } from '../components'
+import { useEffect, useRef, useState } from 'react'
+import AppNavBar from './AppNavBar'
+import { SettingsView } from '../features/settings'
+import { BottomBar } from './BottomBar'
+import type { BuildWarning } from './BottomBar'
+import { useLocalStorage, useRouter } from '../hooks'
 import {
   BuildSidePanel,
   CharacterView,
-  useCharacter,
-  formatClassSummary,
-  formatRace,
 } from '../features/character'
 import './App.css'
 
-const VALID_VIEWS: View[] = ['build', 'character', 'gear', 'enhancements', 'destinies']
+// Placeholder: no warnings until validation engine is built
+const warnings: BuildWarning[] = []
 
-function getViewFromHash(): View {
-  const hash = window.location.hash.replace('#', '')
-  return VALID_VIEWS.includes(hash as View) ? (hash as View) : 'build'
-}
+const VIEWS_WITH_STATS_PANEL = new Set(['build-plan'])
 
 function App() {
-  const [activeView, setActiveView] = useState<View>(getViewFromHash)
-  const [sidebarExpanded, setSidebarExpanded] = useLocalStorage('ddo-sidebar-expanded', false)
-  const {
-    character: selected,
-    activeBuild,
-    viewingPlannedBuild,
-    lifeNumbers,
-    lifeNumber,
-  } = useCharacter()
+  const { view, navigate } = useRouter()
+  const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-nav-bar-expanded', true)
+  const [navBarExpanded, setNavBarExpanded] = useState(() => {
+    const width = window.innerWidth
+    // 600-899: auto-collapse to icons. <600 and >=900: respect stored preference.
+    if (width >= 600 && width < 900) return false
+    return storedExpanded
+  })
 
+  // Auto-collapse nav bar when viewport crosses below 900px,
+  // restore stored preference when crossing back above 900px
+  const prevWidth = useRef(window.innerWidth)
   useEffect(() => {
-    const onHashChange = () => setActiveView(getViewFromHash())
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
+    function handleResize() {
+      const width = window.innerWidth
+      if (prevWidth.current >= 900 && width < 900) {
+        setNavBarExpanded(false)
+      }
+      if (prevWidth.current < 900 && width >= 900) {
+        setNavBarExpanded(storedExpanded)
+      }
+      prevWidth.current = width
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [storedExpanded])
 
-  function handleViewChange(view: View) {
-    window.location.hash = view
-    setActiveView(view)
+  function toggleNavBar() {
+    const next = !navBarExpanded
+    setNavBarExpanded(next)
+    setStoredExpanded(next)
   }
 
-  const showRightPanel = activeView === 'build'
-  const appClasses = [
-    'app',
-    showRightPanel ? '' : 'app--no-sidebar',
-    sidebarExpanded ? 'app--sidebar-expanded' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-
+  const showRightPanel = VIEWS_WITH_STATS_PANEL.has(view)
   return (
-    <div className={appClasses}>
-      <AppSidebar
-        activeView={activeView}
-        onViewChange={handleViewChange}
-        expanded={sidebarExpanded}
-        onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
-      />
-      {activeView === 'build' && (
-        <>
-          <div className="app-content">
-            <CollapsibleSection title="Level Plan" defaultExpanded>
-              <div className="section-placeholder">Level-by-level planning coming soon.</div>
-            </CollapsibleSection>
-            <CollapsibleSection title="Gear">
-              <div className="section-placeholder">Gear planning coming soon.</div>
-            </CollapsibleSection>
-            <CollapsibleSection title="Enhancements">
-              <div className="section-placeholder">Enhancement trees coming soon.</div>
-            </CollapsibleSection>
-            <CollapsibleSection title="Epic Destinies">
-              <div className="section-placeholder">Epic destiny trees coming soon.</div>
-            </CollapsibleSection>
-          </div>
-          <BuildSidePanel />
-        </>
-      )}
-      {activeView === 'character' && <CharacterView />}
-      {activeView === 'gear' && (
+    <div className="app-shell">
+      <div className={`app${navBarExpanded ? '' : ' app--nav-bar-collapsed'}${showRightPanel ? '' : ' app--no-stats'}`}>
+        <AppNavBar
+          activeView={view}
+          onViewChange={navigate}
+          expanded={navBarExpanded}
+          onToggleExpanded={toggleNavBar}
+        />
+
         <div className="app-content">
-          <div className="section-placeholder">Gear planner coming soon.</div>
-        </div>
-      )}
-      {activeView === 'enhancements' && (
-        <div className="app-content">
-          <div className="section-placeholder">Enhancement trees coming soon.</div>
-        </div>
-      )}
-      {activeView === 'destinies' && (
-        <div className="app-content">
-          <div className="section-placeholder">Epic destiny trees coming soon.</div>
-        </div>
-      )}
-      <nav className="breadcrumb">
-        <button className="breadcrumb-link" onClick={() => handleViewChange('character')}>
-          <span className="breadcrumb-name">{selected.name}</span>
-          {activeBuild && (
-            <>
-              <span className="breadcrumb-race">{formatRace(activeBuild.race)}</span>
-              <span className="breadcrumb-classes">{formatClassSummary(activeBuild)}</span>
-            </>
+          {view === 'characters' && <CharacterView />}
+          {view === 'build-plan' && (
+            <div className="section-placeholder">Build Plan coming in Phase 5.</div>
           )}
-          {viewingPlannedBuild ? (
-            <span className="breadcrumb-tag">Planned Build</span>
-          ) : (
-            <span className="breadcrumb-life">
-              Life {(activeBuild && lifeNumbers.get(activeBuild.id)) ?? lifeNumber}
-            </span>
+          {view === 'overview' && (
+            <div className="section-placeholder">Build Overview coming in Phase 10.</div>
           )}
-        </button>
-      </nav>
+          {view === 'gear' && (
+            <div className="section-placeholder">Gear Planner coming in Phase 6.</div>
+          )}
+          {view === 'damage-calc' && (
+            <div className="section-placeholder">Damage Calculator coming in a future update.</div>
+          )}
+          {view === 'farm-checklist' && (
+            <div className="section-placeholder">Farm Checklist coming in Phase 8.</div>
+          )}
+          {view === 'debug' && (
+            <div className="section-placeholder">Debug / Data Browser coming in Phase 2.</div>
+          )}
+          {view === 'settings' && <SettingsView />}
+          {view === 'not-found' && (
+            <div className="section-placeholder">
+              Page not found.{' '}
+              <a href="#" onClick={(e) => { e.preventDefault(); navigate('build-plan') }}>
+                Go to Build Plan
+              </a>
+            </div>
+          )}
+        </div>
+
+        {showRightPanel && <BuildSidePanel />}
+      </div>
+
+      <BottomBar warnings={warnings} onNavigate={navigate} />
     </div>
   )
 }

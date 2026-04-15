@@ -16,13 +16,15 @@
   --danger-bg: rgba(239, 68, 68, 0.1);
   --pip-missing-border: #c0392b;
   --shadow-color: rgba(0, 0, 0, 0.3);
-  --overlay-bg: rgba(0, 0, 0, 0.6);
+  --overlay-bg: rgba(0, 0, 0, 0.25);
   --font-display: 'Vollkorn', Georgia, serif;
-  --accent-glow: rgba(184, 163, 123, 0.3);
-  --accent-glow-strong: rgba(184, 163, 123, 0.5);
-  --accent-bg-subtle: rgba(184, 163, 123, 0.1);
+  --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
+  --accent-glow-strong: color-mix(in srgb, var(--accent) 50%, transparent);
+  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
   --btn-ghost-bg: rgba(255, 255, 255, 0.04);
   --btn-ghost-bg-hover: rgba(255, 255, 255, 0.08);
+
+
   color-scheme: dark;
 
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -55,9 +57,9 @@
   --pip-missing-border: #e74c3c;
   --shadow-color: rgba(0, 0, 0, 0.1);
   --overlay-bg: rgba(0, 0, 0, 0.3);
-  --accent-glow: rgba(139, 115, 53, 0.2);
-  --accent-glow-strong: rgba(139, 115, 53, 0.35);
-  --accent-bg-subtle: rgba(139, 115, 53, 0.1);
+  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-glow-strong: color-mix(in srgb, var(--accent) 35%, transparent);
+  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
   --btn-ghost-bg: rgba(0, 0, 0, 0.04);
   --btn-ghost-bg-hover: rgba(0, 0, 0, 0.08);
   color-scheme: light;
@@ -130,12 +132,6 @@ h1 {
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color 0.2s ease-out,
-    border-color 0.2s ease-out,
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
 }
 
 .btn-ghost:hover {
@@ -160,12 +156,6 @@ h1 {
   font-size: 0.73rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color 0.2s ease-out,
-    border-color 0.2s ease-out,
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
 }
 
 .btn-ghost-sm:hover {
@@ -190,10 +180,6 @@ h1 {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
 }
 
 .btn-primary:hover {
@@ -223,10 +209,6 @@ h1 {
   font-size: 0.73rem;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    background 0.2s ease-out,
-    box-shadow 0.2s ease-out,
-    transform 0.15s ease-out;
 }
 
 .btn-primary-sm:hover {
@@ -243,7 +225,6 @@ h1 {
 .row-interactive {
   border-radius: 3px;
   cursor: pointer;
-  transition: background 0.2s ease-out;
 }
 
 .row-interactive:hover {

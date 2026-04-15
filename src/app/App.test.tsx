@@ -3,6 +3,11 @@ import { describe, it, expect } from 'vitest'
 import App from './App'
 import { CharacterProvider } from '../features/character'
 
+// Mock useDatabase so LoadingGate doesn't block rendering
+vi.mock('../hooks/useDatabase', () => ({
+  useDatabase: () => ({ db: {}, loading: false, error: null }),
+}))
+
 function renderApp() {
   return render(
     <CharacterProvider>
@@ -12,20 +17,18 @@ function renderApp() {
 }
 
 describe('App', () => {
-  it('renders the breadcrumb with character info', () => {
+  it('renders the nav bar with navigation', () => {
     renderApp()
-    expect(screen.getByText('Thordak')).toBeInTheDocument()
+    const buttons = screen.getAllByRole('button')
+    expect(buttons.length).toBeGreaterThanOrEqual(5)
   })
 
-  it('renders collapsible sections', () => {
+  it('renders placeholder content for default view', () => {
     renderApp()
-    expect(screen.getByText('Level Plan')).toBeInTheDocument()
-    expect(screen.getByText('Gear')).toBeInTheDocument()
-    expect(screen.getByText('Enhancements')).toBeInTheDocument()
-    expect(screen.getByText('Epic Destinies')).toBeInTheDocument()
+    expect(screen.getByText(/Build Plan coming/)).toBeInTheDocument()
   })
 
-  it('renders the stats sidebar', () => {
+  it('renders the stats panel on build-plan view', () => {
     renderApp()
     expect(screen.getByText('Stats')).toBeInTheDocument()
     expect(screen.getByText('Feats')).toBeInTheDocument()

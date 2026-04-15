@@ -1,0 +1,132 @@
+.bottom-bar {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.bottom-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 1rem;
+  gap: 1rem;
+}
+
+/* Shared base for bottom bar buttons */
+.bottom-bar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+/* Build info (left) */
+.bottom-bar-build {
+  min-width: 0;
+}
+
+.bottom-bar-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.bottom-bar-description {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Warnings (right) */
+.bottom-bar-warnings {
+  color: var(--danger);
+  font-weight: 600;
+  flex-shrink: 0;
+
+  & svg:last-child {
+  }
+}
+
+.bottom-bar:has(.bottom-bar-warning-list) .bottom-bar-warnings svg:last-child {
+  transform: rotate(180deg);
+}
+
+.bottom-bar-ok {
+  color: var(--text-muted);
+  flex-shrink: 0;
+
+  & svg {
+    color: var(--accent);
+  }
+}
+
+/* Click tooltip */
+.bottom-bar-status {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.bottom-bar-tooltip {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  animation: tooltip-in 150ms;
+
+  &.fading {
+    opacity: 0;
+  }
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Expanded warning list */
+.bottom-bar-warning-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border);
+}
+
+.bottom-bar-warning-item {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--text);
+  }
+}
+
+.bottom-bar-warning-item--error {
+  color: var(--danger);
+}
+
+.bottom-bar-warning-item--warning {
+  color: var(--accent);
+}

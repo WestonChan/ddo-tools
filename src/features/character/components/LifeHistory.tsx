@@ -8,7 +8,8 @@ import {
   formatRace,
   getPlannedBuildPastLives,
 } from '../utils'
-import { EditableText, StarIcon, TrashIcon, PlusIcon } from '../../../components'
+import { EditableText } from '../../../components'
+import { Star, Trash2, Plus } from 'lucide-react'
 
 // --- Reincarnate types ---
 
@@ -146,7 +147,7 @@ function LifeRow({
       className={`life-entry row-interactive ${className ?? ''} ${active ? 'viewing' : ''}`}
       onClick={onClick}
     >
-      <span className="life-marker">{active ? <StarIcon /> : ''}</span>
+      <span className="life-marker">{active ? <Star size={14} /> : ''}</span>
       {lifeNumber != null && <span className="life-number">{lifeNumber}</span>}
       {active ? (
         <EditableText
@@ -225,7 +226,7 @@ export function LifeHistory({
       {/* Planned builds (global) */}
       <div className="section-label">Planned</div>
       <button className="add-planned-life-btn" onClick={onAddPlannedBuild}>
-        <PlusIcon /> Add Planned Build
+        <Plus size={14} /> Add Planned Build
       </button>
       {[...plannedBuilds].reverse().map((build) => {
         const pastLives = getPlannedBuildPastLives(build)
@@ -256,7 +257,7 @@ export function LifeHistory({
               }}
               aria-label="Delete planned build"
             >
-              <TrashIcon />
+              <Trash2 size={14} />
             </button>
           </LifeRow>
         )

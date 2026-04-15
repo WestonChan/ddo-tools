@@ -1,0 +1,168 @@
+/* === Nav Bar Character Card === */
+/* Acts as a single nav item to the characters view. Internal dividers
+   provide visual structure but hover/active state applies card-wide. */
+
+.nav-bar-character-card {
+  --card-h: 184px;
+  --strip-h: 40px;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--card-h);
+  flex-shrink: 0;
+  margin: 0.35rem 0.4rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  overflow: hidden;
+  /* Hover shifts only the background — keeping content colors stable so
+     icons don't flash brighter on hover while the current-slot icon stays
+     locked to accent. Skipped when active: the card is already the
+     current view, so no hover feedback is needed. */
+  &:hover:not(.active) {
+    background: var(--hover-bg);
+  }
+
+  &.active {
+    cursor: default;
+  }
+}
+
+/* Character strip: compact header showing the owning character's name */
+.nav-bar-character-strip {
+  display: grid;
+  grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
+  align-items: center;
+  height: var(--strip-h);
+  flex-shrink: 0;
+
+  & > svg {
+    justify-self: center;
+  }
+}
+
+.nav-bar-character-strip-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 0.5rem;
+}
+
+/* Divider variant that hosts the swap button.
+   Gives the absolutely-positioned swap button a 1px-tall anchor. */
+.nav-bar-divider--swap {
+  position: relative;
+  overflow: visible;
+}
+
+/* Swap button: small square overlapping the middle divider, centered at icon column.
+   Independent hover state since it has its own intent (swap builds). */
+.nav-bar-character-swap-btn {
+  position: absolute;
+  top: 50%;
+  left: calc((var(--icon-col) - 0.8rem - 24px) / 2);
+  transform: translateY(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  cursor: pointer;
+  &:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+}
+
+/* Slot: one row of the card (current build or compare placeholder). */
+.nav-bar-character-slot {
+  flex: 1;
+  display: grid;
+  grid-template-columns: calc(var(--icon-col) - 0.8rem) 1fr;
+  align-items: center;
+  min-height: 0;
+
+  & > svg {
+    justify-self: center;
+  }
+}
+
+.nav-bar-character-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-right: 0.5rem;
+}
+
+.nav-bar-character-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Active state: accent border frames the card, strip turns accent. */
+.nav-bar-character-card.active {
+  border-color: var(--accent);
+}
+
+/* Lift the ::before left accent bar above internal dividers so it reads
+   as one continuous stripe without notches at divider intersections. */
+.nav-bar-character-card.active::before {
+  z-index: 1;
+}
+
+.nav-bar-character-card.active .nav-bar-character-strip {
+  color: var(--accent);
+}
+
+.nav-bar-character-card.active .nav-bar-character-strip-name {
+  color: var(--accent);
+}
+
+/* Top divider (between strip and current build slot) turns accent so the
+   card's internal structure echoes the accent-framed border. The middle
+   --swap divider is left neutral so the swap button anchored there still
+   reads as a distinct interactive affordance rather than blending into
+   the active accent band. */
+.nav-bar-character-card.active .nav-bar-divider:not(.nav-bar-divider--swap) {
+  background: var(--accent);
+}
+
+/* Placeholder dashed lines in the compare slot.
+   Uses --text-muted so the dashes match the build description text color. */
+.nav-bar-character-build-placeholder {
+  height: 0.65rem;
+  margin: 1px 0;
+  border-bottom: 1px dashed var(--text-muted);
+  max-width: 70%;
+
+  &:last-child {
+    max-width: 55%;
+  }
+}
+
+.nav-bar-character-build {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -10,7 +10,7 @@ All 5 pre-frontend gate audits are complete. The DB has 78 tables, 9,452 items, 
 
 ```
 +-------------------+---------------------+---+
-| [Weston: Pal 20 v] [vs]                 | S |
+| [Weston: Pal 20 v]                      | S |
 |-------------------|                     | t |
 | [Build Overview]  |  Main Content       | a |
 | v BUILD PLAN      |  (single scrollable | t |
@@ -41,7 +41,7 @@ All 5 pre-frontend gate audits are complete. The DB has 78 tables, 9,452 items, 
 
 Comparing active:
 +-------------------+
-| [Weston: Pal 20 v] [vs]
+| [Weston: Pal 20 v]
 | vs Wizard TR [sw][x]
 |-------------------|
 | [Build Overview]  |
@@ -52,11 +52,11 @@ Comparing active:
 ```
 
 **Key design decisions:**
-- Sidebar is feature navigation: Build Overview, Build Plan (collapsible: classes/feats, skills, spells, enhancements, reaper, destinies), Gear, TOOLS (collapsible: Damage Calc, Farm Checklist, Debug), Settings
-- **Sidebar top**: `[Weston: Pal 20 v]` dropdown for Manage Characters/Builds and Manage Gear Sets. `[vs]` icon next to it opens compare picker.
+- Nav bar is feature navigation: Build Overview, Build Plan (collapsible: classes/feats, skills, spells, enhancements, reaper, destinies), Gear, TOOLS (collapsible: Damage Calc, Farm Checklist, Debug), Settings
+- **Nav bar top**: `[Weston: Pal 20 v]` dropdown for Manage Characters/Builds and Manage Gear Sets. Comparison is entered from the Characters view (click a second build) -- no picker lives in the nav bar.
 - **Compare active**: Second line appears `vs Wizard TR [swap][x]`. `[swap]` flips primary/comparison. `[x]` deactivates.
 - **Bottom bar**: Build warning indicator. Collapsed: `[!] 3 warnings`. Expands to show details with clickable links to the relevant feature (e.g., "2 feat slots empty (L6, L12) [Levels]"). Zero warnings: hides or shows checkmark.
-- **No horizontal tab bar** -- sidebar IS the tab bar, giving full height to content.
+- **No horizontal tab bar** -- nav bar IS the tab bar, giving full height to content.
 - Clean URL routing (History API): `/ddo-builder/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/debug/:entity`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
 
 ### Tech Stack
@@ -90,6 +90,9 @@ Comparing active:
 - **DB load failure** (WASM not supported, fetch fails): Full-page error with retry button and browser compatibility note.
 - **Wiki fetch failure**: Inline "Preview unavailable" with retry link. Does not block the rest of the detail view.
 - **user.db persistence failure**: Warning banner "Changes may not be saved" with option to export user.db manually.
+- **404 / unknown route**: Full-page "Page not found" with link back to build plan. Router stops silently falling back to `build-plan` for invalid paths.
+- **Invalid share link** (Phase 14): Dedicated error state — "This build link is invalid or corrupted" with option to go to build plan. Distinct from 404 since the `/share` route is valid but the `?b=` payload is not.
+- **Build not found**: When a bookmarked build/character ID no longer exists in `user.db` (deleted or imported from another device). Redirect to Characters view with a toast.
 
 **Empty:**
 - **New character, no builds**: "Start by creating a build. Choose a race and class to begin."
@@ -102,13 +105,13 @@ Comparing active:
 - **Stats panel**: Auto-collapses to a thin toggle strip below 1200px viewport width. User can re-expand.
 - **Enhancement trees**: Below 900px content width, switch to single-tree view with tab switching (instead of 7 trees side-by-side).
 - **Skills grid**: Horizontal scroll with frozen first column (level numbers) and frozen header row (skill names).
-- **Sidebar**: Already has collapsed mode (56px icons only). No further changes needed.
+- **Nav bar**: Already has collapsed mode (56px icons only). No further changes needed.
 
 ---
 
 ## Characters View (`#characters`)
 
-Full-page management UI for characters and builds. Accessed via the sidebar top link.
+Full-page management UI for characters and builds. Accessed via the nav bar top link.
 - Character list with create/delete
 - Selected character shows:
   - Current build summary
@@ -118,12 +121,17 @@ Full-page management UI for characters and builds. Accessed via the sidebar top 
   - Planned builds (renamable, not tied to character)
   - **Past Lives**: Stacking grid + reincarnation workflow (existing PastLifeStacks + LifeHistory UI). Placeholder management: set count of undetailed lives, assign past life feats by type. Placeholders show as single row "Placeholders (N lives)" in life history.
 - "Edit Build" button jumps to the Levels view for the selected build
-- Compare setup: compare icons next to each build
+- **Click to activate / compare**:
+  - Click a build to make it the active build.
+  - Click a second build while one is already active to mark it as the comparison target. A connector line is drawn from the comparison build pointing at the active build, making the direction of comparison visually explicit (deltas read "comparison -> active").
+  - Clicking a selected build again deselects it. Clicking the active build while a comparison is set clears comparison mode entirely.
+  - Strict 1v1: selecting a third build replaces the existing comparison target. (Swap direction via the nav bar `[swap]` button, not by re-clicking.)
 - **Import/Export**:
   - **Import from DDO Builder v2**: Load `.xml` files from the legacy DDO character planner. Parses class splits, feats, enhancements, gear into our build format.
   - **Import custom format**: Load our own `.json` save format (full build state including gear, enhancements, buffs, past lives).
   - **Export**: Save current build as our custom `.json` format. Button accessible per-build.
   - Import/export buttons in the character view header or per-build action menu.
+  - **Note:** If Phase 14 (Build Sharing via URL) ships successfully, per-build JSON export may be replaced by "Copy Share Link" — reassess the need for a separate `.json` format at that point.
 
 ---
 
@@ -131,7 +139,7 @@ Full-page management UI for characters and builds. Accessed via the sidebar top 
 
 ### Build Plan (single scrollable page with 6 sections)
 
-Sidebar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to sections within one page. Contains everything about the build's character progression. Gear and Build Overview are separate sidebar views. Past Lives managed in Characters view. Each section on the page (Classes/Feats, Skills, Spells, Enhancements, Destinies) is individually collapsible via its section header. All collapsed states (sidebar group + each section) persisted in `user.db`. **Default states**: Level Progression and Enhancements expanded; Skills, Spells, Reaper, Destinies collapsed. Each collapsed header shows a progress summary (e.g., "Skills: 0/320 allocated", "Enhancements: 42/80 AP spent").
+Nav bar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to sections within one page. Contains everything about the build's character progression. Gear and Build Overview are separate nav bar views. Past Lives managed in Characters view. Each section on the page (Classes/Feats, Skills, Spells, Enhancements, Destinies) is individually collapsible via its section header. All collapsed states (nav bar group + each section) persisted in `user.db`. **Default states**: Level Progression and Enhancements expanded; Skills, Spells, Reaper, Destinies collapsed. Each collapsed header shows a progress summary (e.g., "Skills: 0/320 allocated", "Enhancements: 42/80 AP spent").
 
 ```
 +----------------------------------------------------------+
@@ -344,7 +352,7 @@ Two states:
 - Gear sets are saved independently from builds. A build references multiple gear sets by ID.
 - Gear set tab dropdown on each set: Rename, Duplicate, Delete, Remove from build.
 - `[+ Add Set]` to create new or add an existing gear set to the current build.
-- **Standalone gear set editing**: Accessible via "Manage Gear Sets" in the sidebar top dropdown. Opens gear set management where you can create/edit/delete gear sets using the same Gear view UI.
+- **Standalone gear set editing**: Accessible via "Manage Gear Sets" in the nav bar top dropdown. Opens gear set management where you can create/edit/delete gear sets using the same Gear view UI.
 
 **Full overview (no slot selected)** -- full width, detailed per slot:
 ```
@@ -452,7 +460,7 @@ Two states:
 
 ### Build Overview (`#overview`)
 
-The landing page for a build -- shows everything at a glance and lets you configure active abilities and buffs. Positioned first in sidebar (above Build Plan).
+The landing page for a build -- shows everything at a glance and lets you configure active abilities and buffs. Positioned first in nav bar (above Build Plan).
 
 ```
 +----------------------------------------------------------+
@@ -652,15 +660,16 @@ baseStats(race, pointBuy, tomes, levelUps)
 ## Build Switching & Comparison
 
 ### Switching
-- **Sidebar top dropdown**: `[Weston: Pal 20 v]` -- dropdown shows:
+- **Nav bar top dropdown**: `[Weston: Pal 20 v]` -- dropdown shows:
   - `Manage Characters / Builds` -- opens Characters view where you switch builds, manage characters, past lives, etc.
   - `Manage Gear Sets` -- opens gear set management (same Gear view UI, no build context)
 - Build switching happens in the Characters view (click a build to make it active)
+- **Unsaved build badge**: Red dot on the nav bar build label when the active build is not persisted (temporary "What if" copy or shared build opened from URL). Signals the user needs to save/import or the build will be lost. Clears when the build is saved ("Keep variant", "Save as new build", or "Import to My Builds").
 
 ### Comparison
-- **Compare icon** `[vs]` next to the build label in sidebar top. Opens a comprehensive build picker showing ALL builds across ALL characters + standalone planned builds. Select one to activate comparison mode.
-- **Compare active**: Second line below build label: `vs Wizard TR [swap][x]`.
-- **Swap button** `[swap]`: Flips which build is primary (editable) and which is comparison (read-only). Sidebar label updates, stats deltas flip sign.
+- **Entering comparison**: Activate a build in the Characters view, then click a second build to mark it as the comparison target (see [Characters View](#characters-view-characters) > Click to activate / compare). The Characters view is the only entry point -- there is no separate nav bar picker.
+- **Compare active**: Second line below the nav bar build label: `vs Wizard TR [swap][x]`.
+- **Swap button** `[swap]`: Flips which build is primary (editable) and which is comparison (read-only). Nav bar label updates, stats deltas flip sign.
 - **"What if" copy**: A `[Try variant]` button creates a temporary copy of the current build. Enters comparison mode with the copy as editable primary and the original as comparison target. When done: "Keep variant" (replaces original), "Save as new build" (keeps both), or "Discard" (reverts to original).
 - **Compare past lives**: Comparing against a character's life inherits that character's past lives for stat calculation. Standalone planned builds default to zero past lives.
 - **Past life warning**: If comparison target has different past lives than current build's character, show a warning indicator.
@@ -668,7 +677,7 @@ baseStats(race, pointBuy, tomes, levelUps)
   - **Stats panel**: +/- deltas inline on each stat (green better, red worse)
   - **Build Overview**: Feats show missing/extra. Abilities present in both builds show +/- damage diff on cards. Buffs show different active states.
   - **Gear**: Side-by-side (your slots left, comparison right)
-  - Other views (Level Plan, Enhancements, Destinies) are unaffected -- swap builds via sidebar to inspect those.
+  - Other views (Level Plan, Enhancements, Destinies) are unaffected -- swap builds via nav bar to inspect those.
 - **Deactivate**: Click `[x]`. If temporary copy active, prompts keep/save/discard first.
 
 ---
@@ -731,7 +740,7 @@ CREATE TABLE ui_state (key TEXT PRIMARY KEY, value TEXT); -- collapsed states, p
 
 Zustand stores are the source of truth for rendering. On mutation, write through to `user.db` (async, debounced for rapid changes like skill allocation). On load, hydrate stores from `user.db`.
 
-**Name limits**: Character names max 40 chars, build names max 60 chars, gear set names max 30 chars. Truncate with ellipsis in tight spaces (sidebar label, dropdowns).
+**Name limits**: Character names max 40 chars, build names max 60 chars, gear set names max 30 chars. Truncate with ellipsis in tight spaces (nav bar label, dropdowns).
 
 ---
 
@@ -743,6 +752,7 @@ Zustand stores are the source of truth for rendering. On mutation, write through
 - Show breakdown by damage source
 - Full formula breakdown: dice, ability mod, enhancement, power, doublestrike/doubleshot, crit profile
 - **Comparison mode**: When active, show +/- deltas on each stat contributing to the calculation AND on the final damage output
+- **Back navigation**: When navigated from Build Overview (via ability card click), show a "Back to Build Overview" link at the top. Browser back button must also return to Build Overview correctly (ensured by `pushState` routing). The referrer context (which view the user came from) should be passed via navigation state so the link label is contextual (e.g., "Back to Build Overview").
 
 ### Item Optimizer
 - Target a stat to maximize (e.g., "maximize Spell Power")
@@ -792,7 +802,7 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
 **Data sources**: `quest_loot`, `crafting_recipes`, `crafting_recipe_ingredients`, `crafting_system_items`, `crafting_ingredients`
 
 ### Debug / Data Browser (collapsible TOOLS sub-group)
-- Collapsible sidebar group under TOOLS with sub-items:
+- Collapsible nav bar group under TOOLS with sub-items:
   - **Items**: Browse/search all items, view full bonuses, effects, augment slots, set membership
   - **Spells**: Browse all spells, view class levels, school, components, damage
   - **Enhancements**: Browse all trees and enhancements, view bonuses, prereqs
@@ -844,7 +854,7 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
 ```
 src/
   app/
-    App.tsx, AppSidebar.tsx          -- modified (feature nav sidebar)
+    App.tsx, AppNavBar.tsx           -- modified (feature nav bar)
   features/
     character/                       -- EXISTING (enhance for Characters view + past lives)
     build-plan/                      -- NEW (single scrollable page)
@@ -886,74 +896,158 @@ src/
 
 ## Implementation Order
 
-### Phase 1: Layout Restructuring
-1. Redesign sidebar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
-2. Add sidebar top build dropdown + compare icon
-3. Update hash routing
-4. Add bottom warning bar (collapsed indicator)
-4b. DB loading gate (skeleton UI until `ddo.db` + `user.db` ready)
-4c. Service worker for `ddo.db` caching (avoid 11MB fetch on every cold load)
+### Phase 1: Layout Restructuring (done)
+1. Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
+2. Nav bar top build dropdown (compare-active indicator added in Phase 9)
+3. Clean URL routing (History API + 404.html SPA redirect)
+4. Bottom warning bar (collapsed indicator)
+5. DB loading gate (skeleton UI until `ddo.db` ready)
+6. Service worker for `ddo.db` caching (stale-while-revalidate)
 
-### Phase 2: Debug / Data Browser
-5. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
-6. Wiki preview via MediaWiki API
-7. Inline correction system + local DB updates
-8. GitHub issue submission with duplicate detection
+### Phase 1b: CSS Refactor (branch: `css-refactor`)
+Companion to Phase 1 — design-system token infrastructure. Can merge independently.
 
-### Phase 3: Characters View & Build Context
-9. Character/build management, switching
-10. Past lives (stacking, placeholders, reincarnation)
-11. Tomes, import/export (export = download `user.db` file)
-12. Gear set management section
-13. Zustand stores (characterStore, buildStore, gearStore) hydrated from `user.db`
-14. `user.db` schema, persistence to IndexedDB, write-through on mutations
-15. Owned content settings
+- `color-mix()` derivatives: `--accent-glow`, `--accent-bg-subtle` track `--accent` on theme switch
+- Flush panel chrome: nav bar, bottom bar, stats panel use `--bg` + hairline border (no `--bg-panel`, no shadow)
+- Active state polish: `cursor: default`, hover suppression, weight bump on active nav items + card border accent
+- Typography tokens (`--text-xs` through `--text-3xl`): Tailwind default scale, migrated across all CSS files
+- Spacing tokens (`--space-px` through `--space-8`): Tailwind default scale, migrated padding/margin/gap
+- Align default `--accent` with Gold theme
+- **Post-merge: verify `docs/styling.md` token table and Design Principles section match the code.** The styling guide was updated on `navigation-refactor` to describe the target state (flat chrome, color-mix, etc.) before the css-refactor code landed — confirm no drift.
 
-### Phase 4: Stats Engine
-16. Stats pipeline: `computeStats.ts` (pipeline stages), `bonusStacking.ts`, `statSources.ts`
-17. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
-18. Breakdown popover, search, pin, stat highlight
-18b. **vitest unit tests** for stats engine (typed/untyped stacking, derived stats, edge cases)
+### Phase 1c: Explicit Return Types (branch off `main`)
+Enable `@typescript-eslint/explicit-function-return-type` ESLint rule with `allowExpressions`, `allowTypedFunctionExpressions`, and `allowHigherOrderFunctions`. Fix all existing violations across `src/` and `e2e/`.
 
-### Phase 5: Build Plan (single scrollable page)
-19. Build header (race, point buy, base stats, tomes)
-20. Level progression (classes/feats + skills)
-21. Spells (card display + picker modal)
-22. Enhancements (N-tree side-by-side, DDO layout)
-23. Reaper enhancements
-24. Destinies (destiny selector + twist bar)
+### Phase 1d: Router Migration (branch off `main`)
+Replace custom `useRouter` hook with `@tanstack/react-router`. Needed before Phase 3+ which require sub-paths, search params, and navigation state.
 
-### Phase 6: Gear
-25. Full overview + side-by-side slot editor
-26. Item search with stacking indicators
-27. Augment/filigree/crafting/upgrade inline
-28. Gear stats panel (bonus type tracking)
-29. Gear set management (per-build + standalone)
+- Install `@tanstack/react-router` + `@tanstack/react-router-devtools`
+- Define route tree with typed routes for all existing views + `not-found`
+- Migrate `App.tsx` view switching to route-based rendering
+- Migrate `AppNavBar` and `BottomBar` navigation from `navigate(view)` to router `Link`/`useNavigate`
+- Configure `basePath: '/ddo-builder'` for GitHub Pages
+- Update `404.html` SPA redirect if needed
+- Remove `src/hooks/useRouter.ts` and `useRouter.test.ts`
+- Verify all Playwright e2e tests pass (URL assertions, navigation, view switching)
 
-### Phase 7: Comparison Mode
-30. Compare picker + sidebar indicator
-31. Comparison display for stats panel, build overview, and gear
-32. Swap button + "What if" copy workflow
-33. Past life warning for comparison
-34. Build warning calculation + bottom bar
+### Phase 2: Index / Landing View
+7. Design landing page for `/ddo-builder/` (recent builds, quick-start actions, or dashboard overview)
+8. Determine whether this is a distinct view or an existing view (e.g., Characters, Build Overview) serves as default
 
-### Phase 8: Farm Checklist
-35. Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
-36. Acquisition path selector per item (farm / craft / purchase)
-37. Materials summary (summed across all crafting paths, deducted when acquired)
-38. Purchasable augments (DB pipeline addition)
+### Phase 3: Error Reporting & Resilience
+Infrastructure for per-view error handling. Built early so every subsequent phase gets error boundaries from day one. WIP code: `error-reporting` branch.
 
-### Phase 9: DB Pipeline -- SLAs, Abilities, Purchasable Augments
-39. Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
-40. Schema: metamagic applicability for SLAs
-41. Schema: purchasable augments (vendor, cost, location)
-42. Wiki scraper for SLA/ability data from enhancement + feat descriptions
-43. Populate via `build_db` pipeline
+9. ErrorBoundary component: catches rendering errors, shows fallback, reports to global collector
+10. Per-view DB loading: remove top-level `LoadingGate` — views that need `ddo.db` call `useDatabase()` and handle their own loading/error; Settings and Characters render instantly
+11. ErrorScreen + ErrorCard: full-page and compact inline error displays with GitHub issue links. ErrorScreen doubles as the app's catch-all 500 page — wrap the app root in an ErrorBoundary that renders ErrorScreen for any unhandled crash. Reuses the same categorized heading, monospace detail, stack trace, and issue-reporting links from LoadingGate's error UI.
+12. Nav-bar bug icon: always visible, links to GitHub issues when no errors; badge + expandable error panel when errors detected
+13. GitHub issue integration: per-source labels (`db-loading`, `user-db`, `runtime`), duplicate search, pre-filled new-issue with stack trace
+14. NotFoundView: 404 page for unknown routes. Update `useRouter` to return a `'not-found'` view instead of silently falling back to `build-plan`
 
-### Phase 10: Build Overview
-44. Feats (passive + active with sources)
-45. Ability cards (min/max/avg, click -> damage calc)
-46. Buffs (spell buffs, conditionals, stances, external, stacks)
+### Phase 4: Debug / Data Browser
+15. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
+16. Wiki preview via MediaWiki API
+17. Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update, override indicators app-wide with deep-link to debug view)
+18. GitHub issue submission with duplicate detection
+
+### Phase 5: Characters View & Build Context
+
+**Persistence stack (build first):**
+19. `user.db` schema via sql.js + `initUserDb()`
+20. IndexedDB round-trip: `db.export()` to Uint8Array, debounced write-through (~200ms)
+21. `VACUUM` after schema changes or bulk imports
+22. Zustand stores (`characterStore`, `buildStore`, `gearStore`, `uiStore`) hydrated from `user.db`. Move nav bar expanded state + resize logic from `App.tsx` into `uiStore` so both App (grid columns) and AppNavBar (CSS class) read from the same source.
+
+**Features:**
+23. Character/build management, switching
+24. Past lives (stacking, placeholders, reincarnation)
+25. Tomes, import/export (export = download raw `user.db` file)
+26. Gear set management section
+27. Owned content settings
+
+### Phase 6: Stats Engine
+28. Stats pipeline: `computeStats.ts`, `bonusStacking.ts`, `statSources.ts`
+29. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
+30. Breakdown popover, search, pin, stat highlight
+31. Vitest unit tests for stats engine (typed/untyped stacking, derived stats, edge cases)
+
+### Phase 7: Build Plan (single scrollable page)
+32. Build header (race, point buy, base stats, tomes)
+33. Level progression (classes/feats + skills)
+34. Spells (card display + picker modal)
+35. Enhancements (N-tree side-by-side, DDO layout)
+36. Reaper enhancements
+37. Destinies (destiny selector + twist bar)
+38. Wire nav bar Build Plan sub-items to `scrollIntoView()` anchors for each section (Level Plan, Skills, Spells, Enhancements, Reaper, Destinies). Active sub-item tracks scroll position.
+
+### Phase 8: Gear
+39. Full overview + side-by-side slot editor
+40. Item search with stacking indicators
+41. Augment/filigree/crafting/upgrade inline
+42. Gear stats panel (bonus type tracking)
+43. Gear set management (per-build + standalone)
+
+### Phase 9: Comparison Mode
+44. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
+45. Comparison display for stats panel, build overview, and gear
+46. Swap button + "What if" copy workflow
+47. Unsaved build badge (red dot on nav bar build label for temp copies; reused by Phase 14 for shared builds)
+48. Past life warning for comparison
+49. Build warning calculation + bottom bar
+
+### Phase 10: Farm Checklist
+50. Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
+51. Acquisition path selector per item (farm / craft / purchase)
+52. Materials summary (summed across all crafting paths, deducted when acquired)
+53. Purchasable augments (DB pipeline addition)
+
+### Phase 11: DB Pipeline -- SLAs, Abilities, Purchasable Augments
+54. Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
+55. Schema: metamagic applicability for SLAs
+56. Schema: purchasable augments (vendor, cost, location)
+57. Wiki scraper for SLA/ability data from enhancement + feat descriptions
+58. Populate via `build_db` pipeline
+
+### Phase 12: Build Overview
+59. Feats (passive + active with sources)
+60. Ability cards (min/max/avg, click -> damage calc)
+61. Buffs (spell buffs, conditionals, stances, external, stacks)
+
+### Phase 13: Settings View Cleanup
+Currently a minimal placeholder (theme + accent picker). Belongs late because knowing what *needs* a setting depends on what features exist.
+
+62. Restructure into sections: Display, Game Content, Data Management, About
+63. Wire to Zustand stores (replace direct localStorage access)
+64. Owned content settings (adventure packs / expansions)
+65. Data management (export/import `user.db`, reset, storage usage)
+66. About / metadata (version, build commit, GitHub links)
+67. Responsive layout (current `max-width: 400px` is too narrow)
+68. Audit against design-system tokens (post-css-refactor merge)
+
+### Phase 14: Build Sharing
+
+Share builds via URL links without a backend. Complement to the file-based import/export in Phase 5.
+
+**Share codec** (`shareCodec.ts`):
+69. Encode/decode builds to URL-safe compressed strings using lz-string (`compressToEncodedURIComponent`)
+70. Use numeric DB IDs (integer PKs from `ddo.db`) instead of string slugs for compactness
+71. Version prefix (`v1:`) for future format evolution
+72. Core build fields: race, class split, feats (with level slots), enhancements, destinies, ability scores
+73. Optional tier: gear set (items + augments + filigrees) — included when total URL stays under safe limits (~2,000 chars)
+
+**Share route & view**:
+74. `/ddo-builder/share?b=<compressed>` route handled by router
+75. Read-only build summary (ShareView) with "Import to My Builds" action — shared build shows unsaved badge (from step 47) until imported
+76. Graceful error state for invalid/corrupted/truncated links
+
+**UI**:
+77. "Copy Share Link" button in build overview or build plan view
+78. Feedback on copy success (toast or inline confirmation)
+
+**Size budget & hosting gate**: If full builds (including gear) consistently exceed ~2,000 chars after compression, explore hosting:
+- Self-hosted paste endpoint (Cloudflare Workers / Vercel serverless — free tier)
+- GitHub Gist API (requires user auth for creation)
+- Evaluate whether static GitHub Pages is still sufficient or if a minimal backend is warranted
 
 ---
 
@@ -964,4 +1058,4 @@ After each phase:
 - Playwright screenshot verification per CLAUDE.md
 - `npm run lint` + `npm run build` -- no errors
 - Feature-specific: can interact with the new UI (click, search, equip)
-- **Unit tests** (vitest) for pure logic: stats engine (Phase 4), AP validation (Phase 5), feat prereqs (Phase 5), gear stacking (Phase 6), build state migrations (Phase 3)
+- **Unit tests** (vitest) for pure logic: stats engine (Phase 4), AP validation (Phase 5), feat prereqs (Phase 5), gear stacking (Phase 6), build state migrations (Phase 3), share codec round-trip (Phase 14)

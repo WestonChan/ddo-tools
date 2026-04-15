@@ -22,13 +22,15 @@ pytest scripts/                  # Run Python tests
 
 ## Project Structure
 
-- **Feature-based frontend** — domain features live under `src/features/`, with type-based subfolders within each feature
+- **App shell** — `src/app/` contains only components that appear on every page: root App, nav bar, bottom bar, loading gate, error boundary. If you removed a feature, the shell should still render.
+- **Feature modules** — domain features live under `src/features/`, each owning its own views, components, types, and CSS
   - `src/features/character/` — character builder (class, race, feats, enhancements)
   - `src/features/gear/` — gear planner (items, augments, sets)
 - **Shared code** — non-feature code lives at the `src/` level, organized by type
   - `src/components/` — reusable UI components (icons, tooltips, modals, etc.)
-  - `src/hooks/` — shared hooks and theme config
-- **App shell** — `src/app/` contains the root App, router, and layout
+  - `src/hooks/` — shared hooks (useDatabase, useLocalStorage)
+  - `src/stores/` — shared Zustand stores (Phase 5+)
+- **Dependency direction** — imports only flow downward: `app/` can import from `features/` and shared. `features/` can import from shared (`hooks/`, `components/`, `stores/`). Shared code never imports from `features/` or `app/`. Features never import from `app/` or from each other.
 - **Python data pipeline** — `scripts/` is a standalone Python package (`ddo-data`)
   - `scripts/src/ddo_data/dat_parser/` — Turbine .dat archive parser (binary format)
   - `scripts/src/ddo_data/game_data/` — parsers for items, feats, enhancements, classes, races
@@ -40,24 +42,20 @@ pytest scripts/                  # Run Python tests
 ## Conventions
 
 - **Frontend:** React + TypeScript + Vite. Use feature-based organization. Router basename is `/ddo-builder` (for GitHub Pages).
-- **Styling:** Dark theme with gold (#c9a848) accents. CSS modules or plain CSS in component directories.
-- **Icons:** Use inline SVG icons with flat color (no emoji). Keep icons single-color, inheriting `currentColor` where possible.
+- **Styling:** Dark theme with gold (#c9a848) accents. Plain CSS in component directories. See `docs/styling.md`.
+- **Icons:** Use `lucide-react` for all icons. Pass `size` prop for sizing. Single-color, inherits `currentColor`.
 - **Python:** Package lives in `scripts/` with `pyproject.toml`. Use `click` for CLI commands. Type hints required.
 - **Data flow:** Python scripts extract game data → `public/data/ddo.db` (SQLite) or JSON files in `public/data/` → React app reads them at runtime.
 - **Hosting:** GitHub Pages (static only). Auto-deployed via GitHub Actions on push to `main`.
 
+## Code Quality
+
+- **Keep code clean.** When working in a file, improve adjacent code that is messy, inconsistent, or overly complex. Don't leave a file worse than you found it.
+- **Refactor freely.** Extract shared logic, simplify conditionals, improve naming, remove dead code. If a refactor makes the code meaningfully better, do it — don't wait to be asked. Follow refactors wherever they lead; don't artificially limit scope.
+
 ## Testing
 
-- **Always write tests** for new Python pipeline code (parsers, writers, scrapers, CLI commands).
-- **Test location:** `scripts/tests/` — mirrors the source structure (e.g., `test_db.py` for `db/writers.py`, `test_cli.py` for `cli.py`).
-- **Run tests:** `pytest scripts/` before committing. All tests must pass.
-- **What to test:**
-  - New writer functions (`insert_*`, `populate_*`, `backfill_*`) — verify row counts and spot-check data.
-  - New parser functions — test with representative wiki template strings and edge cases.
-  - New CLI commands — use `CliRunner` with mocked wiki/binary data (see existing `test_cli.py` patterns).
-  - Schema changes — ensure `create_schema()` succeeds and new tables/columns exist.
-- **Mock external dependencies:** Wiki API calls, binary file reads, and filesystem access should be mocked in tests. Use `unittest.mock.patch` with `contextlib.ExitStack` for multiple mocks.
-- **Don't skip tests:** If a test breaks due to your changes, fix the test — don't delete it.
+Python: `pytest scripts/` -- Frontend: `npx vitest run` -- both must pass before committing. See `docs/testing.md` for conventions, mocking patterns, and what to test.
 
 ## Commits
 
@@ -65,6 +63,10 @@ pytest scripts/                  # Run Python tests
 - **Feature branches**: Implementation work happens on feature branches (e.g., `navigation-refactor`). PR back to `main` when complete.
 - **Commit per step**: When following a multi-step implementation plan, each step gets its own commit. Don't batch unrelated changes.
 - **Tests pass**: All existing tests must pass before committing. New pure logic (stats engine, validation, etc.) must include vitest unit tests.
+
+## CSS
+
+Plain CSS with native nesting, BEM naming, co-located with components. See `docs/styling.md` for full conventions, design tokens, and responsive breakpoints.
 
 ## Interaction Patterns
 
@@ -84,6 +86,8 @@ Screenshots are saved to `screenshots/` (gitignored). Use `browser_close` when f
 
 ## Reference Docs
 
+- `docs/styling.md` — CSS conventions, design tokens, BEM naming, responsive breakpoints, layout architecture
+- `docs/testing.md` — Python and frontend testing conventions, mocking patterns, what to test
 - `docs/ddowiki-api.md` — How to look up DDO game info from ddowiki.com via WebFetch
 - `docs/dat-format.md` — DDO installation path, `.dat` file details, and archive format
 - `docs/db-guidelines.md` — SQLite schema design rules: naming conventions, index strategy, enum decisions, DDL ordering

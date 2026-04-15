@@ -1,0 +1,255 @@
+/* === Nav Bar === */
+.app-nav-bar {
+  --icon-col: 54px;
+
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.5rem 0 0 0;
+  z-index: 20;
+  box-shadow: 4px 0 12px var(--shadow-color);
+  min-height: 0;
+  overflow: hidden;
+
+  /* --- Collapsed state --- */
+  &:not(.expanded) {
+    & .nav-bar-collapsible {
+      opacity: 0;
+      max-width: 0;
+      max-height: 0;
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    & .nav-bar-group-label-text {
+      opacity: 0;
+      max-width: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    & .nav-bar-group-label::before {
+      opacity: 0;
+      max-width: 0;
+    }
+  }
+}
+
+/* --- Scrollable content area (everything except collapse button) --- */
+.nav-bar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Collapsible text --- */
+.nav-bar-collapsible {}
+
+/* --- Brand --- */
+.nav-bar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  flex-shrink: 0;
+  padding: 0 0.75rem;
+}
+
+.nav-bar-brand-text {
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.15;
+  color: var(--accent);
+}
+
+/* Reusable 1px horizontal divider (used by child components like the character card) */
+.nav-bar-divider {
+  height: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+/* --- Nav --- */
+.nav-bar-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+/* --- Shared nav bar row layout --- */
+.nav-bar-btn,
+.nav-bar-build-row,
+.nav-bar-collapse-btn {
+  width: 100%;
+  height: 40px;
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: var(--icon-col) 1fr;
+  align-items: center;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  & > svg {
+    justify-self: center;
+  }
+
+  &:hover {
+    color: var(--text);
+    background: var(--hover-bg);
+  }
+}
+
+/* Nav buttons and build row share interactive styling */
+.nav-bar-btn,
+.nav-bar-build-row {
+  color: var(--text-secondary);
+  position: relative;
+  white-space: nowrap;
+}
+
+/* Shared active state: accent color/background + 3px left accent bar.
+   Parent elements must establish a positioning context (position: relative).
+   cursor: default because clicking the already-active item is a no-op, and
+   hover background is suppressed so the active tint stays stable. */
+.nav-bar-btn.active,
+.nav-bar-build-row.active,
+.nav-bar-character-card.active {
+  color: var(--accent);
+  background: var(--accent-bg-subtle);
+  cursor: default;
+
+  &:hover {
+    background: var(--accent-bg-subtle);
+    color: var(--accent);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+}
+
+.nav-bar-btn {
+  border: none;
+  border-radius: 0;
+}
+
+/* Compact variant for sub-items within a group (e.g., build-plan sections).
+   Same 40px height as regular items (prevents icon shift on collapse).
+   Uses bottom underline instead of left bar to differentiate from parent. */
+.nav-bar-btn--compact {
+  & > svg {
+    opacity: 0.6;
+  }
+
+  & .nav-bar-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  &:hover .nav-bar-label {
+    color: var(--text);
+  }
+
+  &.active > svg {
+    opacity: 1;
+  }
+
+  &.active .nav-bar-label {
+    color: var(--accent);
+  }
+
+}
+
+.nav-bar-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Groups --- */
+.nav-bar-group {
+  width: 100%;
+}
+
+.nav-bar-group-label {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0;
+  color: var(--text-muted);
+
+  &::before {
+    content: '';
+    width: calc(var(--icon-col) - 0.5rem);
+    height: 1px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  &.has-active {
+    color: var(--accent);
+  }
+}
+
+.nav-bar-group-label-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  padding: 0 0.5rem;
+}
+
+/* --- Bottom section --- */
+.nav-bar-bottom {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+
+}
+
+/* --- Collapse toggle --- */
+.nav-bar-collapse-btn {
+  flex-shrink: 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* --- Narrow viewport: expanded nav bar goes full-screen --- */
+@media (max-width: 599px) {
+  .app-nav-bar.expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+  }
+}
+
+

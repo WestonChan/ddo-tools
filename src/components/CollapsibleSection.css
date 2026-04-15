@@ -18,7 +18,6 @@
   border-left: 3px solid var(--accent);
   width: 100%;
   text-align: left;
-  transition: background 0.2s ease-out;
 }
 
 .collapsible-header:hover {
@@ -27,7 +26,6 @@
 
 .collapsible-header .chevron {
   font-size: 0.7rem;
-  transition: transform 0.2s;
 }
 
 .collapsible-header .chevron.expanded {
@@ -37,7 +35,6 @@
 .collapsible-content {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.25s ease;
 }
 
 .collapsible-content.expanded {
