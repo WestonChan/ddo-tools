@@ -124,7 +124,9 @@
 /* Shared active state: accent color/background + 3px left accent bar.
    Parent elements must establish a positioning context (position: relative).
    cursor: default because clicking the already-active item is a no-op, and
-   hover background is suppressed so the active tint stays stable. */
+   hover background is suppressed so the active tint stays stable. Active
+   labels bump one weight step (500 -> 600) so the state is signaled on
+   two axes — color + weight. */
 .nav-bar-btn.active,
 .nav-bar-build-row.active,
 .nav-bar-character-card.active {
@@ -146,6 +148,11 @@
     width: 3px;
     background: var(--accent);
   }
+}
+
+.nav-bar-btn.active .nav-bar-label,
+.nav-bar-build-row.active .nav-bar-label {
+  font-weight: 600;
 }
 
 .nav-bar-btn {
@@ -176,6 +183,7 @@
 
   &.active .nav-bar-label {
     color: var(--accent);
+    font-weight: 600;
   }
 
 }
