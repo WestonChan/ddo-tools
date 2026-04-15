@@ -43,6 +43,51 @@ Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (li
 | `--accent-glow-strong` | `color-mix(accent 50%, transparent)` | `color-mix(accent 35%, transparent)` | Stronger glow (primary button hover) |
 | `--accent-bg-subtle` | `color-mix(accent 10%, transparent)` | `color-mix(accent 10%, transparent)` | Active item backgrounds |
 
+### Type Scale
+
+Tailwind's default scale. Defined in `:root` (theme-independent).
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--text-xs` | 0.75rem (12px) | Caption, microcopy, subtitles, dense labels |
+| `--text-sm` | 0.875rem (14px) | Body UI: rows, buttons, card text, nav labels |
+| `--text-base` | 1rem (16px) | Emphasized body: modal titles, section text |
+| `--text-lg` | 1.125rem (18px) | Nav brand, prominent labels |
+| `--text-xl` | 1.25rem (20px) | View titles, section headings |
+| `--text-2xl` | 1.5rem (24px) | Display, loading gate |
+| `--text-3xl` | 1.875rem (30px) | h1 |
+
+Font weights (400/500/600/700) and letter-spacing stay as raw numbers — only four distinct values, no drift, self-documenting.
+
+### Spacing Scale
+
+Tailwind's default scale (4px base). Defined in `:root` (theme-independent). Used for `padding`, `margin`, and `gap` only — not widths, heights, border-radius, or line-height.
+
+| Token | Value | px |
+|-------|-------|----|
+| `--space-px` | 1px | 1 |
+| `--space-0-5` | 0.125rem | 2 |
+| `--space-1` | 0.25rem | 4 |
+| `--space-1-5` | 0.375rem | 6 |
+| `--space-2` | 0.5rem | 8 |
+| `--space-2-5` | 0.625rem | 10 |
+| `--space-3` | 0.75rem | 12 |
+| `--space-3-5` | 0.875rem | 14 |
+| `--space-4` | 1rem | 16 |
+| `--space-5` | 1.25rem | 20 |
+| `--space-6` | 1.5rem | 24 |
+| `--space-7` | 1.75rem | 28 |
+| `--space-8` | 2rem | 32 |
+
+Half-step names use a `-5` suffix (`--space-1-5`, `--space-2-5`, `--space-3-5`) because CSS custom properties can't include `.`. For negative margins use `calc(-1 * var(--space-N))`.
+
+### Transition Timing
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--transition-fast` | 0.15s | Hover color/background shifts, icon transforms |
+| `--transition-std` | 0.3s | Button transitions, tab animations, tooltip fade |
+
 Always use tokens, never hardcode colors. Use variables for repeated dimensions (`--icon-col`), timing, and spacing. If a value appears 3+ times, extract it.
 
 ## Layout Architecture
