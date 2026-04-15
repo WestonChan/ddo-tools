@@ -27,6 +27,9 @@
   font-weight: 600;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  transition:
+    color var(--transition-std),
+    border-color var(--transition-std);
 }
 
 .side-panel-tab:hover {
