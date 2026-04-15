@@ -1,7 +1,9 @@
+/* Flush with page bg — coplanar with nav bar and bottom bar.
+   Separation from content is carried by the left border (--border-accent
+   for a touch more weight since the panel hosts dense data). */
 .side-panel {
-  background: var(--bg-panel);
+  background: var(--bg);
   border-left: 1px solid var(--border-accent);
-  box-shadow: -4px 0 16px var(--shadow-color);
   display: flex;
   flex-direction: column;
   min-height: 0;

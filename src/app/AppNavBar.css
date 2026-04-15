@@ -2,14 +2,16 @@
 .app-nav-bar {
   --icon-col: 54px;
 
-  background: var(--bg-panel);
+  /* Flush with the page bg — no panel contrast. Separation from the main
+     content area is carried entirely by the right border. Shadow removed
+     because it implies elevation, which contradicts the coplanar bg. */
+  background: var(--bg);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: stretch;
   padding: 0.5rem 0 0 0;
   z-index: 20;
-  box-shadow: 4px 0 12px var(--shadow-color);
   min-height: 0;
   overflow: hidden;
 
