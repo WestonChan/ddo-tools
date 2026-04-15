@@ -1,5 +1,5 @@
 .settings-view {
-  padding: 1.5rem;
+  padding: var(--space-6);
   max-width: 400px;
 }
 
@@ -7,11 +7,11 @@
   font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .settings-view-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .settings-view-label {
@@ -20,17 +20,17 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 /* Theme toggle */
 .settings-view-theme-toggle {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 3px;
+  padding: var(--space-1);
 }
 
 .settings-view-theme-opt {
@@ -38,8 +38,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
-  padding: 0.4rem 0.75rem;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -62,15 +62,15 @@
 .settings-view-accent-grid {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .settings-view-accent-swatch {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   width: 100%;
-  padding: 0.4rem 0.5rem;
+  padding: var(--space-1-5) var(--space-2);
   border: none;
   border-radius: 6px;
   background: transparent;

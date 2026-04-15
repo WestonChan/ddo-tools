@@ -19,7 +19,7 @@
 
 .side-panel-tab {
   flex: 1;
-  padding: 0.6rem 0;
+  padding: var(--space-2-5) 0;
   background: none;
   border: none;
   color: var(--text-secondary);
@@ -44,21 +44,21 @@
 .side-panel-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem;
+  padding: var(--space-3);
 }
 
 /* Stats tab */
 .ability-scores-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
 }
 
 .ability-score-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0.4rem;
+  padding: var(--space-1) var(--space-1-5);
 }
 
 .ability-score-row .label {
@@ -75,13 +75,13 @@
 .stats-separator {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 0.5rem 0;
+  margin: var(--space-2) 0;
 }
 
 .stat-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0.4rem;
+  padding: var(--space-1) var(--space-1-5);
   font-size: var(--text-xs);
 }
 
@@ -96,7 +96,7 @@
 
 /* Feats tab */
 .feat-entry {
-  padding: 0.25rem 0.4rem;
+  padding: var(--space-1) var(--space-1-5);
   font-size: var(--text-xs);
   color: var(--text);
 }

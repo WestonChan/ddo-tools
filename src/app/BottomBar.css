@@ -10,15 +10,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.35rem 1rem;
-  gap: 1rem;
+  padding: var(--space-1-5) var(--space-4);
+  gap: var(--space-4);
 }
 
 /* Shared base for bottom bar buttons */
 .bottom-bar-btn {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
   background: none;
   border: none;
   cursor: pointer;
@@ -82,8 +82,8 @@
   position: absolute;
   bottom: 100%;
   right: 0;
-  margin-bottom: 0.4rem;
-  padding: 0.35rem 0.65rem;
+  margin-bottom: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-2-5);
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -116,7 +116,7 @@
 .bottom-bar-warning-item {
   display: flex;
   align-items: center;
-  padding: 0.35rem 1rem;
+  padding: var(--space-1-5) var(--space-4);
   background: none;
   border: none;
   color: var(--text-secondary);

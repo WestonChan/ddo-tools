@@ -11,7 +11,7 @@
   flex-direction: column;
   height: var(--card-h);
   flex-shrink: 0;
-  margin: 0.35rem 0.4rem;
+  margin: var(--space-1-5) var(--space-1-5);
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -54,7 +54,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-right: 0.5rem;
+  padding-right: var(--space-2);
 }
 
 /* Divider variant that hosts the swap button.
@@ -110,14 +110,14 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding-right: 0.5rem;
+  padding-right: var(--space-2);
 }
 
 .nav-bar-character-name {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 0.15rem;
+  margin-bottom: var(--space-0-5);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -155,7 +155,7 @@
    Uses --text-muted so the dashes match the build description text color. */
 .nav-bar-character-build-placeholder {
   height: 0.65rem;
-  margin: 1px 0;
+  margin: var(--space-px) 0;
   border-bottom: 1px dashed var(--text-muted);
   max-width: 70%;
 

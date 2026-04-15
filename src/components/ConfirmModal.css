@@ -13,7 +13,7 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-accent);
   border-radius: 8px;
-  padding: 1.25rem 1.5rem;
+  padding: var(--space-5) var(--space-6);
   max-width: 400px;
   width: 90%;
   box-shadow:
@@ -27,25 +27,25 @@
   font-size: var(--text-base);
   font-weight: 600;
   letter-spacing: 0.02em;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 .confirm-modal-message {
   color: var(--text-secondary);
   font-size: var(--text-sm);
   line-height: 1.5;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
 }
 
 .confirm-modal-input {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-4);
 }
 
 .confirm-modal-input label {
   display: block;
   color: var(--text-muted);
   font-size: var(--text-xs);
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-1-5);
 }
 
 .confirm-modal-input strong {
@@ -58,7 +58,7 @@
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.35rem 0.5rem;
+  padding: var(--space-1-5) var(--space-2);
   font-size: var(--text-sm);
   box-sizing: border-box;
 }
@@ -71,15 +71,15 @@
 .confirm-modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .confirm-modal-actions .btn-ghost {
-  padding: 0.35rem 0.75rem;
+  padding: var(--space-1-5) var(--space-3);
   font-size: var(--text-xs);
 }
 
 .confirm-modal-actions .btn-primary {
-  padding: 0.35rem 1rem;
+  padding: var(--space-1-5) var(--space-4);
   font-size: var(--text-xs);
 }
