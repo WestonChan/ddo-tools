@@ -26,39 +26,23 @@ test.describe('icon position stability', () => {
     expect(collapsedBox!.y).toBe(expandedBox!.y)
   })
 
-  test('icons do not shift vertically when collapsing the nav bar', async ({ page }) => {
+  test('icons do not shift when collapsing the nav bar', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
-    // Nav bar starts expanded (default stored pref removed, width >= 900)
     const expandedPositions = await getIconCenters(page)
     expect(expandedPositions.length).toBeGreaterThan(0)
 
-    // Collapse
     await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
 
     const collapsedPositions = await getIconCenters(page)
     expect(collapsedPositions.length).toBe(expandedPositions.length)
 
-    // Every icon's vertical center should be within 1px
     for (let i = 0; i < expandedPositions.length; i++) {
-      expect(collapsedPositions[i].y).toBeCloseTo(expandedPositions[i].y, 0)
-    }
-  })
-
-  test('icons do not shift horizontally when collapsing the nav bar', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.goto('/')
-
-    const expandedPositions = await getIconCenters(page)
-    await page.click('.nav-bar-collapse-btn')
-    await page.waitForTimeout(100)
-    const collapsedPositions = await getIconCenters(page)
-
-    for (let i = 0; i < expandedPositions.length; i++) {
-      expect(collapsedPositions[i].x).toBeCloseTo(expandedPositions[i].x, 0)
+      expect(collapsedPositions[i].x).toBe(expandedPositions[i].x)
+      expect(collapsedPositions[i].y).toBe(expandedPositions[i].y)
     }
   })
 })
@@ -84,16 +68,6 @@ test.describe('responsive breakpoints', () => {
     await expect(navBar).not.toHaveClass(/expanded/)
   })
 
-  test('nav bar collapses when resizing from wide to narrow', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.goto('/')
-    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
-
-    // Resize below 900px
-    await page.setViewportSize({ width: 800, height: 800 })
-    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
-  })
-
   test('nav bar re-expands when resizing back above 900px', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
@@ -106,6 +80,23 @@ test.describe('responsive breakpoints', () => {
     // Cross back above 900
     await page.setViewportSize({ width: 1000, height: 800 })
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
+  })
+
+  test('manually collapsed nav bar stays collapsed after resize cycle', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 })
+    await page.goto('/')
+    await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
+
+    // User manually collapses (persists to localStorage)
+    await page.click('.nav-bar-collapse-btn')
+    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
+
+    // Resize below 900 and back — stored preference (collapsed) is respected
+    await page.setViewportSize({ width: 800, height: 800 })
+    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
+
+    await page.setViewportSize({ width: 1000, height: 800 })
+    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
   })
 
   test('expanded nav bar is full-screen at < 600px', async ({ page }) => {
@@ -187,33 +178,23 @@ test.describe('layout', () => {
     expect(box!.width).toBe(220)
   })
 
-  test('collapse button is visible at small viewport height', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 400 })
-    await page.goto('/')
-
-    const collapse = page.locator('.nav-bar-collapse-btn')
-    await expect(collapse).toBeVisible()
-
-    // Collapse button should be within the viewport
-    const box = await collapse.boundingBox()
-    expect(box).not.toBeNull()
-    expect(box!.y + box!.height).toBeLessThanOrEqual(400)
-  })
-
-  test('character card visible at small viewport height', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 400 })
-    await page.goto('/')
-
-    const card = page.locator('.nav-bar-character-card')
-    const box = await card.boundingBox()
-    expect(box).not.toBeNull()
-    expect(box!.height).toBeGreaterThan(50)
-  })
-
-  test('nav bar scrolls at small viewport height', async ({ page }) => {
+  test('nav bar handles small viewport height', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 400 })
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
+
+    // Collapse button should be within the viewport
+    const collapse = page.locator('.nav-bar-collapse-btn')
+    await expect(collapse).toBeVisible()
+    const collapseBox = await collapse.boundingBox()
+    expect(collapseBox).not.toBeNull()
+    expect(collapseBox!.y + collapseBox!.height).toBeLessThanOrEqual(400)
+
+    // Character card should still be visible with reasonable height
+    const card = page.locator('.nav-bar-character-card')
+    const cardBox = await card.boundingBox()
+    expect(cardBox).not.toBeNull()
+    expect(cardBox!.height).toBeGreaterThan(50)
 
     // The scroll wrapper should have overflow (scrollHeight > clientHeight)
     const isScrollable = await page.evaluate(() => {
@@ -248,19 +229,12 @@ test.describe('navigation', () => {
     await expect(page).toHaveURL(/\/settings$/)
   })
 
-  test('clicking the card navigates to characters view', async ({ page }) => {
+  test('clicking the card navigates to characters view with accent bar', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    // Any click on the card routes to characters view
     await page.locator('.nav-bar-character-card').click()
     await expect(page).toHaveURL(/\/characters$/)
-  })
-
-  test('card shows active accent bar on characters view', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.goto('/')
-    await page.locator('.nav-bar-character-card').click()
 
     const card = page.locator('.nav-bar-character-card')
     await expect(card).toHaveClass(/active/)
@@ -333,34 +307,6 @@ test.describe('group hierarchy', () => {
     await expect(group.locator('.nav-bar-btn').first()).toContainText('Build Plan')
   })
 
-  test('character card icons do not shift when collapsing', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.goto('/')
-    await page.locator('.nav-bar-character-card svg').first().waitFor()
-
-    const getCardIconCenters = () =>
-      page.evaluate(() => {
-        // Character strip icon + both build slot icons
-        const icons = document.querySelectorAll('.nav-bar-character-strip > svg, .nav-bar-character-slot > svg')
-        return Array.from(icons).map((el) => {
-          const rect = el.getBoundingClientRect()
-          return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
-        })
-      })
-
-    const expandedPositions = await getCardIconCenters()
-    await page.click('.nav-bar-collapse-btn')
-    await page.waitForTimeout(100)
-    const collapsedPositions = await getCardIconCenters()
-
-    expect(expandedPositions).toHaveLength(3)
-    expect(collapsedPositions).toHaveLength(3)
-    for (let i = 0; i < expandedPositions.length; i++) {
-      expect(collapsedPositions[i].x).toBeCloseTo(expandedPositions[i].x, 0)
-      expect(collapsedPositions[i].y).toBeCloseTo(expandedPositions[i].y, 0)
-    }
-  })
-
   test('swap button has border and background', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
@@ -383,32 +329,6 @@ test.describe('group hierarchy', () => {
     expect(styles!.hasBackground).toBe(true)
     expect(styles!.width).toBe(24)
     expect(styles!.height).toBe(24)
-  })
-
-  test('swap button icon does not shift when collapsing', async ({ page }) => {
-    await page.setViewportSize({ width: 1200, height: 800 })
-    await page.goto('/')
-    await page.locator('.nav-bar-character-swap-btn svg').waitFor()
-
-    const expandedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.nav-bar-character-swap-btn svg')
-      const rect = icon?.getBoundingClientRect()
-      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
-    })
-
-    await page.click('.nav-bar-collapse-btn')
-    await page.waitForTimeout(100)
-
-    const collapsedPos = await page.evaluate(() => {
-      const icon = document.querySelector('.nav-bar-character-swap-btn svg')
-      const rect = icon?.getBoundingClientRect()
-      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null
-    })
-
-    expect(expandedPos).not.toBeNull()
-    expect(collapsedPos).not.toBeNull()
-    expect(collapsedPos!.x).toBeCloseTo(expandedPos!.x, 0)
-    expect(collapsedPos!.y).toBeCloseTo(expandedPos!.y, 0)
   })
 
   test('character card icons align with nav icons when collapsed', async ({ page }) => {
@@ -449,9 +369,9 @@ test.describe('group hierarchy', () => {
 
 // --- Helpers ---
 
-async function getIconCenters(page: import('@playwright/test').Page) {
+async function getIconCenters(page: import('@playwright/test').Page): Promise<{ x: number; y: number }[]> {
   return page.evaluate(() => {
-    const icons = document.querySelectorAll('.app-nav-bar .nav-bar-character-strip > svg, .app-nav-bar .nav-bar-character-slot > svg, .app-nav-bar .nav-bar-btn svg, .app-nav-bar .nav-bar-collapse-btn svg')
+    const icons = document.querySelectorAll('.app-nav-bar svg')
     return Array.from(icons).map((el) => {
       const rect = el.getBoundingClientRect()
       return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }

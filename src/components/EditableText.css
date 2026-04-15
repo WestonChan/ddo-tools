@@ -8,7 +8,6 @@
   border-bottom: 1px dotted var(--border);
   padding: 0 0.15rem;
   min-width: 3rem;
-  transition: border-color 0.15s;
 }
 
 .editable-text:hover .editable-text-display {

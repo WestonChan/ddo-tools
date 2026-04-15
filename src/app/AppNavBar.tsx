@@ -28,7 +28,7 @@ interface NavItem {
   Icon: React.FC<{ size?: number }>
 }
 
-interface NavGroup {
+interface NavGroupDef {
   id: string
   label: string
   view?: View
@@ -36,17 +36,11 @@ interface NavGroup {
   items: NavItem[]
 }
 
-type NavBarEntry = NavItem | NavGroup
-
-function isGroup(entry: NavBarEntry): entry is NavGroup {
-  return typeof entry === 'object' && 'items' in entry
-}
-
 function SkillsIcon(props: { size?: number }) {
   return <TableProperties {...props} style={{ transform: 'scaleX(-1)' }} />
 }
 
-const MAIN_NAV: NavBarEntry[] = [
+const MAIN_NAV: NavGroupDef[] = [
   {
     id: 'build-plan',
     label: 'Build Plan',
@@ -84,10 +78,6 @@ interface AppNavBarProps {
 }
 
 function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: AppNavBarProps) {
-  function groupContainsActive(group: NavGroup): boolean {
-    return group.items.some((item) => item.view === activeView)
-  }
-
   // At narrow widths the expanded nav bar is full-screen; auto-close on navigate
   function handleNavigate(view: View) {
     onViewChange(view)
@@ -106,55 +96,14 @@ function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: App
         <NavBarCharacterCard activeView={activeView} onNavigate={handleNavigate} />
 
         <nav className="nav-bar-items">
-          {MAIN_NAV.map((entry) => {
-            if (isGroup(entry)) {
-              const hasActive = groupContainsActive(entry)
-              return (
-                <div key={entry.id} className="nav-bar-group">
-                  <span className={`nav-bar-group-label${hasActive ? ' has-active' : ''}`}>
-                    <span className="nav-bar-group-label-text nav-bar-collapsible">{entry.label}</span>
-                  </span>
-                  {entry.view && entry.Icon && (
-                    <NavButton
-                      item={{ view: entry.view, label: entry.label, Icon: entry.Icon }}
-                      active={entry.items.some((item) => item.id && item.view === activeView)}
-                      onViewChange={handleNavigate}
-                      header
-                    />
-                  )}
-                  {/* Precompute first index per view so the active-state lookup is O(1)
-                      inside the map instead of O(n²). Several sub-items share the same
-                      view (e.g., build-plan sub-sections); only the first one lights up. */}
-                  {(() => {
-                    const firstIndexByView = new Map<View, number>()
-                    entry.items.forEach((it, i) => {
-                      if (!firstIndexByView.has(it.view)) firstIndexByView.set(it.view, i)
-                    })
-                    return entry.items.map((item, i) => {
-                      const isFirstMatch = firstIndexByView.get(item.view) === i
-                      return (
-                        <NavButton
-                          key={item.id || `${item.view}-${i}`}
-                          item={item}
-                          active={activeView === item.view && isFirstMatch}
-                          onViewChange={handleNavigate}
-                          compact={!!item.id}
-                        />
-                      )
-                    })
-                  })()}
-                </div>
-              )
-            }
-            return (
-              <NavButton
-                key={entry.view}
-                item={entry}
-                active={activeView === entry.view}
-                onViewChange={handleNavigate}
-              />
-            )
-          })}
+          {MAIN_NAV.map((group) => (
+            <NavGroup
+              key={group.id}
+              group={group}
+              activeView={activeView}
+              onViewChange={handleNavigate}
+            />
+          ))}
         </nav>
 
         <div className="nav-bar-bottom">
@@ -171,6 +120,50 @@ function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: App
         <span className="nav-bar-label nav-bar-collapsible">{expanded ? 'Collapse' : ''}</span>
       </button>
     </aside>
+  )
+}
+
+function NavGroup({
+  group,
+  activeView,
+  onViewChange,
+}: {
+  group: NavGroupDef
+  activeView: View
+  onViewChange: (view: View) => void
+}) {
+  const hasActive = group.items.some((item) => item.view === activeView)
+
+  // Precompute first index per view so only the first sub-item per view lights up.
+  // Several sub-items share the same view (e.g., build-plan sub-sections).
+  const firstIndexByView = new Map<View, number>()
+  group.items.forEach((it, i) => {
+    if (!firstIndexByView.has(it.view)) firstIndexByView.set(it.view, i)
+  })
+
+  return (
+    <div className="nav-bar-group">
+      <span className={`nav-bar-group-label${hasActive ? ' has-active' : ''}`}>
+        <span className="nav-bar-group-label-text nav-bar-collapsible">{group.label}</span>
+      </span>
+      {group.view && group.Icon && (
+        <NavButton
+          item={{ view: group.view, label: group.label, Icon: group.Icon }}
+          active={group.items.some((item) => item.id && item.view === activeView)}
+          onViewChange={onViewChange}
+          header
+        />
+      )}
+      {group.items.map((item, i) => (
+        <NavButton
+          key={item.id || `${item.view}-${i}`}
+          item={item}
+          active={activeView === item.view && firstIndexByView.get(item.view) === i}
+          onViewChange={onViewChange}
+          compact={!!item.id}
+        />
+      ))}
+    </div>
   )
 }
 

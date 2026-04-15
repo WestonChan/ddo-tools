@@ -47,10 +47,6 @@
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-
   &:hover {
     color: var(--text-secondary);
     background: var(--hover-bg);
@@ -79,8 +75,6 @@
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  transition: background var(--transition-fast);
-
   &:hover {
     background: var(--hover-bg);
   }

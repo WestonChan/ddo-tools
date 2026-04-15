@@ -8,40 +8,60 @@ interface NavBarCharacterCardProps {
   onNavigate: (view: View) => void
 }
 
+function NavBarBuildSlot({
+  Icon,
+  name,
+  details,
+}: {
+  Icon: React.FC<{ size?: number }>
+  name: string
+  details?: string[]
+}) {
+  return (
+    <div className="nav-bar-character-slot">
+      <Icon size={18} />
+      <div className="nav-bar-character-info nav-bar-collapsible">
+        <span className="nav-bar-character-name">{name}</span>
+        {details
+          ? details.map((d, i) => <span key={i} className="nav-bar-character-build">{d}</span>)
+          : <>
+              <span className="nav-bar-character-build-placeholder" />
+              <span className="nav-bar-character-build-placeholder" />
+            </>
+        }
+      </div>
+    </div>
+  )
+}
+
 export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterCardProps) {
   const { character: selected, activeBuild, lifeNumbers } = useCharacter()
   const raceLabel = activeBuild ? formatRace(activeBuild.race) : ''
   const classLabel = activeBuild ? formatClassSummary(activeBuild) : ''
-  // Named planned builds use their name; unnamed lives fall back to "Life N"
   const buildLabel =
     activeBuild?.name ||
     (activeBuild ? `Life ${lifeNumbers.get(activeBuild.id) ?? '?'}` : 'No build')
 
   const isActive = activeView === 'characters'
+  const buildDetails = [raceLabel, classLabel].filter(Boolean)
 
   return (
     <div
       className={`nav-bar-character-card${isActive ? ' active' : ''}`}
       onClick={() => onNavigate('characters')}
     >
-      {/* Character strip — identifies the owning character */}
       <div className="nav-bar-character-strip">
         <User size={18} />
         <span className="nav-bar-character-strip-name nav-bar-collapsible">{selected.name}</span>
       </div>
       <div className="nav-bar-divider" />
 
-      {/* Current build slot */}
-      <div className="nav-bar-character-slot">
-        <UserPen size={18} />
-        <div className="nav-bar-character-info nav-bar-collapsible">
-          <span className="nav-bar-character-name">{buildLabel}</span>
-          {raceLabel && <span className="nav-bar-character-build">{raceLabel}</span>}
-          {classLabel && <span className="nav-bar-character-build">{classLabel}</span>}
-        </div>
-      </div>
+      <NavBarBuildSlot
+        Icon={UserPen}
+        name={buildLabel}
+        details={buildDetails.length > 0 ? buildDetails : undefined}
+      />
 
-      {/* Divider + swap button between current and compare builds */}
       <div className="nav-bar-divider nav-bar-divider--swap">
         <button
           className="nav-bar-character-swap-btn"
@@ -51,15 +71,7 @@ export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterC
         </button>
       </div>
 
-      {/* Compare slot (placeholder for Phase 7 compare mode) */}
-      <div className="nav-bar-character-slot">
-        <GitCompareArrows size={18} />
-        <div className="nav-bar-character-info nav-bar-collapsible">
-          <span className="nav-bar-character-name">Compare</span>
-          <span className="nav-bar-character-build-placeholder" />
-          <span className="nav-bar-character-build-placeholder" />
-        </div>
-      </div>
+      <NavBarBuildSlot Icon={GitCompareArrows} name="Compare" />
     </div>
   )
 }

@@ -23,8 +23,6 @@
   padding: 0;
   font-size: 0.72rem;
   white-space: nowrap;
-  transition: opacity var(--transition-fast);
-
   &:hover {
     opacity: 0.7;
   }
@@ -53,7 +51,6 @@
   flex-shrink: 0;
 
   & svg:last-child {
-    transition: transform var(--transition-fast);
   }
 }
 
@@ -89,8 +86,7 @@
   color: var(--text-secondary);
   white-space: nowrap;
   box-shadow: 0 4px 12px var(--shadow-color);
-  animation: tooltip-in var(--transition-fast);
-  transition: opacity var(--transition-std);
+  animation: tooltip-in 150ms;
 
   &.fading {
     opacity: 0;
@@ -121,8 +117,6 @@
   font-size: 0.75rem;
   cursor: pointer;
   text-align: left;
-  transition: background var(--transition-fast);
-
   &:hover {
     background: var(--hover-bg);
     color: var(--text);

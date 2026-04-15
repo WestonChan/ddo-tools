@@ -22,13 +22,15 @@ pytest scripts/                  # Run Python tests
 
 ## Project Structure
 
-- **Feature-based frontend** — domain features live under `src/features/`, with type-based subfolders within each feature
+- **App shell** — `src/app/` contains only components that appear on every page: root App, nav bar, bottom bar, loading gate, error boundary. If you removed a feature, the shell should still render.
+- **Feature modules** — domain features live under `src/features/`, each owning its own views, components, types, and CSS
   - `src/features/character/` — character builder (class, race, feats, enhancements)
   - `src/features/gear/` — gear planner (items, augments, sets)
 - **Shared code** — non-feature code lives at the `src/` level, organized by type
   - `src/components/` — reusable UI components (icons, tooltips, modals, etc.)
-  - `src/hooks/` — shared hooks and theme config
-- **App shell** — `src/app/` contains the root App, router, and layout
+  - `src/hooks/` — shared hooks (useDatabase, useLocalStorage)
+  - `src/stores/` — shared Zustand stores (Phase 5+)
+- **Dependency direction** — imports only flow downward: `app/` can import from `features/` and shared. `features/` can import from shared (`hooks/`, `components/`, `stores/`). Shared code never imports from `features/` or `app/`. Features never import from `app/` or from each other.
 - **Python data pipeline** — `scripts/` is a standalone Python package (`ddo-data`)
   - `scripts/src/ddo_data/dat_parser/` — Turbine .dat archive parser (binary format)
   - `scripts/src/ddo_data/game_data/` — parsers for items, feats, enhancements, classes, races

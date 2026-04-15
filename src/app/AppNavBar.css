@@ -32,7 +32,8 @@
     }
 
     & .nav-bar-group-label::before {
-      display: none;
+      opacity: 0;
+      max-width: 0;
     }
   }
 }
@@ -100,10 +101,6 @@
   background: transparent;
   cursor: pointer;
   font-size: 1.1rem;
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-
   & > svg {
     justify-self: center;
   }

@@ -37,10 +37,10 @@ describe('useRouter', () => {
       expect(result.current.view).toBe(view)
     })
 
-    it('defaults to build-plan for unknown paths', () => {
+    it('returns not-found for unknown paths', () => {
       setPath('/nonexistent')
       const { result } = renderHook(() => useRouter())
-      expect(result.current.view).toBe('build-plan')
+      expect(result.current.view).toBe('not-found')
     })
 
     it('strips sub-paths (e.g. debug/items -> debug)', () => {

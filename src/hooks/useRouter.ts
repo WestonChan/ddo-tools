@@ -9,6 +9,7 @@ export type View =
   | 'farm-checklist'
   | 'debug'
   | 'settings'
+  | 'not-found'
 
 const VALID_VIEWS: View[] = [
   'characters',
@@ -28,7 +29,8 @@ function getViewFromPath(): View {
     .replace(BASE, '')
     .replace(/^\//, '')
     .replace(/\/.*$/, '') // strip sub-paths (e.g., debug/items -> debug)
-  return VALID_VIEWS.includes(path as View) ? (path as View) : 'build-plan'
+  if (!path || path === '') return 'build-plan'
+  return VALID_VIEWS.includes(path as View) ? (path as View) : 'not-found'
 }
 
 export function useRouter() {

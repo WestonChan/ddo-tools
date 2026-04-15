@@ -18,8 +18,6 @@
   color: var(--text-secondary);
   cursor: pointer;
   overflow: hidden;
-  transition: background var(--transition-fast);
-
   /* Hover shifts only the background — keeping content colors stable so
      icons don't flash brighter on hover while the current-slot icon stays
      locked to accent. Skipped when active: the card is already the
@@ -83,10 +81,6 @@
   background: var(--bg-input);
   color: var(--text-muted);
   cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast);
-
   &:hover {
     color: var(--accent);
     border-color: var(--accent);

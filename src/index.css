@@ -24,9 +24,6 @@
   --btn-ghost-bg: rgba(255, 255, 255, 0.04);
   --btn-ghost-bg-hover: rgba(255, 255, 255, 0.08);
 
-  /* Interaction timing */
-  --transition-fast: var(--transition-fast);
-  --transition-std: var(--transition-std);
 
   color-scheme: dark;
 
@@ -135,12 +132,6 @@ h1 {
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color var(--transition-std),
-    border-color var(--transition-std),
-    background var(--transition-std),
-    box-shadow var(--transition-std),
-    transform var(--transition-fast);
 }
 
 .btn-ghost:hover {
@@ -165,12 +156,6 @@ h1 {
   font-size: 0.73rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color var(--transition-std),
-    border-color var(--transition-std),
-    background var(--transition-std),
-    box-shadow var(--transition-std),
-    transform var(--transition-fast);
 }
 
 .btn-ghost-sm:hover {
@@ -195,10 +180,6 @@ h1 {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    background var(--transition-std),
-    box-shadow var(--transition-std),
-    transform var(--transition-fast);
 }
 
 .btn-primary:hover {
@@ -228,10 +209,6 @@ h1 {
   font-size: 0.73rem;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    background var(--transition-std),
-    box-shadow var(--transition-std),
-    transform var(--transition-fast);
 }
 
 .btn-primary-sm:hover {
@@ -248,7 +225,6 @@ h1 {
 .row-interactive {
   border-radius: 3px;
   cursor: pointer;
-  transition: background var(--transition-std);
 }
 
 .row-interactive:hover {

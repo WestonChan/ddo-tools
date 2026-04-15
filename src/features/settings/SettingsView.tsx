@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Sun, Moon, Check } from 'lucide-react'
-import { useTheme, THEMES, applyAccent, restoreAccent } from '../hooks'
+import { useTheme, THEMES, applyAccent, restoreAccent } from '../../hooks'
 import './SettingsView.css'
 
 function getActiveAccent(): string | null {

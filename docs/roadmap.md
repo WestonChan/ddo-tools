@@ -90,6 +90,9 @@ Comparing active:
 - **DB load failure** (WASM not supported, fetch fails): Full-page error with retry button and browser compatibility note.
 - **Wiki fetch failure**: Inline "Preview unavailable" with retry link. Does not block the rest of the detail view.
 - **user.db persistence failure**: Warning banner "Changes may not be saved" with option to export user.db manually.
+- **404 / unknown route**: Full-page "Page not found" with link back to build plan. Router stops silently falling back to `build-plan` for invalid paths.
+- **Invalid share link** (Phase 14): Dedicated error state — "This build link is invalid or corrupted" with option to go to build plan. Distinct from 404 since the `/share` route is valid but the `?b=` payload is not.
+- **Build not found**: When a bookmarked build/character ID no longer exists in `user.db` (deleted or imported from another device). Redirect to Characters view with a toast.
 
 **Empty:**
 - **New character, no builds**: "Start by creating a build. Choose a race and class to begin."
@@ -128,6 +131,7 @@ Full-page management UI for characters and builds. Accessed via the nav bar top 
   - **Import custom format**: Load our own `.json` save format (full build state including gear, enhancements, buffs, past lives).
   - **Export**: Save current build as our custom `.json` format. Button accessible per-build.
   - Import/export buttons in the character view header or per-build action menu.
+  - **Note:** If Phase 14 (Build Sharing via URL) ships successfully, per-build JSON export may be replaced by "Copy Share Link" — reassess the need for a separate `.json` format at that point.
 
 ---
 
@@ -660,6 +664,7 @@ baseStats(race, pointBuy, tomes, levelUps)
   - `Manage Characters / Builds` -- opens Characters view where you switch builds, manage characters, past lives, etc.
   - `Manage Gear Sets` -- opens gear set management (same Gear view UI, no build context)
 - Build switching happens in the Characters view (click a build to make it active)
+- **Unsaved build badge**: Red dot on the nav bar build label when the active build is not persisted (temporary "What if" copy or shared build opened from URL). Signals the user needs to save/import or the build will be lost. Clears when the build is saved ("Keep variant", "Save as new build", or "Import to My Builds").
 
 ### Comparison
 - **Entering comparison**: Activate a build in the Characters view, then click a second build to mark it as the comparison target (see [Characters View](#characters-view-characters) > Click to activate / compare). The Characters view is the only entry point -- there is no separate nav bar picker.
@@ -910,6 +915,21 @@ Companion to Phase 1 — design-system token infrastructure. Can merge independe
 - Align default `--accent` with Gold theme
 - **Post-merge: verify `docs/styling.md` token table and Design Principles section match the code.** The styling guide was updated on `navigation-refactor` to describe the target state (flat chrome, color-mix, etc.) before the css-refactor code landed — confirm no drift.
 
+### Phase 1c: Explicit Return Types (branch off `main`)
+Enable `@typescript-eslint/explicit-function-return-type` ESLint rule with `allowExpressions`, `allowTypedFunctionExpressions`, and `allowHigherOrderFunctions`. Fix all existing violations across `src/` and `e2e/`.
+
+### Phase 1d: Router Migration (branch off `main`)
+Replace custom `useRouter` hook with `@tanstack/react-router`. Needed before Phase 3+ which require sub-paths, search params, and navigation state.
+
+- Install `@tanstack/react-router` + `@tanstack/react-router-devtools`
+- Define route tree with typed routes for all existing views + `not-found`
+- Migrate `App.tsx` view switching to route-based rendering
+- Migrate `AppNavBar` and `BottomBar` navigation from `navigate(view)` to router `Link`/`useNavigate`
+- Configure `basePath: '/ddo-builder'` for GitHub Pages
+- Update `404.html` SPA redirect if needed
+- Remove `src/hooks/useRouter.ts` and `useRouter.test.ts`
+- Verify all Playwright e2e tests pass (URL assertions, navigation, view switching)
+
 ### Phase 2: Index / Landing View
 7. Design landing page for `/ddo-builder/` (recent builds, quick-start actions, or dashboard overview)
 8. Determine whether this is a distinct view or an existing view (e.g., Characters, Build Overview) serves as default
@@ -922,84 +942,112 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 11. ErrorScreen + ErrorCard: full-page and compact inline error displays with GitHub issue links. ErrorScreen doubles as the app's catch-all 500 page — wrap the app root in an ErrorBoundary that renders ErrorScreen for any unhandled crash. Reuses the same categorized heading, monospace detail, stack trace, and issue-reporting links from LoadingGate's error UI.
 12. Nav-bar bug icon: always visible, links to GitHub issues when no errors; badge + expandable error panel when errors detected
 13. GitHub issue integration: per-source labels (`db-loading`, `user-db`, `runtime`), duplicate search, pre-filled new-issue with stack trace
+14. NotFoundView: 404 page for unknown routes. Update `useRouter` to return a `'not-found'` view instead of silently falling back to `build-plan`
 
 ### Phase 4: Debug / Data Browser
-14. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
-15. Wiki preview via MediaWiki API
-16. Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update, override indicators app-wide with deep-link to debug view)
-17. GitHub issue submission with duplicate detection
+15. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
+16. Wiki preview via MediaWiki API
+17. Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update, override indicators app-wide with deep-link to debug view)
+18. GitHub issue submission with duplicate detection
 
 ### Phase 5: Characters View & Build Context
 
 **Persistence stack (build first):**
-18. `user.db` schema via sql.js + `initUserDb()`
-19. IndexedDB round-trip: `db.export()` to Uint8Array, debounced write-through (~200ms)
-20. `VACUUM` after schema changes or bulk imports
-21. Zustand stores (`characterStore`, `buildStore`, `gearStore`) hydrated from `user.db`
+19. `user.db` schema via sql.js + `initUserDb()`
+20. IndexedDB round-trip: `db.export()` to Uint8Array, debounced write-through (~200ms)
+21. `VACUUM` after schema changes or bulk imports
+22. Zustand stores (`characterStore`, `buildStore`, `gearStore`, `uiStore`) hydrated from `user.db`. Move nav bar expanded state + resize logic from `App.tsx` into `uiStore` so both App (grid columns) and AppNavBar (CSS class) read from the same source.
 
 **Features:**
-22. Character/build management, switching
-23. Past lives (stacking, placeholders, reincarnation)
-24. Tomes, import/export (export = download raw `user.db` file)
-25. Gear set management section
-26. Owned content settings
+23. Character/build management, switching
+24. Past lives (stacking, placeholders, reincarnation)
+25. Tomes, import/export (export = download raw `user.db` file)
+26. Gear set management section
+27. Owned content settings
 
 ### Phase 6: Stats Engine
-27. Stats pipeline: `computeStats.ts`, `bonusStacking.ts`, `statSources.ts`
-28. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
-29. Breakdown popover, search, pin, stat highlight
-30. Vitest unit tests for stats engine (typed/untyped stacking, derived stats, edge cases)
+28. Stats pipeline: `computeStats.ts`, `bonusStacking.ts`, `statSources.ts`
+29. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
+30. Breakdown popover, search, pin, stat highlight
+31. Vitest unit tests for stats engine (typed/untyped stacking, derived stats, edge cases)
 
 ### Phase 7: Build Plan (single scrollable page)
-31. Build header (race, point buy, base stats, tomes)
-32. Level progression (classes/feats + skills)
-33. Spells (card display + picker modal)
-34. Enhancements (N-tree side-by-side, DDO layout)
-35. Reaper enhancements
-36. Destinies (destiny selector + twist bar)
+32. Build header (race, point buy, base stats, tomes)
+33. Level progression (classes/feats + skills)
+34. Spells (card display + picker modal)
+35. Enhancements (N-tree side-by-side, DDO layout)
+36. Reaper enhancements
+37. Destinies (destiny selector + twist bar)
+38. Wire nav bar Build Plan sub-items to `scrollIntoView()` anchors for each section (Level Plan, Skills, Spells, Enhancements, Reaper, Destinies). Active sub-item tracks scroll position.
 
 ### Phase 8: Gear
-37. Full overview + side-by-side slot editor
-38. Item search with stacking indicators
-39. Augment/filigree/crafting/upgrade inline
-40. Gear stats panel (bonus type tracking)
-41. Gear set management (per-build + standalone)
+39. Full overview + side-by-side slot editor
+40. Item search with stacking indicators
+41. Augment/filigree/crafting/upgrade inline
+42. Gear stats panel (bonus type tracking)
+43. Gear set management (per-build + standalone)
 
 ### Phase 9: Comparison Mode
-42. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
-43. Comparison display for stats panel, build overview, and gear
-44. Swap button + "What if" copy workflow
-45. Past life warning for comparison
-46. Build warning calculation + bottom bar
+44. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
+45. Comparison display for stats panel, build overview, and gear
+46. Swap button + "What if" copy workflow
+47. Unsaved build badge (red dot on nav bar build label for temp copies; reused by Phase 14 for shared builds)
+48. Past life warning for comparison
+49. Build warning calculation + bottom bar
 
 ### Phase 10: Farm Checklist
-47. Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
-48. Acquisition path selector per item (farm / craft / purchase)
-49. Materials summary (summed across all crafting paths, deducted when acquired)
-50. Purchasable augments (DB pipeline addition)
+50. Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
+51. Acquisition path selector per item (farm / craft / purchase)
+52. Materials summary (summed across all crafting paths, deducted when acquired)
+53. Purchasable augments (DB pipeline addition)
 
 ### Phase 11: DB Pipeline -- SLAs, Abilities, Purchasable Augments
-51. Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
-52. Schema: metamagic applicability for SLAs
-53. Schema: purchasable augments (vendor, cost, location)
-54. Wiki scraper for SLA/ability data from enhancement + feat descriptions
-55. Populate via `build_db` pipeline
+54. Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
+55. Schema: metamagic applicability for SLAs
+56. Schema: purchasable augments (vendor, cost, location)
+57. Wiki scraper for SLA/ability data from enhancement + feat descriptions
+58. Populate via `build_db` pipeline
 
 ### Phase 12: Build Overview
-56. Feats (passive + active with sources)
-57. Ability cards (min/max/avg, click -> damage calc)
-58. Buffs (spell buffs, conditionals, stances, external, stacks)
+59. Feats (passive + active with sources)
+60. Ability cards (min/max/avg, click -> damage calc)
+61. Buffs (spell buffs, conditionals, stances, external, stacks)
 
 ### Phase 13: Settings View Cleanup
 Currently a minimal placeholder (theme + accent picker). Belongs late because knowing what *needs* a setting depends on what features exist.
 
-59. Restructure into sections: Display, Game Content, Data Management, About
-60. Wire to Zustand stores (replace direct localStorage access)
-61. Owned content settings (adventure packs / expansions)
-62. Data management (export/import `user.db`, reset, storage usage)
-63. About / metadata (version, build commit, GitHub links)
-64. Responsive layout (current `max-width: 400px` is too narrow)
-65. Audit against design-system tokens (post-css-refactor merge)
+62. Restructure into sections: Display, Game Content, Data Management, About
+63. Wire to Zustand stores (replace direct localStorage access)
+64. Owned content settings (adventure packs / expansions)
+65. Data management (export/import `user.db`, reset, storage usage)
+66. About / metadata (version, build commit, GitHub links)
+67. Responsive layout (current `max-width: 400px` is too narrow)
+68. Audit against design-system tokens (post-css-refactor merge)
+
+### Phase 14: Build Sharing
+
+Share builds via URL links without a backend. Complement to the file-based import/export in Phase 5.
+
+**Share codec** (`shareCodec.ts`):
+69. Encode/decode builds to URL-safe compressed strings using lz-string (`compressToEncodedURIComponent`)
+70. Use numeric DB IDs (integer PKs from `ddo.db`) instead of string slugs for compactness
+71. Version prefix (`v1:`) for future format evolution
+72. Core build fields: race, class split, feats (with level slots), enhancements, destinies, ability scores
+73. Optional tier: gear set (items + augments + filigrees) — included when total URL stays under safe limits (~2,000 chars)
+
+**Share route & view**:
+74. `/ddo-builder/share?b=<compressed>` route handled by router
+75. Read-only build summary (ShareView) with "Import to My Builds" action — shared build shows unsaved badge (from step 47) until imported
+76. Graceful error state for invalid/corrupted/truncated links
+
+**UI**:
+77. "Copy Share Link" button in build overview or build plan view
+78. Feedback on copy success (toast or inline confirmation)
+
+**Size budget & hosting gate**: If full builds (including gear) consistently exceed ~2,000 chars after compression, explore hosting:
+- Self-hosted paste endpoint (Cloudflare Workers / Vercel serverless — free tier)
+- GitHub Gist API (requires user auth for creation)
+- Evaluate whether static GitHub Pages is still sufficient or if a minimal backend is warranted
 
 ---
 
@@ -1010,4 +1058,4 @@ After each phase:
 - Playwright screenshot verification per CLAUDE.md
 - `npm run lint` + `npm run build` -- no errors
 - Feature-specific: can interact with the new UI (click, search, equip)
-- **Unit tests** (vitest) for pure logic: stats engine (Phase 4), AP validation (Phase 5), feat prereqs (Phase 5), gear stacking (Phase 6), build state migrations (Phase 3)
+- **Unit tests** (vitest) for pure logic: stats engine (Phase 4), AP validation (Phase 5), feat prereqs (Phase 5), gear stacking (Phase 6), build state migrations (Phase 3), share codec round-trip (Phase 14)

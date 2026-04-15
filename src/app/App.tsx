@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import AppNavBar from './AppNavBar'
-import { SettingsView } from './SettingsView'
+import { SettingsView } from '../features/settings'
 import { BottomBar } from './BottomBar'
 import type { BuildWarning } from './BottomBar'
 import { useLocalStorage, useRouter } from '../hooks'
@@ -81,6 +81,14 @@ function App() {
             <div className="section-placeholder">Debug / Data Browser coming in Phase 2.</div>
           )}
           {view === 'settings' && <SettingsView />}
+          {view === 'not-found' && (
+            <div className="section-placeholder">
+              Page not found.{' '}
+              <a href="#" onClick={(e) => { e.preventDefault(); navigate('build-plan') }}>
+                Go to Build Plan
+              </a>
+            </div>
+          )}
         </div>
 
         {showRightPanel && <BuildSidePanel />}

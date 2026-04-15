@@ -73,9 +73,6 @@
   font-size: 0.73rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color 0.15s,
-    background 0.15s;
 }
 
 .row-action-btn:hover {
@@ -299,7 +296,6 @@
 .bonus-rows {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.15s ease;
 }
 
 .bonus-rows-inner {
@@ -425,10 +421,6 @@
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition:
-    color 0.15s,
-    border-color 0.15s,
-    background 0.15s;
 }
 
 .reincarnate-type-btn:hover {
@@ -479,10 +471,6 @@
   font-size: 0.8rem;
   cursor: pointer;
   margin-bottom: 0.35rem;
-  transition:
-    color 0.15s,
-    border-color 0.15s,
-    background 0.15s;
 }
 
 .add-planned-life-btn:hover {
