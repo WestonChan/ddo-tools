@@ -12,7 +12,7 @@
   height: var(--card-h);
   flex-shrink: 0;
   margin: var(--space-1-5) var(--space-1-5);
-  background: var(--bg-input);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-secondary);
@@ -25,7 +25,7 @@
      locked to accent. Skipped when active: the card is already the
      current view, so no hover feedback is needed. */
   &:hover:not(.active) {
-    background: var(--hover-bg);
+    background: var(--bg-subtle);
   }
 
   &.active {
@@ -80,7 +80,7 @@
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 3px;
-  background: var(--bg-input);
+  background: var(--bg-tertiary);
   color: var(--text-muted);
   cursor: pointer;
   transition:

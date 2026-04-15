@@ -1,19 +1,18 @@
 export const THEMES = [
-  { name: 'Gold', accent: '#b8962e', hover: '#d4ad3a' },
-  { name: 'Crimson', accent: '#ef4444', hover: '#f87171' },
-  { name: 'Mint', accent: '#6ee7b7', hover: '#a7f3d0' },
-  { name: 'Coral', accent: '#f97066', hover: '#fca5a1' },
-  { name: 'Ice', accent: '#67e8f9', hover: '#a5f3fc' },
-  { name: 'Marigold', accent: '#eab308', hover: '#facc15' },
-  { name: 'Plum', accent: '#a855f7', hover: '#c084fc' },
-  { name: 'Sand', accent: '#d6c5a3', hover: '#e8dcc4' },
-  { name: 'Sage', accent: '#7ba3b8', hover: '#9bbdd0' },
+  { name: 'Gold', accent: '#b8962e' },
+  { name: 'Crimson', accent: '#ef4444' },
+  { name: 'Mint', accent: '#6ee7b7' },
+  { name: 'Coral', accent: '#f97066' },
+  { name: 'Ice', accent: '#67e8f9' },
+  { name: 'Marigold', accent: '#eab308' },
+  { name: 'Plum', accent: '#a855f7' },
+  { name: 'Sand', accent: '#d6c5a3' },
+  { name: 'Sage', accent: '#7ba3b8' },
 ]
 
-export function applyAccent(accent: string, hover: string) {
+export function applyAccent(accent: string) {
   document.documentElement.style.setProperty('--accent', accent)
-  document.documentElement.style.setProperty('--accent-hover', hover)
-  localStorage.setItem('accent', JSON.stringify({ accent, hover }))
+  localStorage.setItem('accent', accent)
 }
 
 export function restoreAccent() {
@@ -22,15 +21,17 @@ export function restoreAccent() {
     if (!stored) {
       // No stored preference — apply the default theme so the CSS :root
       // values don't need to be kept in sync with THEMES manually.
-      const { accent, hover } = THEMES[0]
-      document.documentElement.style.setProperty('--accent', accent)
-      document.documentElement.style.setProperty('--accent-hover', hover)
+      document.documentElement.style.setProperty('--accent', THEMES[0].accent)
       return
     }
-    const { accent, hover } = JSON.parse(stored)
-    if (accent && hover) {
-      document.documentElement.style.setProperty('--accent', accent)
-      document.documentElement.style.setProperty('--accent-hover', hover)
+    // Handle both old format ({accent, hover}) and new format (plain string)
+    if (stored.startsWith('{')) {
+      const { accent } = JSON.parse(stored)
+      if (accent) {
+        document.documentElement.style.setProperty('--accent', accent)
+      }
+    } else {
+      document.documentElement.style.setProperty('--accent', stored)
     }
   } catch {
     // ignore malformed data

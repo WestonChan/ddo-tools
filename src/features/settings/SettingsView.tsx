@@ -49,7 +49,7 @@ export function SettingsView() {
               key={t.name}
               className={`settings-view-accent-swatch${activeAccent === t.accent ? ' selected' : ''}`}
               onClick={() => {
-                applyAccent(t.accent, t.hover)
+                applyAccent(t.accent)
                 setActiveAccent(t.accent)
               }}
             >

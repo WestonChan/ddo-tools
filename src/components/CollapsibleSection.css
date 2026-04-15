@@ -7,7 +7,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2-5) var(--space-4);
-  background: var(--bg-panel);
+  background: var(--bg-tertiary);
   color: var(--accent);
   font-family: var(--font-display);
   font-weight: 600;
@@ -21,7 +21,7 @@
 }
 
 .collapsible-header:hover {
-  background: var(--hover-bg);
+  background: var(--bg-subtle);
 }
 
 .collapsible-header .chevron {

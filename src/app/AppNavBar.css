@@ -2,10 +2,9 @@
 .app-nav-bar {
   --icon-col: 54px;
 
-  /* Flush with the page bg — no panel contrast. Separation from the main
-     content area is carried entirely by the right border. Shadow removed
-     because it implies elevation, which contradicts the coplanar bg. */
-  background: var(--bg);
+  /* Subtle inset bg shared with the character card. Separation from the
+     main content area is carried by the right border + the tonal shift. */
+  background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -113,7 +112,7 @@
 
   &:hover {
     color: var(--text);
-    background: var(--hover-bg);
+    background: var(--bg-subtle);
   }
 }
 
@@ -135,11 +134,11 @@
 .nav-bar-build-row.active,
 .nav-bar-character-card.active {
   color: var(--accent);
-  background: var(--accent-bg-subtle);
+  background: var(--bg-accent);
   cursor: default;
 
   &:hover {
-    background: var(--accent-bg-subtle);
+    background: var(--bg-accent);
     color: var(--accent);
   }
 

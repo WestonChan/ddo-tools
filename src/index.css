@@ -1,28 +1,38 @@
 :root {
+  /* Primitives */
   --bg: #18181b;
-  --bg-panel: #27272a;
-  --bg-input: #1c1c1f;
-  --accent: #b8962e;
-  --accent-hover: #d4ad3a;
+  --tint: white;
   --text: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --border: #3f3f46;
-  --border-accent: #52525b;
-  --hover-bg: #323236;
-  --pip-empty: #2a2a2e;
-  --pip-locked-stripe: #1a1a1e;
+  --accent: #b8962e;
   --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.1);
-  --pip-missing-border: #c0392b;
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --overlay-bg: rgba(0, 0, 0, 0.25);
   --font-display: 'Vollkorn', Georgia, serif;
-  --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
-  --accent-glow-strong: color-mix(in srgb, var(--accent) 50%, transparent);
-  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
-  --btn-ghost-bg: rgba(255, 255, 255, 0.04);
-  --btn-ghost-bg-hover: rgba(255, 255, 255, 0.08);
+
+  /* Text (derived) */
+  --text-secondary: rgb(from var(--text) r g b / 0.65);
+  --text-muted: rgb(from var(--text) r g b / 0.45);
+
+  /* Backgrounds — neutral (tint-based) */
+  --bg-secondary: color-mix(in srgb, var(--tint) 3%, var(--bg));
+  --bg-tertiary: color-mix(in srgb, var(--tint) 6%, var(--bg));
+
+  /* Backgrounds — transparent overlay (context-responsive) */
+  --bg-subtle: rgb(from var(--tint) r g b / 0.10);
+
+  /* Backgrounds — accent-tinted */
+  --bg-accent: color-mix(in srgb, var(--accent) 8%, var(--bg));
+
+  /* Backgrounds — semantic */
+  --bg-danger: rgb(from var(--danger) r g b / 0.1);
+
+  /* Borders — neutral */
+  --border: color-mix(in srgb, var(--tint) 17%, var(--bg));
+  --border-emphasis: color-mix(in srgb, var(--tint) 10%, var(--border));
+
+  /* Borders — accent */
+  --border-accent: color-mix(in srgb, var(--accent) 15%, var(--border));
+
+  /* Borders — semantic */
+  --border-danger: color-mix(in srgb, var(--danger) 40%, var(--border));
 
   /* Interaction timing */
   --transition-fast: 0.15s;
@@ -69,29 +79,12 @@
 }
 
 :root[data-theme='light'] {
+  /* Primitives */
   --bg: #f4f4f5;
-  --bg-panel: #ffffff;
-  --bg-input: #e8e8eb;
-  --accent: #8b7335;
-  --accent-hover: #6e5a28;
+  --tint: black;
   --text: #18181b;
-  --text-secondary: #52525b;
-  --text-muted: #71717a;
-  --border: #d4d4d8;
-  --border-accent: #a1a1aa;
-  --hover-bg: #e4e4e7;
-  --pip-empty: #d4d4d8;
-  --pip-locked-stripe: #e4e4e7;
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.15);
-  --pip-missing-border: #e74c3c;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --overlay-bg: rgba(0, 0, 0, 0.3);
-  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
-  --accent-glow-strong: color-mix(in srgb, var(--accent) 35%, transparent);
-  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
-  --btn-ghost-bg: rgba(0, 0, 0, 0.04);
-  --btn-ghost-bg-hover: rgba(0, 0, 0, 0.08);
+  --accent: #8b7335;
+
   color-scheme: light;
   background: var(--bg);
 }
@@ -109,7 +102,7 @@ a {
 }
 
 a:hover {
-  color: var(--accent-hover);
+  color: color-mix(in oklch, var(--accent) 70%, white);
 }
 
 h1 {
@@ -121,7 +114,7 @@ h1 {
 /* --- Tooltip (portal-based, used by shared/Tooltip.tsx) --- */
 .tooltip-portal {
   position: fixed;
-  background: var(--bg-panel);
+  background: var(--bg-tertiary);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -131,7 +124,6 @@ h1 {
   text-align: center;
   pointer-events: none;
   z-index: 100;
-  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 /* --- Shared UI primitives --- */
@@ -154,7 +146,7 @@ h1 {
 
 /* Ghost button — border outline, accent on hover */
 .btn-ghost {
-  background: var(--btn-ghost-bg);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-accent);
   color: var(--text-secondary);
   border-radius: 4px;
@@ -166,15 +158,13 @@ h1 {
     color var(--transition-std),
     border-color var(--transition-std),
     background var(--transition-std),
-    box-shadow var(--transition-std),
     transform var(--transition-fast);
 }
 
 .btn-ghost:hover {
   color: var(--accent);
   border-color: var(--accent);
-  background: var(--btn-ghost-bg-hover);
-  box-shadow: 0 0 8px var(--accent-glow);
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
 }
 
@@ -184,7 +174,7 @@ h1 {
 
 /* Small ghost button variant */
 .btn-ghost-sm {
-  background: var(--btn-ghost-bg);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-accent);
   color: var(--text-secondary);
   border-radius: 3px;
@@ -196,15 +186,13 @@ h1 {
     color var(--transition-std),
     border-color var(--transition-std),
     background var(--transition-std),
-    box-shadow var(--transition-std),
     transform var(--transition-fast);
 }
 
 .btn-ghost-sm:hover {
   color: var(--accent);
   border-color: var(--accent);
-  background: var(--btn-ghost-bg-hover);
-  box-shadow: 0 0 6px var(--accent-glow);
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
 }
 
@@ -224,13 +212,11 @@ h1 {
   cursor: pointer;
   transition:
     background var(--transition-std),
-    box-shadow var(--transition-std),
     transform var(--transition-fast);
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 2px 12px var(--accent-glow-strong);
+  background: color-mix(in oklch, var(--accent) 70%, white);
   transform: translateY(-1px);
 }
 
@@ -242,7 +228,6 @@ h1 {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
 /* Small primary button variant */
@@ -257,13 +242,11 @@ h1 {
   cursor: pointer;
   transition:
     background var(--transition-std),
-    box-shadow var(--transition-std),
     transform var(--transition-fast);
 }
 
 .btn-primary-sm:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 2px 10px var(--accent-glow-strong);
+  background: color-mix(in oklch, var(--accent) 70%, white);
   transform: translateY(-1px);
 }
 
@@ -279,7 +262,8 @@ h1 {
 }
 
 .row-interactive:hover {
-  background: var(--hover-bg);
+  background: var(--bg-subtle);
+  color: var(--text);
 }
 
 /* Global focus-visible for keyboard navigation */

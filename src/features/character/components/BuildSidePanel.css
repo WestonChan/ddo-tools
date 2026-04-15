@@ -1,9 +1,9 @@
-/* Flush with page bg — coplanar with nav bar and bottom bar.
-   Separation from content is carried by the left border (--border-accent
+/* Subtle inset bg shared with nav bar and bottom bar.
+   Separation from content is carried by the left border (--border-emphasis
    for a touch more weight since the panel hosts dense data). */
 .side-panel {
-  background: var(--bg);
-  border-left: 1px solid var(--border-accent);
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-emphasis);
   display: flex;
   flex-direction: column;
   min-height: 0;

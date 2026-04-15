@@ -4,11 +4,16 @@ CSS conventions, design tokens, layout architecture, and responsive breakpoints 
 
 ## Design Principles
 
-- **Flat chrome, no panel contrast.** The nav bar, bottom bar, and stats side panel use `var(--bg)` (page background) — not `--bg-panel`. They sit flush with the page. Separation is carried entirely by hairline borders (`1px solid var(--border)`). This gives a continuous canvas feel split by thin edges, rather than floating panels.
-- **No shadows on coplanar surfaces.** `box-shadow` implies z-axis elevation — only use it on genuinely floating elements (tooltips, modals, popovers). A flush surface with a shadow is a visual contradiction. `--bg-panel` + `box-shadow` is reserved for elevated UI (tooltip portals, confirm modals, the bottom-bar tooltip).
-- **Active state = color + weight.** Nav items signal active via accent color + one weight-step bump (500 -> 600). The character card adds an accent border + accent top divider. Active items get `cursor: default` and suppress hover background changes — clicking the already-active item is a no-op.
-- **Accent derivatives use `color-mix()`.** Tokens like `--accent-bg-subtle`, `--accent-glow` are derived from `--accent` via `color-mix(in srgb, var(--accent) N%, transparent)` so they track the active accent theme automatically. Never declare accent derivatives as static `rgba()` — that freezes them to one theme.
-- **Identity vs navigation.** The character card's active state uses border + weight + color (emphasizing identity); nav buttons use left accent bar + weight + color (standard navigation). Different element types earn different active patterns.
+- **Flat surfaces, no elevation.** No `box-shadow` anywhere — the UI is a single plane. Surface separation comes from subtle bg tint steps and hairline borders, never drop shadows. Even modals and tooltips sit flush, relying on border + bg contrast against a dimmed scrim.
+- **Derive, don't duplicate.** The light theme only overrides 4 primitives: `--bg`, `--tint`, `--text`, `--accent`. Everything else — secondary/tertiary/hover bgs, borders, semantic colors — is derived via `color-mix()` or `rgb(from ... / alpha)`. Adding a new theme means picking 4 colors, not redefining the whole palette.
+- **Tint, not text, is the shift direction.** Backgrounds and borders mix toward `--tint` (white in dark, black in light), not `--text`. Keeps intent clear: `--tint` is "the direction to shift for more contrast," `--text` is a content color. Adding colored text won't break surface derivations.
+- **Solid vs transparent tokens serve different roles.**
+  - **Solid `color-mix(tint N%, bg)`** (e.g. `--bg-secondary`, `--bg-tertiary`) — fixed colors, good for chrome surfaces where the element owns its entire visual box and doesn't need to respond to what's behind it.
+  - **Transparent `rgb(from tint r g b / N)`** (e.g. `--bg-input`, `--bg-hover`) — context-responsive overlays that always appear N% brighter/darker than their parent. Use for hover states and inset elements that might appear on varying surface levels (e.g. a pip inside a hoverable row — a solid color would become invisible when the row hover matches the pip fill).
+- **Accent derivatives use relative color syntax.** `rgb(from var(--accent) r g b / 0.1)` gives a true alpha variant of the accent. Avoids the `color-mix(accent N%, transparent)` pitfall where srgb mixing pulls color channels toward black (transparent is `rgba(0,0,0,0)` — mixing accent at 10% with it produces a near-black semi-transparent color, not a gold wash).
+- **`color-mix` convention: `modifier <50%, base`.** The base always dominates and goes second. This makes every mix read as "take the base and add a small amount of tint/accent/danger." For strong color states, find a different base rather than flipping percentages (e.g. `--border-danger` mixes danger into border, not the other way around).
+- **Active state = color + weight.** Nav items signal active via accent color + one weight-step bump (500 → 600). The character card adds an accent border + accent top divider. Active items get `cursor: default` and suppress hover background changes — clicking the already-active item is a no-op.
+- **Identity vs navigation.** The character card's active state uses border + color (emphasizing identity); nav buttons use left accent bar + weight + color (standard navigation). Different element types earn different active patterns.
 
 ## Conventions
 
@@ -22,26 +27,61 @@ CSS conventions, design tokens, layout architecture, and responsive breakpoints 
 
 ## Design Tokens
 
-Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (light).
+Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (light). Only primitives differ between themes — derived tokens auto-resolve.
 
-| Token | Dark | Light | Usage |
-|-------|------|-------|-------|
+### Primitives (theme-specific)
+
+| Token | Dark | Light | Role |
+|-------|------|-------|------|
 | `--bg` | `#18181b` | `#f4f4f5` | Page background |
-| `--bg-panel` | `#27272a` | `#ffffff` | Elevated surfaces only (tooltips, modals). Chrome surfaces (nav, bottom bar, stats) use `--bg` instead. |
-| `--bg-input` | `#1c1c1f` | `#e8e8eb` | Input fields |
-| `--accent` | `#b8962e` | `#8b7335` | Gold accent color (matches Gold theme in `theme.ts`) |
-| `--accent-hover` | `#d4ad3a` | `#6e5a28` | Accent hover state |
+| `--tint` | `white` | `black` | Contrast direction — color to mix INTO `--bg` for stepped surfaces |
 | `--text` | `#fafafa` | `#18181b` | Primary text |
-| `--text-secondary` | `#a1a1aa` | `#52525b` | Secondary text |
-| `--text-muted` | `#71717a` | `#71717a` | Muted/disabled text |
-| `--border` | `#3f3f46` | `#d4d4d8` | Default borders |
-| `--border-accent` | `#52525b` | `#a1a1aa` | Emphasized borders |
-| `--hover-bg` | `#323236` | `#e4e4e7` | Hover backgrounds |
-| `--danger` | `#ef4444` | `#ef4444` | Error/warning red |
-| `--shadow-color` | `rgba(0,0,0,0.3)` | `rgba(0,0,0,0.1)` | Box shadows (elevated surfaces only — see Design Principles) |
-| `--accent-glow` | `color-mix(accent 30%, transparent)` | `color-mix(accent 20%, transparent)` | Accent glow effects (button hover shadows) |
-| `--accent-glow-strong` | `color-mix(accent 50%, transparent)` | `color-mix(accent 35%, transparent)` | Stronger glow (primary button hover) |
-| `--accent-bg-subtle` | `color-mix(accent 10%, transparent)` | `color-mix(accent 10%, transparent)` | Active item backgrounds |
+| `--accent` | `#b8962e` | `#8b7335` | Gold by default; overridden at runtime by `theme.ts` when user picks a color |
+| `--danger` | `#ef4444` | `#ef4444` | Error/warning red (same in both themes) |
+
+### Text (derived)
+
+| Token | Formula | Role |
+|-------|---------|------|
+| `--text-secondary` | `color-mix(text 65%, bg)` | Secondary/subtitle text |
+| `--text-muted` | `color-mix(text 45%, bg)` | Muted/placeholder text |
+
+### Backgrounds (derived)
+
+Solid tint-based surfaces for structural UI, plus transparent overlays for context-responsive states.
+
+| Token | Formula | Role |
+|-------|---------|------|
+| `--bg-secondary` | `color-mix(tint 3%, bg)` | Chrome surfaces — nav bar, bottom bar, side panel |
+| `--bg-tertiary` | `color-mix(tint 6%, bg)` | Card surfaces, tooltips, modal body |
+| `--bg-hover` | `rgb(from tint r g b / 0.10)` | **Transparent.** Hover highlight that lifts ~10% over any bg |
+| `--bg-input` | `rgb(from tint r g b / 0.15)` | **Transparent.** Inset elements (inputs, pips) that need to read distinct from any parent bg |
+| `--bg-accent` | `color-mix(accent 3%, bg)` | Subtle accent-tinted surface (tracks theme color) |
+| `--bg-accent-subtle` | `rgb(from accent r g b / 0.1)` | Active item backgrounds — transparent accent wash |
+| `--bg-danger` | `rgb(from danger r g b / 0.1)` | Danger/warning state background |
+
+### Borders (derived)
+
+| Token | Formula | Role |
+|-------|---------|------|
+| `--border` | `color-mix(tint 17%, bg)` | Default borders |
+| `--border-emphasis` | `color-mix(tint 25%, bg)` | Stronger neutral borders |
+| `--border-accent` | `color-mix(accent 15%, border)` | Tonal accent-tinted borders |
+| `--border-danger` | `color-mix(danger 60%, border)` | Danger state borders |
+
+### Contrast scale
+
+The `--bg-*` and `--border-*` tokens form a consistent 3% step scale from `--bg`:
+
+| Step | Token | Typical use |
+|------|-------|-------------|
+| 0% | `--bg` | Page |
+| 3% | `--bg-secondary` | Chrome |
+| 6% | `--bg-tertiary` | Cards, panels |
+| 9% | `--bg-hover` (transparent) | Hover |
+| 15% | `--bg-input` (transparent) | Insets |
+| 17% | `--border` | Default border |
+| 25% | `--border-emphasis` | Strong border |
 
 ### Type Scale
 

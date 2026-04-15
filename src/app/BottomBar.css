@@ -1,9 +1,9 @@
-/* Flush with page bg — matches nav bar and side panel's coplanar treatment.
-   Separation from content is carried by the top border. */
+/* Subtle inset bg shared with nav bar and side panel.
+   Separation from content is carried by the top border + tonal shift. */
 .bottom-bar {
   flex-shrink: 0;
   border-top: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--bg-secondary);
 }
 
 .bottom-bar-row {
@@ -84,13 +84,12 @@
   right: 0;
   margin-bottom: var(--space-1-5);
   padding: var(--space-1-5) var(--space-2-5);
-  background: var(--bg-panel);
+  background: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: var(--text-xs);
   color: var(--text-secondary);
   white-space: nowrap;
-  box-shadow: 0 4px 12px var(--shadow-color);
   animation: tooltip-in var(--transition-fast);
   transition: opacity var(--transition-std);
 
@@ -126,7 +125,7 @@
   transition: background var(--transition-fast);
 
   &:hover {
-    background: var(--hover-bg);
+    background: var(--bg-subtle);
     color: var(--text);
   }
 }

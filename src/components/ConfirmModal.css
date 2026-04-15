@@ -2,7 +2,7 @@
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  background: var(--overlay-bg);
+  background: rgb(from var(--bg) r g b / 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,15 +10,12 @@
 }
 
 .confirm-modal {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-accent);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-emphasis);
   border-radius: 8px;
   padding: var(--space-5) var(--space-6);
   max-width: 400px;
   width: 90%;
-  box-shadow:
-    0 8px 32px var(--shadow-color),
-    0 0 0 1px var(--accent-glow);
 }
 
 .confirm-modal-title {

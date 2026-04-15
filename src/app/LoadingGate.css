@@ -7,7 +7,7 @@
 
 .skeleton-nav-bar {
   width: 56px;
-  background: var(--bg-panel);
+  background: var(--bg-tertiary);
   border-right: 2px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -27,7 +27,7 @@
 
 .skeleton-panel {
   width: 280px;
-  background: var(--bg-panel);
+  background: var(--bg-tertiary);
   border-left: 1px solid var(--border);
   padding: var(--space-6) var(--space-4);
   display: flex;
@@ -37,7 +37,7 @@
 }
 
 .skeleton-block {
-  background: var(--bg-input);
+  background: var(--bg-accent);
   border-radius: 4px;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
@@ -96,7 +96,7 @@
   font-family: monospace;
   font-size: var(--text-xs);
   color: var(--text-secondary);
-  background: var(--bg-input);
+  background: var(--bg-accent);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: var(--space-2) var(--space-4);
@@ -130,7 +130,7 @@
 .loading-gate-retry--secondary {
   background: transparent;
   color: var(--text-secondary);
-  border: 1px solid var(--border-accent);
+  border: 1px solid var(--border-emphasis);
 }
 
 .loading-gate-actions {

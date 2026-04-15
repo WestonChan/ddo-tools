@@ -27,7 +27,7 @@
 .settings-view-theme-toggle {
   display: flex;
   gap: var(--space-1);
-  background: var(--bg-input);
+  background: var(--bg-accent);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: var(--space-1);
@@ -49,12 +49,12 @@
   cursor: pointer;
   &:hover {
     color: var(--text-secondary);
-    background: var(--hover-bg);
+    background: var(--bg-subtle);
   }
 
   &.active {
     color: var(--accent);
-    background: var(--accent-bg-subtle);
+    background: var(--bg-accent);
   }
 }
 
@@ -76,11 +76,11 @@
   background: transparent;
   cursor: pointer;
   &:hover {
-    background: var(--hover-bg);
+    background: var(--bg-subtle);
   }
 
   &.selected {
-    background: var(--accent-bg-subtle);
+    background: var(--bg-accent);
   }
 }
 
@@ -94,7 +94,7 @@
 
 .settings-view-accent-swatch.selected .settings-view-accent-dot {
   box-shadow:
-    0 0 0 2px var(--bg-panel),
+    0 0 0 2px var(--bg),
     0 0 0 3.5px currentColor;
 }
 
