@@ -2,7 +2,7 @@
   /* Primitives */
   --bg: #18181b;
   --tint: white;
-  --text: #fafafa;
+  --text: rgb(from var(--tint) r g b / 0.85);
   --accent: #b8962e;
   --danger: #ef4444;
   --font-display: 'Vollkorn', Georgia, serif;
@@ -82,7 +82,6 @@
   /* Primitives */
   --bg: #f4f4f5;
   --tint: black;
-  --text: #18181b;
   --accent: #8b7335;
 
   color-scheme: light;
@@ -254,16 +253,25 @@ h1 {
   transform: translateY(0);
 }
 
-/* Interactive row — hover highlight */
-.row-interactive {
-  border-radius: 3px;
+/* Shared hover highlight utility. Applied to rows, cards, and buttons that
+   want the default "lift to --bg-subtle on hover" treatment. Active/selected
+   instances suppress their own hover feedback — an already-active nav item
+   or already-selected option is a no-op, so it shouldn't flash on hover. */
+.hoverable {
   cursor: pointer;
-  transition: background var(--transition-std);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 
-.row-interactive:hover {
+.hoverable:not(.active):not(.selected):hover {
   background: var(--bg-subtle);
   color: var(--text);
+}
+
+.hoverable.active,
+.hoverable.selected {
+  cursor: default;
 }
 
 /* Global focus-visible for keyboard navigation */

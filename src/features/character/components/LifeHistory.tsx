@@ -144,7 +144,7 @@ function LifeRow({
 }) {
   return (
     <div
-      className={`life-entry row-interactive ${className ?? ''} ${active ? 'viewing' : ''}`}
+      className={`life-entry hoverable ${className ?? ''} ${active ? 'viewing' : ''}`}
       onClick={onClick}
     >
       <span className="life-marker">{active ? <Star size={14} /> : ''}</span>

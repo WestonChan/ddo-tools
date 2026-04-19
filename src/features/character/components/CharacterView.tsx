@@ -52,7 +52,7 @@ function CharacterView() {
           return (
             <div
               key={char.id}
-              className={`character-row row-interactive ${isActive ? 'active' : ''}`}
+              className={`character-row hoverable ${isActive ? 'active' : ''}`}
               onClick={() => selectCharacter(char.id)}
             >
               <span className="character-marker">{isActive ? <Star size={14} /> : ''}</span>

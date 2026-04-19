@@ -109,11 +109,6 @@
   & > svg {
     justify-self: center;
   }
-
-  &:hover {
-    color: var(--text);
-    background: var(--bg-subtle);
-  }
 }
 
 /* Nav buttons and build row share interactive styling */
@@ -176,19 +171,19 @@
     color: var(--text-muted);
   }
 
-  &:hover .nav-bar-label {
-    color: var(--text);
-  }
-
+  &:hover > svg,
   &.active > svg {
     opacity: 1;
+  }
+
+  &:hover .nav-bar-label {
+    color: var(--text);
   }
 
   &.active .nav-bar-label {
     color: var(--accent);
     font-weight: 600;
   }
-
 }
 
 .nav-bar-label {
