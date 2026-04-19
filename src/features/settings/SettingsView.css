@@ -80,7 +80,7 @@
   height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1.5px rgb(from var(--tint) r g b / 0.08);
 }
 
 .settings-view-accent-swatch.selected .settings-view-accent-dot {
