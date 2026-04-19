@@ -33,11 +33,16 @@ function getViewFromPath(): View {
   return VALID_VIEWS.includes(path as View) ? (path as View) : 'not-found'
 }
 
-export function useRouter() {
+interface RouterApi {
+  view: View
+  navigate: (target: View) => void
+}
+
+export function useRouter(): RouterApi {
   const [view, setView] = useState<View>(getViewFromPath)
 
   useEffect(() => {
-    const onPopState = () => setView(getViewFromPath())
+    const onPopState = (): void => setView(getViewFromPath())
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])

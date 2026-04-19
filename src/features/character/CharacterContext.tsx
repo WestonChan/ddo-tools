@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, type JSX, type ReactNode } from 'react'
 import { STUB_CHARACTERS, STUB_PLANNED_BUILDS } from './data/stubCharacters'
 import type { Character, Life, PastLifeCounts } from './types'
 import {
@@ -12,7 +12,7 @@ import { defaultSelection, migrateCharacters, migrateSelection } from './migrati
 import type { Selection } from './migrations'
 import { CharacterContext, type CharacterContextValue } from './context'
 
-export function CharacterProvider({ children }: { children: ReactNode }) {
+export function CharacterProvider({ children }: { children: ReactNode }): JSX.Element {
   const [characters, setCharacters] = useLocalStorage<Character[]>(
     'ddo-characters',
     STUB_CHARACTERS,
@@ -38,7 +38,7 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
     const viewingLife = character.lives.find((l) => l.id === selection.buildId)
     const activeBuild = viewingPlannedBuild ?? viewingLife ?? currentLife
 
-    function selectCharacter(charId: string) {
+    function selectCharacter(charId: string): void {
       const char = characters.find((c) => c.id === charId)
       if (!char) return
       setSelection({
@@ -47,11 +47,11 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
       })
     }
 
-    function selectBuild(buildId: string) {
+    function selectBuild(buildId: string): void {
       setSelection((prev) => ({ ...prev, buildId }))
     }
 
-    function setOverride(category: keyof PastLifeCounts, id: string, value: number) {
+    function setOverride(category: keyof PastLifeCounts, id: string, value: number): void {
       setCharacters((prev) =>
         prev.map((c) => {
           if (c.id !== selection.characterId) return c
@@ -67,7 +67,7 @@ export function CharacterProvider({ children }: { children: ReactNode }) {
       )
     }
 
-    function setBuildDesired(category: keyof PastLifeCounts, id: string, value: number) {
+    function setBuildDesired(category: keyof PastLifeCounts, id: string, value: number): void {
       if (!viewingPlannedBuild) return
       const currentBuildId = selection.buildId
       setPlannedBuilds((prev) =>

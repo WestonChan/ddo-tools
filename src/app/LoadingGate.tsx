@@ -1,9 +1,10 @@
+import type { JSX } from 'react'
 import { useDatabase } from '../hooks'
 import './LoadingGate.css'
 
 const REPO_URL = 'https://github.com/WestonChan/ddo-tools'
 
-function clearSiteData() {
+function clearSiteData(): void {
   // Wipe SW caches (covers corrupt ddo.db), then reload
   if ('caches' in window) {
     caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n))))
@@ -14,7 +15,7 @@ function clearSiteData() {
   window.location.reload()
 }
 
-export function LoadingGate({ children }: { children: React.ReactNode }) {
+export function LoadingGate({ children }: { children: React.ReactNode }): JSX.Element {
   const { loading, error } = useDatabase()
 
   if (error) {

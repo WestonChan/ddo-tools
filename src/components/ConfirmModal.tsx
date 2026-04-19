@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type JSX } from 'react'
 import './ConfirmModal.css'
 
 /**
@@ -19,7 +19,7 @@ export function ConfirmModal({
   requireInput?: string
   onConfirm: () => void
   onCancel: () => void
-}) {
+}): JSX.Element {
   const [inputValue, setInputValue] = useState('')
   const canConfirm = !requireInput || inputValue.toLowerCase() === requireInput.toLowerCase()
 

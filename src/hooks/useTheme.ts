@@ -8,7 +8,12 @@ function getInitialTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 
-export function useTheme() {
+interface ThemeApi {
+  theme: Theme
+  toggle: () => void
+}
+
+export function useTheme(): ThemeApi {
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
 
   useEffect(() => {
@@ -16,6 +21,6 @@ export function useTheme() {
     localStorage.setItem('theme', theme)
   }, [theme])
 
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  const toggle = (): void => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
   return { theme, toggle }
 }

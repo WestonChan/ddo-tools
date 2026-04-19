@@ -1,6 +1,6 @@
 import { render, act } from '@testing-library/react'
 import { describe, it, expect, beforeEach } from 'vitest'
-import { createElement, type Dispatch, type SetStateAction } from 'react'
+import { createElement, type Dispatch, type JSX, type SetStateAction } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 
 // Store the setter via a callback prop — avoids lint issues with refs and globals
@@ -14,15 +14,18 @@ function TestComponent({
   storageKey: string
   initial: unknown
   onRender: (val: unknown, set: Dispatch<SetStateAction<unknown>>) => void
-}) {
+}): JSX.Element {
   const [value, setValue] = useLocalStorage(storageKey, initial)
   onRender(value, setValue as Dispatch<SetStateAction<unknown>>)
   return createElement('div', { 'data-testid': 'value' }, JSON.stringify(value))
 }
 
-function renderHook(key: string, initial: unknown) {
+function renderHook(key: string, initial: unknown): {
+  getValue: () => unknown
+  getSetter: () => Dispatch<SetStateAction<unknown>>
+} {
   let lastValue: unknown
-  const onRender = (val: unknown, set: Dispatch<SetStateAction<unknown>>) => {
+  const onRender = (val: unknown, set: Dispatch<SetStateAction<unknown>>): void => {
     lastValue = val
     setter = set
   }
@@ -31,16 +34,21 @@ function renderHook(key: string, initial: unknown) {
 }
 
 /** Render two components sharing the same localStorage key, returning both values and setters. */
-function renderTwoHooks(key: string, initial: unknown) {
+function renderTwoHooks(key: string, initial: unknown): {
+  getA: () => unknown
+  getB: () => unknown
+  setA: () => Dispatch<SetStateAction<unknown>>
+  setB: () => Dispatch<SetStateAction<unknown>>
+} {
   let valueA: unknown, valueB: unknown
   let setterA: Dispatch<SetStateAction<unknown>> = () => {}
   let setterB: Dispatch<SetStateAction<unknown>> = () => {}
 
-  const onRenderA = (val: unknown, set: Dispatch<SetStateAction<unknown>>) => {
+  const onRenderA = (val: unknown, set: Dispatch<SetStateAction<unknown>>): void => {
     valueA = val
     setterA = set
   }
-  const onRenderB = (val: unknown, set: Dispatch<SetStateAction<unknown>>) => {
+  const onRenderB = (val: unknown, set: Dispatch<SetStateAction<unknown>>): void => {
     valueB = val
     setterB = set
   }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import AppNavBar from './AppNavBar'
 import { SettingsView } from '../features/settings'
 import { BottomBar } from './BottomBar'
@@ -15,7 +15,7 @@ const warnings: BuildWarning[] = []
 
 const VIEWS_WITH_STATS_PANEL = new Set(['build-plan'])
 
-function App() {
+function App(): JSX.Element {
   const { view, navigate } = useRouter()
   const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-nav-bar-expanded', true)
   const [navBarExpanded, setNavBarExpanded] = useState(() => {
@@ -29,7 +29,7 @@ function App() {
   // restore stored preference when crossing back above 900px
   const prevWidth = useRef(window.innerWidth)
   useEffect(() => {
-    function handleResize() {
+    function handleResize(): void {
       const width = window.innerWidth
       if (prevWidth.current >= 900 && width < 900) {
         setNavBarExpanded(false)
@@ -43,7 +43,7 @@ function App() {
     return () => window.removeEventListener('resize', handleResize)
   }, [storedExpanded])
 
-  function toggleNavBar() {
+  function toggleNavBar(): void {
     const next = !navBarExpanded
     setNavBarExpanded(next)
     setStoredExpanded(next)

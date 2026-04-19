@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type JSX } from 'react'
 import { ChevronRightIcon } from './Icons'
 import './CollapsibleSection.css'
 
@@ -8,7 +8,7 @@ interface CollapsibleSectionProps {
   children: React.ReactNode
 }
 
-function CollapsibleSection({ title, defaultExpanded = false, children }: CollapsibleSectionProps) {
+function CollapsibleSection({ title, defaultExpanded = false, children }: CollapsibleSectionProps): JSX.Element {
   const [expanded, setExpanded] = useState(defaultExpanded)
 
   return (

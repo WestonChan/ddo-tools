@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type JSX } from 'react'
 import type { Life } from '../types'
 import {
   computeMismatchWarnings,
@@ -13,7 +13,7 @@ import { PastLifeStacks } from './PastLifeStacks'
 import { LifeHistory, type ReincarnateResult } from './LifeHistory'
 import './CharacterView.css'
 
-function CharacterView() {
+function CharacterView(): JSX.Element {
   const {
     characters,
     setCharacters,

@@ -1,6 +1,6 @@
 import { render, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { createElement } from 'react'
+import { createElement, type JSX } from 'react'
 import { useAddRemoveInput } from './useAddRemoveInput'
 
 function TestComponent({
@@ -11,7 +11,7 @@ function TestComponent({
   onAdd: () => void
   onRemove: () => void
   ms?: number
-}) {
+}): JSX.Element {
   const { ref, onClick, onContextMenu } = useAddRemoveInput(onAdd, onRemove, ms)
   return createElement('div', {
     ref,
@@ -21,7 +21,7 @@ function TestComponent({
   })
 }
 
-function touch(el: HTMLElement, type: 'touchstart' | 'touchend' | 'touchcancel') {
+function touch(el: HTMLElement, type: 'touchstart' | 'touchend' | 'touchcancel'): void {
   el.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }))
 }
 

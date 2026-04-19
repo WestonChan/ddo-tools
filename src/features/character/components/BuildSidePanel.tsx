@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type JSX } from 'react'
 import './BuildSidePanel.css'
 
 type Tab = 'stats' | 'feats'
@@ -45,7 +45,7 @@ const PASSIVE_FEATS = [
   'Evasion',
 ]
 
-function StatsTab() {
+function StatsTab(): JSX.Element {
   return (
     <>
       <div className="section-label">Ability Scores</div>
@@ -82,7 +82,7 @@ function StatsTab() {
   )
 }
 
-function FeatsTab() {
+function FeatsTab(): JSX.Element {
   return (
     <>
       <div className="section-label">Active</div>
@@ -101,7 +101,7 @@ function FeatsTab() {
   )
 }
 
-function BuildSidePanel() {
+function BuildSidePanel(): JSX.Element {
   const [activeTab, setActiveTab] = useState<Tab>('stats')
 
   return (

@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, type RefObject } from 'react'
 import type { MouseEvent } from 'react'
+
+interface AddRemoveInputHandlers {
+  ref: RefObject<HTMLElement | null>
+  onClick: () => void
+  onContextMenu: (e: MouseEvent) => void
+}
 
 /**
  * Unified add/remove input hook.
@@ -9,7 +15,7 @@ import type { MouseEvent } from 'react'
  * Returns { ref, onClick, onContextMenu } to spread onto the target element.
  * The ref attaches native touch listeners with { passive: false } to allow preventDefault.
  */
-export function useAddRemoveInput(onAdd: () => void, onRemove: () => void, ms = 500) {
+export function useAddRemoveInput(onAdd: () => void, onRemove: () => void, ms = 500): AddRemoveInputHandlers {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const firedRef = useRef(false)
   const elRef = useRef<HTMLElement | null>(null)
