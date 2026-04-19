@@ -1,29 +1,85 @@
 :root {
+  /* Primitives */
   --bg: #18181b;
-  --bg-panel: #27272a;
-  --bg-input: #1c1c1f;
-  --accent: #b8a37b;
-  --accent-hover: #d0bd9b;
-  --text: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --border: #3f3f46;
-  --border-accent: #52525b;
-  --hover-bg: #323236;
-  --pip-empty: #2a2a2e;
-  --pip-locked-stripe: #1a1a1e;
+  --tint: white;
+  --text: rgb(from var(--tint) r g b / 0.85);
+  --accent: #b8962e;
   --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.1);
-  --pip-missing-border: #c0392b;
-  --shadow-color: rgba(0, 0, 0, 0.3);
-  --overlay-bg: rgba(0, 0, 0, 0.25);
   --font-display: 'Vollkorn', Georgia, serif;
-  --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
-  --accent-glow-strong: color-mix(in srgb, var(--accent) 50%, transparent);
-  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
-  --btn-ghost-bg: rgba(255, 255, 255, 0.04);
-  --btn-ghost-bg-hover: rgba(255, 255, 255, 0.08);
 
+  /* Text (derived) */
+  --text-secondary: rgb(from var(--text) r g b / 0.65);
+  --text-muted: rgb(from var(--text) r g b / 0.45);
+
+  /* Backgrounds — neutral (tint-based) */
+  --bg-secondary: color-mix(in srgb, var(--tint) 3%, var(--bg));
+  --bg-tertiary: color-mix(in srgb, var(--tint) 6%, var(--bg));
+
+  /* Backgrounds — transparent overlay (context-responsive) */
+  --bg-subtle: rgb(from var(--tint) r g b / 0.10);
+
+  /* Backgrounds — accent-tinted */
+  --bg-accent: color-mix(in srgb, var(--accent) 8%, var(--bg));
+
+  /* Backgrounds — semantic */
+  --bg-danger: rgb(from var(--danger) r g b / 0.1);
+
+  /* Borders — neutral */
+  --border: color-mix(in srgb, var(--tint) 17%, var(--bg));
+  --border-emphasis: color-mix(in srgb, var(--tint) 10%, var(--border));
+
+  /* Borders — accent */
+  --border-accent: color-mix(in srgb, var(--accent) 15%, var(--border));
+
+  /* Borders — semantic */
+  --border-danger: color-mix(in srgb, var(--danger) 40%, var(--border));
+
+  /* Interaction timing */
+  --transition-fast: 0.15s;
+  --transition-std: 0.3s;
+
+  /* Border radius scale — sm for pips/small buttons, md for most controls,
+     lg for cards/panels/modals. Larger values (8px+) stay raw: too rare to
+     warrant a token. */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+
+  /* Stacking layers. Number them by role so siblings within the same layer
+     can still use small local offsets (e.g. z-index: 1) above their neighbors
+     without colliding with the next layer up. */
+  --z-local:   1;    /* positional offsets within a component (swap btn, etc.) */
+  --z-panel:   10;   /* side panels, stats panel — above main content */
+  --z-nav:     20;   /* nav bar — above panels */
+  --z-overlay: 40;   /* mobile fullscreen nav, slide-in drawers */
+  --z-modal:   100;  /* confirm modals, tooltips — highest layer */
+
+  /* Type scale — values from Tailwind's default scale. Weight and
+     letter-spacing kept as raw numbers (self-documenting, low drift). */
+  --text-xs: 0.75rem;     /* 12px — caption, microcopy, subtitles, dense labels */
+  --text-sm: 0.875rem;    /* 14px — body UI: rows, buttons, card text, nav labels */
+  --text-base: 1rem;      /* 16px — emphasized body: modal titles, section text */
+  --text-lg: 1.125rem;    /* 18px — nav brand, prominent labels */
+  --text-xl: 1.25rem;     /* 20px — view titles, section headings */
+  --text-2xl: 1.5rem;     /* 24px — display, loading gate */
+  --text-3xl: 1.875rem;   /* 30px — h1 */
+
+  /* Spacing scale — Tailwind defaults (4px base, 1rem = 16px). Used for
+     padding, margin, and gap. Half-step names (-5 suffix) follow Tailwind's
+     space-1.5, space-2.5 etc. with . rewritten as - for CSS-var compatibility. */
+  --space-px:  1px;
+  --space-0-5: 0.125rem;  /* 2px  — TW 0.5 */
+  --space-1:   0.25rem;   /* 4px  — TW 1 */
+  --space-1-5: 0.375rem;  /* 6px  — TW 1.5 */
+  --space-2:   0.5rem;    /* 8px  — TW 2 */
+  --space-2-5: 0.625rem;  /* 10px — TW 2.5 */
+  --space-3:   0.75rem;   /* 12px — TW 3 */
+  --space-3-5: 0.875rem;  /* 14px — TW 3.5 */
+  --space-4:   1rem;      /* 16px — TW 4 */
+  --space-5:   1.25rem;   /* 20px — TW 5 */
+  --space-6:   1.5rem;    /* 24px — TW 6 */
+  --space-7:   1.75rem;   /* 28px — TW 7 */
+  --space-8:   2rem;      /* 32px — TW 8 */
 
   color-scheme: dark;
 
@@ -31,7 +87,7 @@
   line-height: 1.5;
   font-weight: 400;
   color: var(--text);
-  background: radial-gradient(ellipse at center, var(--bg) 0%, #111113 100%);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -39,31 +95,13 @@
 }
 
 :root[data-theme='light'] {
+  /* Primitives */
   --bg: #f4f4f5;
-  --bg-panel: #ffffff;
-  --bg-input: #e8e8eb;
+  --tint: black;
   --accent: #8b7335;
-  --accent-hover: #6e5a28;
-  --text: #18181b;
-  --text-secondary: #52525b;
-  --text-muted: #71717a;
-  --border: #d4d4d8;
-  --border-accent: #a1a1aa;
-  --hover-bg: #e4e4e7;
-  --pip-empty: #d4d4d8;
-  --pip-locked-stripe: #e4e4e7;
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.15);
-  --pip-missing-border: #e74c3c;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --overlay-bg: rgba(0, 0, 0, 0.3);
-  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
-  --accent-glow-strong: color-mix(in srgb, var(--accent) 35%, transparent);
-  --accent-bg-subtle: color-mix(in srgb, var(--accent) 10%, transparent);
-  --btn-ghost-bg: rgba(0, 0, 0, 0.04);
-  --btn-ghost-bg-hover: rgba(0, 0, 0, 0.08);
+
   color-scheme: light;
-  background: radial-gradient(ellipse at center, var(--bg) 0%, #e4e4e7 100%);
+  background: var(--bg);
 }
 
 * {
@@ -79,29 +117,28 @@ a {
 }
 
 a:hover {
-  color: var(--accent-hover);
+  color: color-mix(in oklch, var(--accent) 70%, white);
 }
 
 h1 {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   line-height: 1.1;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 /* --- Tooltip (portal-based, used by shared/Tooltip.tsx) --- */
 .tooltip-portal {
   position: fixed;
-  background: var(--bg-panel);
+  background: var(--bg-tertiary);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.7rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-1-5) var(--space-2);
+  font-size: var(--text-xs);
   max-width: 250px;
   text-align: center;
   pointer-events: none;
-  z-index: 100;
-  box-shadow: 0 2px 8px var(--shadow-color);
+  z-index: var(--z-modal);
 }
 
 /* --- Shared UI primitives --- */
@@ -110,12 +147,12 @@ h1 {
 .section-label {
   font-family: var(--font-display);
   color: var(--accent);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-top: 0.5rem;
-  margin-bottom: 0.35rem;
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-1-5);
 }
 
 .section-label:first-child {
@@ -124,21 +161,25 @@ h1 {
 
 /* Ghost button — border outline, accent on hover */
 .btn-ghost {
-  background: var(--btn-ghost-bg);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-accent);
   color: var(--text-secondary);
-  border-radius: 4px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.78rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--text-xs);
   font-weight: 500;
   cursor: pointer;
+  transition:
+    color var(--transition-std),
+    border-color var(--transition-std),
+    background var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-ghost:hover {
   color: var(--accent);
   border-color: var(--accent);
-  background: var(--btn-ghost-bg-hover);
-  box-shadow: 0 0 8px var(--accent-glow);
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
 }
 
@@ -148,21 +189,25 @@ h1 {
 
 /* Small ghost button variant */
 .btn-ghost-sm {
-  background: var(--btn-ghost-bg);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-accent);
   color: var(--text-secondary);
-  border-radius: 3px;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.73rem;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
   font-weight: 500;
   cursor: pointer;
+  transition:
+    color var(--transition-std),
+    border-color var(--transition-std),
+    background var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-ghost-sm:hover {
   color: var(--accent);
   border-color: var(--accent);
-  background: var(--btn-ghost-bg-hover);
-  box-shadow: 0 0 6px var(--accent-glow);
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
 }
 
@@ -175,16 +220,18 @@ h1 {
   background: var(--accent);
   color: var(--bg);
   border: none;
-  border-radius: 4px;
-  padding: 0.3rem 0.85rem;
-  font-size: 0.78rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-1-5) var(--space-3-5);
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 2px 12px var(--accent-glow-strong);
+  background: color-mix(in oklch, var(--accent) 70%, white);
   transform: translateY(-1px);
 }
 
@@ -196,7 +243,6 @@ h1 {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
 /* Small primary button variant */
@@ -204,16 +250,18 @@ h1 {
   background: var(--accent);
   color: var(--bg);
   border: none;
-  border-radius: 3px;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.73rem;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background var(--transition-std),
+    transform var(--transition-fast);
 }
 
 .btn-primary-sm:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 2px 10px var(--accent-glow-strong);
+  background: color-mix(in oklch, var(--accent) 70%, white);
   transform: translateY(-1px);
 }
 
@@ -221,14 +269,25 @@ h1 {
   transform: translateY(0);
 }
 
-/* Interactive row — hover highlight */
-.row-interactive {
-  border-radius: 3px;
+/* Shared hover highlight utility. Applied to rows, cards, and buttons that
+   want the default "lift to --bg-subtle on hover" treatment. Active/selected
+   instances suppress their own hover feedback — an already-active nav item
+   or already-selected option is a no-op, so it shouldn't flash on hover. */
+.hoverable {
   cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 
-.row-interactive:hover {
-  background: var(--hover-bg);
+.hoverable:not(.active):not(.selected):hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+.hoverable.active,
+.hoverable.selected {
+  cursor: default;
 }
 
 /* Global focus-visible for keyboard navigation */

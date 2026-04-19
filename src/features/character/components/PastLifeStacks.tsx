@@ -141,7 +141,7 @@ function StackRow({
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`stack-row row-interactive ${hasStacks || (overlay && overlay.charHas > 0) ? '' : 'empty'}`}
+      className={`stack-row hoverable ${hasStacks || (overlay && overlay.charHas > 0) ? '' : 'empty'}`}
       onClick={onClick}
       onContextMenu={onContextMenu}
     >

@@ -32,7 +32,7 @@
 }
 
 .section-placeholder {
-  padding: 1.5rem;
+  padding: var(--space-6);
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }

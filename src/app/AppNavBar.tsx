@@ -115,7 +115,7 @@ function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: App
         </div>
       </div>
 
-      <button className="nav-bar-collapse-btn" onClick={onToggleExpanded}>
+      <button className="nav-bar-collapse-btn hoverable" onClick={onToggleExpanded}>
         {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
         <span className="nav-bar-label nav-bar-collapsible">{expanded ? 'Collapse' : ''}</span>
       </button>
@@ -182,6 +182,7 @@ function NavButton({
 }) {
   const cls = [
     'nav-bar-btn',
+    'hoverable',
     active && 'active',
     compact && 'nav-bar-btn--compact',
     header && 'nav-bar-btn--header',

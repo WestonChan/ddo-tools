@@ -4,11 +4,16 @@ CSS conventions, design tokens, layout architecture, and responsive breakpoints 
 
 ## Design Principles
 
-- **Flat chrome, no panel contrast.** The nav bar, bottom bar, and stats side panel use `var(--bg)` (page background) — not `--bg-panel`. They sit flush with the page. Separation is carried entirely by hairline borders (`1px solid var(--border)`). This gives a continuous canvas feel split by thin edges, rather than floating panels.
-- **No shadows on coplanar surfaces.** `box-shadow` implies z-axis elevation — only use it on genuinely floating elements (tooltips, modals, popovers). A flush surface with a shadow is a visual contradiction. `--bg-panel` + `box-shadow` is reserved for elevated UI (tooltip portals, confirm modals, the bottom-bar tooltip).
-- **Active state = color + weight.** Nav items signal active via accent color + one weight-step bump (500 -> 600). The character card adds an accent border + accent top divider. Active items get `cursor: default` and suppress hover background changes — clicking the already-active item is a no-op.
-- **Accent derivatives use `color-mix()`.** Tokens like `--accent-bg-subtle`, `--accent-glow` are derived from `--accent` via `color-mix(in srgb, var(--accent) N%, transparent)` so they track the active accent theme automatically. Never declare accent derivatives as static `rgba()` — that freezes them to one theme.
-- **Identity vs navigation.** The character card's active state uses border + weight + color (emphasizing identity); nav buttons use left accent bar + weight + color (standard navigation). Different element types earn different active patterns.
+- **Flat surfaces, no elevation.** No `box-shadow` anywhere — the UI is a single plane. Surface separation comes from subtle bg tint steps and hairline borders, never drop shadows. Even modals and tooltips sit flush, relying on border + bg contrast against a dimmed scrim.
+- **Derive, don't duplicate.** The light theme only overrides 3 primitives: `--bg`, `--tint`, `--accent`. Everything else — `--text`, secondary/tertiary bgs, borders, semantic colors — is derived via `color-mix()` or `rgb(from ... / alpha)`. Adding a new theme means picking 3 colors, not redefining the whole palette.
+- **Tint, not text, is the shift direction.** Backgrounds and borders mix toward `--tint` (white in dark, black in light), not `--text`. Keeps intent clear: `--tint` is "the direction to shift for more contrast," `--text` is a content color. Adding colored text won't break surface derivations.
+- **Solid vs transparent tokens serve different roles.**
+  - **Solid `color-mix(tint N%, bg)`** (e.g. `--bg-secondary`, `--bg-tertiary`) — fixed colors, good for chrome surfaces where the element owns its entire visual box and doesn't need to respond to what's behind it.
+  - **Transparent `rgb(from tint r g b / N)`** (e.g. `--bg-subtle`) — context-responsive overlays that always appear N% brighter/darker than their parent. Use for hover highlights and inset elements that might appear on varying surface levels (e.g. a stack pip inside a hoverable row — a solid color would become invisible when the row's own hover background matches the pip fill).
+- **Accent derivatives use relative color syntax.** `rgb(from var(--accent) r g b / 0.1)` gives a true alpha variant of the accent. Avoids the `color-mix(accent N%, transparent)` pitfall where srgb mixing pulls color channels toward black (transparent is `rgba(0,0,0,0)` — mixing accent at 10% with it produces a near-black semi-transparent color, not a gold wash).
+- **`color-mix` convention: `modifier <50%, base`.** The base always dominates and goes second. This makes every mix read as "take the base and add a small amount of tint/accent/danger." For strong color states, find a different base rather than flipping percentages (e.g. `--border-danger` mixes danger into border, not the other way around).
+- **Active state = color + weight.** Nav items signal active via accent color + one weight-step bump (500 → 600). The character card adds an accent border + accent top divider. Active items get `cursor: default` and suppress hover background changes — clicking the already-active item is a no-op.
+- **Identity vs navigation.** The character card's active state uses border + color (emphasizing identity); nav buttons use left accent bar + weight + color (standard navigation). Different element types earn different active patterns.
 
 ## Conventions
 
@@ -22,26 +27,125 @@ CSS conventions, design tokens, layout architecture, and responsive breakpoints 
 
 ## Design Tokens
 
-Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (light).
+Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (light). Only primitives differ between themes — derived tokens auto-resolve.
 
-| Token | Dark | Light | Usage |
-|-------|------|-------|-------|
+### Primitives (theme-specific)
+
+| Token | Dark | Light | Role |
+|-------|------|-------|------|
 | `--bg` | `#18181b` | `#f4f4f5` | Page background |
-| `--bg-panel` | `#27272a` | `#ffffff` | Elevated surfaces only (tooltips, modals). Chrome surfaces (nav, bottom bar, stats) use `--bg` instead. |
-| `--bg-input` | `#1c1c1f` | `#e8e8eb` | Input fields |
-| `--accent` | `#b8a37b` | `#8b7335` | Gold accent color |
-| `--accent-hover` | `#d0bd9b` | `#6e5a28` | Accent hover state |
-| `--text` | `#fafafa` | `#18181b` | Primary text |
-| `--text-secondary` | `#a1a1aa` | `#52525b` | Secondary text |
-| `--text-muted` | `#71717a` | `#71717a` | Muted/disabled text |
-| `--border` | `#3f3f46` | `#d4d4d8` | Default borders |
-| `--border-accent` | `#52525b` | `#a1a1aa` | Emphasized borders |
-| `--hover-bg` | `#323236` | `#e4e4e7` | Hover backgrounds |
-| `--danger` | `#ef4444` | `#ef4444` | Error/warning red |
-| `--shadow-color` | `rgba(0,0,0,0.3)` | `rgba(0,0,0,0.1)` | Box shadows (elevated surfaces only — see Design Principles) |
-| `--accent-glow` | `color-mix(accent 30%, transparent)` | `color-mix(accent 20%, transparent)` | Accent glow effects (button hover shadows) |
-| `--accent-glow-strong` | `color-mix(accent 50%, transparent)` | `color-mix(accent 35%, transparent)` | Stronger glow (primary button hover) |
-| `--accent-bg-subtle` | `color-mix(accent 10%, transparent)` | `color-mix(accent 10%, transparent)` | Active item backgrounds |
+| `--tint` | `white` | `black` | Contrast direction — color to mix INTO `--bg` for stepped surfaces |
+| `--accent` | `#b8962e` | `#8b7335` | Gold by default; overridden at runtime by `theme.ts` when user picks a color |
+| `--danger` | `#ef4444` | `#ef4444` | Error/warning red (same in both themes) |
+
+### Text (derived)
+
+| Token | Formula | Role |
+|-------|---------|------|
+| `--text` | `rgb(from tint r g b / 0.85)` | Primary text — derived so it tracks `--tint` (dark theme white-ish, light theme black-ish) without a per-theme override |
+| `--text-secondary` | `rgb(from text r g b / 0.65)` | Secondary/subtitle text |
+| `--text-muted` | `rgb(from text r g b / 0.45)` | Muted/placeholder text |
+
+### Backgrounds (derived)
+
+Solid tint-based surfaces for structural UI, plus transparent overlays for context-responsive states.
+
+| Token | Formula | Role |
+|-------|---------|------|
+| `--bg-secondary` | `color-mix(tint 3%, bg)` | Chrome surfaces — nav bar, bottom bar, side panel |
+| `--bg-tertiary` | `color-mix(tint 6%, bg)` | Card surfaces, tooltips, modal body |
+| `--bg-subtle` | `rgb(from tint r g b / 0.10)` | **Transparent.** Dual-purpose overlay — hover highlight via the `.hoverable` utility AND inset surfaces (stack pips, checkbox fills) that need to read distinct from any parent bg |
+| `--bg-accent` | `color-mix(accent 8%, bg)` | Accent-tinted surface (tracks theme color) — selected/active option backgrounds |
+| `--bg-danger` | `rgb(from danger r g b / 0.1)` | Danger/warning state background |
+
+### Borders (derived)
+
+| Token | Formula | Role |
+|-------|---------|------|
+| `--border` | `color-mix(tint 17%, bg)` | Default borders |
+| `--border-emphasis` | `color-mix(tint 10%, border)` | Stronger neutral borders — mixes onto `--border` (not `--bg`) so it tracks `--border` if that ever changes |
+| `--border-accent` | `color-mix(accent 15%, border)` | Tonal accent-tinted borders |
+| `--border-danger` | `color-mix(danger 40%, border)` | Danger state borders |
+
+### Contrast scale
+
+The `--bg-*` and `--border-*` tokens form a rough stepped scale from `--bg`:
+
+| Step | Token | Typical use |
+|------|-------|-------------|
+| 0% | `--bg` | Page |
+| 3% | `--bg-secondary` | Chrome |
+| 6% | `--bg-tertiary` | Cards, panels |
+| 10% | `--bg-subtle` (transparent) | Hover highlights + inset surfaces (pips, fills) |
+| 17% | `--border` | Default border |
+| ~25% | `--border-emphasis` | Strong border (mixed onto `--border`, not `--bg`) |
+
+### Type Scale
+
+Tailwind's default scale. Defined in `:root` (theme-independent).
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--text-xs` | 0.75rem (12px) | Caption, microcopy, subtitles, dense labels |
+| `--text-sm` | 0.875rem (14px) | Body UI: rows, buttons, card text, nav labels |
+| `--text-base` | 1rem (16px) | Emphasized body: modal titles, section text |
+| `--text-lg` | 1.125rem (18px) | Nav brand, prominent labels |
+| `--text-xl` | 1.25rem (20px) | View titles, section headings |
+| `--text-2xl` | 1.5rem (24px) | Display, loading gate |
+| `--text-3xl` | 1.875rem (30px) | h1 |
+
+Font weights (400/500/600/700) and letter-spacing stay as raw numbers — only four distinct values, no drift, self-documenting.
+
+### Spacing Scale
+
+Tailwind's default scale (4px base). Defined in `:root` (theme-independent). Used for `padding`, `margin`, and `gap` only — not widths, heights, border-radius, or line-height.
+
+| Token | Value | px |
+|-------|-------|----|
+| `--space-px` | 1px | 1 |
+| `--space-0-5` | 0.125rem | 2 |
+| `--space-1` | 0.25rem | 4 |
+| `--space-1-5` | 0.375rem | 6 |
+| `--space-2` | 0.5rem | 8 |
+| `--space-2-5` | 0.625rem | 10 |
+| `--space-3` | 0.75rem | 12 |
+| `--space-3-5` | 0.875rem | 14 |
+| `--space-4` | 1rem | 16 |
+| `--space-5` | 1.25rem | 20 |
+| `--space-6` | 1.5rem | 24 |
+| `--space-7` | 1.75rem | 28 |
+| `--space-8` | 2rem | 32 |
+
+Half-step names use a `-5` suffix (`--space-1-5`, `--space-2-5`, `--space-3-5`) because CSS custom properties can't include `.`. For negative margins use `calc(-1 * var(--space-N))`.
+
+### Border Radius
+
+Three-tier scale. Larger values (8px+) stay raw — too rare to warrant a token.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--radius-sm` | 3px | Pips, small buttons, row-action buttons, inset chips |
+| `--radius-md` | 4px | Most controls — buttons, inputs, ghost/primary buttons, tooltips |
+| `--radius-lg` | 6px | Cards, panels, nav character card, swatch rows |
+
+### Transition Timing
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--transition-fast` | 0.15s | Hover color/background shifts, icon transforms |
+| `--transition-std` | 0.3s | Button transitions, tab animations, tooltip fade |
+
+### Stacking (z-index)
+
+Layers are numbered by role so siblings within the same layer can use small local offsets (`z-index: 1`) above their neighbors without colliding with the next layer up.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--z-local` | 1 | Positional offsets within a component (swap btn over divider, etc.) |
+| `--z-panel` | 10 | Side panels, stats panel — above main content |
+| `--z-nav` | 20 | Nav bar — above panels |
+| `--z-overlay` | 40 | Mobile fullscreen nav, slide-in drawers |
+| `--z-modal` | 100 | Confirm modals, tooltips — highest layer |
 
 Always use tokens, never hardcode colors. Use variables for repeated dimensions (`--icon-col`), timing, and spacing. If a value appears 3+ times, extract it.
 

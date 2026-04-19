@@ -1,12 +1,14 @@
+/* Subtle inset bg shared with nav bar and bottom bar.
+   Separation from content is carried by the left border (--border-emphasis
+   for a touch more weight since the panel hosts dense data). */
 .side-panel {
-  background: var(--bg-panel);
-  border-left: 1px solid var(--border-accent);
-  box-shadow: -4px 0 16px var(--shadow-color);
+  background: var(--bg-secondary);
+  border-left: 1px solid var(--border-emphasis);
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
-  z-index: 10;
+  z-index: var(--z-panel);
 }
 
 .side-panel-tabs {
@@ -17,14 +19,17 @@
 
 .side-panel-tab {
   flex: 1;
-  padding: 0.6rem 0;
+  padding: var(--space-2-5) 0;
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  transition:
+    color var(--transition-std),
+    border-color var(--transition-std);
 }
 
 .side-panel-tab:hover {
@@ -39,45 +44,45 @@
 .side-panel-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem;
+  padding: var(--space-3);
 }
 
 /* Stats tab */
 .ability-scores-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
 }
 
 .ability-score-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0.4rem;
+  padding: var(--space-1) var(--space-1-5);
 }
 
 .ability-score-row .label {
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
 }
 
 .ability-score-row .value {
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
 }
 
 .stats-separator {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 0.5rem 0;
+  margin: var(--space-2) 0;
 }
 
 .stat-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.8rem;
+  padding: var(--space-1) var(--space-1-5);
+  font-size: var(--text-xs);
 }
 
 .stat-row .label {
@@ -91,7 +96,7 @@
 
 /* Feats tab */
 .feat-entry {
-  padding: 0.25rem 0.4rem;
-  font-size: 0.8rem;
+  padding: var(--space-1) var(--space-1-5);
+  font-size: var(--text-xs);
   color: var(--text);
 }

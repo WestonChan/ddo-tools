@@ -38,7 +38,7 @@ function BuildInfo({ onNavigate }: { onNavigate: (view: View) => void }) {
     : ''
 
   return (
-    <button className="bottom-bar-btn bottom-bar-build" onClick={() => onNavigate('characters')}>
+    <button className="bottom-bar-btn hoverable bottom-bar-build" onClick={() => onNavigate('characters')}>
       <span className="bottom-bar-name">{character.name}</span>
       {buildDescription && (
         <span className="bottom-bar-description">{buildDescription}</span>
@@ -71,13 +71,13 @@ function WarningStatus({ warnings, onNavigate }: { warnings: BuildWarning[]; onN
   return (
     <div className="bottom-bar-status">
       {warnings.length > 0 ? (
-        <button className="bottom-bar-btn bottom-bar-warnings" onClick={handleClick}>
+        <button className="bottom-bar-btn hoverable bottom-bar-warnings" onClick={handleClick}>
           <TriangleAlert size={14} />
           <span>{warnings.length} warning{warnings.length !== 1 ? 's' : ''}</span>
           <ChevronDown size={12} />
         </button>
       ) : (
-        <button className="bottom-bar-btn bottom-bar-ok" onClick={handleClick}>
+        <button className="bottom-bar-btn hoverable bottom-bar-ok" onClick={handleClick}>
           <Check size={14} />
           <span>No warnings</span>
         </button>
@@ -90,7 +90,7 @@ function WarningStatus({ warnings, onNavigate }: { warnings: BuildWarning[]; onN
       {expanded && warnings.length > 0 && (
         <div className="bottom-bar-warning-list">
           {warnings.map((w, i) => (
-            <button key={i} className={`bottom-bar-warning-item bottom-bar-warning-item--${w.severity}`} onClick={() => onNavigate(w.view)}>
+            <button key={i} className={`bottom-bar-warning-item bottom-bar-warning-item--${w.severity} hoverable`} onClick={() => onNavigate(w.view)}>
               {w.message}
             </button>
           ))}

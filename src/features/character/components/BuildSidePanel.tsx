@@ -51,7 +51,7 @@ function StatsTab() {
       <div className="section-label">Ability Scores</div>
       <div className="ability-scores-grid">
         {ABILITY_SCORES.map((score) => (
-          <div key={score.label} className="ability-score-row row-interactive">
+          <div key={score.label} className="ability-score-row hoverable">
             <span className="label">{score.label}</span>
             <span className="value">{score.value}</span>
           </div>
@@ -59,21 +59,21 @@ function StatsTab() {
       </div>
       <hr className="stats-separator" />
       {STATS.map((stat) => (
-        <div key={stat.label} className="stat-row row-interactive">
+        <div key={stat.label} className="stat-row hoverable">
           <span className="label">{stat.label}</span>
           <span className="value">{stat.value}</span>
         </div>
       ))}
       <hr className="stats-separator" />
       {SAVES.map((stat) => (
-        <div key={stat.label} className="stat-row row-interactive">
+        <div key={stat.label} className="stat-row hoverable">
           <span className="label">{stat.label}</span>
           <span className="value">{stat.value}</span>
         </div>
       ))}
       <hr className="stats-separator" />
       {COMBAT.map((stat) => (
-        <div key={stat.label} className="stat-row row-interactive">
+        <div key={stat.label} className="stat-row hoverable">
           <span className="label">{stat.label}</span>
           <span className="value">{stat.value}</span>
         </div>
@@ -87,13 +87,13 @@ function FeatsTab() {
     <>
       <div className="section-label">Active</div>
       {ACTIVE_FEATS.map((feat) => (
-        <div key={feat} className="feat-entry row-interactive">
+        <div key={feat} className="feat-entry hoverable">
           {feat}
         </div>
       ))}
       <div className="section-label">Passive</div>
       {PASSIVE_FEATS.map((feat) => (
-        <div key={feat} className="feat-entry row-interactive">
+        <div key={feat} className="feat-entry hoverable">
           {feat}
         </div>
       ))}

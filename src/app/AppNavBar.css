@@ -2,14 +2,15 @@
 .app-nav-bar {
   --icon-col: 54px;
 
-  background: var(--bg-panel);
+  /* Subtle inset bg shared with the character card. Separation from the
+     main content area is carried by the right border + the tonal shift. */
+  background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 0.5rem 0 0 0;
-  z-index: 20;
-  box-shadow: 4px 0 12px var(--shadow-color);
+  padding: var(--space-2) 0 0 0;
+  z-index: var(--z-nav);
   min-height: 0;
   overflow: hidden;
 
@@ -59,12 +60,12 @@
   width: 100%;
   min-height: 48px;
   flex-shrink: 0;
-  padding: 0 0.75rem;
+  padding: 0 var(--space-3);
 }
 
 .nav-bar-brand-text {
   font-family: inherit;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -84,7 +85,7 @@
 .nav-bar-items {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
   width: 100%;
 }
 
@@ -100,14 +101,13 @@
   align-items: center;
   background: transparent;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+
   & > svg {
     justify-self: center;
-  }
-
-  &:hover {
-    color: var(--text);
-    background: var(--hover-bg);
   }
 }
 
@@ -122,16 +122,18 @@
 /* Shared active state: accent color/background + 3px left accent bar.
    Parent elements must establish a positioning context (position: relative).
    cursor: default because clicking the already-active item is a no-op, and
-   hover background is suppressed so the active tint stays stable. */
+   hover background is suppressed so the active tint stays stable. Active
+   labels bump one weight step (500 -> 600) so the state is signaled on
+   two axes — color + weight. */
 .nav-bar-btn.active,
 .nav-bar-build-row.active,
 .nav-bar-character-card.active {
   color: var(--accent);
-  background: var(--accent-bg-subtle);
+  background: var(--bg-accent);
   cursor: default;
 
   &:hover {
-    background: var(--accent-bg-subtle);
+    background: var(--bg-accent);
     color: var(--accent);
   }
 
@@ -144,6 +146,11 @@
     width: 3px;
     background: var(--accent);
   }
+}
+
+.nav-bar-btn.active .nav-bar-label,
+.nav-bar-build-row.active .nav-bar-label {
+  font-weight: 600;
 }
 
 .nav-bar-btn {
@@ -160,26 +167,27 @@
   }
 
   & .nav-bar-label {
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     color: var(--text-muted);
+  }
+
+  &:hover > svg,
+  &.active > svg {
+    opacity: 1;
   }
 
   &:hover .nav-bar-label {
     color: var(--text);
   }
 
-  &.active > svg {
-    opacity: 1;
-  }
-
   &.active .nav-bar-label {
     color: var(--accent);
+    font-weight: 600;
   }
-
 }
 
 .nav-bar-label {
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   text-align: left;
   overflow: hidden;
@@ -219,12 +227,12 @@
 }
 
 .nav-bar-group-label-text {
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   white-space: nowrap;
-  padding: 0 0.5rem;
+  padding: 0 var(--space-2);
 }
 
 /* --- Bottom section --- */
@@ -248,7 +256,7 @@
   .app-nav-bar.expanded {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: var(--z-overlay);
   }
 }
 

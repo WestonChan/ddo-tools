@@ -5,13 +5,13 @@
 .collapsible-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background: var(--bg-panel);
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-4);
+  background: var(--bg-tertiary);
   color: var(--accent);
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   letter-spacing: 0.03em;
   cursor: pointer;
   border: none;
@@ -21,11 +21,11 @@
 }
 
 .collapsible-header:hover {
-  background: var(--hover-bg);
+  background: var(--bg-subtle);
 }
 
 .collapsible-header .chevron {
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
 }
 
 .collapsible-header .chevron.expanded {

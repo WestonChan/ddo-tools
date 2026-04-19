@@ -1,36 +1,36 @@
 .settings-view {
-  padding: 1.5rem;
+  padding: var(--space-6);
   max-width: 400px;
 }
 
 .settings-view-title {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .settings-view-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 
 .settings-view-label {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 /* Theme toggle */
 .settings-view-theme-toggle {
   display: flex;
-  gap: 4px;
-  background: var(--bg-input);
+  gap: var(--space-1);
+  background: var(--bg-accent);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-1);
 }
 
 .settings-view-theme-opt {
@@ -38,23 +38,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
-  padding: 0.4rem 0.75rem;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 500;
-  cursor: pointer;
-  &:hover {
-    color: var(--text-secondary);
-    background: var(--hover-bg);
-  }
 
   &.active {
     color: var(--accent);
-    background: var(--accent-bg-subtle);
+    background: var(--bg-accent);
   }
 }
 
@@ -62,25 +57,21 @@
 .settings-view-accent-grid {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .settings-view-accent-swatch {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   width: 100%;
-  padding: 0.4rem 0.5rem;
+  padding: var(--space-1-5) var(--space-2);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   background: transparent;
-  cursor: pointer;
-  &:hover {
-    background: var(--hover-bg);
-  }
 
   &.selected {
-    background: var(--accent-bg-subtle);
+    background: var(--bg-accent);
   }
 }
 
@@ -89,17 +80,17 @@
   height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 1.5px rgb(from var(--tint) r g b / 0.08);
 }
 
 .settings-view-accent-swatch.selected .settings-view-accent-dot {
   box-shadow:
-    0 0 0 2px var(--bg-panel),
+    0 0 0 2px var(--bg),
     0 0 0 3.5px currentColor;
 }
 
 .settings-view-accent-name {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   color: var(--text-secondary);
 }

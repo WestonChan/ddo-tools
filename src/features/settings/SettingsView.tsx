@@ -27,13 +27,13 @@ export function SettingsView() {
         <div className="settings-view-label">Theme</div>
         <div className="settings-view-theme-toggle">
           <button
-            className={`settings-view-theme-opt${theme === 'light' ? ' active' : ''}`}
+            className={`settings-view-theme-opt hoverable${theme === 'light' ? ' active' : ''}`}
             onClick={() => { if (theme !== 'light') toggle() }}
           >
             <Sun size={16} /> Light
           </button>
           <button
-            className={`settings-view-theme-opt${theme === 'dark' ? ' active' : ''}`}
+            className={`settings-view-theme-opt hoverable${theme === 'dark' ? ' active' : ''}`}
             onClick={() => { if (theme !== 'dark') toggle() }}
           >
             <Moon size={16} /> Dark
@@ -47,9 +47,9 @@ export function SettingsView() {
           {THEMES.map((t) => (
             <button
               key={t.name}
-              className={`settings-view-accent-swatch${activeAccent === t.accent ? ' selected' : ''}`}
+              className={`settings-view-accent-swatch hoverable${activeAccent === t.accent ? ' selected' : ''}`}
               onClick={() => {
-                applyAccent(t.accent, t.hover)
+                applyAccent(t.accent)
                 setActiveAccent(t.accent)
               }}
             >
