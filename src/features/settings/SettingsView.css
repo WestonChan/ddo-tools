@@ -29,7 +29,7 @@
   gap: var(--space-1);
   background: var(--bg-accent);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   padding: var(--space-1);
 }
 
@@ -41,7 +41,7 @@
   gap: var(--space-1-5);
   padding: var(--space-1-5) var(--space-3);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-muted);
   font-size: var(--text-xs);
@@ -67,7 +67,7 @@
   width: 100%;
   padding: var(--space-1-5) var(--space-2);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-lg);
   background: transparent;
 
   &.selected {

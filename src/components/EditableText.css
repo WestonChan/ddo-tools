@@ -23,7 +23,7 @@
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   padding: var(--space-0-5) var(--space-1-5);
   font-size: inherit;
   font-family: inherit;

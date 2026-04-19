@@ -118,6 +118,16 @@ Tailwind's default scale (4px base). Defined in `:root` (theme-independent). Use
 
 Half-step names use a `-5` suffix (`--space-1-5`, `--space-2-5`, `--space-3-5`) because CSS custom properties can't include `.`. For negative margins use `calc(-1 * var(--space-N))`.
 
+### Border Radius
+
+Three-tier scale. Larger values (8px+) stay raw — too rare to warrant a token.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--radius-sm` | 3px | Pips, small buttons, row-action buttons, inset chips |
+| `--radius-md` | 4px | Most controls — buttons, inputs, ghost/primary buttons, tooltips |
+| `--radius-lg` | 6px | Cards, panels, nav character card, swatch rows |
+
 ### Transition Timing
 
 | Token | Value | Usage |
