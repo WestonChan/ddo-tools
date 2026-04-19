@@ -90,7 +90,7 @@ function WarningStatus({ warnings, onNavigate }: { warnings: BuildWarning[]; onN
       {expanded && warnings.length > 0 && (
         <div className="bottom-bar-warning-list">
           {warnings.map((w, i) => (
-            <button key={i} className={`bottom-bar-warning-item bottom-bar-warning-item--${w.severity}`} onClick={() => onNavigate(w.view)}>
+            <button key={i} className={`bottom-bar-warning-item bottom-bar-warning-item--${w.severity} hoverable`} onClick={() => onNavigate(w.view)}>
               {w.message}
             </button>
           ))}

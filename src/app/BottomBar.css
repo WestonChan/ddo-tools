@@ -120,14 +120,7 @@
   border: none;
   color: var(--text-secondary);
   font-size: var(--text-xs);
-  cursor: pointer;
   text-align: left;
-  transition: background var(--transition-fast);
-
-  &:hover {
-    background: var(--bg-subtle);
-    color: var(--text);
-  }
 }
 
 .bottom-bar-warning-item--error {
