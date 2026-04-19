@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type JSX } from 'react'
 import { TriangleAlert, Check, ChevronDown } from 'lucide-react'
 import type { View } from '../hooks'
 import {
@@ -19,7 +19,7 @@ interface BottomBarProps {
   onNavigate: (view: View) => void
 }
 
-export function BottomBar({ warnings, onNavigate }: BottomBarProps) {
+export function BottomBar({ warnings, onNavigate }: BottomBarProps): JSX.Element {
   return (
     <div className="bottom-bar">
       <div className="bottom-bar-row">
@@ -30,7 +30,7 @@ export function BottomBar({ warnings, onNavigate }: BottomBarProps) {
   )
 }
 
-function BuildInfo({ onNavigate }: { onNavigate: (view: View) => void }) {
+function BuildInfo({ onNavigate }: { onNavigate: (view: View) => void }): JSX.Element {
   const { character, activeBuild } = useCharacter()
 
   const buildDescription = activeBuild
@@ -47,7 +47,7 @@ function BuildInfo({ onNavigate }: { onNavigate: (view: View) => void }) {
   )
 }
 
-function WarningStatus({ warnings, onNavigate }: { warnings: BuildWarning[]; onNavigate: (view: View) => void }) {
+function WarningStatus({ warnings, onNavigate }: { warnings: BuildWarning[]; onNavigate: (view: View) => void }): JSX.Element {
   const [expanded, setExpanded] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipFading, setTooltipFading] = useState(false)

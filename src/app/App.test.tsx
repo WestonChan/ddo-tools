@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, type RenderResult } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import App from './App'
 import { CharacterProvider } from '../features/character'
@@ -8,7 +8,7 @@ vi.mock('../hooks/useDatabase', () => ({
   useDatabase: () => ({ db: {}, loading: false, error: null }),
 }))
 
-function renderApp() {
+function renderApp(): RenderResult {
   return render(
     <CharacterProvider>
       <App />

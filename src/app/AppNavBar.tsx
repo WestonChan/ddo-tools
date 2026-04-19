@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import {
   Swords,
   ShieldHalf,
@@ -36,7 +37,7 @@ interface NavGroupDef {
   items: NavItem[]
 }
 
-function SkillsIcon(props: { size?: number }) {
+function SkillsIcon(props: { size?: number }): JSX.Element {
   return <TableProperties {...props} style={{ transform: 'scaleX(-1)' }} />
 }
 
@@ -77,9 +78,9 @@ interface AppNavBarProps {
   onToggleExpanded: () => void
 }
 
-function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: AppNavBarProps) {
+function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: AppNavBarProps): JSX.Element {
   // At narrow widths the expanded nav bar is full-screen; auto-close on navigate
-  function handleNavigate(view: View) {
+  function handleNavigate(view: View): void {
     onViewChange(view)
     if (expanded && window.innerWidth < 600) {
       onToggleExpanded()
@@ -131,7 +132,7 @@ function NavGroup({
   group: NavGroupDef
   activeView: View
   onViewChange: (view: View) => void
-}) {
+}): JSX.Element {
   const hasActive = group.items.some((item) => item.view === activeView)
 
   // Precompute first index per view so only the first sub-item per view lights up.
@@ -179,7 +180,7 @@ function NavButton({
   onViewChange: (view: View) => void
   compact?: boolean
   header?: boolean
-}) {
+}): JSX.Element {
   const cls = [
     'nav-bar-btn',
     'hoverable',

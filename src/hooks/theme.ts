@@ -10,12 +10,12 @@ export const THEMES = [
   { name: 'Sage', accent: '#7ba3b8' },
 ]
 
-export function applyAccent(accent: string) {
+export function applyAccent(accent: string): void {
   document.documentElement.style.setProperty('--accent', accent)
   localStorage.setItem('accent', accent)
 }
 
-export function restoreAccent() {
+export function restoreAccent(): void {
   try {
     const stored = localStorage.getItem('accent')
     if (!stored) {

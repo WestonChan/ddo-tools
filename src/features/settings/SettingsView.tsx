@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type JSX } from 'react'
 import { Sun, Moon, Check } from 'lucide-react'
 import { useTheme, THEMES, applyAccent, restoreAccent } from '../../hooks'
 import './SettingsView.css'
@@ -13,7 +13,7 @@ function getActiveAccent(): string | null {
   }
 }
 
-export function SettingsView() {
+export function SettingsView(): JSX.Element {
   const { theme, toggle } = useTheme()
   const [activeAccent, setActiveAccent] = useState<string | null>(getActiveAccent)
 

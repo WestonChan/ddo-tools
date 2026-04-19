@@ -6,7 +6,7 @@ import type { View } from './useRouter'
 // so BASE in useRouter resolves to '' (empty string after trailing slash strip).
 // Paths in tests use just '/{view}'.
 
-function setPath(path: string) {
+function setPath(path: string): void {
   window.history.replaceState(null, '', path)
 }
 

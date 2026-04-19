@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type JSX } from 'react'
 import { createPortal } from 'react-dom'
 
 export type TooltipPlacement = 'bottom' | 'right'
@@ -17,7 +17,7 @@ export function Tooltip({
   text: string
   anchor: DOMRect
   placement?: TooltipPlacement
-}) {
+}): JSX.Element {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
   const measure = useCallback(
@@ -81,7 +81,7 @@ export function TooltipWrapper({
   text: string
   children: React.ReactNode
   placement?: TooltipPlacement
-}) {
+}): JSX.Element {
   const [anchor, setAnchor] = useState<DOMRect | null>(null)
 
   return (

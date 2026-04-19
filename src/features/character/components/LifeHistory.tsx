@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type JSX } from 'react'
 import type { Character, Life, ReincarnationType } from '../types'
 import { PAST_LIFE_DEFS } from '../data/pastLifeDefs'
 import {
@@ -38,7 +38,7 @@ function ReincarnatePanel({
 }: {
   onCancel: () => void
   onConfirm: (result: ReincarnateResult) => void
-}) {
+}): JSX.Element {
   const [mode, setMode] = useState<ReincarnateMode>('epic')
   const [epicFeatId, setEpicFeatId] = useState(EPIC_FEATS_BY_SPHERE[0].feats[0]?.id ?? '')
   const [trueType, setTrueType] = useState<ReincarnationType>('heroic')
@@ -141,7 +141,7 @@ function LifeRow({
   onRename: (name: string) => void
   className?: string
   children?: React.ReactNode
-}) {
+}): JSX.Element {
   return (
     <div
       className={`life-entry hoverable ${className ?? ''} ${active ? 'viewing' : ''}`}
@@ -205,12 +205,12 @@ export function LifeHistory({
   onApplyPlannedBuild: (buildId: string) => void
   onDeletePlannedBuild: (buildId: string) => void
   onAddPlannedBuild: () => void
-}) {
+}): JSX.Element {
   const completed = character.lives.filter((l) => l.status === 'completed')
   const current = character.lives.filter((l) => l.status === 'current')
-  const buildDesc = (life: Life) => `${formatRace(life.race)} ${formatClassSummary(life)}`
+  const buildDesc = (life: Life): string => `${formatRace(life.race)} ${formatClassSummary(life)}`
 
-  const reincLabel = (life: Life) => {
+  const reincLabel = (life: Life): string => {
     if (!life.reincarnation) return ''
     const r = life.reincarnation
     if (r.type === 'epic') {

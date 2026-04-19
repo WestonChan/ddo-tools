@@ -9,7 +9,7 @@ const DB_FETCH_TIMEOUT_MS = 60_000
 // Smoke-test the loaded DB to catch corrupt, empty, or wrong-version files
 // before the app renders with silent bad data. Checks a known table exists
 // and has at least one row.
-function validateSchema(db: Database) {
+function validateSchema(db: Database): void {
   try {
     const result = db.exec('SELECT COUNT(*) FROM items')
     const count = result[0]?.values[0]?.[0] as number

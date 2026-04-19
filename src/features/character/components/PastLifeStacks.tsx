@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type JSX } from 'react'
 import type { Character, Life, PastLifeCounts } from '../types'
 import { PAST_LIFE_DEFS, type PastLifeDef } from '../data/pastLifeDefs'
 import { computeHistoryStacks, EPIC_SPHERE_LIST, formatBonusList } from '../utils'
@@ -20,7 +20,7 @@ function StackBarNormal({
   fromHistory: number
   fromCurrentHistory: number
   currentStacks: number
-}) {
+}): JSX.Element {
   return (
     <span className="stack-bar">
       {Array.from({ length: max }, (_, i) => {
@@ -61,7 +61,7 @@ function StackBarOverlay({
   charHas: number
   charFromHistory: number
   max: number
-}) {
+}): JSX.Element {
   return (
     <span className="stack-bar">
       {Array.from({ length: max }, (_, i) => {
@@ -119,7 +119,7 @@ function StackRow({
   currentStacks: number
   onSetStacks: (value: number) => void
   overlay?: { charHas: number; charFromHistory: number }
-}) {
+}): JSX.Element {
   const hasStacks = stacks > 0
 
   const increment = useCallback(() => {
@@ -193,7 +193,7 @@ function StackSection({
   onSetOverride: (id: string, value: number) => void
   buildDesired?: Record<string, number>
   charStacks?: Record<string, number>
-}) {
+}): JSX.Element {
   const isOverlay = !!buildDesired
   return (
     <>
@@ -247,7 +247,7 @@ interface ActiveBonus {
   value: string
 }
 
-function BonusSummary({ bonuses }: { bonuses: ActiveBonus[] }) {
+function BonusSummary({ bonuses }: { bonuses: ActiveBonus[] }): JSX.Element {
   const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768
   const [expanded, setExpanded] = useState(isDesktop)
 
@@ -303,7 +303,7 @@ export function PastLifeStacks({
   plannedBuild?: Life
   onSetOverride: (category: keyof PastLifeCounts, id: string, value: number) => void
   onSetBuildDesired?: (category: keyof PastLifeCounts, id: string, value: number) => void
-}) {
+}): JSX.Element {
   const isOverlay = !!plannedBuild
 
   // Character's actual stacks (used in both modes)

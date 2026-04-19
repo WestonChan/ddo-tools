@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type JSX } from 'react'
 import './EditableText.css'
 
 interface EditableTextProps {
@@ -13,7 +13,7 @@ export function EditableText({
   placeholder = 'Name...',
   className,
   onCommit,
-}: EditableTextProps) {
+}: EditableTextProps): JSX.Element {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -25,20 +25,20 @@ export function EditableText({
     }
   }, [editing])
 
-  function startEdit(e: React.MouseEvent) {
+  function startEdit(e: React.MouseEvent): void {
     e.stopPropagation()
     e.preventDefault()
     setDraft(value)
     setEditing(true)
   }
 
-  function commit() {
+  function commit(): void {
     const trimmed = draft.trim()
     setEditing(false)
     onCommit(trimmed)
   }
 
-  function cancel() {
+  function cancel(): void {
     setEditing(false)
     setDraft(value)
   }

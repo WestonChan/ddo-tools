@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import { User, UserPen, ArrowUpDown, GitCompareArrows } from 'lucide-react'
 import { useCharacter, formatClassSummary, formatRace } from '../features/character'
 import type { View } from '../hooks'
@@ -16,7 +17,7 @@ function NavBarBuildSlot({
   Icon: React.FC<{ size?: number }>
   name: string
   details?: string[]
-}) {
+}): JSX.Element {
   return (
     <div className="nav-bar-character-slot">
       <Icon size={18} />
@@ -34,7 +35,7 @@ function NavBarBuildSlot({
   )
 }
 
-export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterCardProps) {
+export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterCardProps): JSX.Element {
   const { character: selected, activeBuild, lifeNumbers } = useCharacter()
   const raceLabel = activeBuild ? formatRace(activeBuild.race) : ''
   const classLabel = activeBuild ? formatClassSummary(activeBuild) : ''

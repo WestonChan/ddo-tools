@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, type RenderResult } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AppNavBar from './AppNavBar'
 
@@ -23,7 +23,7 @@ vi.mock('../features/character', () => ({
 const mockNavigate = vi.fn()
 const mockToggle = vi.fn()
 
-function renderNavBar(expanded = true) {
+function renderNavBar(expanded = true): RenderResult {
   return render(
     <AppNavBar
       activeView="build-plan"

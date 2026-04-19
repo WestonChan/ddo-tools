@@ -1,6 +1,8 @@
+import type { JSX } from 'react'
+
 const defaults = { width: '1em', height: '1em', fill: 'currentColor' } as const
 
-export function StarIcon() {
+export function StarIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 1.25l1.75 4.25H14.5l-3.75 3 1.5 4.5L8 10.25 3.75 13l1.5-4.5L1.5 5.5h4.75L8 1.25z" />
@@ -8,7 +10,7 @@ export function StarIcon() {
   )
 }
 
-export function TrashIcon() {
+export function TrashIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M6.5 1.5a.5.5 0 0 0-.5.5v.5h4V2a.5.5 0 0 0-.5-.5h-3zM11 2.5V2a1.5 1.5 0 0 0-1.5-1.5h-3A1.5 1.5 0 0 0 5 2v.5H2.25a.75.75 0 0 0 0 1.5h.49l.68 9.52A1.5 1.5 0 0 0 4.92 15h6.16a1.5 1.5 0 0 0 1.5-1.48l.68-9.52h.49a.75.75 0 0 0 0-1.5H11zM4.24 4h7.52l-.67 9.35a.5.5 0 0 1-.5.15H5.41a.5.5 0 0 1-.5-.15L4.24 4z" />
@@ -17,7 +19,7 @@ export function TrashIcon() {
   )
 }
 
-export function ChevronDownIcon() {
+export function ChevronDownIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M3.22 5.72a.75.75 0 0 1 1.06 0L8 9.44l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L3.22 6.78a.75.75 0 0 1 0-1.06z" />
@@ -25,7 +27,7 @@ export function ChevronDownIcon() {
   )
 }
 
-export function ChevronRightIcon() {
+export function ChevronRightIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M5.72 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.44 8 5.72 4.28a.75.75 0 0 1 0-1.06z" />
@@ -33,7 +35,7 @@ export function ChevronRightIcon() {
   )
 }
 
-export function ChevronLeftIcon() {
+export function ChevronLeftIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M10.28 3.22a.75.75 0 0 1 0 1.06L6.56 8l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0z" />
@@ -41,7 +43,7 @@ export function ChevronLeftIcon() {
   )
 }
 
-export function SunIcon() {
+export function SunIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 1zm0 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-1.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM12.95 3.05a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zM15 8a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 15 8zm-2.05 4.95a.75.75 0 0 1-1.06 0l-1.06-1.06a.75.75 0 1 1 1.06-1.06l1.06 1.06a.75.75 0 0 1 0 1.06zM8 15a.75.75 0 0 1-.75-.75v-1.5a.75.75 0 0 1 1.5 0v1.5A.75.75 0 0 1 8 15zM3.05 12.95a.75.75 0 0 1 0-1.06l1.06-1.06a.75.75 0 1 1 1.06 1.06l-1.06 1.06a.75.75 0 0 1-1.06 0zM1 8a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 1 8zm2.05-4.95a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06L3.05 4.11a.75.75 0 0 1 0-1.06z" />
@@ -49,7 +51,7 @@ export function SunIcon() {
   )
 }
 
-export function MoonIcon() {
+export function MoonIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M6.2 1.74a.75.75 0 0 1 .3.78 5.25 5.25 0 0 0 6.98 6.98.75.75 0 0 1 1.08.86A7.25 7.25 0 1 1 5.42 1.44a.75.75 0 0 1 .78.3zM4.5 8a5.75 5.75 0 0 0 7.04 5.6A5.75 5.75 0 0 1 2.4 4.46 5.73 5.73 0 0 0 4.5 8z" />
@@ -57,7 +59,7 @@ export function MoonIcon() {
   )
 }
 
-export function PlusIcon() {
+export function PlusIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 2.75a.75.75 0 0 1 .75.75v3.75h3.75a.75.75 0 0 1 0 1.5H8.75v3.75a.75.75 0 0 1-1.5 0V8.75H3.5a.75.75 0 0 1 0-1.5h3.75V3.5A.75.75 0 0 1 8 2.75z" />
@@ -67,7 +69,7 @@ export function PlusIcon() {
 
 // --- Navigation icons for nav bar ---
 
-export function SwordShieldIcon() {
+export function SwordShieldIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M10 1v1.5l-.5 3L11 7l1.5-1 2 .5-.5 2L12.5 10l-1.5 1-2.5-.5L7 12l-1 2.5L4.5 15l-.5-2L2.5 12l-.5-1.5L4 9l1.5-1.5L5 5l1.5-2L8 1.5 10 1zM7.5 6.5l-1 1L8 9l1.5-1.5-1-1.5L7.5 6.5z" />
@@ -75,7 +77,7 @@ export function SwordShieldIcon() {
   )
 }
 
-export function PersonIcon() {
+export function PersonIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 1a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM3.5 14a4.5 4.5 0 0 1 9 0 .75.75 0 0 1-1.5 0 3 3 0 0 0-6 0 .75.75 0 0 1-1.5 0z" />
@@ -83,7 +85,7 @@ export function PersonIcon() {
   )
 }
 
-export function BackpackIcon() {
+export function BackpackIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M6 1.5a.75.75 0 0 1 .75.75V3h2.5V2.25a.75.75 0 0 1 1.5 0V3A2.5 2.5 0 0 1 13 5.5v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7A2.5 2.5 0 0 1 5.25 3V2.25A.75.75 0 0 1 6 1.5zM4.5 5.5v7a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 .5-.5v-7a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1zm2 2a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 6.5 7.5z" />
@@ -91,7 +93,7 @@ export function BackpackIcon() {
   )
 }
 
-export function TreeIcon() {
+export function TreeIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 1a.75.75 0 0 1 .75.75v3.69l2.72-2.72a.75.75 0 1 1 1.06 1.06L9.81 6.5l2.72 2.72a.75.75 0 1 1-1.06 1.06L8.75 7.56v6.69a.75.75 0 0 1-1.5 0V7.56L4.53 10.28a.75.75 0 0 1-1.06-1.06L6.19 6.5 3.47 3.78a.75.75 0 0 1 1.06-1.06l2.72 2.72V1.75A.75.75 0 0 1 8 1z" />
@@ -99,7 +101,7 @@ export function TreeIcon() {
   )
 }
 
-export function ConstellationIcon() {
+export function ConstellationIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M3 2a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm10 1a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm-5 4a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm-6 5a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm11 2a1 1 0 1 1 2 0 1 1 0 0 1-2 0z" />
@@ -113,7 +115,7 @@ export function ConstellationIcon() {
   )
 }
 
-export function GearIcon() {
+export function GearIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.46 1.46 0 0 1-2.1.87l-.32-.17c-1.28-.7-2.68.7-1.99 1.99l.17.31a1.46 1.46 0 0 1-.87 2.1l-.34.1c-1.4.42-1.4 2.4 0 2.82l.34.1a1.46 1.46 0 0 1 .87 2.1l-.17.31c-.7 1.28.7 2.69 1.99 1.99l.31-.17a1.46 1.46 0 0 1 2.1.87l.1.34c.42 1.4 2.4 1.4 2.82 0l.1-.34a1.46 1.46 0 0 1 2.1-.87l.31.17c1.28.7 2.69-.7 1.99-1.99l-.17-.31a1.46 1.46 0 0 1 .87-2.1l.34-.1c1.4-.42 1.4-2.4 0-2.82l-.34-.1a1.46 1.46 0 0 1-.87-2.1l.17-.31c.7-1.28-.7-2.69-1.99-1.99l-.31.17a1.46 1.46 0 0 1-2.1-.87l-.1-.34zM8 10.93a2.93 2.93 0 1 1 0-5.86 2.93 2.93 0 0 1 0 5.86z" />
@@ -121,7 +123,7 @@ export function GearIcon() {
   )
 }
 
-export function CheckIcon() {
+export function CheckIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0z" />
@@ -131,7 +133,7 @@ export function CheckIcon() {
 
 // --- Phase 1: Layout restructuring icons ---
 
-export function WarningIcon() {
+export function WarningIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.305 13.75a1.123 1.123 0 0 0 .978 1.69h13.44a1.123 1.123 0 0 0 .978-1.69L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
@@ -139,7 +141,7 @@ export function WarningIcon() {
   )
 }
 
-export function CompareIcon() {
+export function CompareIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M1.5 2A1.5 1.5 0 0 1 3 .5h5A1.5 1.5 0 0 1 9.5 2v5A1.5 1.5 0 0 1 8 8.5H3A1.5 1.5 0 0 1 1.5 7V2zM3 2v5h5V2H3z" />
@@ -148,7 +150,7 @@ export function CompareIcon() {
   )
 }
 
-export function ScrollIcon() {
+export function ScrollIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M4.5 1A1.5 1.5 0 0 0 3 2.5v11A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-11A1.5 1.5 0 0 0 11.5 1h-7zM4.5 2.5h7v11h-7v-11zM6 4.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5A.75.75 0 0 1 6 4.75zM6 7.75a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5A.75.75 0 0 1 6 7.75z" />
@@ -156,7 +158,7 @@ export function ScrollIcon() {
   )
 }
 
-export function HammerIcon() {
+export function HammerIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M9.97 2.97a.75.75 0 0 1 1.06 0l2 2a.75.75 0 0 1 0 1.06l-1.5 1.5a.75.75 0 0 1-1.06 0l-.47-.47-5.47 5.47a.75.75 0 0 1-1.06 0l-1-1a.75.75 0 0 1 0-1.06l5.47-5.47-.47-.47a.75.75 0 0 1 0-1.06l1.5-1.5z" />
@@ -164,7 +166,7 @@ export function HammerIcon() {
   )
 }
 
-export function WandIcon() {
+export function WandIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M2.28 2.28a.75.75 0 0 1 1.06 0l10.38 10.38a.75.75 0 1 1-1.06 1.06L2.28 3.34a.75.75 0 0 1 0-1.06zM7 1.5a.75.75 0 0 1 .75.75v1a.75.75 0 0 1-1.5 0v-1A.75.75 0 0 1 7 1.5zm5 5a.75.75 0 0 1 .75-.75h1a.75.75 0 0 1 0 1.5h-1A.75.75 0 0 1 12 6.5zm-1.28-3.78a.75.75 0 0 1 0 1.06l-.5.5a.75.75 0 1 1-1.06-1.06l.5-.5a.75.75 0 0 1 1.06 0z" />
@@ -172,7 +174,7 @@ export function WandIcon() {
   )
 }
 
-export function BugIcon() {
+export function BugIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M4.355.522a.5.5 0 0 1 .623.333l.291.956A5 5 0 0 1 8 1c.964 0 1.865.273 2.63.752l.258-.847a.5.5 0 0 1 .956.29l-.375 1.233A5 5 0 0 1 13 5h.5a.5.5 0 0 1 0 1H13v1h.5a.5.5 0 0 1 0 1H13a5 5 0 0 1-1.53 3.598l.375 1.233a.5.5 0 1 1-.956.29l-.258-.847A5 5 0 0 1 8 13a5 5 0 0 1-2.63-.752l-.258.847a.5.5 0 1 1-.956-.29l.375-1.233A5 5 0 0 1 3 8H2.5a.5.5 0 0 1 0-1H3V6H2.5a.5.5 0 0 1 0-1H3a5 5 0 0 1 1.53-3.598L4.155.169a.5.5 0 0 1 .2-.647zM5 5a3 3 0 0 0-1 2.236V8a3 3 0 1 0 6 0V7.236A3 3 0 0 0 5 5z" />
@@ -180,7 +182,7 @@ export function BugIcon() {
   )
 }
 
-export function SearchIcon() {
+export function SearchIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
@@ -188,7 +190,7 @@ export function SearchIcon() {
   )
 }
 
-export function ListCheckIcon() {
+export function ListCheckIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M5 1.75A.75.75 0 0 1 5.75 1h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 5 1.75zm0 5A.75.75 0 0 1 5.75 6h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 5 6.75zm0 5a.75.75 0 0 1 .75-.75h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1-.75-.75zM3.28 1.22a.75.75 0 0 1 0 1.06l-1 1a.75.75 0 0 1-1.06 0l-.5-.5a.75.75 0 0 1 1.06-1.06l.22.22.47-.47-.19-.19z" />
@@ -196,7 +198,7 @@ export function ListCheckIcon() {
   )
 }
 
-export function SkillsIcon() {
+export function SkillsIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M2 2.5A.5.5 0 0 1 2.5 2h3a.5.5 0 0 1 0 1H3v2.5a.5.5 0 0 1-1 0v-3zm12 0a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0 0 1H13v2.5a.5.5 0 0 0 1 0v-3zM2 13.5a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 0-1H3v-2.5a.5.5 0 0 0-1 0v3zm12 0a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1 0-1H13v-2.5a.5.5 0 0 1 1 0v3zM5 8a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5A.75.75 0 0 1 5 8z" />
@@ -204,7 +206,7 @@ export function SkillsIcon() {
   )
 }
 
-export function SpellIcon() {
+export function SpellIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 1a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 8 1zM4.11 3.05a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 0 1-1.06 1.06L4.11 4.11a.75.75 0 0 1 0-1.06zm7.78 0a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 1 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zM8 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-4.75 2a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H4a.75.75 0 0 1-.75-.75zm8 0a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1-.75-.75zM5.17 10.89a.75.75 0 0 1 0 1.06l-1.06 1.06a.75.75 0 0 1-1.06-1.06l1.06-1.06a.75.75 0 0 1 1.06 0zm5.66 0a.75.75 0 0 1 1.06 0l1.06 1.06a.75.75 0 1 1-1.06 1.06l-1.06-1.06a.75.75 0 0 1 0-1.06zM8 12.25a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V13a.75.75 0 0 1 .75-.75z" />
@@ -212,7 +214,7 @@ export function SpellIcon() {
   )
 }
 
-export function TreeIcon2() {
+export function TreeIcon2(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 1a.75.75 0 0 1 .75.75v3.69l2.72-2.72a.75.75 0 1 1 1.06 1.06L9.81 6.5l2.72 2.72a.75.75 0 1 1-1.06 1.06L8.75 7.56v6.69a.75.75 0 0 1-1.5 0V7.56L4.53 10.28a.75.75 0 0 1-1.06-1.06L6.19 6.5 3.47 3.78a.75.75 0 0 1 1.06-1.06l2.72 2.72V1.75A.75.75 0 0 1 8 1z" />
@@ -220,7 +222,7 @@ export function TreeIcon2() {
   )
 }
 
-export function SkullIcon() {
+export function SkullIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M8 1a6 6 0 0 0-4 10.47V13a1 1 0 0 0 1 1h1.5v-1.5a.5.5 0 0 1 1 0V14h1v-1.5a.5.5 0 0 1 1 0V14H11a1 1 0 0 0 1-1v-1.53A6 6 0 0 0 8 1zM6 7.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
@@ -228,7 +230,7 @@ export function SkullIcon() {
   )
 }
 
-export function DiamondIcon() {
+export function DiamondIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M6.95.435c.58-.58 1.52-.58 2.1 0l6.515 6.516c.58.58.58 1.519 0 2.098L9.05 15.565c-.58.58-1.519.58-2.098 0L.435 9.05a1.482 1.482 0 0 1 0-2.098L6.95.435z" />
@@ -236,7 +238,7 @@ export function DiamondIcon() {
   )
 }
 
-export function CalculatorIcon() {
+export function CalculatorIcon(): JSX.Element {
   return (
     <svg {...defaults} viewBox="0 0 16 16">
       <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm2-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5V2a.5.5 0 0 0-.5-.5H4zM4 8a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm3 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm3 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM4 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm3 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm3 0a1 1 0 1 1 2 0 1 1 0 0 1-2 0z" />
