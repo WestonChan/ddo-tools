@@ -135,6 +135,18 @@ Three-tier scale. Larger values (8px+) stay raw — too rare to warrant a token.
 | `--transition-fast` | 0.15s | Hover color/background shifts, icon transforms |
 | `--transition-std` | 0.3s | Button transitions, tab animations, tooltip fade |
 
+### Stacking (z-index)
+
+Layers are numbered by role so siblings within the same layer can use small local offsets (`z-index: 1`) above their neighbors without colliding with the next layer up.
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--z-local` | 1 | Positional offsets within a component (swap btn over divider, etc.) |
+| `--z-panel` | 10 | Side panels, stats panel — above main content |
+| `--z-nav` | 20 | Nav bar — above panels |
+| `--z-overlay` | 40 | Mobile fullscreen nav, slide-in drawers |
+| `--z-modal` | 100 | Confirm modals, tooltips — highest layer |
+
 Always use tokens, never hardcode colors. Use variables for repeated dimensions (`--icon-col`), timing, and spacing. If a value appears 3+ times, extract it.
 
 ## Layout Architecture

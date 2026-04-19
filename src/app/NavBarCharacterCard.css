@@ -71,7 +71,7 @@
   top: 50%;
   left: calc((var(--icon-col) - 0.8rem - 24px) / 2);
   transform: translateY(-50%);
-  z-index: 1;
+  z-index: var(--z-local);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -131,7 +131,7 @@
 /* Lift the ::before left accent bar above internal dividers so it reads
    as one continuous stripe without notches at divider intersections. */
 .nav-bar-character-card.active::before {
-  z-index: 1;
+  z-index: var(--z-local);
 }
 
 .nav-bar-character-card.active .nav-bar-character-strip {
