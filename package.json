@@ -16,6 +16,7 @@
     "playwright": "npx @playwright/mcp --port 8931 --output-dir screenshots"
   },
   "dependencies": {
+    "@tanstack/react-router": "^1.168.23",
     "lucide-react": "^1.8.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -25,6 +26,7 @@
     "@eslint/js": "^9.39.1",
     "@playwright/mcp": "^0.0.68",
     "@playwright/test": "^1.59.1",
+    "@tanstack/react-router-devtools": "^1.166.13",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
