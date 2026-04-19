@@ -930,6 +930,14 @@ Replace custom `useRouter` hook with `@tanstack/react-router`. Needed before Pha
 - Remove `src/hooks/useRouter.ts` and `useRouter.test.ts`
 - Verify all Playwright e2e tests pass (URL assertions, navigation, view switching)
 
+### Phase 1e: Transparent pip fills (Character View)
+Follow-up from `css-refactor-v2`. The `.stack-pip` variants in `CharacterView.css` use solid `color-mix(accent N%, bg-tertiary)` fills, plus a solid `--accent` for `.filled`. When the enclosing `.stack-row.hoverable` lifts to `--bg-subtle` on hover, the pip colors stay anchored to the unhovered row bg and read as disconnected — the "muted" pip colors were tuned against `--bg-tertiary`, not the composited hover surface underneath.
+
+- Migrate `.stack-pip.filled`, `.current-has`, `.current-has-filled`, `.locked`, and the `.pip-has-*` overlay variants to transparent accent overlays (e.g. `rgb(from var(--accent) r g b / 0.4)`) so pip colors composite over whatever row bg is currently painted — hovered or not.
+- Keep the `.filled` state readable: may need a higher alpha (0.85+) or stay solid if contrast drops too far on hover.
+- Verify the repeating-linear-gradient hatched variants still read clearly once transparent; swap the "bg-tertiary band" stops to `transparent` so the row bg shows through between stripes.
+- Visual QA on both themes (dark + light) + with non-default accent colors.
+
 ### Phase 2: Index / Landing View
 7. Design landing page for `/ddo-tools/` (recent builds, quick-start actions, or dashboard overview)
 8. Determine whether this is a distinct view or an existing view (e.g., Characters, Build Overview) serves as default
