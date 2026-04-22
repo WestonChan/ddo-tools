@@ -20,6 +20,7 @@
 
   /* Backgrounds — accent-tinted */
   --bg-accent: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  --bg-accent-muted: rgb(from var(--accent) r g b / 0.35);
 
   /* Backgrounds — semantic */
   --bg-danger: rgb(from var(--danger) r g b / 0.1);

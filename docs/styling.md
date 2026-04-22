@@ -54,8 +54,9 @@ Solid tint-based surfaces for structural UI, plus transparent overlays for conte
 |-------|---------|------|
 | `--bg-secondary` | `color-mix(tint 3%, bg)` | Chrome surfaces — nav bar, bottom bar, side panel |
 | `--bg-tertiary` | `color-mix(tint 6%, bg)` | Card surfaces, tooltips, modal body |
-| `--bg-subtle` | `rgb(from tint r g b / 0.10)` | **Transparent.** Dual-purpose overlay — hover highlight via the `.hoverable` utility AND inset surfaces (stack pips, checkbox fills) that need to read distinct from any parent bg |
+| `--bg-subtle` | `rgb(from tint r g b / 0.10)` | **Transparent.** Dual-purpose overlay — hover highlight via the `.hoverable` utility AND neutral inset surfaces (checkbox fills, unfilled pips) that need to read distinct from any parent bg |
 | `--bg-accent` | `color-mix(accent 8%, bg)` | Accent-tinted surface (tracks theme color) — selected/active option backgrounds |
+| `--bg-accent-muted` | `rgb(from accent r g b / 0.35)` | **Transparent.** Dimmed-but-visible accent overlay — muted pip fills and other accent-tinted inset surfaces that must composite over varying parent backgrounds while still reading clearly |
 | `--bg-danger` | `rgb(from danger r g b / 0.1)` | Danger/warning state background |
 
 ### Borders (derived)

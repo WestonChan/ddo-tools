@@ -182,16 +182,16 @@
 .stack-pip.current-has:not(.locked):not(.filled) {
   background: repeating-linear-gradient(
     -45deg,
-    color-mix(in srgb, var(--accent) 40%, var(--bg-tertiary)),
-    color-mix(in srgb, var(--accent) 40%, var(--bg-tertiary)) 3px,
-    color-mix(in srgb, var(--bg-secondary) 40%, var(--bg-tertiary)) 3px,
-    color-mix(in srgb, var(--bg-secondary) 40%, var(--bg-tertiary)) 6px
+    var(--bg-accent-muted),
+    var(--bg-accent-muted) 3px,
+    transparent 3px,
+    transparent 6px
   );
 }
 
 /* Current life has from overrides — muted filled (visible when viewing a different life) */
 .stack-pip.current-has-filled:not(.filled) {
-  background: color-mix(in srgb, var(--accent) 40%, var(--bg-tertiary));
+  background: var(--bg-accent-muted);
 }
 
 .stack-pip.locked {
@@ -199,8 +199,8 @@
     -45deg,
     var(--accent),
     var(--accent) 3px,
-    var(--bg-secondary) 3px,
-    var(--bg-secondary) 6px
+    transparent 3px,
+    transparent 6px
   );
 }
 
@@ -210,16 +210,16 @@
 .stack-pip.pip-has-locked {
   background: repeating-linear-gradient(
     -45deg,
-    color-mix(in srgb, var(--accent) 40%, var(--bg-tertiary)),
-    color-mix(in srgb, var(--accent) 40%, var(--bg-tertiary)) 3px,
-    color-mix(in srgb, var(--bg-secondary) 40%, var(--bg-tertiary)) 3px,
-    color-mix(in srgb, var(--bg-secondary) 40%, var(--bg-tertiary)) 6px
+    var(--bg-accent-muted),
+    var(--bg-accent-muted) 3px,
+    transparent 3px,
+    transparent 6px
   );
 }
 
 /* Character has from overrides, build doesn't need: muted solid (mirrors filled style) */
 .stack-pip.pip-has-filled {
-  background: color-mix(in srgb, var(--accent) 40%, var(--bg-tertiary));
+  background: var(--bg-accent-muted);
 }
 
 /* Build needs this but character doesn't have it yet: red border */
