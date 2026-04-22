@@ -1,5 +1,5 @@
 import { useCallback, useState, type JSX } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { TriangleAlert, Check, ChevronDown } from 'lucide-react'
 import {
   useCharacter,
@@ -31,18 +31,19 @@ export function BottomBar({ warnings }: BottomBarProps): JSX.Element {
 
 function BuildInfo(): JSX.Element {
   const { character, activeBuild } = useCharacter()
+  const navigate = useNavigate()
 
   const buildDescription = activeBuild
     ? `${formatRace(activeBuild.race)} ${formatClassSummary(activeBuild)}`
     : ''
 
   return (
-    <Link to="/characters" className="bottom-bar-btn hoverable bottom-bar-build" activeProps={{}}>
+    <button className="bottom-bar-btn hoverable bottom-bar-build" onClick={() => navigate({ to: '/characters' })}>
       <span className="bottom-bar-name">{character.name}</span>
       {buildDescription && (
         <span className="bottom-bar-description">{buildDescription}</span>
       )}
-    </Link>
+    </button>
   )
 }
 
