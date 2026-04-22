@@ -31,19 +31,18 @@ export function BottomBar({ warnings }: BottomBarProps): JSX.Element {
 
 function BuildInfo(): JSX.Element {
   const { character, activeBuild } = useCharacter()
-  const navigate = useNavigate()
 
   const buildDescription = activeBuild
     ? `${formatRace(activeBuild.race)} ${formatClassSummary(activeBuild)}`
     : ''
 
   return (
-    <button className="bottom-bar-btn hoverable bottom-bar-build" onClick={() => navigate({ to: '/characters' })}>
+    <div className="bottom-bar-build">
       <span className="bottom-bar-name">{character.name}</span>
       {buildDescription && (
         <span className="bottom-bar-description">{buildDescription}</span>
       )}
-    </button>
+    </div>
   )
 }
 
