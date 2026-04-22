@@ -77,7 +77,8 @@ interface AppNavBarProps {
 }
 
 function AppNavBar({ expanded, onToggleExpanded }: AppNavBarProps): JSX.Element {
-  const settingsActive = useActive('/settings')
+  // useLocation reads the committed location; useMatchRoute reads pending, which lags after beforeLoad redirects.
+  const settingsActive = useLocation().pathname === '/settings'
 
   // At narrow widths the expanded nav bar is full-screen; auto-close on navigate.
   function handleNavClick(): void {
@@ -116,12 +117,6 @@ function AppNavBar({ expanded, onToggleExpanded }: AppNavBarProps): JSX.Element 
       </button>
     </aside>
   )
-}
-
-// useLocation reads the committed location; useMatchRoute reads pending, which lags after beforeLoad redirects.
-function useActive(to: string): boolean {
-  const { pathname } = useLocation()
-  return pathname === to
 }
 
 function NavGroup({

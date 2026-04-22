@@ -5,31 +5,13 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  Outlet,
   RouterProvider,
   type AnyRouter,
 } from '@tanstack/react-router'
+import { APP_PATHS } from '../appPaths'
 
-// All top-level paths the app defines. Test routers register these so <Link to="...">
-// type-checks and resolves in isolation tests, without needing the real route tree.
-const APP_PATHS = [
-  'build-plan',
-  'characters',
-  'settings',
-  'overview',
-  'gear',
-  'damage-calc',
-  'farm-checklist',
-  'debug',
-] as const
-
-/**
- * Builds a lightweight test router whose routes all render the children of
- * the root layout. Use this in component tests that need Link / useNavigate /
- * useMatchRoute to work but don't care about the real route components.
- */
 function createStubRouter(component: () => ReactNode, initialPath = '/build-plan'): AnyRouter {
-  const rootRoute = createRootRoute({ component: () => <>{component()}<Outlet /></> })
+  const rootRoute = createRootRoute({ component: () => <>{component()}</> })
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/',

@@ -43,9 +43,7 @@ function AppLayout(): JSX.Element {
   }
 
   const matches = useMatches()
-  const showRightPanel = matches.some(
-    (m) => !!(m.staticData as { showStatsPanel?: boolean } | undefined)?.showStatsPanel,
-  )
+  const showRightPanel = matches.some((m) => m.staticData.showStatsPanel)
 
   return (
     <div className="app-shell">

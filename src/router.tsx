@@ -99,7 +99,9 @@ const routeTree = rootRoute.addChildren([
 const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
 // Accept optional history so tests can inject createMemoryHistory without cross-test bleed.
-export function createAppRouter(history?: RouterHistory): ReturnType<typeof createRouter> {
+export function createAppRouter(
+  history?: RouterHistory,
+): ReturnType<typeof createRouter<typeof routeTree>> {
   return createRouter({ routeTree, basepath, history })
 }
 
@@ -107,8 +109,14 @@ export const router = createAppRouter()
 
 // Register the router with TanStack's type registry so <Link to="...">,
 // useNavigate, and useMatchRoute get the real route tree for type-checking.
+// Augment StaticDataRouteOption here so route definitions get typed autocomplete
+// on staticData and consumers (AppLayout's showRightPanel check) can read it
+// without a cast.
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
+  }
+  interface StaticDataRouteOption {
+    showStatsPanel?: boolean
   }
 }
