@@ -122,7 +122,7 @@ test.describe('responsive breakpoints', () => {
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
     // Click a nav item
-    await page.getByRole('button', { name: 'Gear' }).click()
+    await page.getByRole('link', { name: 'Gear' }).click()
 
     // Nav bar should auto-close
     await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
@@ -133,7 +133,7 @@ test.describe('responsive breakpoints', () => {
     await page.goto('/')
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
-    await page.getByRole('button', { name: 'Gear' }).click()
+    await page.getByRole('link', { name: 'Gear' }).click()
 
     // Nav bar should stay expanded
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
@@ -165,7 +165,7 @@ test.describe('layout', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await page.getByRole('button', { name: 'Gear' }).click()
+    await page.getByRole('link', { name: 'Gear' }).click()
     await expect(page.locator('.side-panel')).not.toBeVisible()
   })
 
@@ -221,11 +221,11 @@ test.describe('navigation', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    await page.getByRole('button', { name: 'Gear' }).click()
+    await page.getByRole('link', { name: 'Gear' }).click()
     await expect(page).toHaveURL(/\/gear$/)
     await expect(page.locator('.app-content')).toContainText('Gear Planner')
 
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('link', { name: 'Settings' }).click()
     await expect(page).toHaveURL(/\/settings$/)
   })
 

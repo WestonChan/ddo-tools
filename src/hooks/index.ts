@@ -1,6 +1,4 @@
 export { useDatabase } from './useDatabase'
-export { useRouter } from './useRouter'
-export type { View } from './useRouter'
 export { useLocalStorage } from './useLocalStorage'
 export { useAddRemoveInput } from './useAddRemoveInput'
 export { useTheme } from './useTheme'
