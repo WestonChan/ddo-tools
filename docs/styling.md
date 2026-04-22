@@ -15,6 +15,10 @@ CSS conventions, design tokens, layout architecture, and responsive breakpoints 
 - **Active state = color + weight.** Nav items signal active via accent color + one weight-step bump (500 → 600). The character card adds an accent border + accent top divider. Active items get `cursor: default` and suppress hover background changes — clicking the already-active item is a no-op.
 - **Identity vs navigation.** The character card's active state uses border + color (emphasizing identity); nav buttons use left accent bar + weight + color (standard navigation). Different element types earn different active patterns.
 
+## Icons
+
+Use `lucide-react` for all icons. Pass the `size` prop for sizing — never use CSS `width`/`height` on icon elements. Icons are single-color and inherit `currentColor`, so they track text color automatically. Don't pass `color` or `fill` directly; control icon color by setting `color` on a parent.
+
 ## Conventions
 
 - **Plain CSS** with native nesting (no Sass/SCSS). All modern browsers support `&` nesting.
