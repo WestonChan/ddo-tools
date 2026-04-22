@@ -42,11 +42,9 @@ function AppLayout(): JSX.Element {
     setStoredExpanded(next)
   }
 
-  // Route-declared flag controls whether the right-hand stats panel shows.
-  // Set via `staticData: { showStatsPanel: true }` in router.tsx.
   const matches = useMatches()
   const showRightPanel = matches.some(
-    (m) => (m.staticData as { showStatsPanel?: boolean } | undefined)?.showStatsPanel === true,
+    (m) => !!(m.staticData as { showStatsPanel?: boolean } | undefined)?.showStatsPanel,
   )
 
   return (

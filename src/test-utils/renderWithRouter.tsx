@@ -28,7 +28,7 @@ const APP_PATHS = [
  * the root layout. Use this in component tests that need Link / useNavigate /
  * useMatchRoute to work but don't care about the real route components.
  */
-export function createTestRouter(component: () => ReactNode, initialPath = '/build-plan'): AnyRouter {
+function createStubRouter(component: () => ReactNode, initialPath = '/build-plan'): AnyRouter {
   const rootRoute = createRootRoute({ component: () => <>{component()}<Outlet /></> })
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -50,7 +50,7 @@ export function renderWithRouter(ui: ReactNode, initialPath = '/build-plan'): {
   router: AnyRouter
   result: RenderResult
 } {
-  const router = createTestRouter(() => ui, initialPath)
+  const router = createStubRouter(() => ui, initialPath)
   const result = render(<RouterProvider router={router} />)
   return { router, result }
 }

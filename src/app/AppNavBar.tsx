@@ -118,10 +118,7 @@ function AppNavBar({ expanded, onToggleExpanded }: AppNavBarProps): JSX.Element 
   )
 }
 
-// Exact-match active check via the committed (resolved) location. useLocation
-// reads resolvedLocation, which is updated only after a navigation is fully
-// committed — including after beforeLoad redirects. useMatchRoute reads the
-// pending location, which can lag behind on initial load after a redirect.
+// useLocation reads the committed location; useMatchRoute reads pending, which lags after beforeLoad redirects.
 function useActive(to: string): boolean {
   const { pathname } = useLocation()
   return pathname === to

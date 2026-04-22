@@ -18,9 +18,7 @@ import {
   OverviewView,
 } from './app/routeComponents'
 
-// Routes that should render the right-hand stats panel via AppLayout tag
-// themselves with `staticData.showStatsPanel`. The layout reads it from the
-// matched route, which keeps the rule co-located with the route definition.
+// Routes opt into the stats panel via staticData: { showStatsPanel: true }.
 const rootRoute = createRootRoute({
   component: AppLayout,
   notFoundComponent: NotFoundView,
@@ -97,16 +95,10 @@ const routeTree = rootRoute.addChildren([
   debugRoute,
 ])
 
-// Strip trailing slash from Vite's BASE_URL (`/ddo-tools/`) — TanStack expects
-// `/ddo-tools` (no trailing slash). Vitest inherits Vite config, so tests also
-// see this basepath; path literals in tests must include the prefix.
+// Strip trailing slash from Vite's BASE_URL (`/ddo-tools/`) — TanStack expects no trailing slash.
 const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
-/**
- * Creates a router instance against the full route tree. Prod callers use the
- * default (browser history); tests inject memory history to drive navigation
- * deterministically. Re-creating per test avoids cross-test history bleed.
- */
+// Accept optional history so tests can inject createMemoryHistory without cross-test bleed.
 export function createAppRouter(history?: RouterHistory): ReturnType<typeof createRouter> {
   return createRouter({ routeTree, basepath, history })
 }

@@ -1,8 +1,6 @@
 import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
 
-// Placeholder views for routes still to be built. Each is a single-line
-// message pending its real implementation in a later phase per roadmap.
 function Placeholder({ message }: { message: string }): JSX.Element {
   return <div className="section-placeholder">{message}</div>
 }
