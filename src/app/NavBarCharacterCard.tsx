@@ -75,6 +75,7 @@ export function NavBarCharacterCard({ onNavClick }: NavBarCharacterCardProps): J
         <button
           className="nav-bar-character-swap-btn"
           title="Swap active and comparison build"
+          onClick={(e) => e.stopPropagation()}
         >
           <ArrowUpDown size={14} />
         </button>

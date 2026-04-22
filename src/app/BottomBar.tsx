@@ -1,4 +1,4 @@
-import { useCallback, useState, type JSX } from 'react'
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { TriangleAlert, Check, ChevronDown } from 'lucide-react'
 import {
@@ -51,21 +51,34 @@ function WarningStatus({ warnings }: { warnings: BuildWarning[] }): JSX.Element 
   const [expanded, setExpanded] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipFading, setTooltipFading] = useState(false)
+  const tooltipTimer = useRef<number | null>(null)
+
+  // Clear any pending tooltip timers on unmount so state setters don't fire
+  // after the component is gone.
+  useEffect(
+    () => () => {
+      if (tooltipTimer.current !== null) clearTimeout(tooltipTimer.current)
+    },
+    [],
+  )
 
   const handleClick = useCallback(() => {
     if (warnings.length > 0) {
       setExpanded(!expanded)
-    } else {
-      setShowTooltip(true)
-      setTooltipFading(false)
-      setTimeout(() => {
-        setTooltipFading(true)
-        setTimeout(() => {
-          setShowTooltip(false)
-          setTooltipFading(false)
-        }, 200)
-      }, 1800)
+      return
     }
+    // Reset any in-flight fade chain so rapid clicks restart the tooltip.
+    if (tooltipTimer.current !== null) clearTimeout(tooltipTimer.current)
+    setShowTooltip(true)
+    setTooltipFading(false)
+    tooltipTimer.current = window.setTimeout(() => {
+      setTooltipFading(true)
+      tooltipTimer.current = window.setTimeout(() => {
+        setShowTooltip(false)
+        setTooltipFading(false)
+        tooltipTimer.current = null
+      }, 200)
+    }, 1800)
   }, [warnings.length, expanded])
 
   return (
