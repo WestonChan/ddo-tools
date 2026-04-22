@@ -1,6 +1,6 @@
 import { useCallback, useState, type JSX } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { TriangleAlert, Check, ChevronDown } from 'lucide-react'
-import type { View } from '../hooks'
 import {
   useCharacter,
   formatClassSummary,
@@ -10,27 +10,26 @@ import './BottomBar.css'
 
 export interface BuildWarning {
   message: string
-  view: View
+  to: string
   severity: 'error' | 'warning' | 'info'
 }
 
 interface BottomBarProps {
   warnings: BuildWarning[]
-  onNavigate: (view: View) => void
 }
 
-export function BottomBar({ warnings, onNavigate }: BottomBarProps): JSX.Element {
+export function BottomBar({ warnings }: BottomBarProps): JSX.Element {
   return (
     <div className="bottom-bar">
       <div className="bottom-bar-row">
-        <BuildInfo onNavigate={onNavigate} />
-        <WarningStatus warnings={warnings} onNavigate={onNavigate} />
+        <BuildInfo />
+        <WarningStatus warnings={warnings} />
       </div>
     </div>
   )
 }
 
-function BuildInfo({ onNavigate }: { onNavigate: (view: View) => void }): JSX.Element {
+function BuildInfo(): JSX.Element {
   const { character, activeBuild } = useCharacter()
 
   const buildDescription = activeBuild
@@ -38,16 +37,17 @@ function BuildInfo({ onNavigate }: { onNavigate: (view: View) => void }): JSX.El
     : ''
 
   return (
-    <button className="bottom-bar-btn hoverable bottom-bar-build" onClick={() => onNavigate('characters')}>
+    <Link to="/characters" className="bottom-bar-btn hoverable bottom-bar-build" activeProps={{}}>
       <span className="bottom-bar-name">{character.name}</span>
       {buildDescription && (
         <span className="bottom-bar-description">{buildDescription}</span>
       )}
-    </button>
+    </Link>
   )
 }
 
-function WarningStatus({ warnings, onNavigate }: { warnings: BuildWarning[]; onNavigate: (view: View) => void }): JSX.Element {
+function WarningStatus({ warnings }: { warnings: BuildWarning[] }): JSX.Element {
+  const navigate = useNavigate()
   const [expanded, setExpanded] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipFading, setTooltipFading] = useState(false)
@@ -90,7 +90,11 @@ function WarningStatus({ warnings, onNavigate }: { warnings: BuildWarning[]; onN
       {expanded && warnings.length > 0 && (
         <div className="bottom-bar-warning-list">
           {warnings.map((w, i) => (
-            <button key={i} className={`bottom-bar-warning-item bottom-bar-warning-item--${w.severity} hoverable`} onClick={() => onNavigate(w.view)}>
+            <button
+              key={i}
+              className={`bottom-bar-warning-item bottom-bar-warning-item--${w.severity} hoverable`}
+              onClick={() => navigate({ to: w.to })}
+            >
               {w.message}
             </button>
           ))}

@@ -1,12 +1,11 @@
 import type { JSX } from 'react'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 import { User, UserPen, ArrowUpDown, GitCompareArrows } from 'lucide-react'
 import { useCharacter, formatClassSummary, formatRace } from '../features/character'
-import type { View } from '../hooks'
 import './NavBarCharacterCard.css'
 
 interface NavBarCharacterCardProps {
-  activeView: View
-  onNavigate: (view: View) => void
+  onNavClick?: () => void
 }
 
 function NavBarBuildSlot({
@@ -35,21 +34,30 @@ function NavBarBuildSlot({
   )
 }
 
-export function NavBarCharacterCard({ activeView, onNavigate }: NavBarCharacterCardProps): JSX.Element {
+export function NavBarCharacterCard({ onNavClick }: NavBarCharacterCardProps): JSX.Element {
   const { character: selected, activeBuild, lifeNumbers } = useCharacter()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
   const raceLabel = activeBuild ? formatRace(activeBuild.race) : ''
   const classLabel = activeBuild ? formatClassSummary(activeBuild) : ''
   const buildLabel =
     activeBuild?.name ||
     (activeBuild ? `Life ${lifeNumbers.get(activeBuild.id) ?? '?'}` : 'No build')
 
-  const isActive = activeView === 'characters'
+  const isActive = pathname === '/characters'
   const buildDetails = [raceLabel, classLabel].filter(Boolean)
 
+  // Kept as a <div> rather than <Link>: the card contains a nested swap
+  // <button> (Phase 9 compare-mode hook), and <button> inside <a> is invalid
+  // HTML. Programmatic navigate avoids the nesting issue without changing
+  // current behavior (entire-card click target).
   return (
     <div
       className={`nav-bar-character-card${isActive ? ' active' : ''}`}
-      onClick={() => onNavigate('characters')}
+      onClick={() => {
+        navigate({ to: '/characters' })
+        onNavClick?.()
+      }}
     >
       <div className="nav-bar-character-strip">
         <User size={18} />

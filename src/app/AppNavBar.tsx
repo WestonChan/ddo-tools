@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { Link, useLocation } from '@tanstack/react-router'
 import {
   Swords,
   ShieldHalf,
@@ -16,7 +17,6 @@ import {
   PanelLeftOpen,
   NotepadText,
 } from 'lucide-react'
-import type { View } from '../hooks'
 import { NavBarCharacterCard } from './NavBarCharacterCard'
 import './AppNavBar.css'
 
@@ -24,7 +24,7 @@ import './AppNavBar.css'
 
 interface NavItem {
   id?: string
-  view: View
+  to: string
   label: string
   Icon: React.FC<{ size?: number }>
 }
@@ -32,7 +32,7 @@ interface NavItem {
 interface NavGroupDef {
   id: string
   label: string
-  view?: View
+  to?: string
   Icon?: React.FC<{ size?: number }>
   items: NavItem[]
 }
@@ -45,26 +45,26 @@ const MAIN_NAV: NavGroupDef[] = [
   {
     id: 'build-plan',
     label: 'Build Plan',
-    view: 'build-plan',
+    to: '/build-plan',
     Icon: NotepadText,
     items: [
-      { id: 'levels', view: 'build-plan', label: 'Level Plan', Icon: ListOrdered },
-      { id: 'skills', view: 'build-plan', label: 'Skills', Icon: SkillsIcon },
-      { id: 'spells', view: 'build-plan', label: 'Spells', Icon: Sparkles },
-      { id: 'enhancements', view: 'build-plan', label: 'Enhancements', Icon: GitBranch },
-      { id: 'reaper', view: 'build-plan', label: 'Reaper', Icon: Skull },
-      { id: 'destinies', view: 'build-plan', label: 'Destinies', Icon: Orbit },
-      { view: 'gear', label: 'Gear', Icon: ShieldHalf },
-      { view: 'overview', label: 'Build Overview', Icon: Swords },
+      { id: 'levels', to: '/build-plan', label: 'Level Plan', Icon: ListOrdered },
+      { id: 'skills', to: '/build-plan', label: 'Skills', Icon: SkillsIcon },
+      { id: 'spells', to: '/build-plan', label: 'Spells', Icon: Sparkles },
+      { id: 'enhancements', to: '/build-plan', label: 'Enhancements', Icon: GitBranch },
+      { id: 'reaper', to: '/build-plan', label: 'Reaper', Icon: Skull },
+      { id: 'destinies', to: '/build-plan', label: 'Destinies', Icon: Orbit },
+      { to: '/gear', label: 'Gear', Icon: ShieldHalf },
+      { to: '/overview', label: 'Build Overview', Icon: Swords },
     ],
   },
   {
     id: 'tools',
     label: 'Tools',
     items: [
-      { view: 'damage-calc', label: 'Damage Calc', Icon: Calculator },
-      { view: 'farm-checklist', label: 'Farm Checklist', Icon: ListTodo },
-      { view: 'debug', label: 'Debug', Icon: Search },
+      { to: '/damage-calc', label: 'Damage Calc', Icon: Calculator },
+      { to: '/farm-checklist', label: 'Farm Checklist', Icon: ListTodo },
+      { to: '/debug', label: 'Debug', Icon: Search },
     ],
   },
 ]
@@ -72,16 +72,15 @@ const MAIN_NAV: NavGroupDef[] = [
 // --- Component ---
 
 interface AppNavBarProps {
-  activeView: View
-  onViewChange: (view: View) => void
   expanded: boolean
   onToggleExpanded: () => void
 }
 
-function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: AppNavBarProps): JSX.Element {
-  // At narrow widths the expanded nav bar is full-screen; auto-close on navigate
-  function handleNavigate(view: View): void {
-    onViewChange(view)
+function AppNavBar({ expanded, onToggleExpanded }: AppNavBarProps): JSX.Element {
+  const settingsActive = useActive('/settings')
+
+  // At narrow widths the expanded nav bar is full-screen; auto-close on navigate.
+  function handleNavClick(): void {
     if (expanded && window.innerWidth < 600) {
       onToggleExpanded()
     }
@@ -94,24 +93,19 @@ function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: App
           <span className="nav-bar-brand-text nav-bar-collapsible">DDO<br />Builder</span>
         </div>
 
-        <NavBarCharacterCard activeView={activeView} onNavigate={handleNavigate} />
+        <NavBarCharacterCard onNavClick={handleNavClick} />
 
         <nav className="nav-bar-items">
           {MAIN_NAV.map((group) => (
-            <NavGroup
-              key={group.id}
-              group={group}
-              activeView={activeView}
-              onViewChange={handleNavigate}
-            />
+            <NavGroup key={group.id} group={group} onNavClick={handleNavClick} />
           ))}
         </nav>
 
         <div className="nav-bar-bottom">
           <NavButton
-            item={{ view: 'settings', label: 'Settings', Icon: Settings }}
-            active={activeView === 'settings'}
-            onViewChange={handleNavigate}
+            item={{ to: '/settings', label: 'Settings', Icon: Settings }}
+            active={settingsActive}
+            onNavClick={handleNavClick}
           />
         </div>
       </div>
@@ -124,22 +118,32 @@ function AppNavBar({ activeView, onViewChange, expanded, onToggleExpanded }: App
   )
 }
 
+// Exact-match active check via the committed (resolved) location. useLocation
+// reads resolvedLocation, which is updated only after a navigation is fully
+// committed — including after beforeLoad redirects. useMatchRoute reads the
+// pending location, which can lag behind on initial load after a redirect.
+function useActive(to: string): boolean {
+  const { pathname } = useLocation()
+  return pathname === to
+}
+
 function NavGroup({
   group,
-  activeView,
-  onViewChange,
+  onNavClick,
 }: {
   group: NavGroupDef
-  activeView: View
-  onViewChange: (view: View) => void
+  onNavClick: () => void
 }): JSX.Element {
-  const hasActive = group.items.some((item) => item.view === activeView)
+  const { pathname } = useLocation()
+  const matchesTo = (to: string): boolean => pathname === to
+  const hasActive = group.items.some((item) => matchesTo(item.to))
 
-  // Precompute first index per view so only the first sub-item per view lights up.
-  // Several sub-items share the same view (e.g., build-plan sub-sections).
-  const firstIndexByView = new Map<View, number>()
+  // Precompute first index per `to` so only the first sub-item per path lights up.
+  // Several sub-items share the same path (e.g., build-plan sub-sections) — future
+  // Phase 7 will give each its own scroll anchor; until then, highlight once.
+  const firstIndexByTo = new Map<string, number>()
   group.items.forEach((it, i) => {
-    if (!firstIndexByView.has(it.view)) firstIndexByView.set(it.view, i)
+    if (!firstIndexByTo.has(it.to)) firstIndexByTo.set(it.to, i)
   })
 
   return (
@@ -147,20 +151,20 @@ function NavGroup({
       <span className={`nav-bar-group-label${hasActive ? ' has-active' : ''}`}>
         <span className="nav-bar-group-label-text nav-bar-collapsible">{group.label}</span>
       </span>
-      {group.view && group.Icon && (
+      {group.to && group.Icon && (
         <NavButton
-          item={{ view: group.view, label: group.label, Icon: group.Icon }}
-          active={group.items.some((item) => item.id && item.view === activeView)}
-          onViewChange={onViewChange}
+          item={{ to: group.to, label: group.label, Icon: group.Icon }}
+          active={group.items.some((item) => item.id && matchesTo(item.to))}
+          onNavClick={onNavClick}
           header
         />
       )}
       {group.items.map((item, i) => (
         <NavButton
-          key={item.id || `${item.view}-${i}`}
+          key={item.id || `${item.to}-${i}`}
           item={item}
-          active={activeView === item.view && firstIndexByView.get(item.view) === i}
-          onViewChange={onViewChange}
+          active={matchesTo(item.to) && firstIndexByTo.get(item.to) === i}
+          onNavClick={onNavClick}
           compact={!!item.id}
         />
       ))}
@@ -171,13 +175,13 @@ function NavGroup({
 function NavButton({
   item,
   active,
-  onViewChange,
+  onNavClick,
   compact,
   header,
 }: {
   item: NavItem
   active: boolean
-  onViewChange: (view: View) => void
+  onNavClick: () => void
   compact?: boolean
   header?: boolean
 }): JSX.Element {
@@ -192,10 +196,10 @@ function NavButton({
     .join(' ')
 
   return (
-    <button className={cls} onClick={() => onViewChange(item.view)}>
+    <Link to={item.to} className={cls} onClick={onNavClick} activeProps={{}}>
       <item.Icon size={compact ? 16 : 18} />
       <span className="nav-bar-label nav-bar-collapsible">{item.label}</span>
-    </button>
+    </Link>
   )
 }
 
