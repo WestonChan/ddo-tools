@@ -126,6 +126,22 @@ describe('formatRace', () => {
   it('handles single-word races', () => {
     expect(formatRace('elf')).toBe('Elf')
   })
+
+  it('title-cases hyphenated race ids', () => {
+    expect(formatRace('eladrin-chaosmancer')).toBe('Eladrin Chaosmancer')
+  })
+})
+
+describe('formatClassSummary kebab-case classes', () => {
+  it('title-cases hyphenated class ids', () => {
+    const life = makeLife({
+      classes: [
+        { classId: 'favored-soul', levels: 12 },
+        { classId: 'artificer', levels: 6 },
+      ],
+    })
+    expect(formatClassSummary(life)).toBe('12 Favored Soul / 6 Artificer')
+  })
 })
 
 describe('computeLifeNumbers', () => {

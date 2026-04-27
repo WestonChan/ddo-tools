@@ -158,6 +158,7 @@ test.describe('layout', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
+    await page.getByRole('link', { name: 'Build Plan', exact: true }).click()
     await expect(page.locator('.side-panel')).toBeVisible()
   })
 
@@ -165,6 +166,8 @@ test.describe('layout', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
+    await page.getByRole('link', { name: 'Build Plan', exact: true }).click()
+    await expect(page.locator('.side-panel')).toBeVisible()
     await page.getByRole('link', { name: 'Gear' }).click()
     await expect(page.locator('.side-panel')).not.toBeVisible()
   })
@@ -249,6 +252,8 @@ test.describe('navigation', () => {
   test('active nav items have accent indicator', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
+
+    await page.getByRole('link', { name: 'Build Plan', exact: true }).click()
 
     // Build Plan parent + Level Plan sub-item are both active on build-plan view
     const activeBtns = page.locator('.nav-bar-btn.active')

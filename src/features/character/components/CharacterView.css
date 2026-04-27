@@ -125,7 +125,6 @@
 }
 
 .past-lives-header h2 {
-  font-family: var(--font-display);
   color: var(--text);
   font-size: var(--text-base);
   font-weight: 600;
@@ -317,7 +316,6 @@
 
 /* --- Life history --- */
 .life-history-title {
-  font-family: var(--font-display);
   color: var(--text);
   font-size: var(--text-base);
   font-weight: 600;

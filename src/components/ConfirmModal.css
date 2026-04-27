@@ -19,7 +19,6 @@
 }
 
 .confirm-modal-title {
-  font-family: var(--font-display);
   color: var(--text);
   font-size: var(--text-base);
   font-weight: 600;

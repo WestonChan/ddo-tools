@@ -18,6 +18,7 @@ import {
   NotepadText,
 } from 'lucide-react'
 import { NavBarCharacterCard } from './NavBarCharacterCard'
+import { AmpersandMark } from '../components'
 import './AppNavBar.css'
 
 // --- Navigation structure ---
@@ -90,9 +91,16 @@ function AppNavBar({ expanded, onToggleExpanded }: AppNavBarProps): JSX.Element 
   return (
     <aside className={`app-nav-bar${expanded ? ' expanded' : ''}`}>
       <div className="nav-bar-scroll">
-        <div className="nav-bar-brand">
-          <span className="nav-bar-brand-text nav-bar-collapsible">DDO<br />Builder</span>
-        </div>
+        <Link
+          to="/"
+          className="nav-bar-brand hoverable"
+          activeOptions={{ exact: true }}
+          activeProps={{ className: 'nav-bar-brand hoverable active' }}
+          onClick={handleNavClick}
+        >
+          <AmpersandMark className="nav-bar-brand-mark" size={26} />
+          <span className="nav-bar-brand-text nav-bar-collapsible">DDO<br />Tools</span>
+        </Link>
 
         <NavBarCharacterCard onNavClick={handleNavClick} />
 

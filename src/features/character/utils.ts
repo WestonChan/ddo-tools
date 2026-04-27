@@ -33,12 +33,20 @@ export function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
+/** Title-case a kebab-cased id: 'eladrin-chaosmancer' -> 'Eladrin Chaosmancer'. */
+export function titleCase(s: string): string {
+  return s
+    .split('-')
+    .map((w) => capitalize(w))
+    .join(' ')
+}
+
 export function formatRace(race: string): string {
-  return capitalize(race)
+  return titleCase(race)
 }
 
 export function formatClassSummary(life: Life): string {
-  return life.classes.map((c) => `${c.levels} ${capitalize(c.classId)}`).join(' / ')
+  return life.classes.map((c) => `${c.levels} ${titleCase(c.classId)}`).join(' / ')
 }
 
 /** Sum all stacks across all categories in an PastLifeCounts record. */

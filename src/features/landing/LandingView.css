@@ -1,0 +1,293 @@
+.landing-view {
+  padding: var(--space-8) var(--space-6);
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* --- Hero --- */
+.landing-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+/* Wrapper just sizes the glyph and pipes the accent color in via currentColor. */
+.landing-hero-mark {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.landing-hero-title {
+  font-family: var(--font-site-title);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--accent);
+}
+
+.landing-hero-tagline {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+}
+
+/* --- Grid of cards --- */
+/* Character + DDO link sit side-by-side on top; site updates spans full width
+   below so its expansion grows downward without unbalancing the top row.
+   Default align-items: stretch keeps the top-row cards the same height. */
+.landing-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  grid-template-areas:
+    'character ddo'
+    'patch     patch';
+  gap: var(--space-5);
+}
+
+.landing-grid-area-character { grid-area: character; }
+.landing-grid-area-ddo { grid-area: ddo; }
+.landing-grid-area-patch { grid-area: patch; }
+
+/* Each grid cell is a flex column so the card inside fills the cell's height —
+   keeps the equal-row-height behavior we'd otherwise lose by adding the wrapper. */
+.landing-grid > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-grid > div > .landing-card {
+  flex: 1;
+}
+
+@media (max-width: 899px) {
+  .landing-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'character'
+      'ddo'
+      'patch';
+  }
+}
+
+/* --- Shared card --- */
+.landing-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.landing-card-eyebrow {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.landing-card-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.landing-card-body {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* --- Active character card --- */
+.landing-active-character-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.landing-active-character-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.landing-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.landing-section dt {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.landing-section dd {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--text);
+}
+
+/* Current build: vertical stack so long class strings don't wrap awkwardly. */
+.landing-build-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.landing-build-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.landing-build-classes {
+  color: var(--text);
+}
+
+.landing-build-meta {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.landing-inline-meta {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Stat rows: count column + label column, baseline-aligned. */
+.landing-stat-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.landing-stat-rows > li {
+  display: grid;
+  grid-template-columns: 2.5ch 1fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.landing-stat-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.landing-stat-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Push card CTAs to the bottom edge so character + ddo cards align their
+   buttons across the top row. */
+.landing-card > .landing-cta {
+  margin-top: auto;
+}
+
+/* --- CTA buttons/links --- */
+.landing-cta {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.landing-cta:hover {
+  background: var(--bg-accent);
+  border-color: var(--accent);
+}
+
+/* --- Patch notes --- */
+.landing-patch-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border);
+}
+
+.landing-patch-entry:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.landing-patch-date {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin: 0;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.landing-patch-changes {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.landing-patch-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1) var(--space-2);
+  margin-top: var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.landing-patch-toggle:hover {
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+.landing-patch-toggle-chevron {
+  transition: transform var(--transition-fast);
+}
+
+.landing-patch-toggle-chevron.is-open {
+  transform: rotate(180deg);
+}

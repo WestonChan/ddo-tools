@@ -30,18 +30,25 @@
 
 /* Build info (left) */
 .bottom-bar-build {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
   min-width: 0;
+  font-size: var(--text-xs);
 }
 
 .bottom-bar-name {
   font-weight: 700;
   color: var(--text);
+  flex-shrink: 0;
 }
 
 .bottom-bar-description {
   color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 /* Warnings (right) */

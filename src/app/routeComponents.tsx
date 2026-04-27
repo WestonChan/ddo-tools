@@ -20,7 +20,7 @@ export const DebugView = makeView('Debug / Data Browser coming in Phase 2.')
 export function NotFoundView(): JSX.Element {
   return (
     <div className="section-placeholder">
-      Page not found. <Link to="/build-plan">Go to Build Plan</Link>
+      Page not found. <Link to="/">Go home</Link>
     </div>
   )
 }

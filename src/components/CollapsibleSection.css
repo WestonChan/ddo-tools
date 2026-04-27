@@ -9,7 +9,6 @@
   padding: var(--space-2-5) var(--space-4);
   background: var(--bg-tertiary);
   color: var(--accent);
-  font-family: var(--font-display);
   font-weight: 600;
   font-size: var(--text-sm);
   letter-spacing: 0.03em;

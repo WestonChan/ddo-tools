@@ -52,27 +52,34 @@
 /* --- Collapsible text --- */
 .nav-bar-collapsible {}
 
-/* --- Brand --- */
+/* --- Brand (Home link) --- */
 .nav-bar-brand {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--icon-col) 1fr;
   align-items: center;
-  justify-content: center;
   width: 100%;
   min-height: 48px;
   flex-shrink: 0;
-  padding: 0 var(--space-3);
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+}
+
+.nav-bar-brand-mark {
+  justify-self: center;
+  color: var(--accent);
 }
 
 .nav-bar-brand-text {
-  font-family: inherit;
+  font-family: var(--font-site-title);
   font-size: var(--text-lg);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  text-align: center;
   line-height: 1.15;
   color: var(--accent);
 }
+
 
 /* Reusable 1px horizontal divider (used by child components like the character card) */
 .nav-bar-divider {
@@ -101,6 +108,7 @@
   align-items: center;
   background: transparent;
   cursor: pointer;
+  font-family: var(--font-nav);
   font-size: var(--text-lg);
   transition:
     color var(--transition-fast),
@@ -127,7 +135,8 @@
    two axes — color + weight. */
 .nav-bar-btn.active,
 .nav-bar-build-row.active,
-.nav-bar-character-card.active {
+.nav-bar-character-card.active,
+.nav-bar-brand.active {
   color: var(--accent);
   background: var(--bg-accent);
   cursor: default;

@@ -2,11 +2,11 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
   type RouterHistory,
 } from '@tanstack/react-router'
 import AppLayout from './app/AppLayout'
 import { CharacterView } from './features/character'
+import { LandingView } from './features/landing'
 import { SettingsView } from './features/settings'
 import {
   BuildPlanView,
@@ -24,14 +24,10 @@ const rootRoute = createRootRoute({
   notFoundComponent: NotFoundView,
 })
 
-// Root path redirects to the canonical /build-plan URL so nav-active-state
-// logic has a single source of truth (matchRoute({ to: '/build-plan' })).
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: () => {
-    throw redirect({ to: '/build-plan' })
-  },
+  component: LandingView,
 })
 
 const buildPlanRoute = createRoute({
