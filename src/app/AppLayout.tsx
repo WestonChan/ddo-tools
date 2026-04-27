@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 import { Outlet, useMatches } from '@tanstack/react-router'
 import AppNavBar from './AppNavBar'
 import { BottomBar, type BuildWarning } from './BottomBar'
-import { useLocalStorage } from '../hooks'
+import { useFaviconAccent, useLocalStorage } from '../hooks'
 import { BuildSidePanel } from '../features/character'
 import './App.css'
 
@@ -10,6 +10,7 @@ import './App.css'
 const warnings: BuildWarning[] = []
 
 function AppLayout(): JSX.Element {
+  useFaviconAccent()
   const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-nav-bar-expanded', true)
   const [navBarExpanded, setNavBarExpanded] = useState(() => {
     const width = window.innerWidth
