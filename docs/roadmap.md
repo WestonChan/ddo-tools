@@ -938,9 +938,10 @@ Follow-up from `css-refactor-v2`. The `.stack-pip` variants in `CharacterView.cs
 - Verify the repeating-linear-gradient hatched variants still read clearly once transparent; swap the "bg-tertiary band" stops to `transparent` so the row bg shows through between stripes.
 - Visual QA on both themes (dark + light) + with non-default accent colors.
 
-### Phase 2: Index / Landing View
-7. Design landing page for `/ddo-tools/` (recent builds, quick-start actions, or dashboard overview)
-8. Determine whether this is a distinct view or an existing view (e.g., Characters, Build Overview) serves as default
+### Phase 2: Index / Landing View (done)
+7. Dedicated `LandingView` at `/ddo-tools/` — ampersand hero mark, active character card, site patch notes, DDO Wiki link-out. The nav bar brand doubles as a Home link (ampersand mark visible when collapsed).
+8. Site patch notes in `src/features/landing/data/sitePatchNotes.ts`. Each entry is one ship date with a bulleted list of imperative changes — no titles, no versions. **Upkeep**: when merging a PR to `main`, either add a new dated entry or append bullets to today's entry if one already exists. Keep change bullets terse and imperative (match commit-subject voice).
+9. DDO game patch notes: v1 is a link-out to DDO Wiki's `Updates` page. v2 (after Phase 4 wiki infra lands): embed the latest update summary via MediaWiki `action=parse`.
 
 ### Phase 3: Error Reporting & Resilience
 Infrastructure for per-view error handling. Built early so every subsequent phase gets error boundaries from day one. WIP code: `error-reporting` branch.
@@ -954,7 +955,7 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 
 ### Phase 4: Debug / Data Browser
 15. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
-16. Wiki preview via MediaWiki API
+16. Wiki preview via MediaWiki API. Also add a wiki-origin health check (CORS, API reachable, schema sniff) — covers all DDO Wiki dependencies including the static `Updates` link on the landing page (see Phase 2 note 9). Replaces the manual "external links rot silently" gap left when Phase 2 deferred live-link validation.
 17. Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update, override indicators app-wide with deep-link to debug view)
 18. GitHub issue submission with duplicate detection
 

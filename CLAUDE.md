@@ -57,6 +57,7 @@ Python: `pytest scripts/` -- Frontend: `npx vitest run` -- both must pass before
 - **Feature branches**: Implementation work happens on feature branches (e.g., `navigation-refactor`). PR back to `main` when complete.
 - **Commit per step**: When following a multi-step implementation plan, each step gets its own commit. Don't batch unrelated changes.
 - **Tests pass**: All existing tests must pass before committing. New pure logic (stats engine, validation, etc.) must include vitest unit tests.
+- **Patch notes upkeep**: When user-visible changes (new features, UI changes, bug fixes that change behavior) ship, add an entry to [`src/features/landing/data/sitePatchNotes.ts`](src/features/landing/data/sitePatchNotes.ts). Either append a new dated entry (today's ship date in `YYYY-MM-DD`) or add a bullet to today's entry if one already exists. Keep bullets terse and imperative — match commit-subject voice. Skip purely-internal changes (refactors with no user-visible effect, comment-only edits, test-only changes).
 
 ## Interaction Patterns
 
