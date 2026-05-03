@@ -943,15 +943,15 @@ Follow-up from `css-refactor-v2`. The `.stack-pip` variants in `CharacterView.cs
 8. Site patch notes in `src/features/landing/data/sitePatchNotes.ts`. Each entry is one ship date with a bulleted list of imperative changes — no titles, no versions. **Upkeep**: when merging a PR to `main`, either add a new dated entry or append bullets to today's entry if one already exists. Keep change bullets terse and imperative (match commit-subject voice).
 9. DDO game patch notes: v1 is a link-out to DDO Wiki's `Updates` page. v2 (after Phase 4 wiki infra lands): embed the latest update summary via MediaWiki `action=parse`.
 
-### Phase 3: Error Reporting & Resilience
-Infrastructure for per-view error handling. Built early so every subsequent phase gets error boundaries from day one. WIP code: `error-reporting` branch.
+### Phase 3: Error Reporting & Resilience (done)
+Infrastructure for per-view error handling. Built early so every subsequent phase gets error boundaries from day one. Sentry adopted for automatic background capture (with Session Replay); a single static "Report a bug" button in the bottom bar covers all user-initiated reports (technical, data-quality, UX feedback) via pre-filled GitHub issues. See [docs/sentry.md](sentry.md) for setup.
 
-9. ErrorBoundary component: catches rendering errors, shows fallback, reports to global collector
-10. Per-view DB loading: remove top-level `LoadingGate` — views that need `ddo.db` call `useDatabase()` and handle their own loading/error; Settings and Characters render instantly
-11. ErrorScreen + ErrorCard: full-page and compact inline error displays with GitHub issue links. ErrorScreen doubles as the app's catch-all 500 page — wrap the app root in an ErrorBoundary that renders ErrorScreen for any unhandled crash. Reuses the same categorized heading, monospace detail, stack trace, and issue-reporting links from LoadingGate's error UI.
-12. Nav-bar bug icon: always visible, links to GitHub issues when no errors; badge + expandable error panel when errors detected
-13. GitHub issue integration: per-source labels (`db-loading`, `user-db`, `runtime`), duplicate search, pre-filled new-issue with stack trace
-14. NotFoundView: 404 page for unknown routes. Update `useRouter` to return a `'not-found'` view instead of silently falling back to `build-plan`
+9. ErrorBoundary infrastructure via the `react-error-boundary` npm package: root `<ErrorBoundary>` in `main.tsx` (catch-all 500 page renders `<ErrorScreen>`), view boundary around `<Outlet />` in `AppLayout` with `resetKeys={[pathname]}`, chrome boundary around `<BottomBar />` so the static Report button stays reachable when other shell elements crash. All boundaries forward to Sentry via the `captureBoundary` adapter, which preserves the React component stack.
+10. Per-view DB loading via `<DatabaseGate>`: top-level `LoadingGate` removed. Views that need `ddo.db` opt into the wrapper; Settings, Characters, and Landing render instantly. `DatabaseGate` shows a skeleton during load and a categorized `<ErrorScreen>` on failure with Retry + Clear-Cached buttons. After 3 retries (sessionStorage) Retry escalates and disables; the counter resets on successful load.
+11. `<ErrorScreen>` + `<ErrorCard>` components: full-page and compact inline error displays with `tone='error' | 'info'` variants, focus-on-mount + `role="alert"` (ErrorScreen), `role="status" aria-live="polite"` (ErrorCard). Used by all four boundary tiers + DatabaseGate + NotFoundView.
+12. Bottom-bar "Report a bug" button: replaces nothing — `BuildInfo` stays on the left (load-bearing on tablet/mobile where the nav collapses); the button sits on the right clustered next to `WarningStatus`. lucide `Bug` icon, mobile collapse to icon-only, `aria-label="Report a bug — opens GitHub issue"`. Click opens a pre-filled GitHub issue in a new tab with sanitized URL + UA + (when Sentry is configured) most-recent event ID + replay correlation.
+13. GitHub issue helper at `src/lib/githubIssue.ts`: `REPO_URL`, `buildIssueUrls(error?, labels?, contextTitle?, sentryContext?)`, `sanitizeUrl()` (strips query + hash). Per-source labels: `db-loading`, `runtime`, `not-found`. Body template prompts users with "What did you notice / What were you doing / Expected vs actual" so reports come back with usable context.
+14. `NotFoundView`: 404 page for unknown routes — TanStack Router already routes unknown paths here; this phase upgrades the visual chrome to `<ErrorScreen tone='info'>` with the sanitized attempted path, "Go to landing", and "Report broken link" actions. Empty-path fallback when sanitized pathname is `/`.
 
 ### Phase 4: Debug / Data Browser
 15. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets

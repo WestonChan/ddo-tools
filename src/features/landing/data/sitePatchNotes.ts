@@ -5,6 +5,16 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-04-28',
+    changes: [
+      'Add Sentry error capture with session replay (when DSN configured)',
+      'Per-view database loading: Settings, Characters, and Landing render instantly',
+      'Real 404 page with go-home and report-broken-link actions',
+      'Bottom-bar "Report a bug" button next to the warnings indicator',
+      'Categorized DB-load errors with Retry and Clear-Cached-Data buttons',
+    ],
+  },
+  {
     date: '2026-04-26',
     changes: [
       'Add landing page with active character card and patch notes',
