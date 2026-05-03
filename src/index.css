@@ -37,6 +37,11 @@
   /* Borders — semantic */
   --border-danger: color-mix(in srgb, var(--danger) 40%, var(--border));
 
+  /* Text — semantic. Aliased to --danger in dark mode (AA-compliant on
+     dark --bg). Light theme overrides with a darker red so danger text at
+     normal sizes meets WCAG AA on the lighter background. */
+  --text-danger: var(--danger);
+
   /* Interaction timing */
   --transition-fast: 0.15s;
   --transition-std: 0.3s;
@@ -103,6 +108,9 @@
   --tint: black;
   --accent: #8b7335;
 
+  /* Darker red for normal-size danger text on light bg (~5.5:1 contrast) */
+  --text-danger: #b91c1c;
+
   color-scheme: light;
   background: var(--bg);
 }
@@ -111,6 +119,15 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* Ensure the React root fills the viewport so percentage-height children
+   (e.g. ErrorScreen's `min-height: 100%` for the root-boundary fallback)
+   resolve against a real height. AppLayout's own `.app-shell` uses
+   `height: 100vh` directly, so this only matters when ErrorScreen
+   replaces the entire app at the root boundary. */
+#root {
+  min-height: 100vh;
 }
 
 a {

@@ -1,4 +1,14 @@
-export { useDatabase } from './useDatabase'
+export {
+  useDatabase,
+  DbError,
+  isDbError,
+  DB_ERROR_FETCH,
+  DB_ERROR_NETWORK,
+  DB_ERROR_TIMEOUT,
+  DB_ERROR_WASM,
+  DB_ERROR_SCHEMA,
+} from './useDatabase'
+export type { DbErrorKind } from './useDatabase'
 export { useLocalStorage } from './useLocalStorage'
 export { useAddRemoveInput } from './useAddRemoveInput'
 export { useTheme } from './useTheme'

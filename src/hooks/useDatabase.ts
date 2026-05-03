@@ -6,53 +6,107 @@ import sqlWasm from 'sql.js/dist/sql-wasm.wasm?url'
 const DB_URL = import.meta.env.BASE_URL + 'data/ddo.db'
 const DB_FETCH_TIMEOUT_MS = 60_000
 
+// Tagged kinds for categorizing DB load failures. Consumers (DatabaseGate)
+// switch on `err.kind` to render category-specific UI without parsing
+// free-form message strings.
+export const DB_ERROR_FETCH = 'db-fetch' as const // server responded with non-OK status
+export const DB_ERROR_NETWORK = 'db-network' as const // couldn't reach server
+export const DB_ERROR_TIMEOUT = 'db-timeout' as const // request exceeded timeout
+export const DB_ERROR_WASM = 'db-wasm' as const // WebAssembly init failed
+export const DB_ERROR_SCHEMA = 'db-schema' as const // DB loaded but schema invalid
+
+export type DbErrorKind =
+  | typeof DB_ERROR_FETCH
+  | typeof DB_ERROR_NETWORK
+  | typeof DB_ERROR_TIMEOUT
+  | typeof DB_ERROR_WASM
+  | typeof DB_ERROR_SCHEMA
+
+export class DbError extends Error {
+  readonly kind: DbErrorKind
+  constructor(kind: DbErrorKind, message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'DbError'
+    this.kind = kind
+  }
+}
+
+export function isDbError(err: unknown): err is DbError {
+  return err instanceof DbError
+}
+
 // Smoke-test the loaded DB to catch corrupt, empty, or wrong-version files
 // before the app renders with silent bad data. Checks a known table exists
 // and has at least one row.
 function validateSchema(db: Database): void {
+  let count: number | undefined
   try {
     const result = db.exec('SELECT COUNT(*) FROM items')
-    const count = result[0]?.values[0]?.[0] as number
-    if (count === 0) throw new Error('Game database is empty (0 items)')
+    count = result[0]?.values[0]?.[0] as number
   } catch (err) {
-    if (err instanceof Error && err.message.includes('0 items')) throw err
-    throw new Error(
+    throw new DbError(
+      DB_ERROR_SCHEMA,
       'Game database has an invalid schema — it may be corrupt or from an incompatible version',
+      { cause: err },
     )
+  }
+  if (count === 0) {
+    throw new DbError(DB_ERROR_SCHEMA, 'Game database is empty (0 items)')
   }
 }
 
-// Singleton promise — DB is fetched and initialized only once per successful
-// load. On failure, the singleton is reset so in-session retries (e.g., a
-// future retry UI that doesn't full-reload the page) can re-attempt.
+async function loadDb(controller: AbortController): Promise<Database> {
+  let SQL
+  try {
+    SQL = await initSqlJs({ locateFile: () => sqlWasm })
+  } catch (err) {
+    throw new DbError(
+      DB_ERROR_WASM,
+      'Browser WebAssembly support failed to initialize',
+      { cause: err },
+    )
+  }
+
+  let buffer: ArrayBuffer
+  try {
+    const r = await fetch(DB_URL, { signal: controller.signal })
+    if (!r.ok) {
+      throw new DbError(
+        DB_ERROR_FETCH,
+        `Failed to fetch DB: ${r.status} ${r.statusText}`,
+      )
+    }
+    buffer = await r.arrayBuffer()
+  } catch (err) {
+    if (err instanceof DbError) throw err
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new DbError(
+        DB_ERROR_TIMEOUT,
+        `DB fetch timed out after ${DB_FETCH_TIMEOUT_MS / 1000}s — check your connection`,
+      )
+    }
+    throw new DbError(
+      DB_ERROR_NETWORK,
+      err instanceof Error ? err.message : 'Network error',
+      { cause: err },
+    )
+  }
+
+  const db = new SQL.Database(new Uint8Array(buffer))
+  validateSchema(db)
+  return db
+}
+
+// Singleton promise — DB is fetched and initialized only once per page load.
+// Retry on failure goes through DatabaseGate's full-page reload, which destroys
+// the JS context, so an in-session reset isn't needed.
 let _dbPromise: Promise<Database> | null = null
 
 function getDb(): Promise<Database> {
   if (!_dbPromise) {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), DB_FETCH_TIMEOUT_MS)
-    _dbPromise = initSqlJs({ locateFile: () => sqlWasm })
-      .then((SQL) =>
-        fetch(DB_URL, { signal: controller.signal })
-          .then((r) => {
-            if (!r.ok) throw new Error(`Failed to fetch DB: ${r.status} ${r.statusText}`)
-            return r.arrayBuffer()
-          })
-          .then((buf) => {
-            const db = new SQL.Database(new Uint8Array(buf))
-            validateSchema(db)
-            return db
-          }),
-      )
-      .finally(() => clearTimeout(timeout))
-      .catch((err) => {
-        // Reset singleton so future callers can retry instead of re-receiving
-        // the cached rejection forever.
-        _dbPromise = null
-        throw err instanceof DOMException && err.name === 'AbortError'
-          ? new Error(`DB fetch timed out after ${DB_FETCH_TIMEOUT_MS / 1000}s — check your connection`)
-          : err
-      })
+    _dbPromise = loadDb(controller).finally(() => clearTimeout(timeout))
   }
   return _dbPromise
 }

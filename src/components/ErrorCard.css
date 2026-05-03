@@ -1,0 +1,31 @@
+.error-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-2-5);
+  background: var(--bg-danger);
+  border: 1px solid var(--border-danger);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  /* Min-height prevents layout shift when this card replaces a
+     variable-height list entry whose own height we don't know. */
+  min-height: var(--space-7);
+  box-sizing: border-box;
+}
+
+.error-card-msg {
+  font-family: monospace;
+  font-size: var(--text-xs);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error-card-report {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}

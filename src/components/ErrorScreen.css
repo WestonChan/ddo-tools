@@ -1,0 +1,61 @@
+.error-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  /* Fills the parent's height (whichever it is). Root-level usage relies
+     on `#root { min-height: 100vh }` in index.css; nested usage inside
+     `.app-content` fills that grid cell. Using 100vh here would overflow
+     past the BottomBar in the nested case. */
+  min-height: 100%;
+  padding: var(--space-8);
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+}
+
+.error-screen h1 {
+  /* h1 base size from index.css uses --text-3xl, which qualifies as
+     "large text" for WCAG (3:1 ratio threshold). --text-danger is aliased
+     to --danger in dark mode; light theme overrides with a darker red so
+     normal-size danger text passes AA when reused below. */
+  color: var(--text-danger);
+}
+
+.error-screen--info h1 {
+  color: var(--text);
+}
+
+.error-screen-detail {
+  font-family: monospace;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  max-width: 500px;
+  word-break: break-word;
+  text-align: left;
+  user-select: all;
+}
+
+.error-screen-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  max-width: 400px;
+}
+
+.error-screen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.error-screen-report {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
