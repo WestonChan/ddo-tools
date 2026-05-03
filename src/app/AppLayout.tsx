@@ -1,13 +1,42 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
-import { Outlet, useMatches } from '@tanstack/react-router'
+import { Outlet, useLocation, useMatches } from '@tanstack/react-router'
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
 import { BottomBar, type BuildWarning } from './BottomBar'
+import { ErrorCard, ErrorScreen } from '../components'
 import { useFaviconAccent, useLocalStorage } from '../hooks'
+import { captureBoundary } from '../lib/sentry'
 import { BuildSidePanel } from '../features/character'
 import './App.css'
 
 // Placeholder: no warnings until validation engine lands.
 const warnings: BuildWarning[] = []
+
+// View-level fallback: full-screen ErrorScreen with a "Try again" action
+// wired into the boundary's resetErrorBoundary via the actions render-prop.
+const ViewFallback = (props: FallbackProps): JSX.Element => (
+  <ErrorScreen
+    {...props}
+    heading="This view crashed"
+    labels="runtime"
+    actions={({ resetErrorBoundary }) => (
+      <button
+        type="button"
+        className="btn-primary"
+        onClick={resetErrorBoundary}
+      >
+        Try again
+      </button>
+    )}
+  />
+)
+
+// Chrome-level fallback: compact ErrorCard sized to the BottomBar's
+// horizontal slot. Owns the static "Report a bug" button, so a crash here
+// must collapse to a card without taking down the rest of the shell.
+const BottomBarFallback = (props: FallbackProps): JSX.Element => (
+  <ErrorCard {...props} context="bottom-bar" labels="runtime" />
+)
 
 function AppLayout(): JSX.Element {
   useFaviconAccent()
@@ -45,6 +74,7 @@ function AppLayout(): JSX.Element {
 
   const matches = useMatches()
   const showRightPanel = matches.some((m) => m.staticData.showStatsPanel)
+  const { pathname } = useLocation()
 
   return (
     <div className="app-shell">
@@ -52,13 +82,28 @@ function AppLayout(): JSX.Element {
         <AppNavBar expanded={navBarExpanded} onToggleExpanded={toggleNavBar} />
 
         <div className="app-content">
-          <Outlet />
+          {/* View-level boundary: a route-component crash collapses to an
+              ErrorScreen here without taking down the surrounding chrome.
+              resetKeys={[pathname]} auto-resets on route navigation. */}
+          <ErrorBoundary
+            FallbackComponent={ViewFallback}
+            onError={captureBoundary}
+            resetKeys={[pathname]}
+          >
+            <Outlet />
+          </ErrorBoundary>
         </div>
 
         {showRightPanel && <BuildSidePanel />}
       </div>
 
-      <BottomBar warnings={warnings} />
+      {/* Chrome boundary around BottomBar: the bar owns the static
+          "Report a bug" button (the user's last resort), so a crash
+          inside collapses to a compact ErrorCard rather than killing
+          the whole bar. */}
+      <ErrorBoundary FallbackComponent={BottomBarFallback} onError={captureBoundary}>
+        <BottomBar warnings={warnings} />
+      </ErrorBoundary>
     </div>
   )
 }
