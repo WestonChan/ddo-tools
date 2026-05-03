@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { TriangleAlert, Check, ChevronDown } from 'lucide-react'
+import { Bug, TriangleAlert, Check, ChevronDown } from 'lucide-react'
 import {
   useCharacter,
   formatClassSummary,
   formatRace,
 } from '../features/character'
+import { TooltipWrapper } from '../components'
+import { buildIssueUrls } from '../lib/githubIssue'
+import { getLastSentryContext } from '../lib/sentry'
 import './BottomBar.css'
 
 export interface BuildWarning {
@@ -23,9 +26,36 @@ export function BottomBar({ warnings }: BottomBarProps): JSX.Element {
     <div className="bottom-bar">
       <div className="bottom-bar-row">
         <BuildInfo />
-        <WarningStatus warnings={warnings} />
+        <div className="bottom-bar-actions">
+          <WarningStatus warnings={warnings} />
+          <ReportBugButton />
+        </div>
       </div>
     </div>
+  )
+}
+
+function ReportBugButton(): JSX.Element {
+  function handleClick(): void {
+    // Compute the URL on click so the most-recent Sentry event ID +
+    // replay correlation lands in the issue body (lastEventId() updates
+    // whenever Sentry captures something, but BottomBar doesn't re-render
+    // on every capture).
+    const sentryContext = getLastSentryContext()
+    const { newIssueUrl } = buildIssueUrls(undefined, [], 'User report', sentryContext)
+    window.open(newIssueUrl, '_blank', 'noopener,noreferrer')
+  }
+  return (
+    <TooltipWrapper text="Report a bug">
+      <button
+        type="button"
+        className="bottom-bar-btn hoverable bottom-bar-report"
+        onClick={handleClick}
+        aria-label="Report a bug — opens GitHub issue"
+      >
+        <Bug size={14} />
+      </button>
+    </TooltipWrapper>
   )
 }
 

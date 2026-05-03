@@ -14,6 +14,25 @@
   gap: var(--space-4);
 }
 
+/* Right cluster: Report-a-bug + WarningStatus, grouped together so they
+   sit beside each other instead of pushing to opposite ends of the bar. */
+.bottom-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* Report-a-bug button (right cluster, icon-only). Muted by default —
+   it's an ambient feedback channel, not an alert. */
+.bottom-bar-report {
+  color: var(--text-muted);
+}
+
+.bottom-bar-report:hover {
+  color: var(--text-secondary);
+}
+
 /* Shared base for bottom bar buttons. Owns its own padding + border-radius so
    the .hoverable utility's bg lift reads as a pill around each button. */
 .bottom-bar-btn {
