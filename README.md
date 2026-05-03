@@ -27,6 +27,8 @@ cp .env.example .env
 
 Edit `.env` to match your system. The default assumes a CrossOver/Steam install on macOS.
 
+Production builds report uncaught errors to Sentry when configured. Setup is optional — see [docs/sentry.md](docs/sentry.md).
+
 ## Getting Started
 
 ### Frontend

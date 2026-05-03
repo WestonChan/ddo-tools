@@ -1,4 +1,17 @@
 import '@testing-library/jest-dom'
+import { vi } from 'vitest'
+
+// Stub @sentry/react across every test. Without this, jsdom emits noisy
+// warnings about missing browser APIs (sendBeacon etc.) and tests that
+// transitively import Sentry-using code can't easily assert capture calls.
+vi.mock('@sentry/react', () => ({
+  init: vi.fn(),
+  browserTracingIntegration: vi.fn(() => ({})),
+  replayIntegration: vi.fn(() => ({})),
+  captureException: vi.fn(),
+  lastEventId: vi.fn(() => undefined),
+  getReplay: vi.fn(() => undefined),
+}))
 
 // jsdom doesn't provide localStorage or matchMedia — stub them for tests
 if (
