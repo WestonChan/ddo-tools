@@ -69,4 +69,3 @@ scripts/diag_*.py
 # Misc
 *.log
 docs/.obsidian/
-docs/notes/*

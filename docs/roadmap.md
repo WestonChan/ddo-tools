@@ -231,6 +231,17 @@ Nav bar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to 
   - Epic/Legendary levels (21+): no class, epic feat slots only
 - Data: `classes`, `feats`, `feat_prereq_*`, `class_auto_feats`, `class_bonus_feat_slots`
 
+#### Level-Up Modal (per-level focused editor)
+- Each row in the Level Progression list has a "Level Up" button. Opens a modal showing only the decisions required at that level.
+- Modal contents (only the sections relevant to the level are shown):
+  - **Feat slots** -- heroic feat at 1/3/6/9/12/15/18, class bonus feats per `class_bonus_feat_slots`, epic feats at 21+. Each slot is a picker filtered by prereqs.
+  - **Skill points** -- ranks for skills available to the level's class, with running remaining-points counter. Cross-class skills shown dimmed.
+  - **Ability score increase** -- at levels 4/8/12/16/20 (and epic ASIs). Single +1 selector across STR/DEX/CON/INT/WIS/CHA.
+- **Interaction**: Left-click to add/select, right-click to remove (DDO convention, matches Skills grid below).
+- **Incomplete badge**: When a level has unfilled required choices, the row shows a red dot / badge. The "Level Up" button on the next incomplete level is the page's primary call-to-action.
+- Validation enforced inside the modal: feat prereqs (`feat_prereq_*`), skill pool limits (cannot go negative), ASI applied to base ability scores in the Build Header.
+- Data: `feat_slots`, `class_bonus_feat_slots`, `feat_prereq_*`, `class_skills`, `skills`
+
 #### Skills (below Classes & Feats, within same collapsible)
 - Grid layout: columns = skills, rows = levels 1-20 only (no epic skill points)
 - **Interaction**: Left-click cell to add 1 rank, right-click to remove 1 rank (follows DDO convention). Shift+click as keyboard alternative for right-click.
@@ -953,11 +964,63 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 13. GitHub issue helper at `src/lib/githubIssue.ts`: `REPO_URL`, `buildIssueUrls(error?, labels?, contextTitle?, sentryContext?)`, `sanitizeUrl()` (strips query + hash). Per-source labels: `db-loading`, `runtime`, `not-found`. Body template prompts users with "What did you notice / What were you doing / Expected vs actual" so reports come back with usable context.
 14. `NotFoundView`: 404 page for unknown routes — TanStack Router already routes unknown paths here; this phase upgrades the visual chrome to `<ErrorScreen tone='info'>` with the sanitized attempted path, "Go to landing", and "Report broken link" actions. Empty-path fallback when sanitized pathname is `/`.
 
-### Phase 4: Debug / Data Browser
-15. 2-panel data browser (picker + detail) for items, spells, enhancements, feats, augments, sets
-16. Wiki preview via MediaWiki API. Also add a wiki-origin health check (CORS, API reachable, schema sniff) — covers all DDO Wiki dependencies including the static `Updates` link on the landing page (see Phase 2 note 9). Replaces the manual "external links rot silently" gap left when Phase 2 deferred live-link validation.
-17. Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update, override indicators app-wide with deep-link to debug view)
-18. GitHub issue submission with duplicate detection
+### Phase 4: Resources Browser
+
+Originally a single "Debug / Data Browser" deliverable; expanded into sub-phases as the design clarified. The route is `/resources` with a "Debug" nav label (the list is power-user-leaning but useful for any player verifying parsed data against the wiki).
+
+**Phase 4a — Items browser + wiki preview (done):**
+15. 2-panel browser (picker + detail) for items only as MVP. Picker has Fuse-fuzzy search, virtualized list (react-window), and a filter row (slot, rarity-Rare, raid, stat multi-select, ML range). Detail panel renders weapon/armor stats, augment slot gems, enchantments (bonuses + effects merged), spells, upgrades, quest sources.
+16. Wiki preview via MediaWiki `action=parse&prop=text` (the `extracts` extension isn't installed on ddowiki). DOMPurify sanitizes the HTML; thumb URLs rewrite to canonical with a `?cb=ddotools` query string to bypass varnish-cached 403s; broken-image error handler hides failed loads. Wiki origin health pill is rendered in the resources header and the drawer top-bar.
+
+**Phase 4b — Drawer architecture (this phase):**
+Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
+- Detail-to-detail navigation with an in-memory back stack. Hybrid URL strategy: only depth-1 changes the URL; deeper navigation is in-memory; `closeDrawer` uses `replace` to avoid history pollution. Browser back at any depth dismisses the drawer (modal-like at depth 2+).
+- DetailBar component: back arrow (hidden at depth 1), breadcrumb (clickable to jump levels), copy-link button (shares the current top of stack — which may differ from the address bar URL at depth 2+), close-all button, wiki health pill.
+- `ResourceDetailView` component: composes `useDetailStack` + `DetailBar` + parsed-detail body + wiki preview. Reusable inline by future views (gear/build) without a drawer wrapper.
+- `DetailNavContext` lets per-category detail components push cross-links onto the stack without prop-drilling.
+
+**Phase 4c — ETL data-quality cleanup (next):**
+
+Frontend workarounds keep accumulating because the scraper stores half-processed strings. Push the cleanup back into `scripts/` so every consumer (current frontend, future tools, exports) gets clean data once. Concrete gaps:
+
+- HTML entities leak into stored strings — e.g. items.id 555 has `name = "Admiral&#39;s Gloves"` while items.id 545 has `name = "Acolyte's Lenses"`. Inconsistent: some inserts decode, some don't. Fix: HTML-unescape every `TEXT` column at insert time (one pass at the writer boundary, not per-field). Frontend currently has no decoder; once the DB is clean, none is needed.
+- `items.rarity` is universally empty (`SELECT DISTINCT rarity FROM items` → 7,249 NULL/empty rows). The picker has had a "Rare only" toggle for a while that's been silently filtering nothing, and the new `[Rare]` row chip will never render until rarity is backfilled. Likely a scraper gap — the column exists, the parser just isn't extracting it from item infoboxes.
+- `stats` table has only `(id, name, category)` — no description column. The detail view's bonus rows now show a wiki-link icon with the stat *name* as a tooltip placeholder; once stat descriptions are scraped (or hand-curated for the ~50 distinct stats DDO uses), the tooltip body should switch to the real description. This is a smaller scrape — stat pages are a bounded set, easy to enumerate.
+- Bonus descriptions contain raw MediaWiki template invocations (`{{Stat|Charisma|5}}`, `{{Elemental Resistance|Fire|30}}`) that the scraper didn't expand. Frontend strip workaround lives in [`EnchantmentList.tsx`](src/features/resources/components/detail/EnchantmentList.tsx) (`cleanDescription`). Long-term: expand templates at parse time (the templates are defined on the wiki — we have the raw definition available); fall back to stripping if expansion fails.
+- `quests.npc` column exists in the schema but is universally null (`COUNT(npc) = 0` across 681 quests). Schema comment notes "unpopulated (future: wt)". The frontend already reads it (see [`items.ts`](src/features/resources/queries/items.ts) — quest query) and renders it in the meta line; populate it from the wiki quest pages and the UI surfaces it for free.
+- Re-run the data pipeline + commit `public/data/ddo.db` after the above. Add a vitest spot-check that asserts no `&#\d+;`/`{{` patterns survive in user-visible columns of `items` / `bonuses` / `effects` / `quests` (so regressions ship loud).
+
+**Phase 4d — Filter UX overhaul (next after ETL cleanup):**
+
+Filters today are scattered across the top bar (Slot select, Pack select, Stats multi-select, ML range inputs, Rare/Raid toggles). Each new filter we add (and Phase 4d/4f bring more) makes the bar wider and harder to scan. Four changes together fix this:
+
+- **Unified filter UI.** Replace the strip of disparate controls with a single filter surface (popover or inline panel) that lists every available filter in one place. Active filters render as removable chips above the result list — visible at a glance, one-click clear. Removes the "where's the rare toggle vs the slot select" cognitive split.
+- **Tiered visibility for rarely-used filters.** Some filters (Slot, Pack, Stats, ML) get used constantly; others (per-stat to-hit, per-stat to-damage, weapon proficiency, material, binding, augment-slot color, future power-user fields) are useful occasionally and would clutter the primary surface. The unified UI groups filters into "common" (always visible) and "more" (collapsed behind a disclosure or secondary tab) so adding new filters doesn't degrade the day-to-day view. Goal: every filter we'd reasonably want is *available*, not *visible*.
+- **Searchable selects.** The Pack dropdown already has 50+ options and will grow; Stats, future Bonus-type, and future Patron filters have similar shapes. Replace the native `<select>` with a typeahead-style combobox so users can find an option by typing instead of scrolling. Stats multi-select pattern can fold into the same primitive.
+- **Per-raid filter.** Today "Raid" is a boolean toggle (any raid) and pack is a separate dropdown — neither lets the user filter to a *specific* raid. Add a Raid filter (combobox listing the entries in `RAID_QUEST_NAMES`) so "show me items that drop from Tower of the Twelve" works directly. The boolean "any raid" toggle can stay as a quick-access shortcut alongside the per-raid select, or fold into "Raid: Any" inside the unified UI.
+
+Concrete rarely-used filters to seed the "more" group with at launch:
+- **To-hit by stat** — "show items that grant a to-hit bonus from <Stat>". Useful for builds that swap which stat drives weapon attack rolls (e.g. Finesse builds wanting Dex-based to-hit gear). Backing data lives in `bonuses` rows scoped to the to-hit stat-mod.
+- **To-damage by stat** — same shape, different relation. "Items that grant to-damage from <Stat>" for stat-swapped damage builds.
+- Materials/binding/augment-slot color filters can fold into the same group as they ship.
+
+Out of scope: filter persistence (that's Phase 4g), saving named filter presets (later).
+
+**Phase 4e — Stat DB Rework (next, before Categories):**
+Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes each bonus to a first-class DB row and adds a `bonus_alias` table so user input (typos, alternate names) can resolve to canonical stats. Required before Phase 4f Categories ships a first-class stats category, and before Phase 5+ Resource Report View can offer alias-aware search in the bonus editor.
+- Promote bonuses to their own table so each bonus is a queryable row (currently bonuses live as denormalized fields per item/feat/etc.)
+- Add `bonus_alias` table mapping freeform aliases (typos, alternate spellings, common shorthand) to canonical bonus rows; powers fuzzy search in user-facing bonus selectors
+
+**Phase 4f — Categories:**
+17. Wire feats, enhancements, a new bonuses category, and a new stats category into the picker. Each gets its own query layer + detail component. Bonuses category surfaces backlinks to items/augments/enhancements/sets that apply them. Once stats are a first-class category, swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushDetail({ category: 'stats', id })` so the inspector navigates *inside* our app — keeps users in the same view, builds the same cross-link affordance bonuses already have between items/feats/etc.
+
+**Phase 4g — Polish:**
+18. Filter persistence per category via `useLocalStorage`. Expand Fuse search to material/binding/item_category.
+19. **Convert the picker to a true sortable table.** Today's picker is a virtualized stacked list: each row shows the name on top and meta fields (`ML · Slot · Pack`) inline below. That works at narrow widths but can't be sorted or column-aligned. Phase 4g reshapes it into a virtualized table with explicit columns (Name, ML, Slot, Pack, Rarity-or-Raid chip, etc.) and clickable column headers that toggle ascending/descending sort. Browse mode (wider picker) is the right home for this since the table needs horizontal space the drawer-sliver doesn't have. Stacked-list view stays as the narrow-mode fallback. The current chips (Raid/Rare) collapse into either a dedicated column or remain as inline name decorations — decide when implementing.
+
+**Deferred to later phases:**
+- Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update) — depends on Phase 5's `user.db`.
+- GitHub issue submission with duplicate detection — see [docs/notes/Resource Report View.md](notes/Resource%20Report%20View.md). Depends on Phase 4e (Stat DB Rework) for the bonus-alias search inside the editor, and Phase 5 (`user.db`) for local override storage.
 
 ### Phase 5: Characters View & Build Context
 
@@ -983,6 +1046,7 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 ### Phase 7: Build Plan (single scrollable page)
 32. Build header (race, point buy, base stats, tomes)
 33. Level progression (classes/feats + skills)
+33b. Level-Up modal (per-level feat picker, skill allocator, ability score increase) with prereq + pool validation and incomplete-level badges on the level row.
 34. Spells (card display + picker modal)
 35. Enhancements (N-tree side-by-side, DDO layout)
 36. Reaper enhancements
@@ -990,6 +1054,7 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 38. Wire nav bar Build Plan sub-items to `scrollIntoView()` anchors for each section (Level Plan, Skills, Spells, Enhancements, Reaper, Destinies). Active sub-item tracks scroll position.
 
 ### Phase 8: Gear
+Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets).
 39. Full overview + side-by-side slot editor
 40. Item search with stacking indicators
 41. Augment/filigree/crafting/upgrade inline
@@ -997,6 +1062,7 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 43. Gear set management (per-build + standalone)
 
 ### Phase 9: Comparison Mode
+Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets).
 44. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
 45. Comparison display for stats panel, build overview, and gear
 46. Swap button + "What if" copy workflow
