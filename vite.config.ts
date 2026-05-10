@@ -40,6 +40,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
+    // Vitest: only `.test.{ts,tsx}` co-located in src/. `.spec.ts` is reserved
+    // for Playwright E2E specs in e2e/ — see docs/testing.md.
+    include: ['**/*.test.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**'],
   },
 })
