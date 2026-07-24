@@ -35,6 +35,7 @@ export {
 } from './Icons'
 export { Tooltip, TooltipWrapper } from './Tooltip'
 export type { TooltipPlacement } from './Tooltip'
+export { WikiLinkIcon } from './WikiLinkIcon'
 export { ErrorScreen } from './ErrorScreen'
 export type { ErrorScreenProps } from './ErrorScreen'
 export { ErrorCard } from './ErrorCard'

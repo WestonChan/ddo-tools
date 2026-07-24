@@ -1,0 +1,20 @@
+/* Inline DDO Wiki cross-reference icon. Sits next to text content (bonus
+   names, quest names, etc.) and is intentionally low-key in resting state
+   so a list of rows isn't visually dominated by repeated link affordances —
+   color picks up the accent on hover to signal interactivity. */
+.wiki-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-0-5);
+  transition: color var(--transition-fast);
+}
+
+.wiki-link-icon:hover,
+.wiki-link-icon:focus-visible {
+  color: var(--accent);
+  outline: none;
+}
