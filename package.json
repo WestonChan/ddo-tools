@@ -18,10 +18,12 @@
   "dependencies": {
     "@sentry/react": "^10.50.0",
     "@tanstack/react-router": "^1.168.23",
+    "fuse.js": "^7.3.0",
     "lucide-react": "^1.8.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-error-boundary": "^6.1.1",
+    "react-window": "^2.2.7",
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
