@@ -2,7 +2,9 @@
 
 ## Context
 
-All 5 pre-frontend gate audits are complete. The DB has 78 tables, 9,452 items, 810 feats, 3,146 enhancements, 480 spells, 25 classes, 29 races. The existing frontend has solid character/past-life management but gear, enhancements, destinies, level planning, and stats computation are all placeholders. This plan defines the overall UI structure, navigation, and feature modules.
+The DB has 78 tables, 7,249 items, 810 feats, 3,146 enhancements, 480 spells, 25 classes, 29 races. This document defines the overall UI structure, navigation, and feature modules, and is the single source of truth for what ships and when.
+
+**Where to start**: the **Phase status** table under `## Implementation Order` names the one phase that is next. Read that first — the sections above it are feature specs, not work orders.
 
 ---
 
@@ -57,15 +59,15 @@ Comparing active:
 - **Compare active**: Second line appears `vs Wizard TR [swap][x]`. `[swap]` flips primary/comparison. `[x]` deactivates.
 - **Bottom bar**: Build warning indicator. Collapsed: `[!] 3 warnings`. Expands to show details with clickable links to the relevant feature (e.g., "2 feat slots empty (L6, L12) [Levels]"). Zero warnings: hides or shows checkmark.
 - **No horizontal tab bar** -- nav bar IS the tab bar, giving full height to content.
-- Clean URL routing (History API): `/ddo-tools/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/debug/:entity`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
+- Clean URL routing via `@tanstack/react-router`: `/ddo-tools/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/resources/$category/$id`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
 
 ### Tech Stack
 - React 19 + TypeScript + Vite (keep existing)
 - **Zustand** -- in-memory state management. Stores are hydrated from `user.db` on load. Mutations write through to `user.db`.
-- **Clean URL routing** -- History API (`pushState` / `popstate`), no library. URLs like `/ddo-tools/build-plan`. GitHub Pages SPA support via `404.html` redirect. Use `scrollIntoView()` for Build Plan section navigation.
+- **@tanstack/react-router** -- typed route tree. Replaced the hand-rolled `useRouter` hook in Phase 1d. URLs like `/ddo-tools/build-plan`; `basePath: '/ddo-tools'` plus a `404.html` redirect for GitHub Pages SPA support. Use `scrollIntoView()` for Build Plan section navigation.
 - **@dnd-kit/sortable** -- drag/drop for sortable lists (pinned stats, spell order). Handles touch, keyboard, and accessibility.
 - **Base UI** (@base-ui/react) -- headless UI primitives for new components (spell picker, enhancement tooltips, gear popovers). Adopt incrementally; don't migrate existing working components.
-- **@tanstack/react-virtual** -- virtual scrolling for large lists (9K+ items, 800+ feats)
+- **react-window** -- virtual scrolling for large lists (7K+ items, 800+ feats)
 - **sql.js** -- in-browser SQLite for both game data (`ddo.db`, read-only) and user data (`user.db`, read/write). Run in **Web Worker** mode to avoid blocking the UI thread during gear search queries.
 - CSS modules + CSS variables (keep existing, no Tailwind)
 - **Settings** includes:
@@ -120,6 +122,7 @@ Full-page management UI for characters and builds. Accessed via the nav bar top 
   - Placeholder lives (set count, click to assign past life feats by type)
   - Planned builds (renamable, not tied to character)
   - **Past Lives**: Stacking grid + reincarnation workflow (existing PastLifeStacks + LifeHistory UI). Placeholder management: set count of undetailed lives, assign past life feats by type. Placeholders show as single row "Placeholders (N lives)" in life history.
+    - **Group by past-life type** (Heroic / Racial / Epic / Iconic) so the whole set stays visible on one screen without scrolling. Reference: ddo-builds.com splits these into tabs; tabs are one option but not required — side-by-side columns or collapsible groups also work and avoid hiding stacks behind a click. Whichever we pick, the constraint is: no vertical scrolling to see all past-life categories at a typical viewport.
 - "Edit Build" button jumps to the Levels view for the selected build
 - **Click to activate / compare**:
   - Click a build to make it the active build.
@@ -222,13 +225,17 @@ Nav bar shows "BUILD PLAN" as a collapsible group with sub-items that scroll to 
 - Point buy: `[36 v]` (28/32/36 point buy system)
 - Base ability scores: STR/DEX/CON/INT/WIS/CHA with +/- buttons, remaining points shown
 - Tomes: Per-ability tome values (+1 through +8). Inherited from character's current tome values; editable for planned builds.
-- Class split summary: `Fighter 12 / Rogue 6 / Paladin 2`
+- **Class set** (up to 3 -- DDO's per-character maximum): declare the build's classes here *before* assigning levels, e.g. `[Fighter] [Rogue] [Paladin] [+ Add class]`. This is an input, not a computed summary. Reference: ddo-builds.com.
+  - Each chip shows its current level count: `Fighter 12 / Rogue 6 / Paladin 2`. Counts stay derived from the level rows.
+  - **Swap a class in place**: changing a chip from Rogue to Ranger remaps *every* level assigned to Rogue in one action, instead of editing six dropdowns. This is the main thing our current builder can't do. Prompt before applying when the swap invalidates dependent choices, and list what breaks (feats losing prereqs, skills becoming cross-class, enhancement trees no longer available) rather than silently dropping them.
+  - **Removing a class** with levels assigned requires resolving those levels first (reassign or delete) -- never orphan them.
 
 #### Level Progression (collapsible, contains Classes/Feats + Skills)
 - Vertical list of levels, each row showing:
   - Level number, class dropdown (heroic 1-20 only), feat slots
   - Ability score increase every 4 levels
   - Epic/Legendary levels (21+): no class, epic feat slots only
+- **The class dropdown lists only the declared class set**, not all 25 classes -- picking from 3 entries is a click instead of a scroll-and-search. Offer an escape hatch ("Other class…") that opens the full list and adds it to the class set if there's room, so the filtered list never becomes a dead end.
 - Data: `classes`, `feats`, `feat_prereq_*`, `class_auto_feats`, `class_bonus_feat_slots`
 
 #### Level-Up Modal (per-level focused editor)
@@ -336,6 +343,7 @@ Grayed = prereqs not met or tier locked
 - **Remove tree**: Right-click tree header or X button (resets AP in that tree).
 - **Interaction**: Left-click adds rank, right-click removes (DDO pattern). Locked abilities grayed.
 - **Hover tooltip**: Name, description per rank, prereqs, AP cost.
+- **Visual treatment**: Render trees natively with our own design tokens (`--accent`, tier bands, rank pips) rather than embedding wiki screenshots. Reference: ddo-builds.com's enhancement trees read as part of their site rather than as pasted images — match that. Node icons come from extracted game icons where available, falling back to a typographic/initial treatment; a screenshot of a wiki tree is never the shipped UI. Must work under any accent color and both themes.
 - **AP pools**: Heroic (80 max, 4/level), Racial (up to 18 from racial TRs + tomes), Universal (up to 3 from tomes). Shown in bottom bar.
 - **Tome settings**: Universal Enhancement tome (+1/+2/+3 universal AP) and Racial AP tomes editable inline next to the AP bar. Also editable on the Characters view (persists per character, inherited by builds like ability tomes).
 - Data: `enhancement_trees`, `enhancements`, `enhancement_prereqs`, `enhancement_prereq_classes`, `enhancement_tree_ap_thresholds`, `enhancement_bonuses`
@@ -356,7 +364,7 @@ Grayed = prereqs not met or tier locked
 Two states:
 
 **Gear sets are independent from builds:**
-- Gear sets are saved separately (named, stored in localStorage). Can be shared across builds.
+- Gear sets are saved separately (named, stored in `user.db` -- see the Persistence section). Can be shared across builds.
 - A build can reference multiple gear sets (e.g., "Melee set", "Casting set", "Tanking set").
 - Gear set selector at top of gear view: `[Melee Set v] [Casting Set] [+ Add set]`
 - Active gear set feeds into stats computation. Switching gear sets updates stats panel immediately.
@@ -532,7 +540,7 @@ The landing page for a build -- shows everything at a glance and lets you config
 - Spells, active feat attacks, enhancement attacks/SLAs, item clickies
 - Each shown as a card: name, type, min/max/avg damage, save/DC, cost, cooldown
 - Click any card to open Damage Calculator (TOOLS) with that ability pre-selected for full breakdown
-- All abilities shown by default. Click `[x]` on a card to hide it. Hidden abilities remembered per build in localStorage.
+- All abilities shown by default. Click `[x]` on a card to hide it. Hidden abilities remembered per build in `user.db` (`ui_state`).
 - **Source attribution**: Each card/pill shows where it comes from (e.g., "Fighter Lv6", "Kensei T3", "Boots of Speed clickie"). If the same ability is granted by multiple sources, show all sources with a duplicate indicator and stacking note.
 - **Ability picker**: Click `[+ Show hidden abilities]` to open picker (like spell picker modal). Shows all available abilities with hidden ones marked `[+]` to re-add. Categorized by source (spells/feats/items/enhancements).
 
@@ -617,8 +625,8 @@ The landing page for a build -- shows everything at a glance and lets you config
 +-------------------------------+
 ```
 
-- **Active bonuses**: Source name, bonus type, value
-- **Suppressed bonuses**: Same-type lower bonuses shown struck through
+- **Active bonuses**: Source name, bonus type, value. The source must name the **specific** provider — "Celestial Ruby Ring", "Kensei T3", "Greater Heroism" — not just the slot or category. The ASCII sketch above abbreviates to fit; the real popover spells the source out. This is what makes the breakdown auditable, and it comes free from the engine's `{ value, sources[] }` return shape (reference: ddo-builds.com's per-stat source breakdown).
+- **Suppressed bonuses**: Same-type lower bonuses shown struck through, each naming the item that suppressed it
 - **Missing bonus types**: Explicitly listed
 
 ### Compare mode in Stats Panel
@@ -696,6 +704,8 @@ baseStats(race, pointBuy, tomes, levelUps)
 ## Persistence (user.db -- SQLite)
 
 All user data lives in a second SQLite database (`user.db`) managed by sql.js. The game data DB (`ddo.db`) is read-only. `user.db` is persisted to IndexedDB between sessions. Import/export = download/upload the `user.db` file.
+
+**This section supersedes any earlier mention of localStorage for user data.** The feature specs above predate the `user.db` design; where they disagree, this section wins. localStorage remains correct only for pre-`user.db` preferences that have not migrated yet (theme, accent color).
 
 **Schema** (relational, mirrors the game DB pattern):
 ```sql
@@ -823,10 +833,10 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
 - Each sub-view is a 2-panel layout:
   - **Left panel**: Searchable/filterable picker list for that entity type
   - **Right panel**: Selected entity detail -- wiki link (opens in new tab for easy comparison), description, and all bonuses/effects this entity applies
-- **Wiki preview**: Right panel embeds the wiki page content inline (fetched via MediaWiki API `action=parse`). Our parsed data shown above, wiki content below -- makes mismatch spotting trivial. Also has "Open wiki in new tab" link.
+- **Wiki compare window**: Inline embedding is impossible -- ddowiki.com put its entire origin (`api.php` included) behind AWS WAF's JS bot challenge, and only top-level navigation clears it. Superseded by the shared right-half compare window shipped in Phase 4b: every wiki click re-navigates one window, so our parsed data sits beside the wiki page for mismatch spotting. Details in [ddowiki-api.md](ddowiki-api.md).
 - **Inline corrections**: When a mismatch is spotted, click "Edit" on any bonus/effect to correct it inline. Changes:
   - Applied to local DB immediately (user's copy is fixed)
-  - Accumulated in a corrections log (stored in localStorage)
+  - Accumulated in a corrections log (stored in `user.db`)
   - Corrections log exportable as JSON file
   - Exported JSON matches the `overrides.json` format used by the data pipeline
   - **Submit correction button**: Per-item. Opens a pre-filled GitHub issue URL (`/issues/new?title=Data+correction:+Item+Name&body=...&labels=data-correction`). The user's own GitHub session handles auth (zero infrastructure needed). The pre-filled body includes the correction JSON and item context. GitHub Action on issue creation:
@@ -862,61 +872,93 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
 
 ## File Structure
 
+For where code lives **today**, read `.claude/rules/frontend.md` (feature-module list and dependency
+direction) rather than this section — it loads automatically when editing `src/`. Listed below are
+only the modules that do **not exist yet**, so this section shrinks to nothing as phases ship.
+
 ```
-src/
-  app/
-    App.tsx, AppNavBar.tsx           -- modified (feature nav bar)
-  features/
-    character/                       -- EXISTING (enhance for Characters view + past lives)
-    build-plan/                      -- NEW (single scrollable page)
-      components/ BuildPlanView, BuildHeader,
-                  LevelProgression, LevelRow, FeatPicker,
-                  SkillGrid, SpellSection, SpellPicker,
-                  EnhancementSection, EnhancementTree, EnhancementNode,
-                  ReaperSection, DestinySection, TwistOfFateBar
-      hooks/ useLevelPlan, useFeats, useSpells, useEnhancementTrees, useEnhancements
-      types.ts
-    build-overview/                  -- NEW
-      components/ BuildOverview, FeatList, AbilityCard, AbilityPicker,
-                  BuffSection, BuffToggle, StanceGroup
-      hooks/ useAbilities, useBuffs
-      types.ts
-    gear/                            -- EXTEND existing
-      components/ GearView, GearOverview, GearSlot, SlotEditor,
-                  ItemSearchPanel, ItemRow, ItemDetail,
-                  AugmentPicker, FiligreePicker, SetBonusDisplay, GearStatsPanel
-      hooks/ useItems, useAugments, useFiligrees, useSetBonuses, useGear
-      types.ts
-    stats/                           -- NEW (extracted from character)
-      components/ StatsPanel, StatsTab, FeatsTab,
-                  StatRow, StatBreakdownPopover
-      engine/ computeStats.ts, bonusStacking.ts, statSources.ts
-      hooks/ useStats, useCompare
-      types.ts
-    debug/                           -- NEW
-      components/ DebugView, EntityPicker, EntityDetail, WikiPreview,
-                  InlineEditor, CorrectionLog
-      hooks/ useEntitySearch, useWikiPreview, useCorrections
-      types.ts
-    build/                           -- NEW (cross-cutting build state)
-      BuildContext.tsx
-      types.ts
+src/features/
+  build-plan/                        -- Phase 7 (single scrollable page)
+    components/ BuildPlanView, BuildHeader,
+                LevelProgression, LevelRow, FeatPicker,
+                SkillGrid, SpellSection, SpellPicker,
+                EnhancementSection, EnhancementTree, EnhancementNode,
+                ReaperSection, DestinySection, TwistOfFateBar
+    hooks/ useLevelPlan, useFeats, useSpells, useEnhancementTrees, useEnhancements
+    types.ts
+  build-overview/                    -- Phase 12
+    components/ BuildOverview, FeatList, AbilityCard, AbilityPicker,
+                BuffSection, BuffToggle, StanceGroup
+    hooks/ useAbilities, useBuffs
+    types.ts
+  stats/                             -- Phase 6 (extracted from character)
+    components/ StatsPanel, StatsTab, FeatsTab,
+                StatRow, StatBreakdownPopover
+    engine/ computeStats.ts, bonusStacking.ts, statSources.ts
+    hooks/ useStats, useCompare
+    types.ts
+
+src/stores/                          -- Phase 5 (Zustand, hydrated from user.db)
 ```
+
+Existing modules that later phases extend: `features/character/` (Characters view + past lives,
+Phase 5), `features/gear/` (Phase 8), `features/resources/` (Phase 4c-4g), `features/settings/`
+(Phase 13). The Phase 4 Resources browser shipped as `features/resources/`, not the
+`features/debug/` originally planned here.
 
 ---
 
 ## Implementation Order
 
-### Phase 1: Layout Restructuring (done)
-1. Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
-2. Nav bar top build dropdown (compare-active indicator added in Phase 9)
-3. Clean URL routing (History API + 404.html SPA redirect)
-4. Bottom warning bar (collapsed indicator)
-5. DB loading gate (skeleton UI until `ddo.db` ready)
-6. Service worker for `ddo.db` caching (stale-while-revalidate)
+### Phase status
 
-### Phase 1b: CSS Refactor (branch: `css-refactor`)
-Companion to Phase 1 — design-system token infrastructure. Can merge independently.
+Exactly one row is `→ NEXT`. **When a phase ships, mark it `done` and move `→ NEXT` in the same
+commit** (per `CLAUDE.md`) — this table is the only place order is recorded, so it cannot contradict
+itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
+
+| Phase | Status | What |
+|---|---|---|
+| 1 | done | Layout restructuring -- feature nav, routing, bottom bar, DB loading gate |
+| 1b | done | CSS refactor -- design-system tokens |
+| 1c | done | Explicit function return types (ESLint rule) |
+| 1d | done | Router migration to `@tanstack/react-router` |
+| 1e | done | Transparent pip fills (Character view) |
+| 2 | done | Landing view + site patch notes |
+| 3 | done | Error reporting & resilience -- Sentry, boundaries, `DatabaseGate` |
+| 4a | done | Resources browser -- items picker + detail |
+| 4b | done | Resources drawer architecture + wiki compare window |
+| **4h** | **→ NEXT** | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` (~30 lines) |
+| 4i | planned | `<Modal>` primitive consolidation |
+| 4c | planned | ETL data-quality cleanup (Python pipeline) |
+| 4d | planned | Filter UX overhaul |
+| 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
+| 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
+| 4g | planned | Polish -- filter persistence, sortable picker table |
+| 5 | planned | Characters view & build context -- `user.db`, Zustand stores |
+| 5b | planned | Resource Report View -- inline corrections + issue submission (requires 5) |
+| 6 | planned | Stats engine |
+| 7 | planned | Build Plan (single scrollable page) |
+| 8 | planned | Gear |
+| 9 | planned | Comparison mode |
+| 10 | planned | Farm checklist |
+| 11 | planned | DB pipeline -- SLAs, abilities, purchasable augments |
+| 12 | planned | Build Overview |
+| 13 | planned | Settings view cleanup |
+| 14 | planned | Build sharing via URL |
+
+Phases 4h and 4i are general frontend cleanup rather than Resources-browser work; they sit under
+Phase 4 only because they surfaced during it. Ordered first because both are small and self-contained.
+
+### Phase 1: Layout Restructuring (done)
+- Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
+- Nav bar top build dropdown (compare-active indicator added in Phase 9)
+- Clean URL routing (History API + 404.html SPA redirect) — the hand-rolled router was later replaced by `@tanstack/react-router` in Phase 1d
+- Bottom warning bar (collapsed indicator)
+- DB loading gate (skeleton UI until `ddo.db` ready)
+- Service worker for `ddo.db` caching (stale-while-revalidate)
+
+### Phase 1b: CSS Refactor (done)
+Companion to Phase 1 — design-system token infrastructure.
 
 - `color-mix()` derivatives: `--accent-glow`, `--accent-bg-subtle` track `--accent` on theme switch
 - Flush panel chrome: nav bar, bottom bar, stats panel use `--bg` + hairline border (no `--bg-panel`, no shadow)
@@ -926,10 +968,10 @@ Companion to Phase 1 — design-system token infrastructure. Can merge independe
 - Align default `--accent` with Gold theme
 - **Post-merge: verify `docs/styling.md` token table and Design Principles section match the code.** The styling guide was updated on `navigation-refactor` to describe the target state (flat chrome, color-mix, etc.) before the css-refactor code landed — confirm no drift.
 
-### Phase 1c: Explicit Return Types (branch off `main`)
+### Phase 1c: Explicit Return Types (done)
 Enable `@typescript-eslint/explicit-function-return-type` ESLint rule with `allowExpressions`, `allowTypedFunctionExpressions`, and `allowHigherOrderFunctions`. Fix all existing violations across `src/` and `e2e/`.
 
-### Phase 1d: Router Migration (branch off `main`)
+### Phase 1d: Router Migration (done)
 Replace custom `useRouter` hook with `@tanstack/react-router`. Needed before Phase 3+ which require sub-paths, search params, and navigation state.
 
 - Install `@tanstack/react-router` + `@tanstack/react-router-devtools`
@@ -941,7 +983,7 @@ Replace custom `useRouter` hook with `@tanstack/react-router`. Needed before Pha
 - Remove `src/hooks/useRouter.ts` and `useRouter.test.ts`
 - Verify all Playwright e2e tests pass (URL assertions, navigation, view switching)
 
-### Phase 1e: Transparent pip fills (Character View)
+### Phase 1e: Transparent pip fills (Character View) (done)
 Follow-up from `css-refactor-v2`. The `.stack-pip` variants in `CharacterView.css` use solid `color-mix(accent N%, bg-tertiary)` fills, plus a solid `--accent` for `.filled`. When the enclosing `.stack-row.hoverable` lifts to `--bg-subtle` on hover, the pip colors stay anchored to the unhovered row bg and read as disconnected — the "muted" pip colors were tuned against `--bg-tertiary`, not the composited hover surface underneath.
 
 - Migrate `.stack-pip.filled`, `.current-has`, `.current-has-filled`, `.locked`, and the `.pip-has-*` overlay variants to transparent accent overlays (e.g. `rgb(from var(--accent) r g b / 0.4)`) so pip colors composite over whatever row bg is currently painted — hovered or not.
@@ -950,29 +992,29 @@ Follow-up from `css-refactor-v2`. The `.stack-pip` variants in `CharacterView.cs
 - Visual QA on both themes (dark + light) + with non-default accent colors.
 
 ### Phase 2: Index / Landing View (done)
-7. Dedicated `LandingView` at `/ddo-tools/` — ampersand hero mark, active character card, site patch notes, DDO Wiki link-out. The nav bar brand doubles as a Home link (ampersand mark visible when collapsed).
-8. Site patch notes in `src/features/landing/data/sitePatchNotes.ts`. Each entry is one ship date with a bulleted list of imperative changes — no titles, no versions. **Upkeep**: when merging a PR to `main`, either add a new dated entry or append bullets to today's entry if one already exists. Keep change bullets terse and imperative (match commit-subject voice).
-9. DDO game patch notes: v1 is a link-out to DDO Wiki's `Updates` page. v2 (after Phase 4 wiki infra lands): embed the latest update summary via MediaWiki `action=parse`.
+- Dedicated `LandingView` at `/ddo-tools/` — ampersand hero mark, active character card, site patch notes, DDO Wiki link-out. The nav bar brand doubles as a Home link (ampersand mark visible when collapsed).
+- Site patch notes in `src/features/landing/data/sitePatchNotes.ts`. Each entry is one ship date with a bulleted list of imperative changes — no titles, no versions. **Upkeep**: when merging a PR to `main`, either add a new dated entry or append bullets to today's entry if one already exists. Keep change bullets terse and imperative (match commit-subject voice).
+- DDO game patch notes: v1 is a link-out to DDO Wiki's `Updates` page. The planned v2 (embed the latest update summary via MediaWiki `action=parse`) is **blocked indefinitely** — AWS WAF fronts the whole ddowiki origin including `api.php`, so no cross-origin fetch can pass. Revisit only if API access is restored (see [docs/notes/To Do.md](notes/To%20Do.md)).
 
 ### Phase 3: Error Reporting & Resilience (done)
 Infrastructure for per-view error handling. Built early so every subsequent phase gets error boundaries from day one. Sentry adopted for automatic background capture (with Session Replay); a single static "Report a bug" button in the bottom bar covers all user-initiated reports (technical, data-quality, UX feedback) via pre-filled GitHub issues. See [docs/sentry.md](sentry.md) for setup.
 
-9. ErrorBoundary infrastructure via the `react-error-boundary` npm package: root `<ErrorBoundary>` in `main.tsx` (catch-all 500 page renders `<ErrorScreen>`), view boundary around `<Outlet />` in `AppLayout` with `resetKeys={[pathname]}`, chrome boundary around `<BottomBar />` so the static Report button stays reachable when other shell elements crash. All boundaries forward to Sentry via the `captureBoundary` adapter, which preserves the React component stack.
-10. Per-view DB loading via `<DatabaseGate>`: top-level `LoadingGate` removed. Views that need `ddo.db` opt into the wrapper; Settings, Characters, and Landing render instantly. `DatabaseGate` shows a skeleton during load and a categorized `<ErrorScreen>` on failure with Retry + Clear-Cached buttons. After 3 retries (sessionStorage) Retry escalates and disables; the counter resets on successful load.
-11. `<ErrorScreen>` + `<ErrorCard>` components: full-page and compact inline error displays with `tone='error' | 'info'` variants, focus-on-mount + `role="alert"` (ErrorScreen), `role="status" aria-live="polite"` (ErrorCard). Used by all four boundary tiers + DatabaseGate + NotFoundView.
-12. Bottom-bar "Report a bug" button: replaces nothing — `BuildInfo` stays on the left (load-bearing on tablet/mobile where the nav collapses); the button sits on the right clustered next to `WarningStatus`. lucide `Bug` icon, mobile collapse to icon-only, `aria-label="Report a bug — opens GitHub issue"`. Click opens a pre-filled GitHub issue in a new tab with sanitized URL + UA + (when Sentry is configured) most-recent event ID + replay correlation.
-13. GitHub issue helper at `src/lib/githubIssue.ts`: `REPO_URL`, `buildIssueUrls(error?, labels?, contextTitle?, sentryContext?)`, `sanitizeUrl()` (strips query + hash). Per-source labels: `db-loading`, `runtime`, `not-found`. Body template prompts users with "What did you notice / What were you doing / Expected vs actual" so reports come back with usable context.
-14. `NotFoundView`: 404 page for unknown routes — TanStack Router already routes unknown paths here; this phase upgrades the visual chrome to `<ErrorScreen tone='info'>` with the sanitized attempted path, "Go to landing", and "Report broken link" actions. Empty-path fallback when sanitized pathname is `/`.
+- ErrorBoundary infrastructure via the `react-error-boundary` npm package: root `<ErrorBoundary>` in `main.tsx` (catch-all 500 page renders `<ErrorScreen>`), view boundary around `<Outlet />` in `AppLayout` with `resetKeys={[pathname]}`, chrome boundary around `<BottomBar />` so the static Report button stays reachable when other shell elements crash. All boundaries forward to Sentry via the `captureBoundary` adapter, which preserves the React component stack.
+- Per-view DB loading via `<DatabaseGate>`: top-level `LoadingGate` removed. Views that need `ddo.db` opt into the wrapper; Settings, Characters, and Landing render instantly. `DatabaseGate` shows a skeleton during load and a categorized `<ErrorScreen>` on failure with Retry + Clear-Cached buttons. After 3 retries (sessionStorage) Retry escalates and disables; the counter resets on successful load.
+- `<ErrorScreen>` + `<ErrorCard>` components: full-page and compact inline error displays with `tone='error' | 'info'` variants, focus-on-mount + `role="alert"` (ErrorScreen), `role="status" aria-live="polite"` (ErrorCard). Used by all four boundary tiers + DatabaseGate + NotFoundView.
+- Bottom-bar "Report a bug" button: replaces nothing — `BuildInfo` stays on the left (load-bearing on tablet/mobile where the nav collapses); the button sits on the right clustered next to `WarningStatus`. lucide `Bug` icon, mobile collapse to icon-only, `aria-label="Report a bug — opens GitHub issue"`. Click opens a pre-filled GitHub issue in a new tab with sanitized URL + UA + (when Sentry is configured) most-recent event ID + replay correlation.
+- GitHub issue helper at `src/lib/githubIssue.ts`: `REPO_URL`, `buildIssueUrls(error?, labels?, contextTitle?, sentryContext?)`, `sanitizeUrl()` (strips query + hash). Per-source labels: `db-loading`, `runtime`, `not-found`. Body template prompts users with "What did you notice / What were you doing / Expected vs actual" so reports come back with usable context.
+- `NotFoundView`: 404 page for unknown routes — TanStack Router already routes unknown paths here; this phase upgrades the visual chrome to `<ErrorScreen tone='info'>` with the sanitized attempted path, "Go to landing", and "Report broken link" actions. Empty-path fallback when sanitized pathname is `/`.
 
 ### Phase 4: Resources Browser
 
 Originally a single "Debug / Data Browser" deliverable; expanded into sub-phases as the design clarified. The route is `/resources` with a "Debug" nav label (the list is power-user-leaning but useful for any player verifying parsed data against the wiki).
 
-**Phase 4a — Items browser + wiki preview (done):**
-15. 2-panel browser (picker + detail) for items only as MVP. Picker has Fuse-fuzzy search, virtualized list (react-window), and a filter row (slot, rarity-Rare, raid, stat multi-select, ML range). Detail panel renders weapon/armor stats, augment slot gems, enchantments (bonuses + effects merged), spells, upgrades, quest sources.
-16. Wiki preview via MediaWiki `action=parse&prop=text` (the `extracts` extension isn't installed on ddowiki). DOMPurify sanitizes the HTML; thumb URLs rewrite to canonical with a `?cb=ddotools` query string to bypass varnish-cached 403s; broken-image error handler hides failed loads. Wiki origin health pill is rendered in the resources header and the drawer top-bar.
+#### Phase 4a — Items browser (done)
+- 2-panel browser (picker + detail) for items only as MVP. Picker has Fuse-fuzzy search, virtualized list (react-window), and a filter row (slot, rarity-Rare, raid, stat multi-select, ML range). Detail panel renders weapon/armor stats, augment slot gems, enchantments (bonuses + effects merged), spells, upgrades, quest sources.
+- Embedded wiki preview via MediaWiki `action=parse&prop=text`, with DOMPurify sanitizing and a health pill in the header. **Entirely removed in Phase 4b** — ddowiki went behind AWS WAF. Recorded here only so the compare-window decision has context; do not reinstate.
 
-**Phase 4b — Drawer architecture (this phase):**
+#### Phase 4b — Drawer architecture + wiki compare window (done)
 Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
 - Detail-to-detail navigation with an in-memory back stack. Hybrid URL strategy: only depth-1 changes the URL; deeper navigation is in-memory; `closeDrawer` uses `replace` to avoid history pollution. Browser back at any depth dismisses the drawer (modal-like at depth 2+).
 - DetailBar component: back arrow (hidden at depth 1), breadcrumb (clickable to jump levels), copy-link button (shares the current top of stack — which may differ from the address bar URL at depth 2+), close-all button.
@@ -980,24 +1022,27 @@ Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
 - `DetailNavContext` lets per-category detail components push cross-links onto the stack without prop-drilling.
 - **Wiki preview → compare window.** ddowiki.com put its entire origin (api.php included) behind AWS WAF's JS bot challenge; no embed or cross-origin fetch can pass — only top-level navigation clears it (details: [docs/ddowiki-api.md](ddowiki-api.md)). The embedded preview pane, health pill, and `pingWiki` machinery are removed; wiki links now open a shared right-half compare window (`openCompareWindow` in `src/lib/wiki/client.ts` — one window that every wiki click re-navigates), and the wiki icon sits next to the item name in `EntityHeader`. Restoring API access is an admin ask tracked in [docs/notes/To Do.md](notes/To%20Do.md).
 
-**Phase 4c — ETL data-quality cleanup (next):**
+#### Phase 4c — ETL data-quality cleanup
 
-Frontend workarounds keep accumulating because the scraper stores half-processed strings. Push the cleanup back into `scripts/` so every consumer (current frontend, future tools, exports) gets clean data once. Newly-found DB errors get logged with evidence + reproduce queries in [docs/notes/DB Errors.md](notes/DB%20Errors.md) as they surface — work through that log as part of this phase. Concrete gaps:
+Frontend workarounds keep accumulating because the scraper stores half-processed strings. Push the cleanup back into `scripts/` so every consumer (current frontend, future tools, exports) gets clean data once. Newly-found DB errors get logged with evidence + reproduce queries in [docs/notes/DB Errors.md](notes/DB%20Errors.md) and [docs/notes/Item DB Errors.md](notes/Item%20DB%20Errors.md) as they surface — work through both logs as part of this phase. Concrete gaps:
 
 - HTML entities leak into stored strings — e.g. items.id 555 has `name = "Admiral&#39;s Gloves"` while items.id 545 has `name = "Acolyte's Lenses"`. Inconsistent: some inserts decode, some don't. Fix: HTML-unescape every `TEXT` column at insert time (one pass at the writer boundary, not per-field). Frontend currently has no decoder; once the DB is clean, none is needed.
 - `items.rarity` is universally empty (`SELECT DISTINCT rarity FROM items` → 7,249 NULL/empty rows). The picker has had a "Rare only" toggle for a while that's been silently filtering nothing, and the new `[Rare]` row chip will never render until rarity is backfilled. Likely a scraper gap — the column exists, the parser just isn't extracting it from item infoboxes.
 - `stats` table has only `(id, name, category)` — no description column. The detail view's bonus rows now show a wiki-link icon with the stat *name* as a tooltip placeholder; once stat descriptions are scraped (or hand-curated for the ~50 distinct stats DDO uses), the tooltip body should switch to the real description. This is a smaller scrape — stat pages are a bounded set, easy to enumerate.
-- Bonus descriptions contain raw MediaWiki template invocations (`{{Stat|Charisma|5}}`, `{{Elemental Resistance|Fire|30}}`) that the scraper didn't expand. Frontend strip workaround lives in [`EnchantmentList.tsx`](src/features/resources/components/detail/EnchantmentList.tsx) (`cleanDescription`). Long-term: expand templates at parse time (the templates are defined on the wiki — we have the raw definition available); fall back to stripping if expansion fails.
-- `quests.npc` column exists in the schema but is universally null (`COUNT(npc) = 0` across 681 quests). Schema comment notes "unpopulated (future: wt)". The frontend already reads it (see [`items.ts`](src/features/resources/queries/items.ts) — quest query) and renders it in the meta line; populate it from the wiki quest pages and the UI surfaces it for free.
+- Bonus descriptions contain raw MediaWiki template invocations (`{{Stat|Charisma|5}}`, `{{Elemental Resistance|Fire|30}}`) that the scraper didn't expand. Frontend strip workaround lives in [`EnchantmentList.tsx`](../src/features/resources/components/detail/EnchantmentList.tsx) (`cleanDescription`). Long-term: expand templates at parse time (the templates are defined on the wiki — we have the raw definition available); fall back to stripping if expansion fails.
+- `quests.npc` column exists in the schema but is universally null (`COUNT(npc) = 0` across 681 quests). Schema comment notes "unpopulated (future: wt)". The frontend already reads it (see [`items.ts`](../src/features/resources/queries/items.ts) — quest query) and renders it in the meta line; populate it from the wiki quest pages and the UI surfaces it for free.
 - `quests` table has no `wiki_url` column (only `items` and `feats` do). The "Drops from" section's quest wiki-link icon currently derives the URL client-side from `q.name` — works for the common case but breaks on disambiguation suffixes (`Quest Name (Heroic)`) and namespaced pages. Add `quests.wiki_url`, populate it during the quest scrape, and the frontend can drop its derive-from-name fallback. Once populated, swap `WikiLinkIcon pageName={q.name}` to a URL-aware variant.
+- Effect magnitudes land in `effects.modifier` and the bonus type is discarded — the wiki's enchantment-template grammar is `{{Effect|magnitude|bonus-type}}` (e.g. `{{Incite|59|Insightful}}`), but `parse_effect_template`'s two-param branch assumes params[0] is a textual modifier. 149 `effects` rows across 30 names, reaching 613 `item_effects` rows; the UI renders the magnitude in the type-chip column. Root cause, evidence, and repro queries in [docs/notes/DB Errors.md](notes/DB%20Errors.md) (entry dated 2026-07-24).
 - `bonuses.bonus_type_id` is NULL on 782 of 4,948 rows (~16%). Some bonuses are legitimately untyped, but 16% feels high — scraper extraction is likely missing types on save-bonus rows (e.g. item 2193's "Illusion Save +6" and "Enchantment Save +6" both come back NULL). Spot-check ~10 NULL rows against the wiki to calibrate; tighten the parser regex / template handling where the wiki uses non-standard phrasing for typed bonuses. The frontend already renders NULL types as an empty grid cell, so this is purely a data-quality cleanup, not a UI gap.
 - Augment-slot extraction is partial and inconsistent across template variants. Two failure modes coexist:
   - **Template not recognized**: `item_augment_slots.slot_type` only carries augment colors (blue, colorless, green, moon, orange, purple, red, sun, yellow). Sentient slots on Legendary items (e.g. item 3582 "Legendary Calamitous Dagger") aren't extracted at all — `{{Augment|Sentient}}` is silently skipped.
   - **Template recognized but wrong table**: `{{Augment|Primary}}` / `{{Augment|Secondary}}` (Cannith upgradeable augment slots) get parsed but routed to `item_effects` with `name="UpgradeableAugment"` and the slot kind in `modifier`. E.g. item 1236 "Circle of Malevolence" has two such rows in effects instead of in augment_slots, so the frontend renders them as malformed enchantment rows ("Primary UpgradeableAugment") instead of as gems in the EntityHeader's augment-slots KV row.
   Fix in two parts: (1) expand the recognized-template set to include `Sentient`, `Primary`, `Secondary`, and any other non-color variants the wiki uses; (2) route all of them into `item_augment_slots` with appropriate `slot_type` values. The frontend already renders whatever slots come back from the query, so once the parser is corrected, the UI surfaces them correctly — no frontend change needed.
+- Audit and remove non-named items from `items`. Scoping evidence (2026-07-24): no generic base loot found by name (`Longsword`, `Dagger`, etc. → 0 rows), and the 87 rows with `wiki_url IS NULL` are **craftable base items** (Thunder-Forged, Green Steel, Alchemical — e.g. ids 7165-7174) that likely belong in the DB, so a naive "delete rows without wiki pages" would remove legitimate items. First define what counts as non-named, then audit the 87 no-wiki_url rows and the 60 `dat_id IS NOT NULL` rows; delete only confirmed junk. Reproduce: `SELECT id, name FROM items WHERE wiki_url IS NULL;`
+- Finish the wiki-only sourcing migration. The pipeline is already ~99% wiki-sourced — `item_effects` (12,550), `item_bonuses` (14,774), `enhancement_bonuses`, `set_bonus_bonuses` all report `data_source='wiki'` exclusively. Residue: 25 `augment_bonuses` rows with `data_source='binary'` (re-source from wiki augment pages or verify and keep), and the 60 `dat_id`-tagged items above (all have wiki pages, so re-sourcing is feasible). Retiring the `.dat` parser entirely is **out of 4c scope** — it still backs the icons pipeline (`ddo_data/icons/`) until the image-extraction question in [docs/notes/To Do.md](notes/To%20Do.md) is resolved. Reproduce: `SELECT data_source, count(*) FROM augment_bonuses GROUP BY data_source;`
 - Re-run the data pipeline + commit `public/data/ddo.db` after the above. Add a vitest spot-check that asserts no `&#\d+;`/`{{` patterns survive in user-visible columns of `items` / `bonuses` / `effects` / `quests` (so regressions ship loud).
 
-**Phase 4d — Filter UX overhaul (next after ETL cleanup):**
+#### Phase 4d — Filter UX overhaul
 
 Filters today are scattered across the top bar (Slot select, Pack select, Stats multi-select, ML range inputs, Rare/Raid toggles). Each new filter we add (and Phase 4d/4f bring more) makes the bar wider and harder to scan. Four changes together fix this:
 
@@ -1013,55 +1058,61 @@ Concrete rarely-used filters to seed the "more" group with at launch:
 
 Out of scope: filter persistence (that's Phase 4g), saving named filter presets (later).
 
-**Phase 4e — Stat DB Rework (next, before Categories):**
+#### Phase 4e — Stat DB Rework
+
+> **Needs spec expansion before an agent can start.** The bullet below says bonuses "currently live
+> as denormalized fields per item/feat/etc.", but `ddo.db` already has a populated `bonuses` table
+> (4,948 rows) alongside `item_bonuses` / `enhancement_bonuses`. What "promote to their own table"
+> means relative to those three existing tables is unresolved. Write out current schema -> target
+> schema, and what `bonus_alias` keys off, before picking this up.
+
 Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes each bonus to a first-class DB row and adds a `bonus_alias` table so user input (typos, alternate names) can resolve to canonical stats. Required before Phase 4f Categories ships a first-class stats category, and before Phase 5+ Resource Report View can offer alias-aware search in the bonus editor.
-- Promote bonuses to their own table so each bonus is a queryable row (currently bonuses live as denormalized fields per item/feat/etc.)
+- Promote bonuses to their own table so each bonus is a queryable row (see the blocker above -- reconcile with the existing `bonuses` / `item_bonuses` / `enhancement_bonuses` tables first)
 - Add `bonus_alias` table mapping freeform aliases (typos, alternate spellings, common shorthand) to canonical bonus rows; powers fuzzy search in user-facing bonus selectors
 
-**Phase 4f — Categories:**
-17. Wire feats, enhancements, a new bonuses category, and a new stats category into the picker. Each gets its own query layer + detail component. Bonuses category surfaces backlinks to items/augments/enhancements/sets that apply them. Once stats are a first-class category, swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushDetail({ category: 'stats', id })` so the inspector navigates *inside* our app — keeps users in the same view, builds the same cross-link affordance bonuses already have between items/feats/etc.
+#### Phase 4f — Categories
+- Wire feats, enhancements, a new bonuses category, and a new stats category into the picker. Each gets its own query layer + detail component. Bonuses category surfaces backlinks to items/augments/enhancements/sets that apply them. Once stats are a first-class category, swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushDetail({ category: 'stats', id })` so the inspector navigates *inside* our app — keeps users in the same view, builds the same cross-link affordance bonuses already have between items/feats/etc.
 
-**Phase 4g — Polish:**
-18. Filter persistence per category via `useLocalStorage`. Expand Fuse search to material/binding/item_category.
-19. **Convert the picker to a true sortable table.** Today's picker is a virtualized stacked list: each row shows the name on top and meta fields (`ML · Slot · Pack`) inline below. That works at narrow widths but can't be sorted or column-aligned. Phase 4g reshapes it into a virtualized table with explicit columns (Name, ML, Slot, Pack, Rarity-or-Raid chip, etc.) and clickable column headers that toggle ascending/descending sort. Browse mode (wider picker) is the right home for this since the table needs horizontal space the drawer-sliver doesn't have. Stacked-list view stays as the narrow-mode fallback. The current chips (Raid/Rare) collapse into either a dedicated column or remain as inline name decorations — decide when implementing.
+#### Phase 4g — Polish
+- Filter persistence per category via `useLocalStorage`. Expand Fuse search to material/binding/item_category.
+- **Item icons in the picker list.** Show each item's icon beside its name so the list is scannable by shape/colour rather than by reading every row (reference: ddo-builds.com's item list). Blocked on an icon-asset source — see the image-extraction item in [docs/notes/To Do.md](notes/To%20Do.md); resolve that first, then wire icons into both the stacked-list and sortable-table picker modes. Needs a placeholder for items with no icon and must not shift row height (virtualized list assumes fixed rows).
+- **Convert the picker to a true sortable table.** Today's picker is a virtualized stacked list: each row shows the name on top and meta fields (`ML · Slot · Pack`) inline below. That works at narrow widths but can't be sorted or column-aligned. Phase 4g reshapes it into a virtualized table with explicit columns (Name, ML, Slot, Pack, Rarity-or-Raid chip, etc.) and clickable column headers that toggle ascending/descending sort. Browse mode (wider picker) is the right home for this since the table needs horizontal space the drawer-sliver doesn't have. Stacked-list view stays as the narrow-mode fallback. The current chips (Raid/Rare) collapse into either a dedicated column or remain as inline name decorations — decide when implementing.
 
-**Phase 4h — Shared-hook state cleanup (small, no UI impact):**
+#### Phase 4h — Shared-hook state cleanup (small, no UI impact)
 
-Two shared hooks still use the `useState + useEffect` anti-pattern for
-state that's read by multiple components. Each consumer gets its own
-local state, so writes from one don't propagate to others on the next
-render. Symptoms are intermittent and easy to miss but real:
+`useTheme` ([../src/hooks/useTheme.ts](../src/hooks/useTheme.ts)) still uses the
+`useState + useEffect` anti-pattern for state read by multiple components.
+Each consumer gets its own local state, so writes from one don't propagate
+to the others on the next render: `toggle()` only updates the calling
+consumer's `setTheme`. The DOM and localStorage stay in sync via the
+effect, but any consumer reading `theme` from the hook lags until it
+re-renders for some other reason. Hidden today because most theme
+reaction happens via CSS `[data-theme]` selectors.
 
-- **`useTheme`** ([src/hooks/useTheme.ts](src/hooks/useTheme.ts)) —
-  `toggle()` only updates the calling consumer's `setTheme`. The DOM and
-  localStorage stay in sync via the effect, but other consumers reading
-  `theme` from the hook (e.g. `WikiPreview` for the iframe nightmode
-  param) lag until they re-render for some other reason. Hidden today
-  because most theme reaction is via CSS `[data-theme]` selectors.
-- **`useWikiHealth`** ([src/hooks/useWikiHealth.ts](src/hooks/useWikiHealth.ts))
-  — has a module-level `_cached` already, but each consumer's `recheck()`
-  only updates that consumer's `setStatus`. Two `WikiHealthPill` instances
-  render simultaneously (resources header + drawer DetailBar); clicking
-  recheck on one leaves the other stale.
+Fix shape: refactor to `useSyncExternalStore` against a module-level
+store, mirroring the `useDatabase` refactor that landed in Phase 4b. The
+public hook API (`{theme, toggle}`) stays identical — no call-site
+changes. Pattern is documented in
+[state-management.md](state-management.md). About 30 lines.
 
-Fix shape: refactor both to `useSyncExternalStore` against a module-level
-store, mirroring the `useDatabase` refactor that landed in Phase 4b. Public
-hook APIs (`{theme, toggle}` and `{status, recheck}`) stay identical — no
-call-site changes. Pattern is documented in
-[docs/state-management.md](docs/state-management.md). About 30 lines each.
+**Done when**: `useTheme` reads from a module store, `npx vitest run` and
+`npm run lint` pass, and toggling the theme in one component is observable
+from another without an unrelated re-render.
 
-`useFaviconAccent` audited and OK — it owns no consumer-facing state
-(pure DOM-side-effect manager via MutationObserver). Leave alone.
+Audited and deliberately left alone: `useFaviconAccent` owns no
+consumer-facing state (pure DOM-side-effect manager via MutationObserver).
+`useWikiHealth` no longer exists — Phase 4b removed the health pill and
+`pingWiki` machinery entirely.
 
-**Phase 4i — `<Modal>` primitive consolidation:**
+#### Phase 4i — `<Modal>` primitive consolidation
 
 Modal-shape UI is currently hand-rolled in two places that should share
 one base component:
 
-- **Resources drawer** ([ResourcesView.tsx](src/features/resources/ResourcesView.tsx) + [ResourcesView.css](src/features/resources/ResourcesView.css))
+- **Resources drawer** ([ResourcesView.tsx](../src/features/resources/ResourcesView.tsx) + [ResourcesView.css](../src/features/resources/ResourcesView.css))
   — drawer panel, backdrop element, Escape/backdrop-click handlers, and
   the `useModalActive(id !== null)` opt-in are all inline.
-- **`ConfirmModal`** ([src/components/ConfirmModal.tsx](src/components/ConfirmModal.tsx))
+- **`ConfirmModal`** ([../src/components/ConfirmModal.tsx](../src/components/ConfirmModal.tsx))
   — likely has its own backdrop + dismissal logic since it predates the
   drawer. Audit needed to confirm what's there.
 
@@ -1074,17 +1125,17 @@ settings modal, etc.) would re-roll the same chrome.
 **Goal:** extract a `<Modal>` (or `<Overlay>`/`<Sheet>`) primitive that
 packages:
 
-1. `useModalActive(open)` automatic opt-in while open.
-2. Backdrop element with click-to-dismiss (callable `onClose`).
-3. Escape-key handler for dismiss.
-4. Z-index from `--z-overlay` / `--z-modal` tokens.
-5. Optional focus trap (Tab cycles inside; restore focus on close). Can
-   skip the third-party `focus-trap-react` for now and do a minimal
-   implementation — first/last focusable element references + a Tab
-   handler that wraps.
-6. Slot props for header / body / footer or generic `children`.
-7. Position variant prop: `centered` (ConfirmModal style), `drawer-right`
-   (resources style), `sheet-bottom` (mobile, future).
+- `useModalActive(open)` automatic opt-in while open.
+- Backdrop element with click-to-dismiss (callable `onClose`).
+- Escape-key handler for dismiss.
+- Z-index from `--z-overlay` / `--z-modal` tokens.
+- Optional focus trap (Tab cycles inside; restore focus on close). Can
+  skip the third-party `focus-trap-react` for now and do a minimal
+  implementation — first/last focusable element references + a Tab
+  handler that wraps.
+- Slot props for header / body / footer or generic `children`.
+- Position variant prop: `centered` (ConfirmModal style), `drawer-right`
+  (resources style), `sheet-bottom` (mobile, future).
 
 **Migration scope** (in this same phase):
 
@@ -1104,106 +1155,111 @@ packages:
 - Specialized focus management library — minimal in-tree Tab-trap is
   enough for the immediate use cases.
 
-**Deferred to later phases:**
+#### Phase 5b — Resource Report View
+
+Split out of Phase 4 because both items need `user.db`. Runs after Phase 5; blocked until then.
+Detail: [docs/notes/Resource Report View.md](notes/Resource%20Report%20View.md).
+
 - Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update) — depends on Phase 5's `user.db`.
-- GitHub issue submission with duplicate detection — see [docs/notes/Resource Report View.md](notes/Resource%20Report%20View.md). Depends on Phase 4e (Stat DB Rework) for the bonus-alias search inside the editor, and Phase 5 (`user.db`) for local override storage.
+- GitHub issue submission with duplicate detection. Depends on Phase 4e (Stat DB Rework) for the bonus-alias search inside the editor, and Phase 5 (`user.db`) for local override storage.
 
 ### Phase 5: Characters View & Build Context
 
 **Persistence stack (build first):**
-19. `user.db` schema via sql.js + `initUserDb()`
-20. IndexedDB round-trip: `db.export()` to Uint8Array, debounced write-through (~200ms)
-21. `VACUUM` after schema changes or bulk imports
-22. Zustand stores (`characterStore`, `buildStore`, `gearStore`, `uiStore`) hydrated from `user.db`. Move nav bar expanded state + resize logic from `App.tsx` into `uiStore` so both App (grid columns) and AppNavBar (CSS class) read from the same source.
+- `user.db` schema via sql.js + `initUserDb()`
+- IndexedDB round-trip: `db.export()` to Uint8Array, debounced write-through (~200ms)
+- `VACUUM` after schema changes or bulk imports
+- Zustand stores (`characterStore`, `buildStore`, `gearStore`, `uiStore`) hydrated from `user.db`. Move nav bar expanded state + resize logic from `App.tsx` into `uiStore` so both App (grid columns) and AppNavBar (CSS class) read from the same source.
 
 **Features:**
-23. Character/build management, switching
-24. Past lives (stacking, placeholders, reincarnation)
-25. Tomes, import/export (export = download raw `user.db` file)
-26. Gear set management section
-27. Owned content settings
+- Character/build management, switching
+- Past lives (stacking, placeholders, reincarnation)
+- Tomes, import/export (export = download raw `user.db` file)
+- Gear set management section
+- Owned content settings
 
 ### Phase 6: Stats Engine
-28. Stats pipeline: `computeStats.ts`, `bonusStacking.ts`, `statSources.ts`
-29. `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
-30. Breakdown popover, search, pin, stat highlight
-31. Vitest unit tests for stats engine (typed/untyped stacking, derived stats, edge cases)
+- Stats pipeline: `computeStats.ts`, `bonusStacking.ts`, `statSources.ts`
+- `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
+- Breakdown popover, search, pin, stat highlight
+- Vitest unit tests for stats engine (typed/untyped stacking, derived stats, edge cases)
 
 ### Phase 7: Build Plan (single scrollable page)
-32. Build header (race, point buy, base stats, tomes)
-33. Level progression (classes/feats + skills)
-33b. Level-Up modal (per-level feat picker, skill allocator, ability score increase) with prereq + pool validation and incomplete-level badges on the level row.
-34. Spells (card display + picker modal)
-35. Enhancements (N-tree side-by-side, DDO layout)
-36. Reaper enhancements
-37. Destinies (destiny selector + twist bar)
-38. Wire nav bar Build Plan sub-items to `scrollIntoView()` anchors for each section (Level Plan, Skills, Spells, Enhancements, Reaper, Destinies). Active sub-item tracks scroll position.
+- Build header (race, point buy, base stats, tomes, class set)
+- Class set: declare up to 3 classes, per-level dropdown filtered to that set, and bulk class swap (remap every level of one class to another in a single action, with a warning listing dependent choices that break)
+- Level progression (classes/feats + skills)
+- Level-Up modal (per-level feat picker, skill allocator, ability score increase) with prereq + pool validation and incomplete-level badges on the level row.
+- Spells (card display + picker modal)
+- Enhancements (N-tree side-by-side, DDO layout)
+- Reaper enhancements
+- Destinies (destiny selector + twist bar)
+- Wire nav bar Build Plan sub-items to `scrollIntoView()` anchors for each section (Level Plan, Skills, Spells, Enhancements, Reaper, Destinies). Active sub-item tracks scroll position.
 
 ### Phase 8: Gear
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets).
-39. Full overview + side-by-side slot editor
-40. Item search with stacking indicators
-41. Augment/filigree/crafting/upgrade inline
-42. Gear stats panel (bonus type tracking)
-43. Gear set management (per-build + standalone)
+- Full overview + side-by-side slot editor
+- Item search with stacking indicators
+- Augment/filigree/crafting/upgrade inline
+- Gear stats panel (bonus type tracking)
+- Gear set management (per-build + standalone)
 
 ### Phase 9: Comparison Mode
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets).
-44. Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
-45. Comparison display for stats panel, build overview, and gear
-46. Swap button + "What if" copy workflow
-47. Unsaved build badge (red dot on nav bar build label for temp copies; reused by Phase 14 for shared builds)
-48. Past life warning for comparison
-49. Build warning calculation + bottom bar
+- Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
+- Comparison display for stats panel, build overview, and gear
+- Swap button + "What if" copy workflow
+- Unsaved build badge (red dot on nav bar build label for temp copies; reused by Phase 14 for shared builds)
+- Past life warning for comparison
+- Build warning calculation + bottom bar
 
 ### Phase 10: Farm Checklist
-50. Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
-51. Acquisition path selector per item (farm / craft / purchase)
-52. Materials summary (summed across all crafting paths, deducted when acquired)
-53. Purchasable augments (DB pipeline addition)
+- Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
+- Acquisition path selector per item (farm / craft / purchase)
+- Materials summary (summed across all crafting paths, deducted when acquired)
+- Purchasable augments (DB pipeline addition)
 
 ### Phase 11: DB Pipeline -- SLAs, Abilities, Purchasable Augments
-54. Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
-55. Schema: metamagic applicability for SLAs
-56. Schema: purchasable augments (vendor, cost, location)
-57. Wiki scraper for SLA/ability data from enhancement + feat descriptions
-58. Populate via `build_db` pipeline
+- Schema: abilities table (source, linked spell, attack type, cost, damage, modifiers)
+- Schema: metamagic applicability for SLAs
+- Schema: purchasable augments (vendor, cost, location)
+- Wiki scraper for SLA/ability data from enhancement + feat descriptions
+- Populate via `build_db` pipeline
 
 ### Phase 12: Build Overview
-59. Feats (passive + active with sources)
-60. Ability cards (min/max/avg, click -> damage calc)
-61. Buffs (spell buffs, conditionals, stances, external, stacks)
+- Feats (passive + active with sources)
+- Ability cards (min/max/avg, click -> damage calc)
+- Buffs (spell buffs, conditionals, stances, external, stacks)
 
 ### Phase 13: Settings View Cleanup
 Currently a minimal placeholder (theme + accent picker). Belongs late because knowing what *needs* a setting depends on what features exist.
 
-62. Restructure into sections: Display, Game Content, Data Management, About
-63. Wire to Zustand stores (replace direct localStorage access)
-64. Owned content settings (adventure packs / expansions)
-65. Data management (export/import `user.db`, reset, storage usage)
-66. About / metadata (version, build commit, GitHub links)
-67. Responsive layout (current `max-width: 400px` is too narrow)
-68. Audit against design-system tokens (post-css-refactor merge)
+- Restructure into sections: Display, Game Content, Data Management, About
+- Wire to Zustand stores (replace direct localStorage access)
+- Owned content settings (adventure packs / expansions)
+- Data management (export/import `user.db`, reset, storage usage)
+- About / metadata (version, build commit, GitHub links)
+- Responsive layout (current `max-width: 400px` is too narrow)
+- Audit against design-system tokens (post-css-refactor merge)
 
 ### Phase 14: Build Sharing
 
 Share builds via URL links without a backend. Complement to the file-based import/export in Phase 5.
 
 **Share codec** (`shareCodec.ts`):
-69. Encode/decode builds to URL-safe compressed strings using lz-string (`compressToEncodedURIComponent`)
-70. Use numeric DB IDs (integer PKs from `ddo.db`) instead of string slugs for compactness
-71. Version prefix (`v1:`) for future format evolution
-72. Core build fields: race, class split, feats (with level slots), enhancements, destinies, ability scores
-73. Optional tier: gear set (items + augments + filigrees) — included when total URL stays under safe limits (~2,000 chars)
+- Encode/decode builds to URL-safe compressed strings using lz-string (`compressToEncodedURIComponent`)
+- Use numeric DB IDs (integer PKs from `ddo.db`) instead of string slugs for compactness
+- Version prefix (`v1:`) for future format evolution
+- Core build fields: race, class split, feats (with level slots), enhancements, destinies, ability scores
+- Optional tier: gear set (items + augments + filigrees) — included when total URL stays under safe limits (~2,000 chars)
 
 **Share route & view**:
-74. `/ddo-tools/share?b=<compressed>` route handled by router
-75. Read-only build summary (ShareView) with "Import to My Builds" action — shared build shows unsaved badge (from step 47) until imported
-76. Graceful error state for invalid/corrupted/truncated links
+- `/ddo-tools/share?b=<compressed>` route handled by router
+- Read-only build summary (ShareView) with "Import to My Builds" action — shared build shows unsaved badge (from step 47) until imported
+- Graceful error state for invalid/corrupted/truncated links
 
 **UI**:
-77. "Copy Share Link" button in build overview or build plan view
-78. Feedback on copy success (toast or inline confirmation)
+- "Copy Share Link" button in build overview or build plan view
+- Feedback on copy success (toast or inline confirmation)
 
 **Size budget & hosting gate**: If full builds (including gear) consistently exceed ~2,000 chars after compression, explore hosting:
 - Self-hosted paste endpoint (Cloudflare Workers / Vercel serverless — free tier)
@@ -1214,9 +1270,17 @@ Share builds via URL links without a backend. Complement to the file-based impor
 
 ## Verification
 
-After each phase:
-- `npm run dev` -- verify layout renders correctly
-- Playwright screenshot verification per CLAUDE.md
+A phase is **done** when all of the following hold. Anything less stays `→ NEXT` in the status table.
+
+- `npx vitest run` + `pytest scripts/` -- all pass (both, regardless of which side you touched)
 - `npm run lint` + `npm run build` -- no errors
+- `npm run dev` -- layout renders correctly; Playwright screenshot verification per `CLAUDE.md`
 - Feature-specific: can interact with the new UI (click, search, equip)
-- **Unit tests** (vitest) for pure logic: stats engine (Phase 4), AP validation (Phase 5), feat prereqs (Phase 5), gear stacking (Phase 6), build state migrations (Phase 3), share codec round-trip (Phase 14)
+- **Status table updated in the same commit** -- phase marked `done`, `→ NEXT` moved to the next
+  phase, and any `docs/notes/` bullets it shipped marked `✅` or deleted. This step is the one that
+  has drifted before; treat it as part of the work, not cleanup.
+
+**Unit tests** (vitest) required for pure logic, by phase: `user.db` migrations (Phase 5), stats
+engine (Phase 6), AP validation + feat prereqs (Phase 7), gear stacking (Phase 8), share codec
+round-trip (Phase 14). Phase 4c additionally needs the ETL regression spot-check described in
+that phase.
