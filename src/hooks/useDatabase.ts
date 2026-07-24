@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import initSqlJs from 'sql.js'
 import type { Database } from 'sql.js'
 import sqlWasm from 'sql.js/dist/sql-wasm.wasm?url'
@@ -97,49 +97,75 @@ async function loadDb(controller: AbortController): Promise<Database> {
   return db
 }
 
-// Singleton promise — DB is fetched and initialized only once per page load.
-// Retry on failure goes through DatabaseGate's full-page reload, which destroys
-// the JS context, so an in-session reset isn't needed.
-let _dbPromise: Promise<Database> | null = null
-
-function getDb(): Promise<Database> {
-  if (!_dbPromise) {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), DB_FETCH_TIMEOUT_MS)
-    _dbPromise = loadDb(controller).finally(() => clearTimeout(timeout))
-  }
-  return _dbPromise
-}
-
 interface DatabaseState {
   db: Database | null
   loading: boolean
   error: Error | null
 }
 
+// Module-level store. The previous implementation used `useState +
+// useEffect` per consumer, which meant *every* component calling
+// `useDatabase` went through one render cycle with `db: null` before the
+// effect synced to the singleton — even when the singleton had long since
+// resolved. That manifested as DB-derived flashes on view mount
+// (breadcrumb showing "items #123" before the name resolved, "no item
+// found" briefly rendering before the row arrived).
+//
+// `useSyncExternalStore` against this module-level state fixes that: every
+// consumer reads the *current* state synchronously on first render. If the
+// DB is already loaded when a component mounts, the consumer immediately
+// gets the populated state — no lag, no flash.
+let _state: DatabaseState = { db: null, loading: true, error: null }
+const _listeners = new Set<() => void>()
+
+function notify(): void {
+  _listeners.forEach((fn) => fn())
+}
+
+function setState(next: DatabaseState): void {
+  _state = next
+  notify()
+}
+
+// Kick off the DB load once on first useDatabase call. Idempotent: repeated
+// calls skip the fetch and just subscribe to the existing module state.
+// Retry-on-failure goes through DatabaseGate's full-page reload, which
+// destroys the JS context, so an in-session reset isn't needed.
+let _kicked = false
+function ensureLoad(): void {
+  if (_kicked) return
+  _kicked = true
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), DB_FETCH_TIMEOUT_MS)
+  loadDb(controller)
+    .finally(() => clearTimeout(timeout))
+    .then((db) => setState({ db, loading: false, error: null }))
+    .catch((err) => {
+      setState({
+        db: null,
+        loading: false,
+        error: err instanceof Error ? err : new Error(String(err)),
+      })
+    })
+}
+
+function subscribe(listener: () => void): () => void {
+  _listeners.add(listener)
+  return () => {
+    _listeners.delete(listener)
+  }
+}
+
+function getSnapshot(): DatabaseState {
+  return _state
+}
+
 export function useDatabase(): DatabaseState {
-  const [state, setState] = useState<DatabaseState>({ db: null, loading: true, error: null })
-
-  useEffect(() => {
-    let cancelled = false
-
-    getDb()
-      .then((db) => {
-        if (!cancelled) setState({ db, loading: false, error: null })
-      })
-      .catch((err) => {
-        if (!cancelled)
-          setState({
-            db: null,
-            loading: false,
-            error: err instanceof Error ? err : new Error(String(err)),
-          })
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  return state
+  // First consumer triggers the load; subsequent consumers piggyback on the
+  // same module state. `useSyncExternalStore` makes the subscription render-
+  // synchronous, so first-render reads see whatever state the module has at
+  // mount time — no useState→useEffect catch-up window.
+  ensureLoad()
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 }
