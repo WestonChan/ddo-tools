@@ -10,5 +10,7 @@ export const APP_PATHS = [
   'gear',
   'damage-calc',
   'farm-checklist',
-  'debug',
+  'resources',
+  'resources/$category',
+  'resources/$category/$id',
 ] as const

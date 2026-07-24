@@ -4,7 +4,7 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
 import { BottomBar, type BuildWarning } from './BottomBar'
 import { ErrorCard, ErrorScreen } from '../components'
-import { useFaviconAccent, useLocalStorage } from '../hooks'
+import { useAnyModalActive, useFaviconAccent, useLocalStorage } from '../hooks'
 import { captureBoundary } from '../lib/sentry'
 import { BuildSidePanel } from '../features/character'
 import './App.css'
@@ -43,8 +43,12 @@ function AppLayout(): JSX.Element {
   const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-nav-bar-expanded', true)
   const [navBarExpanded, setNavBarExpanded] = useState(() => {
     const width = window.innerWidth
-    // 600-899: auto-collapse to icons. <600 and >=900: respect stored preference.
-    if (width >= 600 && width < 900) return false
+    // Anything below 900px forces the nav bar collapsed on mount, regardless
+    // of the user's stored preference. Symmetric with the resize listener
+    // below (which auto-collapses on the same threshold) — without this
+    // guard, a user who saved "expanded" on desktop would see an expanded
+    // nav on every mobile/narrow-viewport load until they resized.
+    if (width < 900) return false
     return storedExpanded
   })
 
@@ -76,10 +80,24 @@ function AppLayout(): JSX.Element {
   const showRightPanel = matches.some((m) => m.staticData.showStatsPanel)
   const { pathname } = useLocation()
 
+  // When any view registers a modal as active (resources detail drawer
+  // today, future ConfirmModal / overlays), apply `inert` to the
+  // surrounding nav bar + bottom bar so keyboard / focus / click events
+  // can't reach them while the modal is on screen. See
+  // src/hooks/useModalActive.ts for the refcounted store + docs/state-
+  // management.md for the pattern. The modal itself stays interactive
+  // because it's outside the inerted subtrees.
+  const modalActive = useAnyModalActive()
+  const inertProp = modalActive || undefined
+
   return (
     <div className="app-shell">
       <div className={`app${navBarExpanded ? '' : ' app--nav-bar-collapsed'}${showRightPanel ? '' : ' app--no-stats'}`}>
-        <AppNavBar expanded={navBarExpanded} onToggleExpanded={toggleNavBar} />
+        <AppNavBar
+          expanded={navBarExpanded}
+          onToggleExpanded={toggleNavBar}
+          inert={inertProp}
+        />
 
         <div className="app-content">
           {/* View-level boundary: a route-component crash collapses to an
@@ -102,7 +120,7 @@ function AppLayout(): JSX.Element {
           inside collapses to a compact ErrorCard rather than killing
           the whole bar. */}
       <ErrorBoundary FallbackComponent={BottomBarFallback} onError={captureBoundary}>
-        <BottomBar warnings={warnings} />
+        <BottomBar warnings={warnings} inert={inertProp} />
       </ErrorBoundary>
     </div>
   )

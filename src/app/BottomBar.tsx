@@ -19,11 +19,15 @@ export interface BuildWarning {
 
 interface BottomBarProps {
   warnings: BuildWarning[]
+  /** When `true`, the entire bottom bar becomes non-interactive — focus,
+   *  pointer, and keyboard events are suppressed. Set by AppLayout while
+   *  any modal-shape overlay (resources drawer, etc.) is active. */
+  inert?: boolean
 }
 
-export function BottomBar({ warnings }: BottomBarProps): JSX.Element {
+export function BottomBar({ warnings, inert }: BottomBarProps): JSX.Element {
   return (
-    <div className="bottom-bar">
+    <div className="bottom-bar" inert={inert}>
       <div className="bottom-bar-row">
         <BuildInfo />
         <div className="bottom-bar-actions">

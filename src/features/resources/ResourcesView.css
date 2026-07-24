@@ -1,0 +1,1038 @@
+/* Resources browser — picker list with a right-edge detail drawer. Wiki
+   access is the compare-window icon in the entity header (the embedded
+   preview died with ddowiki's bot protection — see lib/wiki/client.ts).
+   At <900px the drawer goes full-screen.
+*/
+
+.resources-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  outline: none; /* tabIndex=-1 root for keyboard handlers */
+  /* Anchor for the absolute drawer + backdrop. Making the resources-view
+     the positioned ancestor (instead of the body) lets the drawer extend
+     up over the category-tabs header too. */
+  position: relative;
+}
+
+.resources-header {
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4) 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.resources-tabs {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.resources-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  transition:
+    color var(--transition-std),
+    border-color var(--transition-std),
+    background var(--transition-std);
+}
+
+.resources-tab:hover:not(.disabled) {
+  color: var(--text);
+  background: var(--bg-subtle);
+}
+
+.resources-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.resources-tab.disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Body layout. The picker fills the body in both modes — when an item is
+   selected, the drawer is positioned absolutely on top of it (revealing
+   only a sliver on the left). In browse mode the picker has the entire
+   body to lay out filters, search, and the result list. */
+.resources-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: 'picker';
+}
+
+.resources-picker {
+  grid-area: picker;
+  border-right: 1px solid var(--border);
+  overflow: auto;
+  min-height: 0;
+}
+
+.resources-detail {
+  overflow: auto;
+  min-height: 0;
+}
+
+/* Backdrop — covers the entire viewport (including the app nav bar and
+   bottom bar) so the drawer reads as a true modal. Clicking it dismisses
+   the drawer. The drawer itself has a higher z-index so it renders above
+   the backdrop dim, leaving only the picker sliver and chrome darkened. */
+.resources-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgb(0 0 0 / 0.45);
+  border: 0;
+  cursor: pointer;
+}
+
+/* Drawer popover — anchored to the right edge of the viewport with a
+   viewport-relative width, so its size is independent of the sidebar
+   state, body container width, and BottomBar position. `position: fixed`
+   gives it three properties together: positioning relative to the
+   viewport (consistent right-edge attachment), escape from
+   `.app-content`'s `overflow: auto` clipping (drawer's overflow past the
+   container's left edge would otherwise be cut off), and clean stacking
+   in the root context (its `z-index: var(--z-modal)` reliably beats the
+   nav bar's `z-index: var(--z-nav)`).
+   `clamp(560px, 55vw, 900px)` gives a sensible width across viewport
+   sizes: a floor at 560px keeps the single detail column readable, and a
+   cap at 900px prevents the drawer from sprawling on ultra-wide monitors
+   (it was 1400px when the wiki preview pane shared the body — the pane is
+   gone, see the wiki-access note on .resources-entity-header).
+   Modal-style behavior — drawer covers the BottomBar while
+   open; close the drawer to reach "Report a bug" and warnings. */
+.resources-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: clamp(560px, 55vw, 900px);
+  z-index: var(--z-modal); /* sits above the viewport-covering backdrop */
+  background: var(--bg);
+  border-left: 1px solid var(--border-emphasis);
+  box-shadow: -8px 0 16px rgb(0 0 0 / 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.resources-drawer-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.resources-drawer-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.resources-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+
+.resources-back-btn:hover {
+  color: var(--accent);
+}
+
+/* DetailBar — populates the drawer-bar slot with the breadcrumb nav:
+   optional back arrow + "Back to <category>" crumb + one crumb per stack
+   level. Per-entity actions (copy-link, wiki, report) live in EntityHeader. */
+.resources-detail-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.resources-detail-bar-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.resources-detail-bar-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.resources-detail-bar-back:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.resources-detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.resources-detail-breadcrumb-link-wrap,
+.resources-detail-breadcrumb-current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.resources-detail-breadcrumb-sep {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.resources-detail-breadcrumb-link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: inherit;
+  font-family: inherit;
+  padding: var(--space-0-5) var(--space-1);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14em;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.resources-detail-breadcrumb-link:hover {
+  color: var(--accent);
+  background: var(--bg-subtle);
+}
+
+/* Leading "Back to <category>" crumb. Carries an arrow glyph + label and
+   doubles as the close-all action (clicks fire closeDrawer). The arrow
+   sits inline with the text so the whole crumb reads as one nav target.
+   Override `overflow: hidden` from the parent rule so the flex children
+   render without clipping; max-width: none lets the label fit naturally. */
+.resources-detail-breadcrumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  max-width: none;
+  overflow: visible;
+}
+
+.resources-detail-breadcrumb-back svg {
+  flex-shrink: 0;
+}
+
+.resources-detail-breadcrumb-current {
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Picker chrome (search input + result count) */
+.resources-picker-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.resources-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.resources-search-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  padding: var(--space-1-5) var(--space-2);
+  font-size: var(--text-sm);
+  font-family: inherit;
+}
+
+.resources-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.resources-search-count {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+/* Filter row — sits between the search input and the virtualized list.
+   Each filter is a vertical label/control pair so a wide picker row reads
+   as a tidy form, and narrow widths wrap gracefully via flex-wrap. */
+.resources-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.resources-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.resources-filter-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.resources-filter-input {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  width: 5em;
+  transition: border-color var(--transition-fast);
+}
+
+.resources-filter-input:hover {
+  border-color: var(--border-emphasis);
+}
+
+.resources-filter-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Custom-themed select. Uses `appearance: none` to drop the OS chrome,
+   then a `<SelectShell>` wrapper layers a ChevronDown icon on the right
+   so the closed state matches the rest of the site. */
+.resources-select-shell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 8em;
+}
+
+.resources-filter-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  padding: var(--space-1) var(--space-2);
+  padding-right: var(--space-6);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.resources-filter-select:hover {
+  border-color: var(--border-emphasis);
+}
+
+.resources-filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.resources-select-chevron {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+}
+
+.resources-select-shell:hover .resources-select-chevron,
+.resources-filter-select:focus + .resources-select-chevron {
+  color: var(--text);
+}
+
+/* Multi-select popover (built on <details>). Trigger looks like the other
+   selects so the row reads as one cohesive form; the popover menu drops
+   down with a checkbox per option and a Clear shortcut. */
+.resources-multiselect {
+  position: relative;
+  min-width: 8em;
+}
+
+.resources-multiselect[open] .resources-select-chevron {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.resources-multiselect-trigger {
+  /* Strip the native disclosure marker so we own the chevron. */
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-6) var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.resources-multiselect-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.resources-multiselect-trigger:hover {
+  border-color: var(--border-emphasis);
+}
+
+.resources-multiselect[open] .resources-multiselect-trigger {
+  border-color: var(--accent);
+}
+
+.resources-multiselect-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resources-multiselect-menu {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-emphasis);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+  min-width: 12em;
+}
+
+.resources-multiselect-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.resources-multiselect-item:hover {
+  background: var(--bg-subtle);
+}
+
+.resources-multiselect-item input[type='checkbox'] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.resources-multiselect-empty {
+  padding: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.resources-multiselect-clear {
+  margin-top: var(--space-1);
+  background: transparent;
+  border: 1px solid var(--border-accent);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.resources-multiselect-clear:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.resources-filter-clear {
+  align-self: flex-end;
+  background: transparent;
+  border: 1px solid var(--border-accent);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2-5);
+  font-size: var(--text-xs);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.resources-filter-clear:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Boolean filter toggle (Rare / Raid). aria-pressed drives the active state
+   so screen readers know whether the filter is on. */
+.resources-filter-toggle {
+  align-self: flex-end;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  padding: var(--space-1) var(--space-2-5);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.resources-filter-toggle:hover {
+  border-color: var(--border-emphasis);
+}
+
+.resources-filter-toggle.active {
+  background: var(--bg-accent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Active-filter chip strip — sits below the filter controls, one chip per
+   active filter dimension. Click a chip to remove that one filter. */
+.resources-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.resources-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--bg);
+  border: 1px solid var(--border-accent);
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-family: inherit;
+  padding: var(--space-0-5) var(--space-1-5);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.resources-filter-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--bg-tertiary);
+}
+
+/* Wrap that gives react-window's <List> a height to fill */
+.resources-list-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.resources-list {
+  height: 100% !important;
+}
+
+.resources-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-0-5);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  /* react-window injects `position: absolute; top/left/height` via style prop.
+     Use justify-content: center so the name+meta block sits in the middle of
+     that fixed row height — keeps the hover/active backgrounds balanced
+     instead of hugging the top of each row. */
+  box-sizing: border-box;
+}
+
+.resources-row:hover {
+  background: var(--bg-subtle);
+}
+
+.resources-row.active {
+  background: var(--bg-accent);
+  border-left: 2px solid var(--accent);
+}
+
+/* Top line of the picker row: name on the left, raid/rare chips on the
+   right. Flex layout lets the chips hug the right edge while the name
+   truncates with ellipsis if it overflows. */
+.resources-row-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.resources-row-name {
+  color: var(--text);
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resources-row-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* Small status chip (Raid / Rare). Tinted via data-kind so themes/accent
+   swaps don't hardcode hue — both colors derive from --accent or a
+   neutral so they stay legible in light/dark. */
+.resources-row-chip {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.resources-row-chip[data-kind='raid'] {
+  color: var(--accent);
+  border-color: color-mix(in oklch, var(--accent) 40%, transparent);
+  background: color-mix(in oklch, var(--accent) 10%, transparent);
+}
+
+.resources-row-chip[data-kind='rare'] {
+  color: var(--text-secondary);
+  border-color: var(--border);
+  background: var(--bg-subtle);
+}
+
+.resources-row-meta {
+  display: flex;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  min-width: 0;
+}
+
+.resources-row-meta > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Detail body — built from EntityHeader + DetailSection + StatList + KeyValueGrid. */
+.resources-detail-body {
+  padding: var(--space-4);
+}
+
+/* EntityHeader — name + copy-link/wiki/report icons + KV grid. The
+   "Back to <category>" link lives at the column root (ResourceDetailView).
+   The wiki icon opens the shared compare window (see lib/wiki/client.ts —
+   ddowiki's bot protection killed the old embedded preview pane). */
+.resources-entity-header {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.resources-entity-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-1);
+}
+
+.resources-entity-name {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+/* Inline icon button next to the item name. Tracks the title's font size
+   so the link icon scales with the heading. */
+.resources-entity-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.resources-entity-copy:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.resources-entity-copy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Rarity tints — keyed off data-rarity, themed by light/dark via accent
+   neutral so palette swaps don't break legibility. */
+.resources-entity-name[data-rarity='common'] { color: var(--text); }
+.resources-entity-name[data-rarity='uncommon'] { color: color-mix(in oklch, var(--accent) 55%, var(--text)); }
+.resources-entity-name[data-rarity='rare'] { color: color-mix(in oklch, var(--accent) 80%, var(--text)); }
+.resources-entity-name[data-rarity='epic'] { color: var(--accent); }
+.resources-entity-name[data-rarity='legendary'] { color: var(--accent); font-weight: 700; }
+
+/* KeyValueGrid — 2-col compact grid */
+.resources-kv-grid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.resources-kv-row {
+  display: contents;
+}
+
+.resources-kv-label {
+  color: var(--text-secondary);
+}
+
+.resources-kv-value {
+  color: var(--text);
+  margin: 0;
+}
+
+/* DetailSection — accent label + content slot */
+.resources-section {
+  margin-top: var(--space-4);
+}
+
+.resources-section-body {
+  font-size: var(--text-sm);
+}
+
+/* StatList — vertical label/value rows */
+.resources-stat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* Label/value rows render as a 2-column grid so values left-align under
+   a consistent column edge across the section. Earlier flex
+   `justify-content: space-between` floated values to the container's right
+   edge, which made them read as a ragged-right column rather than a clean
+   left-aligned data table. */
+.resources-stat-row {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-3);
+}
+
+.resources-stat-label {
+  color: var(--text-secondary);
+}
+
+.resources-stat-value {
+  color: var(--text);
+}
+
+/* Plain bulleted list for effects/spells/upgrades */
+.resources-flat-list {
+  list-style: disc inside;
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+/* The bonus list is the actual grid container — declaring the 3 columns
+   here (type, name, value) and having each row's head/desc adopt those
+   columns via `subgrid` is what makes column widths span across rows.
+   With the grid declared per-row, each row would size its columns
+   independently from its own cells; subgrid lets the widest cell in any
+   row set the column width for every row.
+   The name column is `minmax(0, max-content)` so it prefers max-content
+   when the container has room (no wrap, single-line rows), but can
+   shrink below min-content when the container is narrow — long names
+   then wrap inside the cell instead of forcing horizontal scroll on the
+   parent. Type + value stay `max-content` (short, fixed strings that
+   look broken if they wrap). */
+.resources-bonus-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, max-content) max-content;
+  row-gap: var(--space-2);
+  column-gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+}
+
+/* Each row is a subgrid spanning all 4 parent columns. Inside the row,
+   the head and (optional) description stack as separate grid rows with a
+   tight internal row-gap. The parent's row-gap (`space-2`) separates one
+   bonus row from the next. */
+.resources-bonus-row {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  row-gap: var(--space-0-5);
+}
+
+/* Head is another subgrid using the same 4 columns. Cells (type, name,
+   value, icon) place into the parent's column tracks, so a column's
+   width is the widest cell across the entire list — that's the vertical
+   alignment the user is after. Rows without a stat leave the 4th cell
+   empty; the icon column still claims its track width across the list. */
+.resources-bonus-head {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+  column-gap: var(--space-2);
+}
+
+.resources-bonus-name {
+  color: var(--text);
+}
+
+.resources-bonus-value {
+  color: var(--text);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Type renders as plain body text in its column rather than a chip — keeps
+   the row visually similar to the wiki's enchantment listings, which read
+   as "Enhancement Charisma +5" inline. Grid still column-aligns chips
+   vertically across rows for scanability. Muted color gives a small
+   secondary-vs-primary hierarchy (type is metadata, name+value is the
+   value the user reads first). */
+.resources-bonus-type {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.resources-bonus-description {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Quest sources — each row stacks the quest name + a muted meta line
+   ("Level X · Pack · Patron · Zone") so users can spot the where-to-go
+   info at a glance without table-grid alignment. */
+.resources-quest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.resources-quest-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.resources-quest-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.resources-quest-meta {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* Augment slot — small filled gem (rotated square) + text label.
+   Mirrors the DDO in-game representation: a colored socket gem, with the
+   color name written next to it for clarity. */
+.resources-augment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.resources-augment-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.resources-augment-gem {
+  display: inline-block;
+  /* Sized in `em` so the gem scales with the surrounding label/value font.
+     0.7em side → ~1em corner-to-corner span after 45° rotation, which
+     matches the cap height of the label text next to it. */
+  width: 0.7em;
+  height: 0.7em;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  background: var(--gem-color, var(--text-muted));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 35%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--gem-color, var(--text-muted)) 60%, transparent);
+}
+
+.resources-augment-slot[data-color='yellow']    { --gem-color: #d4a017; }
+.resources-augment-slot[data-color='blue']      { --gem-color: #3b82f6; }
+.resources-augment-slot[data-color='red']       { --gem-color: #ef4444; }
+.resources-augment-slot[data-color='purple']    { --gem-color: #a855f7; }
+.resources-augment-slot[data-color='green']     { --gem-color: #22c55e; }
+.resources-augment-slot[data-color='orange']    { --gem-color: #f97316; }
+.resources-augment-slot[data-color='colorless'] { --gem-color: var(--text-muted); }
+
+.resources-detail-description {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin-bottom: var(--space-2);
+}
+
+/* Game tooltip text — secondary to description, italicized to signal it's
+   the in-game hover string rather than the wiki blurb. */
+.resources-detail-tooltip {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: var(--space-2);
+}
+
+.resources-detail-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-6);
+}
+
+.resources-detail-empty-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Narrow viewports — drawer covers the entire viewport (nav bar and
+   BottomBar included), behaving as a full-screen modal. `inset: 0` spans
+   edge-to-edge of the screen. The backdrop hides since the drawer now
+   fully covers it — keeps the DOM lean. */
+@media (max-width: 899px) {
+  .resources-picker {
+    border-right: none;
+  }
+
+  .resources-drawer {
+    inset: 0;
+    width: auto;
+    border-left: none;
+  }
+
+  .resources-drawer-backdrop {
+    display: none;
+  }
+}

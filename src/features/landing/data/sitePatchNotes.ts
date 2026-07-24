@@ -5,6 +5,14 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-07-24',
+    changes: [
+      'Replace the embedded wiki preview with a reusable compare window — DDO Wiki added bot protection that blocks all embedding',
+      'Move the wiki link next to the item name; every wiki click updates one side-by-side window instead of stacking tabs',
+      'Give the item detail the full drawer width',
+    ],
+  },
+  {
     date: '2026-04-28',
     changes: [
       'Add Sentry error capture with session replay (when DSN configured)',

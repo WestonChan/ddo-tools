@@ -975,19 +975,26 @@ Originally a single "Debug / Data Browser" deliverable; expanded into sub-phases
 **Phase 4b — Drawer architecture (this phase):**
 Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
 - Detail-to-detail navigation with an in-memory back stack. Hybrid URL strategy: only depth-1 changes the URL; deeper navigation is in-memory; `closeDrawer` uses `replace` to avoid history pollution. Browser back at any depth dismisses the drawer (modal-like at depth 2+).
-- DetailBar component: back arrow (hidden at depth 1), breadcrumb (clickable to jump levels), copy-link button (shares the current top of stack — which may differ from the address bar URL at depth 2+), close-all button, wiki health pill.
-- `ResourceDetailView` component: composes `useDetailStack` + `DetailBar` + parsed-detail body + wiki preview. Reusable inline by future views (gear/build) without a drawer wrapper.
+- DetailBar component: back arrow (hidden at depth 1), breadcrumb (clickable to jump levels), copy-link button (shares the current top of stack — which may differ from the address bar URL at depth 2+), close-all button.
+- `ResourceDetailView` component: composes `useDetailStack` + `DetailBar` + parsed-detail body. Reusable inline by future views (gear/build) without a drawer wrapper.
 - `DetailNavContext` lets per-category detail components push cross-links onto the stack without prop-drilling.
+- **Wiki preview → compare window.** ddowiki.com put its entire origin (api.php included) behind AWS WAF's JS bot challenge; no embed or cross-origin fetch can pass — only top-level navigation clears it (details: [docs/ddowiki-api.md](ddowiki-api.md)). The embedded preview pane, health pill, and `pingWiki` machinery are removed; wiki links now open a shared right-half compare window (`openCompareWindow` in `src/lib/wiki/client.ts` — one window that every wiki click re-navigates), and the wiki icon sits next to the item name in `EntityHeader`. Restoring API access is an admin ask tracked in [docs/notes/To Do.md](notes/To%20Do.md).
 
 **Phase 4c — ETL data-quality cleanup (next):**
 
-Frontend workarounds keep accumulating because the scraper stores half-processed strings. Push the cleanup back into `scripts/` so every consumer (current frontend, future tools, exports) gets clean data once. Concrete gaps:
+Frontend workarounds keep accumulating because the scraper stores half-processed strings. Push the cleanup back into `scripts/` so every consumer (current frontend, future tools, exports) gets clean data once. Newly-found DB errors get logged with evidence + reproduce queries in [docs/notes/DB Errors.md](notes/DB%20Errors.md) as they surface — work through that log as part of this phase. Concrete gaps:
 
 - HTML entities leak into stored strings — e.g. items.id 555 has `name = "Admiral&#39;s Gloves"` while items.id 545 has `name = "Acolyte's Lenses"`. Inconsistent: some inserts decode, some don't. Fix: HTML-unescape every `TEXT` column at insert time (one pass at the writer boundary, not per-field). Frontend currently has no decoder; once the DB is clean, none is needed.
 - `items.rarity` is universally empty (`SELECT DISTINCT rarity FROM items` → 7,249 NULL/empty rows). The picker has had a "Rare only" toggle for a while that's been silently filtering nothing, and the new `[Rare]` row chip will never render until rarity is backfilled. Likely a scraper gap — the column exists, the parser just isn't extracting it from item infoboxes.
 - `stats` table has only `(id, name, category)` — no description column. The detail view's bonus rows now show a wiki-link icon with the stat *name* as a tooltip placeholder; once stat descriptions are scraped (or hand-curated for the ~50 distinct stats DDO uses), the tooltip body should switch to the real description. This is a smaller scrape — stat pages are a bounded set, easy to enumerate.
 - Bonus descriptions contain raw MediaWiki template invocations (`{{Stat|Charisma|5}}`, `{{Elemental Resistance|Fire|30}}`) that the scraper didn't expand. Frontend strip workaround lives in [`EnchantmentList.tsx`](src/features/resources/components/detail/EnchantmentList.tsx) (`cleanDescription`). Long-term: expand templates at parse time (the templates are defined on the wiki — we have the raw definition available); fall back to stripping if expansion fails.
 - `quests.npc` column exists in the schema but is universally null (`COUNT(npc) = 0` across 681 quests). Schema comment notes "unpopulated (future: wt)". The frontend already reads it (see [`items.ts`](src/features/resources/queries/items.ts) — quest query) and renders it in the meta line; populate it from the wiki quest pages and the UI surfaces it for free.
+- `quests` table has no `wiki_url` column (only `items` and `feats` do). The "Drops from" section's quest wiki-link icon currently derives the URL client-side from `q.name` — works for the common case but breaks on disambiguation suffixes (`Quest Name (Heroic)`) and namespaced pages. Add `quests.wiki_url`, populate it during the quest scrape, and the frontend can drop its derive-from-name fallback. Once populated, swap `WikiLinkIcon pageName={q.name}` to a URL-aware variant.
+- `bonuses.bonus_type_id` is NULL on 782 of 4,948 rows (~16%). Some bonuses are legitimately untyped, but 16% feels high — scraper extraction is likely missing types on save-bonus rows (e.g. item 2193's "Illusion Save +6" and "Enchantment Save +6" both come back NULL). Spot-check ~10 NULL rows against the wiki to calibrate; tighten the parser regex / template handling where the wiki uses non-standard phrasing for typed bonuses. The frontend already renders NULL types as an empty grid cell, so this is purely a data-quality cleanup, not a UI gap.
+- Augment-slot extraction is partial and inconsistent across template variants. Two failure modes coexist:
+  - **Template not recognized**: `item_augment_slots.slot_type` only carries augment colors (blue, colorless, green, moon, orange, purple, red, sun, yellow). Sentient slots on Legendary items (e.g. item 3582 "Legendary Calamitous Dagger") aren't extracted at all — `{{Augment|Sentient}}` is silently skipped.
+  - **Template recognized but wrong table**: `{{Augment|Primary}}` / `{{Augment|Secondary}}` (Cannith upgradeable augment slots) get parsed but routed to `item_effects` with `name="UpgradeableAugment"` and the slot kind in `modifier`. E.g. item 1236 "Circle of Malevolence" has two such rows in effects instead of in augment_slots, so the frontend renders them as malformed enchantment rows ("Primary UpgradeableAugment") instead of as gems in the EntityHeader's augment-slots KV row.
+  Fix in two parts: (1) expand the recognized-template set to include `Sentient`, `Primary`, `Secondary`, and any other non-color variants the wiki uses; (2) route all of them into `item_augment_slots` with appropriate `slot_type` values. The frontend already renders whatever slots come back from the query, so once the parser is corrected, the UI surfaces them correctly — no frontend change needed.
 - Re-run the data pipeline + commit `public/data/ddo.db` after the above. Add a vitest spot-check that asserts no `&#\d+;`/`{{` patterns survive in user-visible columns of `items` / `bonuses` / `effects` / `quests` (so regressions ship loud).
 
 **Phase 4d — Filter UX overhaul (next after ETL cleanup):**
@@ -1017,6 +1024,85 @@ Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes ea
 **Phase 4g — Polish:**
 18. Filter persistence per category via `useLocalStorage`. Expand Fuse search to material/binding/item_category.
 19. **Convert the picker to a true sortable table.** Today's picker is a virtualized stacked list: each row shows the name on top and meta fields (`ML · Slot · Pack`) inline below. That works at narrow widths but can't be sorted or column-aligned. Phase 4g reshapes it into a virtualized table with explicit columns (Name, ML, Slot, Pack, Rarity-or-Raid chip, etc.) and clickable column headers that toggle ascending/descending sort. Browse mode (wider picker) is the right home for this since the table needs horizontal space the drawer-sliver doesn't have. Stacked-list view stays as the narrow-mode fallback. The current chips (Raid/Rare) collapse into either a dedicated column or remain as inline name decorations — decide when implementing.
+
+**Phase 4h — Shared-hook state cleanup (small, no UI impact):**
+
+Two shared hooks still use the `useState + useEffect` anti-pattern for
+state that's read by multiple components. Each consumer gets its own
+local state, so writes from one don't propagate to others on the next
+render. Symptoms are intermittent and easy to miss but real:
+
+- **`useTheme`** ([src/hooks/useTheme.ts](src/hooks/useTheme.ts)) —
+  `toggle()` only updates the calling consumer's `setTheme`. The DOM and
+  localStorage stay in sync via the effect, but other consumers reading
+  `theme` from the hook (e.g. `WikiPreview` for the iframe nightmode
+  param) lag until they re-render for some other reason. Hidden today
+  because most theme reaction is via CSS `[data-theme]` selectors.
+- **`useWikiHealth`** ([src/hooks/useWikiHealth.ts](src/hooks/useWikiHealth.ts))
+  — has a module-level `_cached` already, but each consumer's `recheck()`
+  only updates that consumer's `setStatus`. Two `WikiHealthPill` instances
+  render simultaneously (resources header + drawer DetailBar); clicking
+  recheck on one leaves the other stale.
+
+Fix shape: refactor both to `useSyncExternalStore` against a module-level
+store, mirroring the `useDatabase` refactor that landed in Phase 4b. Public
+hook APIs (`{theme, toggle}` and `{status, recheck}`) stay identical — no
+call-site changes. Pattern is documented in
+[docs/state-management.md](docs/state-management.md). About 30 lines each.
+
+`useFaviconAccent` audited and OK — it owns no consumer-facing state
+(pure DOM-side-effect manager via MutationObserver). Leave alone.
+
+**Phase 4i — `<Modal>` primitive consolidation:**
+
+Modal-shape UI is currently hand-rolled in two places that should share
+one base component:
+
+- **Resources drawer** ([ResourcesView.tsx](src/features/resources/ResourcesView.tsx) + [ResourcesView.css](src/features/resources/ResourcesView.css))
+  — drawer panel, backdrop element, Escape/backdrop-click handlers, and
+  the `useModalActive(id !== null)` opt-in are all inline.
+- **`ConfirmModal`** ([src/components/ConfirmModal.tsx](src/components/ConfirmModal.tsx))
+  — likely has its own backdrop + dismissal logic since it predates the
+  drawer. Audit needed to confirm what's there.
+
+What `useModalActive` solved was *one half* of the modal contract:
+background-inert via refcount + `useSyncExternalStore`. The *other half*
+— backdrop, positioning, dismissal handlers, focus trap — is still
+copy-pasted per modal. Each future overlay (gear comparison sheet,
+settings modal, etc.) would re-roll the same chrome.
+
+**Goal:** extract a `<Modal>` (or `<Overlay>`/`<Sheet>`) primitive that
+packages:
+
+1. `useModalActive(open)` automatic opt-in while open.
+2. Backdrop element with click-to-dismiss (callable `onClose`).
+3. Escape-key handler for dismiss.
+4. Z-index from `--z-overlay` / `--z-modal` tokens.
+5. Optional focus trap (Tab cycles inside; restore focus on close). Can
+   skip the third-party `focus-trap-react` for now and do a minimal
+   implementation — first/last focusable element references + a Tab
+   handler that wraps.
+6. Slot props for header / body / footer or generic `children`.
+7. Position variant prop: `centered` (ConfirmModal style), `drawer-right`
+   (resources style), `sheet-bottom` (mobile, future).
+
+**Migration scope** (in this same phase):
+
+- Audit `ConfirmModal` to identify the duplicated chrome.
+- Extract the primitive in `src/components/Modal.tsx` (or similar).
+- Re-implement `ConfirmModal` on top of the primitive — should drop
+  ~50 lines of chrome and inherit dismissal/inert for free.
+- Re-implement the resources drawer on top of the primitive (variant:
+  `drawer-right`). Drops the `.resources-drawer*` CSS and the inline
+  Escape/backdrop handlers from ResourcesView.
+- The picker's local `inert` stays (it's a sibling of the drawer in the
+  same view, not chrome outside the modal).
+
+**Out of scope:**
+- Animation library / portal-based render-to-body. Drawer is already
+  position: fixed; portal is incremental, not load-bearing for behavior.
+- Specialized focus management library — minimal in-tree Tab-trap is
+  enough for the immediate use cases.
 
 **Deferred to later phases:**
 - Inline correction system (local overrides stored in `user.db`, auto-cleanup on DB update) — depends on Phase 5's `user.db`.

@@ -58,7 +58,7 @@ describe('AppNavBar', () => {
     expect(screen.getByText('Destinies')).toBeInTheDocument()
     expect(screen.getByText('Damage Calc')).toBeInTheDocument()
     expect(screen.getByText('Farm Checklist')).toBeInTheDocument()
-    expect(screen.getByText('Debug')).toBeInTheDocument()
+    expect(screen.getByText('Resources')).toBeInTheDocument()
   })
 
   it('renders character name', async () => {

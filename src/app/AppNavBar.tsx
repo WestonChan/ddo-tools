@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { Link, useLocation } from '@tanstack/react-router'
+import { Link, useMatchRoute } from '@tanstack/react-router'
 import {
   Swords,
   ShieldHalf,
@@ -12,7 +12,7 @@ import {
   Calculator,
   ListOrdered,
   ListTodo,
-  Search,
+  Library,
   PanelLeftClose,
   PanelLeftOpen,
   NotepadText,
@@ -65,7 +65,7 @@ const MAIN_NAV: NavGroupDef[] = [
     items: [
       { to: '/damage-calc', label: 'Damage Calc', Icon: Calculator },
       { to: '/farm-checklist', label: 'Farm Checklist', Icon: ListTodo },
-      { to: '/debug', label: 'Debug', Icon: Search },
+      { to: '/resources', label: 'Resources', Icon: Library },
     ],
   },
 ]
@@ -75,11 +75,22 @@ const MAIN_NAV: NavGroupDef[] = [
 interface AppNavBarProps {
   expanded: boolean
   onToggleExpanded: () => void
+  /** When `true`, the entire nav bar becomes non-interactive — focus,
+   *  pointer, and keyboard events are suppressed. Set by AppLayout while
+   *  any modal-shape overlay (resources drawer, etc.) is active. */
+  inert?: boolean
 }
 
-function AppNavBar({ expanded, onToggleExpanded }: AppNavBarProps): JSX.Element {
-  // useLocation reads the committed location; useMatchRoute reads pending, which lags after beforeLoad redirects.
-  const settingsActive = useLocation().pathname === '/settings'
+function AppNavBar({ expanded, onToggleExpanded, inert }: AppNavBarProps): JSX.Element {
+  // Test swap: useMatchRoute instead of useLocation-pathname equality.
+  // Upside: handles nested/param routes (e.g., a child path under /settings
+  // would still highlight the Settings nav item). Trade-off the original
+  // author flagged: useMatchRoute reads against the pending route tree, so
+  // during async `beforeLoad` redirects the matched route may lag the URL
+  // by a frame. Revert to `useLocation().pathname === '/settings'` if the
+  // mis-highlight is visible during transitions.
+  const matchRoute = useMatchRoute()
+  const settingsActive = !!matchRoute({ to: '/settings' })
 
   // At narrow widths the expanded nav bar is full-screen; auto-close on navigate.
   function handleNavClick(): void {
@@ -89,7 +100,7 @@ function AppNavBar({ expanded, onToggleExpanded }: AppNavBarProps): JSX.Element 
   }
 
   return (
-    <aside className={`app-nav-bar${expanded ? ' expanded' : ''}`}>
+    <aside className={`app-nav-bar${expanded ? ' expanded' : ''}`} inert={inert}>
       <div className="nav-bar-scroll">
         <Link
           to="/"
@@ -134,8 +145,12 @@ function NavGroup({
   group: NavGroupDef
   onNavClick: () => void
 }): JSX.Element {
-  const { pathname } = useLocation()
-  const matchesTo = (to: string): boolean => pathname === to
+  // `fuzzy: true` so nested paths still light up the parent (e.g.
+  // `/resources/items/123` highlights the Resources nav item, not just the
+  // exact `/resources` URL). With strict equality (the previous approach),
+  // any deep navigation would un-highlight the corresponding nav button.
+  const matchRoute = useMatchRoute()
+  const matchesTo = (to: string): boolean => !!matchRoute({ to, fuzzy: true })
   const hasActive = group.items.some((item) => matchesTo(item.to))
 
   // Precompute first index per `to` so only the first sub-item per path lights up.

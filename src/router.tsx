@@ -11,11 +11,11 @@ import { SettingsView } from './features/settings'
 import {
   BuildPlanView,
   DamageCalcView,
-  DebugView,
   FarmChecklistView,
   GearView,
   NotFoundView,
   OverviewView,
+  ResourcesView,
 } from './app/routeComponents'
 
 // Routes opt into the stats panel via staticData: { showStatsPanel: true }.
@@ -73,10 +73,26 @@ const farmChecklistRoute = createRoute({
   component: FarmChecklistView,
 })
 
-const debugRoute = createRoute({
+// Three resources routes — all render the same view, which parses
+// `category` and `id` out of the pathname via useLocation. Nested routes
+// share the component because the URL-shape branching lives inside the view
+// (see `useResourcesParams` in ResourcesView).
+const resourcesRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: 'debug',
-  component: DebugView,
+  path: 'resources',
+  component: ResourcesView,
+})
+
+const resourcesCategoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'resources/$category',
+  component: ResourcesView,
+})
+
+const resourcesItemRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'resources/$category/$id',
+  component: ResourcesView,
 })
 
 const routeTree = rootRoute.addChildren([
@@ -88,7 +104,9 @@ const routeTree = rootRoute.addChildren([
   gearRoute,
   damageCalcRoute,
   farmChecklistRoute,
-  debugRoute,
+  resourcesRoute,
+  resourcesCategoryRoute,
+  resourcesItemRoute,
 ])
 
 // Strip trailing slash from Vite's BASE_URL (`/ddo-tools/`) — TanStack expects no trailing slash.

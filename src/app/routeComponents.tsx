@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
 import { DatabaseGate, ErrorScreen } from '../components'
+import { ResourcesView as RawResourcesView } from '../features/resources'
 import { sanitizeUrl, buildIssueUrls } from '../lib/githubIssue'
 
 function Placeholder({ message }: { message: string }): JSX.Element {
@@ -17,7 +18,6 @@ const RawOverviewView = makePlaceholder('Build Overview coming in Phase 10.')
 const RawGearView = makePlaceholder('Gear Planner coming in Phase 6.')
 const RawDamageCalcView = makePlaceholder('Damage Calculator coming in a future update.')
 const RawFarmChecklistView = makePlaceholder('Farm Checklist coming in Phase 8.')
-const RawDebugView = makePlaceholder('Debug / Data Browser coming in Phase 2.')
 
 // Wrap each DB-needing placeholder in DatabaseGate so the loading-skeleton
 // + error-categorization UX is in place from day one. Settings, Characters,
@@ -37,7 +37,7 @@ export const OverviewView = gated(RawOverviewView)
 export const GearView = gated(RawGearView)
 export const DamageCalcView = gated(RawDamageCalcView)
 export const FarmChecklistView = gated(RawFarmChecklistView)
-export const DebugView = gated(RawDebugView)
+export const ResourcesView = gated(RawResourcesView)
 
 export function NotFoundView(): JSX.Element {
   // Strip query/hash before display + before forwarding to the GitHub issue
