@@ -6,6 +6,8 @@ import logging
 import re
 from collections.abc import Callable
 
+from ddo_data.enums import LootType
+
 from .client import WikiClient
 from .parsers import (
     parse_augment_wikitext,
@@ -652,13 +654,38 @@ def collect_item_material_categories(
 # Quest loot from wiki categories
 # ---------------------------------------------------------------------------
 
-# Parent categories and how to extract quest name from subcategory title
-_QUEST_LOOT_SOURCES: list[tuple[str, str]] = [
-    # (parent_category, suffix_to_strip)
-    ("Chest_loot", " loot"),
-    ("Quest_rewards", " reward items"),
-    ("Raid_loot", " loot"),
+# Parent categories, the typical subcategory suffix each uses, and the
+# loot_type each category maps to.
+#
+# ORDER IS LOAD-BEARING: a quest can appear under both Chest_loot and
+# Raid_loot, and `insert_quest_loot` uses INSERT OR REPLACE, so the last
+# entry wins. Raid_loot must stay last or raid items get downgraded to
+# 'chest'. Enforced by test_quest_loot_sources_put_raid_last.
+_QUEST_LOOT_SOURCES: list[tuple[str, str, LootType]] = [
+    # (parent_category, typical_suffix, loot_type)
+    ("Chest_loot", " loot", LootType.CHEST),
+    ("Quest_rewards", " reward items", LootType.REWARD),
+    ("Raid_loot", " loot", LootType.RAID),
 ]
+
+# Every suffix any loot subcategory uses, longest first so the most specific
+# match strips. Applied regardless of parent category: suffix conventions
+# aren't consistent per parent — `Category:The Chronoscope reward items`
+# lives under Raid_loot, not Quest_rewards, and stripping only the parent's
+# typical suffix left the raw title as a quest name (which auto-created a
+# bogus "The Chronoscope reward items" quest row in the DB).
+_QUEST_LOOT_SUFFIXES: list[str] = sorted(
+    {suffix for _, suffix, _ in _QUEST_LOOT_SOURCES}, key=len, reverse=True
+)
+
+
+def _quest_name_from_subcategory(subcat_title: str) -> str:
+    """Derive a quest name from a loot subcategory title."""
+    name = subcat_title.removeprefix("Category:").strip()
+    for suffix in _QUEST_LOOT_SUFFIXES:
+        if name.endswith(suffix):
+            return name[: -len(suffix)].strip()
+    return name
 
 
 def collect_quest_loot(
@@ -670,15 +697,20 @@ def collect_quest_loot(
     """Collect quest-to-item loot mappings from wiki category trees.
 
     Walks ``Chest_loot``, ``Quest_rewards``, and ``Raid_loot`` category
-    trees.  Whether an item is raid loot is derived from the quest it
-    drops in, not stored on the mapping.
+    trees, tagging each mapping with the ``loot_type`` its parent category
+    implies. This is the only place raid-ness is knowable — the wiki's
+    category membership is the authoritative answer, so it must be carried
+    through to the DB rather than recomputed downstream.
 
-    Returns list of dicts with keys: quest_name, item_name.
+    A quest under two parents yields one entry per category; deduplication
+    and precedence are the writer's job (see ``insert_quest_loot``).
+
+    Returns list of dicts with keys: quest_name, item_name, loot_type.
     """
     results: list[dict] = []
     count = 0
 
-    for parent_cat, suffix in _QUEST_LOOT_SOURCES:
+    for parent_cat, _suffix, loot_type in _QUEST_LOOT_SOURCES:
         if on_progress:
             on_progress(f"  Walking Category:{parent_cat} ...")
 
@@ -689,10 +721,8 @@ def collect_quest_loot(
             on_progress(f"    {len(subcats)} subcategories found")
 
         for subcat_title in subcats:
-            # Extract quest name: "Category:A Break In the Ice loot" -> "A Break In the Ice"
-            quest_name = subcat_title.removeprefix("Category:").strip()
-            if quest_name.endswith(suffix):
-                quest_name = quest_name[: -len(suffix)].strip()
+            # "Category:A Break In the Ice loot" -> "A Break In the Ice"
+            quest_name = _quest_name_from_subcategory(subcat_title)
 
             # Enumerate items in this subcategory
             subcat_name = subcat_title.removeprefix("Category:")
@@ -704,6 +734,7 @@ def collect_quest_loot(
                 results.append({
                     "quest_name": quest_name,
                     "item_name": item_name,
+                    "loot_type": str(loot_type),
                 })
                 count += 1
                 if 0 < limit <= count:

@@ -2,7 +2,8 @@
 // Cache-first strategy: serve from cache if available, otherwise fetch and cache.
 // Bump CACHE_NAME when the DB is rebuilt to invalidate stale caches.
 
-const CACHE_NAME = 'ddo-db-v1'
+// v2: quest_loot.loot_type column added (raid loot tagging).
+const CACHE_NAME = 'ddo-db-v2'
 const DB_URL_PATTERN = /\/data\/ddo\.db$/
 
 self.addEventListener('install', () => {

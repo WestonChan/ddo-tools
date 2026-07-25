@@ -3,149 +3,55 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// Test-only: spin up an in-memory sql.js DB with a slimmed-down schema and a
-// hand-written items fixture. Only the columns/relations the resources query
-// layer actually selects need to exist; we deliberately skip CHECK
-// constraints and indexes that the query doesn't depend on, to keep the
-// fixture readable. Lives under `src/test/fixtures/` so the boundary
-// between production code and test-only helpers stays explicit.
+// Test-only: spin up an in-memory sql.js DB whose SCHEMA is read from the
+// real shipped database (public/data/ddo.db) and whose DATA is hand-written.
+//
+// The schema is generated, not copied, so it cannot drift: seedTestDb
+// executes the shipped DB's own CREATE TABLE statements (verified
+// byte-identical by schemaCompat.test.ts). That also means the real CHECK
+// and NOT NULL constraints apply to the fixture rows — the previous
+// hand-copied "slimmed" DDL silently allowed data that cannot exist in
+// production (item_category 'Greatsword', handedness 'Two-Handed',
+// stats rows without a category).
+//
+// The data stays hand-written on purpose: fixture rows are stable across DB
+// rebuilds and make edge cases (NULL bonus types, multi-pack items, negative
+// values) visible in this file. Tests that need REAL data use openProjectDb.
+//
+// Lives under `src/test/fixtures/` so the boundary between production code
+// and test-only helpers stays explicit.
 
-const FIXTURE_DDL = `
-CREATE TABLE items (
-  id                INTEGER PRIMARY KEY,
-  name              TEXT NOT NULL,
-  rarity            TEXT,
-  equipment_slot    TEXT,
-  item_category     TEXT,
-  level             INTEGER,
-  minimum_level     INTEGER,
-  enhancement_bonus INTEGER,
-  material          TEXT,
-  binding           TEXT,
-  base_value        TEXT,
-  tooltip           TEXT,
-  icon              TEXT,
-  description       TEXT,
-  wiki_url          TEXT
-);
-
-CREATE TABLE item_weapon_stats (
-  item_id      INTEGER PRIMARY KEY REFERENCES items(id),
-  damage       TEXT,
-  critical     TEXT,
-  weapon_type  TEXT,
-  proficiency  TEXT,
-  handedness   TEXT
-);
-
-CREATE TABLE item_armor_stats (
-  item_id        INTEGER PRIMARY KEY REFERENCES items(id),
-  armor_bonus    INTEGER,
-  max_dex_bonus  INTEGER
-);
-
-CREATE TABLE item_augment_slots (
-  item_id    INTEGER NOT NULL REFERENCES items(id),
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  slot_type  TEXT NOT NULL,
-  PRIMARY KEY (item_id, sort_order)
-);
-
-CREATE TABLE item_upgrades (
-  item_id      INTEGER NOT NULL REFERENCES items(id),
-  base_item_id INTEGER NOT NULL REFERENCES items(id),
-  upgrade_tier INTEGER NOT NULL,
-  PRIMARY KEY (item_id, upgrade_tier)
-);
-
-CREATE TABLE bonus_types (
-  id   INTEGER PRIMARY KEY,
-  name TEXT NOT NULL
-);
-
-CREATE TABLE stats (
-  id   INTEGER PRIMARY KEY,
-  name TEXT NOT NULL
-);
-
-CREATE TABLE bonuses (
-  id            INTEGER PRIMARY KEY,
-  name          TEXT NOT NULL,
-  description   TEXT,
-  stat_id       INTEGER REFERENCES stats(id),
-  bonus_type_id INTEGER REFERENCES bonus_types(id),
-  value         INTEGER
-);
-
-CREATE TABLE item_bonuses (
-  item_id    INTEGER NOT NULL REFERENCES items(id),
-  bonus_id   INTEGER NOT NULL REFERENCES bonuses(id),
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  PRIMARY KEY (item_id, bonus_id, sort_order)
-);
-
-CREATE TABLE effects (
-  id       INTEGER PRIMARY KEY,
-  name     TEXT NOT NULL,
-  modifier TEXT
-);
-
-CREATE TABLE item_effects (
-  item_id    INTEGER NOT NULL REFERENCES items(id),
-  effect_id  INTEGER NOT NULL REFERENCES effects(id),
-  value      INTEGER,
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  PRIMARY KEY (item_id, effect_id, sort_order)
-);
-
-CREATE TABLE spells (
-  id   INTEGER PRIMARY KEY,
-  name TEXT NOT NULL
-);
-
-CREATE TABLE item_spell_links (
-  item_id  INTEGER NOT NULL REFERENCES items(id),
-  spell_id INTEGER NOT NULL REFERENCES spells(id),
-  charges  INTEGER,
-  PRIMARY KEY (item_id, spell_id)
-);
-
-CREATE TABLE adventure_packs (
-  id   INTEGER PRIMARY KEY,
-  name TEXT NOT NULL
-);
-
-CREATE TABLE patrons (
-  id   INTEGER PRIMARY KEY,
-  name TEXT NOT NULL
-);
-
-CREATE TABLE quests (
-  id        INTEGER PRIMARY KEY,
-  name      TEXT NOT NULL,
-  pack_id   INTEGER REFERENCES adventure_packs(id),
-  patron_id INTEGER REFERENCES patrons(id),
-  level     INTEGER,
-  zone      TEXT,
-  npc       TEXT
-);
-
-CREATE TABLE quest_loot (
-  quest_id INTEGER NOT NULL REFERENCES quests(id),
-  item_id  INTEGER NOT NULL REFERENCES items(id),
-  PRIMARY KEY (quest_id, item_id)
-);
-`
+// The tables the resources query layer touches. Growing the query surface
+// into a new table? Add it here and schemaCompat.test.ts keeps it honest.
+const FIXTURE_TABLES = [
+  'items',
+  'item_weapon_stats',
+  'item_armor_stats',
+  'item_augment_slots',
+  'item_upgrades',
+  'bonus_types',
+  'stats',
+  'bonuses',
+  'item_bonuses',
+  'effects',
+  'item_effects',
+  'spells',
+  'item_spell_links',
+  'adventure_packs',
+  'patrons',
+  'quests',
+  'quest_loot',
+] as const
 
 const FIXTURE_DATA = `
 INSERT INTO items (id, name, rarity, equipment_slot, item_category, level, minimum_level, enhancement_bonus, material, binding, base_value, tooltip, icon, description, wiki_url) VALUES
-  (1, 'Greatsword of Force', 'Rare', 'Weapon', 'Greatsword', 12, 12, 3, 'Steel', 'Bound to Character on Acquire', '480 pp', 'Strikes with arcane force.', 'Greatsword.png', 'A force-imbued greatsword.', 'https://ddowiki.com/page/Greatsword_of_Force'),
-  (2, 'Sigil of the Stalwart Defender', 'Epic', 'Trinket', 'Trinket', 29, 29, NULL, NULL, 'Bound to Account on Acquire', '5800 pp', NULL, 'Sigil.png', 'A defender''s mark.', 'https://ddowiki.com/page/Sigil_of_the_Stalwart_Defender'),
-  (3, 'Robe of Force Resistance', 'Uncommon', 'Body', 'Cloth Armor', 8, 8, NULL, 'Cloth', NULL, '120 pp', 'A simple robe.', 'Robe.png', 'A simple robe.', 'https://ddowiki.com/page/Robe_of_Force_Resistance'),
+  (1, 'Greatsword of Force', 'Rare', 'Weapon', 'Weapon', 12, 12, 3, 'Steel', 'Bound to Character on Acquire', '480 pp', 'Strikes with arcane force.', 'Greatsword.png', 'A force-imbued greatsword.', 'https://ddowiki.com/page/Greatsword_of_Force'),
+  (2, 'Sigil of the Stalwart Defender', 'Epic', 'Trinket', 'Jewelry', 29, 29, NULL, NULL, 'Bound to Account on Acquire', '5800 pp', NULL, 'Sigil.png', 'A defender''s mark.', 'https://ddowiki.com/page/Sigil_of_the_Stalwart_Defender'),
+  (3, 'Robe of Force Resistance', 'Uncommon', 'Body', 'Clothing', 8, 8, NULL, 'Cloth', NULL, '120 pp', 'A simple robe.', 'Robe.png', 'A simple robe.', 'https://ddowiki.com/page/Robe_of_Force_Resistance'),
   (4, '50% Discount Voucher', 'Common', NULL, NULL, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 INSERT INTO item_weapon_stats (item_id, damage, critical, weapon_type, proficiency, handedness) VALUES
-  (1, '2d6', '19-20/x2', 'Greatsword', 'Martial', 'Two-Handed');
+  (1, '2d6', '19-20/x2', 'Greatsword', 'Martial', 'Two-handed');
 
 INSERT INTO item_armor_stats (item_id, armor_bonus, max_dex_bonus) VALUES
   (3, 0, NULL);
@@ -162,9 +68,9 @@ INSERT INTO bonus_types (id, name) VALUES
   (1, 'Enhancement'),
   (2, 'Insight');
 
-INSERT INTO stats (id, name) VALUES
-  (1, 'Charisma'),
-  (2, 'Heal Amplification');
+INSERT INTO stats (id, name, category) VALUES
+  (1, 'Charisma', 'ability'),
+  (2, 'Heal Amplification', 'magical');
 
 INSERT INTO bonuses (id, name, description, stat_id, bonus_type_id, value) VALUES
   (1, 'Charisma +5', 'Enhancement bonus to Charisma', 1, 1, 5),
@@ -197,10 +103,14 @@ INSERT INTO patrons (id, name) VALUES
   (1, 'Keepers of Barovia');
 
 INSERT INTO quests (id, name, pack_id, patron_id, level, zone) VALUES
-  (1, 'Sealed in Amber', 1, 1, 11, 'Barovia');
+  (1, 'Sealed in Amber', 1, 1, 11, 'Barovia'),
+  (2, 'The Master Artificer', 1, 1, 30, 'Cannith');
 
-INSERT INTO quest_loot (quest_id, item_id) VALUES
-  (1, 2);
+-- Item 2 is chest loot; item 1 is raid loot, so listItems' is_raid flag and
+-- the picker's "Raid only" filter both have something to exercise.
+INSERT INTO quest_loot (quest_id, item_id, loot_type) VALUES
+  (1, 2, 'chest'),
+  (2, 1, 'raid');
 `
 
 let _wasmBinary: ArrayBuffer | null = null
@@ -225,10 +135,91 @@ async function getSQL(): Promise<Awaited<ReturnType<typeof initSqlJs>>> {
   return _SQL
 }
 
+function projectDbPath(): string {
+  const here = dirname(fileURLToPath(import.meta.url))
+  return resolve(here, '..', '..', '..', 'public', 'data', 'ddo.db')
+}
+
+// CREATE TABLE statements for FIXTURE_TABLES, read once from the shipped DB.
+let _fixtureDdl: string | null = null
+async function loadFixtureDdl(): Promise<string> {
+  if (_fixtureDdl !== null) return _fixtureDdl
+  const SQL = await getSQL()
+  const real = new SQL.Database(readFileSync(projectDbPath()))
+  try {
+    const placeholders = FIXTURE_TABLES.map(() => '?').join(', ')
+    const result = real.exec(
+      `SELECT sql FROM sqlite_master WHERE type = 'table' AND name IN (${placeholders})`,
+      [...FIXTURE_TABLES],
+    )
+    const statements = result[0]?.values.map((row) => String(row[0])) ?? []
+    if (statements.length !== FIXTURE_TABLES.length) {
+      throw new Error(
+        `Expected ${FIXTURE_TABLES.length} fixture tables in public/data/ddo.db, ` +
+          `found ${statements.length} — did a table get renamed?`,
+      )
+    }
+    _fixtureDdl = statements.map((s) => `${s};`).join('\n')
+    return _fixtureDdl
+  } finally {
+    real.close()
+  }
+}
+
 export async function seedTestDb(): Promise<Database> {
   const SQL = await getSQL()
+  const ddl = await loadFixtureDdl()
   const db = new SQL.Database()
-  db.run(FIXTURE_DDL)
+  db.run(ddl)
   db.run(FIXTURE_DATA)
   return db
+}
+
+/**
+ * Seed a database with the BASELINE schema — the shape of `quest_loot` and
+ * friends as first publicly deployed (2026-04, pre `loot_type`).
+ *
+ * FROZEN: never edit this to match schema changes — its entire purpose is to
+ * stay old. The stale-service-worker incident (2026-07-25) happened because
+ * returning browsers run NEW frontend code against a cached OLD database;
+ * `schemaCompat.test.ts` recreates that state by running every query
+ * function against this baseline and requiring any missing column to be
+ * declared in `REQUIRED_COLUMNS` (src/hooks/useDatabase.ts), which is what
+ * routes stale caches into DatabaseGate's self-heal instead of a view crash.
+ * When a future query needs a newer column, the fix is a REQUIRED_COLUMNS
+ * entry — not a baseline edit.
+ */
+export async function seedBaselineDb(): Promise<Database> {
+  const db = await seedTestDb()
+  // Rewind the post-baseline schema additions. As of now that is only
+  // quest_loot.loot_type; append future rewinds here when the live fixture
+  // gains columns the baseline never had.
+  db.run(`
+    DROP TABLE quest_loot;
+    CREATE TABLE quest_loot (
+      quest_id INTEGER NOT NULL REFERENCES quests(id),
+      item_id  INTEGER NOT NULL REFERENCES items(id),
+      PRIMARY KEY (quest_id, item_id)
+    );
+    INSERT INTO quest_loot (quest_id, item_id) VALUES (1, 2), (2, 1);
+  `)
+  return db
+}
+
+/**
+ * Open the REAL shipped database (`public/data/ddo.db`) read-only.
+ *
+ * Deliberately different from `seedTestDb`: hand-written fixtures can't
+ * catch drift between hardcoded game-data strings in our TypeScript and the
+ * names the ETL actually writes. Anything that matches on a literal value
+ * from the game data (quest names, slot names, rarity strings) needs to
+ * assert against the shipped artifact or it will fail silently in prod —
+ * which is exactly how `KNOWN_RAID_QUESTS` shipped with 5 dead entries.
+ *
+ * Use sparingly: prefer `seedTestDb` for query-shape and join tests. Reach
+ * for this only to validate literals against real data.
+ */
+export async function openProjectDb(): Promise<Database> {
+  const SQL = await getSQL()
+  return new SQL.Database(readFileSync(projectDbPath()))
 }

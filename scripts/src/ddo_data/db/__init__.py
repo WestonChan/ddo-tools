@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable
 from pathlib import Path
+
+from ddo_data.game_data.raid_quests import KNOWN_RAID_QUESTS
 
 from .schema import create_schema
 from .validate import format_validation, validate_database
@@ -11,6 +14,7 @@ from .writers import (
     apply_overrides,
     backfill_item_materials,
     backfill_item_slots,
+    backfill_quest_loot_types,
     discover_new_classes,
     discover_new_enhancement_trees,
     discover_new_races,
@@ -181,6 +185,16 @@ class GameDB:
     def insert_quest_loot(self, loot_entries: list[dict]) -> int:
         """Insert quest loot from wiki category data."""
         return insert_quest_loot(self.conn, loot_entries)
+
+    def backfill_quest_loot_types(
+        self, raid_quest_names: Iterable[str] | None = None
+    ) -> int:
+        """Tag raid loot rows offline while the wiki scrape is unavailable.
+
+        Defaults to the canonical KNOWN_RAID_QUESTS list.
+        """
+        names = KNOWN_RAID_QUESTS if raid_quest_names is None else raid_quest_names
+        return backfill_quest_loot_types(self.conn, names)
 
     def backfill_item_slots(self, slot_data: dict[str, set[str]]) -> int:
         """Backfill equipment_slot from wiki slot categories."""

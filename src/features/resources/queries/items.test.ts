@@ -35,11 +35,21 @@ describe('items queries (against :memory: DB)', () => {
     expect(first).toHaveProperty('minimum_level')
   })
 
-  it('getItemDetail returns base_value and tooltip from the core row', () => {
+  it('getItemDetail returns the tooltip from the core row', () => {
     const detail = getItemDetail(db, 1)
     expect(detail).not.toBeNull()
-    expect(detail!.base_value).toBe('480 pp')
     expect(detail!.tooltip).toBe('Strikes with arcane force.')
+  })
+
+  // `level`, `base_value`, and `icon` exist on the items table but no UI
+  // renders them, so getItemDetail stopped selecting them. Asserting their
+  // absence keeps the query and ItemCore from drifting back apart silently.
+  it('getItemDetail omits columns no UI renders', () => {
+    const detail = getItemDetail(db, 1)
+    expect(detail).not.toBeNull()
+    expect(detail).not.toHaveProperty('base_value')
+    expect(detail).not.toHaveProperty('icon')
+    expect(detail).not.toHaveProperty('level')
   })
 
   it('getItemDetail joins weapon stats and augment slots', () => {
@@ -51,7 +61,9 @@ describe('items queries (against :memory: DB)', () => {
       critical: '19-20/x2',
       weapon_type: 'Greatsword',
       proficiency: 'Martial',
-      handedness: 'Two-Handed',
+      // 'Two-handed' (lowercase h) is the real CHECK-constrained enum value;
+      // the fixture previously used 'Two-Handed', which cannot exist in prod.
+      handedness: 'Two-handed',
     })
     expect(detail!.armorStats).toBeNull()
     expect(detail!.augmentSlots).toEqual([{ sort_order: 0, slot_type: 'Yellow' }])

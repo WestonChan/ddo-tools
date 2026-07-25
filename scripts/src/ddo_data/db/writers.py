@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterable
 
 from ddo_data.enums import (
-    DataSource, Handedness, ItemCategory, ResolutionMethod, TreeType,
+    DataSource, Handedness, ItemCategory, LootType, ResolutionMethod, TreeType,
 )
 import re
 import sqlite3
@@ -2489,9 +2490,15 @@ def apply_overrides(conn: sqlite3.Connection, overrides_path: str | None = None)
 def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int:
     """Insert quest-to-item loot mappings from wiki category data.
 
-    Each dict has keys: quest_name, item_name, loot_type ('chest'/'reward'/'raid').
-    Processes in order so later entries (raid) overwrite earlier ones (chest) for
-    the same quest+item pair via INSERT OR REPLACE.
+    Each dict has keys: quest_name, item_name, and optionally loot_type
+    ('chest'/'reward'/'raid' — see :class:`~ddo_data.enums.LootType`).
+
+    A quest can sit under several wiki loot categories, so the same
+    quest+item pair can arrive more than once. Precedence is explicit rather
+    than positional: 'raid' is the most specific classification and is never
+    downgraded, so re-runs and out-of-order input converge on the same
+    result. (``_QUEST_LOOT_SOURCES`` still walks Raid_loot last, which makes
+    the common path a plain overwrite.)
 
     Returns count of rows inserted/updated.
     """
@@ -2528,9 +2535,20 @@ def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int
         if item_id is None:
             skipped_item += 1
             continue
+        loot_type = entry.get("loot_type")
         conn.execute(
-            "INSERT OR IGNORE INTO quest_loot (quest_id, item_id) VALUES (?, ?)",
-            (quest_id, item_id),
+            """
+            INSERT INTO quest_loot (quest_id, item_id, loot_type)
+            VALUES (?, ?, ?)
+            ON CONFLICT (quest_id, item_id) DO UPDATE SET
+                loot_type = CASE
+                    -- 'raid' is the most specific tag; never downgrade it.
+                    WHEN quest_loot.loot_type = ? THEN quest_loot.loot_type
+                    WHEN excluded.loot_type IS NULL THEN quest_loot.loot_type
+                    ELSE excluded.loot_type
+                END
+            """,
+            (quest_id, item_id, loot_type, str(LootType.RAID)),
         )
         inserted += 1
 
@@ -2540,6 +2558,53 @@ def insert_quest_loot(conn: sqlite3.Connection, loot_entries: list[dict]) -> int
         inserted, created_quests, skipped_item,
     )
     return inserted
+
+
+def backfill_quest_loot_types(
+    conn: sqlite3.Connection,
+    raid_quest_names: Iterable[str],
+) -> int:
+    """Tag quest_loot rows as raid loot using a hand-maintained quest list.
+
+    STOPGAP, not the real mechanism. The authoritative source is the wiki's
+    ``Category:Raid_loot``, which ``collect_quest_loot`` already reads — but
+    ddowiki now sits behind an AWS WAF JS challenge that blocks every
+    non-browser client (see docs/ddowiki-api.md), so a scrape can't run.
+    This lets the column be populated offline in the meantime.
+
+    Only fills rows where ``loot_type IS NULL``, so it never overwrites
+    scraped values. That makes it safe to leave wired into the build: once a
+    real scrape lands, this becomes a no-op and can be deleted along with
+    ``KNOWN_RAID_QUESTS``.
+
+    Args:
+        raid_quest_names: Quest names to tag. Matched exactly against
+            ``quests.name``; names matching no quest are skipped silently
+            (the list is hand-maintained, and a stale entry shouldn't break
+            a build).
+
+    Returns count of rows updated.
+    """
+    names = list(raid_quest_names)
+    if not names:
+        return 0
+
+    placeholders = ", ".join("?" for _ in names)
+    cur = conn.execute(
+        f"""
+        UPDATE quest_loot SET loot_type = ?
+        WHERE loot_type IS NULL
+          AND quest_id IN (SELECT id FROM quests WHERE name IN ({placeholders}))
+        """,
+        (str(LootType.RAID), *names),
+    )
+    updated = cur.rowcount
+    conn.commit()
+    logger.info(
+        "Backfilled loot_type='raid' on %d quest_loot rows from %d quest names",
+        updated, len(names),
+    )
+    return updated
 
 
 def seed_quest_data(conn: sqlite3.Connection) -> int:

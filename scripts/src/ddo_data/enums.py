@@ -685,6 +685,19 @@ class DataSource(str, Enum):
     OVERRIDE = "override"
 
 
+class LootType(str, Enum):
+    """How an item drops from a quest.
+
+    Mirrors the three wiki loot categories the scraper walks
+    (``Chest_loot`` / ``Quest_rewards`` / ``Raid_loot``). Distinct from
+    ``DataSource``, which records ETL provenance rather than in-game source.
+    """
+    def __str__(self) -> str: return self.value
+    CHEST = "chest"
+    REWARD = "reward"
+    RAID = "raid"
+
+
 class Alignment(str, Enum):
     """Class/race alignment restriction."""
     def __str__(self) -> str: return self.value

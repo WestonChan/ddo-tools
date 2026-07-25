@@ -6,8 +6,10 @@ import { runQuery, runQueryFirst } from './sqlHelpers'
 // approximation for items that drop from quests in multiple packs — most
 // items only have one source). For accurate "show items from pack X"
 // filtering, use `findItemIdsByPack` rather than equality on this column.
-// `is_raid` is true if the item drops from any quest in `RAID_QUEST_NAMES`
-// (computed via `findRaidItemIds`).
+// `is_raid` is true if any of the item's quest sources is tagged as raid loot
+// in `quest_loot.loot_type` (computed via `findRaidItemIds`). It is stamped on
+// every row, so the picker's "Raid only" filter reads it directly rather than
+// re-querying.
 export interface ItemRow {
   id: number
   name: string
@@ -19,23 +21,18 @@ export interface ItemRow {
 }
 
 // Detail shape: the core item, plus per-table relations rendered as their own
-// `<DetailSection>`s. Commit 4 expands the relations (item_bonuses, effects,
-// spell_links). Commit 2 ships with the structural relations (weapon, armor,
-// augment slots, upgrades) so the wiring is in place.
+// `<DetailSection>`s by ItemDetail.
 export interface ItemCore {
   id: number
   name: string
   rarity: string | null
   equipment_slot: string | null
   item_category: string | null
-  level: number | null
   minimum_level: number | null
   enhancement_bonus: number | null
   material: string | null
   binding: string | null
-  base_value: string | null
   tooltip: string | null
-  icon: string | null
   description: string | null
   wiki_url: string | null
 }
@@ -124,55 +121,25 @@ export function listBonusStats(db: Database): string[] {
   ).map((r) => r.name)
 }
 
-// Known DDO raid quest names. The wiki scraper walks the `Raid_loot`
-// category at scrape time but doesn't currently persist a per-row
-// `is_raid` flag, so we approximate by joining quest_loot against this
-// hardcoded list. As DDO ships new raids, this list needs updating, and
-// the right long-term fix is a schema migration that adds `is_raid` to
-// quest_loot (or quests). Names must match exactly what the scraper
-// populates into `quests.name`.
-export const KNOWN_RAID_QUESTS: readonly string[] = [
-  // Heroic raids
-  "Tempest's Spine",
-  'Velah, the Crimson Dragon',
-  'The Twilight Forge',
-  'Plane of Night',
-  'A Vision of Destruction',
-  'The Reaver Stormhorns',
-  'The Mark of Death',
-  'Tower of Despair',
-  'Hound of Xoriat',
-  // Epic raids
-  'The Lord of Blades',
-  'Master Artificer',
-  'Caught in the Web',
-  'The Fall of Truth',
-  'Defiler of the Just',
-  'Killing Time',
-  'Riding the Storm Out',
-  // Legendary / modern raids
-  'Fire on Thunder Peak',
-  'Temple of the Deathwyrm',
-  'Project Nemesis',
-  'Old Baba\'s Hut',
-  'The Rising of Tovag',
-  'Skeletons in the Closet',
-  'Too Hot to Handle',
-  'Strahd\'s Reckoning',
-  'Reign of Madness',
-  'The Dryad and the Demigod',
-]
-
-/** Return the set of item IDs that drop from any known DDO raid quest. */
+/**
+ * Return the set of item IDs that drop from a raid.
+ *
+ * Reads `quest_loot.loot_type`, which the Python pipeline populates from the
+ * wiki's own loot categories (`Chest_loot` / `Quest_rewards` / `Raid_loot`).
+ * This replaced a hardcoded list of raid quest names in this file — five of
+ * those names matched no quest row, silently hiding 262 items.
+ *
+ * Note the column is currently filled by an offline backfill rather than a
+ * live scrape (ddowiki is behind a WAF challenge) — see
+ * `scripts/src/ddo_data/game_data/raid_quests.py`. That's invisible from here:
+ * either way the answer comes from the DB.
+ */
 export function findRaidItemIds(db: Database): Set<number> {
-  const placeholders = KNOWN_RAID_QUESTS.map(() => '?').join(', ')
   const rows = runQuery<{ item_id: number }>(
     db,
-    `SELECT DISTINCT ql.item_id AS item_id
-       FROM quest_loot ql
-       JOIN quests q ON q.id = ql.quest_id
-      WHERE q.name IN (${placeholders})`,
-    KNOWN_RAID_QUESTS as unknown as string[],
+    `SELECT DISTINCT item_id
+       FROM quest_loot
+      WHERE loot_type = 'raid'`,
   )
   return new Set(rows.map((r) => r.item_id))
 }
@@ -211,17 +178,17 @@ export function findItemNameById(db: Database, id: number): string | null {
 }
 
 // Pull every item the picker might display. Search ranking happens client-side
-// via Fuse.js (commit 3) — the SQL layer just hands over the raw rows in a
-// stable initial order. Default sort is descending `minimum_level` so the
-// highest-level items surface first; ties break by slot then name for
-// deterministic ordering within a level band. `NULLS LAST` keeps un-leveled
-// placeholder items at the bottom rather than dominating the top.
+// via Fuse.js — the SQL layer just hands over the raw rows in a stable initial
+// order. Default sort is descending `minimum_level` so the highest-level items
+// surface first; ties break by slot then name for deterministic ordering
+// within a level band. The leading `minimum_level IS NULL` term sorts
+// un-leveled placeholder items last rather than letting them dominate the top
+// (SQLite has no `NULLS LAST` in this position).
 //
 // The `pack` correlated subquery picks the alphabetically-first adventure
 // pack across the item's quest sources (cheap approximation; most items drop
-// in one pack). `is_raid` is computed in JS from the existing
-// `RAID_QUEST_NAMES` list, kept here rather than in SQL so the canonical
-// raid set stays in one place.
+// in one pack). `is_raid` is applied in JS from one `findRaidItemIds` set
+// lookup rather than a correlated EXISTS per row — one query, O(1) per row.
 export function listItems(db: Database): ItemRow[] {
   const rows = runQuery<Omit<ItemRow, 'is_raid'>>(
     db,
@@ -271,11 +238,14 @@ export function findItemIdsByPack(db: Database, pack: string): Set<number> {
 }
 
 export function getItemDetail(db: Database, id: number): ItemDetail | null {
+  // Column list matches ItemCore exactly. `level`, `base_value`, and `icon`
+  // exist on the table but no UI surfaces them — add them back here when
+  // something renders them, rather than paying for columns nobody reads.
   const core = runQueryFirst<ItemCore>(
     db,
-    `SELECT id, name, rarity, equipment_slot, item_category, level, minimum_level,
-            enhancement_bonus, material, binding, base_value, tooltip,
-            icon, description, wiki_url
+    `SELECT id, name, rarity, equipment_slot, item_category, minimum_level,
+            enhancement_bonus, material, binding, tooltip,
+            description, wiki_url
        FROM items
        WHERE id = ?`,
     [id],

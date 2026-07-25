@@ -2,7 +2,14 @@
 
 from unittest.mock import MagicMock
 
-from ddo_data.wiki.scraper import collect_enhancements, collect_feats, collect_items
+from ddo_data.enums import LootType
+from ddo_data.wiki.scraper import (
+    _QUEST_LOOT_SOURCES,
+    collect_enhancements,
+    collect_feats,
+    collect_items,
+    collect_quest_loot,
+)
 
 
 ITEM_WIKITEXT = """
@@ -372,3 +379,129 @@ def test_collect_enhancements_shared_tree() -> None:
 
     assert len(trees) == 1
     assert trees[0]["name"] == "Vanguard"
+
+
+# ---------------------------------------------------------------------------
+# collect_quest_loot tests
+# ---------------------------------------------------------------------------
+
+
+def _make_quest_loot_client(tree: dict[str, list[str]]) -> MagicMock:
+    """Fake client whose iter_category_members walks a canned category tree.
+
+    tree maps a category name to its members; subcategory lookups and page
+    lookups both read from it, matching how collect_quest_loot walks parents
+    then their subcategories.
+    """
+    client = MagicMock()
+
+    def _iter(category: str, **kwargs: object) -> iter:
+        return iter(tree.get(category, []))
+
+    client.iter_category_members.side_effect = _iter
+    return client
+
+
+def test_quest_loot_sources_cover_every_loot_type() -> None:
+    """Each LootType has exactly one wiki category feeding it."""
+    declared = [entry[2] for entry in _QUEST_LOOT_SOURCES]
+    assert set(declared) == set(LootType)
+    assert len(declared) == len(set(declared))
+
+
+def test_quest_loot_sources_put_raid_last() -> None:
+    """Raid must be walked last so INSERT OR REPLACE lets it win.
+
+    An item in both Chest_loot and Raid_loot should end up tagged 'raid';
+    that depends entirely on ordering here.
+    """
+    assert _QUEST_LOOT_SOURCES[-1][2] is LootType.RAID
+
+
+def test_collect_quest_loot_tags_chest_loot() -> None:
+    """Items from a Chest_loot subcategory carry loot_type='chest'."""
+    client = _make_quest_loot_client({
+        "Chest_loot": ["Category:Haywire Foundry loot"],
+        "Haywire Foundry loot": ["Item:Bloodrage Symbiont"],
+    })
+
+    entries = collect_quest_loot(client)
+
+    assert entries == [{
+        "quest_name": "Haywire Foundry",
+        "item_name": "Bloodrage Symbiont",
+        "loot_type": "chest",
+    }]
+
+
+def test_collect_quest_loot_tags_raid_loot() -> None:
+    """Items from a Raid_loot subcategory carry loot_type='raid'.
+
+    This is the whole point: the parent category was previously discarded,
+    so nothing downstream could tell raid loot from chest loot.
+    """
+    client = _make_quest_loot_client({
+        "Raid_loot": ["Category:The Master Artificer loot"],
+        "The Master Artificer loot": ["Item:Epic Nightmare"],
+    })
+
+    entries = collect_quest_loot(client)
+
+    assert entries == [{
+        "quest_name": "The Master Artificer",
+        "item_name": "Epic Nightmare",
+        "loot_type": "raid",
+    }]
+
+
+def test_collect_quest_loot_strips_reward_suffix() -> None:
+    """Quest_rewards subcategories use a different suffix than loot ones."""
+    client = _make_quest_loot_client({
+        "Quest_rewards": ["Category:Sealed in Amber reward items"],
+        "Sealed in Amber reward items": ["Item:Amber Shard"],
+    })
+
+    entries = collect_quest_loot(client)
+
+    assert entries[0]["quest_name"] == "Sealed in Amber"
+    assert entries[0]["loot_type"] == "reward"
+
+
+def test_collect_quest_loot_strips_any_known_suffix_regardless_of_parent() -> None:
+    """Subcategory suffixes don't always match their parent's convention.
+
+    Real case: `Category:The Chronoscope reward items` sits under Raid_loot,
+    whose configured suffix is " loot". Stripping only the parent's suffix
+    left the raw title as the quest name, which auto-created a bogus quest
+    row ("The Chronoscope reward items", 8 loot rows) in the shipped DB.
+    """
+    client = _make_quest_loot_client({
+        "Raid_loot": ["Category:The Chronoscope reward items"],
+        "The Chronoscope reward items": ["Item:Bloody Cleaver"],
+    })
+
+    entries = collect_quest_loot(client)
+
+    assert entries == [{
+        "quest_name": "The Chronoscope",
+        "item_name": "Bloody Cleaver",
+        "loot_type": "raid",
+    }]
+
+
+def test_collect_quest_loot_emits_both_types_for_shared_item() -> None:
+    """A quest listed under both parents yields one entry per category.
+
+    Deduplication and precedence are the writer's job (INSERT OR REPLACE),
+    not the scraper's — so both rows must reach it, raid last.
+    """
+    client = _make_quest_loot_client({
+        "Chest_loot": ["Category:The Shroud loot"],
+        "Raid_loot": ["Category:The Shroud loot"],
+        "The Shroud loot": ["Item:Shard of Great Power"],
+    })
+
+    entries = collect_quest_loot(client)
+
+    assert [e["loot_type"] for e in entries] == ["chest", "raid"]
+    assert {e["quest_name"] for e in entries} == {"The Shroud"}

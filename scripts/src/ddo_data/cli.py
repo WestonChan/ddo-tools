@@ -935,6 +935,16 @@ def build_db(
             ql = db.insert_quest_loot(quest_loot)
             click.echo(f"  {ql} quest loot links")
 
+    # --- Backfill raid loot tags -------------------------------------------
+    # Fills loot_type only where the wiki scrape left it NULL, so it's a no-op
+    # once Category:Raid_loot is reachable again. Runs unconditionally (not
+    # gated on data_types) so a DB built without the items scrape still gets a
+    # usable raid filter. See game_data/raid_quests.py for why this exists.
+    with GameDB(output) as db:
+        raid_rows = db.backfill_quest_loot_types()
+        if raid_rows:
+            click.echo(f"  {raid_rows} quest loot rows tagged as raid loot (offline fallback)")
+
     # --- Apply manual overrides ---
     with GameDB(output) as db:
         overrides = db.apply_overrides()

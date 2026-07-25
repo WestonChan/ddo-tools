@@ -8,7 +8,7 @@ from ddo_data.enums import (
     S, AbilityModSource, AffixType, Alignment, ApPool, Archetype,
     BabProgression, BonusType, CasterType, Class, CraftingParam, CraftingSystem,
     DamageCategory, DamageType, DataSource, EnhancementTier, EquipmentSlot,
-    FeatTier, Handedness, ItemCategory, LinkType, PastLifeType,
+    FeatTier, Handedness, ItemCategory, LinkType, LootType, PastLifeType,
     ProficiencyCategory, Race, RaceType, Rarity, ResolutionMethod,
     SaveEffect, SaveProgression, SaveType, Skill, SlotCategory, SlotTier,
     SlotType, SpellSchool, SpellTradition, StatCategory, TreeType,
@@ -576,11 +576,16 @@ CREATE TABLE IF NOT EXISTS quest_flagging (
 );
 
 CREATE TABLE IF NOT EXISTS quest_loot (
-    quest_id INTEGER NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
-    item_id  INTEGER NOT NULL REFERENCES items(id),
+    quest_id  INTEGER NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
+    item_id   INTEGER NOT NULL REFERENCES items(id),
+    loot_type TEXT     CHECK (loot_type {_check(LootType)}), -- wt: wiki loot category
     PRIMARY KEY (quest_id, item_id)
 );
 CREATE INDEX IF NOT EXISTS idx_quest_loot_item ON quest_loot(item_id);
+-- Partial: 'raid' is the selective value the resources browser filters on;
+-- most rows are chest loot, and NULL rows predate the wiki category scrape.
+CREATE INDEX IF NOT EXISTS idx_quest_loot_type ON quest_loot(loot_type)
+    WHERE loot_type IS NOT NULL;
 
 -- Crafting -----------------------------------------------------------------
 
@@ -1186,12 +1191,50 @@ def _seed_from_enums(conn: sqlite3.Connection) -> None:
         )
 
 
+# Columns added to tables that already shipped. `CREATE TABLE IF NOT EXISTS`
+# never alters an existing table, so a database created before one of these
+# columns existed would silently keep the old shape — and any CREATE INDEX in
+# the DDL that references the new column fails outright. Applied before the
+# DDL script for that reason.
+#
+# This is a deliberately minimal stand-in for a migration framework: additive
+# columns only. Anything more involved (renames, type changes, backfills that
+# need ordering) should bump `schema_version` and get a real migration path.
+_COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
+    # (table, column, column definition)
+    ("quest_loot", "loot_type", f"loot_type TEXT CHECK (loot_type {_check(LootType)})"),
+]
+
+
+def _apply_column_migrations(conn: sqlite3.Connection) -> None:
+    """Add any missing columns listed in ``_COLUMN_MIGRATIONS``.
+
+    Skips tables that don't exist yet — on a fresh database the DDL creates
+    them with the column already present.
+    """
+    for table, column, column_def in _COLUMN_MIGRATIONS:
+        table_exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table,),
+        ).fetchone()
+        if table_exists is None:
+            continue
+        existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column in existing:
+            continue
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column_def}")
+        conn.commit()
+
+
 def create_schema(conn: sqlite3.Connection) -> None:
     """Apply SCHEMA_V1 DDL and seed reference data to *conn*.
 
     Safe to call on an existing database — uses ``CREATE TABLE IF NOT EXISTS``
-    and ``INSERT OR IGNORE`` throughout, so re-running is idempotent.
+    and ``INSERT OR IGNORE`` throughout, so re-running is idempotent. Columns
+    added after a database was first built are applied by
+    ``_apply_column_migrations`` first.
     """
+    _apply_column_migrations(conn)
     conn.executescript(SCHEMA_V1)
     _seed_from_enums(conn)  # must run before _SEED_SQL (classes/races FK stats/skills)
     conn.executescript(_SEED_SQL)

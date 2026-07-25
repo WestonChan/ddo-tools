@@ -867,3 +867,217 @@ def test_insert_enhancement_trees_idempotent() -> None:
         db.insert_enhancement_trees([KENSEI_TREE])
         assert _count(db.conn, "enhancement_trees") == 1
         assert _count(db.conn, "enhancements") == 2
+
+
+# ---------------------------------------------------------------------------
+# quest_loot / loot_type tests
+# ---------------------------------------------------------------------------
+
+
+def _seed_loot_fixture(db: GameDB) -> None:
+    """Two items and two quests to hang quest_loot rows off."""
+    db.conn.executemany(
+        "INSERT INTO items (id, name) VALUES (?, ?)",
+        [(1, "Epic Nightmare"), (2, "Bloodrage Symbiont")],
+    )
+    db.conn.executemany(
+        "INSERT INTO quests (id, name) VALUES (?, ?)",
+        [(1, "The Master Artificer"), (2, "Haywire Foundry")],
+    )
+    db.conn.commit()
+
+
+def _loot_type(db: GameDB, quest_id: int, item_id: int) -> str | None:
+    row = db.conn.execute(
+        "SELECT loot_type FROM quest_loot WHERE quest_id = ? AND item_id = ?",
+        (quest_id, item_id),
+    ).fetchone()
+    return None if row is None else row[0]
+
+
+def test_quest_loot_has_loot_type_column() -> None:
+    """quest_loot carries loot_type so raid-ness lives in the DB."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        cols = {r[1] for r in db.conn.execute("PRAGMA table_info(quest_loot)")}
+    assert "loot_type" in cols
+
+
+def test_create_schema_adds_loot_type_to_preexisting_table() -> None:
+    """An older DB gains loot_type on the next create_schema run.
+
+    The DDL is all CREATE TABLE IF NOT EXISTS, so a database built before the
+    column existed would silently keep the two-column shape and every
+    loot_type query would fail. The already-committed public/data/ddo.db is
+    exactly that case.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        # Roll quest_loot back to its pre-column shape, leaving the rest of the
+        # schema intact — this is the state of the committed ddo.db.
+        db.conn.executescript("""
+            DROP TABLE quest_loot;
+            CREATE TABLE quest_loot (
+                quest_id INTEGER NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
+                item_id  INTEGER NOT NULL REFERENCES items(id),
+                PRIMARY KEY (quest_id, item_id)
+            );
+        """)
+        db.conn.commit()
+        assert "loot_type" not in {
+            r[1] for r in db.conn.execute("PRAGMA table_info(quest_loot)")
+        }
+
+        db.create_schema()
+
+        assert "loot_type" in {
+            r[1] for r in db.conn.execute("PRAGMA table_info(quest_loot)")
+        }
+
+
+def test_create_schema_migration_is_idempotent() -> None:
+    """Re-running create_schema on an up-to-date DB doesn't raise."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.create_schema()
+        cols = [r[1] for r in db.conn.execute("PRAGMA table_info(quest_loot)")]
+    assert cols.count("loot_type") == 1
+
+
+def test_quest_loot_rejects_unknown_loot_type() -> None:
+    """The CHECK constraint pins loot_type to the LootType enum."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        with pytest.raises(sqlite3.IntegrityError):
+            db.conn.execute(
+                "INSERT INTO quest_loot (quest_id, item_id, loot_type) VALUES (1, 1, 'bogus')"
+            )
+
+
+def test_insert_quest_loot_stores_loot_type() -> None:
+    """A scraped raid entry lands with loot_type='raid'."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([{
+            "quest_name": "The Master Artificer",
+            "item_name": "Epic Nightmare",
+            "loot_type": "raid",
+        }])
+        assert _loot_type(db, 1, 1) == "raid"
+
+
+def test_insert_quest_loot_raid_overwrites_chest() -> None:
+    """Raid wins when the same quest+item arrives as chest loot first.
+
+    This is the precedence insert_quest_loot's docstring always claimed but
+    never implemented (it used INSERT OR IGNORE into a 2-column table).
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([
+            {"quest_name": "The Master Artificer", "item_name": "Epic Nightmare",
+             "loot_type": "chest"},
+            {"quest_name": "The Master Artificer", "item_name": "Epic Nightmare",
+             "loot_type": "raid"},
+        ])
+        assert _count(db.conn, "quest_loot") == 1
+        assert _loot_type(db, 1, 1) == "raid"
+
+
+def test_insert_quest_loot_chest_does_not_downgrade_raid() -> None:
+    """A later chest entry must not clobber an existing raid tag.
+
+    Guards the case where category ordering is disturbed or a re-run
+    processes entries out of order — raid is strictly more specific.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([
+            {"quest_name": "The Master Artificer", "item_name": "Epic Nightmare",
+             "loot_type": "raid"},
+            {"quest_name": "The Master Artificer", "item_name": "Epic Nightmare",
+             "loot_type": "chest"},
+        ])
+        assert _loot_type(db, 1, 1) == "raid"
+
+
+def test_insert_quest_loot_tolerates_missing_loot_type() -> None:
+    """Entries without loot_type still insert (column is nullable)."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([{
+            "quest_name": "Haywire Foundry",
+            "item_name": "Bloodrage Symbiont",
+        }])
+        assert _loot_type(db, 2, 2) is None
+
+
+def test_backfill_quest_loot_types_marks_raid_rows() -> None:
+    """Backfill tags rows whose quest is a known raid, leaving others alone."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([
+            {"quest_name": "The Master Artificer", "item_name": "Epic Nightmare"},
+            {"quest_name": "Haywire Foundry", "item_name": "Bloodrage Symbiont"},
+        ])
+
+        updated = db.backfill_quest_loot_types(["The Master Artificer"])
+
+        assert updated == 1
+        assert _loot_type(db, 1, 1) == "raid"
+        assert _loot_type(db, 2, 2) is None
+
+
+def test_backfill_quest_loot_types_is_idempotent() -> None:
+    """Running the backfill twice changes nothing the second time."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([
+            {"quest_name": "The Master Artificer", "item_name": "Epic Nightmare"},
+        ])
+        assert db.backfill_quest_loot_types(["The Master Artificer"]) == 1
+        assert db.backfill_quest_loot_types(["The Master Artificer"]) == 0
+
+
+def test_backfill_quest_loot_types_ignores_unknown_quest_names() -> None:
+    """A name matching no quest is skipped rather than raising.
+
+    The raid list is hand-maintained, so a stale entry must not break a build
+    — the frontend guardrail test is what surfaces the drift.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([
+            {"quest_name": "The Master Artificer", "item_name": "Epic Nightmare"},
+        ])
+        updated = db.backfill_quest_loot_types(
+            ["The Master Artificer", "Velah, the Crimson Dragon"]
+        )
+        assert updated == 1
+
+
+def test_backfill_quest_loot_types_does_not_overwrite_scraped_types() -> None:
+    """Authoritative scraped values win over the hand-maintained fallback.
+
+    Once a real scrape populates loot_type, the backfill must be a no-op so
+    it can stay wired into the build without degrading good data.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_loot_fixture(db)
+        db.insert_quest_loot([
+            {"quest_name": "Haywire Foundry", "item_name": "Bloodrage Symbiont",
+             "loot_type": "chest"},
+        ])
+        # Pretend the hand list wrongly thinks Haywire Foundry is a raid.
+        updated = db.backfill_quest_loot_types(["Haywire Foundry"])
+        assert updated == 0
+        assert _loot_type(db, 2, 2) == "chest"
