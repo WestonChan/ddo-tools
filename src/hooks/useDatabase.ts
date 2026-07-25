@@ -6,6 +6,26 @@ import sqlWasm from 'sql.js/dist/sql-wasm.wasm?url'
 const DB_URL = import.meta.env.BASE_URL + 'data/ddo.db'
 const DB_FETCH_TIMEOUT_MS = 60_000
 
+/** One-shot guard for DatabaseGate's automatic schema-error heal.
+ *  sessionStorage, not localStorage: a browser restart gets a fresh attempt.
+ *  Lives here (not in DatabaseGate) because `loadDb` also reads it to pick
+ *  the fetch cache mode for the post-heal reload. */
+export const SCHEMA_HEAL_KEY = 'ddo-db-schema-heal-attempted'
+
+/** Cache mode for the DB fetch. The DB sits behind TWO cache layers: the
+ *  service worker's Cache Storage (cleared by the self-heal) and the
+ *  browser's HTTP cache (NOT cleared by it — GitHub Pages serves static
+ *  assets with a finite max-age). When the heal guard is set we're on the
+ *  one post-heal reload, so bypass the HTTP cache too; otherwise the same
+ *  stale bytes can come back and burn the single heal attempt. A query-param
+ *  cache-buster would be wrong here: sw.js matches the DB by URL suffix, so
+ *  changing the URL silently disables service-worker caching. Exported for
+ *  tests. */
+export function dbFetchCacheMode(): RequestCache {
+  if (typeof sessionStorage === 'undefined') return 'default'
+  return sessionStorage.getItem(SCHEMA_HEAL_KEY) === null ? 'default' : 'reload'
+}
+
 // Tagged kinds for categorizing DB load failures. Consumers (DatabaseGate)
 // switch on `err.kind` to render category-specific UI without parsing
 // free-form message strings.
@@ -104,7 +124,7 @@ async function loadDb(controller: AbortController): Promise<Database> {
 
   let buffer: ArrayBuffer
   try {
-    const r = await fetch(DB_URL, { signal: controller.signal })
+    const r = await fetch(DB_URL, { signal: controller.signal, cache: dbFetchCacheMode() })
     if (!r.ok) {
       throw new DbError(
         DB_ERROR_FETCH,
@@ -128,7 +148,14 @@ async function loadDb(controller: AbortController): Promise<Database> {
   }
 
   const db = new SQL.Database(new Uint8Array(buffer))
-  validateSchema(db)
+  try {
+    validateSchema(db)
+  } catch (err) {
+    // Free the ~11MB WASM allocation — a rejected DB is never handed to a
+    // consumer, so nothing else holds a handle to close it.
+    db.close()
+    throw err
+  }
   return db
 }
 

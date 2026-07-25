@@ -5,7 +5,7 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
-    date: '2026-07-24',
+    date: '2026-07-25',
     changes: [
       'New Resources browser: search and filter every item in the database, with a detail drawer for stats, enchantments, and drop sources',
       'Replaces Debug in the nav bar',

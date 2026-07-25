@@ -189,6 +189,34 @@ describe('DatabaseGate schema self-heal', () => {
     )
     expect(sessionStorage.getItem('ddo-db-schema-heal-attempted')).toBeNull()
   })
+
+  it('holds the skeleton across re-renders while the heal reload is in flight', () => {
+    // clearSiteData awaits cache deletion (an 11MB entry) + SW unregister
+    // before location.reload() lands — a window of hundreds of ms. The heal
+    // effect sets the sessionStorage guard immediately, so a naive
+    // "shouldSelfHeal(error)" recomputation flips to false on the very next
+    // render and flashes the error screen mid-heal. Simulate: heal pending
+    // (never-resolving clearSiteData), then force a re-render.
+    mockClearSiteData.mockReturnValue(new Promise(() => {}))
+    mockUseDatabase.mockReturnValue({ db: null, loading: false, error: schemaError() })
+    const { rerender } = render(
+      <DatabaseGate>
+        <div>view</div>
+      </DatabaseGate>,
+    )
+    expect(mockClearSiteData).toHaveBeenCalledTimes(1)
+
+    rerender(
+      <DatabaseGate>
+        <div>view</div>
+      </DatabaseGate>,
+    )
+
+    expect(screen.getByRole('status', { name: 'Loading database' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+    // Still exactly one heal attempt — the re-render must not re-trigger it.
+    expect(mockClearSiteData).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('categorizeDbError', () => {

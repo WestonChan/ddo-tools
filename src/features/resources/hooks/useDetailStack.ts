@@ -55,11 +55,13 @@ export function useDetailStack({
   const navigate = useNavigate()
   const [stack, setStack] = useState<StackEntry[]>(() => (urlEntry ? [urlEntry] : []))
 
-  // URL → stack reconciliation. Fires when the parent re-renders with a
-  // new urlEntry (which only happens on URL change, since urlEntry is
-  // derived from the route). The functional updater returns the same
-  // reference when nothing changes, so React de-dupes and there's no
-  // cascading-render concern despite the lint rule's general warning.
+  // URL → stack reconciliation. NOTE: the parent (ResourcesView) builds
+  // urlEntry as a fresh object literal every render, so this effect runs on
+  // EVERY parent render, not just URL changes. That's safe only because the
+  // functional updater below compares by value (entriesEqual) and returns
+  // the same `prev` reference when nothing changed — React then bails out of
+  // the state update, so there's no cascading-render loop despite the lint
+  // rule's warning. The safety lives in the updater, not the dependency.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setStack((prev) => {

@@ -657,10 +657,11 @@ def collect_item_material_categories(
 # Parent categories, the typical subcategory suffix each uses, and the
 # loot_type each category maps to.
 #
-# ORDER IS LOAD-BEARING: a quest can appear under both Chest_loot and
-# Raid_loot, and `insert_quest_loot` uses INSERT OR REPLACE, so the last
-# entry wins. Raid_loot must stay last or raid items get downgraded to
-# 'chest'. Enforced by test_quest_loot_sources_put_raid_last.
+# Order is NOT load-bearing for correctness: `insert_quest_loot` resolves
+# duplicate quest+item pairs with an explicit ON CONFLICT precedence that
+# never downgrades 'raid', regardless of arrival order. Raid_loot is kept
+# last anyway (and pinned by test_quest_loot_sources_put_raid_last) so the
+# common path is a plain overwrite rather than exercising the CASE branch.
 _QUEST_LOOT_SOURCES: list[tuple[str, str, LootType]] = [
     # (parent_category, typical_suffix, loot_type)
     ("Chest_loot", " loot", LootType.CHEST),

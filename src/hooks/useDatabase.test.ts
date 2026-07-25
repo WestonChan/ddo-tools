@@ -1,7 +1,13 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import type { Database } from 'sql.js'
 import { seedTestDb } from '../test/fixtures/resourcesDb'
-import { validateSchema, DbError, DB_ERROR_SCHEMA } from './useDatabase'
+import {
+  validateSchema,
+  dbFetchCacheMode,
+  SCHEMA_HEAL_KEY,
+  DbError,
+  DB_ERROR_SCHEMA,
+} from './useDatabase'
 
 // Regression coverage for the stale-service-worker incident (2026-07-25):
 // public/sw.js serves ddo.db cache-first, so after a deploy that adds a
@@ -80,5 +86,25 @@ describe('validateSchema', () => {
     } finally {
       empty.close()
     }
+  })
+})
+
+// The DB is served through two cache layers: the service worker's Cache
+// Storage AND the browser's HTTP cache. DatabaseGate's self-heal clears the
+// first, but the post-heal refetch must also bypass the second or GitHub
+// Pages' max-age can hand back the same stale bytes — burning the one heal
+// attempt and parking the user on the error screen.
+describe('dbFetchCacheMode', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+  })
+
+  it('uses default HTTP caching on a normal load', () => {
+    expect(dbFetchCacheMode()).toBe('default')
+  })
+
+  it('bypasses the HTTP cache when a schema heal is in flight', () => {
+    sessionStorage.setItem(SCHEMA_HEAL_KEY, '1')
+    expect(dbFetchCacheMode()).toBe('reload')
   })
 })

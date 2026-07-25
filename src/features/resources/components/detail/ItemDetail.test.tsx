@@ -13,14 +13,11 @@ const baseDetail: ItemDetailRow = {
   rarity: null,
   equipment_slot: 'Trinket',
   item_category: null,
-  level: null,
   minimum_level: 5,
   enhancement_bonus: null,
   material: null,
   binding: null,
-  base_value: null,
   tooltip: null,
-  icon: null,
   description: null,
   wiki_url: null,
   weaponStats: null,
@@ -31,7 +28,7 @@ const baseDetail: ItemDetailRow = {
   effects: [],
   spellLinks: [],
   quests: [],
-} as unknown as ItemDetailRow
+}
 
 describe('ItemDetail quest wiki links', () => {
   it('renders a wiki link icon next to each quest in Drops from', () => {
@@ -63,5 +60,21 @@ describe('ItemDetail quest wiki links', () => {
   it('renders no quest links when the item drops from no quests', () => {
     render(<ItemDetail detail={baseDetail} />)
     expect(screen.queryByText('Drops from')).toBeNull()
+  })
+})
+
+describe('ItemDetail header attributes', () => {
+  it('signs a positive enhancement bonus with +', () => {
+    render(<ItemDetail detail={{ ...baseDetail, enhancement_bonus: 3 }} />)
+    expect(screen.getByText('+3')).toBeInTheDocument()
+  })
+
+  it('renders a negative enhancement bonus with a single minus sign', () => {
+    // Same defect class as the EnchantmentList "+-2" bug fixed on this
+    // branch: an unconditional "+" prefix. No negative enhancement_bonus
+    // exists in the shipped DB today, so this is a latent-regression guard.
+    render(<ItemDetail detail={{ ...baseDetail, enhancement_bonus: -2 }} />)
+    expect(screen.getByText('-2')).toBeInTheDocument()
+    expect(screen.queryByText('+-2')).toBeNull()
   })
 })

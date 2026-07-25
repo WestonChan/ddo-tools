@@ -105,12 +105,26 @@ INSERT INTO patrons (id, name) VALUES
 INSERT INTO quests (id, name, pack_id, patron_id, level, zone) VALUES
   (1, 'Sealed in Amber', 1, 1, 11, 'Barovia'),
   (2, 'The Master Artificer', 1, 1, 30, 'Cannith');
+`
 
--- Item 2 is chest loot; item 1 is raid loot, so listItems' is_raid flag and
--- the picker's "Raid only" filter both have something to exercise.
+// quest_loot rows are seeded per schema vintage — the current shape has
+// loot_type, the frozen baseline doesn't. Everything in FIXTURE_DATA above
+// is baseline-compatible; if a future fixture row ever needs a post-baseline
+// column, seedBaselineDb will fail loudly at seed time — branch that insert
+// the same way rather than touching baselineSchema.sql.
+//
+// Item 2 is chest loot; item 1 is raid loot, so listItems' is_raid flag and
+// the picker's "Raid only" filter both have something to exercise.
+const CURRENT_QUEST_LOOT_DATA = `
 INSERT INTO quest_loot (quest_id, item_id, loot_type) VALUES
   (1, 2, 'chest'),
   (2, 1, 'raid');
+`
+
+const BASELINE_QUEST_LOOT_DATA = `
+INSERT INTO quest_loot (quest_id, item_id) VALUES
+  (1, 2),
+  (2, 1);
 `
 
 let _wasmBinary: ArrayBuffer | null = null
@@ -172,37 +186,36 @@ export async function seedTestDb(): Promise<Database> {
   const db = new SQL.Database()
   db.run(ddl)
   db.run(FIXTURE_DATA)
+  db.run(CURRENT_QUEST_LOOT_DATA)
   return db
 }
 
 /**
- * Seed a database with the BASELINE schema — the shape of `quest_loot` and
- * friends as first publicly deployed (2026-04, pre `loot_type`).
+ * Seed a database with the BASELINE schema — the schema as first publicly
+ * deployed (pre `quest_loot.loot_type`), built from the literal snapshot in
+ * `baselineSchema.sql`.
  *
- * FROZEN: never edit this to match schema changes — its entire purpose is to
- * stay old. The stale-service-worker incident (2026-07-25) happened because
- * returning browsers run NEW frontend code against a cached OLD database;
- * `schemaCompat.test.ts` recreates that state by running every query
- * function against this baseline and requiring any missing column to be
- * declared in `REQUIRED_COLUMNS` (src/hooks/useDatabase.ts), which is what
- * routes stale caches into DatabaseGate's self-heal instead of a view crash.
+ * TRULY FROZEN: the DDL is a checked-in file extracted from main's DB, NOT
+ * derived from the current one. That distinction is the whole guarantee — an
+ * earlier iteration derived the baseline from `seedTestDb` (whose schema is
+ * generated from the current shipped DB), which meant a future schema
+ * addition would silently appear in the "baseline" too and the
+ * `REQUIRED_COLUMNS` tripwire in `schemaCompat.test.ts` would never fire.
+ * With a literal snapshot, any query needing a post-baseline column fails
+ * against this DB by construction, forcing the REQUIRED_COLUMNS entry that
+ * routes stale service-worker caches into DatabaseGate's self-heal.
+ *
  * When a future query needs a newer column, the fix is a REQUIRED_COLUMNS
- * entry — not a baseline edit.
+ * entry — never an edit to `baselineSchema.sql`.
  */
 export async function seedBaselineDb(): Promise<Database> {
-  const db = await seedTestDb()
-  // Rewind the post-baseline schema additions. As of now that is only
-  // quest_loot.loot_type; append future rewinds here when the live fixture
-  // gains columns the baseline never had.
-  db.run(`
-    DROP TABLE quest_loot;
-    CREATE TABLE quest_loot (
-      quest_id INTEGER NOT NULL REFERENCES quests(id),
-      item_id  INTEGER NOT NULL REFERENCES items(id),
-      PRIMARY KEY (quest_id, item_id)
-    );
-    INSERT INTO quest_loot (quest_id, item_id) VALUES (1, 2), (2, 1);
-  `)
+  const SQL = await getSQL()
+  const here = dirname(fileURLToPath(import.meta.url))
+  const ddl = readFileSync(resolve(here, 'baselineSchema.sql'), 'utf8')
+  const db = new SQL.Database()
+  db.run(ddl)
+  db.run(FIXTURE_DATA)
+  db.run(BASELINE_QUEST_LOOT_DATA)
   return db
 }
 

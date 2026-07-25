@@ -24,7 +24,12 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-  if (!DB_URL_PATTERN.test(event.request.url)) return
+  // Same-origin check matters even though the path pattern looks specific:
+  // any same-scope page fetching a cross-origin .../data/ddo.db would
+  // otherwise be intercepted and its (opaque) response considered.
+  const url = new URL(event.request.url)
+  if (url.origin !== self.location.origin) return
+  if (!DB_URL_PATTERN.test(url.pathname)) return
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
@@ -32,7 +37,13 @@ self.addEventListener('fetch', (event) => {
       return fetch(event.request).then((response) => {
         if (response.ok) {
           const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+          // waitUntil keeps the worker alive for the ~11MB write. Without
+          // it the browser may terminate the worker after respondWith
+          // settles, silently aborting the put — the DB would then be
+          // re-downloaded on every visit with no visible error.
+          event.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+          )
         }
         return response
       })

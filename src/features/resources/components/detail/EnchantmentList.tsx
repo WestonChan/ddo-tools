@@ -1,5 +1,6 @@
 import type { JSX } from 'react'
 import { DetailSection } from './DetailSection'
+import { formatSigned } from './formatSigned'
 import type { ItemBonus, ItemEffect } from '../../queries/items'
 
 interface EnchantmentListProps {
@@ -40,13 +41,6 @@ function cleanDescription(text: string | null): string | null {
   if (!text) return null
   const stripped = text.replace(/\{\{[^{}]*\}\}/g, '').trim()
   return stripped.length > 0 ? stripped : null
-}
-
-// Format a bonus/effect magnitude with an explicit sign. Negative values are
-// real in the data — cursed gear carries `Constitution -2`, `Will Save -2` —
-// so an unconditional "+" prefix renders "+-2". Zero gets no sign at all.
-function formatSigned(value: number): string {
-  return value > 0 ? `+${value}` : String(value)
 }
 
 function bonusToLine(b: ItemBonus): EnchantmentLine {

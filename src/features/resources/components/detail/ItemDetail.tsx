@@ -2,6 +2,7 @@ import type { JSX } from 'react'
 import { TooltipWrapper, WikiLinkIcon } from '../../../../components'
 import { EntityHeader } from './EntityHeader'
 import { EnchantmentList } from './EnchantmentList'
+import { formatSigned } from './formatSigned'
 import { DetailSection } from './DetailSection'
 import { StatList, type StatListItem } from './StatList'
 import type { KvItem } from './KeyValueGrid'
@@ -21,7 +22,7 @@ function buildHeaderAttributes(detail: ItemDetailRow): KvItem[] {
   if (detail.item_category) attrs.push({ label: 'Type', value: detail.item_category })
   if (detail.minimum_level !== null) attrs.push({ label: 'Min level', value: detail.minimum_level })
   if (detail.enhancement_bonus !== null)
-    attrs.push({ label: 'Enhancement', value: `+${detail.enhancement_bonus}` })
+    attrs.push({ label: 'Enhancement', value: formatSigned(detail.enhancement_bonus) })
   if (detail.material) attrs.push({ label: 'Material', value: detail.material })
   if (detail.binding) attrs.push({ label: 'Binding', value: detail.binding })
   if (detail.augmentSlots.length > 0) {

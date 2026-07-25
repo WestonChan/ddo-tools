@@ -1,5 +1,5 @@
-import { useEffect, type JSX, type ReactNode } from 'react'
-import { useDatabase, isDbError, DB_ERROR_SCHEMA } from '../hooks'
+import { useEffect, useState, type JSX, type ReactNode } from 'react'
+import { useDatabase, isDbError, DB_ERROR_SCHEMA, SCHEMA_HEAL_KEY } from '../hooks'
 import { ErrorScreen } from './ErrorScreen'
 import { categorizeDbError } from './dbErrorCategorize'
 import { clearSiteData } from './clearSiteData'
@@ -7,9 +7,6 @@ import './DatabaseGate.css'
 
 const RETRY_KEY = 'ddo-db-retry-count'
 const RETRY_LIMIT = 3
-// One-shot guard for the automatic schema-error heal below. sessionStorage,
-// not localStorage: a browser restart should get a fresh attempt.
-const SCHEMA_HEAL_KEY = 'ddo-db-schema-heal-attempted'
 
 /** Per-view DB-loading wrapper. Replaces the deprecated top-level
  *  `LoadingGate` so views that don't need `ddo.db` (Settings, Characters,
@@ -25,9 +22,15 @@ const SCHEMA_HEAL_KEY = 'ddo-db-schema-heal-attempted'
  *  came back to a recovered DB doesn't see Retry stuck disabled. */
 export function DatabaseGate({ children }: { children: ReactNode }): JSX.Element {
   const { db, loading, error } = useDatabase()
+  // Sticky for the component's lifetime: once a heal starts, every
+  // subsequent render keeps showing the skeleton until location.reload()
+  // tears the page down. Recomputing from sessionStorage each render would
+  // flip to "not healing" one render after the effect writes the guard,
+  // flashing the error screen mid-heal.
+  const [healStarted, setHealStarted] = useState(false)
 
   useEffect(() => {
-    if (db) {
+    if (db && storageAvailable()) {
       sessionStorage.removeItem(RETRY_KEY)
       // Re-arm the schema self-heal for the next deploy-time schema change.
       sessionStorage.removeItem(SCHEMA_HEAL_KEY)
@@ -39,15 +42,21 @@ export function DatabaseGate({ children }: { children: ReactNode }): JSX.Element
   // runs new code against the old cached file; validateSchema surfaces that
   // as DB_ERROR_SCHEMA. The cause is our own cache, the fix is known —
   // clear it and reload — so do it without making the user find the button.
-  // Strictly once per session (guard above): if the error persists after a
-  // clean refetch, the DB on the server is genuinely bad, and looping would
-  // re-download 11MB per lap. Then the normal error screen takes over.
-  const healing = shouldSelfHeal(error)
+  // Strictly once per session (sessionStorage guard): if the error persists
+  // after a clean refetch, the DB on the server is genuinely bad, and
+  // looping would re-download 11MB per lap. Then the error screen takes over.
+  const healing = healStarted || shouldSelfHeal(error)
   useEffect(() => {
-    if (!healing) return
+    if (!healing || healStarted) return
+    // This setState fires at most once per mount (guarded above) and the
+    // page reloads moments later — the single extra render is the point:
+    // it pins `healing` true so re-renders during the heal can't flash the
+    // error screen. No cascading-render risk.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHealStarted(true)
     sessionStorage.setItem(SCHEMA_HEAL_KEY, '1')
     void clearSiteData()
-  }, [healing])
+  }, [healing, healStarted])
 
   if (loading) return <DatabaseGateSkeleton />
   // While the self-heal reload is in flight, hold the skeleton — flashing
@@ -58,11 +67,18 @@ export function DatabaseGate({ children }: { children: ReactNode }): JSX.Element
   return <>{children}</>
 }
 
+// Storage access can throw in privacy-hardened contexts; render-phase reads
+// must not take the whole view down (mirrors readRetryCount's guard).
+function storageAvailable(): boolean {
+  return typeof sessionStorage !== 'undefined'
+}
+
 function shouldSelfHeal(error: Error | null): boolean {
   return (
     error !== null &&
     isDbError(error) &&
     error.kind === DB_ERROR_SCHEMA &&
+    storageAvailable() &&
     sessionStorage.getItem(SCHEMA_HEAL_KEY) === null
   )
 }

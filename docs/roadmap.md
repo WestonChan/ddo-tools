@@ -1182,7 +1182,6 @@ Findings from the 2026-07-24 structure audit. Deferred until the active feature 
 - Move `CharacterView.tsx` + `.css` from `character/components/` to the `character/` feature root — every other feature keeps its top-level view at the root (`LandingView`, `ResourcesView`, `SettingsView`).
 - Create `character/contexts/` and move `CharacterContext.tsx` + `context.ts` into it, mirroring `resources/contexts/`.
 - Delete empty dirs: `src/assets/`, `src/features/gear/components/`.
-- Extract `KNOWN_RAID_QUESTS` + `findRaidItemIds` from `resources/queries/items.ts` into `queries/raidQuests.ts` so `raidQuests.test.ts` pairs with a real source file.
 - Merge `src/test-utils/` into `src/test/` (single test-support dir; `renderWithRouter` has one consumer).
 - Remove dead icons from [../src/components/Icons.tsx](../src/components/Icons.tsx): 26 of 28 hand-rolled icons have zero consumers (verified 2026-07-24). Swap the two live ones (`ChevronRightIcon` in `CollapsibleSection`, `SkillsIcon` in `AppNavBar`) to `lucide-react` equivalents, delete `Icons.tsx`, prune the barrel — `lucide-react` is already the icon system in 10+ files.
 - Optional, judgment call: `src/hooks/theme.ts` is not a hook (data + DOM/localStorage helpers) and per convention belongs in `src/lib/` — but it's co-located with its consumer `useTheme.ts`. Decide when touching Phase 4h.

@@ -49,7 +49,8 @@ describe('query surface vs the frozen baseline schema', () => {
 
   it('covers every baseline query failure with a REQUIRED_COLUMNS entry', async () => {
     const baseline = await seedBaselineDb()
-    const required = new Set(REQUIRED_COLUMNS.map(([, column]) => column))
+    const requiredColumns = new Set(REQUIRED_COLUMNS.map(([, column]) => column))
+    const requiredTables = new Set(REQUIRED_COLUMNS.map(([table]) => table))
     const uncovered: string[] = []
     let failures = 0
     try {
@@ -59,8 +60,15 @@ describe('query surface vs the frozen baseline schema', () => {
         } catch (err) {
           failures += 1
           const message = err instanceof Error ? err.message : String(err)
-          const missing = /no such column: (\w+)/.exec(message)?.[1]
-          if (missing === undefined || !required.has(missing)) {
+          // SQLite reports qualified references verbatim ("no such column:
+          // ql.loot_type"), so strip any alias prefix before matching, and
+          // treat a missing table as covered when the table is declared.
+          const rawName = /no such (?:column|table): ([\w.]+)/.exec(message)?.[1]
+          const missing = rawName?.split('.').pop()
+          const covered =
+            missing !== undefined &&
+            (requiredColumns.has(missing) || requiredTables.has(missing))
+          if (!covered) {
             uncovered.push(
               `${name} failed against the baseline schema (${message}) but ` +
                 `REQUIRED_COLUMNS does not cover it — add the [table, column] ` +
@@ -75,6 +83,27 @@ describe('query surface vs the frozen baseline schema', () => {
       // (findRaidItemIds needs loot_type). If nothing fails here, the
       // baseline has been "helpfully" updated and the test is vacuous.
       expect(failures).toBeGreaterThan(0)
+    } finally {
+      baseline.close()
+    }
+  })
+
+  it('keeps every REQUIRED_COLUMNS entry genuinely post-baseline', async () => {
+    // The inverse invariant: if an entry's column EXISTS in the frozen
+    // baseline, either the entry is stale or someone regenerated
+    // baselineSchema.sql from the current DB — both defeat the tripwire.
+    const baseline = await seedBaselineDb()
+    try {
+      const alreadyPresent: string[] = []
+      for (const [table, column] of REQUIRED_COLUMNS) {
+        const result = baseline.exec(
+          `SELECT COUNT(*) FROM pragma_table_info('${table}') WHERE name = '${column}'`,
+        )
+        if (Number(result[0]?.values[0]?.[0] ?? 0) > 0) {
+          alreadyPresent.push(`${table}.${column}`)
+        }
+      }
+      expect(alreadyPresent).toEqual([])
     } finally {
       baseline.close()
     }
