@@ -833,7 +833,7 @@ Auto-generated from ALL items in the current build (all gear sets, augments, fil
 - Each sub-view is a 2-panel layout:
   - **Left panel**: Searchable/filterable picker list for that entity type
   - **Right panel**: Selected entity detail -- wiki link (opens in new tab for easy comparison), description, and all bonuses/effects this entity applies
-- **Wiki compare window**: Inline embedding is impossible -- ddowiki.com put its entire origin (`api.php` included) behind AWS WAF's JS bot challenge, and only top-level navigation clears it. Superseded by the shared right-half compare window shipped in Phase 4b: every wiki click re-navigates one window, so our parsed data sits beside the wiki page for mismatch spotting. Details in [ddowiki-api.md](ddowiki-api.md).
+- **Wiki compare window**: Inline embedding is impossible -- ddowiki.com put its entire origin (`api.php` included) behind AWS WAF's JS bot challenge, and only top-level navigation clears it. Superseded by the shared left-half compare window shipped in Phase 4b: every wiki click re-navigates one window, so our parsed data sits beside the wiki page for mismatch spotting. Details in [ddowiki-api.md](ddowiki-api.md).
 - **Inline corrections**: When a mismatch is spotted, click "Edit" on any bonus/effect to correct it inline. Changes:
   - Applied to local DB immediately (user's copy is fixed)
   - Accumulated in a corrections log (stored in `user.db`)
@@ -929,6 +929,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4b | done | Resources drawer architecture + wiki compare window |
 | **4h** | **→ NEXT** | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` (~30 lines) |
 | 4i | planned | `<Modal>` primitive consolidation |
+| 4j | planned | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit |
+| 4k | planned | File-structure cleanup -- feature-layout consistency, dead icon removal |
 | 4c | planned | ETL data-quality cleanup (Python pipeline) |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
@@ -945,9 +947,10 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 12 | planned | Build Overview |
 | 13 | planned | Settings view cleanup |
 | 14 | planned | Build sharing via URL |
+| 15 | planned | `.DDOBuild` import (DDOBuilderV2 desktop files) |
 
-Phases 4h and 4i are general frontend cleanup rather than Resources-browser work; they sit under
-Phase 4 only because they surfaced during it. Ordered first because both are small and self-contained.
+Phases 4h–4k are general frontend/repo cleanup rather than Resources-browser work; they sit under
+Phase 4 only because they surfaced during it. Ordered first because all are small and self-contained.
 
 ### Phase 1: Layout Restructuring (done)
 - Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
@@ -1020,7 +1023,13 @@ Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
 - DetailBar component: back arrow (hidden at depth 1), breadcrumb (clickable to jump levels), copy-link button (shares the current top of stack — which may differ from the address bar URL at depth 2+), close-all button.
 - `ResourceDetailView` component: composes `useDetailStack` + `DetailBar` + parsed-detail body. Reusable inline by future views (gear/build) without a drawer wrapper.
 - `DetailNavContext` lets per-category detail components push cross-links onto the stack without prop-drilling.
-- **Wiki preview → compare window.** ddowiki.com put its entire origin (api.php included) behind AWS WAF's JS bot challenge; no embed or cross-origin fetch can pass — only top-level navigation clears it (details: [docs/ddowiki-api.md](ddowiki-api.md)). The embedded preview pane, health pill, and `pingWiki` machinery are removed; wiki links now open a shared right-half compare window (`openCompareWindow` in `src/lib/wiki/client.ts` — one window that every wiki click re-navigates), and the wiki icon sits next to the item name in `EntityHeader`. Restoring API access is an admin ask tracked in [docs/notes/To Do.md](notes/To%20Do.md).
+- **Wiki preview → compare window.** ddowiki.com put its entire origin (api.php included) behind AWS WAF's JS bot challenge; no embed or cross-origin fetch can pass — only top-level navigation clears it (details: [docs/ddowiki-api.md](ddowiki-api.md)). The embedded preview pane, health pill, and `pingWiki` machinery are removed; wiki links now open a shared left-half compare window (`openCompareWindow` in `src/lib/wiki/client.ts` — one window that every wiki click re-navigates), and the wiki icon sits next to the item name in `EntityHeader`. Restoring API access is an admin ask tracked in [docs/notes/To Do.md](notes/To%20Do.md).
+- **Post-review fixes** (same phase, from the branch review):
+  - The Raid filter silently hid 262 items (347 → 609): the frontend matched a hardcoded list of raid quest names, 5 of which matched no `quests` row, and several raids were missing outright. Fixed the names, then removed the mechanism — raid-ness now lives in `quest_loot.loot_type` and the frontend just queries it (see the Phase 4c entry, which stays open pending an authoritative scrape). `raidLoot.test.ts` guards the new failure mode: a DB shipped with the column empty.
+  - Negative bonus magnitudes rendered as `+-2` (20 bonuses across 54 items — cursed gear). `formatSigned` in `EnchantmentList` now signs only positives.
+  - Picker rows were `<div onClick>`: unreachable by keyboard and carrying `aria-selected` on react-window's `role="listitem"` (invalid). Rows are real `<button>`s using `aria-current`, with a focus ring.
+  - The `/` and Escape shortcuts were bound to the view root, so they never fired when focus sat outside it (nav-bar click, deep link). Moved to `document`; the drawer now takes focus on open and restores it on close, and carries `aria-modal` plus an `aria-labelledby` pointing at the item heading.
+  - Dead code removed: `utils.ts` (duplicate of `isCategory` + an unused `assertNever`), a second divergent `ItemRow` in `types.ts`, `rowsToObjects`/`firstRow`/`escapeLike` in `sqlHelpers.ts`, `EnchantmentLine.statName`, and the unused `level`/`base_value`/`icon` columns in `getItemDetail`.
 
 #### Phase 4c — ETL data-quality cleanup
 
@@ -1028,9 +1037,10 @@ Frontend workarounds keep accumulating because the scraper stores half-processed
 
 - HTML entities leak into stored strings — e.g. items.id 555 has `name = "Admiral&#39;s Gloves"` while items.id 545 has `name = "Acolyte's Lenses"`. Inconsistent: some inserts decode, some don't. Fix: HTML-unescape every `TEXT` column at insert time (one pass at the writer boundary, not per-field). Frontend currently has no decoder; once the DB is clean, none is needed.
 - `items.rarity` is universally empty (`SELECT DISTINCT rarity FROM items` → 7,249 NULL/empty rows). The picker has had a "Rare only" toggle for a while that's been silently filtering nothing, and the new `[Rare]` row chip will never render until rarity is backfilled. Likely a scraper gap — the column exists, the parser just isn't extracting it from item infoboxes.
-- `stats` table has only `(id, name, category)` — no description column. The detail view's bonus rows now show a wiki-link icon with the stat *name* as a tooltip placeholder; once stat descriptions are scraped (or hand-curated for the ~50 distinct stats DDO uses), the tooltip body should switch to the real description. This is a smaller scrape — stat pages are a bounded set, easy to enumerate.
+- `stats` table has only `(id, name, category)` — no description column. Blocks the per-row wiki-link + stacking tooltip on bonus rows (tracked in [docs/notes/Resource View.md](notes/Resource%20View.md) under Phase 4c): the tooltip needs a real description to show. Once stat descriptions are scraped (or hand-curated for the ~50 distinct stats DDO uses), both land together. This is a smaller scrape — stat pages are a bounded set, easy to enumerate.
 - Bonus descriptions contain raw MediaWiki template invocations (`{{Stat|Charisma|5}}`, `{{Elemental Resistance|Fire|30}}`) that the scraper didn't expand. Frontend strip workaround lives in [`EnchantmentList.tsx`](../src/features/resources/components/detail/EnchantmentList.tsx) (`cleanDescription`). Long-term: expand templates at parse time (the templates are defined on the wiki — we have the raw definition available); fall back to stripping if expansion fails.
 - `quests.npc` column exists in the schema but is universally null (`COUNT(npc) = 0` across 681 quests). Schema comment notes "unpopulated (future: wt)". The frontend already reads it (see [`items.ts`](../src/features/resources/queries/items.ts) — quest query) and renders it in the meta line; populate it from the wiki quest pages and the UI surfaces it for free.
+- **Raid loot: column shipped, authoritative data still pending.** `quest_loot.loot_type` now exists (`chest`/`reward`/`raid`), `collect_quest_loot` records which wiki category each mapping came from instead of discarding it, and `insert_quest_loot` implements the raid-wins precedence its docstring always claimed. The frontend queries the column and the hardcoded `KNOWN_RAID_QUESTS` list is gone from `items.ts`. **Still open**: the column is populated by `backfill_quest_loot_types` from a hand-maintained list (`scripts/src/ddo_data/game_data/raid_quests.py`) because ddowiki's WAF challenge blocks the scrape, so only `raid` is set — `chest`/`reward` are NULL on 4,151 rows; a successful items scrape fills those two. The list itself was **reconciled 2026-07-25** against the wiki's `Raids` page in a real browser (which passes the WAF): +4 taggable raids (154 items, 609 → 756), −`Reign of Madness` (story arc, not a raid), scraper suffix bug fixed (bogus `The Chronoscope reward items` quest merged away). Caveat discovered in the process: `Category:Raid_loot` is stale on the wiki (last edit 2015), so even a live scrape under-tags raids — the hand list stays authoritative for `raid` until that's addressed. Remaining sub-issues in [docs/notes/DB Errors.md](notes/DB%20Errors.md): the `chest`/`reward` NULLs, four raids with zero loot rows, and two raids missing from `quests` entirely.
 - `quests` table has no `wiki_url` column (only `items` and `feats` do). The "Drops from" section's quest wiki-link icon currently derives the URL client-side from `q.name` — works for the common case but breaks on disambiguation suffixes (`Quest Name (Heroic)`) and namespaced pages. Add `quests.wiki_url`, populate it during the quest scrape, and the frontend can drop its derive-from-name fallback. Once populated, swap `WikiLinkIcon pageName={q.name}` to a URL-aware variant.
 - Effect magnitudes land in `effects.modifier` and the bonus type is discarded — the wiki's enchantment-template grammar is `{{Effect|magnitude|bonus-type}}` (e.g. `{{Incite|59|Insightful}}`), but `parse_effect_template`'s two-param branch assumes params[0] is a textual modifier. 149 `effects` rows across 30 names, reaching 613 `item_effects` rows; the UI renders the magnitude in the type-chip column. Root cause, evidence, and repro queries in [docs/notes/DB Errors.md](notes/DB%20Errors.md) (entry dated 2026-07-24).
 - `bonuses.bonus_type_id` is NULL on 782 of 4,948 rows (~16%). Some bonuses are legitimately untyped, but 16% feels high — scraper extraction is likely missing types on save-bonus rows (e.g. item 2193's "Illusion Save +6" and "Enchantment Save +6" both come back NULL). Spot-check ~10 NULL rows against the wiki to calibrate; tighten the parser regex / template handling where the wiki uses non-standard phrasing for typed bonuses. The frontend already renders NULL types as an empty grid cell, so this is purely a data-quality cleanup, not a UI gap.
@@ -1049,7 +1059,8 @@ Filters today are scattered across the top bar (Slot select, Pack select, Stats 
 - **Unified filter UI.** Replace the strip of disparate controls with a single filter surface (popover or inline panel) that lists every available filter in one place. Active filters render as removable chips above the result list — visible at a glance, one-click clear. Removes the "where's the rare toggle vs the slot select" cognitive split.
 - **Tiered visibility for rarely-used filters.** Some filters (Slot, Pack, Stats, ML) get used constantly; others (per-stat to-hit, per-stat to-damage, weapon proficiency, material, binding, augment-slot color, future power-user fields) are useful occasionally and would clutter the primary surface. The unified UI groups filters into "common" (always visible) and "more" (collapsed behind a disclosure or secondary tab) so adding new filters doesn't degrade the day-to-day view. Goal: every filter we'd reasonably want is *available*, not *visible*.
 - **Searchable selects.** The Pack dropdown already has 50+ options and will grow; Stats, future Bonus-type, and future Patron filters have similar shapes. Replace the native `<select>` with a typeahead-style combobox so users can find an option by typing instead of scrolling. Stats multi-select pattern can fold into the same primitive.
-- **Per-raid filter.** Today "Raid" is a boolean toggle (any raid) and pack is a separate dropdown — neither lets the user filter to a *specific* raid. Add a Raid filter (combobox listing the entries in `RAID_QUEST_NAMES`) so "show me items that drop from Tower of the Twelve" works directly. The boolean "any raid" toggle can stay as a quick-access shortcut alongside the per-raid select, or fold into "Raid: Any" inside the unified UI.
+- **Per-raid filter.** Today "Raid" is a boolean toggle (any raid) and pack is a separate dropdown — neither lets the user filter to a *specific* raid. Add a Raid filter (combobox listing the entries in `KNOWN_RAID_QUESTS`, or the `is_raid` quests once the Phase 4c migration lands) so "show me items that drop from Tower of the Twelve" works directly. The boolean "any raid" toggle can stay as a quick-access shortcut alongside the per-raid select, or fold into "Raid: Any" inside the unified UI.
+- **"Content you own" filter** — items whose source quests the user can actually run, from an account-type setting (F2P/Premium/VIP) + owned packs/expansions + an "apply free code" shortcut for the recurring pack-giveaway codes. Needs spec expansion before starting; ownership model, wiki sources, and data prerequisites are in [docs/notes/Resource View.md](notes/Resource%20View.md).
 
 Concrete rarely-used filters to seed the "more" group with at launch:
 - **To-hit by stat** — "show items that grant a to-hit bonus from <Stat>". Useful for builds that swap which stat drives weapon attack rolls (e.g. Finesse builds wanting Dex-based to-hit gear). Backing data lives in `bonuses` rows scoped to the to-hit stat-mod.
@@ -1155,6 +1166,27 @@ packages:
 - Specialized focus management library — minimal in-tree Tab-trap is
   enough for the immediate use cases.
 
+#### Phase 4j — Licensing & attribution housekeeping
+
+README/repo gaps found while surveying comparable sites (2026-07-24). All trivial; no code changes.
+
+- **Add a `LICENSE` file.** README says "MIT" but no license text exists in the repo — a stated license with no license file is legally ineffective.
+- **Add an IP / fan-project disclaimer** to the README: DDO is © Standing Stone Games; game content, names, and assets belong to their owners; this is an unaffiliated fan tool. We publish a site built on data extracted from game files and scraped wiki content — currently with no such notice.
+- **Credit DDO Wiki in the README Credits section.** We scrape it heavily (`ddo-data scrape`, `.wiki-cache/`, [ddowiki-api.md](ddowiki-api.md)); wiki content is typically CC-BY-SA, so attribution is a requirement, not a courtesy.
+- **Add a short Deployment section** to the README: push to `main` → GitHub Actions → GitHub Pages (~5 lines).
+
+#### Phase 4k — File-structure cleanup
+
+Findings from the 2026-07-24 structure audit. Deferred until the active feature branch lands so moves don't tangle with feature work; use `git mv` to preserve history and run `npm run build` + `npx vitest run` after.
+
+- Move `CharacterView.tsx` + `.css` from `character/components/` to the `character/` feature root — every other feature keeps its top-level view at the root (`LandingView`, `ResourcesView`, `SettingsView`).
+- Create `character/contexts/` and move `CharacterContext.tsx` + `context.ts` into it, mirroring `resources/contexts/`.
+- Delete empty dirs: `src/assets/`, `src/features/gear/components/`.
+- Extract `KNOWN_RAID_QUESTS` + `findRaidItemIds` from `resources/queries/items.ts` into `queries/raidQuests.ts` so `raidQuests.test.ts` pairs with a real source file.
+- Merge `src/test-utils/` into `src/test/` (single test-support dir; `renderWithRouter` has one consumer).
+- Remove dead icons from [../src/components/Icons.tsx](../src/components/Icons.tsx): 26 of 28 hand-rolled icons have zero consumers (verified 2026-07-24). Swap the two live ones (`ChevronRightIcon` in `CollapsibleSection`, `SkillsIcon` in `AppNavBar`) to `lucide-react` equivalents, delete `Icons.tsx`, prune the barrel — `lucide-react` is already the icon system in 10+ files.
+- Optional, judgment call: `src/hooks/theme.ts` is not a hook (data + DOM/localStorage helpers) and per convention belongs in `src/lib/` — but it's co-located with its consumer `useTheme.ts`. Decide when touching Phase 4h.
+
 #### Phase 5b — Resource Report View
 
 Split out of Phase 4 because both items need `user.db`. Runs after Phase 5; blocked until then.
@@ -1183,6 +1215,8 @@ Detail: [docs/notes/Resource Report View.md](notes/Resource%20Report%20View.md).
 - `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
 - Breakdown popover, search, pin, stat highlight
 - Vitest unit tests for stats engine (typed/untyped stacking, derived stats, edge cases)
+
+**Rules reference** (applies to Phases 6–8): the game's stacking/effect-resolution rules are documented in [stacking-rules.md](stacking-rules.md) (extracted 2026-07-25 from DDOBuilderV2's model via [ddo-builds.com's open-source TS port](https://github.com/johngalt316/ddo-builds)) — read it before designing the engine. Consult their `src/engine/` only as *documentation of the game's rules* — don't copy code or data verbatim: the repo is MIT-labeled, but it's a port of DDOBuilderV2, which has **no license** (all rights reserved), so the MIT grant is only as solid as its unlicensed upstream. Game mechanics themselves are facts and not copyrightable; implement independently against our own SQLite data. Credit both repos in the README when the engine ships. Open design decision recorded in stacking-rules.md: whether to mirror DDOBuilderV2's item-vs-non-item competition split or apply type competition uniformly.
 
 ### Phase 7: Build Plan (single scrollable page)
 - Build header (race, point buy, base stats, tomes, class set)
@@ -1247,6 +1281,7 @@ Share builds via URL links without a backend. Complement to the file-based impor
 
 **Share codec** (`shareCodec.ts`):
 - Encode/decode builds to URL-safe compressed strings using lz-string (`compressToEncodedURIComponent`)
+- Before committing to lz-string, evaluate native `CompressionStream('deflate-raw')` + base64url: zero dependencies, and deflate typically compresses JSON better. lz-string's edge is synchronous API + directly URL-safe output; lz-string last published 2023-03 (stable/finished, not abandoned)
 - Use numeric DB IDs (integer PKs from `ddo.db`) instead of string slugs for compactness
 - Version prefix (`v1:`) for future format evolution
 - Core build fields: race, class split, feats (with level slots), enhancements, destinies, ability scores
@@ -1265,6 +1300,17 @@ Share builds via URL links without a backend. Complement to the file-based impor
 - Self-hosted paste endpoint (Cloudflare Workers / Vercel serverless — free tier)
 - GitHub Gist API (requires user auth for creation)
 - Evaluate whether static GitHub Pages is still sufficient or if a minimal backend is warranted
+- **Empirical data point** (2026-07-24): ddo-builds.com — same domain, comparable build payload — ships lz-string URL-hash sharing *and* a Cloudflare Worker share API (`shareApi.ts`) side by side, suggesting URL-only wasn't sufficient for full builds there. Plan for the gate to trigger.
+
+---
+
+### Phase 15: `.DDOBuild` Import
+
+Import build files from [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOBuilderV2), the dominant desktop build planner. Strong acquisition path: existing users arrive with builds already made. Both comparable sites (ddo-builds.com, ddobuildhub.com) support it. Requires Phase 7's build structures; complements Phase 5's file-based import and Phase 14's URL sharing.
+
+- Parse the `.DDOBuild` XML save format (active life/build, per-level classes, ability scores, tomes, feats, past lives, enhancement spends, gear/augments/filigrees, stances) with native `DOMParser` — no XML library. ddo-builds.com's `src/utils/ddoBuildParser.ts` demonstrates the approach and doubles as format documentation; ddobuildhub.com ships `xmlbuilder2` (~374 KB chunk) for the same job — avoid that.
+- Map DDOBuilderV2's string identifiers onto our `ddo.db` IDs; surface unmapped entries as import warnings rather than failing the whole import.
+- Drag-and-drop + file-picker entry points; imported build lands as unsaved (red-dot badge, Phase 5/14 convention) until the user keeps it.
 
 ---
 

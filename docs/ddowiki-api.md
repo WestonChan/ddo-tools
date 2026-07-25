@@ -219,7 +219,7 @@ https://ddowiki.com/api.php?action=query&list=categorymembers&cmtitle=Category:S
 |----------|--------------|---------|
 | `Chest_loot` | 617 (one per quest) | `quest_loot` (loot_type='chest') |
 | `Quest_rewards` | 57 | `quest_loot` (loot_type='reward') |
-| `Raid_loot` | 25 | `quest_loot` (loot_type='raid') |
+| `Raid_loot` | 26 | `quest_loot` (loot_type='raid') |
 | `Quests_by_adventure_pack` | 65 | `quests.pack_id` |
 | `Quests_by_patron` | 22 | `quests.patron_id` |
 | `Quests_by_level` | varies | `quests.level` |
@@ -227,6 +227,57 @@ https://ddowiki.com/api.php?action=query&list=categorymembers&cmtitle=Category:S
 | `Quests_requiring_flagging` | 21 pages | `quest_flagging` |
 
 The wiki page `Named_chest_loot` renders `Category:Chest_loot` via `{{Category listing}}`. Each subcategory (e.g., `A_Break_In_the_Ice_loot`) contains Item: pages. Strip suffix ` loot` or ` reward items` to get quest name.
+
+**Current state of these mappings** (as of 2026-07-25):
+
+- The three loot categories are walked by `collect_quest_loot`, which tags each mapping with its `loot_type`. Because the WAF challenge blocks the scrape, the shipped DB's `loot_type` is populated only for `raid`, by an offline backfill — see [`raid_quests.py`](../scripts/src/ddo_data/game_data/raid_quests.py). A single successful items scrape fills `chest` and `reward` too.
+- The `Quests_by_*` categories are **not walked by any code**, despite the mapping column above. Quest pack, patron, level, and zone come from the static [`quest_seed_data.json`](../scripts/src/ddo_data/wiki/quest_seed_data.json) via `seed_quest_data` instead. Treat those four rows as intent, not implementation.
+- **`Category:Raid_loot` is stale relative to the wiki's `Raids` page** (verified in-browser 2026-07-25 — top-level navigation passes the WAF, so hand-checks in a real browser remain possible even while the API is blocked). The category page was last modified in 2015 and carries 26 subcategories; the `Raids` page lists 41 raids. Newer raids' loot (Killing Time, Riding the Storm Out, Old Baba's Hut, The Curse of Strahd, Skeletons in the Closet, …) is categorized under `Chest_loot` only. Consequence: even a successful `Raid_loot` scrape under-tags — the canonical raid list in `raid_quests.py` (reconciled against the `Raids` page) stays necessary until the wiki's categorization is fixed or the scraper cross-references the `Raids` page itself.
+- One `Raid_loot` subcategory breaks the naming convention: `The Chronoscope reward items` (suffix `" reward items"` under a `" loot"`-suffixed parent). The scraper now strips against all known suffixes regardless of parent.
+
+### Finding quests and raids
+
+Where to look when you need quest/raid names, their packs, or completeness checks — ranked by authority. Learned during the 2026-07-25 raid reconciliation; all of these are wiki *pages* (not API calls), so while the WAF challenge is up they can be read in a real browser (or Playwright) via top-level navigation, just not fetched by a client.
+
+| Source | URL pattern | What it gives you | Caveats |
+|--------|-------------|-------------------|---------|
+| **`Quests` hub page** | `/page/Quests` | The entry point for all quest lookups: the quest navbox (every listing below links from here), a per-level count matrix linking `Level_N_quests` pages (N = 1–40), and running totals (869 quests + 56 wilderness areas as of Update 80.0.1, 2026-07). Use the totals as a DB-completeness sanity metric. | Totals count a quest once for heroic and once for epic. Challenges and Lamannia content excluded. |
+| **`Level_N_quests` pages** | `/page/Level_<N>_quests` | All quests at a given base level. The unit for level-scoped completeness sweeps ("does the DB have all 78 level-32 quests?"). | Same heroic/epic double-count convention. |
+| **`Category:Quests`** | `/page/Category:Quests` | Template-driven membership of every quest page — the completeness cross-check for the hand-maintained listings, same role `Category:Raids` plays for raids. | Membership only, no metadata columns. |
+| **`Retired quests`** | `/page/Retired_quests` | Quests removed from the game. Check here before treating a DB quest with no current wiki presence as a scrape bug — it may be retired content. | |
+| **`Raids` page** | `/page/Raids` | The canonical raid list — one table row per raid with heroic/epic level, **adventure pack**, and flagging requirements. This is the authority for "is X a raid" and "which pack owns raid X". | Hand-maintained (per-row `edit` links) — but verified complete 2026-07-25 against the template-driven check below (both list the same 41). |
+| **`Category:Raids`** | `/page/Category:Raids` | Template-driven raid membership (populated by each quest page's infobox), with `Heroic/Epic/Legendary raids` subcats. **Use as the completeness cross-check** for the hand-maintained table: agreement between the two is strong evidence; disagreement means one of them lags. | Category membership only — no pack/level columns. |
+| **`Quests_by_level_and_XP`** | `/page/Quests_by_level_and_XP` | DPL-generated (auto-built) sortable table of EVERY quest: name, level, XP, **adventure pack, patron, favor**. The bulk source for quest metadata — this is where to backfill `quests.pack_id`/`patron_id` gaps rather than reading quest pages one by one. | Large page. |
+| **`Quests_by_location`** | `/page/Quests_by_location` | Quests grouped by zone/area — source for `quests.zone`. | |
+| **`Quests_by_update`** | `/page/Quests_by_update` | Quests mapped to the game update that shipped them. Useful for "what's new since the last scrape" sweeps. | |
+| **Expansion pages** | `/page/<Expansion_Name>` | A `Raid: <name>` line naming the expansion's raid(s), plus release-date prose. Good for per-expansion completeness sweeps ("every expansion has 1–2 raids"). | Two expansions genuinely have none: Shadowfell Conspiracy and Sinister Secret of Saltmarsh (verified 2026-07-25). |
+| **Adventure-pack pages** | `/page/<Pack_Name>` | Quest list for the pack; raids appear in it when the pack has one. | Newer quest packs (Fall of the Night Brigade, The Soul Splitter, Grip of the Hidden Hand) are packs, not expansions — no raids, verified. |
+| **`Category:Raid_loot`** | `/page/Category:Raid_loot` | Loot subcategories per raid — what the scraper walks for `quest_loot.loot_type`. | **Stale since 2015.** Newer raids' loot is under `Chest_loot` only. Never use this alone to decide raid-ness — use the `Raids` page. |
+| **Quest pages** | `/page/<Quest_Name>` | Per-quest detail (level, patron, loot list). | Naming traps below. |
+
+**Content ownership / monetization** — the sources for "which pack owns this content and how is it sold", the data a future content-you-own filter needs (see the Phase 4d entry in [docs/notes/Resource View.md](notes/Resource%20View.md)):
+
+| Source | URL pattern | What it gives you | Caveats |
+|--------|-------------|-------------------|---------|
+| **`Adventure_Pack` catalog** | `/page/Adventure_Pack` (navbox links it as `Adventure_Packs`) | One table row per purchasable pack: name, level ranges, epic flag, **DDO Points price**, total favor, patron, release date. Expansions appear as rows too (suffixed `... Expansion`). 65 packs as of 2026-07. The source for populating `adventure_packs.is_free_to_play` and any future price/ownership metadata — the DB column currently defaults to 0 for all 76 real packs. | Hand-maintained. A second small table lists "passes" (e.g. Tavern Tales) — a different purchase type. |
+| **F2P quest list** | `/page/Guide_to_Free_to_Play#Quest_list` | The quests every account has, listed **per quest** (117 rows: name, level, favor, XP, patron, acquired-at — as of 2026-07), plus a small supplemental table of ~5 individually-free quests that belong to otherwise-paid pack families. | **Free-to-play is quest-granular, not pack-granular** — a pack-level flag (`adventure_packs.is_free_to_play`) cannot represent the free quests inside paid packs. Model free-ness on the quest (membership in this list), and derive item accessibility as "any source quest is accessible". |
+| **`Pay_to_Play_quests`** | `/page/Pay_to_Play_quests` | The inverse listing: quests requiring a purchase. | |
+| **`Category:Expansion_Packs`** | `/page/Category:Expansion_Packs` | Enumerates the expansions (template-driven). Note the *article* pages `/page/Expansion` and `/page/Expansion_packs` are both 404 — the category is the only enumeration. | |
+| **`VIP` page** | `/page/VIP` | What a subscription includes. The load-bearing fact for ownership modeling: VIP grants "access to all Adventure Packs (**excluding expansion content**)" — so VIP is a rule (`all packs − expansions`), not a quest list. T&C names MotU and Shadowfell explicitly as never included. Also links `Account_comparisons` (F2P vs Premium vs VIP matrix). | |
+| **`Coupons` page** | `/page/Coupons` | Live table of active DDO Store codes (code, start/expiry, grants) plus a collapsed Expired table — which is where the historic **free-quest-pack giveaway codes** and their granted pack lists live. | Codes rotate weekly — never hardcode *codes*; the durable data is the *pack set* a giveaway granted (source it from the Expired table's grant lists). |
+
+The `Quests` hub navbox also links `Challenge_quests`, `Epic_quests`, `Wilderness_adventure_area`, and `Saga` — start there when hunting a quest listing that isn't covered above.
+
+Naming traps when matching wiki titles to `quests.name` (the raid ones have all caused real bugs — see `scripts/src/ddo_data/game_data/raid_quests.py`):
+
+- **Leading article**: the quest is `The Master Artificer`, not `Master Artificer`.
+- **Quest vs. boss name**: the raid is `The Vault of Night`; `Velah, the Crimson Dragon` is the boss inside it.
+- **Raid vs. story arc**: `Reign of Madness` is a quest chain, not a raid, despite raid-like presentation.
+- **Loot category ≠ quest**: The Shroud's loot lives under `Altar of Fecundity loot` (the crafting altar), not under any Shroud-named category.
+- **Subcategory suffixes vary**: mostly `" loot"`, sometimes `" reward items"`, independent of parent category.
+- **Legendary re-releases are separate quests** with their own loot tables (`Legendary Tempest's Spine` ≠ `Tempest's Spine`).
+- **Disambiguation suffixes on page titles** — a quest's wiki page is NOT always `/page/<quest name>`. Observed variants (all live examples from the Raids page's own links): `(quest)` when the name collides with another entity (`Against_the_Demon_Queen_(quest)` — the bare title is the story arc), `(epic)` for epic versions with their own pages (`Desecrated_Temple_of_Vol_(epic)`), `(story arc)` (`Vault_of_Night_(story_arc)`), `(wilderness)` (`Isle_of_Dread_(wilderness)`), `(Legendary)` (`The_Chronoscope_(Legendary)`). This is exactly why deriving `wiki_url` from `quests.name` breaks (roadmap Phase 4c: add `quests.wiki_url`) — the derived URL lands on the disambiguated/wrong page for every quest in these families.
+- **Heroic and epic are separate wiki pages** when a quest has both versions; the DB stores one row per quest name, so a name-keyed scrape must decide which page (or both) feeds it.
 
 ### Race and class categories
 

@@ -7,9 +7,18 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-07-24',
     changes: [
-      'Replace the embedded wiki preview with a reusable compare window — DDO Wiki added bot protection that blocks all embedding',
-      'Move the wiki link next to the item name; every wiki click updates one side-by-side window instead of stacking tabs',
-      'Give the item detail the full drawer width',
+      'New Resources browser: search and filter every item in the database, with a detail drawer for stats, enchantments, and drop sources',
+      'Replaces Debug in the nav bar',
+      'Filter items by slot, adventure pack, minimum level range, boosted stat, and rare/raid-only',
+      'Open any wiki page in a reusable side-by-side compare window — DDO Wiki added bot protection that blocks embedding',
+      'Fix the Raid filter missing most raids, including Master Artificer, Curse of Strahd, Titan, Ascension Chamber, and Reaver\'s Fate',
+      'Raid loot is now recorded in the game database rather than matched against a hardcoded quest list',
+      'Add Fire Over Morgrave, Relentless, Hunt or Be Hunted, and Green Steel altar items to the Raid filter; stop tagging Reign of Madness (a story arc) as a raid',
+      'Fix negative item bonuses displaying as "+-2" instead of "-2"',
+      'Picker rows are now keyboard-navigable, and the detail drawer takes focus when it opens',
+      'Fix the "/" search shortcut and Escape-to-close not firing when arriving from the nav bar or a shared link',
+      'Collapse the nav bar on load at any width below 900px, matching the resize behavior',
+      'Detect a stale cached game database at load and refresh it automatically instead of crashing the Resources view',
     ],
   },
   {
