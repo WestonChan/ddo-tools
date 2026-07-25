@@ -103,7 +103,11 @@ test.describe('responsive breakpoints', () => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Nav bar starts expanded at <600 (default pref is true)
+    // Any width below 900px mounts collapsed regardless of stored preference,
+    // so expand it deliberately — this test is about how the expanded bar is
+    // laid out at this width, not about which state it starts in.
+    await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
+    await page.click('.nav-bar-collapse-btn')
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
     // Nav bar should cover the full viewport (position: fixed, inset: 0)
@@ -118,7 +122,9 @@ test.describe('responsive breakpoints', () => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Nav bar starts expanded at <600
+    // Mounts collapsed below 900px, so expand it first — auto-close on
+    // navigate is only meaningful for a bar the user opened.
+    await page.click('.nav-bar-collapse-btn')
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
     // Click a nav item
