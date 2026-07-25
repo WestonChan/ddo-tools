@@ -73,10 +73,11 @@ const farmChecklistRoute = createRoute({
   component: FarmChecklistView,
 })
 
-// Three resources routes — all render the same view, which parses
-// `category` and `id` out of the pathname via useLocation. Nested routes
-// share the component because the URL-shape branching lives inside the view
-// (see `useResourcesParams` in ResourcesView).
+// Three resources routes — all render the same view, which reads `category`
+// and `id` via `useParams({ strict: false })`. Nested routes share the
+// component because the URL-shape branching lives inside the view (see
+// `useResourcesParams` in ResourcesView), and TanStack renders the component
+// un-keyed, so moving between the three doesn't remount it.
 const resourcesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'resources',

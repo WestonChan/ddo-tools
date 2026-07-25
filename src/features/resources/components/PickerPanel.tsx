@@ -15,7 +15,6 @@ import type { Category } from '../types'
 import {
   findItemIdsByPack,
   findItemIdsByStats,
-  findRaidItemIds,
   listAdventurePacks,
   listBonusStats,
   type ItemRow,
@@ -44,7 +43,8 @@ interface ItemFilters {
    *  reliably populated by the scraper and "Rare" is the most useful filter
    *  in the meantime. */
   rareOnly: boolean
-  /** Boolean toggle — items linked to any known raid quest via quest_loot. */
+  /** Boolean toggle — reads `ItemRow.is_raid`, which `listItems` already
+   *  stamped onto every row. No extra query. */
   raidOnly: boolean
   /** Multi-select — items match if they boost ANY of these stats. Empty = any. */
   stats: string[]
@@ -165,6 +165,7 @@ function applyRowFilters(rows: ItemRow[], filters: ItemFilters): ItemRow[] {
   return rows.filter((r) => {
     if (filters.slot && r.equipment_slot !== filters.slot) return false
     if (filters.rareOnly && r.rarity !== 'Rare') return false
+    if (filters.raidOnly && !r.is_raid) return false
     if (min !== null && (r.minimum_level === null || r.minimum_level < min)) return false
     if (max !== null && (r.minimum_level === null || r.minimum_level > max)) return false
     return true
@@ -192,20 +193,12 @@ export function PickerPanel({
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<ItemFilters>(EMPTY_FILTERS)
   const debounced = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
-  const inputId = useId()
   const countId = useId()
   const slotSelectId = useId()
   const packSelectId = useId()
 
   const statOptions = useMemo(() => (db ? listBonusStats(db) : []), [db])
   const packOptions = useMemo(() => (db ? listAdventurePacks(db) : []), [db])
-
-  // Raid item-id set — looked up only when the toggle is active so the join
-  // doesn't run for users who never click "Raid only".
-  const raidItemIdSet = useMemo(() => {
-    if (!db || !filters.raidOnly) return null
-    return findRaidItemIds(db)
-  }, [db, filters.raidOnly])
 
   // Compute the matching item-id set only when at least one stat is picked,
   // so users not filtering by stat pay nothing for the JOIN.
@@ -225,19 +218,21 @@ export function PickerPanel({
   // Filters apply BEFORE Fuse so the index only carries currently-visible
   // rows. Filter changes are infrequent vs. keystrokes; rebuilding the
   // index on filter change is fine, rebuilding it on every keystroke is not.
+  //
+  // Slot / rarity / raid / ML are all answerable from the row itself, so
+  // `applyRowFilters` handles them with no SQL. Only stats and pack need a
+  // query: a row carries no stat list, and its `pack` is the alphabetically-
+  // first source rather than the full set.
   const filteredRows = useMemo(() => {
     let result = applyRowFilters(rows, filters)
     if (statItemIdSet) {
       result = result.filter((r) => statItemIdSet.has(r.id))
     }
-    if (raidItemIdSet) {
-      result = result.filter((r) => raidItemIdSet.has(r.id))
-    }
     if (packItemIdSet) {
       result = result.filter((r) => packItemIdSet.has(r.id))
     }
     return result
-  }, [rows, filters, statItemIdSet, raidItemIdSet, packItemIdSet])
+  }, [rows, filters, statItemIdSet, packItemIdSet])
 
   const fuse = useMemo(() => buildItemsIndex(filteredRows), [filteredRows])
   const visible = useMemo(
@@ -321,7 +316,6 @@ export function PickerPanel({
       <div className="resources-search">
         <input
           ref={searchInputRef}
-          id={inputId}
           type="search"
           placeholder="Search… (press / to focus)"
           value={search}

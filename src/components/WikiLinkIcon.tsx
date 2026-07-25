@@ -24,7 +24,7 @@ interface WikiLinkIconProps {
 /**
  * Small icon-only link that opens a DDO Wiki page in the shared compare
  * window (see `openCompareWindow`): a plain click re-navigates one
- * right-half popup so the wiki follows the user's clicks beside the app —
+ * left-half popup so the wiki follows the user's clicks beside the app —
  * the parser-QA workflow the old embedded preview served before ddowiki's
  * bot protection made embedding impossible (see `lib/wiki/client.ts`).
  * Modified clicks (cmd/ctrl/shift/alt) keep native open-a-new-tab behavior.
@@ -33,8 +33,14 @@ interface WikiLinkIconProps {
  * handler, so middle-click, right-click → open-in-new-tab, and link
  * previews all still work. `noopener`/`noreferrer` are deliberately
  * omitted — they discard window-name registration, which silently breaks
- * the reuse (verified: with them, every click spawns a new window). Safe
- * here because the URL is pinned to the trusted ddowiki.com origin.
+ * the reuse (verified: with them, every click spawns a new window).
+ *
+ * Residual risk, accepted: a *named* target gets no implicit `noopener`
+ * (unlike `_blank`), so the opened page holds a live `window.opener` and
+ * could in principle redirect this tab. The URL is pinned to ddowiki.com,
+ * but that's a publicly-editable wiki — the mitigation is the pinned
+ * origin, not an absence of exposure. Revisit if we ever point this at a
+ * URL we don't control.
  *
  * Reused anywhere we surface a wiki cross-reference inline next to text —
  * the item-header title row, bonus rows, quest names, future

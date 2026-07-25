@@ -11,8 +11,8 @@ interface EnchantmentListProps {
 // are separate tables in the schema (different stacking semantics, different
 // shapes) but are visually one list to a reader inspecting an item.
 //
-// Layout note: rows render in three grid columns — `[tag] [name + WikiLinkIcon] [value]`
-// — so type chips and values column-align across rows of varying name length.
+// Layout note: rows render in three grid columns — `[tag] [name] [value]` —
+// so type chips and values column-align across rows of varying name length.
 // For stat-bonus rows, `name` is the bare stat name (e.g. "Charisma") and
 // `value` carries the magnitude separately ("+5"). For non-stat bonuses and
 // effects, `name` carries the full label and `value` is null.
@@ -23,16 +23,11 @@ interface EnchantmentLine {
   /** Display label for the middle column. Bare stat name for stat bonuses;
    *  full label for non-stat bonuses and effects. */
   name: string
-  /** Right-column value text for stat bonuses (e.g. "+5"). Null when value
-   *  is folded into `name` (effects, non-stat bonuses). */
+  /** Right-column value text for stat bonuses (e.g. "+5", "-2"). Null when
+   *  the value is folded into `name` (effects, non-stat bonuses). */
   value: string | null
   /** Muted sub-line below the head. Bonuses-only; null for effects. */
   description: string | null
-  /** Underlying stat name — when set, the row renders a `WikiLinkIcon` next
-   *  to the name pointing at `https://ddowiki.com/page/<stat>`. Null for
-   *  effects and non-stat bonuses (e.g. "On hit: -1 AC to target") — those
-   *  rows render plain text. */
-  statName: string | null
 }
 
 // Frontend workaround for a scraper data-quality gap — see Phase 4c in
@@ -47,6 +42,13 @@ function cleanDescription(text: string | null): string | null {
   return stripped.length > 0 ? stripped : null
 }
 
+// Format a bonus/effect magnitude with an explicit sign. Negative values are
+// real in the data — cursed gear carries `Constitution -2`, `Will Save -2` —
+// so an unconditional "+" prefix renders "+-2". Zero gets no sign at all.
+function formatSigned(value: number): string {
+  return value > 0 ? `+${value}` : String(value)
+}
+
 function bonusToLine(b: ItemBonus): EnchantmentLine {
   const description = cleanDescription(b.description)
   // Stat bonuses split into separate name + value columns so values column-
@@ -54,14 +56,13 @@ function bonusToLine(b: ItemBonus): EnchantmentLine {
   // to target") keep the full text in the name column with no separate value.
   const isStatBonus = b.stat_name !== null
   const name = isStatBonus ? (b.stat_name ?? b.name) : b.name
-  const value = isStatBonus && b.value !== null ? `+${b.value}` : null
+  const value = isStatBonus && b.value !== null ? formatSigned(b.value) : null
   return {
     key: `b-${b.bonus_id}-${b.sort_order}`,
     tag: b.bonus_type,
     name,
     value,
     description: description && description !== b.name ? description : null,
-    statName: b.stat_name,
   }
 }
 
@@ -69,14 +70,13 @@ function effectToLine(e: ItemEffect): EnchantmentLine {
   // Effects sometimes carry a numeric `value` (e.g., Bane +4d6); fold it into
   // the visible name so the user sees the full magnitude without us inventing
   // a new column shape just for effects.
-  const name = e.value !== null ? `${e.name} +${e.value}` : e.name
+  const name = e.value !== null ? `${e.name} ${formatSigned(e.value)}` : e.name
   return {
     key: `e-${e.effect_id}-${e.sort_order}`,
     tag: e.modifier,
     name,
     value: null,
     description: null,
-    statName: null,
   }
 }
 
@@ -86,9 +86,9 @@ function effectToLine(e: ItemEffect): EnchantmentLine {
  * `null` when neither list has entries so the caller can compose this in
  * without an empty-section wrapper.
  *
- * Lives in its own component so the upcoming wiki-link + tooltip wiring
- * (best-effort `https://ddowiki.com/page/<name>` anchors, hover tooltip with
- * stacking semantics) has a self-contained surface to grow into and to test.
+ * Per-row wiki links and stacking-semantics tooltips are NOT wired up — see
+ * the Phase 4c entry in docs/roadmap.md. Keeping this in its own component
+ * gives that work a self-contained surface to land in.
  */
 export function EnchantmentList({ bonuses, effects }: EnchantmentListProps): JSX.Element | null {
   if (bonuses.length === 0 && effects.length === 0) return null

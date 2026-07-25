@@ -82,8 +82,15 @@ export function useDetailStack({
         navigate({ to: `/resources/${entry.category}/${entry.id}` })
         return
       }
-      // Deeper: pure in-memory push, URL unchanged.
-      setStack((prev) => [...prev, entry])
+      // Deeper: pure in-memory push, URL unchanged. Suppress a push of the
+      // entry already on top so re-clicking the cross-reference you just
+      // followed doesn't stack a duplicate crumb. Revisiting an entry that
+      // sits deeper in the stack is still allowed — A > B > A is a real path.
+      setStack((prev) => {
+        const top = prev[prev.length - 1]
+        if (top && entriesEqual(top, entry)) return prev
+        return [...prev, entry]
+      })
     },
     [stack.length, navigate],
   )

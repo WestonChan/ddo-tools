@@ -71,6 +71,37 @@ describe('useDetailStack — pushDetail', () => {
     expect(navigateMock).not.toHaveBeenCalled()
     expect(result.current.stack).toEqual([itemA, itemB, itemC])
   })
+
+  // Re-clicking the cross-reference you just followed shouldn't stack the same
+  // crumb twice ("Alpha > Beta > Beta"). Guards the entry point that Phase 4c
+  // cross-category links will use.
+  it('ignores a push of the entry already on top', () => {
+    const { result } = renderHook(() =>
+      useDetailStack({ urlEntry: itemA, baseCategory: 'items' }),
+    )
+    act(() => {
+      result.current.pushDetail(itemB)
+    })
+    act(() => {
+      result.current.pushDetail(itemB)
+    })
+    expect(result.current.stack).toEqual([itemA, itemB])
+  })
+
+  it('still allows revisiting an entry deeper in the stack', () => {
+    // A > B > A is a legitimate path (A links to B, B links back to A); only an
+    // immediate self-push is suppressed.
+    const { result } = renderHook(() =>
+      useDetailStack({ urlEntry: itemA, baseCategory: 'items' }),
+    )
+    act(() => {
+      result.current.pushDetail(itemB)
+    })
+    act(() => {
+      result.current.pushDetail(itemA)
+    })
+    expect(result.current.stack).toEqual([itemA, itemB, itemA])
+  })
 })
 
 describe('useDetailStack — popDetail', () => {

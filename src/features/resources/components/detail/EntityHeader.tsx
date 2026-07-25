@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 import { Check, Flag, Link as LinkIcon } from 'lucide-react'
 import { TooltipWrapper, WikiLinkIcon } from '../../../../components'
 import { useDetailNav } from '../../contexts/DetailNavContext'
+import { DETAIL_TITLE_ID } from '../../types'
 import { KeyValueGrid, type KvItem } from './KeyValueGrid'
 
 interface EntityHeaderProps {
@@ -66,7 +67,9 @@ export function EntityHeader({
   return (
     <header className="resources-entity-header">
       <div className="resources-entity-title-row">
+        {/* `id` is the drawer's `aria-labelledby` target — see DETAIL_TITLE_ID. */}
         <h2
+          id={DETAIL_TITLE_ID}
           className="resources-entity-name"
           data-rarity={rarity?.toLowerCase() ?? undefined}
         >

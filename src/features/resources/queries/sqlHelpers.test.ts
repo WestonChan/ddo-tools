@@ -1,65 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { Database, QueryExecResult, Statement } from 'sql.js'
-import { rowsToObjects, firstRow, escapeLike, runQuery, runQueryFirst } from './sqlHelpers'
+import type { Database, Statement } from 'sql.js'
+import { runQuery, runQueryFirst } from './sqlHelpers'
 
-describe('rowsToObjects', () => {
-  it('maps columns/values to typed objects', () => {
-    const result: QueryExecResult = {
-      columns: ['id', 'name', 'level'],
-      values: [
-        [1, 'Sword', 5],
-        [2, 'Shield', 3],
-      ],
-    }
-    interface Row {
-      id: number
-      name: string
-      level: number
-    }
-    expect(rowsToObjects<Row>(result)).toEqual([
-      { id: 1, name: 'Sword', level: 5 },
-      { id: 2, name: 'Shield', level: 3 },
-    ])
-  })
-
-  it('returns [] for undefined', () => {
-    expect(rowsToObjects(undefined)).toEqual([])
-  })
-
-  it('handles empty values', () => {
-    const result: QueryExecResult = { columns: ['x'], values: [] }
-    expect(rowsToObjects(result)).toEqual([])
-  })
-})
-
-describe('firstRow', () => {
-  it('returns the first object row', () => {
-    const result: QueryExecResult = {
-      columns: ['id', 'name'],
-      values: [[1, 'A'], [2, 'B']],
-    }
-    expect(firstRow<{ id: number; name: string }>(result)).toEqual({ id: 1, name: 'A' })
-  })
-
-  it('returns null when no rows', () => {
-    expect(firstRow({ columns: ['x'], values: [] })).toBeNull()
-    expect(firstRow(undefined)).toBeNull()
-  })
-})
-
-describe('escapeLike', () => {
-  it('escapes `%`, `_`, and `\\` so LIKE matches them literally', () => {
-    expect(escapeLike('100%')).toBe('100\\%')
-    expect(escapeLike('a_b')).toBe('a\\_b')
-    expect(escapeLike('a\\b')).toBe('a\\\\b')
-    expect(escapeLike('50%_off\\sale')).toBe('50\\%\\_off\\\\sale')
-  })
-
-  it('passes through plain text unchanged', () => {
-    expect(escapeLike('Greatsword of Force')).toBe('Greatsword of Force')
-    expect(escapeLike('')).toBe('')
-  })
-})
+// `rowsToObjects`, `firstRow`, and `escapeLike` were deleted along with their
+// tests: nothing outside this test file ever called them. `runQuery` builds
+// rows via `stmt.getAsObject()` directly, and no query uses a LIKE clause
+// (search is client-side Fuse), so `escapeLike` had no caller either.
 
 describe('runQuery (statement lifecycle)', () => {
   it('frees the prepared statement after iteration', () => {

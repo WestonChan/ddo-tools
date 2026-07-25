@@ -40,13 +40,9 @@ export function isCategory(value: string): value is Category {
   return (CATEGORIES as readonly string[]).includes(value)
 }
 
-// Picker-shape row (id + name + minimal context). Per-category modules extend
-// this with their own metadata fields. ItemRow lands in queries/items.ts in
-// commit 2; declared here as a type-only stub so PickerPanel can compile.
-export interface ItemRow {
-  id: number
-  name: string
-  min_level: number | null
-  slot: string | null
-  rarity: string | null
-}
+// DOM id of the detail heading rendered by EntityHeader. The drawer in
+// ResourcesView points `aria-labelledby` at it so the dialog announces the
+// entity's name rather than an internal id. A module constant rather than
+// `useId()` because the two components are in separate subtrees and only one
+// drawer is ever open at a time.
+export const DETAIL_TITLE_ID = 'resources-detail-title'

@@ -40,8 +40,9 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-// Empty query returns the original (already alpha-sorted) rows so the picker
-// has a stable initial order. Non-empty queries hit Fuse, then re-rank.
+// Empty query returns `rows` untouched, preserving whatever order the caller
+// established — `listItems` sorts by descending minimum level, then slot, then
+// name. Non-empty queries hit Fuse, then re-rank.
 export function searchItems(
   fuse: Fuse<ItemRow>,
   rows: ItemRow[],

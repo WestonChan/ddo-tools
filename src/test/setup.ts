@@ -37,6 +37,20 @@ if (
   }
 }
 
+// jsdom has no ResizeObserver. react-window's <List> constructs one on mount
+// to track its container, so any test rendering a virtualized list throws
+// without this. The stub is inert — jsdom has no layout engine, so a real
+// implementation would only ever report zeros anyway. Row-level rendering is
+// covered by unit tests on the row component; assert real virtualization
+// behavior in Playwright, per docs/testing.md.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+}
+
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   window.matchMedia = () => ({
     matches: false,
