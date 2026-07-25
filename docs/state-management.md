@@ -7,8 +7,11 @@ each fitting a different shape of "state":
    (open/closed, hover-state, in-flight form values). The default. No special
    considerations.
 2. **Persisted user preferences** (`useLocalStorage`) — values the user
-   should see again on next session (theme, nav-bar pinned/collapsed,
-   future filter persistence). Backed by localStorage; one hook per key.
+   should see again on next session (nav-bar pinned/collapsed, future filter
+   persistence). Backed by localStorage; one hook per key. Note that
+   "persisted" and "shared" are independent axes: a preference read by
+   several components at once wants pattern #3 with a localStorage write in
+   the mutator (see `useTheme`), not one `useLocalStorage` per consumer.
 3. **Shared async/external state** (`useSyncExternalStore` + module store)
    — values that multiple components subscribe to, derived from an async
    source or imperative side-channel, and where every consumer should see
@@ -25,9 +28,9 @@ Three signals together mean this is the right pattern:
 
 1. **Singleton-ish underlying source.** One fetch, one init, one cache —
    shared across all callers. Examples in this codebase: the SQLite game
-   database (one network load per session); the DDO Wiki health ping (one
-   probe per session); a session-scoped UI override (e.g. nav-bar
-   collapsed because a drawer is open).
+   database (one network load per session); the active colour theme (one
+   `data-theme` attribute on the document); the refcount of open modals
+   (one background-inert state).
 2. **Multiple components read the same value.** Not just one consumer —
    the value flows through the UI in multiple places.
 3. **Stale-state flashes on first render would be visible.** If a
@@ -126,21 +129,38 @@ When writing a new hook of this shape:
       cleanup function for `useSyncExternalStore`.
 - [ ] `setState` (or whatever your mutator is) replaces the state object
       (don't mutate in place — referential stability matters).
-- [ ] If the source loads async, expose a `ensureLoad`-style kicker that's
-      idempotent and called from the hook body. Don't put the load in a
-      module-top-level statement (it would fire even when no component
-      mounts; bad for tests and tree-shaking).
+- [ ] Whether the source is async or synchronous, expose an
+      `ensureLoad`/`ensureInit`-style kicker that's idempotent and called
+      from the hook body. Don't put the load in a module-top-level statement
+      (it would fire even when no component mounts; bad for tests and
+      tree-shaking). A synchronous store may also call the kicker from
+      `getSnapshot` so that getter is total — fine as long as it's
+      idempotent and returns the same value once resolved.
 - [ ] Pass `getSnapshot` for both the second and third arg of
       `useSyncExternalStore`.
+- [ ] If the store mirrors its value into something outside React (a DOM
+      attribute, localStorage), route **every** write through one function
+      and call it from the init path too — not just the mutator. Otherwise
+      the external copy is set once at load and then drifts from the store
+      the first time init resolves to something different (the Phase 4h
+      `useTheme` bug: `data-theme` said dark, the store said light, and the
+      theme button silently did nothing).
 
 ### Reference implementations
 
 - [`src/hooks/useDatabase.ts`](../src/hooks/useDatabase.ts) — async DB
   load, exposes `{ db, loading, error }`. Reference example for "async
   resource + multiple consumers."
-- [Earlier session example — see `useNavBarOverride.ts` in git history if
-  reinstated] — synchronous session-scoped override (no fetch). Reference
-  for "imperative-write side-channel with multiple readers."
+- [`src/hooks/useTheme.ts`](../src/hooks/useTheme.ts) — synchronous shared
+  preference resolved from an external source (localStorage + `matchMedia`)
+  that the store also writes back to. Reference for "lazy first-read init,
+  and one function that owns the side effect so no path can skip it."
+- [`src/hooks/useModalActive.ts`](../src/hooks/useModalActive.ts) —
+  refcounted signal: writers assert while mounted, a separate reader hook
+  exposes the boolean. One writer and one reader today
+  (`ResourcesView` → `AppLayout`); the refcount exists so stacked overlays
+  keep working as more are added. Reference for "imperative-write
+  side-channel decoupled from its reader."
 
 ### Trade-offs and caveats
 
@@ -154,7 +174,8 @@ When writing a new hook of this shape:
 - **Tests need to reset state between runs.** Module-level state persists
   across vitest test cases in the same file. Provide a test-only reset
   helper if assertions depend on initial state — e.g.
-  `_resetWikiHealthCacheForTests()` in `useWikiHealth.ts`.
+  `_resetThemeForTests()` in `useTheme.ts`, `_resetModalActiveForTests()`
+  in `useModalActive.ts`.
 
 ### When NOT to use it
 

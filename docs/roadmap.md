@@ -927,8 +927,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 3 | done | Error reporting & resilience -- Sentry, boundaries, `DatabaseGate` |
 | 4a | done | Resources browser -- items picker + detail |
 | 4b | done | Resources drawer architecture + wiki compare window |
-| **4h** | **→ NEXT** | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` (~30 lines) |
-| 4i | planned | `<Modal>` primitive consolidation |
+| 4h | done | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` |
+| **4i** | **→ NEXT** | `<Modal>` primitive consolidation |
 | 4j | planned | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit |
 | 4k | planned | File-structure cleanup -- feature-layout consistency, dead icon removal |
 | 4c | planned | ETL data-quality cleanup (Python pipeline) |
@@ -1089,26 +1089,40 @@ Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes ea
 - **Item icons in the picker list.** Show each item's icon beside its name so the list is scannable by shape/colour rather than by reading every row (reference: ddo-builds.com's item list). Blocked on an icon-asset source — see the image-extraction item in [docs/notes/To Do.md](notes/To%20Do.md); resolve that first, then wire icons into both the stacked-list and sortable-table picker modes. Needs a placeholder for items with no icon and must not shift row height (virtualized list assumes fixed rows).
 - **Convert the picker to a true sortable table.** Today's picker is a virtualized stacked list: each row shows the name on top and meta fields (`ML · Slot · Pack`) inline below. That works at narrow widths but can't be sorted or column-aligned. Phase 4g reshapes it into a virtualized table with explicit columns (Name, ML, Slot, Pack, Rarity-or-Raid chip, etc.) and clickable column headers that toggle ascending/descending sort. Browse mode (wider picker) is the right home for this since the table needs horizontal space the drawer-sliver doesn't have. Stacked-list view stays as the narrow-mode fallback. The current chips (Raid/Rare) collapse into either a dedicated column or remain as inline name decorations — decide when implementing.
 
-#### Phase 4h — Shared-hook state cleanup (small, no UI impact)
+#### Phase 4h — Shared-hook state cleanup (done)
 
-`useTheme` ([../src/hooks/useTheme.ts](../src/hooks/useTheme.ts)) still uses the
-`useState + useEffect` anti-pattern for state read by multiple components.
-Each consumer gets its own local state, so writes from one don't propagate
-to the others on the next render: `toggle()` only updates the calling
-consumer's `setTheme`. The DOM and localStorage stay in sync via the
-effect, but any consumer reading `theme` from the hook lags until it
-re-renders for some other reason. Hidden today because most theme
-reaction happens via CSS `[data-theme]` selectors.
+`useTheme` ([../src/hooks/useTheme.ts](../src/hooks/useTheme.ts)) used the
+`useState + useEffect` anti-pattern for shared state: each consumer held its
+own copy, so `toggle()` only updated the caller and every other consumer kept
+rendering the stale value until an unrelated re-render. Latent rather than
+visible, because `SettingsView` was the only consumer and most theme reaction
+runs through CSS `[data-theme]` selectors.
 
-Fix shape: refactor to `useSyncExternalStore` against a module-level
-store, mirroring the `useDatabase` refactor that landed in Phase 4b. The
-public hook API (`{theme, toggle}`) stays identical — no call-site
-changes. Pattern is documented in
-[state-management.md](state-management.md). About 30 lines.
-
-**Done when**: `useTheme` reads from a module store, `npx vitest run` and
-`npm run lint` pass, and toggling the theme in one component is observable
-from another without an unrelated re-render.
+- Refactored to `useSyncExternalStore` against a module-level store, matching
+  `useDatabase` / `useModalActive` (pattern: [state-management.md](state-management.md)).
+  Public API `{theme, toggle}` unchanged — no call-site edits.
+- The `data-theme` attribute write moved from the consumer effect into a
+  single `applyTheme` function that both the init path and the `setTheme`
+  mutator go through, so the document can never disagree with the store.
+  Init is lazy (first read, not import time) so it can't snapshot
+  localStorage/matchMedia before callers or tests stage them.
+- **Bug caught in review, fixed in this phase:** the first cut wrote
+  `data-theme` only in the mutator. Because the store resolves lazily and
+  `SettingsView` is the sole consumer, the inputs could move between page
+  load and the first Settings visit (OS light/dark schedule flipping, or
+  another tab toggling and writing localStorage). The store then resolved to
+  a theme the page wasn't rendering, Settings highlighted the wrong button,
+  and clicking the right one did nothing — its handler only calls `toggle()`
+  when the value differs. Applying on init closes it.
+- Init deliberately does **not** persist to localStorage, so a theme the user
+  never chose isn't latched — they keep following their OS until they pick a
+  side. (The old mount effect latched it on the first Settings visit.)
+- `useTheme.test.ts` covers initialization precedence (stored value > system
+  preference), DOM/localStorage sync on toggle, the store/document agreement
+  above, and the cross-consumer propagation that the old shape failed.
+  `_resetThemeForTests()` clears the module cache between cases.
+- `src/hooks/theme.ts` (accent helpers — not a hook) was left in place;
+  the move to `src/lib/` is deferred to Phase 4k with the other file moves.
 
 Audited and deliberately left alone: `useFaviconAccent` owns no
 consumer-facing state (pure DOM-side-effect manager via MutationObserver).
@@ -1184,7 +1198,7 @@ Findings from the 2026-07-24 structure audit. Deferred until the active feature 
 - Delete empty dirs: `src/assets/`, `src/features/gear/components/`.
 - Merge `src/test-utils/` into `src/test/` (single test-support dir; `renderWithRouter` has one consumer).
 - Remove dead icons from [../src/components/Icons.tsx](../src/components/Icons.tsx): 26 of 28 hand-rolled icons have zero consumers (verified 2026-07-24). Swap the two live ones (`ChevronRightIcon` in `CollapsibleSection`, `SkillsIcon` in `AppNavBar`) to `lucide-react` equivalents, delete `Icons.tsx`, prune the barrel — `lucide-react` is already the icon system in 10+ files.
-- Optional, judgment call: `src/hooks/theme.ts` is not a hook (data + DOM/localStorage helpers) and per convention belongs in `src/lib/` — but it's co-located with its consumer `useTheme.ts`. Decide when touching Phase 4h.
+- Move `src/hooks/theme.ts` to `src/lib/theme.ts` — it's not a hook (data + DOM/localStorage accent helpers) and per convention belongs in `src/lib/`. Deferred here from Phase 4h to keep that phase to state semantics. Only consumer is `SettingsView`, via the `src/hooks` barrel: update the barrel export and the import.
 
 #### Phase 5b — Resource Report View
 
