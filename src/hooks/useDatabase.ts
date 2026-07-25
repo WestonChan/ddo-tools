@@ -35,10 +35,30 @@ export function isDbError(err: unknown): err is DbError {
   return err instanceof DbError
 }
 
-// Smoke-test the loaded DB to catch corrupt, empty, or wrong-version files
-// before the app renders with silent bad data. Checks a known table exists
-// and has at least one row.
-function validateSchema(db: Database): void {
+// Schema features the frontend queries that were ADDED after the first
+// public DB shipped. The service worker serves ddo.db cache-first, so after
+// a deploy that changes the schema, returning browsers run new code against
+// the old cached DB for at least one page load — a sw.js CACHE_NAME bump
+// cannot close that window (the old worker serves the load that discovers
+// the new one). Validating these at the gate turns that stale-cache state
+// into a DB_ERROR_SCHEMA, which DatabaseGate self-heals by clearing caches;
+// without it, the mismatch crashes later inside whichever view queries the
+// missing column ("no such column: loot_type" — 2026-07-25 incident).
+//
+// Add a [table, column] pair here whenever a frontend query starts relying
+// on a new column or table. Enforced by schemaCompat.test.ts: every query
+// function is run against the frozen v1 baseline schema, and any missing
+// column it trips over must be listed here — forgetting an entry fails CI
+// instead of crashing returning browsers.
+export const REQUIRED_COLUMNS: ReadonlyArray<readonly [table: string, column: string]> = [
+  ['quest_loot', 'loot_type'],
+]
+
+/** Smoke-test the loaded DB to catch corrupt, empty, stale-cached, or
+ *  wrong-version files before the app renders with silent bad data. Checks
+ *  a known table has at least one row and that every schema feature the
+ *  frontend queries exists. Exported for tests. */
+export function validateSchema(db: Database): void {
   let count: number | undefined
   try {
     const result = db.exec('SELECT COUNT(*) FROM items')
@@ -52,6 +72,21 @@ function validateSchema(db: Database): void {
   }
   if (count === 0) {
     throw new DbError(DB_ERROR_SCHEMA, 'Game database is empty (0 items)')
+  }
+
+  for (const [table, column] of REQUIRED_COLUMNS) {
+    // pragma_table_info returns zero rows for a missing table, so this one
+    // check covers both "table gone" and "column not yet migrated in".
+    const result = db.exec(
+      `SELECT COUNT(*) FROM pragma_table_info('${table}') WHERE name = '${column}'`,
+    )
+    const present = Number(result[0]?.values[0]?.[0] ?? 0)
+    if (present === 0) {
+      throw new DbError(
+        DB_ERROR_SCHEMA,
+        `Game database is missing ${table}.${column} — likely a stale cached copy from before a data update`,
+      )
+    }
   }
 }
 

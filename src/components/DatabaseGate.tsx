@@ -1,11 +1,15 @@
 import { useEffect, type JSX, type ReactNode } from 'react'
-import { useDatabase } from '../hooks'
+import { useDatabase, isDbError, DB_ERROR_SCHEMA } from '../hooks'
 import { ErrorScreen } from './ErrorScreen'
 import { categorizeDbError } from './dbErrorCategorize'
+import { clearSiteData } from './clearSiteData'
 import './DatabaseGate.css'
 
 const RETRY_KEY = 'ddo-db-retry-count'
 const RETRY_LIMIT = 3
+// One-shot guard for the automatic schema-error heal below. sessionStorage,
+// not localStorage: a browser restart should get a fresh attempt.
+const SCHEMA_HEAL_KEY = 'ddo-db-schema-heal-attempted'
 
 /** Per-view DB-loading wrapper. Replaces the deprecated top-level
  *  `LoadingGate` so views that don't need `ddo.db` (Settings, Characters,
@@ -23,12 +27,44 @@ export function DatabaseGate({ children }: { children: ReactNode }): JSX.Element
   const { db, loading, error } = useDatabase()
 
   useEffect(() => {
-    if (db) sessionStorage.removeItem(RETRY_KEY)
+    if (db) {
+      sessionStorage.removeItem(RETRY_KEY)
+      // Re-arm the schema self-heal for the next deploy-time schema change.
+      sessionStorage.removeItem(SCHEMA_HEAL_KEY)
+    }
   }, [db])
 
+  // Automatic recovery from a stale cached DB. The service worker serves
+  // ddo.db cache-first, so the first load after a schema-changing deploy
+  // runs new code against the old cached file; validateSchema surfaces that
+  // as DB_ERROR_SCHEMA. The cause is our own cache, the fix is known —
+  // clear it and reload — so do it without making the user find the button.
+  // Strictly once per session (guard above): if the error persists after a
+  // clean refetch, the DB on the server is genuinely bad, and looping would
+  // re-download 11MB per lap. Then the normal error screen takes over.
+  const healing = shouldSelfHeal(error)
+  useEffect(() => {
+    if (!healing) return
+    sessionStorage.setItem(SCHEMA_HEAL_KEY, '1')
+    void clearSiteData()
+  }, [healing])
+
   if (loading) return <DatabaseGateSkeleton />
+  // While the self-heal reload is in flight, hold the skeleton — flashing
+  // the error screen for the sub-second before location.reload() lands
+  // would look like a crash-and-recover to the user.
+  if (healing) return <DatabaseGateSkeleton />
   if (error) return <DatabaseGateError error={error} />
   return <>{children}</>
+}
+
+function shouldSelfHeal(error: Error | null): boolean {
+  return (
+    error !== null &&
+    isDbError(error) &&
+    error.kind === DB_ERROR_SCHEMA &&
+    sessionStorage.getItem(SCHEMA_HEAL_KEY) === null
+  )
 }
 
 function DatabaseGateSkeleton(): JSX.Element {
@@ -71,7 +107,7 @@ function DatabaseGateError({ error }: { error: Error }): JSX.Element {
           >
             Retry
           </button>
-          <button type="button" className="btn-ghost" onClick={clearSiteData}>
+          <button type="button" className="btn-ghost" onClick={() => void clearSiteData()}>
             Clear Cached Game Data &amp; Retry
           </button>
         </>
@@ -90,20 +126,6 @@ function readRetryCount(): number {
 
 function handleRetry(): void {
   sessionStorage.setItem(RETRY_KEY, String(readRetryCount() + 1))
-  window.location.reload()
-}
-
-// Wipe SW caches (covers corrupt ddo.db) + unregister SWs, then reload.
-function clearSiteData(): void {
-  if ('caches' in window) {
-    void caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n))))
-  }
-  if ('serviceWorker' in navigator) {
-    void navigator.serviceWorker
-      .getRegistrations()
-      .then((regs) => regs.forEach((r) => r.unregister()))
-  }
-  sessionStorage.removeItem(RETRY_KEY)
   window.location.reload()
 }
 

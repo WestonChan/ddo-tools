@@ -13,15 +13,21 @@ import { categorizeDbError } from './dbErrorCategorize'
 
 // `vi.mock` is hoisted to top of the module, so referenced variables must
 // be created via `vi.hoisted` to be available when the factory runs.
-const { mockUseDatabase } = vi.hoisted(() => ({ mockUseDatabase: vi.fn() }))
+const { mockUseDatabase, mockClearSiteData } = vi.hoisted(() => ({
+  mockUseDatabase: vi.fn(),
+  mockClearSiteData: vi.fn(),
+}))
 
 vi.mock('../hooks', async (importActual) => {
   const actual = await importActual<typeof import('../hooks')>()
   return { ...actual, useDatabase: mockUseDatabase }
 })
 
+vi.mock('./clearSiteData', () => ({ clearSiteData: mockClearSiteData }))
+
 beforeEach(() => {
   mockUseDatabase.mockReset()
+  mockClearSiteData.mockReset()
   sessionStorage.clear()
 })
 
@@ -115,6 +121,73 @@ describe('DatabaseGate', () => {
       </DatabaseGate>,
     )
     expect(screen.getByRole('button', { name: 'Retry' })).toBeEnabled()
+  })
+})
+
+// Schema errors get one automatic clear-cache-and-reload before any UI is
+// shown. Rationale (stale-service-worker incident, 2026-07-25): sw.js serves
+// ddo.db cache-first, so the first page load after a schema-changing deploy
+// runs new code against the old cached DB. That's self-inflicted staleness —
+// the fix is known (clear the cache), so don't make the user click it. The
+// sessionStorage guard limits it to ONE attempt: if the schema error
+// persists (server actually shipping a bad DB), the normal error screen
+// shows rather than an infinite reload loop re-downloading 11MB.
+describe('DatabaseGate schema self-heal', () => {
+  const schemaError = (): DbError =>
+    new DbError(DB_ERROR_SCHEMA, 'Game database is missing quest_loot.loot_type')
+
+  it('auto-clears caches once on a schema error, showing the skeleton meanwhile', () => {
+    mockUseDatabase.mockReturnValue({ db: null, loading: false, error: schemaError() })
+    render(
+      <DatabaseGate>
+        <div>view</div>
+      </DatabaseGate>,
+    )
+    expect(mockClearSiteData).toHaveBeenCalledTimes(1)
+    // No error flash while the heal reload is in flight.
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+    expect(screen.getByRole('status', { name: 'Loading database' })).toBeInTheDocument()
+  })
+
+  it('shows the error screen instead of healing when the guard is already set', () => {
+    sessionStorage.setItem('ddo-db-schema-heal-attempted', '1')
+    mockUseDatabase.mockReturnValue({ db: null, loading: false, error: schemaError() })
+    render(
+      <DatabaseGate>
+        <div>view</div>
+      </DatabaseGate>,
+    )
+    expect(mockClearSiteData).not.toHaveBeenCalled()
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Game database is invalid' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Clear Cached Game Data/ })).toBeEnabled()
+  })
+
+  it('does not auto-heal non-schema errors', () => {
+    mockUseDatabase.mockReturnValue({
+      db: null,
+      loading: false,
+      error: new DbError(DB_ERROR_NETWORK, 'Network error'),
+    })
+    render(
+      <DatabaseGate>
+        <div>view</div>
+      </DatabaseGate>,
+    )
+    expect(mockClearSiteData).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+  })
+
+  it('clears the heal guard once the DB loads, re-arming for future deploys', () => {
+    sessionStorage.setItem('ddo-db-schema-heal-attempted', '1')
+    mockUseDatabase.mockReturnValue({ db: {}, loading: false, error: null })
+    render(
+      <DatabaseGate>
+        <div>ok</div>
+      </DatabaseGate>,
+    )
+    expect(sessionStorage.getItem('ddo-db-schema-heal-attempted')).toBeNull()
   })
 })
 
