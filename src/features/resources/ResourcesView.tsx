@@ -3,8 +3,8 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import { CategoryTabs } from './components/CategoryTabs'
 import { PickerPanel } from './components/PickerPanel'
 import { ResourceDetailView } from './components/ResourceDetailView'
+import { Modal } from '../../components'
 import { useDatabase } from '../../hooks/useDatabase'
-import { useModalActive } from '../../hooks/useModalActive'
 import { listItems } from './queries/items'
 import { DETAIL_TITLE_ID, isCategory, type Category } from './types'
 import './ResourcesView.css'
@@ -31,17 +31,6 @@ function ResourcesView(): JSX.Element {
   const navigate = useNavigate()
   const { db } = useDatabase()
   const searchRef = useRef<HTMLInputElement | null>(null)
-  const drawerRef = useRef<HTMLDivElement | null>(null)
-  // Element that held focus when the drawer opened, so closing can hand focus
-  // back instead of dumping the user on <body>.
-  const restoreFocusRef = useRef<HTMLElement | null>(null)
-
-  // While the detail drawer is open, register as an active modal so
-  // AppLayout inerts the surrounding nav bar + bottom bar (focus stays
-  // trapped in the drawer area, background shortcuts don't fire). The
-  // picker inside .resources-body is inerted separately below since it's
-  // a sibling of the drawer in the same view's stacking context.
-  useModalActive(id !== null)
 
   // DatabaseGate (in routeComponents.tsx) blocks rendering until db is ready,
   // so non-null is guaranteed by the time this component mounts.
@@ -58,57 +47,36 @@ function ResourcesView(): JSX.Element {
     navigate({ to: `/resources/${category}`, replace: true })
   }, [navigate, category])
 
-  // Move focus into the drawer when it opens and hand it back when it closes.
-  // Without this the drawer was a `role="dialog"` nobody could reach: opening
-  // it inerts the picker, so a keyboard user was left on <body> with no
-  // announcement and no way back out except the mouse.
-  useEffect(() => {
-    if (id === null) return
-    restoreFocusRef.current = document.activeElement as HTMLElement | null
-    drawerRef.current?.focus()
-    return () => {
-      // Runs after the drawer unmounts and `inert` lifts off the picker, so
-      // the original row button is focusable again.
-      const target = restoreFocusRef.current
-      restoreFocusRef.current = null
-      if (target?.isConnected) target.focus()
-    }
-  }, [id])
-
-  // Global shortcuts while the resources view is mounted: '/' focuses the
-  // search input (picker only), Escape closes the drawer.
+  // '/' focuses the picker's search input while the resources view is
+  // mounted. (Escape-to-close and drawer focus management belong to <Modal> /
+  // useModalBehavior — see src/hooks/useModalBehavior.ts.)
   //
   // Listener goes on `document`, not the view root. Keydown fires at the
   // focused element and bubbles up, so a root-level listener only ran when
   // focus was already inside the view — which it isn't after clicking
   // "Resources" in the nav bar (focus on the nav link) or opening a deep link
-  // (focus on <body>). Both flows left the advertised keys dead.
+  // (focus on <body>). Both flows left the advertised key dead.
   //
   // Effect lifetime scopes this: the listener exists only while a /resources
-  // route is rendered. StatsMultiSelect's capture-phase Escape handler runs
-  // first and stops propagation, so Escape closes an open popover before it
-  // reaches the drawer.
+  // route is rendered.
   useEffect(() => {
     function onKey(e: KeyboardEvent): void {
       const target = e.target as HTMLElement | null
       const inField =
         target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
-      // The `/`-focus shortcut is gated on the drawer being closed: the picker
-      // is obscured + `inert` while it's open, so focusing the hidden search
-      // input would be visually inert and confusing for screen readers.
+      // Gated on the drawer being closed: the picker is obscured + `inert`
+      // while it's open, so focusing the hidden search input would be
+      // visually inert and confusing for screen readers.
       if (e.key === '/' && !inField && id === null) {
         e.preventDefault()
         searchRef.current?.focus()
-      } else if (e.key === 'Escape' && id !== null) {
-        e.preventDefault()
-        closeDrawer()
       }
     }
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)
     }
-  }, [id, closeDrawer])
+  }, [id])
 
   // The popover only needs identity (category + id). Display names are
   // resolved against the DB by ResourceDetailView at render time, so the
@@ -137,33 +105,21 @@ function ResourcesView(): JSX.Element {
             <p className="section-placeholder">{category} coming soon.</p>
           )}
         </aside>
+        {/* `labelledBy` points at the EntityHeader's <h2>, so the dialog
+            announces the item's name instead of an internal id. `label` is a
+            fallback for when no detail renders (unknown id → DetailEmpty,
+            which has no heading): per the accessible-name spec an
+            unresolvable labelledby falls through to it. */}
         {id !== null && (
-          <>
-            <button
-              type="button"
-              className="resources-drawer-backdrop"
-              onClick={closeDrawer}
-              aria-label="Close item details"
-            />
-            {/* `aria-labelledby` points at the EntityHeader's <h2>, so the
-                dialog announces the item's name instead of an internal id.
-                The `aria-label` is a fallback for when no detail renders
-                (unknown id → DetailEmpty, which has no heading): per the
-                accessible-name spec an unresolvable labelledby falls through
-                to it. `tabIndex={-1}` makes the container programmatically
-                focusable for the focus effect above. */}
-            <div
-              className="resources-drawer"
-              ref={drawerRef}
-              tabIndex={-1}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={DETAIL_TITLE_ID}
-              aria-label="Item details"
-            >
-              <ResourceDetailView urlEntry={urlEntry} baseCategory={category} />
-            </div>
-          </>
+          <Modal
+            variant="drawer-right"
+            onClose={closeDrawer}
+            labelledBy={DETAIL_TITLE_ID}
+            label="Item details"
+            backdropLabel="Close item details"
+          >
+            <ResourceDetailView urlEntry={urlEntry} baseCategory={category} />
+          </Modal>
         )}
       </div>
     </div>

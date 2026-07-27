@@ -98,15 +98,6 @@ describe('ResourcesView keyboard shortcuts', () => {
     expect(input).toHaveValue('a/b')
   })
 
-  it('moves focus into the drawer when it opens', () => {
-    // Deep link: the URL carries an id, so the drawer renders on mount. Focus
-    // has to follow it — the picker goes `inert`, so leaving focus on <body>
-    // strands keyboard and screen-reader users outside any usable region.
-    mockParams = { category: 'items', id: '42' }
-    render(<ResourcesView />)
-    expect(screen.getByRole('dialog')).toHaveFocus()
-  })
-
   it('closes the drawer on Escape even when focus sits outside the view', async () => {
     mockParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
@@ -146,10 +137,13 @@ describe('ResourcesView drawer', () => {
     expect(screen.getByRole('dialog')).toHaveAccessibleName(/Bloodstone/)
   })
 
-  it('marks the drawer as a modal dialog', () => {
+  it('closes the drawer when the backdrop is clicked', async () => {
     mockParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
-    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close item details' }))
+
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items', replace: true })
   })
 
   it('inerts the picker while the drawer is open', () => {

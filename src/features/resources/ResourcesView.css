@@ -1,7 +1,9 @@
-/* Resources browser — picker list with a right-edge detail drawer. Wiki
-   access is the compare-window icon in the entity header (the embedded
-   preview died with ddowiki's bot protection — see lib/wiki/client.ts).
-   At <900px the drawer goes full-screen.
+/* Resources browser — picker list with a right-edge detail drawer. The
+   drawer shell is <Modal variant="drawer-right"> (src/components/Modal.css
+   owns its positioning, width, and the <900px full-screen switch); this file
+   styles the picker and the drawer's contents. Wiki access is the
+   compare-window icon in the entity header (the embedded preview died with
+   ddowiki's bot protection — see lib/wiki/client.ts).
 */
 
 .resources-view {
@@ -9,11 +11,6 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  outline: none; /* tabIndex=-1 root for keyboard handlers */
-  /* Anchor for the absolute drawer + backdrop. Making the resources-view
-     the positioned ancestor (instead of the body) lets the drawer extend
-     up over the category-tabs header too. */
-  position: relative;
 }
 
 .resources-header {
@@ -89,49 +86,10 @@
   min-height: 0;
 }
 
-/* Backdrop — covers the entire viewport (including the app nav bar and
-   bottom bar) so the drawer reads as a true modal. Clicking it dismisses
-   the drawer. The drawer itself has a higher z-index so it renders above
-   the backdrop dim, leaving only the picker sliver and chrome darkened. */
-.resources-drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-overlay);
-  background: rgb(0 0 0 / 0.45);
-  border: 0;
-  cursor: pointer;
-}
-
-/* Drawer popover — anchored to the right edge of the viewport with a
-   viewport-relative width, so its size is independent of the sidebar
-   state, body container width, and BottomBar position. `position: fixed`
-   gives it three properties together: positioning relative to the
-   viewport (consistent right-edge attachment), escape from
-   `.app-content`'s `overflow: auto` clipping (drawer's overflow past the
-   container's left edge would otherwise be cut off), and clean stacking
-   in the root context (its `z-index: var(--z-modal)` reliably beats the
-   nav bar's `z-index: var(--z-nav)`).
-   `clamp(560px, 55vw, 900px)` gives a sensible width across viewport
-   sizes: a floor at 560px keeps the single detail column readable, and a
-   cap at 900px prevents the drawer from sprawling on ultra-wide monitors
-   (it was 1400px when the wiki preview pane shared the body — the pane is
-   gone, see the wiki-access note on .resources-entity-header).
-   Modal-style behavior — drawer covers the BottomBar while
-   open; close the drawer to reach "Report a bug" and warnings. */
-.resources-drawer {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: clamp(560px, 55vw, 900px);
-  z-index: var(--z-modal); /* sits above the viewport-covering backdrop */
-  background: var(--bg);
-  border-left: 1px solid var(--border-emphasis);
-  box-shadow: -8px 0 16px rgb(0 0 0 / 0.25);
-  display: flex;
-  flex-direction: column;
-}
-
+/* The drawer itself is <Modal variant="drawer-right"> — backdrop, fixed
+   positioning, width clamp, and the <900px full-screen behavior live in
+   src/components/Modal.css. The `-bar` / `-body` rules below are the drawer's
+   contents, owned by ResourceDetailView. */
 .resources-drawer-bar {
   flex-shrink: 0;
   display: flex;
@@ -1042,22 +1000,10 @@
   color: var(--text-muted);
 }
 
-/* Narrow viewports — drawer covers the entire viewport (nav bar and
-   BottomBar included), behaving as a full-screen modal. `inset: 0` spans
-   edge-to-edge of the screen. The backdrop hides since the drawer now
-   fully covers it — keeps the DOM lean. */
+/* Narrow viewports — the drawer goes full-screen (see Modal.css), so the
+   picker's right divider has nothing to divide. */
 @media (max-width: 899px) {
   .resources-picker {
     border-right: none;
-  }
-
-  .resources-drawer {
-    inset: 0;
-    width: auto;
-    border-left: none;
-  }
-
-  .resources-drawer-backdrop {
-    display: none;
   }
 }
