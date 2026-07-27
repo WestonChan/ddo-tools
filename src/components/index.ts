@@ -33,6 +33,8 @@ export {
   DiamondIcon,
   CalculatorIcon,
 } from './Icons'
+export { Modal } from './Modal'
+export type { ModalProps, ModalVariant } from './Modal'
 export { Tooltip, TooltipWrapper } from './Tooltip'
 export type { TooltipPlacement } from './Tooltip'
 export { WikiLinkIcon } from './WikiLinkIcon'

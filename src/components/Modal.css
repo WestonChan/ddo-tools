@@ -1,0 +1,73 @@
+/* Modal shell — backdrop + panel variants. Every rule is a single flat
+   class so a consumer stylesheet (loaded after this one) can override at
+   equal specificity via the `className` prop. No box-shadow: surfaces are
+   flat here, separation comes from the dimmed backdrop + hairline border
+   (docs/styling.md). */
+
+/* Covers the entire viewport including nav bar and bottom bar, so the panel
+   reads as a true modal. Clicking it dismisses. It's a real <button> so
+   assistive tech can find and activate the dismissal (virtual cursor, screen
+   reader tap) rather than it being a pointer-only affordance — Tab itself
+   stays trapped inside the panel, so the backdrop is never in the tab order
+   while the modal is open. The panel's higher z-index keeps it painted above
+   the dim. */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgb(0 0 0 / 0.45);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* `position: fixed` on the panel buys three things at once: positioning
+   against the viewport (so size and placement are independent of the nav
+   bar state and container width), escape from `.app-content`'s
+   `overflow: auto` clipping, and clean stacking in the root context — its
+   `--z-modal` reliably beats the nav bar's `--z-nav`. */
+.modal-panel {
+  position: fixed;
+  z-index: var(--z-modal);
+}
+
+/* Centered dialog. `inset: 0` + `margin: auto` centers on both axes;
+   `height: fit-content` keeps it hugging its content. Width is deliberately
+   unset — consumers size themselves via `className`. */
+.modal-panel--centered {
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-emphasis);
+  border-radius: 8px;
+}
+
+/* Right-edge drawer. `clamp(560px, 55vw, 900px)`: the 560px floor keeps a
+   single detail column readable, the 900px cap stops the drawer sprawling on
+   ultra-wide monitors. Covers the bottom bar while open — close it to reach
+   "Report a bug" and build warnings. */
+.modal-panel--drawer-right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: clamp(560px, 55vw, 900px);
+  background: var(--bg);
+  border-left: 1px solid var(--border-emphasis);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Narrow viewports — the drawer takes the whole screen, so the backdrop it
+   would fully cover is dropped instead of painted underneath. */
+@media (max-width: 899px) {
+  .modal-panel--drawer-right {
+    inset: 0;
+    width: auto;
+    border-left: none;
+  }
+
+  .modal-backdrop--drawer-right {
+    display: none;
+  }
+}
