@@ -1223,6 +1223,8 @@ Detail: [docs/notes/Resource Report View.md](notes/Resource%20Report%20View.md).
 
 ### Phase 5: Characters View & Build Context
 
+Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnation-button bug + flow copy pass).
+
 **Persistence stack (build first):**
 - `user.db` schema via sql.js + `initUserDb()`
 - IndexedDB round-trip: `db.export()` to Uint8Array, debounced write-through (~200ms)
