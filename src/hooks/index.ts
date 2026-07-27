@@ -11,6 +11,7 @@ export {
 } from './useDatabase'
 export type { DbErrorKind } from './useDatabase'
 export { useLocalStorage } from './useLocalStorage'
+export { useMediaQuery } from './useMediaQuery'
 export { useAddRemoveInput } from './useAddRemoveInput'
 export { useTheme } from './useTheme'
 export type { Theme } from './useTheme'
