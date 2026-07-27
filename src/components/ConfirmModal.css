@@ -1,18 +1,7 @@
 /* --- Confirm modal --- */
-.confirm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(from var(--bg) r g b / 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-}
-
+/* Sizing + padding only: the backdrop, centering, surface, and border come
+   from Modal's `centered` variant (src/components/Modal.css). */
 .confirm-modal {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-emphasis);
-  border-radius: 8px;
   padding: var(--space-5) var(--space-6);
   max-width: 400px;
   width: 90%;
@@ -26,11 +15,15 @@
   margin-bottom: var(--space-2);
 }
 
+/* `pre-line` because callers compose multi-paragraph messages with \n (see
+   CharacterView's apply-build warning list) — collapsed whitespace ran the
+   warnings into one wall of text. */
 .confirm-modal-message {
   color: var(--text-secondary);
   font-size: var(--text-sm);
   line-height: 1.5;
   margin-bottom: var(--space-4);
+  white-space: pre-line;
 }
 
 .confirm-modal-input {

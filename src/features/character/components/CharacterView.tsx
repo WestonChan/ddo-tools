@@ -184,7 +184,7 @@ function CharacterView(): JSX.Element {
               : `This will overwrite your current life's build data with "${applyConfirm.desc}". This cannot be undone.`
           }
           confirmLabel="Apply"
-          requireInput={applyConfirm.desc}
+          requireInput="Apply"
           onCancel={() => setApplyConfirm(null)}
           onConfirm={() => {
             const build = plannedBuilds.find((b) => b.id === applyConfirm.buildId)
