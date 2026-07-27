@@ -932,6 +932,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
 | **4k** | **→ NEXT** | File-structure cleanup -- feature-layout consistency, dead icon removal |
 | 4c | planned | ETL data-quality cleanup (Python pipeline) |
+| 4l | planned | DDOBuilderV2 data cross-check utility -- diff `ddo.db` against Maetrim's XML data files |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
@@ -1218,6 +1219,18 @@ Findings from the 2026-07-24 structure audit. Deferred until the active feature 
 - Merge `src/test-utils/` into `src/test/` (single test-support dir; `renderWithRouter` has one consumer).
 - Remove dead icons from [../src/components/Icons.tsx](../src/components/Icons.tsx): 26 of 28 hand-rolled icons have zero consumers (verified 2026-07-24). Swap the two live ones (`ChevronRightIcon` in `CollapsibleSection`, `SkillsIcon` in `AppNavBar`) to `lucide-react` equivalents, delete `Icons.tsx`, prune the barrel — `lucide-react` is already the icon system in 10+ files.
 - Move `src/hooks/theme.ts` to `src/lib/theme.ts` — it's not a hook (data + DOM/localStorage accent helpers) and per convention belongs in `src/lib/`. Deferred here from Phase 4h to keep that phase to state semantics. Only consumer is `SettingsView`, via the `src/hooks` barrel: update the barrel export and the import.
+
+#### Phase 4l — DDOBuilderV2 data cross-check utility
+
+[Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOBuilderV2) — the dominant desktop planner —
+ships its game data as XML files in its repo. That's an independent, well-maintained dataset
+covering the same entities as `ddo.db`, which makes it a free correctness oracle: anywhere the two
+disagree, one of us is wrong, and each disagreement is either a bug to fix or a gap to fill.
+
+- **New `ddo-data` CLI command** (e.g. `ddo-data compare-ddobuilder <path-to-DDOBuilderV2-checkout>`) that diffs `ddo.db` against the XML data files in a local checkout.
+- **Report shape**: entities present in one dataset but not the other (items, feats, enhancement trees), and field mismatches (ML, bonus values, augment slots, etc.) where entities can be mapped by name. Name mapping is fuzzy by nature — DDOBuilderV2 uses its own string identifiers (same mapping problem Phase 15's `.DDOBuild` import will face); surface unmappable entries as their own report section rather than failing.
+- **Do not vendor their XML into this repo.** DDOBuilderV2 has no license (all rights reserved — same caveat as the Phase 6 rules-reference note), so the command takes a path to a checkout the user clones themselves; nothing of theirs is committed here.
+- **Findings feed the existing error logs** ([docs/notes/DB Errors.md](notes/DB%20Errors.md), [docs/notes/Item DB Errors.md](notes/Item%20DB%20Errors.md)) with evidence + reproduce queries, and get fixed Phase 4c-style. Running the diff before/during Phase 4c maximizes what that cleanup catches.
 
 #### Phase 5b — Resource Report View
 
