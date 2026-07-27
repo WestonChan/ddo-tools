@@ -1,4 +1,5 @@
 import type { Character, PastLifeCategory } from '../character'
+import type { PatchNote } from './data/sitePatchNotes'
 
 export const PAST_LIFE_ORDER: { key: PastLifeCategory; label: string }[] = [
   { key: 'heroic', label: 'heroic' },
@@ -51,4 +52,13 @@ const PATCH_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
 export function formatPatchDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
   return PATCH_DATE_FORMATTER.format(new Date(Date.UTC(y, m - 1, d)))
+}
+
+/**
+ * Newest patch-note date (YYYY-MM-DD) — the site's last release date.
+ * Scans every entry rather than trusting index 0: newest-first ordering
+ * in SITE_PATCH_NOTES is convention, not enforced.
+ */
+export function latestPatchNoteDate(notes: readonly PatchNote[]): string {
+  return notes.reduce((latest, note) => (note.date > latest ? note.date : latest), '')
 }

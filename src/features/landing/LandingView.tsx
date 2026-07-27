@@ -3,6 +3,7 @@ import { LandingHero } from './components/LandingHero'
 import { LandingActiveCharacter } from './components/LandingActiveCharacter'
 import { SitePatchNotes } from './components/SitePatchNotes'
 import { DdoPatchNotesCard } from './components/DdoPatchNotesCard'
+import { LandingFooter } from './components/LandingFooter'
 import './LandingView.css'
 
 // LandingView owns the grid layout — each child card sits inside a positioning
@@ -23,6 +24,7 @@ function LandingView(): JSX.Element {
           <SitePatchNotes />
         </div>
       </div>
+      <LandingFooter />
     </div>
   )
 }

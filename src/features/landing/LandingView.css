@@ -291,3 +291,30 @@
 .landing-patch-toggle-chevron.is-open {
   transform: rotate(180deg);
 }
+
+/* --- Footer --- */
+/* Slim site-metadata row (version · last update · GitHub) under the card
+   grid. Hairline top border only — same flat-chrome treatment as the cards. */
+.landing-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.landing-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.landing-footer-link:hover {
+  color: var(--accent);
+}

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
+import pkg from './package.json'
 
 // VITE_SENTRY_ORG and VITE_SENTRY_PROJECT are also inlined into the
 // client bundle (org slug is needed at runtime to build replay URLs;
@@ -25,6 +26,11 @@ export default defineConfig({
     }),
   ],
   base: '/ddo-tools/',
+  define: {
+    // Site version shown in the landing footer. Sourced from package.json,
+    // which is patch-bumped on every push to main (see CLAUDE.md, Commits).
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   optimizeDeps: {
     // sql.js JS module must be pre-bundled (CJS -> ESM conversion).
     // The WASM binary is loaded separately via ?url import.

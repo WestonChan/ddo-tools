@@ -5,6 +5,13 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-07-27',
+    changes: [
+      'Add a landing-page footer with the site version, last-update date, and a GitHub link',
+      'Publish the project under the MIT license, with credits and a fan-project disclaimer in the README',
+    ],
+  },
+  {
     date: '2026-07-26',
     changes: [
       'Confirmation dialogs now close on Escape or a backdrop click, announce their title to screen readers, and hand focus back where you left off',

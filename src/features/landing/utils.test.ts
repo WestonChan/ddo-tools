@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countPastLives, formatPatchDate } from './utils'
+import { countPastLives, formatPatchDate, latestPatchNoteDate } from './utils'
 import type { Character, Life } from '../character'
 
 function makeLife(overrides: Partial<Life> = {}): Life {
@@ -118,5 +118,42 @@ describe('formatPatchDate', () => {
 
   it('handles December (month=12)', () => {
     expect(formatPatchDate('2025-12-10')).toBe('Dec 10, 2025')
+  })
+})
+
+describe('latestPatchNoteDate', () => {
+  it('returns the date of the only entry', () => {
+    expect(latestPatchNoteDate([{ date: '2026-07-26', changes: [] }])).toBe('2026-07-26')
+  })
+
+  it('returns the newest date from newest-first entries', () => {
+    expect(
+      latestPatchNoteDate([
+        { date: '2026-07-26', changes: [] },
+        { date: '2026-07-25', changes: [] },
+        { date: '2026-04-14', changes: [] },
+      ]),
+    ).toBe('2026-07-26')
+  })
+
+  it('returns the newest date even when entries are out of order', () => {
+    // SITE_PATCH_NOTES is newest-first by convention only — nothing enforces
+    // the ordering, so the helper must not trust index 0.
+    expect(
+      latestPatchNoteDate([
+        { date: '2026-04-14', changes: [] },
+        { date: '2026-07-26', changes: [] },
+        { date: '2026-07-25', changes: [] },
+      ]),
+    ).toBe('2026-07-26')
+  })
+
+  it('compares across year boundaries', () => {
+    expect(
+      latestPatchNoteDate([
+        { date: '2025-12-31', changes: [] },
+        { date: '2026-01-01', changes: [] },
+      ]),
+    ).toBe('2026-01-01')
   })
 })

@@ -929,8 +929,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4b | done | Resources drawer architecture + wiki compare window |
 | 4h | done | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` |
 | 4i | done | `<Modal>` primitive consolidation (+ mobile fullscreen nav modal behavior) |
-| **4j** | **→ NEXT** | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit |
-| 4k | planned | File-structure cleanup -- feature-layout consistency, dead icon removal |
+| 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
+| **4k** | **→ NEXT** | File-structure cleanup -- feature-layout consistency, dead icon removal |
 | 4c | planned | ETL data-quality cleanup (Python pipeline) |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
@@ -1193,14 +1193,20 @@ packages:
 - Specialized focus management library — minimal in-tree Tab-trap is
   enough for the immediate use cases.
 
-#### Phase 4j — Licensing & attribution housekeeping
+#### Phase 4j — Licensing & attribution housekeeping (done)
 
-README/repo gaps found while surveying comparable sites (2026-07-24). All trivial; no code changes.
+**Shipped 2026-07-27** on `phase-4j-licensing`. As specced below.
+
+README/repo gaps found while surveying comparable sites (2026-07-24), expanded 2026-07-27 to add
+site metadata (version, last release date, GitHub link) modeled on ddo-builds.com's main page.
 
 - **Add a `LICENSE` file.** README says "MIT" but no license text exists in the repo — a stated license with no license file is legally ineffective.
 - **Add an IP / fan-project disclaimer** to the README: DDO is © Standing Stone Games; game content, names, and assets belong to their owners; this is an unaffiliated fan tool. We publish a site built on data extracted from game files and scraped wiki content — currently with no such notice.
 - **Credit DDO Wiki in the README Credits section.** We scrape it heavily (`ddo-data scrape`, `.wiki-cache/`, [ddowiki-api.md](ddowiki-api.md)); wiki content is typically CC-BY-SA, so attribution is a requirement, not a courtesy.
 - **Add a short Deployment section** to the README: push to `main` → GitHub Actions → GitHub Pages (~5 lines).
+- **Landing-page footer with site metadata** (reference: ddo-builds.com): version number, last-updated date (newest [sitePatchNotes.ts](../src/features/landing/data/sitePatchNotes.ts) entry), and a GitHub link (reuse `REPO_URL` from [../src/lib/githubIssue.ts](../src/lib/githubIssue.ts)). Version injected at build time via a Vite `define` reading `package.json`.
+- **Versioning convention.** `package.json` starts at `0.0.0`; **patch-bump on every push to `main`** (a step in the weston-git merge workflow, recorded as a repo gate in `CLAUDE.md`). **The major version stays 0 until the developer explicitly declares the site fully released**; minor/major bumps happen only on explicit instruction.
+- **Package metadata**: `license`/`repository`/`homepage` in `package.json`, `license` in `scripts/pyproject.toml`, auto-updating badges (version, last commit, license, CI) in the README.
 
 #### Phase 4k — File-structure cleanup
 
