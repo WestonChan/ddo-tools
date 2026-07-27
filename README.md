@@ -1,5 +1,10 @@
 # DDO Tools
 
+[![CI](https://github.com/WestonChan/ddo-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/WestonChan/ddo-tools/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/github/package-json/v/WestonChan/ddo-tools)](https://github.com/WestonChan/ddo-tools/blob/main/package.json)
+[![Last commit](https://img.shields.io/github/last-commit/WestonChan/ddo-tools)](https://github.com/WestonChan/ddo-tools/commits/main)
+[![License](https://img.shields.io/github/license/WestonChan/ddo-tools)](LICENSE)
+
 A toolkit for [Dungeons & Dragons Online](https://www.ddo.com/) — plan character builds and gear sets.
 
 **Live site:** [westonchan.github.io/ddo-tools](https://westonchan.github.io/ddo-tools/)
@@ -72,8 +77,15 @@ ddo-data info
 | `ddo-data dat-namemap` | Cross-reference wiki items with gamelogic to map property key names |
 | `ddo-data scrape --type items` | Scrape item data from DDO Wiki (cached, rate-limited) |
 
+## Deployment
+
+Every push to `main` runs the CI workflow (lint, tests, build) and, on success, deploys the
+built site to GitHub Pages via `actions/deploy-pages`. There is no manual deploy step — merging
+to `main` is the release.
+
 ## Credits
 
+- [DDO Wiki](https://ddowiki.com/) -- the source of most game data in `ddo.db` (items, quests, effects), scraped via `ddo-data scrape`; wiki content is available under CC BY-SA
 - [DATUnpacker](https://github.com/Middle-earth-Revenge/DATUnpacker) (Middle-earth-Revenge) -- C#/.NET reference for the Turbine .dat archive format and compression scheme
 - [DATExplorer](https://github.com/Middle-earth-Revenge/DATExplorer) (Middle-earth-Revenge) -- C# tool documenting the B-tree directory structure and header field layout
 - [LotroCompanion/lotro-tools](https://github.com/LotroCompanion/lotro-tools) (LotroCompanion) -- Java extraction tools revealing the PropertiesSet/DataFacade pattern for Turbine game data
@@ -83,4 +95,8 @@ ddo-data info
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+DDO Tools is an unaffiliated fan project. Dungeons & Dragons Online is © Standing Stone Games;
+game content, names, imagery, and data belong to their respective owners. The MIT license covers
+this repository's code, not the game data it extracts or the wiki content it aggregates.
