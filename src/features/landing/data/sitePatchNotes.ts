@@ -5,6 +5,18 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-07-26',
+    changes: [
+      'Confirmation dialogs now close on Escape or a backdrop click, announce their title to screen readers, and hand focus back where you left off',
+      'Press Enter to confirm a dialog — from the typed-confirmation field once the phrase matches, or directly when no typing is required',
+      'Applying a planned build now asks you to type "Apply" instead of the full build description',
+      'Render line breaks in confirmation messages instead of collapsing them into one paragraph',
+      'Keep Tab inside open dialogs and the item detail drawer instead of letting it walk out into the page behind',
+      'Close the phone fullscreen nav with Escape; the page behind it is disabled while it is open',
+      'Unify overlay styling: consistent backdrop dim and a flat hairline drawer edge in place of the shadow',
+    ],
+  },
+  {
     date: '2026-07-25',
     changes: [
       'New Resources browser: search and filter every item in the database, with a detail drawer for stats, enchantments, and drop sources',

@@ -928,8 +928,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4a | done | Resources browser -- items picker + detail |
 | 4b | done | Resources drawer architecture + wiki compare window |
 | 4h | done | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` |
-| **4i** | **→ NEXT** | `<Modal>` primitive consolidation |
-| 4j | planned | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit |
+| 4i | done | `<Modal>` primitive consolidation (+ mobile fullscreen nav modal behavior) |
+| **4j** | **→ NEXT** | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit |
 | 4k | planned | File-structure cleanup -- feature-layout consistency, dead icon removal |
 | 4c | planned | ETL data-quality cleanup (Python pipeline) |
 | 4d | planned | Filter UX overhaul |
@@ -1058,7 +1058,7 @@ Filters today are scattered across the top bar (Slot select, Pack select, Stats 
 
 - **Unified filter UI.** Replace the strip of disparate controls with a single filter surface (popover or inline panel) that lists every available filter in one place. Active filters render as removable chips above the result list — visible at a glance, one-click clear. Removes the "where's the rare toggle vs the slot select" cognitive split.
 - **Tiered visibility for rarely-used filters.** Some filters (Slot, Pack, Stats, ML) get used constantly; others (per-stat to-hit, per-stat to-damage, weapon proficiency, material, binding, augment-slot color, future power-user fields) are useful occasionally and would clutter the primary surface. The unified UI groups filters into "common" (always visible) and "more" (collapsed behind a disclosure or secondary tab) so adding new filters doesn't degrade the day-to-day view. Goal: every filter we'd reasonably want is *available*, not *visible*.
-- **Searchable selects.** The Pack dropdown already has 50+ options and will grow; Stats, future Bonus-type, and future Patron filters have similar shapes. Replace the native `<select>` with a typeahead-style combobox so users can find an option by typing instead of scrolling. Stats multi-select pattern can fold into the same primitive.
+- **Searchable selects.** The Pack dropdown already has 50+ options and will grow; Stats, future Bonus-type, and future Patron filters have similar shapes. Replace the native `<select>` with a typeahead-style combobox so users can find an option by typing instead of scrolling. Build it as a **shared primitive in `src/components/`** serving every filter dropdown alike — Pack, Stats, per-raid, future Bonus-type/Patron — with `StatsMultiSelect` migrating onto it (preserve its capture-phase Escape precedence over modal dismissal; see `useModalBehavior`'s bubble-phase contract). Deliberately *not* built on the Phase 4i `<Modal>` — combobox popovers are non-modal anatomy (no backdrop, no inert, focus stays in the trigger's flow). Library research (2026-07-26): **Base UI**'s `Combobox` (`multiple` + filtering; headless, token-friendly; MUI + ex-Radix team; 1.0.0-rc, pushed daily, 439k wk downloads) is the best fit and matches the tech-stack section's existing Base UI earmark; runner-up downshift (hooks-only, 4.2M wk). Radix has no combobox; react-select drags in emotion; Headless UI assumes Tailwind. Re-verify Base UI has reached 1.0 stable when this phase starts.
 - **Per-raid filter.** Today "Raid" is a boolean toggle (any raid) and pack is a separate dropdown — neither lets the user filter to a *specific* raid. Add a Raid filter (combobox listing the entries in `KNOWN_RAID_QUESTS`, or the `is_raid` quests once the Phase 4c migration lands) so "show me items that drop from Tower of the Twelve" works directly. The boolean "any raid" toggle can stay as a quick-access shortcut alongside the per-raid select, or fold into "Raid: Any" inside the unified UI.
 - **"Content you own" filter** — items whose source quests the user can actually run, from an account-type setting (F2P/Premium/VIP) + owned packs/expansions + an "apply free code" shortcut for the recurring pack-giveaway codes. Needs spec expansion before starting; ownership model, wiki sources, and data prerequisites are in [docs/notes/Resource View.md](notes/Resource%20View.md).
 
@@ -1129,7 +1129,20 @@ consumer-facing state (pure DOM-side-effect manager via MutationObserver).
 `useWikiHealth` no longer exists — Phase 4b removed the health pill and
 `pingWiki` machinery entirely.
 
-#### Phase 4i — `<Modal>` primitive consolidation
+#### Phase 4i — `<Modal>` primitive consolidation (done)
+
+**Shipped 2026-07-26** on `phase-4i-modal-primitive`. As specced below, plus scope added
+mid-phase: the behavioral core landed as a shared `useModalBehavior` hook
+(`src/hooks/useModalBehavior.ts` — Escape, focus save/restore, Tab trap, `useModalActive`
+opt-in) with `<Modal>` (`src/components/Modal.tsx`, variants `centered`/`drawer-right`) as a
+thin shell over it, and the **mobile fullscreen nav** (<600px) adopted the hook directly
+(`registerActive: false` — it *is* the chrome the refcount inerts; AppLayout wires background
+`inert` from a new `useMediaQuery` hook instead). The drawer's box-shadow was dropped per the
+no-shadow design principle, and ConfirmModal's `\n` message collapse was fixed
+(`white-space: pre-line`). Notable post-review fix: focus restore under `<StrictMode>`'s
+double-invoked effects (restore target read into a closure local at effect setup, never nulled).
+
+Original spec follows.
 
 Modal-shape UI is currently hand-rolled in two places that should share
 one base component:

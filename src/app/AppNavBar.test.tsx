@@ -22,16 +22,26 @@ vi.mock('../features/character', () => ({
 }))
 
 const mockToggle = vi.fn()
+const mockCollapse = vi.fn()
 
-function renderNavBar(expanded = true, initialPath = '/build-plan'): ReturnType<typeof renderWithRouter> {
+function renderNavBar(
+  expanded = true,
+  { initialPath = '/build-plan', overlayActive }: { initialPath?: string; overlayActive?: boolean } = {},
+): ReturnType<typeof renderWithRouter> {
   return renderWithRouter(
-    <AppNavBar expanded={expanded} onToggleExpanded={mockToggle} />,
+    <AppNavBar
+      expanded={expanded}
+      onToggleExpanded={mockToggle}
+      onCollapse={mockCollapse}
+      overlayActive={overlayActive}
+    />,
     initialPath,
   )
 }
 
 beforeEach(() => {
   mockToggle.mockClear()
+  mockCollapse.mockClear()
 })
 
 describe('AppNavBar', () => {
@@ -85,31 +95,43 @@ describe('AppNavBar', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/characters'))
   })
 
-  it('closes nav bar on navigate at narrow widths', async () => {
-    const original = window.innerWidth
-    Object.defineProperty(window, 'innerWidth', { value: 500, writable: true })
-
+  // Below 600px the expanded nav bar is a full-screen overlay, so navigating
+  // has to dismiss it — otherwise the destination view stays hidden behind
+  // it. AppLayout owns the breakpoint check and passes `overlayActive`.
+  it('collapses on navigate while it is the fullscreen overlay', async () => {
     const user = userEvent.setup()
-    const { router } = renderNavBar(true)
+    const { router } = renderNavBar(true, { overlayActive: true })
     await user.click(await screen.findByText('Gear'))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/gear'))
-    expect(mockToggle).toHaveBeenCalled()
-
-    Object.defineProperty(window, 'innerWidth', { value: original, writable: true })
+    expect(mockCollapse).toHaveBeenCalled()
   })
 
-  it('does not close nav bar on navigate at wide widths', async () => {
-    const original = window.innerWidth
-    Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true })
-
+  it('stays open on navigate when it is inline chrome', async () => {
     const user = userEvent.setup()
     const { router } = renderNavBar(true)
     await user.click(await screen.findByText('Gear'))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/gear'))
-    expect(mockToggle).not.toHaveBeenCalled()
+    expect(mockCollapse).not.toHaveBeenCalled()
+  })
 
-    Object.defineProperty(window, 'innerWidth', { value: original, writable: true })
+  it('dismisses the fullscreen overlay on Escape', async () => {
+    renderNavBar(true, { overlayActive: true })
+    await screen.findByText('Gear')
+    // Focusable panel: the overlay takes focus when it opens, so a keyboard
+    // user lands inside it rather than on the inerted content behind.
+    expect(document.querySelector('.app-nav-bar')).toHaveAttribute('tabindex', '-1')
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(mockCollapse).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores Escape when the nav bar is inline chrome', async () => {
+    renderNavBar(true)
+    await screen.findByText('Gear')
+    await userEvent.keyboard('{Escape}')
+    expect(mockCollapse).not.toHaveBeenCalled()
   })
 })

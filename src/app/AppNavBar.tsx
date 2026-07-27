@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import { useRef, type JSX } from 'react'
 import { Link, useMatchRoute } from '@tanstack/react-router'
 import {
   Swords,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { NavBarCharacterCard } from './NavBarCharacterCard'
 import { AmpersandMark } from '../components'
+import { useModalBehavior } from '../hooks'
 import './AppNavBar.css'
 
 // --- Navigation structure ---
@@ -75,13 +76,48 @@ const MAIN_NAV: NavGroupDef[] = [
 interface AppNavBarProps {
   expanded: boolean
   onToggleExpanded: () => void
+  /** Collapses the nav bar (persisting the collapsed preference). Used for
+   *  every dismissal of the mobile fullscreen overlay — Escape and
+   *  navigation — where a toggle would be wrong: dismissing must never
+   *  expand. */
+  onCollapse: () => void
+  /** When `true`, the expanded nav bar is covering the viewport as the
+   *  narrow-width fullscreen overlay, so it behaves like a modal: Escape
+   *  dismisses it, focus moves in and is trapped, and navigating closes it.
+   *  AppLayout owns the breakpoint check and inerts everything behind it. */
+  overlayActive?: boolean
   /** When `true`, the entire nav bar becomes non-interactive — focus,
    *  pointer, and keyboard events are suppressed. Set by AppLayout while
    *  any modal-shape overlay (resources drawer, etc.) is active. */
   inert?: boolean
 }
 
-function AppNavBar({ expanded, onToggleExpanded, inert }: AppNavBarProps): JSX.Element {
+function AppNavBar({
+  expanded,
+  onToggleExpanded,
+  onCollapse,
+  overlayActive,
+  inert,
+}: AppNavBarProps): JSX.Element {
+  const asideRef = useRef<HTMLElement | null>(null)
+
+  // Modal behavior for the fullscreen overlay state (Escape to dismiss,
+  // focus moved in and trapped). Two deliberate departures from <Modal>:
+  //
+  // - `registerActive: false`. The refcounted modal-active store exists so
+  //   AppLayout can inert the background *chrome* — and this overlay IS
+  //   chrome, so registering would inert the nav bar itself. AppLayout wires
+  //   the surrounding regions from the same `overlayActive` flag instead.
+  // - No `role="dialog"`. The nav bar stays a landmark <aside> wrapping a
+  //   <nav>; dialog would flatten that structure for AT. `inert` on
+  //   everything else is a stronger containment guarantee than aria-modal.
+  useModalBehavior({
+    active: !!overlayActive,
+    onClose: onCollapse,
+    panelRef: asideRef,
+    registerActive: false,
+  })
+
   // Test swap: useMatchRoute instead of useLocation-pathname equality.
   // Upside: handles nested/param routes (e.g., a child path under /settings
   // would still highlight the Settings nav item). Trade-off the original
@@ -92,15 +128,21 @@ function AppNavBar({ expanded, onToggleExpanded, inert }: AppNavBarProps): JSX.E
   const matchRoute = useMatchRoute()
   const settingsActive = !!matchRoute({ to: '/settings' })
 
-  // At narrow widths the expanded nav bar is full-screen; auto-close on navigate.
+  // The fullscreen overlay covers the view it just navigated to, so dismiss
+  // it on navigate. Inline (wider) layouts stay put.
   function handleNavClick(): void {
-    if (expanded && window.innerWidth < 600) {
-      onToggleExpanded()
+    if (overlayActive) {
+      onCollapse()
     }
   }
 
   return (
-    <aside className={`app-nav-bar${expanded ? ' expanded' : ''}`} inert={inert}>
+    <aside
+      ref={asideRef}
+      tabIndex={-1}
+      className={`app-nav-bar${expanded ? ' expanded' : ''}`}
+      inert={inert}
+    >
       <div className="nav-bar-scroll">
         <Link
           to="/"

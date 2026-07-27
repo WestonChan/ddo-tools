@@ -101,11 +101,18 @@ function FeatsTab(): JSX.Element {
   )
 }
 
-function BuildSidePanel(): JSX.Element {
+interface BuildSidePanelProps {
+  /** When `true`, the entire panel becomes non-interactive — focus, pointer,
+   *  and keyboard events are suppressed. Set by AppLayout while the mobile
+   *  fullscreen nav overlay is covering it. */
+  inert?: boolean
+}
+
+function BuildSidePanel({ inert }: BuildSidePanelProps): JSX.Element {
   const [activeTab, setActiveTab] = useState<Tab>('stats')
 
   return (
-    <aside className="side-panel">
+    <aside className="side-panel" inert={inert}>
       <div className="side-panel-tabs">
         <button
           className={`side-panel-tab ${activeTab === 'stats' ? 'active' : ''}`}

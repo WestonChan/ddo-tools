@@ -149,8 +149,8 @@ Layers are numbered by role so siblings within the same layer can use small loca
 | `--z-local` | 1 | Positional offsets within a component (swap btn over divider, etc.) |
 | `--z-panel` | 10 | Side panels, stats panel — above main content |
 | `--z-nav` | 20 | Nav bar — above panels |
-| `--z-overlay` | 40 | Mobile fullscreen nav, slide-in drawers |
-| `--z-modal` | 100 | Confirm modals, tooltips — highest layer |
+| `--z-overlay` | 40 | Mobile fullscreen nav, modal backdrops (`.modal-backdrop` in Modal.css) |
+| `--z-modal` | 100 | Dialog/drawer panels (`.modal-panel` in Modal.css), tooltips — highest layer |
 
 Always use tokens, never hardcode colors. Use variables for repeated dimensions (`--icon-col`), timing, and spacing. If a value appears 3+ times, extract it.
 
@@ -185,9 +185,10 @@ The nav bar is always in the grid flow (never fixed-position) except at `<600px`
 |-------|----------------|-------------------|-------|
 | **>=900px** | Stored preference (localStorage) | Inline, pushes content (220px) | Desktop layout |
 | **600-899px** | Auto-collapsed (icons only, 56px) | Inline, pushes content (220px) | Re-expands when resizing back above 900px |
-| **<600px** | Auto-collapsed (icons only, 56px) | **Full-screen overlay** (`position: fixed; inset: 0`) | Auto-closes on navigate |
+| **<600px** | Auto-collapsed (icons only, 56px) | **Full-screen overlay** (`position: fixed; inset: 0`) | Behaves as a modal: closes on navigate or Escape, background goes `inert` |
 
 Key rules:
 - **No media queries in App.css** -- grid columns are controlled by JS-toggled classes (`app--nav-bar-collapsed`, `app--no-stats`).
-- **One media query in AppNavBar.css** -- `@media (max-width: 599px)` makes `.app-nav-bar.expanded` full-viewport via `position: fixed`.
-- Auto-collapse/restore is handled by a resize listener in `App.tsx` that tracks the 900px threshold crossing.
+- **One media query in AppNavBar.css** -- `@media (max-width: 599px)` makes `.app-nav-bar.expanded` full-viewport via `position: fixed`. AppLayout mirrors the same query in JS (`useMediaQuery('(max-width: 599px)')`) to drive the overlay's modal behavior — the two must move together.
+- **One media query in Modal.css** -- `@media (max-width: 899px)` makes the `drawer-right` variant full-screen and hides its backdrop.
+- Auto-collapse/restore is handled by a resize listener in `AppLayout.tsx` that tracks the 900px threshold crossing.

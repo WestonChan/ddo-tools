@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { Outlet, useLocation, useMatches } from '@tanstack/react-router'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
 import { BottomBar, type BuildWarning } from './BottomBar'
 import { ErrorCard, ErrorScreen } from '../components'
-import { useAnyModalActive, useFaviconAccent, useLocalStorage } from '../hooks'
+import { useAnyModalActive, useFaviconAccent, useLocalStorage, useMediaQuery } from '../hooks'
 import { captureBoundary } from '../lib/sentry'
 import { BuildSidePanel } from '../features/character'
 import './App.css'
@@ -76,6 +76,24 @@ function AppLayout(): JSX.Element {
     setStoredExpanded(next)
   }
 
+  // Dismissing the mobile overlay persists the collapsed state, same as
+  // hitting the collapse button — the user asked for it to be closed. That's
+  // the opposite of the resize auto-collapse above, which deliberately leaves
+  // the stored preference alone so the nav re-expands on the way back up.
+  const collapseNavBar = useCallback((): void => {
+    setNavBarExpanded(false)
+    setStoredExpanded(false)
+  }, [setStoredExpanded])
+
+  // Below 600px the expanded nav bar is a fullscreen overlay rather than a
+  // grid column — the breakpoint is duplicated from AppNavBar.css's single
+  // `@media (max-width: 599px)` rule, so the two have to move together. In
+  // that mode the nav bar behaves like a modal (AppNavBar wires Escape +
+  // focus containment via useModalBehavior) and everything behind it goes
+  // inert from here.
+  const isMobileNav = useMediaQuery('(max-width: 599px)')
+  const navOverlayActive = navBarExpanded && isMobileNav
+
   const matches = useMatches()
   const showRightPanel = matches.some((m) => m.staticData.showStatsPanel)
   const { pathname } = useLocation()
@@ -89,6 +107,9 @@ function AppLayout(): JSX.Element {
   // because it's outside the inerted subtrees.
   const modalActive = useAnyModalActive()
   const inertProp = modalActive || undefined
+  // Separate flag: the mobile nav overlay inerts everything except the nav bar
+  // itself, so it can't share `inertProp` (which the nav bar consumes).
+  const navOverlayInert = navOverlayActive || undefined
 
   return (
     <div className="app-shell">
@@ -96,10 +117,12 @@ function AppLayout(): JSX.Element {
         <AppNavBar
           expanded={navBarExpanded}
           onToggleExpanded={toggleNavBar}
+          onCollapse={collapseNavBar}
+          overlayActive={navOverlayActive}
           inert={inertProp}
         />
 
-        <div className="app-content">
+        <div className="app-content" inert={navOverlayInert}>
           {/* View-level boundary: a route-component crash collapses to an
               ErrorScreen here without taking down the surrounding chrome.
               resetKeys={[pathname]} auto-resets on route navigation. */}
@@ -112,7 +135,7 @@ function AppLayout(): JSX.Element {
           </ErrorBoundary>
         </div>
 
-        {showRightPanel && <BuildSidePanel />}
+        {showRightPanel && <BuildSidePanel inert={navOverlayInert} />}
       </div>
 
       {/* Chrome boundary around BottomBar: the bar owns the static
@@ -120,7 +143,7 @@ function AppLayout(): JSX.Element {
           inside collapses to a compact ErrorCard rather than killing
           the whole bar. */}
       <ErrorBoundary FallbackComponent={BottomBarFallback} onError={captureBoundary}>
-        <BottomBar warnings={warnings} inert={inertProp} />
+        <BottomBar warnings={warnings} inert={inertProp || navOverlayInert} />
       </ErrorBoundary>
     </div>
   )

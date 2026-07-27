@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import * as Sentry from '@sentry/react'
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router'
 import { CharacterProvider } from '../features/character'
 import { createAppRouter } from '../router'
+import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../test/matchMediaStub'
 
 // Tests for the headline behavior of Phase 3: when a route component
 // crashes, the app shell (nav bar, bottom bar, side panel) stays
@@ -73,5 +75,104 @@ describe('AppLayout error boundaries', () => {
     // Component stack is included via the captureBoundary adapter.
     const stack = (context as { contexts?: { react?: { componentStack?: string } } })?.contexts?.react?.componentStack
     expect(stack).toBeTypeOf('string')
+  })
+})
+
+// Below 600px the expanded nav bar covers the whole viewport (AppNavBar.css).
+// AppLayout has to treat it as a modal: everything behind it goes `inert`, and
+// Escape dismisses it. The nav bar itself must stay interactive — inerting the
+// overlay along with the rest of the chrome would make it unusable.
+describe('AppLayout mobile nav overlay', () => {
+  const realWidth = window.innerWidth
+
+  /** Returns the stub so a test can emit a later breakpoint crossing. Only the
+   *  (max-width: 599px) query AppLayout asks about needs a real answer. */
+  function setViewportWidth(width: number): MatchMediaStub {
+    Object.defineProperty(window, 'innerWidth', {
+      value: width,
+      writable: true,
+      configurable: true,
+    })
+    return installMatchMedia((query) => query.includes('599px') && width < 600)
+  }
+
+  function expandNavBar(): Promise<void> {
+    // The collapse/expand toggle is icon-only when collapsed, so it has no
+    // accessible name to query by.
+    const toggle = document.querySelector('.nav-bar-collapse-btn')
+    if (!(toggle instanceof HTMLElement)) throw new Error('nav bar toggle not found')
+    return userEvent.click(toggle)
+  }
+
+  afterEach(() => {
+    restoreMatchMedia()
+    Object.defineProperty(window, 'innerWidth', {
+      value: realWidth,
+      writable: true,
+      configurable: true,
+    })
+  })
+
+  it('inerts the content, side panel, and bottom bar while the overlay is open', async () => {
+    setViewportWidth(500)
+    localStorage.setItem('ddo-nav-bar-expanded', 'false')
+    renderApp('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+
+    await expandNavBar()
+
+    expect(document.querySelector('.app-content')).toHaveAttribute('inert')
+    expect(document.querySelector('.side-panel')).toHaveAttribute('inert')
+    expect(document.querySelector('.bottom-bar')).toHaveAttribute('inert')
+    expect(document.querySelector('.app-nav-bar')).not.toHaveAttribute('inert')
+  })
+
+  it('collapses the overlay on Escape and lifts every inert', async () => {
+    setViewportWidth(500)
+    localStorage.setItem('ddo-nav-bar-expanded', 'false')
+    renderApp('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+    await expandNavBar()
+    expect(document.querySelector('.app-nav-bar')).toHaveClass('expanded')
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(document.querySelector('.app-nav-bar')).not.toHaveClass('expanded')
+    expect(document.querySelector('.app-content')).not.toHaveAttribute('inert')
+    expect(document.querySelector('.side-panel')).not.toHaveAttribute('inert')
+    expect(document.querySelector('.bottom-bar')).not.toHaveAttribute('inert')
+  })
+
+  it('drops the overlay when the viewport grows past the breakpoint, keeping the nav expanded', async () => {
+    // Rotating a phone to landscape (or dragging a narrow window wider) crosses
+    // 600px with the nav still expanded. `navOverlayActive` has to recompute
+    // from the media-query change alone — nothing else re-renders AppLayout —
+    // and the nav must stay expanded, becoming an ordinary sidebar rather than
+    // collapsing or leaving the background stuck inert.
+    const matchMedia = setViewportWidth(500)
+    localStorage.setItem('ddo-nav-bar-expanded', 'false')
+    renderApp('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+    await expandNavBar()
+    expect(document.querySelector('.app-content')).toHaveAttribute('inert')
+
+    act(() => matchMedia.emitChange('(max-width: 599px)', false))
+
+    expect(document.querySelector('.app-nav-bar')).toHaveClass('expanded')
+    expect(document.querySelector('.app-content')).not.toHaveAttribute('inert')
+    expect(document.querySelector('.side-panel')).not.toHaveAttribute('inert')
+    expect(document.querySelector('.bottom-bar')).not.toHaveAttribute('inert')
+  })
+
+  it('leaves an expanded desktop nav bar as ordinary inline chrome', async () => {
+    setViewportWidth(1200)
+    localStorage.setItem('ddo-nav-bar-expanded', 'true')
+    renderApp('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+    expect(document.querySelector('.app-nav-bar')).toHaveClass('expanded')
+
+    expect(document.querySelector('.app-content')).not.toHaveAttribute('inert')
+    expect(document.querySelector('.side-panel')).not.toHaveAttribute('inert')
+    expect(document.querySelector('.bottom-bar')).not.toHaveAttribute('inert')
   })
 })
