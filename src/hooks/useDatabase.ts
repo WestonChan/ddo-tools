@@ -72,6 +72,8 @@ export function isDbError(err: unknown): err is DbError {
 // instead of crashing returning browsers.
 export const REQUIRED_COLUMNS: ReadonlyArray<readonly [table: string, column: string]> = [
   ['quest_loot', 'loot_type'],
+  // getItemDetail reads is_rare to mark rare drops in "Drops from".
+  ['quest_loot', 'is_rare'],
 ]
 
 /** Smoke-test the loaded DB to catch corrupt, empty, stale-cached, or

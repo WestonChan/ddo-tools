@@ -931,7 +931,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4i | done | `<Modal>` primitive consolidation (+ mobile fullscreen nav modal behavior) |
 | 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
 | 4k | done | File-structure cleanup -- feature-layout consistency, dead icon removal |
-| **4c** | **→ NEXT** | ETL data-quality cleanup (Python pipeline) |
+| 4c | done | ETL template/entity normalization + rare loot (Python pipeline) |
+| **4m** | **→ NEXT** | ETL data-quality: audits & investigations -- **blocks Phase 8** (see the phase entry) |
 | 4l | planned | DDOBuilderV2 data cross-check utility -- diff `ddo.db` against Maetrim's XML data files |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
@@ -952,6 +953,18 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 
 Phases 4h–4k are general frontend/repo cleanup rather than Resources-browser work; they sit under
 Phase 4 only because they surfaced during it. Ordered first because all are small and self-contained.
+
+**Independence and ordering notes** (the table reads as strictly serial by default, so where that
+isn't true it is said here):
+
+- **4m is a prerequisite for Phase 8**, not optional cleanup — `{{Enhancement bonus}}` is missing on
+  4,037 items and a weapon's `+N` is unusable without it. It is `→ NEXT` for that reason and because
+  it reuses the template module 4c just built.
+- **4l can be taken in parallel with 4m** (different files: a new CLI command vs. the existing
+  writers). Its scope also shrank: the manual cross-check was already run during 4c planning and its
+  findings are recorded in [DB Errors.md](notes/DB%20Errors.md), so 4l is now "build the repeatable
+  tool", not "discover the disagreements".
+- **4d–4g remain serial** behind each other as written (4f still `requires 4e`).
 
 ### Phase 1: Layout Restructuring (done)
 - Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
@@ -1032,26 +1045,125 @@ Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
   - The `/` and Escape shortcuts were bound to the view root, so they never fired when focus sat outside it (nav-bar click, deep link). Moved to `document`; the drawer now takes focus on open and restores it on close, and carries `aria-modal` plus an `aria-labelledby` pointing at the item heading.
   - Dead code removed: `utils.ts` (duplicate of `isCategory` + an unused `assertNever`), a second divergent `ItemRow` in `types.ts`, `rowsToObjects`/`firstRow`/`escapeLike` in `sqlHelpers.ts`, `EnchantmentLine.statName`, and the unused `level`/`base_value`/`icon` columns in `getItemDetail`.
 
-#### Phase 4c — ETL data-quality cleanup
+#### Phase 4c — ETL template/entity normalization + rare loot (done)
 
-Frontend workarounds keep accumulating because the scraper stores half-processed strings. Push the cleanup back into `scripts/` so every consumer (current frontend, future tools, exports) gets clean data once. Newly-found DB errors get logged with evidence + reproduce queries in [docs/notes/DB Errors.md](notes/DB%20Errors.md) and [docs/notes/Item DB Errors.md](notes/Item%20DB%20Errors.md) as they surface — work through both logs as part of this phase. Concrete gaps:
+Frontend workarounds kept accumulating because the scraper stored half-processed strings. The
+2026-07-28 investigation found most of the phase's bullets shared **one root cause**: the pipeline
+treated MediaWiki templates as *noise to strip* rather than *structure to expand*, and never
+normalized strings where rows are written. Full evidence, with counts and reproduce queries, is in
+[DB Errors.md](notes/DB%20Errors.md) (the "systematic audit" section) and
+[Item DB Errors.md](notes/Item%20DB%20Errors.md).
 
-- HTML entities leak into stored strings — e.g. items.id 555 has `name = "Admiral&#39;s Gloves"` while items.id 545 has `name = "Acolyte's Lenses"`. Inconsistent: some inserts decode, some don't. Fix: HTML-unescape every `TEXT` column at insert time (one pass at the writer boundary, not per-field). Frontend currently has no decoder; once the DB is clean, none is needed.
-- `items.rarity` is universally empty (`SELECT DISTINCT rarity FROM items` → 7,249 NULL/empty rows). The picker has had a "Rare only" toggle for a while that's been silently filtering nothing, and the new `[Rare]` row chip will never render until rarity is backfilled. Likely a scraper gap — the column exists, the parser just isn't extracting it from item infoboxes.
-- `stats` table has only `(id, name, category)` — no description column. Blocks the per-row wiki-link + stacking tooltip on bonus rows (tracked in [docs/notes/Resource View.md](notes/Resource%20View.md) under Phase 4c): the tooltip needs a real description to show. Once stat descriptions are scraped (or hand-curated for the ~50 distinct stats DDO uses), both land together. This is a smaller scrape — stat pages are a bounded set, easy to enumerate.
-- Bonus descriptions contain raw MediaWiki template invocations (`{{Stat|Charisma|5}}`, `{{Elemental Resistance|Fire|30}}`) that the scraper didn't expand. Frontend strip workaround lives in [`EnchantmentList.tsx`](../src/features/resources/components/detail/EnchantmentList.tsx) (`cleanDescription`). Long-term: expand templates at parse time (the templates are defined on the wiki — we have the raw definition available); fall back to stripping if expansion fails.
-- `quests.npc` column exists in the schema but is universally null (`COUNT(npc) = 0` across 681 quests). Schema comment notes "unpopulated (future: wt)". The frontend already reads it (see [`items.ts`](../src/features/resources/queries/items.ts) — quest query) and renders it in the meta line; populate it from the wiki quest pages and the UI surfaces it for free.
-- **Raid loot: column shipped, authoritative data still pending.** `quest_loot.loot_type` now exists (`chest`/`reward`/`raid`), `collect_quest_loot` records which wiki category each mapping came from instead of discarding it, and `insert_quest_loot` implements the raid-wins precedence its docstring always claimed. The frontend queries the column and the hardcoded `KNOWN_RAID_QUESTS` list is gone from `items.ts`. **Still open**: the column is populated by `backfill_quest_loot_types` from a hand-maintained list (`scripts/src/ddo_data/game_data/raid_quests.py`) because ddowiki's WAF challenge blocks the scrape, so only `raid` is set — `chest`/`reward` are NULL on 4,151 rows; a successful items scrape fills those two. The list itself was **reconciled 2026-07-25** against the wiki's `Raids` page in a real browser (which passes the WAF): +4 taggable raids (154 items, 609 → 756), −`Reign of Madness` (story arc, not a raid), scraper suffix bug fixed (bogus `The Chronoscope reward items` quest merged away). Caveat discovered in the process: `Category:Raid_loot` is stale on the wiki (last edit 2015), so even a live scrape under-tags raids — the hand list stays authoritative for `raid` until that's addressed. Remaining sub-issues in [docs/notes/DB Errors.md](notes/DB%20Errors.md): the `chest`/`reward` NULLs, four raids with zero loot rows, and two raids missing from `quests` entirely.
-- `quests` table has no `wiki_url` column (only `items` and `feats` do). The "Drops from" section's quest wiki-link icon currently derives the URL client-side from `q.name` — works for the common case but breaks on disambiguation suffixes (`Quest Name (Heroic)`) and namespaced pages. Add `quests.wiki_url`, populate it during the quest scrape, and the frontend can drop its derive-from-name fallback. Once populated, swap `WikiLinkIcon pageName={q.name}` to a URL-aware variant.
-- Effect magnitudes land in `effects.modifier` and the bonus type is discarded — the wiki's enchantment-template grammar is `{{Effect|magnitude|bonus-type}}` (e.g. `{{Incite|59|Insightful}}`), but `parse_effect_template`'s two-param branch assumes params[0] is a textual modifier. 149 `effects` rows across 30 names, reaching 613 `item_effects` rows; the UI renders the magnitude in the type-chip column. Root cause, evidence, and repro queries in [docs/notes/DB Errors.md](notes/DB%20Errors.md) (entry dated 2026-07-24).
-- `bonuses.bonus_type_id` is NULL on 782 of 4,948 rows (~16%). Some bonuses are legitimately untyped, but 16% feels high — scraper extraction is likely missing types on save-bonus rows (e.g. item 2193's "Illusion Save +6" and "Enchantment Save +6" both come back NULL). Spot-check ~10 NULL rows against the wiki to calibrate; tighten the parser regex / template handling where the wiki uses non-standard phrasing for typed bonuses. The frontend already renders NULL types as an empty grid cell, so this is purely a data-quality cleanup, not a UI gap.
-- Augment-slot extraction is partial and inconsistent across template variants. Two failure modes coexist:
-  - **Template not recognized**: `item_augment_slots.slot_type` only carries augment colors (blue, colorless, green, moon, orange, purple, red, sun, yellow). Sentient slots on Legendary items (e.g. item 3582 "Legendary Calamitous Dagger") aren't extracted at all — `{{Augment|Sentient}}` is silently skipped.
-  - **Template recognized but wrong table**: `{{Augment|Primary}}` / `{{Augment|Secondary}}` (Cannith upgradeable augment slots) get parsed but routed to `item_effects` with `name="UpgradeableAugment"` and the slot kind in `modifier`. E.g. item 1236 "Circle of Malevolence" has two such rows in effects instead of in augment_slots, so the frontend renders them as malformed enchantment rows ("Primary UpgradeableAugment") instead of as gems in the EntityHeader's augment-slots KV row.
-  Fix in two parts: (1) expand the recognized-template set to include `Sentient`, `Primary`, `Secondary`, and any other non-color variants the wiki uses; (2) route all of them into `item_augment_slots` with appropriate `slot_type` values. The frontend already renders whatever slots come back from the query, so once the parser is corrected, the UI surfaces them correctly — no frontend change needed.
-- Audit and remove non-named items from `items`. Scoping evidence (2026-07-24): no generic base loot found by name (`Longsword`, `Dagger`, etc. → 0 rows), and the 87 rows with `wiki_url IS NULL` are **craftable base items** (Thunder-Forged, Green Steel, Alchemical — e.g. ids 7165-7174) that likely belong in the DB, so a naive "delete rows without wiki pages" would remove legitimate items. First define what counts as non-named, then audit the 87 no-wiki_url rows and the 60 `dat_id IS NOT NULL` rows; delete only confirmed junk. Reproduce: `SELECT id, name FROM items WHERE wiki_url IS NULL;`
-- Finish the wiki-only sourcing migration. The pipeline is already ~99% wiki-sourced — `item_effects` (12,550), `item_bonuses` (14,774), `enhancement_bonuses`, `set_bonus_bonuses` all report `data_source='wiki'` exclusively. Residue: 25 `augment_bonuses` rows with `data_source='binary'` (re-source from wiki augment pages or verify and keep), and the 60 `dat_id`-tagged items above (all have wiki pages, so re-sourcing is feasible). Retiring the `.dat` parser entirely is **out of 4c scope** — it still backs the icons pipeline (`ddo_data/icons/`) until the image-extraction question in [docs/notes/To Do.md](notes/To%20Do.md) is resolved. Reproduce: `SELECT data_source, count(*) FROM augment_bonuses GROUP BY data_source;`
-- Re-run the data pipeline + commit `public/data/ddo.db` after the above. Add a vitest spot-check that asserts no `&#\d+;`/`{{` patterns survive in user-visible columns of `items` / `bonuses` / `effects` / `quests` (so regressions ship loud).
+**What shipped:**
+
+- **Offline page enumeration.** `build-db` fetched page *wikitext* through the disk cache but
+  enumerated page *titles* through the API — and ddowiki's AWS WAF returns HTTP 202 with an empty
+  body to every non-browser client, so the pipeline could not run at all. `WikiClient` now derives
+  titles from `.wiki-cache/*.json`, falling back to the API when it is reachable.
+- **`wiki/templates.py`** — one module owning template → (display text, structured fields),
+  replacing three naive `re.sub(r'\{\{[^{}]*\}\}','')` sites plus a copy of the same regex that had
+  been ported into TypeScript.
+- **Writer-boundary string normalization** — HTML entities (96 rows across 7 columns and 5 different
+  parsers, which is why it belongs at the writer), markup in `name` columns (310 rows), and
+  case/punctuation name variants (65 groups: `Clicky`/`clicky`, `Armor-Piercing`/`ArmorPiercing`,
+  `STR`/`Str`, …).
+- **Parser fixes** — item names (`{{Item|X}} (level 12)` was stripped to `(level 12)`, 7 items);
+  the `{{Effect|magnitude|bonus-type}}` grammar (153 `effects` rows, 658 `item_effects`, so `Incite`
+  now carries `Insightful` instead of `"59"`); nested-template extraction; malformed `+-N` names;
+  and `{{Save|Spell|N}}` resolving to stat 21 `Spell Resistance` instead of stat 177 `Spell Save`
+  (19 rows — two different game mechanics, which is why the name appeared in both tables).
+- **`unique_enchantments`** (762 rows from the cached `{{Unique enchantment}}` pages) with nullable
+  FKs from both `bonuses` and `effects`. This is the shared identity the schema previously lost:
+  `Deception`'s page carries the sneak-attack text that `Deception +7` alone cannot express. Gives
+  the per-row wiki-link tooltip a real target and a URL.
+- **Rare loot.** No `rarity` field exists in the item infobox as originally assumed — the sources
+  are the infobox `| rare =` field plus `Category:Rare Loot List items` (browser-captured, since the
+  WAF blocks clients; see `wiki/rare_loot_items.py`, on the `raid_quests.py` stopgap model). Landed
+  as `items.rarity` (139), `augments.is_rare` (79 — the Lunar/Solar Gems live there, not in `items`)
+  and `quest_loot.is_rare` (139 mappings). The picker's "Rare only" toggle, which had been silently
+  filtering nothing, now works, and drop locations show `(rare)`.
+- **Seven validation assertions** in `db/validate.py` (A1–A6 plus A3b), wired to `ddo-data
+  validate-db`, each with a test that it *fires* on crafted bad data rather than only passing on
+  good data. A1 carries an allowlist with a recorded reason per entry.
+- **Writer idempotency.** Because the WAF makes `build-db` an in-place updater, idempotency is a
+  correctness property. Four tables were appending a fresh copy of their scrape on every run
+  (`crafting_options` +701/run, `crafting_option_bonuses` +349, `crafting_recipes` +127,
+  `crafting_recipe_ingredients` +234, `schema_version` +1), and `collapse_value_variants` /
+  `renormalize_bonus_names` were mutually recursive with disagreeing rules, flipping 18 negative
+  bonuses to positive on every build while row counts stayed stable. Both fixed and pinned by
+  `test_writer_idempotency.py`.
+- Deleted the frontend `cleanDescription` workaround, whose whole reason to exist was this gap.
+
+**Architectural fact recorded by this phase:** while the WAF stands, `build-db` is an **in-place
+updater**, not a rebuild. Anything expecting a clean rebuild — a schema change needing backfill, a
+row deletion — needs a repair pass like `repair_stored_rows`. Cache-derived *category* membership is
+not a workaround: only 167 of 810 feat pages and 0 enhancement-tree pages are recoverable from
+`[[Category:]]` links.
+
+#### Phase 4m — ETL data-quality: audits & investigations
+
+The 2026-07-28 audit swept all 78 tables and found far more than Phase 4c could absorb. **This phase
+is a Phase 8 prerequisite**, not optional cleanup. Every item below has counts and a reproduce query
+in [DB Errors.md](notes/DB%20Errors.md); this entry deliberately links out rather than duplicating.
+
+Large enough that it should be split when picked up — suggested slices, in order:
+
+1. **The two big recoveries** (highest value; reuse 4c's `wiki/templates.py` while it is fresh):
+   - **`{{Enhancement bonus|w|N}}` is missing on 4,037 items** — a weapon's most basic stat. 4,055
+     items carry the template; 18 produced a row. The dead `items.enhancement_bonus` column is the
+     same bug. Confirmed independently against Maetrim's data. **This is what blocks Phase 8.**
+   - **2,420 augment slots missing** across five unrecognized template families (`Lamordia Slot`
+     1,001, `Dino Slot` 440, `MoonSunAugment` 427, `UpgradeableAugment` 72, `Slaver's Slot` 30).
+     Carries an open schema question — whether `slot_type` needs a companion `slot_family` — with the
+     analysis recorded in the notes. Between them these two also explain ~516 of the 830
+     content-less items.
+2. **Maetrim-fed fixes** (small, high-certainty; these retire a stopgap):
+   - 4 missing `bonus_types` rows (`Legendary`, `Penalty`, `Orb`, `Vitality`) account for ~44 NULL
+     `bonus_type_id` values outright — `Legendary` is 14/14.
+   - `bonus_types` id 3 is named `Insight`; DDO calls it `Insightful`, and our own scraped data
+     agrees with DDO (301 vs 289). User-visible in every bonus-type badge.
+   - `Quests.xml` flags `IsRaid` on exactly 41 quests — the same count as the wiki's Raids page — so
+     `game_data/raid_quests.py` can be **deleted and replaced** rather than waiting for the WAF. It
+     also fills 12 of the 13 NULL-`pack_id` raid quests and both quests missing from `quests`.
+3. **Audits and verdicts:**
+   - 32 columns 100% NULL and 8 under 5% — each needs "populate or drop". Two need a decision first:
+     `item_augment_slots.augment_id` (6,887 rows — what is socketed is a *build* choice, so it may
+     belong in `user.db`; decide before Phase 8) and the `weapon_proficiencies` model (3 rows backing
+     three all-NULL FK columns; relevant to Phase 7).
+   - **`quests` conflates quests with other loot sources** — `insert_quest_loot` auto-creates a
+     `quests` row for every loot category it discovers, so the table holds expansions
+     (`Magic of Myth Drannor`, 205 items), wilderness areas, crafting stations (`Ritual Table`),
+     taverns (`Blue Water Inn`, 160) and loot categories. 121 of the 122 pack-less rows have pack,
+     patron, level *and* zone all NULL because **no pack applies**. User-visible: **1,995 of 4,797
+     items with a drop location (42%) show no pack on any of them**, and the detail view labels a
+     crafting altar the same as a raid. Needs a loot-source **type** (or those rows moved out of
+     `quests`), not a pack backfill — inventing a pack for a crafting station would be wrong. Also
+     blocks Phase 4d's "Content you own" filter, which gates on pack ownership.
+   - Content gaps: 830 items with no bonus or effect (391 with nothing at all), 242/680 quests with
+     no loot rows, 430/1,279 augments with no bonuses, `filigrees.icon` 0/365.
+   - 198 orphaned `bonuses` and 137 orphaned `effects` — audit before deleting, since an orphan may
+     mean a *consumer* table is incomplete rather than the row being junk. (Now 73/15 after 4c's
+     dedupe; that is the recorded A6 warning baseline.)
+   - **Crafting-table duplication is a bug, not data:** `crafting_options` holds exactly 4 identical
+     copies of each of 1,119 options, and `crafting_recipes` 4 × 127 — four historical build runs.
+     4c stopped the growth but left the copies. The structural fix is a `UNIQUE INDEX` matching this
+     repo's convention elsewhere, which cannot be created until the copies are merged (their
+     `crafting_option_bonuses` / `crafting_recipe_ingredients` children need merging too).
+   - Modelling decisions: `{{SpellPower|potency}}`'s 773-row fan-out across 11 elemental stats vs one
+     `Universal Spell Power` row (**needed before Phase 6** — it changes what the engine sums);
+     `{{HELstats}}` multi-stat loss; `Clicky` (232 rows) duplicating `item_spell_links`
+     (**before Phase 12**); set bonuses needing the item router's three-way routing so a named
+     *effect* conferred by a set has somewhere to go other than `bonuses`; the 12 named tables with
+     no `wiki_url` column.
+   - Remaining markup: `crafting_options.description` (344 HTML-tag rows) and `feats.note` (137 wiki
+     list markers) — 4c fixed only the columns the Resources view renders. Also ~9
+     `crafting_options.name` rows holding whole paragraphs.
+   - `items.minimum_level = 0` on items that should be ML 1, plus 315 ML disagreements with Maetrim.
+   - The 87 `wiki_url IS NULL` + 60 `dat_id` non-named-item audit; 25 binary `augment_bonuses` rows;
+     the 25 zero-magnitude `{{Absorption|X|0|N}}` rows; item 2396's upgrade edge.
+   - **Decide whether to recommit a rebuilt `ddo.db`.** The committed database is not a build output:
+     one `build-db` run from it adds ~752 items from the cache and raises a new
+     `items_have_equipment_slot` warning. 4c deliberately shipped the smaller, reviewed delta.
 
 #### Phase 4d — Filter UX overhaul
 
@@ -1087,6 +1199,8 @@ Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes ea
 
 #### Phase 4g — Polish
 - Filter persistence per category via `useLocalStorage`. Expand Fuse search to material/binding/item_category.
+- **Improve the visual treatment of the Raid and Rare indicators.** Phase 4c extracted `ResourceChip` so the picker list and the item-detail "Drops from" line render the same fact identically, but the styling is inherited rather than designed: `raid` is accent-tinted and `rare` is neutral (`--text-secondary` / `--border` / `--bg-subtle`), which was a picker-local choice made when raid was the only notable property. Open questions for a proper pass — should rarity get its own hue (the genre convention is gold/amber) rather than borrowing the accent or a neutral; should the two chips read as the same *kind* of thing at all, given one is a drop-source property and the other a loot-list property; and do they belong as chips, as a column in the Phase 4g sortable table (see below), or as inline name decorations. Note that no shipped item is currently both raid *and* rare, so the side-by-side case is untested against real data. Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
+- **Suppress the empty metadata line under "Drops from".** When a drop location has no pack, patron, zone, npc or level, `ItemDetail` still renders the `·`-joined meta span and leaves a blank line (visible on item 3179). Mostly a symptom of the loot-source problem in Phase 4m, but the guard is worth having regardless.
 - **Item icons in the picker list.** Show each item's icon beside its name so the list is scannable by shape/colour rather than by reading every row (reference: ddo-builds.com's item list). Blocked on an icon-asset source — see the image-extraction item in [docs/notes/To Do.md](notes/To%20Do.md); resolve that first, then wire icons into both the stacked-list and sortable-table picker modes. Needs a placeholder for items with no icon and must not shift row height (virtualized list assumes fixed rows).
 - **Convert the picker to a true sortable table.** Today's picker is a virtualized stacked list: each row shows the name on top and meta fields (`ML · Slot · Pack`) inline below. That works at narrow widths but can't be sorted or column-aligned. Phase 4g reshapes it into a virtualized table with explicit columns (Name, ML, Slot, Pack, Rarity-or-Raid chip, etc.) and clickable column headers that toggle ascending/descending sort. Browse mode (wider picker) is the right home for this since the table needs horizontal space the drawer-sliver doesn't have. Stacked-list view stays as the narrow-mode fallback. The current chips (Raid/Rare) collapse into either a dedicated column or remain as inline name decorations — decide when implementing.
 
@@ -1285,14 +1399,50 @@ re-verified against the tree before implementing — which corrected two of them
 #### Phase 4l — DDOBuilderV2 data cross-check utility
 
 [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOBuilderV2) — the dominant desktop planner —
-ships its game data as XML files in its repo. That's an independent, well-maintained dataset
-covering the same entities as `ddo.db`, which makes it a free correctness oracle: anywhere the two
-disagree, one of us is wrong, and each disagreement is either a bug to fix or a gap to fill.
+ships its game data in its repo. That's an independent, well-maintained dataset covering the same
+entities as `ddo.db`, which makes it a free correctness oracle: anywhere the two disagree, one of us
+is wrong, and each disagreement is either a bug to fix or a gap to fill.
 
-- **New `ddo-data` CLI command** (e.g. `ddo-data compare-ddobuilder <path-to-DDOBuilderV2-checkout>`) that diffs `ddo.db` against the XML data files in a local checkout.
-- **Report shape**: entities present in one dataset but not the other (items, feats, enhancement trees), and field mismatches (ML, bonus values, augment slots, etc.) where entities can be mapped by name. Name mapping is fuzzy by nature — DDOBuilderV2 uses its own string identifiers (same mapping problem Phase 15's `.DDOBuild` import will face); surface unmappable entries as their own report section rather than failing.
-- **Do not vendor their XML into this repo.** DDOBuilderV2 has no license (all rights reserved — same caveat as the Phase 6 rules-reference note), so the command takes a path to a checkout the user clones themselves; nothing of theirs is committed here.
-- **Findings feed the existing error logs** ([docs/notes/DB Errors.md](notes/DB%20Errors.md), [docs/notes/Item DB Errors.md](notes/Item%20DB%20Errors.md)) with evidence + reproduce queries, and get fixed Phase 4c-style. Running the diff before/during Phase 4c maximizes what that cleanup catches.
+**Permission and attribution.** The author has granted permission to use this data. The repo carries
+**no LICENSE file** (GitHub reports `license: None`), so the grant is the only basis for use — record
+who granted it, when, and in what form alongside this entry, and **credit Maetrim in
+[README.md](../README.md)** when anything sourced from it ships. This supersedes the earlier
+"do not vendor their XML into this repo" rule, which assumed no permission existed.
+
+**What the dataset actually contains** (enumerated 2026-07-28 — the earlier "ships its game data as
+XML files" undersold it):
+
+- **`Output/DataFiles/Items/` — 8,511 `.item` files, 13.2 MB**, each with an explicit `<BonusType>`
+  per `<Buff>`. That is precisely the field NULL on 782 of our `bonuses` rows. Top `<Buff><Type>`
+  values: `WeaponEnchantment` 3,569, `AbilityBonus` 1,405, `SkillBonus` 979, `ArmorEnchantment` 958,
+  `SpellcastingImplement` 755, `Fortification` 509.
+- **`Quests.xml` — 569 quests** with `Patron`, `AdventurePack`, `Levels`, per-difficulty XP, and
+  `IsRaid` on exactly 41 (matching the wiki's Raids page).
+- **`Output/DataFiles/ItemImages/` — 8,644 PNGs**, a candidate answer to the icon-asset question
+  blocking Phase 4g and the image-extraction item in [To Do.md](notes/To%20Do.md).
+- 115 enhancement trees, 32 augment files, 28 classes, 30 races, 65 filigree sets, `SetBonuses.xml`,
+  `BonusTypes.xml`, `Spells.xml`, `Feats.xml`.
+
+**Name mapping is much easier than this entry originally feared.** Normalizing to `[a-z0-9]` maps
+**6,928 of our 7,246 distinct item names (95.6%)** and 543 of 679 quests. The "surface unmappable
+entries as their own report section" design is still right, but that section will be short.
+
+- **New `ddo-data` CLI command** (e.g. `ddo-data compare-ddobuilder <path-to-checkout>`) that diffs
+  `ddo.db` against a local checkout. A sparse clone of `Output/DataFiles` is 85 MB, so the command
+  should keep taking a path rather than vendoring.
+- **Report shape**: entities present in one dataset but not the other, and field mismatches (ML,
+  bonus values, augment slots) where entities map by name.
+- **The oracle is not infallible.** `'+1 Starter Docent'` has `DropLocation = 'Enhancement bonus'`, a
+  field mix-up on his side. Findings are leads to verify against the wiki, not truth to import.
+- **Scope note: the manual pass is already done.** The cross-check was run by hand during Phase 4c
+  planning and its findings are recorded in [DB Errors.md](notes/DB%20Errors.md) — including that his
+  `DropLocation` could fill 2,162 of our 2,452 loot-less items, and that the "1,582 items he has that
+  we don't" is mostly 1,314 level-variant pages (he stores one row per ML tier where we store one per
+  item) rather than missing data. So 4l is now **"build the repeatable tool"**, not "discover the
+  disagreements", and can be taken in parallel with 4m.
+- **Findings feed the existing error logs** ([DB Errors.md](notes/DB%20Errors.md),
+  [Item DB Errors.md](notes/Item%20DB%20Errors.md)) with evidence + reproduce queries, and get fixed
+  Phase 4m-style.
 
 #### Phase 5b — Resource Report View
 
@@ -1456,5 +1606,8 @@ A phase is **done** when all of the following hold. Anything less stays `→ NEX
 
 **Unit tests** (vitest) required for pure logic, by phase: `user.db` migrations (Phase 5), stats
 engine (Phase 6), AP validation + feat prereqs (Phase 7), gear stacking (Phase 8), share codec
-round-trip (Phase 14). Phase 4c additionally needs the ETL regression spot-check described in
-that phase.
+round-trip (Phase 14). Phase 4c shipped its ETL regression spot-check as
+`src/features/resources/queries/etlRegression.test.ts`, which asserts against the real
+`public/data/ddo.db` rather than a fixture — a hand-written fixture cannot catch an ETL regression,
+because the fixture is whatever we typed rather than whatever the pipeline produced. Extend it
+whenever a pipeline invariant gains a user-visible consequence.

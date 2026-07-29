@@ -117,6 +117,10 @@ describe('PickerRow', () => {
     const button = screen.getByRole('button', { name: /Bloodstone/ })
     expect(button).toHaveTextContent('Raid')
     expect(button).toHaveTextContent('Rare')
+    // Chips come from the shared `ResourceChip`, which the detail drawer also
+    // uses — the data-kind attribute is the styling contract both rely on.
+    expect(button.querySelector('.resources-chip[data-kind="raid"]')).not.toBeNull()
+    expect(button.querySelector('.resources-chip[data-kind="rare"]')).not.toBeNull()
   })
 
   it('omits meta segments that have no data', () => {

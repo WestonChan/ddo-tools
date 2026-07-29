@@ -114,11 +114,13 @@ INSERT INTO quests (id, name, pack_id, patron_id, level, zone) VALUES
 // the same way rather than touching baselineSchema.sql.
 //
 // Item 2 is chest loot; item 1 is raid loot, so listItems' is_raid flag and
-// the picker's "Raid only" filter both have something to exercise.
+// the picker's "Raid only" filter both have something to exercise. Item 1's
+// mapping is also flagged rare, matching its item-level rarity, so the
+// "(rare)" marker in "Drops from" has something to render.
 const CURRENT_QUEST_LOOT_DATA = `
-INSERT INTO quest_loot (quest_id, item_id, loot_type) VALUES
-  (1, 2, 'chest'),
-  (2, 1, 'raid');
+INSERT INTO quest_loot (quest_id, item_id, loot_type, is_rare) VALUES
+  (1, 2, 'chest', 0),
+  (2, 1, 'raid', 1);
 `
 
 const BASELINE_QUEST_LOOT_DATA = `

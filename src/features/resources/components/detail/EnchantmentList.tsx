@@ -31,20 +31,12 @@ interface EnchantmentLine {
   description: string | null
 }
 
-// Frontend workaround for a scraper data-quality gap — see Phase 4c in
-// docs/roadmap.md. Some bonus descriptions carry raw MediaWiki template
-// syntax (`{{Elemental Resistance|Fire|30}}`) the scraper didn't expand.
-// Strip the template invocations at render time so the user sees clean
-// text; if nothing meaningful is left, the description is dropped. Once
-// the ETL expands templates, this function and its caller go away.
-function cleanDescription(text: string | null): string | null {
-  if (!text) return null
-  const stripped = text.replace(/\{\{[^{}]*\}\}/g, '').trim()
-  return stripped.length > 0 ? stripped : null
-}
-
 function bonusToLine(b: ItemBonus): EnchantmentLine {
-  const description = cleanDescription(b.description)
+  // Descriptions arrive as prose: the ETL expands formatter templates from the
+  // bonus's own structured columns and resolves named enchantments to their
+  // wiki page's effect text (see populate_enchantment_descriptions). This used
+  // to strip `{{...}}` at render time to hide the gap.
+  const description = b.description
   // Stat bonuses split into separate name + value columns so values column-
   // align across rows. Bonuses without a backing stat (e.g. "On hit: -1 AC
   // to target") keep the full text in the name column with no separate value.
@@ -80,9 +72,9 @@ function effectToLine(e: ItemEffect): EnchantmentLine {
  * `null` when neither list has entries so the caller can compose this in
  * without an empty-section wrapper.
  *
- * Per-row wiki links and stacking-semantics tooltips are NOT wired up — see
- * the Phase 4c entry in docs/roadmap.md. Keeping this in its own component
- * gives that work a self-contained surface to land in.
+ * Per-row wiki links and stacking-semantics tooltips are NOT wired up yet.
+ * `unique_enchantments.wiki_url` now supplies the data they need; keeping this
+ * in its own component gives that work a self-contained surface to land in.
  */
 export function EnchantmentList({ bonuses, effects }: EnchantmentListProps): JSX.Element | null {
   if (bonuses.length === 0 && effects.length === 0) return null

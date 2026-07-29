@@ -83,20 +83,38 @@ describe('EnchantmentList', () => {
     expect(screen.getByText('Evil Outsider')).toBeInTheDocument()
   })
 
-  it('strips unexpanded MediaWiki template syntax from descriptions', () => {
+  // The ETL now expands descriptions to prose, so the component renders what
+  // it is given rather than stripping template syntax at render time. The
+  // guarantee that no `{{` reaches here is enforced upstream: validation
+  // assertion A3 in the pipeline, and etlRegression.test.ts against the
+  // shipped database.
+  it('renders an expanded description as its own sub-line', () => {
     render(
       <EnchantmentList
-        bonuses={[bonus({ description: '{{Elemental Resistance|Fire|30}}Resists fire.' })]}
+        bonuses={[bonus({
+          name: 'Fire Resistance +30',
+          stat_name: 'Fire Resistance',
+          description: '+30 Enhancement bonus to Fire Resistance',
+        })]}
         effects={[]}
       />,
     )
-    expect(screen.getByText('Resists fire.')).toBeInTheDocument()
+    expect(
+      screen.getByText('+30 Enhancement bonus to Fire Resistance'),
+    ).toBeInTheDocument()
   })
 
-  it('drops a description that is nothing but template syntax', () => {
+  it('omits the sub-line when there is no description', () => {
+    const { container } = render(
+      <EnchantmentList bonuses={[bonus({ description: null })]} effects={[]} />,
+    )
+    expect(container.querySelector('.resources-bonus-description')).toBeNull()
+  })
+
+  it('omits the sub-line when the description just repeats the name', () => {
     const { container } = render(
       <EnchantmentList
-        bonuses={[bonus({ description: '{{Elemental Resistance|Fire|30}}' })]}
+        bonuses={[bonus({ name: 'Charisma +5', description: 'Charisma +5' })]}
         effects={[]}
       />,
     )

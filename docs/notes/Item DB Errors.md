@@ -1,7 +1,10 @@
-Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see tag) · ❌ won't do · 🐛 bug
+Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see tag) · ❌ won't do · 🐛 bug · ⚠ needs a decision or verdict before it can be fixed
 
 A `🐛` paired with a phase tag means a confirmed bug scheduled into that phase. Parser/ETL bugs go to
-Phase 4c; this log is worked through as part of it, alongside [[DB Errors]].
+Phase 4m now that 4c has shipped; this log is worked through as part of it, alongside [[DB Errors]]. The 2026-07-28 systematic
+audit lives in [[DB Errors]]; only item-specific findings are repeated here.
 
-- 🐛 📋 Phase 4c — [Upgrades](http://localhost:5173/ddo-tools/resources/items/2396) detected as upgradable when it's a slot upgrade - should probably put the enchantment that is upgradable there
-- 🐛 📋 Phase 4c — http://localhost:5173/ddo-tools/resources/items/1469 name was detected wrong, detected after name parentheses instead of name with parentheses
+- 🐛 📋 Phase 4m — [Upgrades](http://localhost:5173/ddo-tools/resources/items/2396) detected as upgradable when it's a slot upgrade - should probably put the enchantment that is upgradable there. Retagged from 4c 2026-07-28: item 2396 `Epic Slice` has an `item_upgrades` row pointing at 6344 `Slice`, but both wiki pages have **empty** `crafting`/`craftingupgrade` fields — so the upgrade edge came from somewhere else and needs tracing before it can be fixed. 2,091 `item_upgrades` rows total, so the false-positive rate is unknown. Repro: `SELECT * FROM item_upgrades WHERE item_id = 2396;`
+- ✅ **Item 1469's name — root cause found 2026-07-28, fixed in Phase 4c.** The wiki field is `| name = {{Item|Crystallized Eternity}} (level 12)`; the parser stripped the template instead of extracting it, leaving `" (level 12)"`. 7 items affected (ids 1469, 1470, 1471, 5658, 5659, 5660, 6396 — Crystallized Eternity, Pick of Endless Light, Spectral Throwing Dagger). Note two pairs also collide by case only (`(Level 12)` vs `(level 12)`). Repro: `SELECT id, name, wiki_url FROM items WHERE name LIKE '(%';`
+- 🐛 📋 Phase 4m — **`items.binding` populated on 2 of 7,249 rows.** The item infobox carries a `bind` field on ~292 of every 300 sampled pages, and `parsers.py` has a dedicated `{{Bind|BtA|BoE}}` parser — but almost nothing lands. Binding (Bound to Account / Character / Bound on Equip) is a field the Phase 8 Gear view will want. Repro: `SELECT COUNT(binding) FROM items;`
+- 🐛 📋 Phase 4m — **391 items have no content at all** — no bonuses, effects, weapon stats, armor stats, or augment slots — out of 830 with no bonus-or-effect. 404 of the 830 have `quest_loot` rows, so they are genuine drops that parsed to nothing. Distinct from the non-named-item audit: these have wiki pages. Full evidence in [[DB Errors]].

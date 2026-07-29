@@ -1,5 +1,6 @@
 import type { JSX } from 'react'
 import { TooltipWrapper, WikiLinkIcon } from '../../../../components'
+import { ResourceChip } from '../ResourceChip'
 import { EntityHeader } from './EntityHeader'
 import { EnchantmentList } from './EnchantmentList'
 import { formatSigned } from './formatSigned'
@@ -124,6 +125,10 @@ export function ItemDetail({ detail }: { detail: ItemDetailRow }): JSX.Element {
                       with disambiguation suffixes; acceptable until the
                       column ships and this switches to href. */}
                   <WikiLinkIcon pageName={q.name} />
+                  {/* Rare is a property of this drop location, not another
+                      where-to-go fact, so it sits on the name line as the
+                      same chip the picker rows use — not in the meta line. */}
+                  {q.is_rare && <ResourceChip kind="rare" />}
                 </span>
                 <span className="resources-quest-meta">
                   {[

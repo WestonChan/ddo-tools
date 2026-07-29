@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PickerPanel } from './PickerPanel'
-import type { ItemRow } from '../queries/items'
+import { RARE_RARITY, type ItemRow } from '../queries/items'
 
 const navigateMock = vi.fn()
 vi.mock('@tanstack/react-router', () => ({
@@ -42,8 +42,14 @@ function row(overrides: Partial<ItemRow> = {}): ItemRow {
   }
 }
 
+// `RARE_RARITY` rather than a literal: the picker compares against the exact
+// string the ETL writes, and this fixture has to hold the same one. It seeded
+// 'Rare' for months while `items.rarity` was 100% empty in the shipped DB, so
+// the filter passed here and matched nothing in production.
+// `etlRegression.test.ts` is the other half — it asserts the real database
+// actually contains this value.
 const ROWS: ItemRow[] = [
-  row({ id: 1, name: 'Bloodstone', is_raid: true, rarity: 'Rare', minimum_level: 12 }),
+  row({ id: 1, name: 'Bloodstone', is_raid: true, rarity: RARE_RARITY, minimum_level: 12 }),
   row({ id: 2, name: 'Cloak of Night', equipment_slot: 'Back', minimum_level: 20 }),
   row({ id: 3, name: 'Ring of Spell Storing', equipment_slot: 'Ring', minimum_level: 4 }),
 ]

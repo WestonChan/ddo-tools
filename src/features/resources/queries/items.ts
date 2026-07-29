@@ -1,6 +1,17 @@
 import type { Database } from 'sql.js'
 import { runQuery, runQueryFirst } from './sqlHelpers'
 
+/**
+ * The exact `items.rarity` value the pipeline writes for rare loot.
+ *
+ * Shared so the filter and its tests can't drift from each other or from the
+ * ETL: the Python writer emits `Rarity.RARE` ("Rare"), and
+ * `etlRegression.test.ts` asserts the shipped database actually contains it.
+ * Before rarity was populated, the filter compared against a string no row ever
+ * held and quietly matched nothing.
+ */
+export const RARE_RARITY = 'Rare'
+
 // Picker shape: just enough to render a row in PickerPanel and rank in Fuse.
 // `pack` is the alphabetically-first adventure pack the item drops in (an
 // approximation for items that drop from quests in multiple packs — most
@@ -95,6 +106,10 @@ export interface ItemQuestRef {
   patron: string | null
   zone: string | null
   npc: string | null
+  /** True when this particular drop is rare loot. Mapping-level, from
+   *  `quest_loot.is_rare` — the same item can be a rare drop in one place and
+   *  a guaranteed reward in another, which the item-level `rarity` can't say. */
+  is_rare: boolean
 }
 
 export interface ItemDetail extends ItemCore {
@@ -325,11 +340,11 @@ export function getItemDetail(db: Database, id: number): ItemDetail | null {
   // populate it yet (see Phase 4c in docs/roadmap.md). The UI already filters
   // null segments out, so this is harmless pre-wiring; once the scraper ships
   // npc data, the meta line surfaces it without a frontend change.
-  const quests = runQuery<ItemQuestRef>(
+  const quests = runQuery<Omit<ItemQuestRef, 'is_rare'> & { is_rare: number }>(
     db,
     `SELECT q.id AS quest_id, q.name AS name, q.level AS level,
             ap.name AS pack, p.name AS patron, q.zone AS zone,
-            q.npc AS npc
+            q.npc AS npc, ql.is_rare AS is_rare
        FROM quest_loot ql
        JOIN quests q ON q.id = ql.quest_id
        LEFT JOIN adventure_packs ap ON ap.id = q.pack_id
@@ -337,7 +352,7 @@ export function getItemDetail(db: Database, id: number): ItemDetail | null {
        WHERE ql.item_id = ?
        ORDER BY q.level, q.name`,
     [id],
-  )
+  ).map((q) => ({ ...q, is_rare: q.is_rare === 1 }))
 
   return {
     ...core,

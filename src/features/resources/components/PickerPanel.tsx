@@ -17,6 +17,7 @@ import {
   findItemIdsByStats,
   listAdventurePacks,
   listBonusStats,
+  RARE_RARITY,
   type ItemRow,
 } from '../queries/items'
 import { useDatabase } from '../../../hooks/useDatabase'
@@ -164,7 +165,7 @@ function applyRowFilters(rows: ItemRow[], filters: ItemFilters): ItemRow[] {
   const max = filters.minLevelMax ? Number(filters.minLevelMax) : null
   return rows.filter((r) => {
     if (filters.slot && r.equipment_slot !== filters.slot) return false
-    if (filters.rareOnly && r.rarity !== 'Rare') return false
+    if (filters.rareOnly && r.rarity !== RARE_RARITY) return false
     if (filters.raidOnly && !r.is_raid) return false
     if (min !== null && (r.minimum_level === null || r.minimum_level < min)) return false
     if (max !== null && (r.minimum_level === null || r.minimum_level > max)) return false

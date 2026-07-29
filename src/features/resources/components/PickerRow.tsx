@@ -1,5 +1,6 @@
 import type { JSX } from 'react'
 import type { RowComponentProps } from 'react-window'
+import { ResourceChip } from './ResourceChip'
 import type { ItemRow } from '../queries/items'
 
 // Per-row props that we (the caller) supply via `<List rowProps={...}>`.
@@ -39,16 +40,8 @@ export function PickerRow(
           <span className="resources-row-name">{row.name}</span>
           {(row.is_raid || isRare) && (
             <span className="resources-row-chips">
-              {row.is_raid && (
-                <span className="resources-row-chip" data-kind="raid">
-                  Raid
-                </span>
-              )}
-              {isRare && (
-                <span className="resources-row-chip" data-kind="rare">
-                  Rare
-                </span>
-              )}
+              {row.is_raid && <ResourceChip kind="raid" />}
+              {isRare && <ResourceChip kind="rare" />}
             </span>
           )}
         </div>

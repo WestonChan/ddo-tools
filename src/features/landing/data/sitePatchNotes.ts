@@ -5,6 +5,19 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-07-29',
+    changes: [
+      'The "Rare only" filter in the item list now works — it had been silently matching nothing, and finds 139 rare-loot items',
+      'Item detail now marks which drop locations are rare loot, using the same Rare chip as the item list',
+      'Fix seven items whose names showed only a level suffix, such as "(level 12)" instead of "Crystallized Eternity (level 12)"',
+      'Item names and icons no longer show raw HTML escapes like "Admiral&#39;s Gloves"',
+      'Enchantment rows now show readable descriptions instead of raw wiki markup, and named enchantments explain what they actually do',
+      'Enchantment type labels now show the bonus type (Insightful, Legendary) where they previously showed a stray number',
+      'Spell saving-throw bonuses are no longer mislabelled as Spell Resistance — two different game mechanics that had been merged',
+      'Bonuses with a penalty now read "-2" instead of "+-2"',
+    ],
+  },
+  {
     date: '2026-07-28',
     changes: [
       'Fix the Settings accent swatch not showing as selected after a page reload, on a first visit, or when an older accent color was saved',

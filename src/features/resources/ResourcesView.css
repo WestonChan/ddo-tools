@@ -648,10 +648,12 @@
   flex-shrink: 0;
 }
 
-/* Small status chip (Raid / Rare). Tinted via data-kind so themes/accent
-   swaps don't hardcode hue — both colors derive from --accent or a
-   neutral so they stay legible in light/dark. */
-.resources-row-chip {
+/* Small status chip (Raid / Rare), rendered by the shared `ResourceChip`
+   component in both the picker rows and the detail drawer's drop-location
+   rows. Tinted via data-kind so themes/accent swaps don't hardcode hue —
+   both colors derive from --accent or a neutral so they stay legible in
+   light/dark. */
+.resources-chip {
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -660,15 +662,18 @@
   border: 1px solid transparent;
   text-transform: uppercase;
   line-height: 1.4;
+  /* Never squeeze the chip when it shares a flex line with a long,
+     truncating name. */
+  flex-shrink: 0;
 }
 
-.resources-row-chip[data-kind='raid'] {
+.resources-chip[data-kind='raid'] {
   color: var(--accent);
   border-color: color-mix(in oklch, var(--accent) 40%, transparent);
   background: color-mix(in oklch, var(--accent) 10%, transparent);
 }
 
-.resources-row-chip[data-kind='rare'] {
+.resources-chip[data-kind='rare'] {
   color: var(--text-secondary);
   border-color: var(--border);
   background: var(--bg-subtle);
@@ -917,9 +922,13 @@
   gap: var(--space-0-5);
 }
 
+/* Name, wiki-link icon, and (for rare drop locations) a Rare chip share one
+   line. Wraps rather than overflowing on narrow viewports, where a long
+   quest name has already used up the drawer's width. */
 .resources-quest-name {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-1);
   font-size: var(--text-sm);
   color: var(--text);
