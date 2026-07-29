@@ -1,6 +1,6 @@
 import { useContext } from 'react'
-import { CharacterContext } from '../context'
-import type { CharacterContextValue } from '../context'
+import { CharacterContext } from '../contexts/characterContext'
+import type { CharacterContextValue } from '../contexts/characterContext'
 
 export function useCharacter(): CharacterContextValue {
   const ctx = useContext(CharacterContext)

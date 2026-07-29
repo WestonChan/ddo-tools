@@ -1,16 +1,16 @@
 import { useState, type JSX } from 'react'
-import type { Life } from '../types'
+import type { Life } from './types'
 import {
   computeMismatchWarnings,
   formatClassSummary,
   formatRace,
   getCurrentLifeNumber,
-} from '../utils'
-import { useCharacter } from '../hooks/useCharacter'
-import { ConfirmModal } from '../../../components'
+} from './utils'
+import { useCharacter } from './hooks/useCharacter'
+import { ConfirmModal } from '../../components'
 import { Star, Plus } from 'lucide-react'
-import { PastLifeStacks } from './PastLifeStacks'
-import { LifeHistory, type ReincarnateResult } from './LifeHistory'
+import { PastLifeStacks } from './components/PastLifeStacks'
+import { LifeHistory, type ReincarnateResult } from './components/LifeHistory'
 import './CharacterView.css'
 
 function CharacterView(): JSX.Element {

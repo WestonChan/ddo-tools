@@ -1,21 +1,12 @@
 import { useState, useEffect, type JSX } from 'react'
 import { Sun, Moon, Check } from 'lucide-react'
-import { useTheme, THEMES, applyAccent, restoreAccent } from '../../hooks'
+import { useTheme } from '../../hooks'
+import { ACCENT_PRESETS, applyAccent, resolveActiveAccent, restoreAccent } from '../../lib/accent'
 import './SettingsView.css'
-
-function getActiveAccent(): string | null {
-  try {
-    const stored = localStorage.getItem('accent')
-    if (!stored) return null
-    return JSON.parse(stored).accent ?? null
-  } catch {
-    return null
-  }
-}
 
 export function SettingsView(): JSX.Element {
   const { theme, toggle } = useTheme()
-  const [activeAccent, setActiveAccent] = useState<string | null>(getActiveAccent)
+  const [activeAccent, setActiveAccent] = useState<string>(resolveActiveAccent)
 
   useEffect(() => restoreAccent(), [])
 
@@ -44,7 +35,7 @@ export function SettingsView(): JSX.Element {
       <div className="settings-view-section">
         <div className="settings-view-label">Accent Color</div>
         <div className="settings-view-accent-grid">
-          {THEMES.map((t) => (
+          {ACCENT_PRESETS.map((t) => (
             <button
               key={t.name}
               className={`settings-view-accent-swatch hoverable${activeAccent === t.accent ? ' selected' : ''}`}

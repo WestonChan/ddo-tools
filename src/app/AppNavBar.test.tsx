@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import AppNavBar from './AppNavBar'
-import { renderWithRouter } from '../test-utils/renderWithRouter'
+import { renderWithRouter } from '../test/renderWithRouter'
 
 vi.mock('../features/character', () => ({
   useCharacter: () => ({

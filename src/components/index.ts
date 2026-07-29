@@ -1,38 +1,6 @@
 export { AmpersandMark } from './AmpersandMark'
-export { default as CollapsibleSection } from './CollapsibleSection'
 export { ConfirmModal } from './ConfirmModal'
 export { EditableText } from './EditableText'
-export {
-  StarIcon,
-  TrashIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  ChevronLeftIcon,
-  SunIcon,
-  MoonIcon,
-  PlusIcon,
-  SwordShieldIcon,
-  PersonIcon,
-  BackpackIcon,
-  TreeIcon,
-  ConstellationIcon,
-  GearIcon,
-  CheckIcon,
-  WarningIcon,
-  CompareIcon,
-  ScrollIcon,
-  HammerIcon,
-  WandIcon,
-  BugIcon,
-  SearchIcon,
-  ListCheckIcon,
-  SkillsIcon,
-  SpellIcon,
-  TreeIcon2,
-  SkullIcon,
-  DiamondIcon,
-  CalculatorIcon,
-} from './Icons'
 export { Modal } from './Modal'
 export type { ModalProps, ModalVariant } from './Modal'
 export { Tooltip, TooltipWrapper } from './Tooltip'

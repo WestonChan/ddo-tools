@@ -20,7 +20,7 @@ import {
   type ItemRow,
 } from '../queries/items'
 import { useDatabase } from '../../../hooks/useDatabase'
-import { useDebouncedValue } from '../../../hooks/useDebouncedValue'
+import { useDebouncedValue } from '../../../hooks'
 import { buildItemsIndex, searchItems } from '../search'
 import { PickerRow } from './PickerRow'
 import { DetailEmpty } from './DetailEmpty'

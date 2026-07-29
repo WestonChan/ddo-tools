@@ -930,8 +930,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4h | done | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` |
 | 4i | done | `<Modal>` primitive consolidation (+ mobile fullscreen nav modal behavior) |
 | 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
-| **4k** | **→ NEXT** | File-structure cleanup -- feature-layout consistency, dead icon removal |
-| 4c | planned | ETL data-quality cleanup (Python pipeline) |
+| 4k | done | File-structure cleanup -- feature-layout consistency, dead icon removal |
+| **4c** | **→ NEXT** | ETL data-quality cleanup (Python pipeline) |
 | 4l | planned | DDOBuilderV2 data cross-check utility -- diff `ddo.db` against Maetrim's XML data files |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
@@ -1209,16 +1209,78 @@ site metadata (version, last release date, GitHub link) modeled on ddo-builds.co
 - **Versioning convention.** `package.json` starts at `0.0.0`; **patch-bump on every push to `main`** (a step in the weston-git merge workflow, recorded as a repo gate in `CLAUDE.md`). **The major version stays 0 until the developer explicitly declares the site fully released**; minor/major bumps happen only on explicit instruction.
 - **Package metadata**: `license`/`repository`/`homepage` in `package.json`, `license` in `scripts/pyproject.toml`, auto-updating badges (version, last commit, license, CI) in the README.
 
-#### Phase 4k — File-structure cleanup
+#### Phase 4k — File-structure cleanup (done)
 
-Findings from the 2026-07-24 structure audit. Deferred until the active feature branch lands so moves don't tangle with feature work; use `git mv` to preserve history and run `npm run build` + `npx vitest run` after.
+**Shipped 2026-07-28** on `phase-4k-file-structure`. Findings from the 2026-07-24 structure audit,
+re-verified against the tree before implementing — which corrected two of them.
 
-- Move `CharacterView.tsx` + `.css` from `character/components/` to the `character/` feature root — every other feature keeps its top-level view at the root (`LandingView`, `ResourcesView`, `SettingsView`).
-- Create `character/contexts/` and move `CharacterContext.tsx` + `context.ts` into it, mirroring `resources/contexts/`.
-- Delete empty dirs: `src/assets/`, `src/features/gear/components/`.
-- Merge `src/test-utils/` into `src/test/` (single test-support dir; `renderWithRouter` has one consumer).
-- Remove dead icons from [../src/components/Icons.tsx](../src/components/Icons.tsx): 26 of 28 hand-rolled icons have zero consumers (verified 2026-07-24). Swap the two live ones (`ChevronRightIcon` in `CollapsibleSection`, `SkillsIcon` in `AppNavBar`) to `lucide-react` equivalents, delete `Icons.tsx`, prune the barrel — `lucide-react` is already the icon system in 10+ files.
-- Move `src/hooks/theme.ts` to `src/lib/theme.ts` — it's not a hook (data + DOM/localStorage accent helpers) and per convention belongs in `src/lib/`. Deferred here from Phase 4h to keep that phase to state semantics. Only consumer is `SettingsView`, via the `src/hooks` barrel: update the barrel export and the import.
+- `CharacterView.tsx` + `.css` moved from `character/components/` to the `character/` feature root,
+  matching `LandingView` / `ResourcesView` / `SettingsView`.
+- `character/contexts/` created, holding `characterContext.ts` (the context object + its value type)
+  and `CharacterProvider.tsx` (the provider component), mirroring `resources/contexts/`. Both files
+  were renamed from `context.ts` / `CharacterContext.tsx` — see the case-collision note below.
+- `src/test-utils/` merged into `src/test/`; `renderWithRouter` had one consumer. This also closed a
+  gap where `tsconfig.app.json` excluded `src/test` from the app typecheck but not `src/test-utils`.
+- `src/components/Icons.tsx` deleted outright, along with the 29-name re-export block in the
+  components barrel. **The original bullet's premise was wrong on all three counts** and is recorded
+  here so nobody re-derives it: there were 29 exports, not 28; *all 29* were dead, not 26; and no
+  lucide swap was needed. `AppNavBar` declares its own local `SkillsIcon` wrapping lucide's
+  `TableProperties` — a name collision, not an import — and `ChevronRightIcon`'s only importer,
+  `CollapsibleSection`, had itself been orphaned since `fdfe9ab` (2026-04-11) replaced hash routing
+  with real routes. Lesson: dead-code audits must resolve import edges, not match identifiers.
+- `CollapsibleSection` (`.tsx` + `.css`) deleted — dead since April. Prior art recorded on Phase 7,
+  which is the phase that wants the concept back.
+- `src/hooks/theme.ts` moved to `src/lib/accent.ts` — it holds zero React (data + DOM/localStorage
+  accent helpers). Renamed from `theme.ts` on the way because it collided semantically with
+  `hooks/useTheme.ts`, which owns light/dark; the moved module owns the accent palette and every
+  function in it is `*Accent`. `THEMES` became `ACCENT_PRESETS`. The `src/hooks` barrel dropped the
+  re-export rather than pointing it at `../lib` — a barrel re-exporting a sibling directory's module
+  misreports what it owns. `SettingsView` imports it directly, matching `sentry` / `githubIssue` /
+  `wiki/client`, none of which have a barrel.
+- `useDebouncedValue` added to the `src/hooks` barrel; it was a real hook with a real consumer that
+  the barrel omitted, so `PickerPanel` reached it by direct path.
+- **Bug found and fixed in review, then a second half of it found by hand:** `SettingsView` had a
+  private `getActiveAccent()` that parsed only the legacy `{accent, hover}` JSON, while `applyAccent`
+  writes a plain string — so `JSON.parse('#b8962e')` threw, the catch swallowed it, and *no accent
+  swatch showed as selected after a page reload*. The accent itself still applied, so only the
+  indicator was dead. The first fix routed both formats through one parser but still returned `null`
+  for "nothing stored", while `restoreAccent` *applied* `ACCENT_PRESETS[0]` in that same case — so a
+  fresh visitor saw Gold applied and Gold unselected. `src/lib/accent.ts` now exports
+  `resolveActiveAccent()` as the single answer to "what accent is in effect" (stored when usable,
+  default otherwise) and `restoreAccent` is one line over it, so the applied value and the selected
+  swatch cannot disagree. `readStoredAccent` went back to being module-private — with the resolver
+  public it had no callers, and an exported raw-null reader is what let a consumer invent its own
+  fallback in the first place.
+- **Then a third case, found by hand after both fixes:** a legacy entry whose color is not in
+  `ACCENT_PRESETS` (e.g. the old `#d4af37` gold) parses fine, so it was neither absent nor unusable —
+  it applied a color no swatch could represent, leaving the grid with nothing selected and no way to
+  get back to it. `resolveActiveAccent` now resolves against the preset list itself (case-insensitively,
+  returning the preset's own casing), so absent, unreadable, and off-palette all collapse to the
+  default. **Trade-off, deliberate:** this discards a stored off-palette color on next load rather than
+  keeping it applied-but-unselectable. The grid is the only way to choose an accent, so a color outside
+  it is stale data from an older palette, not a preference a user could have expressed.
+- **Lesson worth more than the fix, and it repeated three times:** every wrong state here was *pinned
+  by a passing test*. `selects no swatch when nothing is stored` asserted the first divergence as
+  intended behavior — the three-way split read as deliberate because it was commented as deliberate,
+  and writing the test against the comment's claim rather than against the other half of the module
+  made it permanent. The off-palette case survived because *every* test seeded `localStorage` with a
+  value taken from `ACCENT_PRESETS`, so the data could not fail to match; the round trip was verified
+  against the test's own assumption instead of the app's. The older cases were worse — they asserted
+  the module round-trips arbitrary hexes like `#246810`, a state unreachable through the UI, pinning a
+  contract nothing depends on while the reachable failure went uncovered. Three fixes now stand on two
+  invariant tests rather than more case tests: `resolveActiveAccent` agrees with `restoreAccent` across
+  every storage state, and Settings always applies an accent exactly one swatch reports as selected —
+  the latter being the only assertion that can catch "applied a color the grid does not contain",
+  since that failure has no expected swatch to name. Recorded as a Test completeness rule in
+  [`.claude/skills/weston-workflow/SKILL.md`](../.claude/skills/weston-workflow/SKILL.md).
+- **Dropped as stale:** the original bullet to delete empty `src/assets/` and
+  `src/features/gear/components/`. Neither path existed.
+- **macOS case-collision, worth knowing:** `characterContext.ts` and `CharacterContext.tsx` cannot
+  coexist in one directory. Vite resolves `./CharacterContext` by trying `.ts` before `.tsx`, and on
+  a case-insensitive filesystem `./CharacterContext.ts` matches `characterContext.ts` — so the
+  barrel's provider export silently resolved to the context-object module (16 tests failed with
+  `Element type is invalid`). `tsc -b` did **not** catch it. Hence `CharacterProvider.tsx`. Recorded
+  as a rule in [`.claude/rules/frontend.md`](../.claude/rules/frontend.md).
 
 #### Phase 4l — DDOBuilderV2 data cross-check utility
 
@@ -1275,6 +1337,16 @@ Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnati
 - Reaper enhancements
 - Destinies (destiny selector + twist bar)
 - Wire nav bar Build Plan sub-items to `scrollIntoView()` anchors for each section (Level Plan, Skills, Spells, Enhancements, Reaper, Destinies). Active sub-item tracks scroll position.
+- **Collapsible-section primitive — prior art.** The per-section collapse specced above needs a shared
+  component. One existed (`src/components/CollapsibleSection.tsx`) and was deleted in Phase 4k as dead
+  code; recover it with `git show 8f1f648:src/components/CollapsibleSection.tsx` (and `.css`). Worth
+  reusing: its `grid-template-rows: 0fr → 1fr` expand, which animates to true content height without a
+  hardcoded `max-height` — but add the `transition` property it never had, so it animates instead of
+  snapping. Worth rewriting: its state model. It was uncontrolled (`useState(defaultExpanded)`), where
+  this phase needs collapse state persisted in `user.db` — so controlled `expanded` / `onToggle` — plus
+  a `summary` slot in the header for the collapsed progress text ("Skills: 0/320 allocated"). Two other
+  chevron-expand idioms exist to reconcile against: `SitePatchNotes.tsx` rotates a chevron via an
+  `is-open` class, `PastLifeStacks.tsx` swaps `ChevronDown`/`ChevronRight`.
 
 ### Phase 8: Gear
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets).
@@ -1321,6 +1393,15 @@ Currently a minimal placeholder (theme + accent picker). Belongs late because kn
 - About / metadata (version, build commit, GitHub links)
 - Responsive layout (current `max-width: 400px` is too narrow)
 - Audit against design-system tokens (post-css-refactor merge)
+- **Dedupe accent parsing between `index.html` and `src/lib/accent.ts`.** The pre-paint inline script
+  (`index.html` lines 15-30) re-implements both the legacy-`{accent, hover}`-JSON and plain-string
+  branches so the accent applies before first paint. Phase 4k gave `accent.ts` test coverage pinning
+  that behavior; the inline copy is now the untested twin, and nothing catches it drifting. Any fix has
+  to keep the pre-paint guarantee — inlining a built module, or accepting a flash of the default accent.
+  The same script also duplicates `useTheme`'s light/dark resolution, so both halves are in scope.
+  The rule it has to match is now explicit: absent or unusable resolves to `ACCENT_PRESETS[0]`, same as
+  `resolveActiveAccent`. The inline copy instead leaves `:root` standing, which is invisible only
+  because `:root` is Gold — the exact coincidence that hid this phase's swatch bug.
 
 ### Phase 14: Build Sharing
 
@@ -1367,7 +1448,7 @@ A phase is **done** when all of the following hold. Anything less stays `→ NEX
 
 - `npx vitest run` + `pytest scripts/` -- all pass (both, regardless of which side you touched)
 - `npm run lint` + `npm run build` -- no errors
-- `npm run dev` -- layout renders correctly; Playwright screenshot verification per `CLAUDE.md`
+- `npm run dev` -- layout renders correctly; browser-tool screenshot verification per `.claude/rules/frontend.md`
 - Feature-specific: can interact with the new UI (click, search, equip)
 - **Status table updated in the same commit** -- phase marked `done`, `→ NEXT` moved to the next
   phase, and any `docs/notes/` bullets it shipped marked `✅` or deleted. This step is the one that

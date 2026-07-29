@@ -1,6 +1,6 @@
 import { createContext, type Dispatch, type SetStateAction } from 'react'
-import type { Character, Life, PastLifeCounts } from './types'
-import type { Selection } from './migrations'
+import type { Character, Life, PastLifeCounts } from '../types'
+import type { Selection } from '../migrations'
 
 export interface CharacterContextValue {
   characters: Character[]

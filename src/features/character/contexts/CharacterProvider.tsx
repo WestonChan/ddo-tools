@@ -1,16 +1,16 @@
 import { useMemo, type JSX, type ReactNode } from 'react'
-import { STUB_CHARACTERS, STUB_PLANNED_BUILDS } from './data/stubCharacters'
-import type { Character, Life, PastLifeCounts } from './types'
+import { STUB_CHARACTERS, STUB_PLANNED_BUILDS } from '../data/stubCharacters'
+import type { Character, Life, PastLifeCounts } from '../types'
 import {
   computeLifeNumbers,
   getCurrentLifeNumber,
   EMPTY_UNTRACKED,
   updateCategoryMap,
-} from './utils'
-import { useLocalStorage } from '../../hooks'
-import { defaultSelection, migrateCharacters, migrateSelection } from './migrations'
-import type { Selection } from './migrations'
-import { CharacterContext, type CharacterContextValue } from './context'
+} from '../utils'
+import { useLocalStorage } from '../../../hooks'
+import { defaultSelection, migrateCharacters, migrateSelection } from '../migrations'
+import type { Selection } from '../migrations'
+import { CharacterContext, type CharacterContextValue } from './characterContext'
 
 export function CharacterProvider({ children }: { children: ReactNode }): JSX.Element {
   const [characters, setCharacters] = useLocalStorage<Character[]>(

@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-07-28',
+    changes: [
+      'Fix the Settings accent swatch not showing as selected after a page reload, on a first visit, or when an older accent color was saved',
+    ],
+  },
+  {
     date: '2026-07-27',
     changes: [
       'Add a landing-page footer with the site version, last-update date, and a GitHub link',
