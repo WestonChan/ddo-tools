@@ -45,7 +45,6 @@ htmlcov/
 .claude/
 CLAUDE.md
 .mcp.json
-.playwright-mcp/
 test-results/
 playwright-report/
 

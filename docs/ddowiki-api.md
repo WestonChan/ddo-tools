@@ -237,7 +237,7 @@ The wiki page `Named_chest_loot` renders `Category:Chest_loot` via `{{Category l
 
 ### Finding quests and raids
 
-Where to look when you need quest/raid names, their packs, or completeness checks — ranked by authority. Learned during the 2026-07-25 raid reconciliation; all of these are wiki *pages* (not API calls), so while the WAF challenge is up they can be read in a real browser (or Playwright) via top-level navigation, just not fetched by a client.
+Where to look when you need quest/raid names, their packs, or completeness checks — ranked by authority. Learned during the 2026-07-25 raid reconciliation; all of these are wiki *pages* (not API calls), so while the WAF challenge is up they can be read in a real browser (or Claude's browser tool) via top-level navigation, just not fetched by a client.
 
 | Source | URL pattern | What it gives you | Caveats |
 |--------|-------------|-------------------|---------|

@@ -18,8 +18,7 @@
     "test:watch": "vitest",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
-    "test:e2e": "playwright test",
-    "playwright": "npx @playwright/mcp --port 8931 --output-dir screenshots"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@sentry/react": "^10.50.0",
@@ -34,7 +33,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@playwright/mcp": "^0.0.68",
     "@playwright/test": "^1.59.1",
     "@sentry/vite-plugin": "^5.2.0",
     "@tanstack/react-router-devtools": "^1.166.13",
