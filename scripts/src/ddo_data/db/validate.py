@@ -24,6 +24,127 @@ class ValidationResult:
         return len(self.failures) == 0
 
 
+# ---------------------------------------------------------------------------
+# Phase 4c regression guards (A1-A6, plus A3b)
+#
+# The 2026-07-28 audit found one root cause behind most of Phase 4c: templates
+# treated as noise to strip rather than structure to expand. These checks make
+# that class of bug fail the build instead of quietly producing wrong numbers.
+# Each has a test in tests/test_db_validate.py proving it *fires*.
+#
+# A3b was added after review: A3 watched `bonuses.description` alone, and the
+# markup was sitting in the `name` columns next to it the whole time.
+# ---------------------------------------------------------------------------
+
+# A1's exemptions. A bare "no shared names" rule would fire on all seven of
+# these and get deleted the first time it did, so each carries the reason it is
+# legitimate. Anything not listed here is a stat-identity bug.
+DUAL_TABLE_ALLOWLIST: dict[str, str] = {
+    "Concealment":
+        "effects rows are named sources (Blurry, Dusk, Lesser Displacement, "
+        "Smoke Screen); the bonus row is the numeric miss chance",
+    "Wizardry":
+        "effects rows are the Magi/Archmagi/AM tiers; the bonus row is the "
+        "flat spell-point total",
+    "Fortification":
+        "effects rows carry the word grades (light/moderate/heavy); the bonus "
+        "row carries the percentage",
+    "Doublestrike":
+        "the effect is the named proc 'Calamitous Blows'; the bonus is the "
+        "flat doublestrike chance",
+    "Protection":
+        "effects rows are the named protection auras; the bonus row is the "
+        "deflection bonus to AC",
+    "Attack Bonus":
+        "the effect is a conditional to-hit rider; the bonus is the flat "
+        "attack bonus a stacking rule can sum",
+    "Tendon Slice":
+        "the effect is the on-hit slice proc; the bonus is the numeric "
+        "movement penalty it applies",
+    "Deception":
+        "the wiki writes both {{Deception}} (the proc, no magnitude given) and "
+        "{{Deception|N}} (the numeric to-hit/damage rider); the value-less "
+        "invocation has nowhere to go but effects",
+    "Shatter":
+        "same two invocations as Deception — {{Shatter}} with no magnitude is "
+        "an effect, {{Shatter|N}} resolves to the Shatter stat",
+    "True Seeing":
+        "the effect is the item enchantment; the bonus is a set-bonus grant. "
+        "`set_bonuses` links only to `bonuses`, so a named effect a set confers "
+        "has nowhere else to go — giving set bonuses the item router's "
+        "three-way routing is Phase 4m. Surfaced by A3b: while the bonus was "
+        "still named '[[True Seeing (enhancement)|True Seeing]]' the markup hid "
+        "the collision from this check",
+    "Temporary Spell Points":
+        "the effect is the value-less invocation; the bonus is the numeric "
+        "spell-point pool",
+    "Spell Resistance":
+        "the effects rows are the item enchantment {{Spell Resistance|N}} "
+        "(values 17-41); the bonus rows are enhancement-granted SR. The rows "
+        "that made this a genuine bug — {{Save|Spell|N}} spell saving throws "
+        "recorded as SR — now resolve to stat 177 (Spell Save), and assertion "
+        "A2 guards that mapping at its source",
+}
+
+# A5's vocabulary: wiki housekeeping and presentation wrappers. A bonus or
+# effect *named* after one of these was parsed from markup that is not game
+# data at all. Kept in sync with wiki/templates.py by name, not by import, so
+# validate.py stays importable without the wiki package's HTTP dependency.
+# `UpgradeableAugment` is deliberately absent: its 2 effects rows are the only
+# stored trace of 72 augment slots, and recognizing that template family is
+# Phase 4m's work. Flagging them here would fail the build for a known,
+# scheduled gap.
+NON_ENCHANTMENT_TEMPLATES: tuple[str, ...] = (
+    "bug", "inlinewht", "orphan", "underlinked", "top", "history", "stub",
+    "ref", "cleanup", "expand", "nearly finished", "almost there",
+)
+
+# A6's high-water mark, measured on the database this branch produced (down from
+# 198 bonuses / 137 effects before it: the repair passes merged or deleted the
+# stale rows, and the wider item scrape gave many of the rest a consumer).
+# Driving the remainder to zero belongs to Phase 4m; until then the check reports
+# any growth as a warning so the count cannot silently climb back.
+ORPHAN_BASELINE: dict[str, int] = {"bonuses": 73, "effects": 15}
+
+# Consumer tables that make a bonuses/effects row reachable. A row nothing
+# points at is an orphan — which may equally mean a consumer table is
+# incomplete, so this is a warning and 4m audits before deleting anything.
+_BONUS_CONSUMERS: tuple[str, ...] = (
+    "item_bonuses", "augment_bonuses", "enhancement_bonuses",
+    "set_bonus_bonuses", "crafting_option_bonuses",
+)
+_EFFECT_CONSUMERS: tuple[str, ...] = ("item_effects",)
+
+
+def _sql_list(values: tuple[str, ...] | list[str]) -> str:
+    """Render values as a SQL IN-list of quoted literals."""
+    return ", ".join("'" + v.replace("'", "''") + "'" for v in values)
+
+
+def _orphan_clause(table: str, consumers: tuple[str, ...]) -> str:
+    """``NOT EXISTS`` chain marking rows of *table* no consumer references."""
+    column = "bonus_id" if table == "bonuses" else "effect_id"
+    return " AND ".join(
+        f"NOT EXISTS (SELECT 1 FROM {c} WHERE {c}.{column} = {table}.id)"
+        for c in consumers
+    )
+
+
+def count_orphans(conn: sqlite3.Connection) -> dict[str, int]:
+    """Count ``bonuses``/``effects`` rows that no consumer table references."""
+    counts: dict[str, int] = {}
+    for table, consumers in (
+        ("bonuses", _BONUS_CONSUMERS), ("effects", _EFFECT_CONSUMERS),
+    ):
+        try:
+            counts[table] = conn.execute(
+                f"SELECT COUNT(*) FROM {table} WHERE {_orphan_clause(table, consumers)}"
+            ).fetchone()[0]
+        except sqlite3.OperationalError:
+            counts[table] = 0
+    return counts
+
+
 # Each assertion: (name, description, severity, query, column_names)
 # Query should return rows that FAIL the assertion (0 rows = pass).
 _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
@@ -341,7 +462,180 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         """,
         ["class"],
     ),
+    # --- Phase 4c template/entity normalization guards ---
+    (
+        "enchantment_not_in_both_tables",
+        "An enchantment name should live in bonuses OR effects, not both "
+        "(A1; see DUAL_TABLE_ALLOWLIST for the legitimate exceptions)",
+        "error",
+        f"""
+        SELECT e.name, COUNT(*) AS effect_rows
+        FROM effects e
+        WHERE e.name NOT IN ({_sql_list(tuple(DUAL_TABLE_ALLOWLIST))})
+          AND EXISTS (
+            SELECT 1 FROM bonuses b
+             WHERE b.name = e.name
+                OR b.name GLOB e.name || ' [+-]*'
+          )
+        GROUP BY e.name
+        LIMIT 20
+        """,
+        ["name", "effect_rows"],
+    ),
+    (
+        "bonus_descriptions_expanded",
+        "No bonus description should retain raw {{template}} markup (A3)",
+        "error",
+        """
+        SELECT id, name, description FROM bonuses
+        WHERE description LIKE '%{{%'
+        LIMIT 20
+        """,
+        ["id", "name", "description"],
+    ),
+    (
+        "effect_modifier_is_not_a_magnitude",
+        "effects.modifier holds the bonus type; a magnitude there belongs in "
+        "item_effects.value (A4)",
+        "error",
+        # Matches a bare magnitude only — "59", "+91", "-20", "15%" — mirroring
+        # the parser's own _NUMERIC_PARAM_RE. A leading digit alone is not
+        # enough: {{Burns|3rd}} (44 uses) is a tier, and flagging it would make
+        # this assertion unpassable and therefore disposable. GLOB negates with
+        # [^...], not [!...].
+        """
+        SELECT id, name, modifier FROM effects
+        WHERE (modifier GLOB '[0-9+-]*' AND NOT modifier GLOB '*[^0-9+%-]*')
+           OR modifier LIKE '%{{%'
+        LIMIT 20
+        """,
+        ["id", "name", "modifier"],
+    ),
+    (
+        "no_maintenance_template_rows",
+        "No bonus or effect should be named after a wiki maintenance template "
+        "({{bug}}, {{Orphan}}, ...) — those are editor markers, not game data (A5)",
+        "error",
+        f"""
+        SELECT 'effects' AS source_table, id, name FROM effects
+        WHERE lower(name) IN ({_sql_list(NON_ENCHANTMENT_TEMPLATES)})
+        UNION ALL
+        SELECT 'bonuses', id, name FROM bonuses
+        WHERE lower(name) IN ({_sql_list(NON_ENCHANTMENT_TEMPLATES)})
+        LIMIT 20
+        """,
+        ["source_table", "id", "name"],
+    ),
+    (
+        "orphan_rows_within_baseline",
+        f"Orphaned bonuses/effects should not exceed the recorded baseline "
+        f"{ORPHAN_BASELINE} (A6; cleanup is Phase 4m, so this only warns)",
+        "warning",
+        f"""
+        SELECT 'bonuses' AS source_table, COUNT(*) AS orphans,
+               {ORPHAN_BASELINE['bonuses']} AS baseline
+          FROM bonuses WHERE {_orphan_clause('bonuses', _BONUS_CONSUMERS)}
+        HAVING orphans > baseline
+        UNION ALL
+        SELECT 'effects', COUNT(*), {ORPHAN_BASELINE['effects']}
+          FROM effects WHERE {_orphan_clause('effects', _EFFECT_CONSUMERS)}
+        HAVING COUNT(*) > {ORPHAN_BASELINE['effects']}
+        """,
+        ["source_table", "orphans", "baseline"],
+    ),
 ]
+
+
+def _validate_save_template_stats(conn: sqlite3.Connection) -> ValidationResult:
+    """A2 — every ``{{Save|X|N}}`` parameter must resolve to a Save stat.
+
+    Checked against the parser's mapping table rather than against stored rows,
+    because A3 removes the evidence a row-level check would need: once
+    descriptions are expanded from structure, no row remembers that it came from
+    a ``{{Save|...}}`` template. Checking the mapping catches the *shape* — the
+    real bug was ``spell`` -> "Spell Resistance", a caster-level-check mechanic
+    standing in for a saving throw — and catches it before it reaches any row.
+
+    ``bonuses.name`` cannot serve as the oracle here: it is generated from the
+    resolved stat, so a wrong stat yields a wrong-but-self-consistent name. That
+    is exactly how the Spell Save bug survived.
+    """
+    failures: list[dict] = []
+    try:
+        from ..dat_parser import effects as effects_module
+
+        known_stats = {
+            row[0].lower(): row[0]
+            for row in conn.execute("SELECT name FROM stats").fetchall()
+        }
+        for param, stat_name in effects_module._SAVE_ABBREVS.items():
+            lowered = stat_name.lower()
+            if "save" in lowered or "saving throw" in lowered:
+                continue
+            failures.append({
+                "param": param,
+                "stat": stat_name,
+                "in_stats_table": stat_name.lower() in known_stats,
+            })
+    except Exception as exc:  # noqa: BLE001 — reported, not raised
+        failures.append({"error": f"Skipped: {exc}"})
+
+    return ValidationResult(
+        name="save_templates_resolve_to_save_stats",
+        description=(
+            "Every {{Save|X|N}} parameter should map to a stat whose name is a "
+            "saving throw (A2)"
+        ),
+        severity="error",
+        failures=failures,
+    )
+
+
+def _validate_names_are_free_of_markup(
+    conn: sqlite3.Connection,
+) -> ValidationResult:
+    """A3b — no ``name`` column may hold wiki or HTML markup.
+
+    A3 watched ``bonuses.description`` only, and the markup simply moved next
+    door: four bonus names shipped as raw wikitext (one of them a whole
+    sentence), 380 ``crafting_options.name`` values ended in ``<br />``, and an
+    editor comment leaked into a material named ``'No <!--'``.
+
+    Every table is swept rather than a hand-kept list, so a new table inherits
+    the rule. Descriptions are deliberately excluded: their markup carries prose
+    structure and normalizing it is Phase 4m's work, not this assertion's.
+    """
+    failures: list[dict] = []
+    tables = [
+        row[0] for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' "
+            "AND name NOT LIKE 'sqlite_%' ORDER BY name"
+        )
+    ]
+    for table in tables:
+        columns = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if "name" not in columns:
+            continue
+        rows = conn.execute(
+            f"""
+            SELECT name FROM {table}
+             WHERE name LIKE '%[[%' OR name LIKE '%{{{{%'
+                OR name LIKE '%<%>%' OR name LIKE '%<!--%'
+             LIMIT 5
+            """
+        ).fetchall()
+        for (value,) in rows:
+            failures.append({"source_table": table, "column": "name", "value": value})
+
+    return ValidationResult(
+        name="names_are_free_of_markup",
+        description=(
+            "No name column should hold wikilinks, templates, HTML tags or "
+            "editor comments — a name is a label, not wikitext (A3b)"
+        ),
+        severity="error",
+        failures=failures,
+    )
 
 
 def validate_database(conn: sqlite3.Connection) -> list[ValidationResult]:
@@ -357,6 +651,8 @@ def validate_database(conn: sqlite3.Connection) -> list[ValidationResult]:
         results.append(ValidationResult(
             name=name, description=desc, severity=severity, failures=failures,
         ))
+    results.append(_validate_save_template_stats(conn))
+    results.append(_validate_names_are_free_of_markup(conn))
     return results
 
 
