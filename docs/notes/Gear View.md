@@ -28,6 +28,8 @@ Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see
 			- So a stat with possible 15 Enhancement and 6 Insight would have a denominator of 21, and the highest point that stat could get from a single line of 15 of that stat would be 15/21
 			- Each line item of an item gets that calculation, then summed together would be be the value of that item for your selected stats
 			- Then the suggested items would display in order of highest to lowest
+		- Could have some additional view where you can select requested stats, then gives recommended items with those stats (only for slots that are empty, or maybe an option to preserve existing items vs not or only to look for certain slots)
+			- Can then be extended for gear replacement to see if there is a better item for a specific slot
 	- Show image of item from wiki + stats that it gives from db
 
 📋 Phase 8 — List-view expansion + stat groups:
