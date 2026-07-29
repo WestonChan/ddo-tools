@@ -12,7 +12,44 @@ The DDO Wiki (ddowiki.com) is a MediaWiki site. Use `WebFetch` with its API to l
 > - **Only top-level browser navigation works** — the challenge solves invisibly in ~1s. The frontend's wiki links therefore open a shared compare window (see `src/lib/wiki/client.ts`).
 > - **Do not script around the challenge** (headless token harvesting, challenge-solving proxies) — that's circumvention of an intentional bot policy.
 >
+> **Still blocked as of 2026-07-28** — re-verified with a bare `api.php` `allpages` request: `HTTP 202`, empty body.
+>
 > The path back: ask the ddowiki admins to exempt `/api.php` from the challenge rule (tracked in `docs/notes/To Do.md`). If that happens, everything below works again as written.
+
+### Working offline: the page cache is an enumeration source
+
+The pipeline is not fully blocked, because the two halves of a scrape fail differently.
+`WikiClient.get_wikitext` reads through a disk cache (`.wiki-cache/`, keyed by `md5(page_title)`,
+each file storing `{title, wikitext}`), whereas `iter_namespace_pages` / `iter_category_members` hit
+the API directly. So **page content survives the outage and page discovery does not** — which is why
+`build-db` could not run at all until Phase 4c.
+
+The fix (shipped 4c): `WikiClient` derives titles from the cache index itself, falling back to the
+API when it is reachable. Measured coverage as of 2026-07-28:
+
+| Source | Recoverable from cache | Verdict |
+|---|---|---|
+| `Item:` namespace titles | 11,993 non-redirect of 14,195 cached files | **works** — a superset of the 7,430 rows in `ddo.db` |
+| Item wikitext | 7,034 of 7,249 shipped items (97%) | **works** |
+| Quest pages | 24 of 680 | unusable — anything quest-page-sourced stays blocked |
+| Feat pages via `[[Category:]]` links | 167 of 810 | **not viable** |
+| Enhancement-tree pages via category links | 0 of 108 | **not viable** |
+| Loot category memberships | 563 of 4,949 | **not viable** |
+
+**Namespace enumeration from cache titles works; category walking does not.** Any plan that depends
+on a category walk is blocked exactly as the API is — don't design around it.
+
+Two consequences worth knowing before touching the pipeline:
+
+- Cache keys use the **decoded** page title (`Item:Admiral's Gloves`), so a DB row still holding an
+  HTML-escaped name misses its own cache entry until unescaped.
+- Because titles come from the cache rather than a live listing, `build-db` **updates in place**
+  rather than rebuilding. See the ETL invariants in `.claude/rules/python.md`.
+
+**A real browser still passes**, since the challenge solves invisibly on top-level navigation. That
+is how the raid list was reconciled (2026-07-25) and how `Category:Rare Loot List items` was captured
+for Phase 4c (2026-07-28) — read pages in a browser, commit the result as a documented seed module on
+the `raid_quests.py` / `rare_loot_items.py` model, and mark it deletable once the API returns.
 
 ## API Endpoints
 

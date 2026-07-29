@@ -17,19 +17,56 @@ DDO_WIKI_API = "https://ddowiki.com/api.php"
 _DEFAULT_CACHE_DIR = Path(".wiki-cache")
 _REQUEST_DELAY = 0.6  # ~1.7 req/s, polite rate limit
 
+# Title prefix per MediaWiki namespace id we enumerate. Main namespace (0) has
+# no prefix, so it is identified by the *absence* of any known prefix — a title
+# like "Past Life: Fighter" contains a colon but is still main namespace.
+_NAMESPACE_PREFIX: dict[int, str] = {
+    0: "",
+    6: "File",
+    10: "Template",
+    14: "Category",
+    500: "Item",
+}
+
+# Every namespace prefix ddowiki uses, lowercased. Used only to decide whether
+# a colon in a title is a namespace separator or part of the page name.
+_KNOWN_PREFIXES: frozenset[str] = frozenset({
+    "media", "special", "talk", "user", "user talk", "ddowiki",
+    "ddowiki talk", "file", "file talk", "mediawiki", "mediawiki talk",
+    "template", "template talk", "help", "help talk", "category",
+    "category talk", "image", "image talk", "item", "item talk",
+})
+
+# How page titles are enumerated. "auto" prefers the disk cache and falls back
+# to the API when nothing is cached; "cache" and "api" pin one source.
+ENUMERATION_MODES: tuple[str, ...] = ("auto", "cache", "api")
+
 
 class WikiClient:
-    """Rate-limited, caching HTTP client for the DDO Wiki API."""
+    """Rate-limited, caching HTTP client for the DDO Wiki API.
+
+    The disk cache is also an offline *page index*: every entry stores its own
+    title, so ``iter_namespace_pages`` can enumerate a namespace without the
+    ``allpages`` API — which matters because ddowiki's AWS WAF answers every
+    non-browser client with HTTP 202 and an empty body (see
+    docs/ddowiki-api.md), leaving the pipeline unable to enumerate anything.
+    """
 
     def __init__(
         self,
         cache_dir: Path = _DEFAULT_CACHE_DIR,
         use_cache: bool = True,
         delay: float = _REQUEST_DELAY,
+        enumeration: str = "auto",
     ) -> None:
+        if enumeration not in ENUMERATION_MODES:
+            raise ValueError(
+                f"enumeration must be one of {ENUMERATION_MODES}, got {enumeration!r}"
+            )
         self.cache_dir = cache_dir
         self.use_cache = use_cache
         self.delay = delay
+        self.enumeration = enumeration
         self._session = requests.Session()
         self._session.headers["User-Agent"] = "ddo-data/0.1 (DDO Tools)"
         self._last_request_time = 0.0
@@ -62,10 +99,58 @@ class WikiClient:
 
         return wikitext
 
+    def iter_cached_pages(self) -> Iterator[tuple[str, str]]:
+        """Yield ``(title, wikitext)`` for every entry in the disk cache.
+
+        Order follows the cache filenames (md5 digests), so callers that need a
+        stable order must sort. Unreadable or malformed entries are skipped.
+        """
+        if not self.cache_dir.is_dir():
+            return
+        for path in self.cache_dir.glob("*.json"):
+            try:
+                data = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                continue
+            title = data.get("title")
+            wikitext = data.get("wikitext")
+            if isinstance(title, str) and isinstance(wikitext, str):
+                yield title, wikitext
+
+    def iter_cached_titles(self, namespace: int) -> list[str]:
+        """Sorted non-redirect cached titles belonging to *namespace*."""
+        prefix = _NAMESPACE_PREFIX.get(namespace)
+        if prefix is None:
+            return []
+        titles = [
+            title
+            for title, wikitext in self.iter_cached_pages()
+            if _title_namespace_matches(title, prefix)
+            and "#REDIRECT" not in wikitext.upper()
+        ]
+        return sorted(titles)
+
     def iter_namespace_pages(
         self, namespace: int, *, limit: int = 0,
     ) -> Iterator[str]:
-        """Yield all page titles in a namespace via allpages API."""
+        """Yield page titles in a namespace, from the cache or the allpages API.
+
+        Which source is used follows ``self.enumeration``. In the default
+        ``"auto"`` mode the cache wins when it holds anything for the namespace,
+        because it is the only source that works while the WAF challenge is up;
+        an empty cache falls through to the API so a first run still works.
+        """
+        if self.enumeration in ("auto", "cache"):
+            cached = self.iter_cached_titles(namespace)
+            if cached:
+                yield from cached[:limit] if limit > 0 else cached
+                return
+            if self.enumeration == "cache":
+                logger.warning(
+                    "No cached titles for namespace %d and enumeration=cache", namespace,
+                )
+                return
+
         params = {
             "action": "query",
             "list": "allpages",
@@ -172,3 +257,16 @@ class WikiClient:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         path = self._cache_path(key)
         path.write_text(json.dumps({"title": key, "wikitext": content}))
+
+
+def _title_namespace_matches(title: str, prefix: str) -> bool:
+    """True when *title* belongs to the namespace identified by *prefix*.
+
+    ``prefix`` is ``""`` for the main namespace, whose members are exactly the
+    titles carrying no *known* namespace prefix — "Past Life: Fighter" qualifies,
+    "Category:Feats" does not.
+    """
+    head, sep, _ = title.partition(":")
+    if prefix:
+        return sep == ":" and head.strip().lower() == prefix.lower()
+    return not (sep == ":" and head.strip().lower() in _KNOWN_PREFIXES)
