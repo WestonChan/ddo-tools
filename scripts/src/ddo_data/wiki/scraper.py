@@ -127,6 +127,102 @@ def collect_augments(
     return augments
 
 
+def collect_unique_enchantments(
+    client: WikiClient,
+    *,
+    on_progress: Callable[[str], None] | None = None,
+) -> list[dict]:
+    """Collect ``{{Unique enchantment}}`` definitions from the page cache.
+
+    These pages are what makes a named enchantment mean something: Deception's
+    page carries "+X (type) bonus to hit and +Y to damage for any hit that would
+    qualify as a sneak attack", which is the text ``bonuses.description`` needs
+    and previously had no way to reach.
+
+    Read straight from the cache rather than from a category walk — the pages
+    are scattered across the main namespace and the category API is WAF-blocked.
+    A page can define more than one enchantment (a base and its Legendary
+    version), so every occurrence of the template is collected.
+
+    Returns dicts with keys: name, effect, wiki_url.
+    """
+    from urllib.parse import quote
+
+    from .parsers import clean_wikitext, extract_all_templates
+
+    results: list[dict] = []
+    seen: set[str] = set()
+
+    for title, wikitext in sorted(client.iter_cached_pages()):
+        if "{{Unique enchantment" not in wikitext:
+            continue
+        for fields in extract_all_templates(wikitext, "Unique enchantment"):
+            name = clean_wikitext(fields.get("name", "")) or None
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            effect = clean_wikitext(fields.get("effect", "")) or None
+            results.append({
+                "name": name,
+                "effect": effect,
+                "wiki_url": (
+                    "https://ddowiki.com/page/"
+                    f"{quote(title.replace(' ', '_'), safe='_/:()-,')}"
+                ),
+            })
+
+    if on_progress:
+        on_progress(f"  {len(results)} unique enchantments parsed from cache")
+    return results
+
+
+def collect_rare_loot_names(
+    client: WikiClient,
+    *,
+    scraped_items: list[dict] | None = None,
+    on_progress: Callable[[str], None] | None = None,
+) -> list[str]:
+    """Reconcile the two sources of "this is rare loot" into one name list.
+
+    Source 1 is each item infobox's ``| rare =`` field, which the item scrape
+    already parsed. Source 2 is the wiki's ``Category:Rare Loot List items``,
+    which is broader but unreachable behind the WAF challenge — see
+    :mod:`ddo_data.wiki.rare_loot_items` for the browser-captured stand-in.
+
+    The two are unioned rather than one preferred: the category holds 97 names
+    the field never marks, and the field holds 3 the category omits. Overlap and
+    disagreement are both reported so neither source silently wins.
+    """
+    from .rare_loot_items import RARE_LOOT_ITEMS
+
+    field_names: set[str] = {
+        item["name"]
+        for item in (scraped_items or [])
+        if item.get("rare") and item.get("name")
+    }
+
+    category_names: set[str] = set()
+    for title in client.iter_category_members(
+        "Rare Loot List items", namespace=500, member_type="page",
+    ):
+        category_names.add(title.removeprefix("Item:").strip())
+    source = "wiki category"
+    if not category_names:
+        category_names = set(RARE_LOOT_ITEMS)
+        source = "browser-captured list (category unreachable)"
+
+    if on_progress:
+        on_progress(
+            f"  rare loot: {len(field_names)} from the infobox field, "
+            f"{len(category_names)} from the {source}; "
+            f"{len(field_names & category_names)} in both, "
+            f"{len(field_names - category_names)} field-only, "
+            f"{len(category_names - field_names)} category-only"
+        )
+
+    return sorted(field_names | category_names)
+
+
 # Page titles that are index/overview pages, not individual feats
 _SPELL_SKIP_TITLES = {"All spells", "Spell", "Spells"}
 

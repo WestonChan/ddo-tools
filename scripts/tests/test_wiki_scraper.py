@@ -505,3 +505,143 @@ def test_collect_quest_loot_emits_both_types_for_shared_item() -> None:
 
     assert [e["loot_type"] for e in entries] == ["chest", "raid"]
     assert {e["quest_name"] for e in entries} == {"The Shroud"}
+
+
+# ---------------------------------------------------------------------------
+# collect_unique_enchantments tests
+# ---------------------------------------------------------------------------
+
+UNIQUE_ENCHANTMENT_WIKITEXT = """
+{{Unique enchantment
+|name  = Deception
+|found = {{Counted dot list|category=Deception items|namespace=Item}}
+|effect = +4 [[enhancement bonus]] to hit and +4 to damage for any hit that
+would qualify as a [[sneak attack]].
+}}
+[[Category:Unique item enchantments]]
+"""
+
+TWO_ENCHANTMENTS_WIKITEXT = """
+{{Unique enchantment
+  | name   = Vile Grip
+  | effect = Small chance to deal massive evil damage.
+}}
+{{Unique enchantment
+  | name   = Legendary Vile Grip
+  | effect = Small chance to deal even more massive evil damage.
+}}
+"""
+
+EMPTY_EFFECT_WIKITEXT = """
+{{Unique enchantment
+|name=Blinding Fear
+|found=
+|effect=
+|note=
+}}
+"""
+
+
+def _cache_client(pages: dict[str, str]) -> MagicMock:
+    client = MagicMock()
+    client.iter_cached_pages.return_value = list(pages.items())
+    return client
+
+
+def test_collect_unique_enchantments_reads_effect_text() -> None:
+    from ddo_data.wiki.scraper import collect_unique_enchantments
+
+    client = _cache_client({"Deception": UNIQUE_ENCHANTMENT_WIKITEXT})
+    results = collect_unique_enchantments(client)
+
+    assert len(results) == 1
+    assert results[0]["name"] == "Deception"
+    assert "sneak attack" in results[0]["effect"]
+    assert results[0]["wiki_url"] == "https://ddowiki.com/page/Deception"
+
+
+def test_collect_unique_enchantments_handles_two_on_one_page() -> None:
+    """A page often defines both the base and the Legendary version."""
+    from ddo_data.wiki.scraper import collect_unique_enchantments
+
+    client = _cache_client({"Vile Grip": TWO_ENCHANTMENTS_WIKITEXT})
+    names = [r["name"] for r in collect_unique_enchantments(client)]
+
+    assert names == ["Vile Grip", "Legendary Vile Grip"]
+
+
+def test_collect_unique_enchantments_empty_effect_stays_none() -> None:
+    """An empty `effect =` field must be NULL, not the empty string."""
+    from ddo_data.wiki.scraper import collect_unique_enchantments
+
+    client = _cache_client({"Blinding Fear": EMPTY_EFFECT_WIKITEXT})
+    results = collect_unique_enchantments(client)
+
+    assert results[0]["effect"] is None
+
+
+def test_collect_unique_enchantments_ignores_other_pages() -> None:
+    from ddo_data.wiki.scraper import collect_unique_enchantments
+
+    client = _cache_client({"Item:Celestia": ITEM_WIKITEXT})
+    assert collect_unique_enchantments(client) == []
+
+
+def test_collect_unique_enchantments_deduplicates_by_name() -> None:
+    from ddo_data.wiki.scraper import collect_unique_enchantments
+
+    client = _cache_client({
+        "Deception": UNIQUE_ENCHANTMENT_WIKITEXT,
+        "Deception (historic)": UNIQUE_ENCHANTMENT_WIKITEXT,
+    })
+    assert len(collect_unique_enchantments(client)) == 1
+
+
+# ---------------------------------------------------------------------------
+# collect_rare_loot_names tests
+# ---------------------------------------------------------------------------
+
+
+def test_collect_rare_loot_names_unions_both_sources() -> None:
+    from ddo_data.wiki.scraper import collect_rare_loot_names
+
+    client = MagicMock()
+    client.iter_category_members.return_value = iter([
+        "Item:Buckle of Secrets", "Item:Crisis Claw",
+    ])
+    names = collect_rare_loot_names(
+        client,
+        scraped_items=[
+            {"name": "Argonnessen Eye Band", "rare": True},
+            {"name": "Plain Boot", "rare": False},
+        ],
+    )
+
+    assert names == ["Argonnessen Eye Band", "Buckle of Secrets", "Crisis Claw"]
+
+
+def test_collect_rare_loot_names_falls_back_to_the_captured_list() -> None:
+    """With the category unreachable the browser-captured list stands in."""
+    from ddo_data.wiki.rare_loot_items import RARE_LOOT_ITEMS
+    from ddo_data.wiki.scraper import collect_rare_loot_names
+
+    client = MagicMock()
+    client.iter_category_members.return_value = iter([])
+    names = collect_rare_loot_names(client, scraped_items=[])
+
+    assert set(names) == set(RARE_LOOT_ITEMS)
+
+
+def test_collect_rare_loot_names_reports_the_reconciliation() -> None:
+    from ddo_data.wiki.scraper import collect_rare_loot_names
+
+    client = MagicMock()
+    client.iter_category_members.return_value = iter(["Item:Crisis Claw"])
+    messages: list[str] = []
+    collect_rare_loot_names(
+        client,
+        scraped_items=[{"name": "Crisis Claw", "rare": True}],
+        on_progress=messages.append,
+    )
+
+    assert any("1 in both" in m for m in messages), messages

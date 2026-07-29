@@ -2,16 +2,658 @@
 
 from __future__ import annotations
 
+import html
 import logging
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from ddo_data.enums import (
-    DataSource, Handedness, ItemCategory, LootType, ResolutionMethod, TreeType,
+    DataSource, Handedness, ItemCategory, LootType, Rarity, ResolutionMethod,
+    TreeType,
 )
 import re
 import sqlite3
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Writer-boundary string normalization
+#
+# 91 shipped rows carried raw HTML entities ("Admiral&#39;s Gloves") across 7
+# TEXT columns produced by 5 different parsers. Normalizing here — where rows
+# are written — fixes all of them at once and keeps the next parser from
+# reintroducing the problem. `canonical_text` must stay idempotent: the writer
+# normalizes on insert and `normalize_stored_text` normalizes again over rows
+# that predate this code.
+# ---------------------------------------------------------------------------
+
+_HTML_COMMENT_RE = re.compile(r"<!--.*?(?:-->|$)", re.DOTALL)
+_HTML_TAG_RE = re.compile(r"<[^<>]+>")
+# [[Target|Display]] -> Display; [[Target]] -> Target.
+_WIKILINK_RE = re.compile(r"\[\[(?:[^\[\]|]*\|)?([^\[\]|]*)\]\]")
+
+# Bounded so a pathological "&amp;amp;amp;..." can't spin; four rounds is far
+# more nesting than any wiki text carries.
+_MAX_UNESCAPE_ROUNDS = 4
+
+# Dict keys whose value labels an entity. `_clean_input` routes these through
+# `canonical_name`; everything else keeps `canonical_text`.
+_NAME_KEYS: frozenset[str] = frozenset({"name"})
+
+
+def _decode_entities(text: str) -> str:
+    """Unescape HTML entities to a fixed point, so decoding is idempotent."""
+    for _ in range(_MAX_UNESCAPE_ROUNDS):
+        decoded = html.unescape(text)
+        if decoded == text:
+            return text
+        text = decoded
+    return text
+
+
+def canonical_text(value: str | None) -> str | None:
+    """Normalize a TEXT value on its way into the database.
+
+    Decodes HTML entities to a fixed point (so the function is idempotent),
+    drops editor comments — ``item_materials`` shipped a row literally named
+    ``'No <!--'`` — and trims surrounding whitespace. Empty results become
+    None: absence is spelled NULL, not ``''``.
+    """
+    if value is None:
+        return None
+    text = _HTML_COMMENT_RE.sub("", _decode_entities(value)).strip()
+    return text or None
+
+
+def canonical_name(value: str | None) -> str | None:
+    """Normalize a value that *names* an entity.
+
+    Everything ``canonical_text`` does, plus the markup a name can never
+    legitimately carry — because a name is a label, so wikitext in it is a leak
+    rather than meaning:
+
+    * a template expands to its display text (``{{HELstats|3|L=6}}`` -> ``3``),
+    * a wikilink renders as the text a reader sees
+      (``[[True Seeing (enhancement)|True Seeing]]`` -> ``True Seeing``) rather
+      than being stripped to nothing,
+    * an HTML tag becomes a word boundary — 380 ``crafting_options.name`` values
+      ended in ``<br />``, and one splits two names across the break, so
+      deleting the tag outright would fuse them into ``FearFearsome``.
+
+    Descriptions deliberately do **not** come through here: their markup carries
+    prose structure (wiki tables, list markers, colour spans) that a label-level
+    rule would destroy, and cleaning it is Phase 4m's work.
+    """
+    if value is None:
+        return None
+    from ..wiki.templates import expand_display_text
+
+    text = _HTML_COMMENT_RE.sub("", _decode_entities(value))
+    text = expand_display_text(text)
+    text = _WIKILINK_RE.sub(r"\1", text)
+    text = _HTML_TAG_RE.sub(" ", text)
+    return " ".join(text.split()) or None
+
+
+def _clean_input(record: Any, *, key: str | None = None) -> Any:
+    """Recursively normalize every string in a scraper record.
+
+    Applied at the top of each ``insert_*`` function so the normalization
+    boundary is the writer, not any individual parser. A value stored under a
+    name key gets the stricter ``canonical_name`` treatment.
+    """
+    if isinstance(record, str):
+        return canonical_name(record) if key in _NAME_KEYS else canonical_text(record)
+    if isinstance(record, dict):
+        return {k: _clean_input(v, key=k) for k, v in record.items()}
+    if isinstance(record, list):
+        cleaned = [_clean_input(value, key=key) for value in record]
+        return [value for value in cleaned if value is not None]
+    return record
+
+
+def _clean_inputs(records: list[dict]) -> list[dict]:
+    """Normalize a list of scraper records."""
+    return [_clean_input(record) for record in records]
+
+
+# ---------------------------------------------------------------------------
+# Normalizing rows that are already stored
+#
+# `build-db` cannot rebuild from scratch: ddowiki's WAF answers every
+# non-browser client with HTTP 202 and an empty body, so category enumeration
+# is dead and only the ~14k cached pages can be re-read. The build therefore
+# updates the existing database, and rows written before this code existed are
+# never touched by an insert. These passes apply the *same* functions the
+# writer applies, so the two can never disagree, and they run before ingestion
+# so a freshly scraped clean name lands on the already-cleaned row rather than
+# creating a duplicate.
+# ---------------------------------------------------------------------------
+
+# Columns whose variants no deterministic rule can decide (is the enhancement
+# "Self Reliant" or "Self-Reliant"? the wiki spells it both ways), so the
+# majority spelling in the column wins. Sourced from the 2026-07-28 duplicate
+# audit in docs/notes/DB Errors.md.
+#
+# `items.name` is deliberately absent: its remaining variant pair
+# ("Shadow Sight"/"Shadowsight") is two distinct wiki pages, and collapsing
+# entity names would merge real items. The `(level N)` groups it also had are
+# fixed at the parser instead.
+_VARIANT_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("bonuses", "name"),
+    ("item_materials", "name"),
+    ("enhancements", "name"),
+    ("item_weapon_stats", "attack_mod"),
+    ("item_weapon_stats", "damage_mod"),
+    ("item_weapon_stats", "damage_class"),
+    ("items", "race_required"),
+    ("spells", "spell_resistance"),
+    ("spells", "range"),
+    ("class_bonus_feat_slots", "slot_label"),
+)
+
+
+# A sign directly in front of a number is meaning, not punctuation. Stripping
+# it made "Constitution -2" and "Constitution +2" share a key, so the collapse
+# relabelled 18 penalties as bonuses — and `renormalize_bonus_names` rebuilt the
+# sign from `value` on the next pass, giving the two passes an endless argument
+# that the *last one to run* won. Hyphens elsewhere still collapse, which is the
+# whole point of the key ("Self-Reliant" / "Self Reliant").
+_SIGN_BEFORE_NUMBER_RE = re.compile(r"([+-])(?=\d)")
+_SIGN_WORDS = {"+": " plus ", "-": " minus "}
+
+
+def _variant_key(value: str) -> str:
+    """Case- and punctuation-insensitive key grouping spellings of one value."""
+    signed = _SIGN_BEFORE_NUMBER_RE.sub(
+        lambda m: _SIGN_WORDS[m.group(1)], value.lower()
+    )
+    return re.sub(r"[^a-z0-9]", "", signed)
+
+
+def _table_columns(conn: sqlite3.Connection, table: str) -> list[tuple[str, str, bool]]:
+    """``[(name, declared_type, not_null)]`` for *table*, empty if absent."""
+    try:
+        rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    except sqlite3.OperationalError:
+        return []
+    return [(r[1], (r[2] or "").upper(), bool(r[3])) for r in rows]
+
+
+def _text_columns(conn: sqlite3.Connection) -> list[tuple[str, str, bool]]:
+    """Every TEXT column in the database as ``(table, column, not_null)``."""
+    tables = [
+        r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' "
+            "AND name NOT LIKE 'sqlite_%' ORDER BY name"
+        )
+    ]
+    result: list[tuple[str, str, bool]] = []
+    for table in tables:
+        for name, decl_type, not_null in _table_columns(conn, table):
+            if decl_type.startswith("TEXT"):
+                result.append((table, name, not_null))
+    return result
+
+
+def _referencing_columns(
+    conn: sqlite3.Connection, table: str,
+) -> list[tuple[str, str]]:
+    """``[(child_table, child_column)]`` for every FK pointing at *table*.
+
+    Derived from ``PRAGMA foreign_key_list`` rather than a hand-kept list, so a
+    new child table is picked up without editing this module.
+    """
+    children: list[tuple[str, str]] = []
+    for (child,) in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'"
+    ).fetchall():
+        for fk in conn.execute(f"PRAGMA foreign_key_list({child})").fetchall():
+            # (id, seq, table, from, to, on_update, on_delete, match)
+            if fk[2] == table:
+                children.append((child, fk[3]))
+    return children
+
+
+def _merge_rows(
+    conn: sqlite3.Connection, table: str, keeper_id: int, loser_id: int,
+) -> None:
+    """Fold *loser_id* into *keeper_id*, repointing everything that referred to it.
+
+    ``UPDATE OR IGNORE`` handles child rows that would collide with one the
+    keeper already has (both items pointing at the same quest, say); the
+    leftovers are then deleted rather than left dangling.
+    """
+    for child, column in _referencing_columns(conn, table):
+        conn.execute(
+            f"UPDATE OR IGNORE {child} SET {column} = ? WHERE {column} = ?",
+            (keeper_id, loser_id),
+        )
+        conn.execute(f"DELETE FROM {child} WHERE {column} = ?", (loser_id,))
+    conn.execute(f"DELETE FROM {table} WHERE id = ?", (loser_id,))
+
+
+def _has_id_column(conn: sqlite3.Connection, table: str) -> bool:
+    return any(name == "id" for name, _, _ in _table_columns(conn, table))
+
+
+def _normalize_column(
+    conn: sqlite3.Connection,
+    table: str,
+    column: str,
+    normalizer: Callable[[str], str | None],
+    *,
+    not_null: bool,
+    where: str | None = None,
+) -> int:
+    """Rewrite *column* through *normalizer*, merging rows that then collide.
+
+    Returns the number of rows changed. A row whose normalized value would be
+    NULL in a NOT NULL column is left alone — dropping the value would lose
+    more than the untidy spelling costs.
+    """
+    sql = f"SELECT rowid, {column} FROM {table} WHERE {column} IS NOT NULL"
+    if where:
+        sql += f" AND ({where})"
+    try:
+        rows = conn.execute(sql).fetchall()
+    except sqlite3.OperationalError:
+        return 0
+
+    changed = 0
+    for rowid, old in rows:
+        if not isinstance(old, str):
+            continue
+        new = normalizer(old)
+        if new == old:
+            continue
+        if new is None and not_null:
+            continue
+        try:
+            # Deliberately not wrapped in `with conn:` — a failed statement only
+            # undoes itself, whereas the context manager would roll back the
+            # whole surrounding transaction, including the caller's inserts.
+            conn.execute(
+                f"UPDATE {table} SET {column} = ? WHERE rowid = ?", (new, rowid)
+            )
+        except sqlite3.IntegrityError:
+            # A row already holds the normalized value — fold this one into it.
+            if not _has_id_column(conn, table):
+                logger.warning(
+                    "Cannot normalize %s.%s %r -> %r (conflict, no id column)",
+                    table, column, old, new,
+                )
+                continue
+            keeper = conn.execute(
+                f"SELECT id FROM {table} WHERE {column} = ? AND rowid != ?",
+                (new, rowid),
+            ).fetchone()
+            loser = conn.execute(
+                f"SELECT id FROM {table} WHERE rowid = ?", (rowid,)
+            ).fetchone()
+            if keeper is None or loser is None:
+                continue
+            _merge_rows(conn, table, keeper[0], loser[0])
+        changed += 1
+    return changed
+
+
+def normalize_stored_text(conn: sqlite3.Connection) -> int:
+    """Apply the writer's text normalization to rows already in the database.
+
+    Runs ``canonical_text`` over every TEXT column, plus the deterministic
+    effect-name canonicalization the writer uses, and merges any rows that
+    become duplicates as a result. Idempotent — a second run reports 0.
+    """
+    from ..dat_parser.effects import canonical_effect_name
+
+    changed = _normalize_column(
+        conn, "effects", "name", canonical_effect_name, not_null=True,
+    )
+
+    # Only rows that can possibly change are read back: an entity reference, an
+    # editor comment, or untrimmed whitespace.
+    candidates = (
+        "{col} LIKE '%&%;%' OR {col} LIKE '%<!--%' OR {col} <> trim({col})"
+    )
+    for table, column, not_null in _text_columns(conn):
+        if (table, column) == ("effects", "name"):
+            continue
+        # Name columns are swept unfiltered: `canonical_name` normalizes more
+        # than entities (markup, HTML tags, internal whitespace), and a
+        # candidate predicate that missed one of those would let a stored name
+        # disagree with what the writer now produces — which is how a rescrape
+        # would land a collapsed name *beside* its untidy twin instead of on it.
+        changed += _normalize_column(
+            conn, table, column,
+            canonical_name if column in _NAME_KEYS else canonical_text,
+            not_null=not_null,
+            where=None if column in _NAME_KEYS else candidates.format(col=column),
+        )
+    conn.commit()
+    return changed
+
+
+def collapse_value_variants(conn: sqlite3.Connection) -> int:
+    """Collapse case/punctuation spellings of one value to the majority spelling.
+
+    For the columns in ``_VARIANT_COLUMNS``, values that differ only in case or
+    punctuation are the same value — any consumer filtering on ``attack_mod =
+    'STR'`` silently missed the rows spelled ``'Str'``. The winner is the
+    spelling used by the most rows; ties go to the one with more capitals, then
+    alphabetically, so the outcome does not depend on row order.
+    """
+    changed = 0
+    for table, column in _VARIANT_COLUMNS:
+        if not any(name == column for name, _, _ in _table_columns(conn, table)):
+            continue
+        groups: dict[str, list[tuple[str, int]]] = {}
+        rows = conn.execute(
+            f"SELECT {column}, COUNT(*) FROM {table} "
+            f"WHERE {column} IS NOT NULL AND {column} != '' GROUP BY {column}"
+        ).fetchall()
+        for value, count in rows:
+            if isinstance(value, str):
+                groups.setdefault(_variant_key(value), []).append((value, count))
+
+        for variants in groups.values():
+            if len(variants) < 2:
+                continue
+            keeper = sorted(
+                variants,
+                key=lambda v: (-v[1], -sum(1 for c in v[0] if c.isupper()), v[0]),
+            )[0][0]
+            for value, _count in variants:
+                if value == keeper:
+                    continue
+                changed += _rename_value(conn, table, column, value, keeper)
+    conn.commit()
+    return changed
+
+
+# ---------------------------------------------------------------------------
+# Repairing rows the pre-4c parsers wrote
+#
+# Each pass here is the stored-row half of a parser fix. The parser fix alone
+# only reaches rows the re-scrape rewrites — and because inserts are
+# INSERT OR IGNORE, a corrected row lands *beside* the stale one rather than
+# replacing it, so an item ends up displaying Incite twice with one of them
+# wrong. These passes reconcile the old shape with the new.
+# ---------------------------------------------------------------------------
+
+# Effect names that were never enchantments: wiki maintenance markers and the
+# crafting-choice wrappers, whose alternatives are now parsed individually.
+# `UpgradeableAugment` is deliberately absent — those rows are the only stored
+# trace of 72 augment slots, and creating the slots is Phase 4m's work.
+_NON_ENCHANTMENT_EFFECT_NAMES: tuple[str, ...] = (
+    "bug", "inlinewht", "orphan", "underlinked", "top", "history", "stub",
+    "ref", "cleanup", "expand", "nearly finished", "almost there",
+)
+
+
+def repair_stored_rows(conn: sqlite3.Connection) -> dict[str, int]:
+    """Bring rows written by the old parsers up to the current behaviour.
+
+    Must run *before* ``populate_enchantment_descriptions``: the
+    ``{{Save|Spell|N}}`` repair identifies its rows by the template still in
+    their description, and expanding descriptions erases that evidence.
+
+    Returns a count per pass. Idempotent — a second run reports all zeros.
+    """
+    return {
+        "spell_saves_retargeted": _retarget_spell_save_bonuses(conn),
+        "effect_modifiers_regraded": _regrade_effect_modifiers(conn),
+        "effect_names_regraded": _regrade_effect_names(conn),
+        "maintenance_rows_deleted": _delete_maintenance_effects(conn),
+        "items_merged": _merge_items_sharing_a_wiki_page(conn),
+    }
+
+
+def _retarget_spell_save_bonuses(conn: sqlite3.Connection) -> int:
+    """Move ``{{Save|Spell|N}}`` bonuses from Spell Resistance to Spell Save.
+
+    A spell saving throw (values 1-8) and Spell Resistance (the caster-level
+    check, 17-41) are different mechanics; 18 items looked like they carried the
+    same enchantment twice because both landed on stat 21.
+    """
+    save_stat = conn.execute(
+        "SELECT id, name FROM stats WHERE name = 'Spell Save'"
+    ).fetchone()
+    if save_stat is None:
+        return 0
+    save_id, save_name = save_stat
+
+    rows = conn.execute(
+        """
+        SELECT id, value FROM bonuses
+         WHERE stat_id IS NOT NULL AND stat_id != ?
+           AND (description LIKE '{{Save|spell|%' OR description LIKE '{{Saves|spell|%')
+        """,
+        (save_id,),
+    ).fetchall()
+
+    changed = 0
+    for bonus_id, value in rows:
+        new_name = _bonus_name(save_name, value)
+        try:
+            conn.execute(
+                "UPDATE bonuses SET stat_id = ?, name = ? WHERE id = ?",
+                (save_id, new_name, bonus_id),
+            )
+        except sqlite3.IntegrityError:
+            # The re-scrape already created the corrected row; fold into it.
+            keeper = conn.execute(
+                """
+                SELECT id FROM bonuses
+                 WHERE stat_id = ? AND name = ? AND id != ?
+                   AND COALESCE(value, -1) = COALESCE(?, -1)
+                """,
+                (save_id, new_name, bonus_id, value),
+            ).fetchone()
+            if keeper is None:
+                continue
+            _merge_rows(conn, "bonuses", keeper[0], bonus_id)
+        changed += 1
+    conn.commit()
+    return changed
+
+
+def _regrade_effect_modifiers(conn: sqlite3.Connection) -> int:
+    """Move magnitudes out of ``effects.modifier`` into ``item_effects.value``.
+
+    ``modifier`` is the bonus type. 153 rows held a number there instead —
+    ``{{Incite|59|Insightful}}`` parsed as modifier "59" with the bonus type
+    discarded. The magnitude is recoverable and moves to the column that exists
+    for it; the bonus type is not, so a row whose re-scraped replacement already
+    carries the type is dropped in favour of that replacement.
+
+    Ordinal modifiers are left alone: ``{{Burns|3rd}}`` (44 uses) is a tier.
+    """
+    from ..dat_parser.effects import _numeric_param
+
+    rows = conn.execute(
+        "SELECT id, name, modifier FROM effects WHERE modifier IS NOT NULL"
+    ).fetchall()
+
+    changed = 0
+    for effect_id, name, modifier in rows:
+        magnitude = _numeric_param(modifier)
+        has_template = "{{" in modifier
+        # A modifier with no letters or digits ('-') is neither a bonus type nor
+        # a magnitude; it is punctuation left over from a wiki placeholder.
+        is_noise = not re.search(r"[a-zA-Z0-9]", modifier)
+        if magnitude is None and not has_template and not is_noise:
+            continue
+
+        target_id = _ensure_effect(conn, name, None)
+        if target_id is None:
+            continue
+
+        for item_id, value, sort_order in conn.execute(
+            "SELECT item_id, value, sort_order FROM item_effects WHERE effect_id = ?",
+            (effect_id,),
+        ).fetchall():
+            replacement = conn.execute(
+                """
+                SELECT 1 FROM item_effects ie
+                  JOIN effects e ON e.id = ie.effect_id
+                 WHERE ie.item_id = ? AND e.name = ? AND ie.effect_id != ?
+                   AND e.modifier IS NOT NULL
+                """,
+                (item_id, name, effect_id),
+            ).fetchone()
+            if replacement is not None:
+                continue
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO item_effects
+                    (item_id, effect_id, value, sort_order, data_source)
+                SELECT ?, ?, COALESCE(?, ?), ?, data_source
+                  FROM item_effects WHERE item_id = ? AND effect_id = ? AND sort_order = ?
+                """,
+                (item_id, target_id, value, magnitude, sort_order,
+                 item_id, effect_id, sort_order),
+            )
+
+        conn.execute("DELETE FROM item_effects WHERE effect_id = ?", (effect_id,))
+        if target_id != effect_id:
+            conn.execute("DELETE FROM effects WHERE id = ?", (effect_id,))
+        else:
+            conn.execute(
+                "UPDATE effects SET modifier = NULL WHERE id = ?", (effect_id,)
+            )
+        changed += 1
+    conn.commit()
+    return changed
+
+
+_NAMED_MAGNITUDE_RE = re.compile(r"^(.+?)\s([+-]\d+)%?$")
+
+
+def _regrade_effect_names(conn: sqlite3.Connection) -> int:
+    """Move a magnitude out of ``effects.name`` into ``item_effects.value``.
+
+    Same rule as ``_regrade_effect_modifiers``, applied to the other column an
+    magnitude leaked into: the plain-text fallback path stored one effect as
+    ``"Tendon Slice +10"``, which also made it look like a second copy of the
+    ``Tendon Slice`` bonus to validation assertion A1.
+    """
+    rows = conn.execute("SELECT id, name FROM effects").fetchall()
+    changed = 0
+    for effect_id, name in rows:
+        match = _NAMED_MAGNITUDE_RE.match(name or "")
+        if match is None:
+            continue
+        base, magnitude = match.group(1).strip(), int(match.group(2))
+        target_id = _ensure_effect(conn, base, None)
+        if target_id is None or target_id == effect_id:
+            continue
+        for item_id, value, sort_order in conn.execute(
+            "SELECT item_id, value, sort_order FROM item_effects WHERE effect_id = ?",
+            (effect_id,),
+        ).fetchall():
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO item_effects
+                    (item_id, effect_id, value, sort_order, data_source)
+                SELECT ?, ?, COALESCE(?, ?), ?, data_source
+                  FROM item_effects WHERE item_id = ? AND effect_id = ? AND sort_order = ?
+                """,
+                (item_id, target_id, value, magnitude, sort_order,
+                 item_id, effect_id, sort_order),
+            )
+        conn.execute("DELETE FROM item_effects WHERE effect_id = ?", (effect_id,))
+        conn.execute("DELETE FROM effects WHERE id = ?", (effect_id,))
+        changed += 1
+    conn.commit()
+    return changed
+
+
+def _delete_maintenance_effects(conn: sqlite3.Connection) -> int:
+    """Delete effects rows that were never enchantments, and their item links."""
+    placeholders = ", ".join("?" for _ in _NON_ENCHANTMENT_EFFECT_NAMES)
+    ids = [
+        row[0] for row in conn.execute(
+            f"SELECT id FROM effects WHERE lower(name) IN ({placeholders})",
+            _NON_ENCHANTMENT_EFFECT_NAMES,
+        ).fetchall()
+    ]
+    for effect_id in ids:
+        conn.execute("DELETE FROM item_effects WHERE effect_id = ?", (effect_id,))
+        conn.execute("DELETE FROM effects WHERE id = ?", (effect_id,))
+    conn.commit()
+    return len(ids)
+
+
+def _merge_items_sharing_a_wiki_page(conn: sqlite3.Connection) -> int:
+    """One wiki page describes one item, so two rows sharing a URL are one item.
+
+    This is how the seven items named ``(level 12)`` are retired: the name fix
+    creates a correctly-named row from the same page, and INSERT OR IGNORE
+    leaves the old one beside it. The surviving name is the one matching the
+    page title, falling back to the longer name.
+    """
+    from urllib.parse import unquote
+
+    def title_key(url: str) -> str:
+        title = unquote(url.rsplit("/", 1)[-1]).removeprefix("Item:")
+        return re.sub(r"[^a-z0-9]", "", title.lower())
+
+    duplicates = conn.execute(
+        """
+        SELECT wiki_url, COUNT(*) FROM items
+         WHERE wiki_url IS NOT NULL
+         GROUP BY wiki_url HAVING COUNT(*) > 1
+        """
+    ).fetchall()
+
+    merged = 0
+    for url, _count in duplicates:
+        rows = conn.execute(
+            "SELECT id, name FROM items WHERE wiki_url = ? ORDER BY id", (url,)
+        ).fetchall()
+        expected = title_key(url)
+        keeper = sorted(
+            rows,
+            key=lambda r: (
+                re.sub(r"[^a-z0-9]", "", (r[1] or "").lower()) != expected,
+                -len(r[1] or ""),
+                r[0],
+            ),
+        )[0]
+        for item_id, _name in rows:
+            if item_id == keeper[0]:
+                continue
+            _merge_rows(conn, "items", keeper[0], item_id)
+            merged += 1
+    conn.commit()
+    return merged
+
+
+def _rename_value(
+    conn: sqlite3.Connection, table: str, column: str, old: str, new: str,
+) -> int:
+    """Rewrite every ``column = old`` to *new*, merging rows that then collide."""
+    cur = conn.execute(
+        f"UPDATE OR IGNORE {table} SET {column} = ? WHERE {column} = ?", (new, old)
+    )
+    renamed = cur.rowcount
+    leftovers = conn.execute(
+        f"SELECT rowid FROM {table} WHERE {column} = ?", (old,)
+    ).fetchall()
+    if leftovers and _has_id_column(conn, table):
+        keeper = conn.execute(
+            f"SELECT id FROM {table} WHERE {column} = ?", (new,)
+        ).fetchone()
+        if keeper is not None:
+            for (rowid,) in leftovers:
+                loser = conn.execute(
+                    f"SELECT id FROM {table} WHERE rowid = ?", (rowid,)
+                ).fetchone()
+                if loser is not None and loser[0] != keeper[0]:
+                    _merge_rows(conn, table, keeper[0], loser[0])
+                    renamed += 1
+    return renamed
 
 # ---------------------------------------------------------------------------
 # Normalisation maps (wiki strings → schema CHECK constraint values)
@@ -190,6 +832,17 @@ def _parse_effect(text: str) -> dict | None:
     return parse_effect_template(text)
 
 
+def _split_enchantments(entries: Iterable[str]) -> list[str]:
+    """Expand wiki enchantment bullets into the enchantments they really hold."""
+    from ..wiki.templates import split_enchantment_entry
+
+    result: list[str] = []
+    for entry in entries:
+        if entry:
+            result.extend(split_enchantment_entry(entry))
+    return result
+
+
 def _is_metadata(text: str) -> bool:
     """Check if a wiki enchantment string is item metadata (augments, sets, etc.)."""
     from ..dat_parser.effects import is_metadata_template
@@ -286,7 +939,16 @@ def _resolve_clicky_spell(conn: sqlite3.Connection, modifier: str) -> int | None
 
 
 def _ensure_effect(conn: sqlite3.Connection, name: str, modifier: str | None) -> int | None:
-    """Get or create an effects row, returning its id."""
+    """Get or create an effects row, returning its id.
+
+    The name is canonicalized first so ``clicky`` and ``Clicky`` reach the same
+    row instead of splitting 232 references across two spellings.
+    """
+    from ..dat_parser.effects import canonical_effect_name
+
+    name = canonical_effect_name(name)
+    if not name:
+        return None
     coalesced = modifier or ""
     row = conn.execute(
         "SELECT id FROM effects WHERE name = ? AND COALESCE(modifier, '') = ?",
@@ -313,7 +975,13 @@ def _ensure_bonus(
     value: int | None,
     description: str | None = None,
 ) -> int:
-    """Get or create a bonus definition row. Returns the bonus id."""
+    """Get or create a bonus definition row. Returns the bonus id.
+
+    A bonus with no parseable stat names itself after its own wiki text, so this
+    is where raw markup would otherwise enter ``bonuses.name`` — the single
+    choke point every caller goes through.
+    """
+    name = canonical_name(name) or name
     row = conn.execute(
         f"""
         SELECT id FROM bonuses
@@ -350,6 +1018,41 @@ def _lookup_id(conn: sqlite3.Connection, table: str, name_col: str, id_col: str,
     return row[0] if row else None
 
 
+def _resolve_named(
+    conn: sqlite3.Connection, table: str, name: str | None,
+) -> tuple[int | None, str | None]:
+    """Resolve *name* in a reference table, case-insensitively.
+
+    Returns ``(id, canonical_name)`` — the spelling stored in the reference
+    table, not the spelling the wiki template happened to use. Template
+    parameters vary in case (``{{wizardry|195}}`` vs ``{{Wizardry|195}}``) and
+    building a bonus name from the raw parameter is what produced 27 groups of
+    case-variant ``bonuses.name`` values. Falls back to the given name when the
+    reference table has no such row.
+    """
+    if not name:
+        return None, None
+    row = conn.execute(
+        f"SELECT id, name FROM {table} WHERE name = ? COLLATE NOCASE", (name,)
+    ).fetchone()
+    if row is None:
+        return None, name
+    return row[0], row[1]
+
+
+def _bonus_name(stat: str | None, value: int | None) -> str:
+    """Format the generated ``bonuses.name``.
+
+    ``f"{stat} +{value}"`` produced "Constitution +-2" for the 17 rows with a
+    negative magnitude, and ``name`` is part of the table's unique index — so
+    the malformed spelling was load-bearing, not cosmetic.
+    """
+    label = stat or "Unknown"
+    if value is None:
+        return label
+    return f"{label} {value:+d}"
+
+
 # ---------------------------------------------------------------------------
 # Public insert functions
 # ---------------------------------------------------------------------------
@@ -371,6 +1074,8 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
 
     Returns the count of item rows inserted (not counting sub-table rows).
     """
+    items = _clean_inputs(items)
+
     inserted = 0
 
     # Generic names that leak through from wiki parsing artifacts
@@ -417,6 +1122,11 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
         equipment_slot = item.get("equipment_slot")
         slot_id = _lookup_id(conn, "equipment_slots", "name", "id", equipment_slot)
 
+        # The wiki infobox's `| rare = yes` marker is the item-level rarity the
+        # picker's "Rare only" filter reads. 'Rare' is the exact string the
+        # frontend compares against, so it is not a free choice.
+        rarity = str(Rarity.RARE) if item.get("rare") else item.get("rarity")
+
         cur = conn.execute(
             f"""
             INSERT OR IGNORE INTO items (
@@ -431,7 +1141,7 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             (
                 name,
                 item.get("dat_id"),
-                item.get("rarity"),
+                rarity,
                 slot_id,
                 equipment_slot,
                 item_category,
@@ -522,13 +1232,13 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
         for sort_order, effect in enumerate(decoded_bonuses):
             if effect.get("stat") is None:
                 continue  # stat_def_id not yet in STAT_DEF_IDS — skip until mapped
-            stat_id = _lookup_id(conn, "stats", "name", "id", effect["stat"])
+            stat_id, stat_name = _resolve_named(conn, "stats", effect["stat"])
             bonus_type_id = (
-                _lookup_id(conn, "bonus_types", "name", "id", effect["bonus_type"])
+                _resolve_named(conn, "bonus_types", effect["bonus_type"])[0]
                 if effect.get("bonus_type")
                 else None
             )
-            bonus_name = f"{effect['stat']} +{effect['magnitude']}"
+            bonus_name = _bonus_name(stat_name, effect["magnitude"])
             resolution = effect.get("_resolution_method", "stat_def_ids")
             bonus_id = _ensure_bonus(
                 conn, bonus_name, stat_id, bonus_type_id, effect["magnitude"],
@@ -548,10 +1258,15 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
         #   1. item_bonuses — stat+value bonuses ({{Stat}}, {{SpellPower}}, etc.)
         #   2. item_effects — weapon/armor effects (Vorpal, Bane, etc.)
         #   3. skip — metadata already stored elsewhere (augments, sets, materials)
+        #
+        # One bullet can hold more than one enchantment, or none: a maintenance
+        # marker ({{bug}}) contributes nothing, and a crafting choice wrapper
+        # ({{Nearly Finished|{{Stat|CON|8}}|{{Stat|STR|8}}}}) contributes one
+        # entry per alternative rather than leaking the literal "{{Stat".
         pass_a_count = len(decoded_bonuses)
         bonus_offset = 0
         effect_offset = 0
-        for enchantment in item.get("enchantments") or []:
+        for enchantment in _split_enchantments(item.get("enchantments") or []):
             if not enchantment:
                 continue
 
@@ -566,9 +1281,9 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             for ne in named_effects:
                 if ne.get("stat") is not None:
                     # Numeric bonus/penalty
-                    ne_stat_id = _lookup_id(conn, "stats", "name", "id", ne["stat"])
-                    ne_bt_id = _lookup_id(conn, "bonus_types", "name", "id", ne["bonus_type"])
-                    ne_name = f"{ne['stat']} {ne['value']:+d}"
+                    ne_stat_id, ne_stat_name = _resolve_named(conn, "stats", ne["stat"])
+                    ne_bt_id = _resolve_named(conn, "bonus_types", ne["bonus_type"])[0]
+                    ne_name = _bonus_name(ne_stat_name, ne["value"])
                     ne_bonus_id = _ensure_bonus(
                         conn, ne_name, ne_stat_id, ne_bt_id, ne["value"],
                         description=f"Named enchantment: {enchantment_clean}",
@@ -594,11 +1309,11 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             parsed_list = _parse_enchantment(enchantment)
             if parsed_list:
                 for parsed in parsed_list:
-                    stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
-                    bonus_type_id = _lookup_id(
-                        conn, "bonus_types", "name", "id", parsed["bonus_type"]
-                    )
-                    bonus_name = f"{parsed['stat']} +{parsed['value']}"
+                    stat_id, stat_name = _resolve_named(conn, "stats", parsed["stat"])
+                    bonus_type_id = _resolve_named(
+                        conn, "bonus_types", parsed["bonus_type"],
+                    )[0]
+                    bonus_name = _bonus_name(stat_name, parsed["value"])
                     bonus_id = _ensure_bonus(
                         conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
                         description=enchantment,
@@ -701,6 +1416,8 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
 
     Returns the count of set rows created/updated.
     """
+    sets = _clean_inputs(sets)
+
     inserted = 0
     for set_data in sets:
         name = set_data.get("name")
@@ -715,11 +1432,11 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
             parsed_list = _parse_enchantment(bonus_text)
             if parsed_list:
                 for parsed in parsed_list:
-                    stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
-                    bonus_type_id = _lookup_id(
-                        conn, "bonus_types", "name", "id", parsed["bonus_type"],
-                    )
-                    bonus_name = f"{parsed['stat']} +{parsed['value']}"
+                    stat_id, stat_name = _resolve_named(conn, "stats", parsed["stat"])
+                    bonus_type_id = _resolve_named(
+                        conn, "bonus_types", parsed["bonus_type"],
+                    )[0]
+                    bonus_name = _bonus_name(stat_name, parsed["value"])
                     bonus_id = _ensure_bonus(
                         conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
                         description=bonus_text,
@@ -738,11 +1455,263 @@ def insert_set_bonus_effects(conn: sqlite3.Connection, sets: list[dict]) -> int:
     return inserted
 
 
+def insert_unique_enchantments(
+    conn: sqlite3.Connection, entries: list[dict],
+) -> int:
+    """Insert ``{{Unique enchantment}}`` pages into ``unique_enchantments``.
+
+    These pages carry what a named enchantment actually does — Deception's
+    "+X (type) bonus to hit and +Y to damage for any hit that would qualify as a
+    sneak attack" — which is the text ``bonuses.description`` needs and could
+    not previously reach. Stored once per enchantment rather than repeated in
+    each of the rows that reference it.
+
+    Returns the count of rows inserted (existing names are updated in place).
+    """
+    entries = _clean_inputs(entries)
+    inserted = 0
+    for entry in entries:
+        name = entry.get("name")
+        if not name:
+            continue
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO unique_enchantments (name, effect, wiki_url) "
+            "VALUES (?, ?, ?)",
+            (name, entry.get("effect"), entry.get("wiki_url")),
+        )
+        inserted += cur.rowcount
+        if cur.rowcount == 0:
+            # Fill in fields a previous, thinner scrape left empty.
+            conn.execute(
+                """
+                UPDATE unique_enchantments
+                   SET effect   = COALESCE(effect, ?),
+                       wiki_url = COALESCE(wiki_url, ?)
+                 WHERE name = ?
+                """,
+                (entry.get("effect"), entry.get("wiki_url"), name),
+            )
+    conn.commit()
+    return inserted
+
+
+def populate_enchantment_descriptions(conn: sqlite3.Connection) -> int:
+    """Resolve enchantment identity and replace template text with real prose.
+
+    Two template families need opposite treatment, which is why one pass owns
+    both:
+
+    * **Formatter templates** (``{{Stat|Wisdom|14}}``) — the invocation *is* the
+      data, already parsed into stat/bonus_type/value, so the description is
+      regenerated from those columns.
+    * **Named-enchantment templates** (``{{Deception|6}}``) — the invocation
+      *references a page*, so the row links to ``unique_enchantments`` and takes
+      that page's effect text.
+
+    Anything else falls back to expanding the template to its display text, so
+    no ``{{`` survives in a user-visible column (validation assertion A3).
+    Returns the number of rows updated.
+    """
+    from ..wiki.templates import (
+        expand_display_text,
+        format_bonus_description,
+        iter_templates,
+    )
+
+    updated = 0
+
+    # --- effects: link by name, the effect's own identity ---
+    updated += conn.execute(
+        """
+        UPDATE effects SET unique_enchantment_id = (
+            SELECT ue.id FROM unique_enchantments ue
+             WHERE ue.name = effects.name COLLATE NOCASE
+        )
+        WHERE unique_enchantment_id IS NULL
+          AND EXISTS (
+            SELECT 1 FROM unique_enchantments ue
+             WHERE ue.name = effects.name COLLATE NOCASE
+          )
+        """
+    ).rowcount
+
+    # --- bonuses: identity comes from the template named in the description ---
+    rows = conn.execute(
+        """
+        SELECT b.id, b.description, b.value, s.name, bt.name
+          FROM bonuses b
+          LEFT JOIN stats s ON s.id = b.stat_id
+          LEFT JOIN bonus_types bt ON bt.id = b.bonus_type_id
+         WHERE b.description LIKE '%{{%'
+        """
+    ).fetchall()
+
+    for bonus_id, description, value, stat_name, bonus_type in rows:
+        templates = iter_templates(description or "")
+        enchantment_id = None
+        effect_text = None
+        for template in templates:
+            row = conn.execute(
+                "SELECT id, effect FROM unique_enchantments WHERE name = ? COLLATE NOCASE",
+                (template.name,),
+            ).fetchone()
+            if row is not None:
+                enchantment_id, effect_text = row
+                break
+
+        new_description = (
+            effect_text
+            or format_bonus_description(stat_name, value, bonus_type)
+            or canonical_text(expand_display_text(description or ""))
+        )
+        conn.execute(
+            "UPDATE bonuses SET description = ?, unique_enchantment_id = "
+            "COALESCE(?, unique_enchantment_id) WHERE id = ?",
+            (new_description, enchantment_id, bonus_id),
+        )
+        updated += 1
+
+    # --- bonuses fallback: the stat's own enchantment page ---
+    # A formatter template names the *formatter*, not the enchantment:
+    # {{Tactics|Combat Mastery|11}} looks for a "Tactics" page that does not
+    # exist, which left 112 bonuses unlinked while `stats.name` and
+    # `unique_enchantments.name` agreed exactly ("Combat Mastery", "Shatter",
+    # "Spell Focus Mastery", ...). The resolved stat FK — not the generated
+    # name — is the evidence, so a bonus whose stat never resolved stays NULL:
+    # a wrong FK is worse than a missing one. Runs after the loop above so a
+    # named-enchantment template keeps its more specific identity.
+    updated += conn.execute(
+        """
+        UPDATE bonuses SET unique_enchantment_id = (
+            SELECT ue.id FROM unique_enchantments ue
+              JOIN stats s ON s.name = ue.name COLLATE NOCASE
+             WHERE s.id = bonuses.stat_id
+        )
+        WHERE unique_enchantment_id IS NULL
+          AND stat_id IS NOT NULL
+          AND EXISTS (
+            SELECT 1 FROM unique_enchantments ue
+              JOIN stats s ON s.name = ue.name COLLATE NOCASE
+             WHERE s.id = bonuses.stat_id
+          )
+        """
+    ).rowcount
+
+    conn.commit()
+    return updated
+
+
+def renormalize_bonus_names(conn: sqlite3.Connection) -> int:
+    """Rebuild stored ``bonuses.name`` values from their stat and value columns.
+
+    Repairs the 17 rows named ``"Constitution +-2"`` and the case-variant names
+    that were built from a raw template parameter rather than the stat the FK
+    resolved to. Only rows whose stat is resolved are touched — for the rest the
+    name is the only description of the bonus there is.
+    """
+    changed = 0
+    rows = conn.execute(
+        """
+        SELECT b.id, b.name, s.name, b.value
+          FROM bonuses b
+          JOIN stats s ON s.id = b.stat_id
+        """
+    ).fetchall()
+    for bonus_id, old_name, stat_name, value in rows:
+        new_name = _bonus_name(stat_name, value)
+        if new_name == old_name:
+            continue
+        try:
+            conn.execute(
+                "UPDATE bonuses SET name = ? WHERE id = ?", (new_name, bonus_id)
+            )
+        except sqlite3.IntegrityError:
+            keeper = conn.execute(
+                """
+                SELECT id FROM bonuses
+                 WHERE name = ? AND id != ?
+                   AND COALESCE(stat_id, -1) = (SELECT COALESCE(stat_id, -1) FROM bonuses WHERE id = ?)
+                   AND COALESCE(bonus_type_id, -1) = (SELECT COALESCE(bonus_type_id, -1) FROM bonuses WHERE id = ?)
+                   AND COALESCE(value, -1) = COALESCE(?, -1)
+                """,
+                (new_name, bonus_id, bonus_id, bonus_id, value),
+            ).fetchone()
+            if keeper is None:
+                continue
+            _merge_rows(conn, "bonuses", keeper[0], bonus_id)
+        changed += 1
+    conn.commit()
+    return changed
+
+
+def populate_rarity(
+    conn: sqlite3.Connection, rare_names: Iterable[str],
+) -> dict[str, object]:
+    """Flag rare loot on items, augments, and every quest mapping of a rare item.
+
+    *rare_names* is the reconciled rare-loot list: the wiki's
+    ``Category:Rare Loot List items`` plus whatever the item infoboxes'
+    ``| rare = yes`` field marked. Names that match neither table are returned
+    rather than silently dropped — 80 of the category's members are Lunar/Solar
+    Gems that live in ``augments``, and the remainder are worth reporting.
+
+    Returns ``{"items": n, "augments": n, "quest_loot": n, "unmatched": [...]}``.
+    """
+    names = sorted({canonical_text(name) or "" for name in rare_names} - {""})
+
+    item_hits = 0
+    augment_hits = 0
+    unmatched: list[str] = []
+    for name in names:
+        cur = conn.execute(
+            "UPDATE items SET rarity = ? WHERE name = ? COLLATE NOCASE "
+            "AND COALESCE(rarity, '') != ?",
+            (str(Rarity.RARE), name, str(Rarity.RARE)),
+        )
+        if cur.rowcount:
+            item_hits += cur.rowcount
+            continue
+        cur = conn.execute(
+            "UPDATE augments SET is_rare = 1 WHERE name = ? COLLATE NOCASE AND is_rare = 0",
+            (name,),
+        )
+        if cur.rowcount:
+            augment_hits += cur.rowcount
+            continue
+        # Already flagged on a previous run counts as matched, not missing.
+        already = conn.execute(
+            "SELECT 1 FROM items WHERE name = ? COLLATE NOCASE "
+            "UNION ALL SELECT 1 FROM augments WHERE name = ? COLLATE NOCASE",
+            (name, name),
+        ).fetchone()
+        if already is None:
+            unmatched.append(name)
+
+    # Mapping-level flag: multiplied across every quest a rare item drops from.
+    loot_rows = conn.execute(
+        """
+        UPDATE quest_loot SET is_rare = 1
+         WHERE is_rare = 0
+           AND item_id IN (SELECT id FROM items WHERE rarity = ?)
+        """,
+        (str(Rarity.RARE),),
+    ).rowcount
+    conn.commit()
+    return {
+        "items": item_hits,
+        "augments": augment_hits,
+        "quest_loot": loot_rows,
+        "unmatched": unmatched,
+    }
+
+
 def insert_filigrees(conn: sqlite3.Connection, filigrees: list[dict]) -> int:
     """Insert filigree dicts (from wiki scraper) into the DB.
 
     Returns the count of filigree rows inserted.
     """
+    filigrees = _clean_inputs(filigrees)
+
     inserted = 0
     for fil in filigrees:
         name = fil.get("name")
@@ -765,6 +1734,8 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
 
     Returns the count of augment rows inserted.
     """
+    augments = _clean_inputs(augments)
+
     inserted = 0
     for augment in augments:
         name = augment.get("name")
@@ -796,11 +1767,11 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
                 continue
             parsed_list = _parse_enchantment(enchantment)
             for parsed in parsed_list:
-                stat_id = _lookup_id(conn, "stats", "name", "id", parsed["stat"])
-                bonus_type_id = _lookup_id(
-                    conn, "bonus_types", "name", "id", parsed["bonus_type"]
-                )
-                bonus_name = f"{parsed['stat']} +{parsed['value']}"
+                stat_id, stat_name = _resolve_named(conn, "stats", parsed["stat"])
+                bonus_type_id = _resolve_named(
+                    conn, "bonus_types", parsed["bonus_type"],
+                )[0]
+                bonus_name = _bonus_name(stat_name, parsed["value"])
                 bonus_id = _ensure_bonus(
                     conn, bonus_name, stat_id, bonus_type_id, parsed["value"],
                     description=enchantment,
@@ -816,14 +1787,14 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
 
         # Binary bonuses from effect_ref localization names
         for sort_order_b, bb in enumerate(augment.get("_binary_bonuses") or []):
-            stat_id = _lookup_id(conn, "stats", "name", "id", bb["stat"])
+            stat_id, stat_name = _resolve_named(conn, "stats", bb["stat"])
             bonus_type_id = (
-                _lookup_id(conn, "bonus_types", "name", "id", bb["bonus_type"])
+                _resolve_named(conn, "bonus_types", bb["bonus_type"])[0]
                 if bb.get("bonus_type")
                 else None
             )
             value = bb.get("value")
-            bonus_name = f"{bb['stat']} +{value}" if value else bb["stat"]
+            bonus_name = _bonus_name(stat_name, value)
             bonus_id = _ensure_bonus(
                 conn, bonus_name, stat_id, bonus_type_id, value,
                 description=bb.get("_description"),
@@ -848,6 +1819,8 @@ def insert_spells(conn: sqlite3.Connection, spells: list[dict]) -> int:
 
     Returns the count of spell rows inserted.
     """
+    spells = _clean_inputs(spells)
+
     inserted = 0
     for spell in spells:
         name = spell.get("name")
@@ -1069,6 +2042,8 @@ def insert_feats(conn: sqlite3.Connection, feats: list[dict], **kwargs: object) 
 
     Returns the count of feat rows inserted.
     """
+    feats = _clean_inputs(feats)
+
     inserted = 0
 
     def _bool(d: dict, key: str) -> int:
@@ -1353,6 +2328,8 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
 
     Returns the count of tree rows inserted.
     """
+    trees = _clean_inputs(trees)
+
     inserted = 0
 
     for tree in trees:
@@ -1472,20 +2449,20 @@ def insert_enhancement_trees(conn: sqlite3.Connection, trees: list[dict]) -> int
                     # stripping, abbreviations, Will Saving Throws -> Will Save, etc.)
                     normalized = normalize_stat_name(raw_stat)
                     resolved_stat = normalized[0] if normalized else raw_stat
-                    stat_id = _lookup_id(conn, "stats", "name", "id", resolved_stat)
+                    stat_id, resolved_stat = _resolve_named(conn, "stats", resolved_stat)
                     if stat_id is None and len(normalized) > 1:
                         # Composite stat — use first resolved component
                         for ns in normalized:
-                            stat_id = _lookup_id(conn, "stats", "name", "id", ns)
+                            stat_id, canonical = _resolve_named(conn, "stats", ns)
                             if stat_id is not None:
-                                resolved_stat = ns
+                                resolved_stat = canonical
                                 break
                     bonus_type_id = (
-                        _lookup_id(conn, "bonus_types", "name", "id", pb["bonus_type"])
+                        _resolve_named(conn, "bonus_types", pb["bonus_type"])[0]
                         if pb.get("bonus_type")
                         else None
                     )
-                    bonus_name = f"{resolved_stat} +{pb['value']}"
+                    bonus_name = _bonus_name(resolved_stat, pb["value"])
                     bonus_id = _ensure_bonus(
                         conn, bonus_name, stat_id, bonus_type_id, pb["value"],
                         description=description,
@@ -1803,18 +2780,39 @@ def insert_crafting_options(
 ) -> int:
     """Insert named crafting system options (Green Steel, Thunder-Forged, etc.).
 
-    Each dict has: system_id, tier, name, description.
-    Deduplicates by (system_id, tier, name) before inserting.
-    Returns the count of crafting_options rows inserted.
+    Each dict has: system_id, tier, name, description. An option's identity is
+    ``(system_id, tier, name)`` — two systems can offer an option of the same
+    name, and one system can offer it at more than one tier.
+
+    Rows already carrying that identity are updated in place, never appended to.
+    ``build-db`` updates the shipped database rather than rebuilding it (see the
+    module header), so this writer replays the same scrape on every run: the
+    table reached 4,476 rows holding 1,119 distinct options, one identical copy
+    per historical build, because ``INSERT OR IGNORE`` has nothing to ignore on
+    without a unique index. Removing those copies needs the referring
+    ``crafting_option_bonuses`` rows merged too, which is Phase 4m's dedupe; a
+    UNIQUE index on the identity is the structural guard to add once they are
+    gone.
+
+    Returns the count of crafting_options rows inserted — 0 on a repeat run.
     """
+    options = _clean_inputs(options)
+
+    existing: set[tuple] = {
+        (system_id, tier, name)
+        for system_id, tier, name in conn.execute(
+            "SELECT system_id, tier, name FROM crafting_options"
+        )
+    }
+
     inserted = 0
     seen: set[tuple] = set()
 
     for opt in options:
         system_id = opt.get("system_id")
-        tier = opt.get("tier", "")
-        name = opt.get("name", "")
-        description = opt.get("description", "")
+        tier = opt.get("tier") or ""
+        name = opt.get("name") or ""
+        description = opt.get("description") or ""
 
         if not system_id or not name:
             continue
@@ -1824,13 +2822,26 @@ def insert_crafting_options(
             continue
         seen.add(key)
 
-        cur = conn.execute(
-            """INSERT OR IGNORE INTO crafting_options
+        if key in existing:
+            # A reworded wiki cell edits the option it belongs to. Every stored
+            # copy of the identity is updated, so the pre-existing duplicates
+            # cannot drift apart while they wait for 4m.
+            conn.execute(
+                """UPDATE crafting_options SET description = ?
+                    WHERE system_id = ? AND tier = ? AND name = ?
+                      AND COALESCE(description, '') != ?""",
+                (description, system_id, tier, name, description),
+            )
+            continue
+
+        conn.execute(
+            """INSERT INTO crafting_options
                (system_id, tier, name, description)
                VALUES (?, ?, ?, ?)""",
             (system_id, tier, name, description),
         )
-        inserted += cur.rowcount
+        existing.add(key)
+        inserted += 1
 
     conn.commit()
     logger.info("Inserted %d crafting option rows", inserted)
@@ -2236,17 +3247,17 @@ def populate_crafting_option_bonuses(conn: sqlite3.Connection) -> int:
             stat_name = bonus_dict.get("stat")
             if not stat_name:
                 continue
-            stat_id = _lookup_id(conn, "stats", "name", "id", stat_name)
+            stat_id, stat_name = _resolve_named(conn, "stats", stat_name)
             bonus_type = bonus_dict.get("bonus_type")
             bonus_type_id = (
-                _lookup_id(conn, "bonus_types", "name", "id", bonus_type)
+                _resolve_named(conn, "bonus_types", bonus_type)[0]
                 if bonus_type else None
             )
             value = bonus_dict.get("value")
             if value is None:
                 continue
 
-            bonus_name = f"{stat_name} +{value}"
+            bonus_name = _bonus_name(stat_name, value)
             bonus_id = _ensure_bonus(
                 conn, bonus_name, stat_id, bonus_type_id, value,
                 description=desc,
@@ -2445,10 +3456,10 @@ def apply_overrides(conn: sqlite3.Connection, overrides_path: str | None = None)
         ).fetchone()[0]
 
         for i, bonus in enumerate(bonuses):
-            stat_id = _lookup_id(conn, "stats", "name", "id", bonus.get("stat"))
-            bonus_type_id = _lookup_id(conn, "bonus_types", "name", "id", bonus.get("bonus_type"))
+            stat_id, stat_name = _resolve_named(conn, "stats", bonus.get("stat"))
+            bonus_type_id = _resolve_named(conn, "bonus_types", bonus.get("bonus_type"))[0]
             value = bonus.get("value")
-            name = f"{bonus.get('stat', '?')} +{value}" if value else bonus.get("stat", "override")
+            name = _bonus_name(stat_name or "override", value)
 
             bonus_id = _ensure_bonus(conn, name, stat_id, bonus_type_id, value)
             if bonus_id is not None:
@@ -2851,27 +3862,37 @@ def seed_crafting_data(conn: sqlite3.Connection) -> int:
             )
 
         # --- Insert recipes ---
+        # A recipe's identity is its system plus the upgrade it describes. The
+        # table has no unique index to lean on (and cannot get one until the
+        # copies four earlier builds appended are removed — Phase 4m), so the
+        # existing row is looked up rather than trusted to collide.
         for recipe in sys_data.get("upgrades", []):
             recipe_name = recipe.get("input", "") or recipe.get("tier", "")
             input_name = recipe.get("input", "")
             output_name = recipe.get("output", "")
             input_id = item_ids.get(input_name) if input_name else None
             output_id = item_ids.get(output_name) if output_name else None
+            identity = (sys_id, recipe_name, input_id, output_id, recipe.get("tier", ""))
 
-            cur = conn.execute(
-                """INSERT INTO crafting_recipes
-                   (system_id, name, input_item_id, output_item_id, description)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (
-                    sys_id,
-                    recipe_name,
-                    input_id,
-                    output_id,
-                    recipe.get("tier", ""),
-                ),
-            )
-            recipe_id = cur.lastrowid
-            inserted += 1
+            existing_recipe = conn.execute(
+                """SELECT id FROM crafting_recipes
+                    WHERE system_id = ? AND COALESCE(name, '') = COALESCE(?, '')
+                      AND COALESCE(input_item_id, -1) = COALESCE(?, -1)
+                      AND COALESCE(output_item_id, -1) = COALESCE(?, -1)
+                      AND COALESCE(description, '') = COALESCE(?, '')""",
+                identity,
+            ).fetchone()
+            if existing_recipe is not None:
+                recipe_id = existing_recipe[0]
+            else:
+                cur = conn.execute(
+                    """INSERT INTO crafting_recipes
+                       (system_id, name, input_item_id, output_item_id, description)
+                       VALUES (?, ?, ?, ?, ?)""",
+                    identity,
+                )
+                recipe_id = cur.lastrowid
+                inserted += 1
 
             # Link ingredients to recipe
             for ingr_name, qty in recipe.get("ingredients", {}).items():
@@ -2880,13 +3901,13 @@ def seed_crafting_data(conn: sqlite3.Connection) -> int:
                     (ingr_name,),
                 ).fetchone()
                 if ingr_row:
-                    conn.execute(
+                    cur = conn.execute(
                         """INSERT OR IGNORE INTO crafting_recipe_ingredients
                            (recipe_id, ingredient_id, quantity)
                            VALUES (?, ?, ?)""",
                         (recipe_id, ingr_row[0], qty),
                     )
-                    inserted += 1
+                    inserted += cur.rowcount
 
     conn.commit()
     logger.info("Seeded %d crafting data rows (items, ingredients, recipes)", inserted)

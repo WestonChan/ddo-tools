@@ -129,6 +129,31 @@ CREATE INDEX idx_feats_proficiency ON feats(proficiency_id) WHERE proficiency_id
 CREATE INDEX idx_class_bonus_feat_slots_level ON class_bonus_feat_slots(class_id, class_level);
 ```
 
+### A unique index is what makes a write path idempotent
+
+Every table the pipeline inserts into needs a `CREATE UNIQUE INDEX` on its natural identity — not
+only to prevent duplicates, but because **`INSERT OR IGNORE` silently degrades into plain `INSERT`
+when there is no unique index to conflict against.** An in-run `seen` set is not a substitute: it
+dedupes within one call and knows nothing about rows already in the database.
+
+This is load-bearing rather than theoretical, because `build-db` updates `ddo.db` **in place** while
+ddowiki's WAF blocks page discovery (see [ddowiki-api.md](ddowiki-api.md)), so every write path runs
+against a populated table. Four crafting tables had no unique index and were appending a fresh copy
+of their entire scrape on every run — `crafting_options` reached exactly 4 identical copies of each
+of its 1,119 options before anyone noticed, because row counts alone look like "we have data".
+
+Rules:
+
+- Give every scraper-fed table a unique index on its identity at the point the table is created.
+  Retrofitting one is painful: the duplicates must be merged first, and their child rows merged with
+  them.
+- Where a unique index genuinely cannot exist yet, say so in the writer's docstring and have the
+  writer look up existing identities explicitly rather than relying on `OR IGNORE`.
+- Test idempotency by **writing twice and comparing row counts**, per table. Phase 4c's
+  `scripts/tests/test_writer_idempotency.py` is the pattern.
+- Where two normalization passes feed each other, also assert **value** convergence, not just row
+  counts — 18 negative bonuses flipped sign on every build while the counts stayed perfectly stable.
+
 ---
 
 ## Consolidating columns into their own tables

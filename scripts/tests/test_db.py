@@ -1081,3 +1081,492 @@ def test_backfill_quest_loot_types_does_not_overwrite_scraped_types() -> None:
         updated = db.backfill_quest_loot_types(["Haywire Foundry"])
         assert updated == 0
         assert _loot_type(db, 2, 2) == "chest"
+
+
+# ---------------------------------------------------------------------------
+# Bonus naming
+# ---------------------------------------------------------------------------
+
+
+def test_bonus_name_uses_a_single_sign() -> None:
+    """A negative value produced 'Constitution +-2' — 17 shipped rows.
+
+    The name participates in the bonuses unique index, so the malformed form is
+    load-bearing rather than cosmetic.
+    """
+    item = {
+        "name": "Cursed Ring",
+        "enchantments": ["{{Stat|CON|-2}}"],
+        "augment_slots": [],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([item])
+        names = [
+            r[0] for r in db.conn.execute(
+                "SELECT name FROM bonuses WHERE value IS NOT NULL"
+            )
+        ]
+    assert names == ["Constitution -2"]
+    assert not any("+-" in n for n in names)
+
+
+def test_bonus_name_uses_the_canonical_stat_spelling() -> None:
+    """{{wizardry|195}} and {{Wizardry|195}} must reach one bonus row.
+
+    `bonuses.name` shipped 27 case-variant groups because the name was built
+    from the raw template parameter instead of the stat the FK resolved to.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([
+            {"name": "Robe A", "enchantments": ["{{Wizardry|195}}"], "augment_slots": []},
+            {"name": "Robe B", "enchantments": ["{{wizardry|195}}"], "augment_slots": []},
+        ])
+        rows = db.conn.execute(
+            "SELECT name, stat_id FROM bonuses WHERE value = 195"
+        ).fetchall()
+    assert len(rows) == 1, rows
+    assert rows[0][0] == "Wizardry +195"
+    assert rows[0][1] is not None
+
+
+def test_save_spell_bonus_resolves_to_the_spell_save_stat() -> None:
+    """{{Save|Spell|4}} is a spell saving throw (stat 177), not Spell Resistance."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([
+            {"name": "Cloak", "enchantments": ["{{Save|Spell|4}}"], "augment_slots": []},
+        ])
+        row = db.conn.execute(
+            """
+            SELECT b.name, s.name FROM bonuses b
+            JOIN stats s ON s.id = b.stat_id
+            WHERE b.value = 4
+            """
+        ).fetchone()
+    assert row == ("Spell Save +4", "Spell Save")
+
+
+def test_renormalize_bonus_names_rebuilds_stored_names() -> None:
+    """Stored '+-N' names are repaired from the stat and value columns."""
+    from ddo_data.db.writers import renormalize_bonus_names
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.conn.execute(
+            "INSERT INTO bonuses (name, stat_id, value) VALUES ('Constitution +-2', 3, -2)"
+        )
+        changed = renormalize_bonus_names(db.conn)
+        name = db.conn.execute("SELECT name FROM bonuses").fetchone()[0]
+    assert changed == 1
+    assert name == "Constitution -2"
+
+
+# ---------------------------------------------------------------------------
+# unique_enchantments
+# ---------------------------------------------------------------------------
+
+
+UNIQUE_ENCHANTMENT_FIXTURE = [
+    {
+        "name": "Deception",
+        "effect": "+4 enhancement bonus to hit and +4 to damage for any hit "
+                  "that would qualify as a sneak attack.",
+        "wiki_url": "https://ddowiki.com/page/Deception",
+    },
+    {
+        "name": "Blinding Fear",
+        "effect": None,
+        "wiki_url": "https://ddowiki.com/page/Blinding_Fear",
+    },
+]
+
+
+def test_insert_unique_enchantments_stores_the_effect_text() -> None:
+    from ddo_data.db.writers import insert_unique_enchantments
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        count = insert_unique_enchantments(db.conn, UNIQUE_ENCHANTMENT_FIXTURE)
+        rows = db.conn.execute(
+            "SELECT name, effect, wiki_url FROM unique_enchantments ORDER BY name"
+        ).fetchall()
+    assert count == 2
+    assert rows[0][0] == "Blinding Fear"
+    assert rows[0][1] is None, "an empty effect field stays NULL, never ''"
+    assert rows[1][0] == "Deception"
+    assert "sneak attack" in rows[1][1]
+
+
+def test_insert_unique_enchantments_is_idempotent() -> None:
+    from ddo_data.db.writers import insert_unique_enchantments
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        insert_unique_enchantments(db.conn, UNIQUE_ENCHANTMENT_FIXTURE)
+        insert_unique_enchantments(db.conn, UNIQUE_ENCHANTMENT_FIXTURE)
+        (count,) = db.conn.execute("SELECT COUNT(*) FROM unique_enchantments").fetchone()
+    assert count == 2
+
+
+def test_insert_unique_enchantments_skips_a_nameless_entry() -> None:
+    """An item with no enchantments must not leave an empty row behind."""
+    from ddo_data.db.writers import insert_unique_enchantments
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        count = insert_unique_enchantments(db.conn, [{"name": None, "effect": "x"}, {}])
+        (rows,) = db.conn.execute("SELECT COUNT(*) FROM unique_enchantments").fetchone()
+    assert count == 0
+    assert rows == 0
+
+
+def test_bonus_description_resolves_a_named_enchantment_page() -> None:
+    """A named-enchantment bonus gets the page's effect text and the FK."""
+    from ddo_data.db.writers import (
+        insert_unique_enchantments,
+        populate_enchantment_descriptions,
+    )
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        insert_unique_enchantments(db.conn, UNIQUE_ENCHANTMENT_FIXTURE)
+        db.insert_items([
+            {"name": "Sneaky Dagger", "enchantments": ["{{Deception|6}}"],
+             "augment_slots": []},
+        ])
+        populate_enchantment_descriptions(db.conn)
+        row = db.conn.execute(
+            """
+            SELECT b.description, ue.name
+            FROM bonuses b
+            LEFT JOIN unique_enchantments ue ON ue.id = b.unique_enchantment_id
+            WHERE b.value = 6
+            """
+        ).fetchone()
+    assert row[1] == "Deception"
+    assert "sneak attack" in row[0]
+    assert "{{" not in row[0]
+
+
+def test_bonus_description_expands_a_formatter_template_from_structure() -> None:
+    """A {{Stat}} bonus describes itself from stat/value/bonus_type."""
+    from ddo_data.db.writers import populate_enchantment_descriptions
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([
+            {"name": "Wise Hat", "enchantments": ["{{Stat|WIS|14}}"], "augment_slots": []},
+        ])
+        populate_enchantment_descriptions(db.conn)
+        description = db.conn.execute(
+            "SELECT description FROM bonuses WHERE value = 14"
+        ).fetchone()[0]
+    assert description == "+14 Enhancement bonus to Wisdom"
+    assert "{{" not in description
+
+
+def test_bonus_description_never_leaves_a_template_behind() -> None:
+    """Whatever the shape, no description keeps raw wiki markup (assertion A3)."""
+    from ddo_data.db.writers import populate_enchantment_descriptions
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.conn.execute(
+            "INSERT INTO bonuses (name, description) VALUES "
+            "('Mystery', '{{Totally Unknown Template|x}}')"
+        )
+        populate_enchantment_descriptions(db.conn)
+        (description,) = db.conn.execute("SELECT description FROM bonuses").fetchone()
+    assert description is None or "{{" not in description
+
+
+def test_effect_links_to_its_unique_enchantment_page() -> None:
+    from ddo_data.db.writers import (
+        insert_unique_enchantments,
+        populate_enchantment_descriptions,
+    )
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        insert_unique_enchantments(db.conn, [
+            {"name": "Blinding Fear", "effect": "On Hit: Blinds foe.",
+             "wiki_url": "https://ddowiki.com/page/Blinding_Fear"},
+        ])
+        db.insert_items([
+            {"name": "Scary Axe", "enchantments": ["{{Blinding Fear}}"],
+             "augment_slots": []},
+        ])
+        populate_enchantment_descriptions(db.conn)
+        row = db.conn.execute(
+            """
+            SELECT e.name, ue.name FROM effects e
+            JOIN unique_enchantments ue ON ue.id = e.unique_enchantment_id
+            """
+        ).fetchone()
+    assert row == ("Blinding Fear", "Blinding Fear")
+
+
+def test_bonus_links_to_the_enchantment_page_named_after_its_stat() -> None:
+    """A formatter template still has an enchantment identity: its stat's page.
+
+    `{{Tactics|Combat Mastery|11}}` names the template "Tactics", which has no
+    wiki page, so matching on the template alone left 112 bonuses unlinked even
+    though `stats.name` and `unique_enchantments.name` agreed exactly.
+    """
+    from ddo_data.db.writers import (
+        insert_unique_enchantments,
+        populate_enchantment_descriptions,
+    )
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        insert_unique_enchantments(db.conn, [{
+            "name": "Combat Mastery",
+            "effect": "+X Enhancement bonus to the DC to resist the character's "
+                      "Trip, Sunder and Stunning Blow attempts.",
+            "wiki_url": "https://ddowiki.com/page/Combat_Mastery",
+        }])
+        db.insert_items([
+            {"name": "Tactician's Ring",
+             "enchantments": ["{{Tactics|Combat Mastery|11}}"],
+             "augment_slots": []},
+        ])
+        populate_enchantment_descriptions(db.conn)
+        row = db.conn.execute(
+            """
+            SELECT b.name, ue.name, ue.wiki_url
+              FROM bonuses b
+              JOIN unique_enchantments ue ON ue.id = b.unique_enchantment_id
+            """
+        ).fetchone()
+    assert row == (
+        "Combat Mastery +11",
+        "Combat Mastery",
+        "https://ddowiki.com/page/Combat_Mastery",
+    )
+
+
+def test_a_named_enchantment_template_outranks_the_stat_name() -> None:
+    """The template names a more specific identity, so it must win.
+
+    `{{Sheltering|18|Insightful|Magical}}` resolves stat "Magical Sheltering"
+    while the template points at the general "Sheltering" page; 136 shipped rows
+    are linked the template's way and re-deriving them from the stat would
+    silently move them.
+    """
+    from ddo_data.db.writers import (
+        insert_unique_enchantments,
+        populate_enchantment_descriptions,
+    )
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        insert_unique_enchantments(db.conn, [
+            {"name": "Sheltering", "effect": "Reduces incoming damage.",
+             "wiki_url": "https://ddowiki.com/page/Sheltering"},
+            {"name": "Magical Sheltering", "effect": "Reduces magical damage.",
+             "wiki_url": "https://ddowiki.com/page/Magical_Sheltering"},
+        ])
+        db.insert_items([
+            {"name": "Warded Cloak",
+             "enchantments": ["{{Sheltering|18|Insightful|Magical}}"],
+             "augment_slots": []},
+        ])
+        populate_enchantment_descriptions(db.conn)
+        linked = db.conn.execute(
+            """
+            SELECT ue.name FROM bonuses b
+              JOIN unique_enchantments ue ON ue.id = b.unique_enchantment_id
+            """
+        ).fetchone()
+    assert linked == ("Sheltering",)
+
+
+def test_a_bonus_with_no_stat_stays_unlinked() -> None:
+    """A wrong FK is worse than a NULL one, so no name-shaped guessing.
+
+    `Whirlwind Absorption +0` (description "Whirlwind 0 20 5") is a parse
+    artifact with no resolved stat; its resemblance to an enchantment page name
+    is not evidence of identity.
+    """
+    from ddo_data.db.writers import (
+        insert_unique_enchantments,
+        populate_enchantment_descriptions,
+    )
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        insert_unique_enchantments(db.conn, [{
+            "name": "Whirlwind Absorption", "effect": "Absorbs wind damage.",
+            "wiki_url": "https://ddowiki.com/page/Whirlwind_Absorption",
+        }])
+        db.conn.execute(
+            "INSERT INTO bonuses (name, description, value) VALUES "
+            "('Whirlwind Absorption +0', 'Whirlwind 0 20 5', 0)"
+        )
+        populate_enchantment_descriptions(db.conn)
+        (fk,) = db.conn.execute(
+            "SELECT unique_enchantment_id FROM bonuses"
+        ).fetchone()
+    assert fk is None
+
+
+# ---------------------------------------------------------------------------
+# Rarity
+# ---------------------------------------------------------------------------
+
+
+def test_insert_items_stores_the_rare_flag_as_rarity() -> None:
+    """The frontend compares `rarity !== 'Rare'`, so the exact string matters."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([
+            {"name": "Rare Boot", "rare": True, "equipment_slot": "Feet"},
+            {"name": "Plain Boot", "rare": False, "equipment_slot": "Feet"},
+        ])
+        rows = dict(db.conn.execute("SELECT name, rarity FROM items").fetchall())
+    assert rows["Rare Boot"] == "Rare"
+    assert rows["Plain Boot"] is None
+
+
+def test_populate_rarity_multiplies_across_quest_loot() -> None:
+    """Every mapping of a rare item is flagged, not just the item row."""
+    from ddo_data.db.writers import populate_rarity
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.conn.executemany(
+            "INSERT INTO items (id, name) VALUES (?, ?)",
+            [(1, "Buckle of Secrets"), (2, "Plain Boot")],
+        )
+        db.conn.executemany(
+            "INSERT INTO quests (id, name) VALUES (?, ?)",
+            [(1, "Quest A"), (2, "Quest B")],
+        )
+        db.conn.executemany(
+            "INSERT INTO quest_loot (quest_id, item_id) VALUES (?, ?)",
+            [(1, 1), (2, 1), (1, 2)],
+        )
+        db.conn.commit()
+        report = populate_rarity(db.conn, ["Buckle of Secrets"])
+        rare_loot = db.conn.execute(
+            "SELECT quest_id, item_id FROM quest_loot WHERE is_rare = 1 ORDER BY quest_id"
+        ).fetchall()
+        rarity = dict(db.conn.execute("SELECT name, rarity FROM items").fetchall())
+    assert rarity["Buckle of Secrets"] == "Rare"
+    assert rarity["Plain Boot"] is None
+    assert rare_loot == [(1, 1), (2, 1)]
+    assert report["items"] == 1
+
+
+def test_populate_rarity_flags_augments_too() -> None:
+    """80 of the wiki's rare-loot members are Gems, which live in `augments`."""
+    from ddo_data.db.writers import populate_rarity
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.conn.execute(
+            "INSERT INTO augments (name, slot_color) VALUES ('Lunar Gem of Foo', 'blue')"
+        )
+        db.conn.commit()
+        report = populate_rarity(db.conn, ["Lunar Gem of Foo"])
+        (is_rare,) = db.conn.execute("SELECT is_rare FROM augments").fetchone()
+    assert is_rare == 1
+    assert report["augments"] == 1
+
+
+def test_populate_rarity_counts_names_it_could_not_place() -> None:
+    """A rare name matching neither table is reported, not silently dropped."""
+    from ddo_data.db.writers import populate_rarity
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        report = populate_rarity(db.conn, ["Nonexistent Thing"])
+    assert report["unmatched"] == ["Nonexistent Thing"]
+
+
+def test_populate_rarity_matches_a_decoded_name() -> None:
+    """The captured category list uses decoded names; so must the match."""
+    from ddo_data.db.writers import populate_rarity
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([{"name": "Admiral&#39;s Gloves", "equipment_slot": "Hands"}])
+        report = populate_rarity(db.conn, ["Admiral's Gloves"])
+        (rarity,) = db.conn.execute("SELECT rarity FROM items").fetchone()
+    assert rarity == "Rare"
+    assert report["unmatched"] == []
+
+
+def test_populate_rarity_is_idempotent() -> None:
+    from ddo_data.db.writers import populate_rarity
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.conn.execute("INSERT INTO items (id, name) VALUES (1, 'Buckle of Secrets')")
+        db.conn.commit()
+        first = populate_rarity(db.conn, ["Buckle of Secrets"])
+        second = populate_rarity(db.conn, ["Buckle of Secrets"])
+    assert first["items"] == 1
+    assert second["items"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Choice-wrapper and maintenance templates in the enchantment list
+# ---------------------------------------------------------------------------
+
+
+def test_maintenance_template_produces_no_row() -> None:
+    """{{bug}} is a wiki known-issue marker, not an item property."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([
+            {"name": "Buggy Blade", "enchantments": ["{{bug|does nothing on live}}"],
+             "augment_slots": []},
+        ])
+        (bonuses,) = db.conn.execute("SELECT COUNT(*) FROM bonuses").fetchone()
+        (effects,) = db.conn.execute("SELECT COUNT(*) FROM effects").fetchone()
+    assert bonuses == 0
+    assert effects == 0
+
+
+def test_choice_wrapper_resolves_through_its_nested_templates() -> None:
+    """{{Nearly Finished|{{Stat|STR|8}}|...}} captured the literal '{{stat'."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([{
+            "name": "Celestial Emerald Ring",
+            "enchantments": ["{{Nearly Finished|{{Stat|CON|8}}|{{Stat|STR|8}}}}"],
+            "augment_slots": [],
+        }])
+        names = sorted(
+            r[0] for r in db.conn.execute("SELECT name FROM bonuses")
+        )
+        effect_names = [r[0] for r in db.conn.execute("SELECT name FROM effects")]
+    assert names == ["Constitution +8", "Strength +8"]
+    assert "Nearly Finished" not in effect_names
+
+
+def test_item_with_no_enchantments_writes_nothing_extra() -> None:
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([{"name": "Plain Ring", "enchantments": [], "augment_slots": []}])
+        (bonuses,) = db.conn.execute("SELECT COUNT(*) FROM bonuses").fetchone()
+        (effects,) = db.conn.execute("SELECT COUNT(*) FROM effects").fetchone()
+        (uniq,) = db.conn.execute("SELECT COUNT(*) FROM unique_enchantments").fetchone()
+    assert (bonuses, effects, uniq) == (0, 0, 0)
+
+
+def test_unclosed_template_does_not_write_a_partial_row() -> None:
+    """A malformed '{{Stat|Wisdom' must be skipped, not half-stored."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([
+            {"name": "Broken Hat", "enchantments": ["{{Stat|Wisdom"], "augment_slots": []},
+        ])
+        modifiers = [r[0] for r in db.conn.execute("SELECT modifier FROM effects")]
+        names = [r[0] for r in db.conn.execute("SELECT name FROM effects")]
+    assert all(m is None or "{{" not in m for m in modifiers)
+    assert all("{{" not in n for n in names)

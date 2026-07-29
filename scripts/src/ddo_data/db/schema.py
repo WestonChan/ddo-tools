@@ -231,7 +231,10 @@ CREATE TABLE IF NOT EXISTS augments (
     name       TEXT NOT NULL,                                     -- wt: {{Item Augment|name=...}}
     icon       TEXT,                                              -- wt: wiki image filename
     slot_color TEXT NOT NULL,                                     -- wt: type field; lt: fallback from tooltip
-    min_level  INTEGER                                           -- bp: key 0x10001C5D; wt: minimum level field
+    min_level  INTEGER,                                           -- bp: key 0x10001C5D; wt: minimum level field
+    -- 80 of the wiki's 216 Rare Loot List members are Lunar/Solar Gems, which
+    -- are augments rather than items — so rarity needs a home on both tables.
+    is_rare    INTEGER NOT NULL DEFAULT 0 CHECK (is_rare IN (0, 1))  -- wt: Category:Rare Loot List items
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_augments_name ON augments(name);
 CREATE INDEX IF NOT EXISTS idx_augments_slot_color ON augments(slot_color);
@@ -579,6 +582,10 @@ CREATE TABLE IF NOT EXISTS quest_loot (
     quest_id  INTEGER NOT NULL REFERENCES quests(id) ON DELETE CASCADE,
     item_id   INTEGER NOT NULL REFERENCES items(id),
     loot_type TEXT     CHECK (loot_type {_check(LootType)}), -- wt: wiki loot category
+    -- Mapping-level rarity: "is this drop a rare drop". Multiplied out from the
+    -- item's own flag, which is the entity-level fact the picker filters on.
+    -- Deliberately stored in both places — they answer different questions.
+    is_rare   INTEGER NOT NULL DEFAULT 0 CHECK (is_rare IN (0, 1)),  -- c: from items.rarity
     PRIMARY KEY (quest_id, item_id)
 );
 CREATE INDEX IF NOT EXISTS idx_quest_loot_item ON quest_loot(item_id);
@@ -760,14 +767,31 @@ CREATE TABLE IF NOT EXISTS set_bonus_items (                    -- wt: {{Named i
 );
 CREATE INDEX IF NOT EXISTS idx_set_bonus_items_item ON set_bonus_items(item_id);
 
+-- Unique Enchantments ------------------------------------------------------
+-- The shared identity behind named enchantments. A wiki page carrying
+-- {{Unique enchantment}} defines what "Deception" or "Bottled Heart" actually
+-- does; the `bonuses` and `effects` rows that mention it are instances of it.
+-- Stored once here rather than repeated in every referring row's description.
+CREATE TABLE IF NOT EXISTS unique_enchantments (
+    id       INTEGER PRIMARY KEY,                                -- c: autoincrement
+    name     TEXT NOT NULL,                                       -- wt: {{Unique enchantment|name=...}}
+    effect   TEXT,                                               -- wt: effect field — the real meaning
+    wiki_url TEXT                                                -- c: constructed from page title
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_enchantments_name
+    ON unique_enchantments(name);
+
 -- Effects (weapon/armor enchantments: Vorpal, Bane, Destruction, etc.) ------
 CREATE TABLE IF NOT EXISTS effects (
     id          INTEGER PRIMARY KEY,                             -- c: autoincrement
     name        TEXT NOT NULL,                                    -- wt: parsed from enchantment text
-    modifier    TEXT                                               -- wt: modifier from effect template
+    modifier    TEXT,                                              -- wt: bonus type from effect template
+    unique_enchantment_id INTEGER REFERENCES unique_enchantments(id)  -- c: matched by name
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_effects_name_mod
     ON effects(name, COALESCE(modifier, ''));
+CREATE INDEX IF NOT EXISTS idx_effects_unique_enchantment
+    ON effects(unique_enchantment_id) WHERE unique_enchantment_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS item_effects (                       -- wt: parsed from enchantment text via parse_effect_template
     item_id     INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
@@ -787,12 +811,16 @@ CREATE TABLE IF NOT EXISTS bonuses (
     description   TEXT,                                           -- ln: effect localization name; wt: enchantment text
     stat_id       INTEGER REFERENCES stats(id),                  -- c: joined from stat name (parsed from ln/wt)
     bonus_type_id INTEGER REFERENCES bonus_types(id),            -- c: joined from bonus_type name (parsed from ln/wt)
-    value         INTEGER                                        -- ln: parsed from "+N" in effect name; wt: from template
+    value         INTEGER,                                       -- ln: parsed from "+N" in effect name; wt: from template
+    -- NULL for formatter-template bonuses, which have no enchantment page
+    unique_enchantment_id INTEGER REFERENCES unique_enchantments(id)  -- c: matched by name
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bonuses_unique
     ON bonuses(COALESCE(stat_id, -1), COALESCE(bonus_type_id, -1), COALESCE(value, -1), name);
 CREATE INDEX IF NOT EXISTS idx_bonuses_stat ON bonuses(stat_id) WHERE stat_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_bonuses_bonus_type ON bonuses(bonus_type_id) WHERE bonus_type_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_bonuses_unique_enchantment
+    ON bonuses(unique_enchantment_id) WHERE unique_enchantment_id IS NOT NULL;
 
 -- M2M: items <-> bonuses
 -- resolution_method tracks how stat identity was determined:
@@ -851,7 +879,14 @@ CREATE TABLE IF NOT EXISTS schema_version (
     version    INTEGER NOT NULL,
     applied_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-INSERT OR IGNORE INTO schema_version (version) VALUES (1);
+-- One row per applied version, not one per build. `INSERT OR IGNORE` has no
+-- unique constraint to ignore on here, so it appended a duplicate row every
+-- time `create_schema` ran — five of them by the time this was noticed.
+DELETE FROM schema_version WHERE rowid NOT IN (
+    SELECT MIN(rowid) FROM schema_version GROUP BY version
+);
+INSERT INTO schema_version (version)
+SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM schema_version WHERE version = 1);
 """
 
 # ---------------------------------------------------------------------------
@@ -1203,6 +1238,19 @@ def _seed_from_enums(conn: sqlite3.Connection) -> None:
 _COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     # (table, column, column definition)
     ("quest_loot", "loot_type", f"loot_type TEXT CHECK (loot_type {_check(LootType)})"),
+    ("quest_loot", "is_rare", "is_rare INTEGER NOT NULL DEFAULT 0"),
+    ("augments", "is_rare", "is_rare INTEGER NOT NULL DEFAULT 0"),
+    # The FK target is created by the DDL that runs straight after these
+    # migrations. SQLite resolves foreign keys at DML time, not at ALTER time,
+    # so adding the column before its parent table exists is safe.
+    (
+        "bonuses", "unique_enchantment_id",
+        "unique_enchantment_id INTEGER REFERENCES unique_enchantments(id)",
+    ),
+    (
+        "effects", "unique_enchantment_id",
+        "unique_enchantment_id INTEGER REFERENCES unique_enchantments(id)",
+    ),
 ]
 
 

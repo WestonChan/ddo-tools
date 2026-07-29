@@ -15,6 +15,7 @@ from .writers import (
     backfill_item_materials,
     backfill_item_slots,
     backfill_quest_loot_types,
+    collapse_value_variants,
     discover_new_classes,
     discover_new_enhancement_trees,
     discover_new_races,
@@ -29,7 +30,10 @@ from .writers import (
     insert_quest_loot,
     insert_set_bonus_effects,
     insert_spells,
+    insert_unique_enchantments,
+    normalize_stored_text,
     populate_crafting_option_bonuses,
+    populate_enchantment_descriptions,
     populate_enhancement_exclusion_groups,
     populate_enhancement_feat_links,
     populate_enhancement_prereq_races,
@@ -37,8 +41,11 @@ from .writers import (
     populate_feat_exclusion_groups,
     populate_item_materials,
     populate_item_upgrades,
+    populate_rarity,
     populate_stat_sources,
     populate_weapon_types,
+    renormalize_bonus_names,
+    repair_stored_rows,
     seed_class_feat_data,
     seed_crafting_data,
     seed_quest_data,
@@ -185,6 +192,34 @@ class GameDB:
     def insert_quest_loot(self, loot_entries: list[dict]) -> int:
         """Insert quest loot from wiki category data."""
         return insert_quest_loot(self.conn, loot_entries)
+
+    def insert_unique_enchantments(self, entries: list[dict]) -> int:
+        """Insert {{Unique enchantment}} definitions scraped from the wiki."""
+        return insert_unique_enchantments(self.conn, entries)
+
+    def populate_enchantment_descriptions(self) -> int:
+        """Expand template descriptions and link rows to unique_enchantments."""
+        return populate_enchantment_descriptions(self.conn)
+
+    def renormalize_bonus_names(self) -> int:
+        """Rebuild bonuses.name from the resolved stat and value."""
+        return renormalize_bonus_names(self.conn)
+
+    def populate_rarity(self, rare_names: Iterable[str]) -> dict[str, object]:
+        """Flag rare items, augments, and every quest mapping of a rare item."""
+        return populate_rarity(self.conn, rare_names)
+
+    def normalize_stored_text(self) -> int:
+        """Apply writer-boundary text normalization to rows already stored."""
+        return normalize_stored_text(self.conn)
+
+    def collapse_value_variants(self) -> int:
+        """Collapse case/punctuation spellings of one value to one spelling."""
+        return collapse_value_variants(self.conn)
+
+    def repair_stored_rows(self) -> dict[str, int]:
+        """Bring rows written by the pre-4c parsers up to current behaviour."""
+        return repair_stored_rows(self.conn)
 
     def backfill_quest_loot_types(
         self, raid_quest_names: Iterable[str] | None = None
