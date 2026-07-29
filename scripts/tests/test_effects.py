@@ -299,6 +299,168 @@ def test_parse_effect_plain_text_returns_none():
     assert parse_effect_template("+15 Enhancement Bonus") is None
 
 
+# ---------------------------------------------------------------------------
+# {{Effect|value|bonus-type}} grammar
+#
+# The wiki's grammar is magnitude-first: {{Incite|59|Insightful}} means "+59
+# Insightful Incite". The old parser assumed params[0] was a textual modifier,
+# so the magnitude landed in the TEXT `modifier` column and the bonus type was
+# discarded outright — 153 effects rows reaching 658 item_effects rows.
+# ---------------------------------------------------------------------------
+
+
+def test_parse_effect_numeric_first_param_is_the_value():
+    """{{Incite|59|Insightful}} → value 59, bonus type in modifier."""
+    result = parse_effect_template("{{Incite|59|Insightful}}")
+    assert result == {"effect": "Incite", "modifier": "Insightful", "value": 59}
+
+
+def test_parse_effect_single_numeric_param_still_parses():
+    """Regression guard: the single-param shape already worked."""
+    result = parse_effect_template("{{Incite|120}}")
+    assert result == {"effect": "Incite", "modifier": None, "value": 120}
+
+
+def test_parse_effect_signed_param_is_a_value_not_a_modifier():
+    """{{Incite|+91}} failed isdigit() and was dumped into modifier."""
+    result = parse_effect_template("{{Incite|+91}}")
+    assert result == {"effect": "Incite", "modifier": None, "value": 91}
+
+
+def test_parse_effect_percent_param_is_a_value_not_a_modifier():
+    result = parse_effect_template("{{Diversion|59%}}")
+    assert result == {"effect": "Diversion", "modifier": None, "value": 59}
+
+
+def test_parse_effect_negative_param_is_a_value():
+    result = parse_effect_template("{{Threat|-20}}")
+    assert result == {"effect": "Threat", "modifier": None, "value": -20}
+
+
+def test_parse_effect_percent_with_bonus_type():
+    result = parse_effect_template("{{Conditioning|15%|Legendary}}")
+    assert result == {"effect": "Conditioning", "modifier": "Legendary", "value": 15}
+
+
+def test_parse_effect_word_first_param_keeps_the_old_reading():
+    """{{Bane|Evil Outsider|4}} is type-then-magnitude and must not flip."""
+    result = parse_effect_template("{{Bane|Evil Outsider|4}}")
+    assert result == {"effect": "Bane", "modifier": "Evil Outsider", "value": 4}
+
+
+def test_parse_effect_clicky_special_case_preserved():
+    """{{Clicky|Spell|CasterLevel|Charges}} keeps the spell name in modifier."""
+    result = parse_effect_template("{{Clicky|Chain Lightning|12|3}}")
+    assert result["effect"] == "Clicky"
+    assert result["modifier"] == "Chain Lightning"
+    assert result["value"] == 12
+    assert result["charges"] == 3
+
+
+def test_parse_effect_maintenance_template_produces_no_row():
+    """{{bug}} is a known-issue marker for editors, not an item property."""
+    assert parse_effect_template("{{bug|broken on live}}") is None
+    assert parse_effect_template("{{Bug|broken on live}}") is None
+    assert parse_effect_template("{{Ref|some citation}}") is None
+
+
+def test_parse_effect_never_returns_a_truncated_template_as_modifier():
+    """Two shipped effects rows had modifier '{{Stat' — a half-eaten template."""
+    result = parse_effect_template("{{Nearly Finished|{{Stat|STR|8}}|{{Stat|CON|8}}}}")
+    assert result is None or "{{" not in (result["modifier"] or "")
+
+
+# ---------------------------------------------------------------------------
+# canonical_effect_name
+# ---------------------------------------------------------------------------
+
+
+def test_canonical_effect_name_uppercases_a_lowercase_variant():
+    """`clicky` (41 rows) and `Clicky` (191 rows) are one effect."""
+    from ddo_data.dat_parser.effects import canonical_effect_name
+
+    assert canonical_effect_name("clicky") == "Clicky"
+    assert canonical_effect_name("Clicky") == "Clicky"
+    assert canonical_effect_name("bane") == "Bane"
+
+
+def test_canonical_effect_name_collapses_punctuation_variants():
+    from ddo_data.dat_parser.effects import canonical_effect_name
+
+    assert canonical_effect_name("ArmorPiercing") == "Armor-Piercing"
+    assert canonical_effect_name("Armor-Piercing") == "Armor-Piercing"
+    assert canonical_effect_name("TrueSeeing") == "True Seeing"
+    assert canonical_effect_name("Bloodrage") == "Blood Rage"
+    assert canonical_effect_name("Efficient_Metamagic") == "Efficient Metamagic"
+    assert canonical_effect_name("Nearly finished") == "Nearly Finished"
+
+
+def test_canonical_effect_name_strips_a_leaked_wiki_table_pipe():
+    """`|* Random effect:` is a table cell marker that leaked into the name."""
+    from ddo_data.dat_parser.effects import canonical_effect_name
+
+    assert canonical_effect_name("|* Random effect:") == "Random effect:"
+    assert canonical_effect_name("Random effect:") == "Random effect:"
+
+
+def test_canonical_effect_name_strips_html_comments_and_collapses_space():
+    from ddo_data.dat_parser.effects import canonical_effect_name
+
+    assert canonical_effect_name("No <!--") == "No"
+    assert canonical_effect_name("Blood   Rage") == "Blood Rage"
+
+
+def test_canonical_effect_name_leaves_an_all_caps_abbreviation_alone():
+    from ddo_data.dat_parser.effects import canonical_effect_name
+
+    assert canonical_effect_name("DR") == "DR"
+    assert canonical_effect_name("ArmorBonus") == "ArmorBonus"
+
+
+def test_canonical_effect_name_on_empty_input():
+    from ddo_data.dat_parser.effects import canonical_effect_name
+
+    assert canonical_effect_name("") == ""
+    assert canonical_effect_name("   ") == ""
+
+
+# ---------------------------------------------------------------------------
+# {{Save|Spell|N}} stat identity
+# ---------------------------------------------------------------------------
+
+
+def test_save_spell_resolves_to_spell_save_not_spell_resistance():
+    """A spell *saving throw* (1-8) is not Spell Resistance (17-41).
+
+    All 19 shipped rows resolved to stat 21 (Spell Resistance) while stat 177
+    (Spell Save) existed and was correct.
+    """
+    result = parse_enchantment_string("{{Save|Spell|4}}")
+    assert result == {"value": 4, "bonus_type": "Resistance", "stat": "Spell Save"}
+
+
+def test_save_spell_lowercase_param_too():
+    result = parse_enchantment_string("{{Save|spell|6}}")
+    assert result["stat"] == "Spell Save"
+
+
+def test_other_save_params_are_unchanged():
+    """Regression guard: every other save param already mapped correctly."""
+    cases = {
+        "r": "Reflex Save",
+        "reflex": "Reflex Save",
+        "will": "Will Save",
+        "fort": "Fortitude Save",
+        "curse": "Curse Save",
+        "enchantment": "Enchantment Save",
+        "illusion": "Illusion Save",
+    }
+    for param, expected in cases.items():
+        result = parse_enchantment_string(f"{{{{Save|{param}|4}}}}")
+        assert result is not None, param
+        assert result["stat"] == expected, param
+
+
 def test_is_metadata_template():
     """is_metadata_template identifies metadata templates."""
     assert is_metadata_template("{{Augment|Red}}") is True

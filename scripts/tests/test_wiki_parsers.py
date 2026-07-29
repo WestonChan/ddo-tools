@@ -325,6 +325,55 @@ def test_parse_item_wikitext_nested() -> None:
     assert item["damage"] is not None
 
 
+def test_parse_item_wikitext_name_extracts_item_template() -> None:
+    """`| name = {{Item|X}} (level 12)` keeps X — stripping left just "(level 12)".
+
+    Seven shipped items were named "(level 12)"/"(level 20)" because the naive
+    template strip deleted the only part of the field that held the name.
+    """
+    wikitext = "{{Named item|Weapon|name = {{Item|Crystallized Eternity}} (level 12)}}"
+    item = parse_item_wikitext(wikitext)
+    assert item is not None
+    assert item["name"] == "Crystallized Eternity (level 12)"
+
+
+def test_parse_item_wikitext_rare_field() -> None:
+    """`| rare = yes` marks the item as rare loot."""
+    item = parse_item_wikitext("{{Named item|Weapon|name=Boot|rare = yes}}")
+    assert item is not None
+    assert item["rare"] is True
+
+
+def test_parse_item_wikitext_rare_field_keeps_yes_alongside_a_comment() -> None:
+    """`yes <!-- rare status not confirmed -->` is still an affirmative yes."""
+    item = parse_item_wikitext(
+        "{{Named item|Weapon|name=Boot|rare = yes <!-- rare status not confirmed -->}}"
+    )
+    assert item is not None
+    assert item["rare"] is True
+
+
+def test_parse_item_wikitext_rare_field_bare_comment_is_not_rare() -> None:
+    """A bare `<!-- suspected rare item -->` is a note, not a claim.
+
+    Nine shipped items carry only this comment. Reading it as truthy would
+    assert rarity the wiki never asserted; they are reconciled against
+    Category:Rare Loot List items instead.
+    """
+    item = parse_item_wikitext(
+        "{{Named item|Weapon|name=Boot|rare = <!-- suspected rare item -->}}"
+    )
+    assert item is not None
+    assert item["rare"] is False
+
+
+def test_parse_item_wikitext_rare_field_absent_or_empty() -> None:
+    """No `rare` field, or an empty one, means not rare — never None."""
+    assert parse_item_wikitext("{{Named item|Weapon|name=Boot}}")["rare"] is False
+    assert parse_item_wikitext("{{Named item|Weapon|name=Boot|rare = }}")["rare"] is False
+    assert parse_item_wikitext("{{Named item|Weapon|name=Boot|rare = no}}")["rare"] is False
+
+
 def test_parse_item_wikitext_empty_name_fallback() -> None:
     """When name field is empty, positional arg is used as fallback."""
     wikitext = "{{Named item|Weapon|minlevel=5}}"

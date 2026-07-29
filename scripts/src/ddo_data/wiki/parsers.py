@@ -288,6 +288,39 @@ def _parse_list(value: str) -> list[str]:
     return items
 
 
+def clean_name_field(raw: str) -> str | None:
+    """Clean an entity `name` field, expanding templates instead of deleting them.
+
+    ``clean_wikitext`` deletes ``{{...}}`` outright, which is right for prose but
+    wrong for a name: ``{{Item|Crystallized Eternity}} (level 12)`` carries the
+    name *inside* the template. Expanding first and cleaning after keeps both
+    halves. Returns None for an empty field so callers can fall back to the page
+    title.
+    """
+    # Deferred import: templates.py builds on extract_template from this module,
+    # so a module-level import here would be circular.
+    from .templates import expand_display_text
+
+    if not raw or not raw.strip():
+        return None
+    return clean_wikitext(expand_display_text(raw)) or None
+
+
+# The wiki's `| rare =` field is a marker, not a value: editors write "yes", or
+# leave a bare HTML comment when the status is only suspected. A comment alone
+# is not a claim that the item is rare, so it does not count — the suspected
+# cases are reconciled against Category:Rare Loot List items instead.
+_RARE_AFFIRMATIVE: frozenset[str] = frozenset({"yes", "y", "true", "1", "rare"})
+
+
+def _parse_rare_field(raw: str) -> bool:
+    """True when the item infobox affirmatively marks the item as rare loot."""
+    if not raw:
+        return False
+    without_comments = re.sub(r"<!--.*?-->", "", raw, flags=re.DOTALL)
+    return clean_wikitext(without_comments).strip().lower() in _RARE_AFFIRMATIVE
+
+
 def _parse_enchantment_list(value: str) -> list[str]:
     """Parse an enchantment list, preserving wiki template syntax.
 
@@ -322,9 +355,14 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
 
     item: dict[str, Any] = {}
 
-    # Name (required)
-    name = fields.get("name", "")
-    item["name"] = clean_wikitext(name) if name else None
+    # Name (required). Templates in this field are *extracted*, not stripped —
+    # `| name = {{Item|Crystallized Eternity}} (level 12)` carries the item's
+    # name inside the template, and stripping it left only " (level 12)".
+    item["name"] = clean_name_field(fields.get("name", ""))
+
+    # Rare loot marker (`| rare = yes`). Absent/empty means not rare, so this is
+    # always a bool — never None — and the writer can store it directly.
+    item["rare"] = _parse_rare_field(fields.get("rare", ""))
 
     # Item category from positional arg (Weapon, Armor, Jewelry, etc.)
     item["item_type"] = fields.get("_positional_1", "").strip() or None

@@ -180,7 +180,11 @@ _SAVE_ABBREVS: dict[str, str] = {
     "ref": "Reflex Save",
     "fortitude": "Fortitude Save",
     "reflex": "Reflex Save",
-    "spell": "Spell Resistance",
+    # {{Save|Spell|N}} is a *saving throw* against spells (values 1-8), not
+    # Spell Resistance (the caster-level-check mechanic, values 17-41). All 19
+    # shipped rows resolved to stat 21 while stat 177 existed and was correct;
+    # 18 items looked like they carried the same enchantment twice as a result.
+    "spell": "Spell Save",
     "enchantment": "Enchantment Save",
     "illusion": "Illusion Save",
     "saving throws vs. traps": "Saving Throws vs Traps",
@@ -192,7 +196,6 @@ _SAVE_ABBREVS: dict[str, str] = {
     "trap": "Trap Save",
     "curse": "Curse Save",
     "sleep": "Sleep Save",
-    "curse": "Curse Save",
 }
 
 # Stat names from {{Stat}} templates that are valid for type-17 correlation.
@@ -236,7 +239,6 @@ _SKILL_ABBREVS: dict[str, str] = {
     "perform": "Perform",
     "umd": "Use Magic Device",
     "use magic device": "Use Magic Device",
-    "command": "Command",  # Bonus to all CHA-based skills (not just Intimidate)
     "dd": "Disable Device",
     "ms": "Move Silently",
     "ol": "Open Lock",
@@ -1504,7 +1506,9 @@ _STAT_ALIASES: dict[str, str] = {
     "hit and damage vs. evil creatures": S.ATTACK_AND_DAMAGE_VS_EVIL,
     "saves vs. evil creatures": S.SAVES_VS_EVIL,
     "hit on sneak attack": S.SNEAK_ATTACK_HIT,
-    "spell saves": S.SPELL_RESISTANCE,
+    # A spell *save* is a saving throw, not Spell Resistance — same identity
+    # confusion as {{Save|Spell|N}} above.
+    "spell saves": S.SPELL_SAVE,
     "additional damage to helpless targets": S.HELPLESS_DAMAGE,
     "damage on sneak attack": S.SNEAK_ATTACK_DAMAGE,
     "damage vs evil": "Damage vs Evil",  # just damage, not attack+damage
@@ -1858,17 +1862,71 @@ _GENERIC_TEMPLATE_RE = re.compile(
     r"\{\{([^|}]+?)(?:\|([^}]*))?\}\}",
 )
 
+# A template parameter that is a magnitude rather than a word: "59", "+91",
+# "-20", "15%". Deliberately excludes roman numerals — for effects a single
+# letter is far more likely to be a modifier ({{Vorpal|M}}) than the number
+# 1000, which is the reading _parse_int would give it.
+_NUMERIC_PARAM_RE = re.compile(r"^[+-]?\d+%?$")
+
+# Effect-name variants that differ by more than their first letter, and so
+# cannot be canonicalized by the generic capitalize rule below. Keyed by the
+# case- and punctuation-insensitive form; the value is the spelling to keep.
+# Sourced from the 2026-07-28 duplicate-name audit (docs/notes/DB Errors.md).
+_EFFECT_NAME_CANONICAL: dict[str, str] = {
+    "armorpiercing": "Armor-Piercing",
+    "trueseeing": "True Seeing",
+    "bloodrage": "Blood Rage",
+    "efficientmetamagic": "Efficient Metamagic",
+    "nearlyfinished": "Nearly Finished",
+    "ghostbane": "Ghost Touch",
+}
+
+# Wiki table markup and editor comments that leaked into effect names.
+# `|* Random effect:` is a table cell marker; `No <!--` is a truncated comment.
+_NAME_JUNK_RE = re.compile(r"^\s*[|*\s]+|<!--.*?(?:-->|$)", re.DOTALL)
+
+
+def canonical_effect_name(raw: str) -> str:
+    """Return the one spelling an effect name should be stored under.
+
+    ``effects.name`` shipped 19 variant groups over 462 rows — ``Clicky``/
+    ``clicky`` (191+41), ``Armor-Piercing``/``ArmorPiercing``, and a
+    ``|* Random effect:`` whose leading pipe came from a wiki table cell.
+    Canonicalization is deterministic so every writer reaches the same row:
+    junk is stripped, known multi-character variants map through
+    ``_EFFECT_NAME_CANONICAL``, and anything else keeps its spelling with an
+    upper-case first letter. All-caps abbreviations (``DR``) and internal
+    capitals (``ArmorBonus``) are left alone.
+    """
+    text = _NAME_JUNK_RE.sub("", raw or "")
+    text = " ".join(text.split()).strip()
+    if not text:
+        return ""
+    key = re.sub(r"[^a-z0-9]", "", text.lower())
+    canonical = _EFFECT_NAME_CANONICAL.get(key)
+    if canonical:
+        return canonical
+    return text[0].upper() + text[1:]
+
 
 def parse_effect_template(text: str) -> dict | None:
     """Parse a wiki enchantment template as a weapon/armor effect.
 
     Returns a dict with keys: effect (str), modifier (str|None), value (int|None).
-    Returns None if the template is metadata, a stat bonus, plain text, or
-    not a recognized template.
+    Returns None if the template is metadata, wiki maintenance markup, a stat
+    bonus, plain text, or not a recognized template.
 
     This function is the complement of ``parse_enchantment_string`` — it handles
     everything that isn't a numeric stat bonus or metadata.
+
+    The wiki's grammar is **magnitude first**: ``{{Incite|59|Insightful}}`` means
+    "+59 Insightful Incite". Reading params[0] as a textual modifier put the
+    magnitude in the TEXT ``modifier`` column and threw the bonus type away.
+    ``{{Bane|Evil Outsider|4}}`` is the other shape — type then magnitude — so
+    the two are told apart by whether params[0] looks numeric.
     """
+    from ..wiki.templates import is_maintenance_template
+
     text = text.strip()
     match = _GENERIC_TEMPLATE_RE.search(text)
     if not match:
@@ -1877,44 +1935,48 @@ def parse_effect_template(text: str) -> dict | None:
     name = match.group(1).strip()
     params_raw = match.group(2) or ""
 
-    # Skip metadata templates (already stored in dedicated columns/tables)
+    # Skip metadata templates (already stored in dedicated columns/tables) and
+    # wiki maintenance markers (never game data at all).
     name_lower = name.lower()
-    if name_lower in _METADATA_TEMPLATES:
+    if name_lower in _METADATA_TEMPLATES or is_maintenance_template(name):
         return None
 
-    # Normalize effect names (wiki template name -> canonical effect name)
-    _EFFECT_ALIASES: dict[str, str] = {
-        "ghostbane": "Ghost Touch",
-    }
-    name = _EFFECT_ALIASES.get(name_lower, name)
+    name = canonical_effect_name(name)
 
     # Parse parameters, filtering out wiki noise (nocat=TRUE, prefix=..., etc.)
+    # and any parameter still carrying template markup — a half-matched nested
+    # template ({{Stat) is not a modifier.
     params = []
     for p in params_raw.split("|"):
         p = p.strip()
-        if not p or "=" in p:
+        if not p or "=" in p or "{{" in p or "}}" in p:
             continue
         params.append(p)
 
     # Determine modifier and value from params
     modifier: str | None = None
     value: int | None = None
+    is_clicky = name_lower in ("clicky", "clickie")
 
-    if len(params) == 0:
-        # Simple flag: {{Vorpal}}, {{Keen}}, {{Ghostly}}
-        pass
+    numeric_first = None if is_clicky else _numeric_param(params[0]) if params else None
+
+    if numeric_first is not None:
+        # Magnitude first: {{Incite|59|Insightful}}, {{Incite|+91}}
+        value = numeric_first
+        for p in params[1:]:
+            if _numeric_param(p) is None:
+                modifier = p
+                break
     elif len(params) == 1:
-        # One param: could be a modifier or a numeric value
-        if params[0].isdigit():
-            value = int(params[0])
-        else:
-            modifier = params[0]
+        # One non-numeric param: a word modifier ({{Vorpal|Sovereign}})
+        modifier = params[0]
     elif len(params) >= 2:
-        # Two+ params: first is modifier, look for numeric value in rest
+        # Type then magnitude: {{Bane|Evil Outsider|4}}
         modifier = params[0]
         for p in params[1:]:
-            if p.isdigit():
-                value = int(p)
+            parsed = _numeric_param(p)
+            if parsed is not None:
+                value = parsed
                 break
 
     result: dict = {
@@ -1925,13 +1987,23 @@ def parse_effect_template(text: str) -> dict | None:
 
     # Clicky templates: {{Clicky|SpellName|CasterLevel|Charges[|extra]}}
     # param 0 = spell name, param 1 = caster level (-> value), param 2 = charges
-    if name_lower in ("clicky", "clickie") and len(params) >= 3:
+    if is_clicky and len(params) >= 3:
         try:
             result["charges"] = int(params[2])
         except ValueError:
             pass
 
     return result
+
+
+def _numeric_param(param: str) -> int | None:
+    """Parse a magnitude-shaped template parameter, or None if it is a word."""
+    if not _NUMERIC_PARAM_RE.match(param.strip()):
+        return None
+    try:
+        return int(param.strip().rstrip("%").lstrip("+"))
+    except ValueError:
+        return None
 
 
 def is_metadata_template(text: str) -> bool:
