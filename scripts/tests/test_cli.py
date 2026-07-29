@@ -759,3 +759,84 @@ def test_build_db_type_filter(tmp_path) -> None:
     mock_collect_feats.assert_not_called()
     mock_insert_feats.assert_not_called()
     assert "5 items inserted" in result.output
+
+
+def test_build_db_enumeration_flag_reaches_the_client(tmp_path) -> None:
+    """--enumeration selects the page-title source on WikiClient.
+
+    'cache' is the mode that works while ddowiki's WAF challenge is up, so the
+    flag has to actually arrive rather than being accepted and ignored.
+    """
+    db_path = tmp_path / "ddo.db"
+
+    with contextlib.ExitStack() as stack:
+        client_cls = stack.enter_context(patch("ddo_data.wiki.client.WikiClient"))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_items", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_rare_loot_names", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_unique_enchantments", return_value=[]))
+        stack.enter_context(patch("ddo_data.game_data.items.parse_items", side_effect=RuntimeError("no game data")))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_item_slot_categories", return_value={}))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_item_material_categories", return_value={}))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_quest_loot", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.discover_races_from_categories", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.discover_classes_from_categories", return_value=[]))
+        stack.enter_context(patch("ddo_data.cli._fix_missing_item_icons"))
+        stack.enter_context(patch("ddo_data.cli._resolve_race_class_icons"))
+
+        runner = CliRunner()
+        result = runner.invoke(cli, [
+            "build-db", "--output", str(db_path),
+            "--type", "items", "--enumeration", "cache",
+        ])
+
+    assert result.exit_code == 0, result.output
+    assert client_cls.call_args.kwargs["enumeration"] == "cache"
+
+
+def test_build_db_rejects_an_unknown_enumeration_mode(tmp_path) -> None:
+    runner = CliRunner()
+    result = runner.invoke(cli, [
+        "build-db", "--output", str(tmp_path / "x.db"), "--enumeration", "telepathy",
+    ])
+    assert result.exit_code != 0
+    assert "telepathy" in result.output
+
+
+def test_build_db_normalizes_stored_rows_before_ingesting(tmp_path) -> None:
+    """The normalization pass must precede the inserts.
+
+    Order is load-bearing: an escaped name already in the database has to be
+    decoded *before* the scrape inserts the decoded spelling, or the two end up
+    as separate rows.
+    """
+    db_path = tmp_path / "ddo.db"
+    calls: list[str] = []
+
+    with contextlib.ExitStack() as stack:
+        stack.enter_context(patch(
+            "ddo_data.db.GameDB.normalize_stored_text",
+            side_effect=lambda *a, **k: calls.append("normalize") or 0,
+        ))
+        stack.enter_context(patch(
+            "ddo_data.db.GameDB.insert_items",
+            side_effect=lambda *a, **k: calls.append("insert") or 0,
+        ))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_items", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_rare_loot_names", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_unique_enchantments", return_value=[]))
+        stack.enter_context(patch("ddo_data.game_data.items.parse_items", side_effect=RuntimeError("no game data")))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_item_slot_categories", return_value={}))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_item_material_categories", return_value={}))
+        stack.enter_context(patch("ddo_data.wiki.scraper.collect_quest_loot", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.discover_races_from_categories", return_value=[]))
+        stack.enter_context(patch("ddo_data.wiki.scraper.discover_classes_from_categories", return_value=[]))
+        stack.enter_context(patch("ddo_data.cli._fix_missing_item_icons"))
+        stack.enter_context(patch("ddo_data.cli._resolve_race_class_icons"))
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["build-db", "--output", str(db_path), "--type", "items"])
+
+    assert result.exit_code == 0, result.output
+    assert calls[0] == "normalize"
+    assert "insert" in calls
+    assert calls.index("normalize") < calls.index("insert")

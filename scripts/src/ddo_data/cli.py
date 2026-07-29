@@ -6,6 +6,8 @@ from pathlib import Path
 import click
 from dotenv import load_dotenv
 
+from .wiki.client import ENUMERATION_MODES
+
 # Load .env from project root (two levels up from scripts/src/ddo_data/)
 load_dotenv(Path(__file__).resolve().parents[4] / ".env")
 
@@ -746,6 +748,16 @@ def dat_identify(ctx: click.Context) -> None:
     help="Max pages to fetch per type (0 = all)",
 )
 @click.option(
+    "--enumeration",
+    type=click.Choice(ENUMERATION_MODES),
+    default="auto",
+    help=(
+        "How page titles are enumerated: 'cache' reads the .wiki-cache index, "
+        "'api' uses allpages, 'auto' (default) prefers the cache and falls back "
+        "to the API. The API is unusable while ddowiki's WAF challenge is up."
+    ),
+)
+@click.option(
     "--type", "data_types",
     type=click.Choice(["items", "feats", "enhancements", "sets", "augments", "spells", "filigrees", "classes", "crafting"]),
     multiple=True, default=("items", "feats", "enhancements", "sets", "augments", "spells", "filigrees", "classes", "crafting"),
@@ -757,6 +769,7 @@ def build_db(
     output: Path,
     no_cache: bool,
     limit: int,
+    enumeration: str,
     data_types: tuple[str, ...],
 ) -> None:
     """Build SQLite game database from DDO Wiki data."""
@@ -765,17 +778,35 @@ def build_db(
     from .wiki.scraper import collect_augments, collect_classes, collect_enhancements, collect_feats, collect_filigrees, collect_items, collect_set_bonuses, collect_spells
 
     ddo_path: Path = ctx.obj["ddo_path"]
-    client = WikiClient(use_cache=not no_cache)
+    client = WikiClient(use_cache=not no_cache, enumeration=enumeration)
     output.parent.mkdir(parents=True, exist_ok=True)
+    rare_names: list[str] = []
 
     with GameDB(output) as db:
         db.create_schema()
+
+        # Normalize what is already stored *before* ingesting. The build updates
+        # an existing database rather than rebuilding it (ddowiki's WAF blocks
+        # category enumeration, so a from-scratch build would lose feats,
+        # spells, and quest loot), which means a freshly scraped clean name
+        # would otherwise land beside its escaped twin instead of on it.
+        click.echo("Normalizing stored text...")
+        normalized = db.normalize_stored_text()
+        collapsed = db.collapse_value_variants()
+        click.echo(f"  {normalized} values normalized, {collapsed} name variants collapsed")
 
         for data_type in data_types:
             click.echo(f"Collecting {data_type}...")
             count = 0
             if data_type == "items":
                 wiki_items_list = list(collect_items(client, limit=limit, on_progress=click.echo))
+                # Collected here so the rare-loot reconciliation (which runs
+                # after augments and quest loot are loaded) can see the
+                # `| rare =` field the item scrape parsed.
+                from .wiki.scraper import collect_rare_loot_names
+                rare_names = collect_rare_loot_names(
+                    client, scraped_items=wiki_items_list, on_progress=click.echo,
+                )
                 try:
                     from .game_data.items import parse_items
                     click.echo("Parsing binary items and merging wiki data...")
@@ -823,6 +854,17 @@ def build_db(
                 click.echo(f"  Unknown data type: {data_type!r} — skipping")
                 continue
             click.echo(f"  {count:,} {data_type} inserted")
+
+    # Unique enchantment definitions — the {{Unique enchantment}} pages that say
+    # what a named enchantment actually does. Read from the page cache, so this
+    # runs regardless of which data types were selected.
+    click.echo("Collecting unique enchantments...")
+    from .wiki.scraper import collect_unique_enchantments
+    with GameDB(output) as db:
+        ue = db.insert_unique_enchantments(
+            collect_unique_enchantments(client, on_progress=click.echo)
+        )
+        click.echo(f"  {ue} unique enchantments inserted")
 
     # Seed crafting items, ingredients, and recipes (must run after both items and crafting are loaded)
     if "crafting" in data_types and "items" in data_types:
@@ -956,6 +998,53 @@ def build_db(
         with GameDB(output) as db:
             sources = db.populate_stat_sources()
             click.echo(f"  {sources} stat source entries")
+
+    # --- Rare loot ---------------------------------------------------------
+    # Runs after items, augments and quest loot are all present: the item-level
+    # flag is what the picker filters on, and it is multiplied out across every
+    # quest_loot mapping of a rare item.
+    if rare_names:
+        click.echo("Flagging rare loot...")
+        with GameDB(output) as db:
+            report = db.populate_rarity(rare_names)
+            click.echo(
+                f"  {report['items']} items, {report['augments']} augments, "
+                f"{report['quest_loot']} quest loot rows flagged rare"
+            )
+            unmatched = report["unmatched"]
+            if unmatched:
+                click.echo(
+                    f"  {len(unmatched)} rare names matched no item or augment: "
+                    + ", ".join(unmatched[:5])
+                    + (" ..." if len(unmatched) > 5 else "")
+                )
+
+    # --- Repair rows the pre-4c parsers wrote ------------------------------
+    # Must precede the description expansion below: the {{Save|Spell|N}} repair
+    # identifies its rows by the template still sitting in their description.
+    click.echo("Repairing legacy rows...")
+    with GameDB(output) as db:
+        repairs = db.repair_stored_rows()
+        click.echo(
+            f"  {repairs['spell_saves_retargeted']} spell-save bonuses retargeted, "
+            f"{repairs['effect_modifiers_regraded']} effect magnitudes regraded, "
+            f"{repairs['effect_names_regraded']} effect names regraded, "
+            f"{repairs['maintenance_rows_deleted']} maintenance rows deleted, "
+            f"{repairs['items_merged']} duplicate items merged"
+        )
+
+    # --- Enchantment identity and descriptions -----------------------------
+    # Last, because it consumes every bonus and effect the passes above wrote.
+    click.echo("Expanding enchantment descriptions...")
+    with GameDB(output) as db:
+        described = db.populate_enchantment_descriptions()
+        renamed = db.renormalize_bonus_names()
+        cleaned = db.normalize_stored_text()
+        collapsed = db.collapse_value_variants()
+        click.echo(
+            f"  {described} descriptions expanded, {renamed} bonus names rebuilt, "
+            f"{cleaned} values normalized, {collapsed} name variants collapsed"
+        )
 
     # Second-pass: fetch missing icons
     click.echo("Fixing missing icons...")
