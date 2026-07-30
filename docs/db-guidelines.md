@@ -1,5 +1,8 @@
 # DDO Database Design Guidelines
 
+Companion doc: [etl-invariants.md](etl-invariants.md) covers the pipeline rules that feed these
+tables — template expansion, writer-boundary normalization, and why `build-db` updates in place.
+
 Design decisions for `public/data/ddo.db` — the SQLite database powering the DDO Tools.
 
 ---
