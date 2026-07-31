@@ -72,6 +72,31 @@ class TestExpandDisplayText:
     def test_link_template_second_param_is_the_display_text(self) -> None:
         assert expand_display_text("{{Item|Celestia (weapon)|Celestia}}") == "Celestia"
 
+    def test_a_trailing_pipe_does_not_blank_the_link_text(self) -> None:
+        """``{{Item|Crystallized Eternity|}}`` still renders the item's name.
+
+        MediaWiki reads the trailing pipe as an empty second parameter, and a
+        link template with no display text falls back to the page name — it does
+        not render nothing. Once ``extract_template`` began keeping empty
+        positional slots (so ``{{Enhancement bonus|io||15}}`` reads correctly),
+        taking the *last* parameter here would hand back ``""`` and the name
+        would vanish: the same failure as the seven items called ``(level 12)``,
+        wearing a different hat. One trailing pipe from a wiki editor is the
+        whole distance between this being latent and being live.
+        """
+        assert (
+            expand_display_text("{{Item|Crystallized Eternity|}}")
+            == "Crystallized Eternity"
+        )
+
+    def test_a_link_template_with_nothing_in_it_renders_nothing(self) -> None:
+        """``{{Item|}}`` names no page, so there is no text to show.
+
+        Two cached occurrences, both on ``Item:Potion of Protection from
+        Energy``.
+        """
+        assert expand_display_text("{{Item|}}") == ""
+
     def test_drops_a_maintenance_template_and_its_editorial_note(self) -> None:
         assert (
             expand_display_text("Grants Fire Shield {{Bug|does nothing on live}}")

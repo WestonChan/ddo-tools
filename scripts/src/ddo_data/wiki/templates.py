@@ -205,8 +205,19 @@ def _expand_one(raw: str) -> str:
     fields = extract_template(raw, name) or {}
     params = Template(name=name, fields=fields, raw=raw).positional()
     if lower in _LINK_TEMPLATES:
-        # {{Item|Page}} -> "Page"; {{Item|Page|Display}} -> "Display"
-        return expand_display_text(params[-1]) if params else ""
+        # {{Item|Page}} -> "Page"; {{Item|Page|Display}} -> "Display".
+        #
+        # The last *non-empty* parameter, not simply the last one:
+        # ``extract_template`` keeps empty positional slots (MediaWiki numbers
+        # them, and {{Enhancement bonus|io||15}} depends on it), so a trailing
+        # pipe from a wiki editor would otherwise make ``params[-1]`` the empty
+        # string and blank the item's name. A link template with no display text
+        # falls back to the page name; only a template naming nothing at all
+        # renders nothing.
+        for param in reversed(params):
+            if param.strip():
+                return expand_display_text(param)
+        return ""
     return " ".join(expand_display_text(p) for p in params if p.strip())
 
 

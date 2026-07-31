@@ -20,8 +20,9 @@ def extract_template(
     """Extract fields from the first {{template_name|...}} occurrence.
 
     Returns dict of field_name -> raw_value. Handles nested {{...}} via
-    brace counting. First positional arg (before any key=value) is stored
-    with key ``_positional_1``.
+    brace counting. Positional args are stored as ``_positional_1``,
+    ``_positional_2``, ... in source order; a blank one keeps its slot, the way
+    MediaWiki numbers them.
 
     Returns None if the template is not found.
     """
@@ -88,11 +89,17 @@ def extract_template(
     result: dict[str, str] = {}
     positional_index = 0
 
-    for field_str in fields_raw:
+    for index, field_str in enumerate(fields_raw):
         field_str = field_str.strip()
-        if not field_str:
+        # fields_raw[0] is whatever sits between "{{Name" and its first pipe —
+        # normally nothing at all, and never a parameter.
+        if index == 0 and not field_str:
             continue
 
+        # An empty parameter still occupies its slot: MediaWiki reads
+        # ``{{Enhancement bonus|io||15}}`` as {{{2}}}="" and {{{3}}}="15".
+        # Dropping the blank promoted 15 into slot 2, where it read as a
+        # magnitude and tripled into a +45 implement bonus.
         eq_pos = field_str.find("=")
         if eq_pos > 0 and not field_str[:eq_pos].strip().startswith("{"):
             key = field_str[:eq_pos].strip().lower()

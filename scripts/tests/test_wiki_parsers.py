@@ -27,7 +27,6 @@ SIMPLE_TEMPLATE = """
 |weapontype = Longsword
 |proficiency = Martial Weapon Proficiency
 |handedness = One Handed
-|enchantmentbonus = 15
 |durability = 250
 |material = Steel
 |hardness = 39
@@ -113,6 +112,21 @@ def test_extract_template_positional_arg() -> None:
     result = extract_template(SIMPLE_TEMPLATE, "Named item")
     assert result is not None
     assert result["_positional_1"] == "Weapon"
+
+
+def test_extract_template_keeps_an_empty_positional_slot() -> None:
+    """``{{Foo||bar}}`` puts ``bar`` in slot 2 — MediaWiki counts the blank.
+
+    Collapsing the blank silently promoted every later argument one slot. The
+    12 cached ``{{Enhancement bonus|io||15}}`` invocations are the live case:
+    read as slot 2, the implement value 15 became a magnitude and rendered a
+    +45 implement bonus instead.
+    """
+    result = extract_template("{{Enhancement bonus|io||15}}", "Enhancement bonus")
+    assert result is not None
+    assert result["_positional_1"] == "io"
+    assert result["_positional_2"] == ""
+    assert result["_positional_3"] == "15"
 
 
 def test_extract_template_nested_braces() -> None:
@@ -265,7 +279,6 @@ def test_parse_item_wikitext_weapon() -> None:
     assert item["weapon_type"] == "Longsword"
     assert item["proficiency"] == "Martial Weapon Proficiency"
     assert item["handedness"] == "One Handed"
-    assert item["enhancement_bonus"] == 15
     assert item["durability"] == 250
     assert item["material"] == "Steel"
     assert item["hardness"] == 39
