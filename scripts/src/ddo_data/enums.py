@@ -418,6 +418,9 @@ class BonusType(str, Enum):
     IMPLEMENT      = ("Implement", 26, False)
     MUSIC          = ("Music", 27, False)
     EQUIPMENT      = ("Equipment", 28, False)
+    # {{Enhancement bonus|o|N}} renders "+N Orb Bonus", not an enhancement
+    # bonus. Only one orb can be equipped, so it cannot stack with itself.
+    ORB            = ("Orb", 29, False)
 
 
 class DamageType(str, Enum):

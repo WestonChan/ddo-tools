@@ -230,6 +230,12 @@ class TestWholeBuildIdempotency:
                 "{{Deception|7}}",
                 "{{Stat|WIS|14}}",
                 "{{Tactics|Combat Mastery|11}}",
+                # One invocation per output shape the template has: an
+                # enhancement pair, an orb bonus plus an implement, and a
+                # magnitude of 0 that lands in `effects` as Masterwork.
+                "{{Enhancement bonus|w|-2}}",
+                "{{Enhancement bonus|oi|6|21}}",
+                "{{Enhancement bonus|a|0}}",
                 "Vorpal",
             ],
             "augment_slots": ["Yellow", "Colorless"],
@@ -300,3 +306,198 @@ class TestWholeBuildIdempotency:
         # A pass that wrote nothing at all would satisfy the equality above.
         assert after_first["bonuses"] > 0
         assert after_first["crafting_options"] == len(CRAFTING_OPTIONS_FIXTURE)
+
+    def test_enhancement_bonus_values_converge_as_well_as_counts(self) -> None:
+        """Rebuilding must not move a single value, not just a single count.
+
+        `{{Enhancement bonus|w|-2}}` is cursed gear, and 4c's sign flip proved
+        that a normalization pass can invert a negative bonus on every build
+        while the row counts sit perfectly still. The Masterwork row is here for
+        the same reason from the other side: a magnitude of 0 must keep landing
+        in `effects` rather than drifting into a `+0` bonus row.
+        """
+        db = _fresh_db()
+        rows = []
+        for _ in range(3):
+            self._write_everything(db)
+            rows.append(sorted(db.conn.execute(
+                """
+                SELECT s.name, bt.name, b.value, b.name, b.description
+                  FROM item_bonuses ib
+                  JOIN bonuses b ON b.id = ib.bonus_id
+                  LEFT JOIN stats s ON s.id = b.stat_id
+                  LEFT JOIN bonus_types bt ON bt.id = b.bonus_type_id
+                 WHERE bt.name IN ('Enhancement', 'Implement', 'Orb')
+                   AND s.name IN ('Attack Bonus', 'Damage Bonus',
+                                  'Saving Throws', 'Universal Spell Power')
+                """
+            ).fetchall()))
+
+        assert rows[0] == rows[1] == rows[2], "a rebuild pass rewrites values"
+        assert rows[0] == sorted([
+            ("Attack Bonus", "Enhancement", -2, "Attack Bonus -2",
+             "-2 Enhancement penalty to Attack Bonus"),
+            ("Damage Bonus", "Enhancement", -2, "Damage Bonus -2",
+             "-2 Enhancement penalty to Damage Bonus"),
+            ("Saving Throws", "Orb", 6, "Saving Throws +6",
+             "+6 Orb bonus to Saving Throws"),
+            ("Universal Spell Power", "Implement", 21,
+             "Universal Spell Power +21",
+             "+21 Implement bonus to Universal Spell Power"),
+        ])
+
+    def test_masterwork_stays_an_effect_across_rebuilds(self) -> None:
+        db = _fresh_db()
+        for _ in range(2):
+            self._write_everything(db)
+
+        assert db.conn.execute(
+            "SELECT COUNT(*) FROM item_effects ie JOIN effects e ON e.id = ie.effect_id "
+            "WHERE e.name = 'Masterwork'"
+        ).fetchone()[0] == 1
+
+
+class TestARouterChangeLeavesNoStaleRows:
+    """Adding a row to an item shifts `sort_order`, which is part of the PK.
+
+    `item_bonuses` is keyed on (item_id, bonus_id, sort_order), so `INSERT OR
+    IGNORE` only recognises a row it has already written *at the same offset*.
+    The moment a new routing step emits rows before the existing ones, every
+    later enchantment lands at a fresh offset and the old copy stays behind.
+    Rebuilding the shipped database after adding the {{Enhancement bonus}} step
+    produced 7,972 such ghosts — real rows, correct values, silently doubling
+    every affected item's enchantment list.
+
+    Row counts alone cannot catch this: it only shows up when the *writer*
+    changes, which is precisely when a "did the counts move?" check is expected
+    to see movement.
+    """
+
+    BASE = {
+        "name": "Shifting Blade",
+        "equipment_slot": "Main Hand",
+        "enchantments": ["{{Stat|STR|6}}", "{{Stat|CON|4}}"],
+    }
+    WITH_EXTRA = {
+        **BASE,
+        "enchantments": [
+            "{{Enhancement bonus|w|5}}", "{{Stat|STR|6}}", "{{Stat|CON|4}}",
+        ],
+    }
+
+    def _pairs(self, db: GameDB) -> list[tuple]:
+        return db.conn.execute(
+            """
+            SELECT b.name, COUNT(*) AS copies, MIN(ib.sort_order)
+              FROM item_bonuses ib
+              JOIN bonuses b ON b.id = ib.bonus_id
+             GROUP BY ib.item_id, ib.bonus_id
+             ORDER BY b.name
+            """
+        ).fetchall()
+
+    def test_a_new_routing_step_does_not_double_the_later_rows(self) -> None:
+        db = _fresh_db()
+        db.insert_items([self.BASE])
+        db.insert_items([self.WITH_EXTRA])
+
+        db.repair_stored_rows()
+
+        copies = {name: n for name, n, _ in self._pairs(db)}
+        assert copies == {
+            "Attack Bonus +5": 1,
+            "Damage Bonus +5": 1,
+            "Strength +6": 1,
+            "Constitution +4": 1,
+        }
+
+    def test_the_surviving_copy_is_the_one_the_current_writer_produced(self) -> None:
+        """Keep the highest offset — the freshest write — or this never settles.
+
+        Keeping the lowest reads as "first wins" and looks tidier, but the
+        writer re-inserts at its own offset on the next run, so the repair would
+        delete the same rows again on every build forever, and the shipped
+        display order would stay frozen at the superseded parser's layout.
+        """
+        db = _fresh_db()
+        db.insert_items([self.BASE])
+        db.insert_items([self.WITH_EXTRA])
+
+        db.repair_stored_rows()
+
+        offsets = {name: offset for name, _, offset in self._pairs(db)}
+        assert offsets["Attack Bonus +5"] == 0
+        assert offsets["Damage Bonus +5"] == 1
+        assert offsets["Strength +6"] == 2
+        assert offsets["Constitution +4"] == 3
+
+    def test_a_third_pass_deletes_nothing(self) -> None:
+        """Convergence: once repaired, the writer stops producing ghosts."""
+        db = _fresh_db()
+        db.insert_items([self.BASE])
+        db.insert_items([self.WITH_EXTRA])
+        db.repair_stored_rows()
+
+        db.insert_items([self.WITH_EXTRA])
+
+        assert db.repair_stored_rows()["duplicate_item_bonuses_deleted"] == 0
+
+    def test_the_repair_reports_zero_on_a_clean_database(self) -> None:
+        db = _fresh_db()
+        db.insert_items([self.WITH_EXTRA])
+        db.repair_stored_rows()
+
+        assert db.repair_stored_rows()["duplicate_item_bonuses_deleted"] == 0
+
+    def test_the_same_shift_is_repaired_in_item_effects(self) -> None:
+        """`item_effects` is keyed the same way and shifts for the same reason.
+
+        A magnitude of 0 emits a Masterwork effect at offset 0, so every other
+        effect on those items moved down a slot on the rebuild.
+        """
+        db = _fresh_db()
+        db.insert_items([{
+            "name": "Shifting Plate",
+            "equipment_slot": "Body",
+            "enchantments": ["Vorpal", "{{Bane|Evil Outsider|4}}"],
+        }])
+        db.insert_items([{
+            "name": "Shifting Plate",
+            "equipment_slot": "Body",
+            "enchantments": [
+                "{{Enhancement bonus|a|0}}", "Vorpal", "{{Bane|Evil Outsider|4}}",
+            ],
+        }])
+
+        db.repair_stored_rows()
+
+        rows = db.conn.execute(
+            """
+            SELECT e.name, ie.value, COUNT(*)
+              FROM item_effects ie JOIN effects e ON e.id = ie.effect_id
+             GROUP BY ie.item_id, ie.effect_id, COALESCE(ie.value, -1)
+             ORDER BY e.name
+            """
+        ).fetchall()
+        assert [(n, v, c) for n, v, c in rows] == [
+            ("Bane", 4, 1), ("Masterwork", None, 1), ("Vorpal", None, 1),
+        ]
+
+    def test_two_magnitudes_of_one_effect_are_not_collapsed(self) -> None:
+        """`item_effects.value` sits outside the key: Bane 2 and Bane 4 differ."""
+        db = _fresh_db()
+        db.insert_items([{
+            "name": "Twin Bane",
+            "equipment_slot": "Main Hand",
+            "enchantments": ["{{Bane|Evil Outsider|2}}", "{{Bane|Undead|4}}"],
+        }])
+
+        db.repair_stored_rows()
+
+        values = sorted(
+            r[0] for r in db.conn.execute(
+                "SELECT ie.value FROM item_effects ie JOIN effects e "
+                "ON e.id = ie.effect_id WHERE e.name = 'Bane'"
+            )
+        )
+        assert values == [2, 4]

@@ -51,6 +51,38 @@ is how the raid list was reconciled (2026-07-25) and how `Category:Rare Loot Lis
 for Phase 4c (2026-07-28) — read pages in a browser, commit the result as a documented seed module on
 the `raid_quests.py` / `rare_loot_items.py` model, and mark it deletable once the API returns.
 
+#### `action=raw` works in a browser — use it to read a template's own definition
+
+Top-level navigation to `https://ddowiki.com/index.php?title=<PAGE>&action=raw` returns the page's
+**wikitext**, challenge and all. Verified 2026-07-30 against `Template:Enhancement bonus`.
+
+This is the fastest way to settle "what does this template actually mean", and it is worth doing
+**before writing any parser for a wiki template**. Template pages are not in `.wiki-cache` (the
+scraper only ever fetched content namespaces), so the definition is invisible offline — which is
+exactly how Phase 4m's biggest finding came to be documented with the wrong grammar for months.
+`{{Enhancement bonus}}` was recorded in the notes as two kinds (`w`/`a`) and one magnitude; its
+source defines **nine kinds and three output shapes**, including one kind that must produce *no*
+enhancement bonus and a magnitude of 0 that means "Masterwork" rather than `+0`. A corpus census
+cannot recover that — it shows you the parameters, never their meaning.
+
+Read both `?action=raw` (the `#switch:` logic, which is authoritative) and the rendered page (the
+USAGE and EXAMPLES sections, which are prose and can be incomplete — the USAGE block omits `si`,
+a kind the switch handles and 12 pages use).
+
+**Scale limit — this is a reading tool, not a scraping tool.** One page per navigation is fine for
+a template definition or an index page; driving it in a loop over thousands of item pages is the
+"scripting around the challenge" this document rules out at the top, with a browser as the user
+agent. The cache already covers item wikitext at 97%, so bulk refill is not the need.
+
+**High-yield pages worth reading this way** (one page each, large structured tables — these are the
+biggest offline gaps, since only 24 of 680 quest pages are cached):
+
+| Page | Fills |
+|---|---|
+| `Quests_by_level_and_XP` | `quests.pack_id` / `patron_id` / `level` — 122 NULL packs, 127 NULL levels |
+| `Adventure_Pack` | `adventure_packs.is_free_to_play` (populated on 1 of 77 rows) |
+| `Guide_to_Free_to_Play#Quest_list` | quest-granular F2P, which a pack-level flag cannot represent |
+
 ## API Endpoints
 
 **Search:**

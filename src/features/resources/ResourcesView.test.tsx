@@ -45,7 +45,6 @@ vi.mock('./queries/items', async () => {
       equipment_slot: 'Trinket',
       item_category: null,
       minimum_level: 12,
-      enhancement_bonus: null,
       material: null,
       binding: null,
       tooltip: null,

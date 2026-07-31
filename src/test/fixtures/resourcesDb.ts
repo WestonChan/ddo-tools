@@ -44,11 +44,11 @@ const FIXTURE_TABLES = [
 ] as const
 
 const FIXTURE_DATA = `
-INSERT INTO items (id, name, rarity, equipment_slot, item_category, level, minimum_level, enhancement_bonus, material, binding, base_value, tooltip, icon, description, wiki_url) VALUES
-  (1, 'Greatsword of Force', 'Rare', 'Weapon', 'Weapon', 12, 12, 3, 'Steel', 'Bound to Character on Acquire', '480 pp', 'Strikes with arcane force.', 'Greatsword.png', 'A force-imbued greatsword.', 'https://ddowiki.com/page/Greatsword_of_Force'),
-  (2, 'Sigil of the Stalwart Defender', 'Epic', 'Trinket', 'Jewelry', 29, 29, NULL, NULL, 'Bound to Account on Acquire', '5800 pp', NULL, 'Sigil.png', 'A defender''s mark.', 'https://ddowiki.com/page/Sigil_of_the_Stalwart_Defender'),
-  (3, 'Robe of Force Resistance', 'Uncommon', 'Body', 'Clothing', 8, 8, NULL, 'Cloth', NULL, '120 pp', 'A simple robe.', 'Robe.png', 'A simple robe.', 'https://ddowiki.com/page/Robe_of_Force_Resistance'),
-  (4, '50% Discount Voucher', 'Common', NULL, NULL, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO items (id, name, rarity, equipment_slot, item_category, level, minimum_level, material, binding, base_value, tooltip, icon, description, wiki_url) VALUES
+  (1, 'Greatsword of Force', 'Rare', 'Weapon', 'Weapon', 12, 12, 'Steel', 'Bound to Character on Acquire', '480 pp', 'Strikes with arcane force.', 'Greatsword.png', 'A force-imbued greatsword.', 'https://ddowiki.com/page/Greatsword_of_Force'),
+  (2, 'Sigil of the Stalwart Defender', 'Epic', 'Trinket', 'Jewelry', 29, 29, NULL, 'Bound to Account on Acquire', '5800 pp', NULL, 'Sigil.png', 'A defender''s mark.', 'https://ddowiki.com/page/Sigil_of_the_Stalwart_Defender'),
+  (3, 'Robe of Force Resistance', 'Uncommon', 'Body', 'Clothing', 8, 8, 'Cloth', NULL, '120 pp', 'A simple robe.', 'Robe.png', 'A simple robe.', 'https://ddowiki.com/page/Robe_of_Force_Resistance'),
+  (4, '50% Discount Voucher', 'Common', NULL, NULL, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 INSERT INTO item_weapon_stats (item_id, damage, critical, weapon_type, proficiency, handedness) VALUES
   (1, '2d6', '19-20/x2', 'Greatsword', 'Martial', 'Two-handed');

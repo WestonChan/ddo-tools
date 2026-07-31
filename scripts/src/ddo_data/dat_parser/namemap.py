@@ -40,7 +40,6 @@ logger = logging.getLogger(__name__)
 # Numeric fields: compared directly as int.
 _NUMERIC_FIELDS = [
     "minimum_level",
-    "enhancement_bonus",
     "durability",
     "hardness",
     "armor_bonus",

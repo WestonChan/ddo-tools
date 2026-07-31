@@ -25,7 +25,6 @@ vi.mock('../queries/items', async () => {
       item_category: null,
       level: null,
       minimum_level: 12,
-      enhancement_bonus: null,
       material: null,
       binding: null,
       base_value: null,

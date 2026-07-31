@@ -527,6 +527,48 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
         ["source_table", "id", "name"],
     ),
     (
+        "item_enhancement_bonus_composite_complete",
+        "An item's Enhancement attack bonus must be matched by an equal damage "
+        "bonus — {{Enhancement bonus|w|N}} renders both or neither (A7)",
+        "error",
+        # Named for items on purpose: `enhancement_bonus_stat_resolved` above
+        # covers character enhancement *trees*, an unrelated concept that shares
+        # the word.
+        #
+        # This is the check `bonuses.name` cannot make (invariant 4). One wiki
+        # template fans out to up to four rows across two tables; drop one and
+        # every surviving row is still internally consistent, its generated name
+        # still agrees with its stat, and the row count still looks plausible.
+        # Only the *pairing* gives the loss away.
+        #
+        # Armor Class is deliberately not required here: `|a` renders it alone,
+        # so its presence or absence says nothing about the pair.
+        """
+        WITH enhancement_pair AS (
+            SELECT ib.item_id, s.name AS stat, b.value
+              FROM item_bonuses ib
+              JOIN bonuses b ON b.id = ib.bonus_id
+              JOIN stats s ON s.id = b.stat_id
+              JOIN bonus_types bt ON bt.id = b.bonus_type_id
+             WHERE bt.name = 'Enhancement'
+               AND s.name IN ('Attack Bonus', 'Damage Bonus')
+        )
+        SELECT i.name AS item, p.stat, p.value,
+               CASE p.stat WHEN 'Attack Bonus' THEN 'Damage Bonus'
+                           ELSE 'Attack Bonus' END AS missing
+          FROM enhancement_pair p
+          JOIN items i ON i.id = p.item_id
+         WHERE NOT EXISTS (
+                SELECT 1 FROM enhancement_pair q
+                 WHERE q.item_id = p.item_id
+                   AND q.value = p.value
+                   AND q.stat != p.stat
+              )
+         LIMIT 20
+        """,
+        ["item", "stat", "value", "missing"],
+    ),
+    (
         "orphan_rows_within_baseline",
         f"Orphaned bonuses/effects should not exceed the recorded baseline "
         f"{ORPHAN_BASELINE} (A6; cleanup is Phase 4m, so this only warns)",

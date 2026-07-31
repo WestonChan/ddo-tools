@@ -1848,7 +1848,17 @@ def parse_enchantment_string_multi(text: str) -> list[dict]:
 # Effect template parser (weapon/armor effects → item_effects table)
 # ---------------------------------------------------------------------------
 
-# Templates that are metadata, not effects — they have dedicated columns/tables.
+# Templates this parser must not read as effects. Most are metadata stored
+# elsewhere (augment slots, set membership, materials, binding).
+#
+# `enhancement bonus` is the exception and is listed for a different reason:
+# `wiki/enhancement_bonus.py` decodes it at the router's step 1b, before this
+# parser is ever reached. It stays here as the backstop for a *malformed*
+# invocation — an unknown kind, which the wiki template itself renders as an
+# editor error — so those are skipped rather than mangled into an effect named
+# "Enhancement bonus". The comment above this entry used to claim it had a
+# dedicated column; it never did, and that fiction is why 5,239 invocations
+# were silently dropped.
 _METADATA_TEMPLATES: frozenset[str] = frozenset({
     "augment", "named item sets", "mat", "craftingeffects",
     "enhancement bonus", "enhancement_bonus",

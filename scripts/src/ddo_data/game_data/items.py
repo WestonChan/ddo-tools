@@ -95,7 +95,6 @@ _WIKI_ONLY_FIELDS = [
     "material",
     "binding",
     "weight",
-    "enhancement_bonus",
     "armor_bonus",
     "max_dex_bonus",
     "base_value",

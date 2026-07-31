@@ -40,7 +40,6 @@ export interface ItemCore {
   equipment_slot: string | null
   item_category: string | null
   minimum_level: number | null
-  enhancement_bonus: number | null
   material: string | null
   binding: string | null
   tooltip: string | null
@@ -259,7 +258,7 @@ export function getItemDetail(db: Database, id: number): ItemDetail | null {
   const core = runQueryFirst<ItemCore>(
     db,
     `SELECT id, name, rarity, equipment_slot, item_category, minimum_level,
-            enhancement_bonus, material, binding, tooltip,
+            material, binding, tooltip,
             description, wiki_url
        FROM items
        WHERE id = ?`,

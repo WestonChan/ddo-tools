@@ -406,7 +406,69 @@ def repair_stored_rows(conn: sqlite3.Connection) -> dict[str, int]:
         "effect_names_regraded": _regrade_effect_names(conn),
         "maintenance_rows_deleted": _delete_maintenance_effects(conn),
         "items_merged": _merge_items_sharing_a_wiki_page(conn),
+        "duplicate_item_bonuses_deleted": _deduplicate_item_bonuses(conn),
+        "duplicate_item_effects_deleted": _deduplicate_item_effects(conn),
     }
+
+
+def _deduplicate_item_effects(conn: sqlite3.Connection) -> int:
+    """The same repair for ``item_effects``, which is keyed the same way.
+
+    ``value`` is *not* part of the key here, so identity is
+    ``(item_id, effect_id, value)``: an item may legitimately carry
+    ``{{Bane|Evil Outsider|2}}`` and ``{{Bane|Undead|4}}``, and collapsing those
+    would delete a real enchantment rather than a ghost.
+    """
+    cur = conn.execute(
+        """
+        DELETE FROM item_effects AS dup
+         WHERE EXISTS (
+               SELECT 1 FROM item_effects later
+                WHERE later.item_id = dup.item_id
+                  AND later.effect_id = dup.effect_id
+                  AND COALESCE(later.value, -1) = COALESCE(dup.value, -1)
+                  AND later.sort_order > dup.sort_order
+         )
+        """
+    )
+    conn.commit()
+    return cur.rowcount
+
+
+def _deduplicate_item_bonuses(conn: sqlite3.Connection) -> int:
+    """Collapse ``item_bonuses`` rows an item holds more than once.
+
+    ``sort_order`` is part of the primary key, so ``INSERT OR IGNORE`` only
+    recognises a row it wrote *at the same offset*. Add a routing step that
+    emits rows earlier in the list and every later enchantment shifts down one
+    slot, gets re-inserted at its new offset, and leaves its old copy behind.
+    Adding step 1b for ``{{Enhancement bonus}}`` did exactly that to the shipped
+    database: 7,972 ghost rows, each with a correct value, silently doubling the
+    enchantment list of every item that carried one.
+
+    This is invariant 6 seen from an angle the idempotency tests cannot cover on
+    their own — the duplication appears when the *writer* changes, which is the
+    one moment a "did the row counts move?" check expects movement.
+
+    The **highest** ``sort_order`` wins — the freshest write, which is where the
+    current parser puts the enchantment. Keeping the lowest instead looks
+    tidier and never converges: the writer re-inserts at its own offset on every
+    run, so the repair would delete the same rows again forever and the shipped
+    display order would stay frozen at whatever the superseded parser produced.
+    """
+    cur = conn.execute(
+        """
+        DELETE FROM item_bonuses AS dup
+         WHERE EXISTS (
+               SELECT 1 FROM item_bonuses later
+                WHERE later.item_id = dup.item_id
+                  AND later.bonus_id = dup.bonus_id
+                  AND later.sort_order > dup.sort_order
+         )
+        """
+    )
+    conn.commit()
+    return cur.rowcount
 
 
 def _retarget_spell_save_bonuses(conn: sqlite3.Connection) -> int:
@@ -832,6 +894,22 @@ def _parse_effect(text: str) -> dict | None:
     return parse_effect_template(text)
 
 
+def _parse_enhancement_bonus(text: str):
+    """Decode ``{{Enhancement bonus|kind|N}}``, or None if it isn't one."""
+    from ..wiki.enhancement_bonus import parse_enhancement_bonus
+
+    return parse_enhancement_bonus(text)
+
+
+def _format_bonus_description(
+    stat: str | None, value: int | None, bonus_type: str | None,
+) -> str | None:
+    """Generate a bonus description from its resolved columns (invariant 2)."""
+    from ..wiki.templates import format_bonus_description
+
+    return format_bonus_description(stat, value, bonus_type)
+
+
 def _split_enchantments(entries: Iterable[str]) -> list[str]:
     """Expand wiki enchantment bullets into the enchantments they really hold."""
     from ..wiki.templates import split_enchantment_entry
@@ -1131,12 +1209,12 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             f"""
             INSERT OR IGNORE INTO items (
                 name, dat_id, rarity, slot_id, equipment_slot, item_category,
-                level, durability, item_type, minimum_level, enhancement_bonus,
+                level, durability, item_type, minimum_level,
                 hardness, weight, material, binding, base_value,
                 race_required, icon, description, tooltip,
                 enchant_name, enchant_suffix, effect_value,
                 cooldown_seconds, internal_level, tier_multiplier, wiki_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
@@ -1149,7 +1227,6 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                 item.get("durability"),
                 item.get("item_type"),
                 item.get("minimum_level"),
-                item.get("enhancement_bonus"),
                 item.get("hardness"),
                 item.get("weight"),
                 item.get("material"),
@@ -1327,6 +1404,51 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
                         (item_id, bonus_id, pass_a_count + bonus_offset),
                     )
                     bonus_offset += 1
+                continue
+
+            # 1b. {{Enhancement bonus|kind|N}} — the wiki's most-used item
+            # template, and one invocation of it means between zero and four
+            # rows across two tables, so it gets a decoder of its own. It has
+            # to be tried before step 2: it is still listed in
+            # _METADATA_TEMPLATES (so a malformed invocation still gets skipped
+            # rather than mangled), and step 3 would otherwise swallow every
+            # well-formed one — which is exactly what shipped, 5,239 times.
+            enhancement_bonus = _parse_enhancement_bonus(enchantment)
+            if enhancement_bonus is not None:
+                for parsed in enhancement_bonus.bonuses:
+                    stat_id, stat_name = _resolve_named(conn, "stats", parsed["stat"])
+                    bonus_type_id, bonus_type_name = _resolve_named(
+                        conn, "bonus_types", parsed["bonus_type"],
+                    )
+                    bonus_id = _ensure_bonus(
+                        conn,
+                        _bonus_name(stat_name, parsed["value"]),
+                        stat_id, bonus_type_id, parsed["value"],
+                        description=_format_bonus_description(
+                            stat_name, parsed["value"], bonus_type_name,
+                        ),
+                    )
+                    conn.execute(
+                        f"""
+                        INSERT OR IGNORE INTO item_bonuses
+                            (item_id, bonus_id, sort_order, data_source, resolution_method)
+                        VALUES (?, ?, ?, '{DataSource.WIKI}', '{ResolutionMethod.WIKI_ENCHANTMENT}')
+                        """,
+                        (item_id, bonus_id, pass_a_count + bonus_offset),
+                    )
+                    bonus_offset += 1
+                for effect_name in enhancement_bonus.effects:
+                    effect_id = _ensure_effect(conn, effect_name, None)
+                    if effect_id is not None:
+                        conn.execute(
+                            f"""
+                            INSERT OR IGNORE INTO item_effects
+                                (item_id, effect_id, value, sort_order, data_source)
+                            VALUES (?, ?, NULL, ?, '{DataSource.WIKI}')
+                            """,
+                            (item_id, effect_id, effect_offset),
+                        )
+                        effect_offset += 1
                 continue
 
             # 2. Weapon/armor effect → item_effects table

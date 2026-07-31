@@ -1109,9 +1109,13 @@ in [DB Errors.md](notes/DB%20Errors.md); this entry deliberately links out rathe
 Large enough that it should be split when picked up — suggested slices, in order:
 
 1. **The two big recoveries** (highest value; reuse 4c's `wiki/templates.py` while it is fresh):
-   - **`{{Enhancement bonus|w|N}}` is missing on 4,037 items** — a weapon's most basic stat. 4,055
-     items carry the template; 18 produced a row. The dead `items.enhancement_bonus` column is the
-     same bug. Confirmed independently against Maetrim's data. **This is what blocks Phase 8.**
+   - ✅ **`{{Enhancement bonus}}` — shipped 2026-07-30 as slice 1a.** 8,989 rows recovered across
+     5,239 occurrences; **Phase 8 is unblocked.** The template turned out to define *nine* kinds,
+     not the two the notes recorded, and one invocation can mean up to four rows across two tables
+     — full grammar, measured outcome and residuals in [DB Errors.md](notes/DB%20Errors.md).
+     `items.enhancement_bonus` was removed from the schema rather than populated. Three follow-ups
+     it surfaced (orb energy resistances, `insert_augments`, multi-template bullets) are logged
+     there against this phase.
    - **2,420 augment slots missing** across five unrecognized template families (`Lamordia Slot`
      1,001, `Dino Slot` 440, `MoonSunAugment` 427, `UpgradeableAugment` 72, `Slaver's Slot` 30).
      Carries an open schema question — whether `slot_type` needs a companion `slot_family` — with the
@@ -1126,7 +1130,9 @@ Large enough that it should be split when picked up — suggested slices, in ord
      `game_data/raid_quests.py` can be **deleted and replaced** rather than waiting for the WAF. It
      also fills 12 of the 13 NULL-`pack_id` raid quests and both quests missing from `quests`.
 3. **Audits and verdicts:**
-   - 32 columns 100% NULL and 8 under 5% — each needs "populate or drop". Two need a decision first:
+   - 31 columns 100% NULL and 8 under 5% — each needs "populate or drop". (Was 32;
+     `items.enhancement_bonus` was dropped outright in slice 1a once bonus rows proved to be the
+     only shape Phase 8 needs.) Two need a decision first:
      `item_augment_slots.augment_id` (6,887 rows — what is socketed is a *build* choice, so it may
      belong in `user.db`; decide before Phase 8) and the `weapon_proficiencies` model (3 rows backing
      three all-NULL FK columns; relevant to Phase 7).

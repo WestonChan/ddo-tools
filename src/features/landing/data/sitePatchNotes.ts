@@ -5,6 +5,15 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-07-30',
+    changes: [
+      'Weapons, armor and shields now show their "+N Enhancement Bonus" — it was missing from every item on the site, and is a weapon\'s most basic stat',
+      'Spellcasting implements now show their Implement bonus to Universal Spell Power, and orbs their Orb Bonus',
+      'Masterwork items are now marked as such, instead of showing nothing',
+      'Cursed items keep the minus on their enhancement penalty',
+    ],
+  },
+  {
     date: '2026-07-29',
     changes: [
       'The "Rare only" filter in the item list now works — it had been silently matching nothing, and finds 139 rare-loot items',

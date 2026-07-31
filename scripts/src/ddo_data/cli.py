@@ -1030,7 +1030,10 @@ def build_db(
             f"{repairs['effect_modifiers_regraded']} effect magnitudes regraded, "
             f"{repairs['effect_names_regraded']} effect names regraded, "
             f"{repairs['maintenance_rows_deleted']} maintenance rows deleted, "
-            f"{repairs['items_merged']} duplicate items merged"
+            f"{repairs['items_merged']} duplicate items merged, "
+            f"{repairs['duplicate_item_bonuses_deleted']} duplicate item bonuses "
+            f"and {repairs['duplicate_item_effects_deleted']} duplicate item "
+            f"effects deleted"
         )
 
     # --- Enchantment identity and descriptions -----------------------------

@@ -87,7 +87,38 @@ and `renormalize_bonus_names` flipped 18 negative bonuses to positive on every s
 `build-db` runs the collapse last, so the wrong sign is what shipped. Assert **value** convergence,
 not just row counts. Pattern: `scripts/tests/test_writer_idempotency.py`.
 
-## 7. Frontend workarounds are a smell pointing here
+## 7. Read the template's own definition before writing its parser
+
+A corpus census tells you which parameters occur. It cannot tell you what they *mean*, and the
+difference is where the data loss lives.
+
+`{{Enhancement bonus}}` sat in `docs/notes/DB Errors.md` for two days described as "first param the
+item kind (`w` weapon / `a` armor), second the magnitude". Its actual definition —
+`Template:Enhancement bonus`, read via `?action=raw` (see
+[ddowiki-api.md](ddowiki-api.md#actionraw-works-in-a-browser--use-it-to-read-a-templates-own-definition))
+— is two `{{#switch:{{lc:{{{1}}}}}}}` blocks defining **nine kinds** with three different output
+shapes. Building the parser from the census reading would have produced wrong data, not missing
+data, for 1,040 of 5,239 occurrences:
+
+- `io` means "spellcasting implement **only**" — it must produce no enhancement bonus at all.
+- `o`/`oi` render an **Orb Bonus**, a different bonus type; filed as Enhancement it would
+  stack-replace a real enhancement bonus in the stats engine.
+- Magnitude `0` renders **"Masterwork"**, a named property with its own mechanics — not `+0`.
+
+**Template pages are not in `.wiki-cache`**, so the definition is invisible offline. Fetch it.
+
+### The corollary: a strong correlation is not a meaning
+
+The template's third parameter matched the page's own `minlevel` on **426 of 459** occurrences, and
+"param 3 is the minimum level" is the obvious conclusion. It is wrong. The source says param 3
+overrides the *spellcasting-implement* value, defaulting to `param2 × 3`; the two agree 93% of the
+time only because implement bonuses scale with item level in DDO.
+
+A parser built on the 93% reading would have written correct-looking numbers into a column meaning
+something else — the same failure mode as invariant 4, reached by a different route. When a census
+suggests a meaning, confirm it against the definition before encoding it.
+
+## 8. Frontend workarounds are a smell pointing here
 
 `cleanDescription` in `EnchantmentList.tsx` existed only because the ETL stored raw wikitext. When a
 view starts massaging pipeline output at render time, the fix belongs in `scripts/` — every other

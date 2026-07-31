@@ -3,7 +3,6 @@ import { TooltipWrapper, WikiLinkIcon } from '../../../../components'
 import { ResourceChip } from '../ResourceChip'
 import { EntityHeader } from './EntityHeader'
 import { EnchantmentList } from './EnchantmentList'
-import { formatSigned } from './formatSigned'
 import { DetailSection } from './DetailSection'
 import { StatList, type StatListItem } from './StatList'
 import type { KvItem } from './KeyValueGrid'
@@ -22,8 +21,6 @@ function buildHeaderAttributes(detail: ItemDetailRow): KvItem[] {
   if (detail.equipment_slot) attrs.push({ label: 'Slot', value: detail.equipment_slot })
   if (detail.item_category) attrs.push({ label: 'Type', value: detail.item_category })
   if (detail.minimum_level !== null) attrs.push({ label: 'Min level', value: detail.minimum_level })
-  if (detail.enhancement_bonus !== null)
-    attrs.push({ label: 'Enhancement', value: formatSigned(detail.enhancement_bonus) })
   if (detail.material) attrs.push({ label: 'Material', value: detail.material })
   if (detail.binding) attrs.push({ label: 'Binding', value: detail.binding })
   if (detail.augmentSlots.length > 0) {

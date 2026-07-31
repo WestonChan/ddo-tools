@@ -322,3 +322,118 @@ def test_a_bonus_referenced_by_a_consumer_is_not_an_orphan(
     counts = count_orphans(conn)
 
     assert counts["bonuses"] == 1
+
+
+# ---------------------------------------------------------------------------
+# A7 — a composite enhancement bonus must arrive whole
+#
+# Distinct from `enhancement_bonus_stat_resolved`, which is about character
+# enhancement *trees*. This one is about `{{Enhancement bonus|...}}` on items.
+# ---------------------------------------------------------------------------
+
+
+def _seed_composite_half(conn: sqlite3.Connection, stat: str, value: int) -> None:
+    """One half of the attack/damage pair `{{Enhancement bonus|w|N}}` renders."""
+    conn.execute("INSERT INTO items (id, name) VALUES (1, 'Halfwright Blade')")
+    stat_id = conn.execute("SELECT id FROM stats WHERE name = ?", (stat,)).fetchone()[0]
+    type_id = conn.execute(
+        "SELECT id FROM bonus_types WHERE name = 'Enhancement'"
+    ).fetchone()[0]
+    conn.execute(
+        "INSERT INTO bonuses (id, name, stat_id, bonus_type_id, value) "
+        "VALUES (1, ?, ?, ?, ?)",
+        (f"{stat} {value:+d}", stat_id, type_id, value),
+    )
+    conn.execute(
+        "INSERT INTO item_bonuses (item_id, bonus_id, sort_order) VALUES (1, 1, 0)"
+    )
+
+
+def test_a7_fires_when_only_the_attack_half_was_written(
+    conn: sqlite3.Connection,
+) -> None:
+    """``|w`` renders "attack **and** damage rolls" — half of it is a bug.
+
+    The failure this catches is a decoder that fans one template out to several
+    rows and loses one of them. Nothing else would see it: each surviving row is
+    internally consistent, and `bonuses.name` is generated from the stat, so it
+    agrees with whatever the stat happens to be (invariant 4).
+    """
+    _seed_composite_half(conn, "Attack Bonus", 5)
+
+    result = _result(conn, "item_enhancement_bonus_composite_complete")
+
+    assert not result.passed
+    assert result.severity == "error"
+    assert result.failures[0]["item"] == "Halfwright Blade"
+    assert result.failures[0]["missing"] == "Damage Bonus"
+
+
+def test_a7_fires_when_only_the_damage_half_was_written(
+    conn: sqlite3.Connection,
+) -> None:
+    _seed_composite_half(conn, "Damage Bonus", 5)
+
+    result = _result(conn, "item_enhancement_bonus_composite_complete")
+
+    assert not result.passed
+    assert result.failures[0]["missing"] == "Attack Bonus"
+
+
+def test_a7_fires_when_the_halves_disagree_on_value(
+    conn: sqlite3.Connection,
+) -> None:
+    """One template yields one magnitude; two different ones cannot be a pair."""
+    _seed_composite_half(conn, "Attack Bonus", 5)
+    damage_id = conn.execute(
+        "SELECT id FROM stats WHERE name = 'Damage Bonus'"
+    ).fetchone()[0]
+    type_id = conn.execute(
+        "SELECT id FROM bonus_types WHERE name = 'Enhancement'"
+    ).fetchone()[0]
+    conn.execute(
+        "INSERT INTO bonuses (id, name, stat_id, bonus_type_id, value) "
+        "VALUES (2, 'Damage Bonus +4', ?, ?, 4)",
+        (damage_id, type_id),
+    )
+    conn.execute(
+        "INSERT INTO item_bonuses (item_id, bonus_id, sort_order) VALUES (1, 2, 1)"
+    )
+
+    result = _result(conn, "item_enhancement_bonus_composite_complete")
+
+    assert not result.passed
+
+
+def test_a7_passes_on_a_pair_written_through_the_real_writer(
+    conn: sqlite3.Connection,
+) -> None:
+    """The shape the pipeline actually produces must not trip the assertion."""
+    from ddo_data.db.writers import insert_items
+    from ddo_data.wiki.parsers import parse_item_wikitext
+
+    parsed = parse_item_wikitext(
+        "{{Named item|Weapon\n| name = Wholewright Blade\n"
+        "| enhancements =\n* {{Enhancement bonus|w|5}}\n}}"
+    )
+    assert parsed is not None
+    insert_items(conn, [parsed])
+
+    assert _result(conn, "item_enhancement_bonus_composite_complete").passed
+
+
+def test_a7_ignores_an_armor_class_only_enhancement_bonus(
+    conn: sqlite3.Connection,
+) -> None:
+    """``|a`` renders Armor Class alone — it is not half of anything."""
+    from ddo_data.db.writers import insert_items
+    from ddo_data.wiki.parsers import parse_item_wikitext
+
+    parsed = parse_item_wikitext(
+        "{{Named item|Armor\n| name = Wholewright Plate\n"
+        "| enhancements =\n* {{Enhancement bonus|a|3}}\n}}"
+    )
+    assert parsed is not None
+    insert_items(conn, [parsed])
+
+    assert _result(conn, "item_enhancement_bonus_composite_complete").passed

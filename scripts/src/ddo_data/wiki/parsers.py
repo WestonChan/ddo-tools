@@ -376,7 +376,6 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
 
     # Numeric fields
     item["minimum_level"] = _parse_int(fields.get("minlevel", ""))
-    item["enhancement_bonus"] = _parse_int(fields.get("enchantmentbonus", ""))
     item["durability"] = _parse_int(fields.get("durability", ""))
     item["hardness"] = _parse_int(fields.get("hardness", ""))
     item["armor_bonus"] = _parse_int(fields.get("armorbonus", "") or fields.get("ac", ""))

@@ -254,7 +254,6 @@ CREATE TABLE IF NOT EXISTS items (
     durability        INTEGER,                                     -- bp: key 0x10000A4D
     item_type         TEXT,                                        -- wt: {{Named item|TYPE}} positional arg
     minimum_level     INTEGER,                                     -- bp: key 0x10001C5D
-    enhancement_bonus INTEGER,                                     -- wt: enchantmentbonus field
     hardness          INTEGER,                                     -- wt: hardness field
     weight            REAL,                                        -- wt: weight field
     material_id       INTEGER REFERENCES item_materials(id),       -- c: joined from material name

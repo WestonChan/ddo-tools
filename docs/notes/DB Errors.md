@@ -23,7 +23,29 @@ A corpus-wide census of every template appearing in a cached item's `enhancement
 
 Both of the first two entries are deferred to **Phase 4m** (decided 2026-07-28) rather than folded into 4c, to keep 4c's review surface at what was approved. They are the highest-value items on 4m's list and the reason 4m should be picked up promptly — **`{{Enhancement bonus}}` blocks Phase 8**.
 
-- 🐛 📋 Phase 4m — **`{{Enhancement bonus|w|N}}` — the core `+N Enhancement Bonus` — is missing from 4,037 items.** 4,055 cached items carry the template (variants: `Enhancement bonus` 3,790, `Enhancement_bonus` 256, `enhancement bonus` 12, `enhancement_bonus` 1); **only 18 produced a bonus row.** The first param is the item kind (`w` weapon / `a` armor), the second the magnitude. **`items.enhancement_bonus` being 100% NULL is the same bug, not a separate one.** Independent confirmation: Maetrim records a `WeaponEnchantment` value on 3,002 of the 6,928 name-mappable items where we record zero, and 3,569 `WeaponEnchantment` + 958 `ArmorEnchantment` buffs across his full set. This is a weapon's most basic stat and Phase 8 (Gear) cannot function without it. Repro: `SELECT COUNT(enhancement_bonus) FROM items;` → 0
+- ✅ **Shipped 2026-07-30 (Phase 4m slice 1a) — 8,989 rows recovered, and the finding below was wrong in two ways.** Original text said the grammar was "`w` weapon / `a` armor, second param the magnitude". The template's own source (`Template:Enhancement bonus`, read in-browser via `action=raw` — it is **not** in the cache) defines **nine kinds from six letters** via two `{{#switch:{{lc:{{{1}}}}}}}` blocks, and one invocation can mean up to four rows across two tables. Corrected counts: **5,239 occurrences across 5,011 cached pages** (not 4,055/4,037 — those predate the 4c rebuild). Variants: `Enhancement bonus` 4,773, `Enhancement_bonus` 429, `enhancement bonus` 36, `enhancement_bonus` 1.
+
+	| kind | occurrences | enhancement bonus applies to | implement line? |
+	|---|---|---|---|
+	| `w` | 3,079 | Attack Bonus + Damage Bonus | — |
+	| `a` | 1,120 | Armor Class | — |
+	| `i` | 685 | Attack Bonus + Damage Bonus | yes |
+	| `s` | 199 | Armor Class + Attack + Damage | — |
+	| `oi` | 64 | **Orb Bonus** | yes |
+	| `o` | 55 | **Orb Bonus** | — |
+	| `io` | 21 | **none** — implement only | yes |
+	| `si` | 12 | Armor Class + Attack + Damage | yes |
+	| `I` | 4 | folds to `i` (`{{lc:}}`) | yes |
+
+	Three shapes the original finding missed entirely: the **implement value** is `param3` if present else `param2 × 3`, targeting `Universal Spell Power` @ `Implement` (param 3 is *not* minimum level — 426 of 459 match `minlevel` only because implement bonuses scale with ML); **magnitude 0 renders `Masterwork`**, not `+0`, so it becomes an `effects` row (12 items); and **negative magnitudes are legitimate** on cursed gear.
+
+	Root cause: `_METADATA_TEMPLATES` in `dat_parser/effects.py` skipped the template as *"metadata — stored in dedicated columns"*, while the only writer for that column (`wiki/parsers.py`) read an item-infobox field `enchantmentbonus` **the wiki has never used**. Two halves built for each other that never met. `items.enhancement_bonus` was indeed the same bug — the column has now been **removed from the schema** rather than populated, since bonus rows are the only consumer shape Phase 8 needs (dead-column count 32 → 31).
+
+	Measured outcome (clean-room from-scratch build, independent re-census): **97.2% of expected rows written**, every residual named — 199 pages with no `items` row (pre-existing item-coverage gap), 197 occurrences outside any `{{Named item}}` infobox (augment/crafting/upgrade pages), 6 in multi-template bullets, 28 multi-version-page attribution. Verified against the committed baseline: **0 item names changed, 0 pre-existing bonus values changed, 0 logical tuples lost**; `item_bonuses` 16,847 → 25,426. Attack Bonus and Damage Bonus gained exactly 3,527 each — the composite pairing now guarded by assertion A7 `item_enhancement_bonus_composite_complete`.
+- 🐛 📋 Phase 4m — **The Orb Bonus stores only its saving-throw half.** `{{Enhancement bonus|o|N}}`'s popup grants a +N orb bonus to all saving throws **and** to five energy resistances (Acid/Cold/Fire/Electric/Sonic) while blocking. Slice 1a stored the leading mechanic only — 99 rows against `Saving Throws` — so five sixths of the fact is still unrecorded. Repro: `SELECT COUNT(*) FROM bonuses b JOIN bonus_types bt ON bt.id=b.bonus_type_id WHERE bt.name='Orb';` → 99
+- 🐛 📋 Phase 4m — **`insert_augments` never got the enhancement-bonus decoder.** Its enchantment loop (`writers.py` ~1825) runs step 1 only — no step 1b and no named-enchantment step — so `{{Enhancement bonus}}` on `{{Item Augment}}` pages is still dropped. Part of the 197 out-of-infobox occurrences above.
+- 🐛 📋 Phase 4m — **A bullet holding several templates yields only one enchantment.** Step 1 consumes the whole bullet, so `** {{Enhancement bonus|io|5}}, {{SpellPower|Radiance|84}}, {{Regeneration|Greater}}` stores the spell power and drops the rest. General and pre-existing — affects far more than this one template.
+- ⚠ 📋 Phase 4m — **Multi-version item pages merge onto one `items` row.** `Swashbuckler` carries AC 2/3/4/5/15 from four infoboxes on one page, so the merged row looks like it has five contradictory enhancement bonuses. Source of the 28 unattributable rows above, and a modelling question rather than a parse bug.
 - 🐛 📋 Phase 4m — **Whole augment-slot families are unrecognized — 2,420 slots missing (9,307 template occurrences vs 6,887 stored rows).** Only `{{Augment|Colour}}` is parsed. Unhandled, with clean two-param shapes ready to parse:
 	- `{{Lamordia Slot|Melancholic|Weapon}}` — 1,001 occurrences / 346 items (values: Melancholic, Dolorous, Miserable, Woeful × Weapon/Accessory/Armor)
 	- `{{Dino Slot|Scale|Weapon}}` — 440 / 132 items (Scale, Fang, Claw, Horn, Set)
@@ -93,7 +115,7 @@ Sparse-cloned `Output/DataFiles` (85 MB) and diffed **8,510 `.item` files** agai
 - 🐛 📋 Phase 4m — **4 real bonus types have no row in our 28-row `bonus_types` table, and their absence directly produces NULL `bonus_type_id`.** Maetrim's `<BonusType>` vocabulary has 26 distinct values; 9 don't match ours, of which 4 are genuine gaps with measurable consequences:
 	- `Legendary` — 14 of our bonus descriptions mention it, **14 of those (100%) have NULL type**. This is the `{{Conditioning|15|Legendary}}` shape from the effects-magnitude bug.
 	- `Penalty` — 19 mentioned, **18 NULL** (cursed-gear negatives).
-	- `Orb` — 15 mentioned, **11 NULL**.
+	- ~~`Orb` — 15 mentioned, **11 NULL**.~~ ✅ **Added 2026-07-30** as `bonus_types` id 29, pulled forward from this slice because `{{Enhancement bonus|o|N}}` renders "+N Orb Bonus" and filing it as Enhancement would let it stack-replace a real enhancement bonus — a wrong answer rather than a missing one. The remaining three (`Legendary`, `Penalty`, `Vitality`) are still open.
 	- `Vitality` — 22 mentioned, 1 NULL.
 	Adding four rows fixes ~44 NULL-type bonuses outright. The other 5 unmatched names are DDO's item-specific flavours of Enhancement (`Weapon Enchantment` 2,829, `Armor Enhancement` 958, `Shield Enhancement` 257, `False Life` 7) plus `Insightful` — see below. Repro: `SELECT COUNT(*) FROM bonuses WHERE lower(description) LIKE '%legendary%' AND bonus_type_id IS NULL;`
 - 🐛 ⚠ 📋 Phase 4m — **`bonus_types` id 3 is named `Insight`, but DDO's bonus type is `Insightful`.** Our own scraped data agrees with DDO, not with us: **301 descriptions use `|Insightful}}` vs 289 using `|Insight}}`**, and both alias onto id 3 — so there's no data loss, but every UI surface that renders the bonus-type name shows "Insight" where the game says "Insightful". Matters for the Phase 6 stat-breakdown popover and the bonus-type badge pills. Confirm against the wiki's bonus-type page, then rename. Repro: `SELECT id, name FROM bonus_types WHERE name LIKE 'Insight%';`
