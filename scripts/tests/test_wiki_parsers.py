@@ -292,10 +292,10 @@ def test_parse_item_wikitext_weapon() -> None:
     assert isinstance(item["enchantments"], list)
     assert "Holy Sword" in item["enchantments"]
     assert "+15 Enhancement Bonus" in item["enchantments"]
-    # Augment slots
-    assert isinstance(item["augment_slots"], list)
-    assert "Red Augment Slot" in item["augment_slots"]
-    assert "Purple Augment Slot" in item["augment_slots"]
+    # Augment slots. The fixture's legacy `augmentslot =` field holds prose
+    # ("Red Augment Slot"), which is not a slot label any augment can be joined
+    # against — see test_a_legacy_augmentslot_field_is_decoded_not_trusted.
+    assert item["augment_slots"] == []
 
 
 def test_parse_item_wikitext_armor() -> None:
@@ -385,6 +385,97 @@ def test_parse_item_wikitext_rare_field_absent_or_empty() -> None:
     assert parse_item_wikitext("{{Named item|Weapon|name=Boot}}")["rare"] is False
     assert parse_item_wikitext("{{Named item|Weapon|name=Boot|rare = }}")["rare"] is False
     assert parse_item_wikitext("{{Named item|Weapon|name=Boot|rare = no}}")["rare"] is False
+
+
+# ---------------------------------------------------------------------------
+# Augment-slot extraction
+#
+# The enhancements bullet list is where the wiki records an item's sockets, and
+# the extractor used to be `re.search(r"\{\{[Aa]ugment\|(\w+)\}\}")` — one
+# family, one shape, and no way past a second parameter. These cover the six
+# template families and the bullet shapes that were losing data.
+# ---------------------------------------------------------------------------
+
+
+def _slots(enhancements: str) -> list[str]:
+    item = parse_item_wikitext(
+        f"{{{{Named item|Weapon|name = Testwright Blade|enhancements =\n{enhancements}\n}}}}"
+    )
+    assert item is not None
+    return item["augment_slots"]
+
+
+def test_augment_slot_extraction_keeps_a_named_parameter_from_hiding_the_colour() -> None:
+    """578 cached invocations carry `nocat=` and stored nothing at all."""
+    assert _slots("* {{Augment|Purple|nocat=TRUE}}") == ["purple"]
+
+
+def test_augment_slot_extraction_reads_every_family() -> None:
+    """Item:Legendary Downcast Top Hat's real enhancements list, in page order."""
+    assert _slots(
+        "* {{Absorption|Electric|14|||Insight}}\n"
+        "* {{Lamordia Slot|Melancholic|Accessory}}\n"
+        "* {{Lamordia Slot|Dolorous|Accessory}}\n"
+        "* {{Augment|Green}}\n"
+        "* {{Augment|Colorless}}\n"
+        "* {{MoonSunAugment|Sun}}"
+    ) == [
+        "lamordia: melancholic (accessory)",
+        "lamordia: dolorous (accessory)",
+        "green",
+        "colorless",
+        "sun",
+    ]
+
+
+def test_augment_slot_extraction_leaves_other_enchantments_alone() -> None:
+    """A slot template does not make the rest of its bullet disappear."""
+    item = parse_item_wikitext(
+        "{{Named item|Weapon|name = Testwright Blade|enhancements =\n"
+        "* {{Lamordia Slot|Woeful|Weapon}}, {{SpellPower|Radiance|84}}\n"
+        "* {{Stat|STR|6}}\n}}"
+    )
+    assert item is not None
+    assert item["augment_slots"] == ["lamordia: woeful (weapon)"]
+    assert item["enchantments"] == ["{{SpellPower|Radiance|84}}", "{{Stat|STR|6}}"]
+
+
+def test_an_upgradeable_augment_is_an_enchantment_not_a_slot() -> None:
+    """It marks an upgrade the item can receive, not a socket it has."""
+    item = parse_item_wikitext(
+        "{{Named item|Weapon|name = Testwright Blade|enhancements =\n"
+        "* {{UpgradeableAugment|Primary}}\n}}"
+    )
+    assert item is not None
+    assert item["augment_slots"] == []
+    assert item["enchantments"] == ["{{UpgradeableAugment|Primary}}"]
+
+
+def test_a_legacy_augmentslot_field_is_decoded_not_trusted() -> None:
+    """The pre-template `augmentslot =` field feeds the same column.
+
+    A free-text value has no `augment_slot_types` row to resolve to, so the
+    writer would drop it and the socket would silently vanish from the item.
+    Recognized colours are kept; anything else declines here, where it is
+    visible, rather than downstream.
+    """
+    item = parse_item_wikitext(
+        "{{Named item|Jewelry|name = Testwright Ring|augmentslot =\n"
+        "* Blue\n* One colorless augment slot\n* White\n}}"
+    )
+    assert item is not None
+    assert item["augment_slots"] == ["blue"]
+
+
+def test_a_malformed_slot_invocation_stays_an_enchantment() -> None:
+    """Declined by the decoder, so the router's metadata step still sees it."""
+    item = parse_item_wikitext(
+        "{{Named item|Weapon|name = Testwright Blade|enhancements =\n"
+        "* {{Dino Slot|Talon|Weapon}}\n}}"
+    )
+    assert item is not None
+    assert item["augment_slots"] == []
+    assert item["enchantments"] == ["{{Dino Slot|Talon|Weapon}}"]
 
 
 def test_parse_item_wikitext_empty_name_fallback() -> None:

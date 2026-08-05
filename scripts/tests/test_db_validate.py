@@ -437,3 +437,223 @@ def test_a7_ignores_an_armor_class_only_enhancement_bonus(
     insert_items(conn, [parsed])
 
     assert _result(conn, "item_enhancement_bonus_composite_complete").passed
+
+# ---------------------------------------------------------------------------
+# A8 / A8b / A8c — the augment_slot_types vocabulary and the FKs onto it
+#
+# `augment_slot_types` is the closed set of sockets an item can carry, written
+# only from the decoder's output. Three ways it can go wrong, none of which
+# raises anything on its own: a row outside the grammar (A8), a well-formed
+# crafting socket no augment answers to — a dropdown that opens onto nothing
+# (A8b), and a junction row pointing at a definition that is not there (A8c).
+# ---------------------------------------------------------------------------
+
+
+def _definition(conn: sqlite3.Connection, label: str, *parts: str | None) -> int:
+    """Insert one `augment_slot_types` row and return its id.
+
+    Written directly rather than through the writer so a *bad* row can exist:
+    `_resolve_augment_slot_type` declines anything the decoder did not compose,
+    which is what makes A8 a tripwire for a future writer rather than for this
+    one.
+    """
+    cur = conn.execute(
+        "INSERT INTO augment_slot_types (label, family, variant, qualifier) "
+        "VALUES (?, ?, ?, ?)",
+        (label, *parts),
+    )
+    assert cur.lastrowid is not None
+    return cur.lastrowid
+
+
+def _slot_row(conn: sqlite3.Connection, slot_id: int) -> None:
+    conn.execute("INSERT OR IGNORE INTO items (id, name) VALUES (1, 'Slotted Ring')")
+    conn.execute(
+        "INSERT INTO item_augment_slots (item_id, sort_order, slot_id) "
+        "VALUES (1, (SELECT COUNT(*) FROM item_augment_slots), ?)",
+        (slot_id,),
+    )
+
+
+def _slotted(conn: sqlite3.Connection, label: str, *parts: str | None) -> int:
+    """A definition plus an item carrying it — the state the UI renders."""
+    slot_id = _definition(conn, label, *parts)
+    _slot_row(conn, slot_id)
+    return slot_id
+
+
+@pytest.mark.parametrize(
+    ("label", "parts"),
+    [
+        # The label and its columns must describe the same socket, or the
+        # augments-side display fallback and the FK point different ways.
+        ("lamordia: melancholic (accessory)", ("standard", "melancholic", "accessory")),
+        ("lamordia: melancholic (accessory)", ("lamordia", "melancholic", None)),
+        # Labels no composition could produce.
+        ("melancholic (weapon)", ("lamordia", "melancholic", "weapon")),
+        ("lamordia melancholic", ("lamordia", "melancholic", None)),
+        ("isle_of_dread: fang", ("dino", "fang", None)),
+        ("chartreuse", ("standard", "chartreuse", None)),
+        # Not folded at the writer boundary: `augments.slot_color` is
+        # lower-case, so the backfill would never find this row.
+        ("Green", ("standard", "Green", None)),
+        # Variants and pools the templates do not define.
+        ("lamordia: talon (weapon)", ("lamordia", "talon", "weapon")),
+        ("lamordia: woeful (helmet)", ("lamordia", "woeful", "helmet")),
+    ],
+)
+def test_a8_fires_on_a_definition_outside_the_vocabulary(
+    conn: sqlite3.Connection, label: str, parts: tuple[str | None, ...],
+) -> None:
+    _definition(conn, label, *parts)
+
+    result = _result(conn, "augment_slot_types_are_known")
+
+    assert not result.passed
+    assert result.severity == "error"
+    assert result.failures[0]["label"] == label
+
+
+def test_a8_passes_on_every_definition_the_decoder_can_compose(
+    conn: sqlite3.Connection,
+) -> None:
+    from ddo_data.wiki.augment_slots import known_slot_definitions
+
+    for label, family, variant, qualifier in known_slot_definitions():
+        _definition(conn, label, family, variant, qualifier)
+
+    assert _result(conn, "augment_slot_types_are_known").passed
+
+
+def test_a8_passes_on_slots_written_through_the_real_writer(
+    conn: sqlite3.Connection,
+) -> None:
+    """The shape the pipeline actually produces, end to end from wikitext."""
+    from ddo_data.db.writers import insert_items
+    from ddo_data.wiki.parsers import parse_item_wikitext
+
+    parsed = parse_item_wikitext(
+        "{{Named item|Clothing\n| name = Wholewright Top Hat\n"
+        "| enhancements =\n"
+        "* {{Lamordia Slot|Melancholic|Accessory}}\n"
+        "* {{Augment|Purple|nocat=TRUE}}\n"
+        "* {{MoonSunAugment|Sun}}\n"
+        "* {{Dino Slot|Set}}\n"
+        "* {{Slaver's Slot|Prefix|Legendary}}\n}}"
+    )
+    assert parsed is not None
+    insert_items(conn, [parsed])
+
+    assert _result(conn, "augment_slot_types_are_known").passed
+    assert conn.execute("SELECT COUNT(*) FROM item_augment_slots").fetchone()[0] == 5
+
+
+def test_a8b_fires_on_a_crafting_slot_no_augment_fits(conn: sqlite3.Connection) -> None:
+    """A well-formed socket that joins to nothing opens onto an empty dropdown."""
+    _slotted(conn, "lamordia: melancholic (accessory)", "lamordia", "melancholic", "accessory")
+
+    result = _result(conn, "crafting_slots_have_candidate_augments")
+
+    assert not result.passed
+    assert result.severity == "error"
+    assert result.failures[0]["label"] == "lamordia: melancholic (accessory)"
+
+
+def test_a8b_passes_once_a_matching_augment_exists(conn: sqlite3.Connection) -> None:
+    slot_id = _slotted(
+        conn, "lamordia: melancholic (accessory)", "lamordia", "melancholic", "accessory",
+    )
+    conn.execute(
+        "INSERT INTO augments (name, slot_color, slot_id) VALUES "
+        "('Melancholic Charisma', 'lamordia: melancholic (accessory)', ?)",
+        (slot_id,),
+    )
+
+    assert _result(conn, "crafting_slots_have_candidate_augments").passed
+
+
+def test_a8b_needs_the_fk_not_just_the_display_fallback(conn: sqlite3.Connection) -> None:
+    """The candidate query joins on `slot_id`; a matching `slot_color` alone is
+    the un-backfilled state, which renders as an empty dropdown."""
+    _slotted(conn, "lamordia: woeful (weapon)", "lamordia", "woeful", "weapon")
+    conn.execute(
+        "INSERT INTO augments (name, slot_color) VALUES "
+        "('Woeful Sneak Attack', 'lamordia: woeful (weapon)')"
+    )
+
+    assert not _result(conn, "crafting_slots_have_candidate_augments").passed
+
+
+def test_a8b_ignores_slavers_slots(conn: sqlite3.Connection) -> None:
+    """Slave Lords crafting fills these with shards, so no augment ever will."""
+    _slotted(conn, "slaver's: prefix (legendary)", "slavers", "prefix", "legendary")
+
+    assert _result(conn, "crafting_slots_have_candidate_augments").passed
+
+
+def test_a8b_ignores_a_socket_no_item_carries(conn: sqlite3.Connection) -> None:
+    """Nothing renders it, so an empty candidate list cannot be seen."""
+    _definition(conn, "lamordia: woeful (armor)", "lamordia", "woeful", "armor")
+
+    assert _result(conn, "crafting_slots_have_candidate_augments").passed
+
+
+def test_a8c_fires_on_a_junction_row_pointing_at_nothing(
+    conn: sqlite3.Connection,
+) -> None:
+    """Crafted with foreign keys off, which is not a contrivance: the shape
+    migration in db/schema.py runs before the DDL turns them on, and the
+    frontend reads the shipped file with them off too. Validation is the
+    enforcement for every FK in this schema."""
+    slot_id = _slotted(conn, "sun", "standard", "sun", None)
+    # The pragma is a no-op inside a transaction, and the inserts above opened one.
+    conn.commit()
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.execute("DELETE FROM augment_slot_types WHERE id = ?", (slot_id,))
+
+    result = _result(conn, "augment_slot_ids_resolve")
+
+    assert not result.passed
+    assert result.severity == "error"
+    assert result.failures[0]["source_table"] == "item_augment_slots"
+
+
+def test_a8c_fires_on_an_augment_pointing_at_nothing(conn: sqlite3.Connection) -> None:
+    slot_id = _definition(conn, "sun", "standard", "sun", None)
+    conn.execute(
+        "INSERT INTO augments (name, slot_color, slot_id) VALUES ('Solar Gem', 'sun', ?)",
+        (slot_id,),
+    )
+    # The pragma is a no-op inside a transaction, and the inserts above opened one.
+    conn.commit()
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.execute("DELETE FROM augment_slot_types WHERE id = ?", (slot_id,))
+
+    result = _result(conn, "augment_slot_ids_resolve")
+
+    assert not result.passed
+    assert result.failures[0]["source_table"] == "augments"
+
+
+def test_a8c_passes_when_every_slot_id_resolves(conn: sqlite3.Connection) -> None:
+    slot_id = _slotted(conn, "sun", "standard", "sun", None)
+    conn.execute(
+        "INSERT INTO augments (name, slot_color, slot_id) VALUES ('Solar Gem', 'sun', ?)",
+        (slot_id,),
+    )
+    # A NULL FK is the documented un-backfilled state, not a dangling one.
+    conn.execute(
+        "INSERT INTO augments (name, slot_color) VALUES ('Odd Gem', 'chartreuse')"
+    )
+
+    assert _result(conn, "augment_slot_ids_resolve").passed
+
+
+def test_a8_vocabulary_matches_the_decoders(conn: sqlite3.Connection) -> None:
+    """validate.py mirrors the decoder's vocabulary by value rather than by
+    import (it must stay loadable without the wiki package's HTTP dependency),
+    so the copy needs a test that the two still agree."""
+    from ddo_data.db.validate import AUGMENT_SLOT_DEFINITIONS
+    from ddo_data.wiki.augment_slots import known_slot_definitions
+
+    assert set(AUGMENT_SLOT_DEFINITIONS) == set(known_slot_definitions())

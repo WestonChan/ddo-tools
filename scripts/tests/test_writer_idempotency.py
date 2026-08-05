@@ -70,6 +70,40 @@ def _count(conn: sqlite3.Connection, table: str) -> int:
     return conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
 
 
+# The three (name, modifier) pairs the shipped database holds under the two
+# misrouted template names, plus one real effect that must survive the repair.
+_MISROUTED_EFFECTS = [
+    ("UpgradeableAugment", "Primary"),
+    ("UpgradeableAugment", "Secondary"),
+    ("Slaver's Slot", "Prefix"),
+]
+
+
+def _seed_misrouted_augment_effects(db: GameDB) -> None:
+    """Recreate the pre-repair rows the old effect parser wrote."""
+    db.insert_items([{
+        "name": "Testwright Relic",
+        "equipment_slot": "Trinket",
+        "enchantments": ["Vorpal"],
+    }])
+    item_id = db.conn.execute(
+        "SELECT id FROM items WHERE name = 'Testwright Relic'"
+    ).fetchone()[0]
+    for offset, (name, modifier) in enumerate(_MISROUTED_EFFECTS, start=1):
+        db.conn.execute(
+            "INSERT INTO effects (name, modifier) VALUES (?, ?)", (name, modifier)
+        )
+        effect_id = db.conn.execute(
+            "SELECT id FROM effects WHERE name = ? AND modifier = ?", (name, modifier)
+        ).fetchone()[0]
+        db.conn.execute(
+            "INSERT INTO item_effects (item_id, effect_id, value, sort_order, "
+            "data_source) VALUES (?, ?, NULL, ?, 'wiki')",
+            (item_id, effect_id, offset),
+        )
+    db.conn.commit()
+
+
 class TestCraftingOptionsIdempotency:
     """``insert_crafting_options`` must match existing rows, not append copies."""
 
@@ -357,6 +391,105 @@ class TestWholeBuildIdempotency:
         ).fetchone()[0] == 1
 
 
+class TestAugmentSlotsAreRewrittenPerItem:
+    """`item_augment_slots` is keyed on (item_id, sort_order) — position only.
+
+    That makes `INSERT OR IGNORE` actively wrong for this table: recognizing a
+    newly-decoded family slot inserts it *before* the colour slots that were
+    already stored, every later slot re-lands at a shifted offset, and the old
+    value stays behind at the offset it used to hold. The whole list is rewritten
+    per item instead, which is safe because `augment_id` is NULL on every row.
+    """
+
+    GREEN_ONLY = {
+        "name": "Testwright Circlet",
+        "equipment_slot": "Head",
+        "enchantments": [],
+        "augment_slots": ["green"],
+    }
+    WITH_FAMILY_SLOT = {
+        **GREEN_ONLY,
+        "augment_slots": ["lamordia: melancholic (accessory)", "green"],
+    }
+
+    def _slots(self, db: GameDB) -> list[tuple[int, str]]:
+        return db.conn.execute(
+            "SELECT ias.sort_order, t.label FROM item_augment_slots ias "
+            "JOIN items i ON i.id = ias.item_id "
+            "JOIN augment_slot_types t ON t.id = ias.slot_id "
+            "WHERE i.name = 'Testwright Circlet' ORDER BY ias.sort_order"
+        ).fetchall()
+
+    def test_a_new_slot_at_the_front_leaves_no_ghost_behind(self) -> None:
+        db = _fresh_db()
+        db.insert_items([self.GREEN_ONLY])
+        db.insert_items([self.WITH_FAMILY_SLOT])
+
+        assert self._slots(db) == [
+            (0, "lamordia: melancholic (accessory)"), (1, "green"),
+        ]
+
+    def test_repeated_writes_converge(self) -> None:
+        db = _fresh_db()
+        seen = []
+        for _ in range(3):
+            db.insert_items([self.WITH_FAMILY_SLOT])
+            seen.append(self._slots(db))
+
+        assert seen[0] == seen[1] == seen[2]
+        assert len(seen[0]) == 2
+
+    def test_a_shortened_list_drops_the_slots_that_went_away(self) -> None:
+        """A wiki edit removing a slot must remove the row, not orphan it."""
+        db = _fresh_db()
+        db.insert_items([self.WITH_FAMILY_SLOT])
+        db.insert_items([self.GREEN_ONLY])
+
+        assert self._slots(db) == [(0, "green")]
+
+    def test_an_empty_list_clears_every_stored_slot(self) -> None:
+        """A wiki edit removing the last slot has to reach the database.
+
+        This is the case that rules out "skip the delete when the incoming list
+        is empty" as a way to protect multi-version pages from each other.
+        """
+        db = _fresh_db()
+        db.insert_items([self.WITH_FAMILY_SLOT])
+
+        db.insert_items([{**self.GREEN_ONLY, "augment_slots": []}])
+
+        assert self._slots(db) == []
+
+    def test_an_item_dict_without_the_key_leaves_the_stored_slots_alone(self) -> None:
+        """The binary parser never produces `augment_slots`.
+
+        Its dicts describe the same items, so a blanket rewrite would delete the
+        wiki-sourced slots on every build.
+        """
+        db = _fresh_db()
+        db.insert_items([self.WITH_FAMILY_SLOT])
+
+        db.insert_items([{
+            "name": "Testwright Circlet",
+            "equipment_slot": "Head",
+            "dat_id": "0x1234",
+            "enchantments": [],
+        }])
+
+        assert self._slots(db) == [
+            (0, "lamordia: melancholic (accessory)"), (1, "green"),
+        ]
+
+    def test_a_slot_label_resolves_case_insensitively(self) -> None:
+        """Case is folded at the writer boundary, before the label identifies its
+        definitions row — otherwise `Green` would define a second green socket
+        that no augment (whose `slot_color` is lower-case) is ever matched to."""
+        db = _fresh_db()
+        db.insert_items([{**self.GREEN_ONLY, "augment_slots": ["Green", " Blue "]}])
+
+        assert self._slots(db) == [(0, "green"), (1, "blue")]
+
+
 class TestARouterChangeLeavesNoStaleRows:
     """Adding a row to an item shifts `sort_order`, which is part of the PK.
 
@@ -482,6 +615,120 @@ class TestARouterChangeLeavesNoStaleRows:
         assert [(n, v, c) for n, v, c in rows] == [
             ("Bane", 4, 1), ("Masterwork", None, 1), ("Vorpal", None, 1),
         ]
+
+    def test_the_misrouted_augment_templates_are_deleted(self) -> None:
+        """`UpgradeableAugment` and `Slaver's Slot` became junk `item_effects`.
+
+        Neither was in `_METADATA_TEMPLATES`, so the effect parser read them as
+        weapon effects: 72 + 30 junction rows in the shipped database, under
+        effect names that are template invocations rather than game concepts.
+        The stale state cannot be produced through the writer any more — the
+        parsers that made it are gone — so it is constructed the way the old
+        writer wrote it.
+        """
+        db = _fresh_db()
+        _seed_misrouted_augment_effects(db)
+
+        deleted = db.repair_stored_rows()["misrouted_augment_effects_deleted"]
+
+        assert deleted == 3
+        assert db.conn.execute(
+            "SELECT COUNT(*) FROM effects "
+            "WHERE lower(name) IN ('upgradeableaugment', \"slaver's slot\")"
+        ).fetchone()[0] == 0
+        assert _count(db.conn, "item_effects") == 1, "an unrelated effect was deleted"
+
+    def test_the_misrouted_deletion_is_idempotent(self) -> None:
+        db = _fresh_db()
+        _seed_misrouted_augment_effects(db)
+        db.repair_stored_rows()
+
+        assert db.repair_stored_rows()["misrouted_augment_effects_deleted"] == 0
+
+    def test_the_canonical_upgradeable_effect_survives_the_repair(self) -> None:
+        """The repair targets the raw template name, not the concept.
+
+        `{{UpgradeableAugment|Primary}}` now stores `Upgradeable Augment`, and
+        deleting that on the next build would undo the fix it is here to
+        support.
+        """
+        db = _fresh_db()
+        _seed_misrouted_augment_effects(db)
+        db.insert_items([{
+            "name": "Epic Testwright Locket",
+            "equipment_slot": "Trinket",
+            "enchantments": ["{{UpgradeableAugment|Primary}}"],
+        }])
+
+        db.repair_stored_rows()
+
+        assert db.conn.execute(
+            "SELECT e.name, e.modifier FROM item_effects ie "
+            "JOIN effects e ON e.id = ie.effect_id "
+            "JOIN items i ON i.id = ie.item_id "
+            "WHERE i.name = 'Epic Testwright Locket'"
+        ).fetchall() == [("Upgradeable Augment", "Primary")]
+
+    def test_an_augments_slot_id_is_backfilled_from_its_slot_colour(self) -> None:
+        """`augments.slot_color` is the wiki-sourced display fallback; `slot_id`
+        is what the candidate query joins on.
+
+        `insert_augments` uses INSERT OR IGNORE, so the 1,279 rows already
+        stored never get the FK from a re-scrape — the repair pass is the only
+        thing that can reach them.
+        """
+        db = _fresh_db()
+        db.insert_items([{
+            "name": "Testwright Circlet",
+            "equipment_slot": "Head",
+            "enchantments": [],
+            "augment_slots": ["lamordia: melancholic (accessory)", "sun"],
+        }])
+        db.conn.execute(
+            "INSERT INTO augments (name, slot_color) VALUES "
+            "('Melancholic Charisma', 'lamordia: melancholic (accessory)'), "
+            "('Solar Gem of Abjuration', 'sun')"
+        )
+
+        backfilled = db.repair_stored_rows()["augment_slot_ids_backfilled"]
+
+        assert backfilled == 2
+        assert db.conn.execute(
+            "SELECT a.name, t.label FROM augments a "
+            "JOIN augment_slot_types t ON t.id = a.slot_id ORDER BY a.name"
+        ).fetchall() == [
+            ("Melancholic Charisma", "lamordia: melancholic (accessory)"),
+            ("Solar Gem of Abjuration", "sun"),
+        ]
+
+    def test_the_slot_id_backfill_is_idempotent(self) -> None:
+        db = _fresh_db()
+        db.insert_items([{
+            "name": "Testwright Circlet", "equipment_slot": "Head",
+            "enchantments": [], "augment_slots": ["sun"],
+        }])
+        db.conn.execute("INSERT INTO augments (name, slot_color) VALUES ('Solar Gem', 'sun')")
+        db.repair_stored_rows()
+
+        assert db.repair_stored_rows()["augment_slot_ids_backfilled"] == 0
+
+    def test_a_slot_colour_with_no_definition_stays_null(self) -> None:
+        """The definitions table only holds sockets some item actually carries.
+
+        A `slot_color` naming none of them (or naming nothing in the vocabulary
+        at all) leaves the FK NULL rather than inventing a definition — the
+        display fallback still renders, which is the whole point of keeping it.
+        """
+        db = _fresh_db()
+        db.conn.execute(
+            "INSERT INTO augments (name, slot_color) VALUES "
+            "('Unsocketable Gem', 'chartreuse'), ('Orphan Gem', 'moon')"
+        )
+
+        assert db.repair_stored_rows()["augment_slot_ids_backfilled"] == 0
+        assert db.conn.execute(
+            "SELECT COUNT(*) FROM augments WHERE slot_id IS NOT NULL"
+        ).fetchone()[0] == 0
 
     def test_two_magnitudes_of_one_effect_are_not_collapsed(self) -> None:
         """`item_effects.value` sits outside the key: Bane 2 and Bane 4 differ."""

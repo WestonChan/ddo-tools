@@ -2,16 +2,18 @@
 
 import struct
 
+import pytest
+
 from ddo_data.dat_parser.effects import (
     EffectMapResult,
+    _correlate_item_effects,
+    _record_bonus_type_mapping,
+    _record_stat_mapping,
     build_effect_census,
     build_effect_map,
     format_effect_census,
     format_effect_map,
     parse_enchantment_string,
-    _record_bonus_type_mapping,
-    _record_stat_mapping,
-    _correlate_item_effects,
 )
 
 
@@ -297,6 +299,103 @@ def test_parse_effect_plain_text_returns_none():
     """Plain text without templates returns None."""
     assert parse_effect_template("Tier 1:") is None
     assert parse_effect_template("+15 Enhancement Bonus") is None
+
+
+# ---------------------------------------------------------------------------
+# {{UpgradeableAugment|Primary/Secondary}} — a potential effect, not a slot
+#
+# The item can be upgraded at the Fountain of Necrotic Might to *gain* an
+# augment slot; it does not carry one today. So it deliberately stays out of
+# _METADATA_TEMPLATES and out of the slot decoder, and reaches this parser as
+# the effect it is. All 80 cached occurrences are Primary or Secondary.
+# ---------------------------------------------------------------------------
+
+
+def test_upgradeable_augment_is_a_named_effect_with_its_tier_as_modifier():
+    assert parse_effect_template("{{UpgradeableAugment|Primary}}") == {
+        "effect": "Upgradeable Augment", "modifier": "Primary", "value": None,
+    }
+
+
+def test_upgradeable_augment_ignores_its_display_only_second_parameter():
+    """Parameter 2 controls rendering outside the Item namespace.
+
+    Four cached invocations pass `1`. Read positionally it becomes a magnitude,
+    and the item ends up claiming an "Upgradeable Augment +1" it does not have.
+    """
+    assert parse_effect_template("{{UpgradeableAugment|Secondary|1}}") == {
+        "effect": "Upgradeable Augment", "modifier": "Secondary", "value": None,
+    }
+
+
+def test_upgradeable_augment_defaults_to_primary():
+    """The template's own default is `{{{1|Primary}}}`."""
+    assert parse_effect_template("{{UpgradeableAugment}}") == {
+        "effect": "Upgradeable Augment", "modifier": "Primary", "value": None,
+    }
+
+
+def test_upgradeable_augment_underscored_reaches_the_same_branch():
+    assert parse_effect_template("{{Upgradeable_Augment|Secondary}}") == {
+        "effect": "Upgradeable Augment", "modifier": "Secondary", "value": None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# The slot templates reach this parser only when malformed
+#
+# Well-formed invocations are consumed upstream by wiki/augment_slots.py, so an
+# arrival here is an unknown colour, variant or pool — a wiki editor error the
+# template itself renders as an error message. _METADATA_TEMPLATES is the
+# backstop that keeps those from becoming effects named after the template.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "{{Lamordia Slot|Talon|Weapon}}",
+        "{{Lamordia_Slot|Talon|Weapon}}",
+        "{{Dino Slot|Talon|Weapon}}",
+        "{{Dino_Slot|Talon|Weapon}}",
+        "{{Slaver's Slot|Talon}}",
+        "{{MoonSunAugment|Eclipse}}",
+        "{{Augment|Chartreuse}}",
+    ],
+)
+def test_a_malformed_slot_template_is_skipped_not_turned_into_an_effect(text):
+    """MediaWiki reads `_` and a space in a page name as the same character.
+
+    Matching the raw spelling let `{{Lamordia_Slot|...}}` past the backstop and
+    into `effects` under the literal template name.
+    """
+    assert parse_effect_template(text) is None
+
+
+def test_the_routing_contract_between_the_slot_decoder_and_this_parser():
+    """Pin the cross-module agreement the slot/effect split depends on.
+
+    Each half is enforced somewhere else; nothing else checks that the two
+    halves still say the same thing. Drop the `slaver's slot` backstop and
+    malformed invocations become effects again; add `upgradeableaugment` to it
+    and the potential effect vanishes — while the repair pass keeps deleting
+    the rows it used to produce, on every build.
+    """
+    from ddo_data.db.writers import _MISROUTED_AUGMENT_EFFECT_NAMES
+    from ddo_data.dat_parser.effects import (
+        _EFFECT_NAME_CANONICAL,
+        _METADATA_TEMPLATES,
+    )
+
+    assert "slaver's slot" in _METADATA_TEMPLATES
+    assert "upgradeableaugment" not in _METADATA_TEMPLATES
+    assert _EFFECT_NAME_CANONICAL["upgradeableaugment"] == "Upgradeable Augment"
+
+    # The repair matches raw template names. If one ever collided with a
+    # canonical spelling, every build would delete the correct rows the parser
+    # had just written.
+    canonical = {name.lower() for name in _EFFECT_NAME_CANONICAL.values()}
+    assert canonical.isdisjoint(_MISROUTED_AUGMENT_EFFECT_NAMES)
 
 
 # ---------------------------------------------------------------------------

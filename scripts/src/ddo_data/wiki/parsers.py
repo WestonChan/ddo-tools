@@ -356,6 +356,11 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
     Extracts data from the ``{{Named item|TYPE|...}}`` template.
     Returns None if the template is not found.
     """
+    # Imported here, not at module scope: `templates` builds on this module's
+    # `extract_template`, so a top-level import would close the cycle before
+    # that function is defined.
+    from .augment_slots import extract_augment_slots, parse_slot_color
+
     fields = extract_template(wikitext, "Named item")
     if fields is None:
         return None
@@ -427,22 +432,32 @@ def parse_item_wikitext(wikitext: str) -> dict[str, Any] | None:
     # Wiki template field is "enhancements"; our dict key is "enchantments" (DDO term).
     raw_enchantments = _parse_enchantment_list(fields.get("enhancements", ""))
 
-    # Extract {{Augment|Color}} templates from enchantments into augment_slots.
-    # DDO wiki embeds augment slots in the enhancements list, not a separate field.
+    # Pull augment slots out of the enhancements list — the DDO wiki embeds an
+    # item's sockets there rather than in a field of their own.
+    #
+    # This used to be `re.search(r"\{\{[Aa]ugment\|(\w+)\}\}")`, which reads one
+    # template family in one shape: `\w+` cannot cross the pipe in
+    # `{{Augment|Purple|nocat=TRUE}}`, and the four crafting families were never
+    # looked for at all. `extract_augment_slots` decodes all of them, and hands
+    # back whatever else the bullet held so a slot no longer swallows the
+    # enchantment beside it.
     augment_slots: list[str] = []
     enchantments: list[str] = []
     for entry in raw_enchantments:
-        m = re.search(r"\{\{[Aa]ugment\|(\w+)\}\}", entry)
-        if m:
-            augment_slots.append(m.group(1).lower())
-        else:
-            enchantments.append(entry)
+        slots, remainder = extract_augment_slots(entry)
+        augment_slots.extend(slot.label for slot in slots)
+        if remainder:
+            enchantments.append(remainder)
     item["enchantments"] = enchantments
 
-    # Also check the explicit augmentslot= field (older wiki format).
-    explicit_slots = _parse_list(fields.get("augmentslot", ""))
-    if explicit_slots:
-        augment_slots.extend(explicit_slots)
+    # Also check the explicit augmentslot= field (older wiki format). Its values
+    # go through the decoder too: the field holds a bare word rather than a
+    # template, but it feeds the same column, and a free-text value like
+    # "One colorless augment slot" would store a label nothing can join against.
+    for raw_slot in _parse_list(fields.get("augmentslot", "")):
+        slot = parse_slot_color(raw_slot)
+        if slot is not None:
+            augment_slots.append(slot.label)
     item["augment_slots"] = augment_slots
 
     # Use the page name as fallback for item name

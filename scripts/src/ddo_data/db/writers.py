@@ -383,11 +383,21 @@ def collapse_value_variants(conn: sqlite3.Connection) -> int:
 
 # Effect names that were never enchantments: wiki maintenance markers and the
 # crafting-choice wrappers, whose alternatives are now parsed individually.
-# `UpgradeableAugment` is deliberately absent — those rows are the only stored
-# trace of 72 augment slots, and creating the slots is Phase 4m's work.
 _NON_ENCHANTMENT_EFFECT_NAMES: tuple[str, ...] = (
     "bug", "inlinewht", "orphan", "underlinked", "top", "history", "stub",
     "ref", "cleanup", "expand", "nearly finished", "almost there",
+)
+
+# Augment templates the effect parser used to read as weapon effects, stored
+# under their raw invocation name: 72 `UpgradeableAugment` and 30
+# `Slaver's Slot` junction rows in the shipped database.
+#
+# Matched on the *raw* spelling on purpose. `{{UpgradeableAugment|Primary}}` now
+# canonicalizes to the effect `Upgradeable Augment`, which is the correct row
+# and must survive; `Slaver's Slot` becomes an `item_augment_slots` row and has
+# no effects-side counterpart at all.
+_MISROUTED_AUGMENT_EFFECT_NAMES: tuple[str, ...] = (
+    "upgradeableaugment", "slaver's slot",
 )
 
 
@@ -405,6 +415,8 @@ def repair_stored_rows(conn: sqlite3.Connection) -> dict[str, int]:
         "effect_modifiers_regraded": _regrade_effect_modifiers(conn),
         "effect_names_regraded": _regrade_effect_names(conn),
         "maintenance_rows_deleted": _delete_maintenance_effects(conn),
+        "misrouted_augment_effects_deleted": _delete_misrouted_augment_effects(conn),
+        "augment_slot_ids_backfilled": _backfill_augment_slot_ids(conn),
         "items_merged": _merge_items_sharing_a_wiki_page(conn),
         "duplicate_item_bonuses_deleted": _deduplicate_item_bonuses(conn),
         "duplicate_item_effects_deleted": _deduplicate_item_effects(conn),
@@ -631,13 +643,20 @@ def _regrade_effect_names(conn: sqlite3.Connection) -> int:
     return changed
 
 
-def _delete_maintenance_effects(conn: sqlite3.Connection) -> int:
-    """Delete effects rows that were never enchantments, and their item links."""
-    placeholders = ", ".join("?" for _ in _NON_ENCHANTMENT_EFFECT_NAMES)
+def _delete_effects_named(
+    conn: sqlite3.Connection, names: tuple[str, ...],
+) -> int:
+    """Delete every ``effects`` row whose lower-cased name is in *names*.
+
+    Junction rows go first: ``item_effects`` has no ``ON DELETE CASCADE``, so
+    deleting the definition alone would leave links pointing at nothing.
+
+    Returns the number of ``effects`` rows removed; a second run reports zero.
+    """
+    placeholders = ", ".join("?" for _ in names)
     ids = [
         row[0] for row in conn.execute(
-            f"SELECT id FROM effects WHERE lower(name) IN ({placeholders})",
-            _NON_ENCHANTMENT_EFFECT_NAMES,
+            f"SELECT id FROM effects WHERE lower(name) IN ({placeholders})", names,
         ).fetchall()
     ]
     for effect_id in ids:
@@ -645,6 +664,54 @@ def _delete_maintenance_effects(conn: sqlite3.Connection) -> int:
         conn.execute("DELETE FROM effects WHERE id = ?", (effect_id,))
     conn.commit()
     return len(ids)
+
+
+def _delete_maintenance_effects(conn: sqlite3.Connection) -> int:
+    """Delete effects rows that were never enchantments, and their item links."""
+    return _delete_effects_named(conn, _NON_ENCHANTMENT_EFFECT_NAMES)
+
+
+def _delete_misrouted_augment_effects(conn: sqlite3.Connection) -> int:
+    """Delete the augment templates the effect parser mistook for effects.
+
+    These are the stored half of the slot fix: the parser change stops writing
+    them, but `INSERT OR IGNORE` never deletes, so without this the item keeps
+    displaying "UpgradeableAugment Primary" beside the properly-named effect
+    the same template now produces.
+
+    Returns the number of `effects` rows removed; a second run reports zero.
+    """
+    return _delete_effects_named(conn, _MISROUTED_AUGMENT_EFFECT_NAMES)
+
+
+def _backfill_augment_slot_ids(conn: sqlite3.Connection) -> int:
+    """Point each augment at the socket definition its ``slot_color`` names.
+
+    ``augments.slot_color`` is the wiki-sourced display fallback and
+    ``augments.slot_id`` is what the candidate query joins on, so the FK has to
+    be derived from the label. It cannot happen in ``insert_augments``: that
+    writer is ``INSERT OR IGNORE``, which never touches a row already stored, and
+    the definitions it would resolve against are written by the *item* pass that
+    may not have run yet.
+
+    Left NULL when no definition carries that label — either the colour is
+    outside the vocabulary, or no item in the database has that socket. Both are
+    display-only situations rather than errors, which is why the TEXT fallback
+    stays. Returns the number of augments given an FK; a second run reports zero.
+    """
+    cur = conn.execute(
+        """
+        UPDATE augments SET slot_id = (
+            SELECT t.id FROM augment_slot_types t WHERE t.label = augments.slot_color
+        )
+        WHERE slot_id IS NULL
+          AND EXISTS (
+              SELECT 1 FROM augment_slot_types t WHERE t.label = augments.slot_color
+          )
+        """
+    )
+    conn.commit()
+    return cur.rowcount
 
 
 def _merge_items_sharing_a_wiki_page(conn: sqlite3.Connection) -> int:
@@ -1118,6 +1185,40 @@ def _resolve_named(
     return row[0], row[1]
 
 
+def _resolve_augment_slot_type(conn: sqlite3.Connection, label: str) -> int | None:
+    """Resolve a canonical slot label to its ``augment_slot_types`` row id.
+
+    Inserts the definition on first encounter, which is deliberately *not*
+    ``_resolve_named``'s auto-create-anything behaviour: only a label
+    ``wiki/augment_slots.py`` composed may become a row, so the vocabulary stays
+    closed. A label the decoder could not have produced is declined (and logged)
+    rather than stored — it would surface as a socket in the UI that no augment
+    fits, and fail validation A8 on the next build.
+
+    Case is the caller's business: the label arrives already folded at the writer
+    boundary, and the lookup is exact so a stray capital cannot resolve onto the
+    lower-case row.
+    """
+    from ..wiki.augment_slots import decompose_label
+
+    row = conn.execute(
+        "SELECT id FROM augment_slot_types WHERE label = ?", (label,)
+    ).fetchone()
+    if row is not None:
+        return row[0]
+
+    slot = decompose_label(label)
+    if slot is None:
+        logger.warning("Ignoring augment slot label outside the vocabulary: %r", label)
+        return None
+    cur = conn.execute(
+        "INSERT INTO augment_slot_types (label, family, variant, qualifier) "
+        "VALUES (?, ?, ?, ?)",
+        (label, slot.family, slot.variant, slot.qualifier),
+    )
+    return cur.lastrowid
+
+
 def _bonus_name(stat: str | None, value: int | None) -> str:
     """Format the generated ``bonuses.name``.
 
@@ -1134,6 +1235,53 @@ def _bonus_name(stat: str | None, value: int | None) -> str:
 # ---------------------------------------------------------------------------
 # Public insert functions
 # ---------------------------------------------------------------------------
+
+
+def _link_enhancement_bonuses(
+    conn: sqlite3.Connection,
+    decoded,
+    *,
+    table: str,
+    owner_column: str,
+    owner_id: int,
+    sort_order: int,
+) -> int:
+    """Write a decoded ``{{Enhancement bonus}}``'s rows into a junction table.
+
+    Both routers need the same four steps — resolve the stat, resolve the bonus
+    type, generate the name and description, link the row — and differ only in
+    which table and owner column the link lands in. ``item_bonuses`` numbers its
+    rows from a running offset shared across every routing step, while
+    ``augment_bonuses`` numbers them from the enchantment's own index, so the
+    starting offset is the caller's to choose.
+
+    Returns the number of rows written, so a caller keeping a running offset can
+    advance it.
+    """
+    written = 0
+    for parsed in decoded.bonuses:
+        stat_id, stat_name = _resolve_named(conn, "stats", parsed["stat"])
+        bonus_type_id, bonus_type_name = _resolve_named(
+            conn, "bonus_types", parsed["bonus_type"],
+        )
+        bonus_id = _ensure_bonus(
+            conn,
+            _bonus_name(stat_name, parsed["value"]),
+            stat_id, bonus_type_id, parsed["value"],
+            description=_format_bonus_description(
+                stat_name, parsed["value"], bonus_type_name,
+            ),
+        )
+        conn.execute(
+            f"""
+            INSERT OR IGNORE INTO {table}
+                ({owner_column}, bonus_id, sort_order, data_source, resolution_method)
+            VALUES (?, ?, ?, '{DataSource.WIKI}', '{ResolutionMethod.WIKI_ENCHANTMENT}')
+            """,
+            (owner_id, bonus_id, sort_order + written),
+        )
+        written += 1
+    return written
 
 
 def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
@@ -1293,15 +1441,35 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             )
 
         # --- item_augment_slots ---
-        for sort_order, slot_color in enumerate(item.get("augment_slots") or []):
-            if not slot_color:
-                continue
-            conn.execute(
-                f"""
-                INSERT OR IGNORE INTO item_augment_slots (item_id, sort_order, slot_type)
-                VALUES (?, ?, ?)
-                """,
-                (item_id, sort_order, slot_color.strip()),
+        # Rewritten whole rather than merged: the primary key is
+        # (item_id, sort_order), so INSERT OR IGNORE only recognises a row it
+        # wrote at the same *position*. Teaching the parser a new template
+        # family puts a slot in front of the ones already stored, every later
+        # slot re-lands one offset down, and the superseded value survives at
+        # the offset it used to hold — the ghost-row bug slice 1a hit in
+        # `item_bonuses`, with no repair pass able to tell a ghost from a real
+        # duplicate colour. Deleting first loses nothing: `augment_id` is NULL
+        # on every row, so the list carries no state but its own contents.
+        #
+        # Only when the key is present. The binary parser describes the same
+        # items and never produces `augment_slots`, so an unconditional delete
+        # would drop the wiki's slots on every build.
+        if "augment_slots" in item:
+            conn.execute("DELETE FROM item_augment_slots WHERE item_id = ?", (item_id,))
+            # Lower-cased here, at the writer boundary (invariant 3): the label
+            # identifies the `augment_slot_types` row, so a capitalized copy
+            # would define the same socket a second time while looking correct.
+            slot_ids = [
+                slot_id
+                for label in item.get("augment_slots") or []
+                if label and label.strip()
+                if (slot_id := _resolve_augment_slot_type(conn, label.strip().lower()))
+                is not None
+            ]
+            conn.executemany(
+                "INSERT INTO item_augment_slots (item_id, sort_order, slot_id) "
+                "VALUES (?, ?, ?)",
+                [(item_id, order, slot_id) for order, slot_id in enumerate(slot_ids)],
             )
 
         # --- bonuses pass A: decoded effect entries with resolved stat/bonus_type ---
@@ -1415,28 +1583,11 @@ def insert_items(conn: sqlite3.Connection, items: list[dict]) -> int:
             # well-formed one — which is exactly what shipped, 5,239 times.
             enhancement_bonus = _parse_enhancement_bonus(enchantment)
             if enhancement_bonus is not None:
-                for parsed in enhancement_bonus.bonuses:
-                    stat_id, stat_name = _resolve_named(conn, "stats", parsed["stat"])
-                    bonus_type_id, bonus_type_name = _resolve_named(
-                        conn, "bonus_types", parsed["bonus_type"],
-                    )
-                    bonus_id = _ensure_bonus(
-                        conn,
-                        _bonus_name(stat_name, parsed["value"]),
-                        stat_id, bonus_type_id, parsed["value"],
-                        description=_format_bonus_description(
-                            stat_name, parsed["value"], bonus_type_name,
-                        ),
-                    )
-                    conn.execute(
-                        f"""
-                        INSERT OR IGNORE INTO item_bonuses
-                            (item_id, bonus_id, sort_order, data_source, resolution_method)
-                        VALUES (?, ?, ?, '{DataSource.WIKI}', '{ResolutionMethod.WIKI_ENCHANTMENT}')
-                        """,
-                        (item_id, bonus_id, pass_a_count + bonus_offset),
-                    )
-                    bonus_offset += 1
+                bonus_offset += _link_enhancement_bonuses(
+                    conn, enhancement_bonus,
+                    table="item_bonuses", owner_column="item_id",
+                    owner_id=item_id, sort_order=pass_a_count + bonus_offset,
+                )
                 for effect_name in enhancement_bonus.effects:
                     effect_id = _ensure_effect(conn, effect_name, None)
                     if effect_id is not None:
@@ -1859,6 +2010,7 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
     augments = _clean_inputs(augments)
 
     inserted = 0
+    skipped_effects = 0
     for augment in augments:
         name = augment.get("name")
         if not name:
@@ -1872,18 +2024,23 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
             """,
             (augment.get("dat_id"), name, augment.get("icon"), slot_color, augment.get("minimum_level")),
         )
-        if cur.rowcount == 0:
-            continue
+        inserted += cur.rowcount
 
-        augment_id = conn.execute(
-            "SELECT id FROM augments WHERE name = ?", (name,)
-        ).fetchone()
-        if augment_id is None:
+        # Deliberately not gated on `cur.rowcount`: an early version skipped the
+        # rest of the loop for an augment that already existed, which made every
+        # routing improvement invisible on the shipped database. `build-db`
+        # updates in place and all 1,279 augments are already stored, so "only
+        # process new augments" means "never process anything again".
+        row = conn.execute("SELECT id FROM augments WHERE name = ?", (name,)).fetchone()
+        if row is None:
+            logger.warning("Failed to retrieve id for augment %r after insert", name)
             continue
-        augment_id = augment_id[0]
-        inserted += 1
+        augment_id: int = row[0]
 
-        # Bonuses from enchantments
+        # Bonuses from enchantments. `sort_order` is the enchantment's own index
+        # rather than a running counter, so adding a routing step below cannot
+        # shift a later enchantment into a fresh offset — the ghost-row failure
+        # `_deduplicate_item_bonuses` exists for does not arise here.
         for sort_order, enchantment in enumerate(augment.get("enchantments") or []):
             if not enchantment:
                 continue
@@ -1906,6 +2063,24 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
                     """,
                     (augment_id, bonus_id, sort_order),
                 )
+            if parsed_list:
+                continue
+
+            # The item router's step 1b, on this side of the pipeline: this loop
+            # ran `_parse_enchantment` alone, so an {{Item Augment}} page whose
+            # enchantment is a template rather than prose stored nothing.
+            enhancement_bonus = _parse_enhancement_bonus(enchantment)
+            if enhancement_bonus is None:
+                continue
+            _link_enhancement_bonuses(
+                conn, enhancement_bonus,
+                table="augment_bonuses", owner_column="augment_id",
+                owner_id=augment_id, sort_order=sort_order,
+            )
+            # The decoder's effects output (only ever Masterwork) has nowhere to
+            # go: there is no augment_effects table. Counted rather than
+            # silently dropped so the gap stays visible if it ever grows.
+            skipped_effects += len(enhancement_bonus.effects)
 
         # Binary bonuses from effect_ref localization names
         for sort_order_b, bb in enumerate(augment.get("_binary_bonuses") or []):
@@ -1930,6 +2105,11 @@ def insert_augments(conn: sqlite3.Connection, augments: list[dict]) -> int:
                 (augment_id, bonus_id, 100 + sort_order_b, bb.get("_resolution_method")),
             )
 
+    if skipped_effects:
+        logger.info(
+            "insert_augments: %d enhancement-bonus effect(s) had nowhere to go "
+            "(no augment_effects table)", skipped_effects,
+        )
     conn.commit()
     return inserted
 

@@ -90,14 +90,83 @@ DUAL_TABLE_ALLOWLIST: dict[str, str] = {
 # effect *named* after one of these was parsed from markup that is not game
 # data at all. Kept in sync with wiki/templates.py by name, not by import, so
 # validate.py stays importable without the wiki package's HTTP dependency.
-# `UpgradeableAugment` is deliberately absent: its 2 effects rows are the only
-# stored trace of 72 augment slots, and recognizing that template family is
-# Phase 4m's work. Flagging them here would fail the build for a known,
-# scheduled gap.
+#
+# The augment-slot templates are deliberately absent. `Slaver's Slot` and the
+# raw `UpgradeableAugment` did once sit in `effects` as parser junk, but the
+# repair pass deletes them rather than tolerating them, and the effect this
+# vocabulary would now match — `Upgradeable Augment` — is a real potential
+# effect (the item can be upgraded to gain a slot), not markup.
 NON_ENCHANTMENT_TEMPLATES: tuple[str, ...] = (
     "bug", "inlinewht", "orphan", "underlinked", "top", "history", "stub",
     "ref", "cleanup", "expand", "nearly finished", "almost there",
 )
+
+# A8's vocabulary: every `augment_slot_types` row the grammar of
+# `wiki/augment_slots.py` can compose, as (label, family, variant, qualifier).
+#
+# All four columns are checked together because they have to agree. `label` is
+# the string `augments.slot_color` speaks, so it is what the FK backfill matches
+# on; family/variant/qualifier are what every consumer reads instead of parsing
+# the label. A row where they disagree points the two at different sockets and
+# raises nothing on its own — the dropdown just opens onto the wrong list.
+# Case is meaning for the same reason: `Green` would match no augment while
+# looking perfectly correct, and these comparisons are case-sensitive.
+#
+# Mirrored from the decoder by value, not by import, for the same reason
+# NON_ENCHANTMENT_TEMPLATES is: validate.py must stay importable without the
+# wiki package's HTTP dependency. `test_a8_vocabulary_matches_the_decoders`
+# holds the two copies together by set equality.
+AUGMENT_SLOT_DEFINITIONS: tuple[tuple[str, str, str, str | None], ...] = (
+    ('blue', 'standard', 'blue', None),
+    ('colorless', 'standard', 'colorless', None),
+    ('green', 'standard', 'green', None),
+    ('moon', 'standard', 'moon', None),
+    ('orange', 'standard', 'orange', None),
+    ('purple', 'standard', 'purple', None),
+    ('red', 'standard', 'red', None),
+    ('sun', 'standard', 'sun', None),
+    ('yellow', 'standard', 'yellow', None),
+    ('isle of dread: claw (accessory)', 'dino', 'claw', 'accessory'),
+    ('isle of dread: claw (armor)', 'dino', 'claw', 'armor'),
+    ('isle of dread: claw (weapon)', 'dino', 'claw', 'weapon'),
+    ('isle of dread: fang (accessory)', 'dino', 'fang', 'accessory'),
+    ('isle of dread: fang (armor)', 'dino', 'fang', 'armor'),
+    ('isle of dread: fang (weapon)', 'dino', 'fang', 'weapon'),
+    ('isle of dread: horn (accessory)', 'dino', 'horn', 'accessory'),
+    ('isle of dread: horn (armor)', 'dino', 'horn', 'armor'),
+    ('isle of dread: horn (weapon)', 'dino', 'horn', 'weapon'),
+    ('isle of dread: scale (accessory)', 'dino', 'scale', 'accessory'),
+    ('isle of dread: scale (armor)', 'dino', 'scale', 'armor'),
+    ('isle of dread: scale (weapon)', 'dino', 'scale', 'weapon'),
+    ('isle of dread: set bonus', 'dino', 'set', None),
+    ('lamordia: dolorous (accessory)', 'lamordia', 'dolorous', 'accessory'),
+    ('lamordia: dolorous (armor)', 'lamordia', 'dolorous', 'armor'),
+    ('lamordia: dolorous (weapon)', 'lamordia', 'dolorous', 'weapon'),
+    ('lamordia: melancholic (accessory)', 'lamordia', 'melancholic', 'accessory'),
+    ('lamordia: melancholic (armor)', 'lamordia', 'melancholic', 'armor'),
+    ('lamordia: melancholic (weapon)', 'lamordia', 'melancholic', 'weapon'),
+    ('lamordia: miserable (accessory)', 'lamordia', 'miserable', 'accessory'),
+    ('lamordia: miserable (armor)', 'lamordia', 'miserable', 'armor'),
+    ('lamordia: miserable (weapon)', 'lamordia', 'miserable', 'weapon'),
+    ('lamordia: woeful (accessory)', 'lamordia', 'woeful', 'accessory'),
+    ('lamordia: woeful (armor)', 'lamordia', 'woeful', 'armor'),
+    ('lamordia: woeful (weapon)', 'lamordia', 'woeful', 'weapon'),
+    ("slaver's: augment", 'slavers', 'augment', None),
+    ("slaver's: augment (legendary)", 'slavers', 'augment', 'legendary'),
+    ("slaver's: bonus", 'slavers', 'bonus', None),
+    ("slaver's: bonus (legendary)", 'slavers', 'bonus', 'legendary'),
+    ("slaver's: extra", 'slavers', 'extra', None),
+    ("slaver's: extra (legendary)", 'slavers', 'extra', 'legendary'),
+    ("slaver's: prefix", 'slavers', 'prefix', None),
+    ("slaver's: prefix (legendary)", 'slavers', 'prefix', 'legendary'),
+    ("slaver's: suffix", 'slavers', 'suffix', None),
+    ("slaver's: suffix (legendary)", 'slavers', 'suffix', 'legendary'),
+)
+
+# A8b's scope: the families whose sockets are filled with augments. Slave Lords
+# crafting fills its own with shards, so an empty candidate list there is the
+# right answer rather than a gap.
+_AUGMENT_FILLED_FAMILIES: tuple[str, ...] = ("dino", "lamordia")
 
 # A6's high-water mark, measured on the database this branch produced (down from
 # 198 bonuses / 137 effects before it: the repair passes merged or deleted the
@@ -119,6 +188,24 @@ _EFFECT_CONSUMERS: tuple[str, ...] = ("item_effects",)
 def _sql_list(values: tuple[str, ...] | list[str]) -> str:
     """Render values as a SQL IN-list of quoted literals."""
     return ", ".join("'" + v.replace("'", "''") + "'" for v in values)
+
+
+def _known_slot_definitions_cte() -> str:
+    """``VALUES`` rows for A8's mirror, NULL qualifiers rendered as ``''``.
+
+    Comparing ``''`` to ``COALESCE(qualifier, '')`` rather than using ``IS``:
+    SQL equality on NULL is never true, so a NULL-qualifier row would look
+    unknown to every comparison and A8 would fail on correct data.
+    """
+    return ", ".join(
+        "("
+        + ", ".join(
+            "'" + (value or "").replace("'", "''") + "'"
+            for value in (label, family, variant, qualifier)
+        )
+        + ")"
+        for label, family, variant, qualifier in AUGMENT_SLOT_DEFINITIONS
+    )
 
 
 def _orphan_clause(table: str, consumers: tuple[str, ...]) -> str:
@@ -567,6 +654,90 @@ _ASSERTIONS: list[tuple[str, str, str, str, list[str]]] = [
          LIMIT 20
         """,
         ["item", "stat", "value", "missing"],
+    ),
+    (
+        "augment_slot_types_are_known",
+        "Every augment_slot_types row must be one the augment-slot decoder can "
+        "compose, label and family columns agreeing — the label is what "
+        "augments.slot_color is matched against and the columns are what every "
+        "consumer reads, so a row outside the vocabulary aims the two at "
+        "different sockets without raising anything (A8)",
+        "error",
+        f"""
+        WITH known(label, family, variant, qualifier) AS (
+            VALUES {_known_slot_definitions_cte()}
+        )
+        SELECT t.label, t.family, t.variant, t.qualifier
+          FROM augment_slot_types t
+         WHERE NOT EXISTS (
+                 SELECT 1 FROM known k
+                  WHERE k.label = t.label
+                    AND k.family = t.family
+                    AND k.variant = t.variant
+                    AND k.qualifier = COALESCE(t.qualifier, '')
+               )
+         LIMIT 20
+        """,
+        ["label", "family", "variant", "qualifier"],
+    ),
+    (
+        "crafting_slots_have_candidate_augments",
+        "Every Lamordia / Isle of Dread socket an item carries should have at "
+        "least one augment pointing at it — the augments-side FK is backfilled "
+        "from the same vocabulary, so an empty pool means the backfill or the "
+        "augment scrape lapsed (A8b). Slaver's sockets are excluded: Slave "
+        "Lords crafting fills them with shards, not augments",
+        "error",
+        # Measured on the database this branch produced: zero empty pools, which
+        # is what makes this an error rather than a warning. A8 catches a
+        # malformed definition; this catches the subtler one — a perfectly-formed
+        # socket no augment answers to, which shows up in the UI as a dropdown
+        # that opens onto nothing. Sockets no item carries are out of scope:
+        # nothing renders them, so nothing can be empty.
+        f"""
+        SELECT t.label, t.family
+          FROM augment_slot_types t
+         WHERE t.family IN ({_sql_list(_AUGMENT_FILLED_FAMILIES)})
+           AND EXISTS (
+                 SELECT 1 FROM item_augment_slots s WHERE s.slot_id = t.id
+               )
+           AND NOT EXISTS (
+                 SELECT 1 FROM augments a WHERE a.slot_id = t.id
+               )
+         LIMIT 20
+        """,
+        ["label", "family"],
+    ),
+    (
+        "augment_slot_ids_resolve",
+        "Every item_augment_slots.slot_id, and every non-NULL "
+        "augments.slot_id, must name an augment_slot_types row (A8c)",
+        "error",
+        # SQLite only enforces foreign keys when the connection asks it to, and
+        # two paths here do not: db/schema.py's shape migration runs before the
+        # DDL turns them on, and the frontend opens the shipped file with them
+        # off. Validation is the enforcement for this FK, as it is for every
+        # other one in this schema. A NULL augments.slot_id is the documented
+        # un-backfilled state and deliberately not a failure.
+        """
+        SELECT 'item_augment_slots' AS source_table, s.slot_id AS slot_id,
+               COUNT(*) AS rows_affected
+          FROM item_augment_slots s
+         WHERE NOT EXISTS (
+                 SELECT 1 FROM augment_slot_types t WHERE t.id = s.slot_id
+               )
+         GROUP BY s.slot_id
+        UNION ALL
+        SELECT 'augments', a.slot_id, COUNT(*)
+          FROM augments a
+         WHERE a.slot_id IS NOT NULL
+           AND NOT EXISTS (
+                 SELECT 1 FROM augment_slot_types t WHERE t.id = a.slot_id
+               )
+         GROUP BY a.slot_id
+         LIMIT 20
+        """,
+        ["source_table", "slot_id", "rows_affected"],
     ),
     (
         "orphan_rows_within_baseline",

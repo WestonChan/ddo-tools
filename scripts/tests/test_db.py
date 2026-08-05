@@ -177,8 +177,23 @@ def test_insert_items_armor() -> None:
     assert row[1] == 1
 
 
+def _slot_labels(db: GameDB, item_name: str) -> list[tuple[int, str]]:
+    return db.conn.execute(
+        "SELECT ias.sort_order, t.label FROM item_augment_slots ias "
+        "JOIN items i ON ias.item_id = i.id "
+        "JOIN augment_slot_types t ON t.id = ias.slot_id "
+        "WHERE i.name = ? ORDER BY ias.sort_order",
+        (item_name,),
+    ).fetchall()
+
+
 def test_insert_items_augment_slots() -> None:
-    """augment_slots list creates item_augment_slots rows with correct sort_order."""
+    """augment_slots list creates item_augment_slots rows with correct sort_order.
+
+    Case is folded at the writer boundary (invariant 3): the label identifies
+    the `augment_slot_types` row, and a capitalized copy would insert a second
+    definition for the same socket rather than resolving to the first.
+    """
     item = {
         "name": "Augmented Ring",
         "augment_slots": ["Blue", "Yellow", "Colorless"],
@@ -187,16 +202,145 @@ def test_insert_items_augment_slots() -> None:
     with GameDB(":memory:") as db:
         db.create_schema()
         db.insert_items([item])
-        rows = db.conn.execute(
-            "SELECT sort_order, slot_type FROM item_augment_slots ias "
-            "JOIN items i ON ias.item_id = i.id "
-            "WHERE i.name = ? ORDER BY sort_order",
-            ("Augmented Ring",),
+        rows = _slot_labels(db, "Augmented Ring")
+        definitions = db.conn.execute(
+            "SELECT label, family, variant, qualifier FROM augment_slot_types ORDER BY label"
         ).fetchall()
-    assert len(rows) == 3
-    assert rows[0] == (0, "Blue")
-    assert rows[1] == (1, "Yellow")
-    assert rows[2] == (2, "Colorless")
+    assert rows == [(0, "blue"), (1, "yellow"), (2, "colorless")]
+    assert definitions == [
+        ("blue", "standard", "blue", None),
+        ("colorless", "standard", "colorless", None),
+        ("yellow", "standard", "yellow", None),
+    ]
+
+
+def test_insert_items_writes_one_definition_per_socket() -> None:
+    """Definitions are resolved, not appended: two items sharing a socket share
+    the row, and the same item carrying it twice does too."""
+    melancholic = "lamordia: melancholic (accessory)"
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([
+            {"name": "Hat A", "augment_slots": [melancholic, melancholic], "enchantments": []},
+            {"name": "Hat B", "augment_slots": [melancholic, "green"], "enchantments": []},
+        ])
+        assert _count(db.conn, "augment_slot_types") == 2
+        assert _slot_labels(db, "Hat A") == [(0, melancholic), (1, melancholic)]
+        assert db.conn.execute(
+            "SELECT family, variant, qualifier FROM augment_slot_types WHERE label = ?",
+            (melancholic,),
+        ).fetchone() == ("lamordia", "melancholic", "accessory")
+
+
+def test_the_parser_path_writes_the_definitions_the_migration_would() -> None:
+    """The whole chain on real wikitext: parser -> decoder -> writer -> definitions.
+
+    `augment_slot_types` has two entry points — the shape migration, which
+    rebuilds definitions from labels already stored, and this one, which writes
+    them as pages are parsed. They have to agree exactly, or the database holds
+    sockets the parser would never produce (and the migration would then have to
+    guess at on the next build). Hand-seeded dicts cannot catch a disagreement
+    that lives in the parser, so the input here is wikitext.
+    """
+    from ddo_data.wiki.parsers import parse_item_wikitext
+
+    parsed = parse_item_wikitext(
+        "{{Named item|Clothing\n| name = Legendary Testwright Top Hat\n"
+        "| enhancements =\n"
+        "* {{Lamordia Slot|Melancholic|Accessory}}\n"
+        "* {{Lamordia Slot|DOLOROUS|accessory}}\n"
+        "* {{Augment|Green}}\n"
+        "* {{Augment|Colorless|nocat=TRUE}}\n"
+        "* {{MoonSunAugment|Sun}}\n"
+        "* {{Dino Slot|Set}}\n"
+        "* {{Slaver's Slot|Prefix|Legendary}}\n}}"
+    )
+    assert parsed is not None
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([parsed])
+
+        assert _slot_labels(db, "Legendary Testwright Top Hat") == [
+            (0, "lamordia: melancholic (accessory)"),
+            (1, "lamordia: dolorous (accessory)"),
+            (2, "green"),
+            (3, "colorless"),
+            (4, "sun"),
+            (5, "isle of dread: set bonus"),
+            (6, "slaver's: prefix (legendary)"),
+        ]
+        assert db.conn.execute(
+            "SELECT label, family, variant, qualifier FROM augment_slot_types ORDER BY label"
+        ).fetchall() == [
+            ("colorless", "standard", "colorless", None),
+            ("green", "standard", "green", None),
+            ("isle of dread: set bonus", "dino", "set", None),
+            ("lamordia: dolorous (accessory)", "lamordia", "dolorous", "accessory"),
+            ("lamordia: melancholic (accessory)", "lamordia", "melancholic", "accessory"),
+            ("slaver's: prefix (legendary)", "slavers", "prefix", "legendary"),
+            ("sun", "standard", "sun", None),
+        ]
+
+
+def test_the_two_entry_points_into_the_definitions_table_agree() -> None:
+    """Migrating stored labels and parsing the page they came from must land on
+    the same rows — same labels, same decomposition, no second definition.
+
+    Run one way then the other on the same database: the migration writes the
+    definitions from the labels, then the re-parse resolves the same page and
+    must reuse them rather than add anything.
+    """
+    from ddo_data.wiki.parsers import parse_item_wikitext
+
+    labels = [
+        "lamordia: melancholic (accessory)",
+        "green",
+        "isle of dread: set bonus",
+    ]
+    wikitext = (
+        "{{Named item|Clothing\n| name = Legacy Top Hat\n"
+        "| enhancements =\n"
+        "* {{Lamordia Slot|Melancholic|Accessory}}\n"
+        "* {{Augment|Green}}\n"
+        "* {{Dino Slot|Set}}\n}}"
+    )
+
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_legacy_slots(db, labels)
+        db.create_schema()  # migration rebuilds the definitions from the labels
+        from_migration = db.conn.execute(
+            "SELECT id, label, family, variant, qualifier FROM augment_slot_types ORDER BY id"
+        ).fetchall()
+
+        parsed = parse_item_wikitext(wikitext)
+        assert parsed is not None
+        parsed["name"] = "Legacy Top Hat"
+        db.insert_items([parsed])
+
+        assert db.conn.execute(
+            "SELECT id, label, family, variant, qualifier FROM augment_slot_types ORDER BY id"
+        ).fetchall() == from_migration
+        assert [label for _, label in _slot_labels(db, "Legacy Top Hat")] == labels
+
+
+def test_insert_items_skips_a_slot_label_the_decoder_never_composed() -> None:
+    """The definitions table is a closed vocabulary, so the writer must not
+    auto-create a row for an arbitrary string the way `_resolve_named` does.
+
+    Only the decoder composes labels, so an unrecognized one means a caller
+    bypassed it — storing it would put a socket in the UI that no augment fits
+    and that validation A8 would then fail the build over.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_items([{
+            "name": "Odd Ring",
+            "augment_slots": ["chartreuse", "green"],
+            "enchantments": [],
+        }])
+        assert _slot_labels(db, "Odd Ring") == [(0, "green")]
+        assert _count(db.conn, "augment_slot_types") == 1
 
 
 def test_insert_items_enchantments_go_to_effects() -> None:
@@ -944,6 +1088,123 @@ def test_create_schema_migration_is_idempotent() -> None:
     assert cols.count("loot_type") == 1
 
 
+# ---------------------------------------------------------------------------
+# item_augment_slots: TEXT slot_type -> augment_slot_types FK
+#
+# `build-db` updates in place (invariant 6), so the committed database arrives
+# holding 9,498 rows in the old shape. The shape change is only correct if the
+# migration preserves every row's label through the FK and converges — a second
+# build must change nothing at all.
+# ---------------------------------------------------------------------------
+
+# The shape as shipped before the definitions table existed.
+_LEGACY_SLOT_SCHEMA = """
+    DROP TABLE item_augment_slots;
+    DROP TABLE IF EXISTS augment_slot_types;
+    CREATE TABLE item_augment_slots (
+        item_id    INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        slot_type  TEXT NOT NULL,
+        augment_id INTEGER REFERENCES augments(id),
+        PRIMARY KEY (item_id, sort_order)
+    );
+    CREATE INDEX idx_item_augment_slots_type ON item_augment_slots(slot_type);
+"""
+
+# Legendary Downcast Top Hat's five sockets, in its stored order — one page
+# carrying every shape the vocabulary has.
+_TOP_HAT_LABELS = [
+    "lamordia: melancholic (accessory)",
+    "lamordia: dolorous (accessory)",
+    "green",
+    "colorless",
+    "sun",
+]
+
+
+def _seed_legacy_slots(db: GameDB, labels: list[str]) -> None:
+    db.conn.execute("INSERT OR IGNORE INTO items (id, name) VALUES (1, 'Legacy Top Hat')")
+    db.conn.executescript(_LEGACY_SLOT_SCHEMA)
+    db.conn.executemany(
+        "INSERT INTO item_augment_slots (item_id, sort_order, slot_type) VALUES (1, ?, ?)",
+        list(enumerate(labels)),
+    )
+    db.conn.commit()
+
+
+def _joined_slots(db: GameDB) -> list[tuple]:
+    return db.conn.execute(
+        """
+        SELECT s.sort_order, t.label, t.family, t.variant, t.qualifier
+          FROM item_augment_slots s
+          JOIN augment_slot_types t ON t.id = s.slot_id
+         WHERE s.item_id = 1
+         ORDER BY s.sort_order
+        """
+    ).fetchall()
+
+
+def test_create_schema_migrates_stored_slot_types_onto_definitions() -> None:
+    """Every stored label survives the shape change, read back through the FK."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_legacy_slots(db, _TOP_HAT_LABELS)
+
+        db.create_schema()
+
+        assert _joined_slots(db) == [
+            (0, "lamordia: melancholic (accessory)", "lamordia", "melancholic", "accessory"),
+            (1, "lamordia: dolorous (accessory)", "lamordia", "dolorous", "accessory"),
+            (2, "green", "standard", "green", None),
+            (3, "colorless", "standard", "colorless", None),
+            (4, "sun", "standard", "sun", None),
+        ]
+        columns = {r[1] for r in db.conn.execute("PRAGMA table_info(item_augment_slots)")}
+        assert "slot_type" not in columns
+        assert "slot_id" in columns
+        # One definitions row per distinct label, not per slot.
+        assert _count(db.conn, "augment_slot_types") == len(set(_TOP_HAT_LABELS))
+
+
+def test_the_slot_shape_migration_converges() -> None:
+    """A second and third build must not renumber, duplicate, or re-migrate.
+
+    Convergence is the property, not row counts (invariant 6): the ids the
+    junction points at have to be stable, or every rebuild rewrites rows that
+    did not change.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_legacy_slots(db, _TOP_HAT_LABELS)
+
+        seen = []
+        for _ in range(3):
+            db.create_schema()
+            seen.append((
+                _joined_slots(db),
+                db.conn.execute(
+                    "SELECT id, label FROM augment_slot_types ORDER BY id"
+                ).fetchall(),
+            ))
+
+        assert seen[0] == seen[1] == seen[2]
+
+
+def test_the_slot_shape_migration_refuses_a_label_it_cannot_decompose() -> None:
+    """A stored value outside the vocabulary is a bug, not a row to guess at.
+
+    Inventing a definitions row for it would hand the frontend a socket no
+    augment matches; dropping the row would lose data silently. Both are worse
+    than failing the build with the value named.
+    """
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        _seed_legacy_slots(db, ["chartreuse"])
+
+        with pytest.raises(RuntimeError, match="chartreuse"):
+            db.create_schema()
+
+
 def test_quest_loot_rejects_unknown_loot_type() -> None:
     """The CHECK constraint pins loot_type to the LootType enum."""
     with GameDB(":memory:") as db:
@@ -1570,3 +1831,118 @@ def test_unclosed_template_does_not_write_a_partial_row() -> None:
         names = [r[0] for r in db.conn.execute("SELECT name FROM effects")]
     assert all(m is None or "{{" not in m for m in modifiers)
     assert all("{{" not in n for n in names)
+
+
+# ---------------------------------------------------------------------------
+# insert_augments: the enchantment router
+#
+# `insert_augments` runs `_parse_enchantment` and nothing else, so an
+# {{Item Augment}} page whose enchantment is a template rather than prose
+# produced no `augment_bonuses` row at all — the same gap the item router
+# closed with step 1b.
+# ---------------------------------------------------------------------------
+
+
+def _augment_bonus_rows(db: GameDB, augment: str) -> list[tuple]:
+    return db.conn.execute(
+        """
+        SELECT s.name, bt.name, b.value
+          FROM augment_bonuses ab
+          JOIN augments a ON a.id = ab.augment_id
+          JOIN bonuses b ON b.id = ab.bonus_id
+          LEFT JOIN stats s ON s.id = b.stat_id
+          LEFT JOIN bonus_types bt ON bt.id = b.bonus_type_id
+         WHERE a.name = ?
+         ORDER BY s.name
+        """,
+        (augment,),
+    ).fetchall()
+
+
+def test_insert_augments_decodes_an_enhancement_bonus_enchantment() -> None:
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_augments([{
+            "name": "Testwright Weapon Augment",
+            "slot_color": "colorless",
+            "enchantments": ["{{Enhancement bonus|w|3}}"],
+        }])
+        rows = _augment_bonus_rows(db, "Testwright Weapon Augment")
+    assert rows == [
+        ("Attack Bonus", "Enhancement", 3),
+        ("Damage Bonus", "Enhancement", 3),
+    ]
+
+
+def test_insert_augments_keeps_prose_enchantments_working() -> None:
+    """The new fallback runs after `_parse_enchantment`, not instead of it."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_augments([{
+            "name": "Testwright Topaz",
+            "slot_color": "yellow",
+            "enchantments": ["+3 Enhancement bonus to Strength"],
+        }])
+        rows = _augment_bonus_rows(db, "Testwright Topaz")
+    assert rows == [("Strength", "Enhancement", 3)]
+
+
+def test_insert_augments_routes_enchantments_for_an_augment_it_already_stored() -> None:
+    """`build-db` updates in place, so "already stored" is the normal case.
+
+    Gating the enchantment loop on the INSERT's rowcount made every routing
+    improvement invisible on the shipped database: all 1,279 augments exist, so
+    the loop never ran again for any of them.
+    """
+    augment = {
+        "name": "Testwright Weapon Augment",
+        "slot_color": "colorless",
+        "enchantments": ["{{Enhancement bonus|w|3}}"],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        # First pass with the enchantment absent — the state a re-scrape that
+        # newly recognizes a template starts from.
+        db.insert_augments([{**augment, "enchantments": []}])
+        assert _augment_bonus_rows(db, "Testwright Weapon Augment") == []
+
+        assert db.insert_augments([augment]) == 0, "the augment row already exists"
+        rows = _augment_bonus_rows(db, "Testwright Weapon Augment")
+    assert rows == [
+        ("Attack Bonus", "Enhancement", 3),
+        ("Damage Bonus", "Enhancement", 3),
+    ]
+
+
+def test_insert_augments_is_idempotent_across_repeated_passes() -> None:
+    """Re-running the enchantment loop must converge, not accumulate copies."""
+    augment = {
+        "name": "Testwright Weapon Augment",
+        "slot_color": "colorless",
+        "enchantments": ["{{Enhancement bonus|w|3}}", "+3 Enhancement bonus to Strength"],
+    }
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        seen = []
+        for _ in range(3):
+            db.insert_augments([augment])
+            seen.append(db.conn.execute(
+                "SELECT augment_id, bonus_id, sort_order FROM augment_bonuses "
+                "ORDER BY augment_id, bonus_id, sort_order"
+            ).fetchall())
+    assert seen[0] == seen[1] == seen[2]
+    assert len(seen[0]) == 3
+
+
+def test_insert_augments_stores_no_bonus_for_a_masterwork_magnitude() -> None:
+    """A magnitude of 0 is the word "Masterwork", an effect the augment tables
+    have nowhere to put — so it must not become a +0 bonus row either."""
+    with GameDB(":memory:") as db:
+        db.create_schema()
+        db.insert_augments([{
+            "name": "Testwright Masterwork Gem",
+            "slot_color": "colorless",
+            "enchantments": ["{{Enhancement bonus|a|0}}"],
+        }])
+        rows = _augment_bonus_rows(db, "Testwright Masterwork Gem")
+    assert rows == []

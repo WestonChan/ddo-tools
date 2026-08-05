@@ -1849,20 +1849,26 @@ def parse_enchantment_string_multi(text: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 # Templates this parser must not read as effects. Most are metadata stored
-# elsewhere (augment slots, set membership, materials, binding).
+# elsewhere (set membership, materials, binding).
 #
-# `enhancement bonus` is the exception and is listed for a different reason:
-# `wiki/enhancement_bonus.py` decodes it at the router's step 1b, before this
-# parser is ever reached. It stays here as the backstop for a *malformed*
-# invocation — an unknown kind, which the wiki template itself renders as an
-# editor error — so those are skipped rather than mangled into an effect named
-# "Enhancement bonus". The comment above this entry used to claim it had a
-# dedicated column; it never did, and that fiction is why 5,239 invocations
-# were silently dropped.
+# The augment-slot families and `enhancement bonus` are listed for a different
+# reason: dedicated decoders (`wiki/augment_slots.py`, `wiki/enhancement_bonus.py`)
+# consume every well-formed invocation upstream — the slots before the router
+# runs at all, the enhancement bonus at the router's step 1b — so an invocation
+# reaching this parser is *malformed*: an unknown colour, variant or kind, which
+# the wiki template itself renders as an editor error. Skipping those beats
+# mangling them into an effect named after the template. The comment that used
+# to sit here claimed these had dedicated columns; they never did, and that
+# fiction is why 5,239 enhancement bonuses and ~2,700 augment slots were
+# silently dropped.
+#
+# `upgradeableaugment` is deliberately absent: it is not a slot the item has but
+# an upgrade it can receive, so it must reach this parser and become the
+# canonical `Upgradeable Augment` effect.
 _METADATA_TEMPLATES: frozenset[str] = frozenset({
     "augment", "named item sets", "mat", "craftingeffects",
     "enhancement bonus", "enhancement_bonus",
-    "moonsunaugment", "lamordia slot", "dino slot",
+    "moonsunaugment", "lamordia slot", "dino slot", "slaver's slot",
     "vaultsoftheartificersupgrade", "bind",
 })
 
@@ -1889,6 +1895,22 @@ _EFFECT_NAME_CANONICAL: dict[str, str] = {
     "efficientmetamagic": "Efficient Metamagic",
     "nearlyfinished": "Nearly Finished",
     "ghostbane": "Ghost Touch",
+    "upgradeableaugment": "Upgradeable Augment",
+}
+
+# Templates whose first parameter is a named grade and whose later parameters
+# are display control rather than data. Keyed by template name (case- and
+# punctuation-insensitive, like `_EFFECT_NAME_CANONICAL`); the value is the
+# grade the template falls back to when parameter 1 is absent.
+#
+# `{{UpgradeableAugment|Primary}}` marks an item that can be upgraded at the
+# Fountain of Necrotic Might to *gain* an augment slot — a potential effect, not
+# a socket, which is why it stays out of `_METADATA_TEMPLATES` and out of the
+# slot decoder. Its second parameter only applies outside the Item namespace;
+# four cached invocations pass `1`, which the generic grammar below would read
+# as a magnitude and store as "Upgradeable Augment +1".
+_GRADE_ONLY_TEMPLATES: dict[str, str] = {
+    "upgradeableaugment": "Primary",
 }
 
 # Wiki table markup and editor comments that leaked into effect names.
@@ -1947,7 +1969,12 @@ def parse_effect_template(text: str) -> dict | None:
 
     # Skip metadata templates (already stored in dedicated columns/tables) and
     # wiki maintenance markers (never game data at all).
-    name_lower = name.lower()
+    #
+    # Underscores fold to spaces first, because MediaWiki reads them as the same
+    # character in a page name: `{{Lamordia_Slot|...}}` and `{{Lamordia Slot}}`
+    # are one template, and matching the raw spelling let the underscored form
+    # slip past the backstop and become an effect named "Lamordia_Slot".
+    name_lower = name.lower().replace("_", " ")
     if name_lower in _METADATA_TEMPLATES or is_maintenance_template(name):
         return None
 
@@ -1962,6 +1989,17 @@ def parse_effect_template(text: str) -> dict | None:
         if not p or "=" in p or "{{" in p or "}}" in p:
             continue
         params.append(p)
+
+    # Keyed the same case- and punctuation-insensitive way as
+    # `_EFFECT_NAME_CANONICAL`, so `Upgradeable_Augment` and
+    # `UpgradeableAugment` reach the same branch.
+    default_grade = _GRADE_ONLY_TEMPLATES.get(re.sub(r"[^a-z0-9]", "", name_lower))
+    if default_grade is not None:
+        return {
+            "effect": name,
+            "modifier": params[0] if params else default_grade,
+            "value": None,
+        }
 
     # Determine modifier and value from params
     modifier: str | None = None
@@ -2024,7 +2062,9 @@ def is_metadata_template(text: str) -> bool:
         # Plain text like "Tier 1:", "Adds ..."
         lower = text.lower()
         return lower.startswith(("tier", "adds", "upgradeable", "one of", "none"))
-    name_lower = match.group(1).strip().lower()
+    # Underscores fold to spaces, as in `parse_effect_template` — MediaWiki
+    # treats `{{Dino_Slot}}` and `{{Dino Slot}}` as the same page.
+    name_lower = match.group(1).strip().lower().replace("_", " ")
     return name_lower in _METADATA_TEMPLATES
 
 

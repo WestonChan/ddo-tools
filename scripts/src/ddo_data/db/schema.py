@@ -35,6 +35,49 @@ _EQUIP_CATEGORIES = _check_subset(
     ItemCategory.JEWELRY, ItemCategory.CLOTHING,
 )
 
+# These two blocks are interpolated into SCHEMA_V1 below rather than written
+# inline, because `_migrate_item_augment_slots` rebuilds both tables and has to
+# do it with the same DDL a fresh build uses — two copies would drift into a
+# migrated database whose schema differs from a newly created one.
+_AUGMENT_SLOT_TYPES_DDL = """
+-- Augment Slot Types -------------------------------------------------------
+-- The closed vocabulary of sockets an item can carry: a gem colour ('blue',
+-- 'colorless', 'sun', ...) or one crafting family's socket
+-- ('lamordia: melancholic (weapon)', 'isle of dread: set bonus').
+--
+-- `label` is composed in exactly one place — wiki/augment_slots.py::slot_label —
+-- and family/variant/qualifier are that label's decomposition, so no consumer
+-- ever parses a label to classify a socket. It is also the string
+-- `augments.slot_color` speaks, which is how the augments-side display fallback
+-- is recognized as the same socket when `augments.slot_id` is backfilled.
+--
+-- Rows are written only from the decoder's output, one per socket actually seen
+-- on an item; validate.py's A8 asserts every row against the decoder's full
+-- grammar, and A8c that no junction row dangles.
+CREATE TABLE IF NOT EXISTS augment_slot_types (
+    id        INTEGER PRIMARY KEY,                               -- c: autoincrement
+    label     TEXT NOT NULL,                                     -- c: wiki/augment_slots.py::slot_label
+    family    TEXT NOT NULL,                                     -- wt: 'standard', or the crafting family
+    variant   TEXT NOT NULL,                                     -- wt: the colour, or the family's first parameter
+    qualifier TEXT                                               -- wt: augment pool, or Legendary grade
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_augment_slot_types_label ON augment_slot_types(label);
+"""
+
+# Rows are rewritten per item rather than merged: the primary key is position,
+# so an in-place update that shifts a slot leaves the old value behind at the
+# offset it used to hold.
+_ITEM_AUGMENT_SLOTS_DDL = """
+CREATE TABLE IF NOT EXISTS item_augment_slots (
+    item_id    INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    slot_id    INTEGER NOT NULL REFERENCES augment_slot_types(id), -- wt: slot template in enhancements
+    augment_id INTEGER REFERENCES augments(id),                   -- c: joined from augments (unpopulated)
+    PRIMARY KEY (item_id, sort_order)
+);
+CREATE INDEX IF NOT EXISTS idx_item_augment_slots_slot ON item_augment_slots(slot_id);
+"""
+
 SCHEMA_V1 = f"""
 PRAGMA foreign_keys = ON;
 
@@ -224,19 +267,22 @@ CREATE TABLE IF NOT EXISTS filigrees (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_filigrees_name ON filigrees(name);
 CREATE INDEX IF NOT EXISTS idx_filigrees_set ON filigrees(set_name) WHERE set_name IS NOT NULL;
 
+{_AUGMENT_SLOT_TYPES_DDL}
 -- Augments -----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS augments (
     id         INTEGER PRIMARY KEY,                              -- c: autoincrement
     dat_id     TEXT,                                             -- bp: 0x79 file ID (matched by name)
     name       TEXT NOT NULL,                                     -- wt: {{Item Augment|name=...}}
     icon       TEXT,                                              -- wt: wiki image filename
-    slot_color TEXT NOT NULL,                                     -- wt: type field; lt: fallback from tooltip
+    slot_id    INTEGER REFERENCES augment_slot_types(id),         -- c: joined from slot_color
+    slot_color TEXT NOT NULL,                                     -- display fallback; wt: type field; lt: tooltip
     min_level  INTEGER,                                           -- bp: key 0x10001C5D; wt: minimum level field
     -- 80 of the wiki's 216 Rare Loot List members are Lunar/Solar Gems, which
     -- are augments rather than items — so rarity needs a home on both tables.
     is_rare    INTEGER NOT NULL DEFAULT 0 CHECK (is_rare IN (0, 1))  -- wt: Category:Rare Loot List items
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_augments_name ON augments(name);
+CREATE INDEX IF NOT EXISTS idx_augments_slot ON augments(slot_id) WHERE slot_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_augments_slot_color ON augments(slot_color);
 
 -- Items --------------------------------------------------------------------
@@ -301,15 +347,7 @@ CREATE TABLE IF NOT EXISTS item_armor_stats (
     max_dex_bonus INTEGER                                        -- wt: maxdex field
 );
 
-CREATE TABLE IF NOT EXISTS item_augment_slots (
-    item_id    INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    slot_type  TEXT NOT NULL,                                     -- wt: {{Augment|Color}} in enhancements field
-    augment_id INTEGER REFERENCES augments(id),                   -- c: joined from augments (unpopulated)
-    PRIMARY KEY (item_id, sort_order)
-);
-CREATE INDEX IF NOT EXISTS idx_item_augment_slots_type ON item_augment_slots(slot_type);
-
+{_ITEM_AUGMENT_SLOTS_DDL}
 
 -- item_spell_links defined after Spells block (forward reference to spells)
 
@@ -1239,6 +1277,11 @@ _COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("quest_loot", "loot_type", f"loot_type TEXT CHECK (loot_type {_check(LootType)})"),
     ("quest_loot", "is_rare", "is_rare INTEGER NOT NULL DEFAULT 0"),
     ("augments", "is_rare", "is_rare INTEGER NOT NULL DEFAULT 0"),
+    # Which socket this augment fits. Nullable and backfilled from the
+    # wiki-sourced `slot_color` display fallback by `repair_stored_rows`, so a
+    # scrape that reports a colour the vocabulary does not contain still stores
+    # the augment.
+    ("augments", "slot_id", "slot_id INTEGER REFERENCES augment_slot_types(id)"),
     # The FK target is created by the DDL that runs straight after these
     # migrations. SQLite resolves foreign keys at DML time, not at ALTER time,
     # so adding the column before its parent table exists is safe.
@@ -1273,15 +1316,93 @@ def _apply_column_migrations(conn: sqlite3.Connection) -> None:
         conn.commit()
 
 
+def _migrate_item_augment_slots(conn: sqlite3.Connection) -> None:
+    """Rebuild ``item_augment_slots`` around ``augment_slot_types``.
+
+    A no-op unless the table still carries the TEXT ``slot_type`` column it
+    shipped with. This is the one migration that is not additive, so it does not
+    fit ``_COLUMN_MIGRATIONS``: the vocabulary moved into a definitions table and
+    the junction now points at it by id.
+
+    The table is rebuilt rather than patched with ``ADD COLUMN`` + ``DROP
+    COLUMN`` so that a migrated database's DDL is the same text a fresh build
+    writes — column order included. ``build-db`` updates in place (invariant 6),
+    so this runs against 9,498 populated rows on the committed database, and the
+    labels are all it has to rebuild the definitions from.
+
+    Convergent by construction: once ``slot_type`` is gone the function returns
+    immediately, so a second build changes nothing.
+    """
+    table_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'item_augment_slots'"
+    ).fetchone()
+    if table_exists is None:
+        return
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(item_augment_slots)")}
+    if "slot_type" not in columns:
+        return
+
+    # Function-level, matching db/writers.py: the decoder is only needed the one
+    # time this migration actually runs.
+    from ..wiki.augment_slots import decompose_label
+
+    stored = conn.execute(
+        "SELECT item_id, sort_order, slot_type, augment_id FROM item_augment_slots"
+    ).fetchall()
+
+    definitions = {}
+    undecodable = []
+    for label in sorted({row[2] for row in stored}):
+        slot = decompose_label(label)
+        if slot is None:
+            undecodable.append(label)
+        else:
+            definitions[label] = slot
+    if undecodable:
+        # Neither guessing a definitions row nor dropping the junction rows is
+        # acceptable: one hands the frontend a socket no augment matches, the
+        # other loses data silently. Validation assertion A8 exists to keep this
+        # unreachable, so reaching it means A8 was skipped.
+        raise RuntimeError(
+            "item_augment_slots holds slot_type values outside the augment-slot "
+            f"vocabulary, so they cannot be migrated: {', '.join(undecodable)}"
+        )
+
+    conn.executescript(_AUGMENT_SLOT_TYPES_DDL)
+    conn.executemany(
+        "INSERT OR IGNORE INTO augment_slot_types (label, family, variant, qualifier) "
+        "VALUES (?, ?, ?, ?)",
+        [
+            (label, slot.family, slot.variant, slot.qualifier)
+            for label, slot in definitions.items()
+        ],
+    )
+    slot_ids = dict(conn.execute("SELECT label, id FROM augment_slot_types"))
+
+    conn.execute("DROP TABLE item_augment_slots")
+    conn.executescript(_ITEM_AUGMENT_SLOTS_DDL)
+    conn.executemany(
+        "INSERT INTO item_augment_slots (item_id, sort_order, slot_id, augment_id) "
+        "VALUES (?, ?, ?, ?)",
+        [
+            (item_id, sort_order, slot_ids[label], augment_id)
+            for item_id, sort_order, label, augment_id in stored
+        ],
+    )
+    conn.commit()
+
+
 def create_schema(conn: sqlite3.Connection) -> None:
     """Apply SCHEMA_V1 DDL and seed reference data to *conn*.
 
     Safe to call on an existing database — uses ``CREATE TABLE IF NOT EXISTS``
-    and ``INSERT OR IGNORE`` throughout, so re-running is idempotent. Columns
-    added after a database was first built are applied by
-    ``_apply_column_migrations`` first.
+    and ``INSERT OR IGNORE`` throughout, so re-running is idempotent. Shape
+    changes a database created before them needs are applied first:
+    ``_apply_column_migrations`` for new columns, then
+    ``_migrate_item_augment_slots`` for the one table whose columns changed.
     """
     _apply_column_migrations(conn)
+    _migrate_item_augment_slots(conn)
     conn.executescript(SCHEMA_V1)
     _seed_from_enums(conn)  # must run before _SEED_SQL (classes/races FK stats/skills)
     conn.executescript(_SEED_SQL)
