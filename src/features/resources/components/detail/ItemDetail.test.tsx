@@ -22,6 +22,7 @@ const baseDetail: ItemDetailRow = {
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],
+  slotCandidates: {},
   upgrades: [],
   bonuses: [],
   effects: [],

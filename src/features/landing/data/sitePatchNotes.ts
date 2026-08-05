@@ -5,6 +5,16 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-08-03',
+    changes: [
+      "Recover ~2,400 missing augment slots: crafting-slot families (Lamordia, Isle of Dread, Slaver's) were dropped entirely, and Purple/Sun/Moon slots were undercounted",
+      "Crafting and Sun/Moon slots in item detail now expand to list the augments that fit them, with each augment's bonuses and minimum level",
+      'Sun and Moon augment slots get their gem colors instead of rendering gray',
+      'Old epic items now show their "Upgradeable Augment" (Primary/Secondary) upgrade instead of a raw template name',
+      '37 more augments show their bonuses — a scraper guard had been skipping every already-stored augment',
+    ],
+  },
+  {
     date: '2026-07-30',
     changes: [
       'Weapons, armor and shields now show their "+N Enhancement Bonus" — it was missing from every item on the site, and is a weapon\'s most basic stat',
@@ -58,7 +68,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
       'Replaces Debug in the nav bar',
       'Filter items by slot, adventure pack, minimum level range, boosted stat, and rare/raid-only',
       'Open any wiki page in a reusable side-by-side compare window — DDO Wiki added bot protection that blocks embedding',
-      'Fix the Raid filter missing most raids, including Master Artificer, Curse of Strahd, Titan, Ascension Chamber, and Reaver\'s Fate',
+      "Fix the Raid filter missing most raids, including Master Artificer, Curse of Strahd, Titan, Ascension Chamber, and Reaver's Fate",
       'Raid loot is now recorded in the game database rather than matched against a hardcoded quest list',
       'Add Fire Over Morgrave, Relentless, Hunt or Be Hunted, and Green Steel altar items to the Raid filter; stop tagging Reign of Madness (a story arc) as a raid',
       'Fix negative item bonuses displaying as "+-2" instead of "-2"',

@@ -74,6 +74,17 @@ export const REQUIRED_COLUMNS: ReadonlyArray<readonly [table: string, column: st
   ['quest_loot', 'loot_type'],
   // getItemDetail reads is_rare to mark rare drops in "Drops from".
   ['quest_loot', 'is_rare'],
+  // getItemDetail joins augment_slot_types to read each socket's label and
+  // family, and getAugmentsForSlot joins both augment tables to list what fits
+  // it. None of the three tables exists in the baseline schema, and
+  // pragma_table_info reports a missing table the same way it reports a missing
+  // column, so naming one column of each covers all three.
+  ['augment_slot_types', 'label'],
+  ['augments', 'slot_id'],
+  ['augment_bonuses', 'augment_id'],
+  // The junction's own vocabulary moved from a TEXT slot_type to this FK, so a
+  // cached copy from before that has the table but not the column.
+  ['item_augment_slots', 'slot_id'],
 ]
 
 /** Smoke-test the loaded DB to catch corrupt, empty, stale-cached, or
@@ -117,21 +128,16 @@ async function loadDb(controller: AbortController): Promise<Database> {
   try {
     SQL = await initSqlJs({ locateFile: () => sqlWasm })
   } catch (err) {
-    throw new DbError(
-      DB_ERROR_WASM,
-      'Browser WebAssembly support failed to initialize',
-      { cause: err },
-    )
+    throw new DbError(DB_ERROR_WASM, 'Browser WebAssembly support failed to initialize', {
+      cause: err,
+    })
   }
 
   let buffer: ArrayBuffer
   try {
     const r = await fetch(DB_URL, { signal: controller.signal, cache: dbFetchCacheMode() })
     if (!r.ok) {
-      throw new DbError(
-        DB_ERROR_FETCH,
-        `Failed to fetch DB: ${r.status} ${r.statusText}`,
-      )
+      throw new DbError(DB_ERROR_FETCH, `Failed to fetch DB: ${r.status} ${r.statusText}`)
     }
     buffer = await r.arrayBuffer()
   } catch (err) {
@@ -142,11 +148,9 @@ async function loadDb(controller: AbortController): Promise<Database> {
         `DB fetch timed out after ${DB_FETCH_TIMEOUT_MS / 1000}s — check your connection`,
       )
     }
-    throw new DbError(
-      DB_ERROR_NETWORK,
-      err instanceof Error ? err.message : 'Network error',
-      { cause: err },
-    )
+    throw new DbError(DB_ERROR_NETWORK, err instanceof Error ? err.message : 'Network error', {
+      cause: err,
+    })
   }
 
   const db = new SQL.Database(new Uint8Array(buffer))

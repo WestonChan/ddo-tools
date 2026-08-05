@@ -7,6 +7,7 @@ import {
   findItemIdsByStats,
   findItemNameById,
   findRaidItemIds,
+  getAugmentsForSlot,
   getItemDetail,
   listAdventurePacks,
   listBonusStats,
@@ -25,6 +26,9 @@ const QUERY_SURFACE: ReadonlyArray<readonly [name: string, run: (db: Database) =
   ['findItemIdsByPack', (db) => findItemIdsByPack(db, 'Mists of Ravenloft')],
   ['findItemNameById', (db) => findItemNameById(db, 1)],
   ['getItemDetail', (db) => getItemDetail(db, 1)],
+  // Socket 4 is Sun in the current fixture; against the shipped DB any id runs
+  // the same query, and against the baseline the table is missing outright.
+  ['getAugmentsForSlot', (db) => getAugmentsForSlot(db, 4)],
 ]
 
 // Why these tests exist: when the stale-service-worker incident broke the
@@ -66,8 +70,7 @@ describe('query surface vs the frozen baseline schema', () => {
           const rawName = /no such (?:column|table): ([\w.]+)/.exec(message)?.[1]
           const missing = rawName?.split('.').pop()
           const covered =
-            missing !== undefined &&
-            (requiredColumns.has(missing) || requiredTables.has(missing))
+            missing !== undefined && (requiredColumns.has(missing) || requiredTables.has(missing))
           if (!covered) {
             uncovered.push(
               `${name} failed against the baseline schema (${message}) but ` +

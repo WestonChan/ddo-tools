@@ -62,7 +62,39 @@ export interface ItemArmorStats {
 
 export interface ItemAugmentSlot {
   sort_order: number
-  slot_type: string
+  /** The `augment_slot_types` row this socket is, and the key `slotCandidates`
+   *  is indexed by. Two sockets of the same kind on one item share it. */
+  slot_id: number
+  /**
+   * The socket's canonical label, from one closed vocabulary the ETL composes:
+   * a bare colour (`red`, `colorless`, `sun`, `moon`, …) for a gem socket, or
+   * `family: variant (qualifier)` for a crafting socket —
+   * `lamordia: melancholic (accessory)`, `isle of dread: set bonus`,
+   * `slaver's: prefix (legendary)`.
+   *
+   * Lower-case as stored; display casing is applied at render time by
+   * `formatSlotLabel`. The view never parses it — `family` below is what says
+   * what kind of socket this is.
+   */
+  label: string
+  /** `standard` for a gem socket, otherwise the crafting family (`lamordia`,
+   *  `dino`, `slavers`). Read instead of pattern-matching the label. */
+  family: string
+  /** The augment pool a crafting socket draws from (`weapon` / `armor` /
+   *  `accessory`) or a Slaver's socket's `legendary` grade; null when the
+   *  socket has neither. Carried so no consumer has to take it out of the
+   *  label. */
+  qualifier: string | null
+}
+
+/** One augment that fits a slot: what the candidate dropdown renders. */
+export interface AugmentCandidate {
+  augment_id: number
+  name: string
+  min_level: number | null
+  /** Generated bonus labels ("Charisma +5"). Empty for the 430 shipped
+   *  augments whose bonuses the pipeline has not resolved yet. */
+  bonuses: string[]
 }
 
 export interface ItemUpgrade {
@@ -115,6 +147,10 @@ export interface ItemDetail extends ItemCore {
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
   augmentSlots: ItemAugmentSlot[]
+  /** Candidate augments per `slot_id`, for the sockets that get a dropdown
+   *  (see `slotTakesCandidateList`). Plain colour sockets are absent: they
+   *  accept hundreds of augments and render as a gem, not a list. */
+  slotCandidates: Record<number, AugmentCandidate[]>
   upgrades: ItemUpgrade[]
   bonuses: ItemBonus[]
   effects: ItemEffect[]
@@ -183,11 +219,7 @@ export function findItemIdsByStats(db: Database, stats: readonly string[]): Set<
  *  labels for stack entries that don't carry a name yet (e.g., URL-seeded
  *  depth-1 entries). One indexed-PK query, sub-millisecond. */
 export function findItemNameById(db: Database, id: number): string | null {
-  const rows = runQuery<{ name: string }>(
-    db,
-    'SELECT name FROM items WHERE id = ?',
-    [id],
-  )
+  const rows = runQuery<{ name: string }>(db, 'SELECT name FROM items WHERE id = ?', [id])
   return rows[0]?.name ?? null
 }
 
@@ -251,6 +283,80 @@ export function findItemIdsByPack(db: Database, pack: string): Set<number> {
   return new Set(rows.map((r) => r.item_id))
 }
 
+/**
+ * True when a socket belongs to a crafting family rather than being a gem colour.
+ *
+ * Reads the `family` column the ETL decomposes the label into, so the view
+ * never pattern-matches a string to decide whether to draw a gem.
+ */
+export function isFamilySlot(family: string): boolean {
+  return family !== 'standard'
+}
+
+/**
+ * True when a socket should offer a list of candidate augments rather than just
+ * a gem.
+ *
+ * The crafting families draw from a handful of purpose-made augments each, and
+ * so do Sun and Moon — small enough lists to be useful. The other colours
+ * accept hundreds and the gem says everything a browse view can. Exported so
+ * the query layer and the view agree on one rule.
+ *
+ * Sun and Moon are identified by label because for a `standard` socket the
+ * label *is* the colour — the vocabulary composes it from the variant alone.
+ */
+export function slotTakesCandidateList(family: string, label: string): boolean {
+  return isFamilySlot(family) || label === 'sun' || label === 'moon'
+}
+
+/**
+ * The augments that fit a socket, in the order a player scans them (level, then
+ * name), each with its bonus labels.
+ *
+ * Joined on `augments.slot_id`, the FK the pipeline backfills from the socket's
+ * label — the wiki-sourced `slot_color` is a display fallback and is never
+ * queried on. A socket with no matching augments returns an empty list, which
+ * is correct for Slaver's sockets: Slave Lords crafting fills those with shards
+ * rather than augments.
+ */
+export function getAugmentsForSlot(db: Database, slotId: number): AugmentCandidate[] {
+  const rows = runQuery<{
+    augment_id: number
+    name: string
+    min_level: number | null
+    bonus: string | null
+  }>(
+    db,
+    `SELECT a.id AS augment_id, a.name AS name, a.min_level AS min_level,
+            b.name AS bonus
+       FROM augments a
+       LEFT JOIN augment_bonuses ab ON ab.augment_id = a.id
+       LEFT JOIN bonuses b ON b.id = ab.bonus_id
+      WHERE a.slot_id = ?
+      ORDER BY a.min_level IS NULL, a.min_level, a.name COLLATE NOCASE,
+               ab.sort_order`,
+    [slotId],
+  )
+
+  // One row per (augment, bonus) — folded here rather than with GROUP_CONCAT
+  // so a bonus name containing a comma stays one bonus.
+  const byId = new Map<number, AugmentCandidate>()
+  for (const row of rows) {
+    let candidate = byId.get(row.augment_id)
+    if (!candidate) {
+      candidate = {
+        augment_id: row.augment_id,
+        name: row.name,
+        min_level: row.min_level,
+        bonuses: [],
+      }
+      byId.set(row.augment_id, candidate)
+    }
+    if (row.bonus) candidate.bonuses.push(row.bonus)
+  }
+  return [...byId.values()]
+}
+
 export function getItemDetail(db: Database, id: number): ItemDetail | null {
   // Column list matches ItemCore exactly. `level`, `base_value`, and `icon`
   // exist on the table but no UI surfaces them — add them back here when
@@ -284,12 +390,23 @@ export function getItemDetail(db: Database, id: number): ItemDetail | null {
 
   const augmentSlots = runQuery<ItemAugmentSlot>(
     db,
-    `SELECT sort_order, slot_type
-       FROM item_augment_slots
-       WHERE item_id = ?
-       ORDER BY sort_order`,
+    `SELECT s.sort_order AS sort_order, s.slot_id AS slot_id, t.label AS label,
+            t.family AS family, t.qualifier AS qualifier
+       FROM item_augment_slots s
+       JOIN augment_slot_types t ON t.id = s.slot_id
+       WHERE s.item_id = ?
+       ORDER BY s.sort_order`,
     [id],
   )
+
+  // One query per distinct socket, not per slot: an item with two Lamordia
+  // accessory sockets offers the same augments in both.
+  const slotCandidates: Record<number, AugmentCandidate[]> = {}
+  for (const slot of augmentSlots) {
+    if (!slotTakesCandidateList(slot.family, slot.label)) continue
+    if (slot.slot_id in slotCandidates) continue
+    slotCandidates[slot.slot_id] = getAugmentsForSlot(db, slot.slot_id)
+  }
 
   const upgrades = runQuery<ItemUpgrade>(
     db,
@@ -358,6 +475,7 @@ export function getItemDetail(db: Database, id: number): ItemDetail | null {
     weaponStats,
     armorStats,
     augmentSlots,
+    slotCandidates,
     upgrades,
     bonuses,
     effects,

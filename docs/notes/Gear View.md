@@ -6,6 +6,18 @@ Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see
 	- Click a set to open it in the Gearing View
 	- Shrinks to a `Back to Comparison View` button while in the Gearing View
 
+📋 Phase 8 — Augment picker game facts (recorded 2026-08-03 while shipping 4m slice 1b; sourced from `Template:Augment` / `Template:UpgradeableAugment` via `?action=raw`):
+- Slot → candidate augments is an FK join through the `augment_slot_types` definitions table: `item_augment_slots.slot_id` and `augments.slot_id` both reference it, and its `family`/`variant`/`qualifier` columns mean no consumer parses a label. Family slots are `family != 'standard'`; everything else is a colour gem. (`augments.slot_color` remains as wiki-sourced display fallback.)
+- **Colour-acceptance rules** (what fits in a coloured socket — the picker must widen beyond exact match):
+	- Orange sockets take Orange, Red, or Yellow augments
+	- Purple sockets take Blue, Purple, or Red
+	- Green sockets take Blue, Green, or Yellow
+	- Every socket except Sun/Moon also takes Colorless
+	- Sun/Moon sockets take only their own gems (Lunar and Solar Gems)
+- **UpgradeableAugment pools** (stored as the `Upgradeable Augment` potential effect, Primary/Secondary modifier): Primary unlocks Yellow/Blue (+Red on weapons and shields) via Epic Tapestry Shreds; Secondary unlocks Green (+Orange/Purple on weapons and shields) via Masterwork Tapestry Shreds — both at the Fountain of Necrotic Might. Weapon/shield-ness is derivable from the item's own weapon stats / category (verified: all 40 affected items are explicitly listed in the template's own source).
+- Slaver's slots (`slaver's: prefix` etc.) are filled by Slave Lords **shards**, not augments — the candidate list is empty by design until a Slave Lords crafting scrape exists.
+- 430/1,279 augments still have no `augment_bonuses` rows (4m audit item), so candidate lists may show name-only entries until that ships.
+
 📋 Phase 8 — Gear finding view:
 - Filtering
 	- Filter by toggling item types (helm, gloves, etc.) — visually the same as the equip slots

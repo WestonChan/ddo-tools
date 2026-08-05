@@ -29,6 +29,9 @@ const FIXTURE_TABLES = [
   'item_armor_stats',
   'item_augment_slots',
   'item_upgrades',
+  'augment_slot_types',
+  'augments',
+  'augment_bonuses',
   'bonus_types',
   'stats',
   'bonuses',
@@ -55,11 +58,6 @@ INSERT INTO item_weapon_stats (item_id, damage, critical, weapon_type, proficien
 
 INSERT INTO item_armor_stats (item_id, armor_bonus, max_dex_bonus) VALUES
   (3, 0, NULL);
-
-INSERT INTO item_augment_slots (item_id, sort_order, slot_type) VALUES
-  (1, 0, 'Yellow'),
-  (2, 0, 'Colorless'),
-  (2, 1, 'Blue');
 
 INSERT INTO item_upgrades (item_id, base_item_id, upgrade_tier) VALUES
   (2, 2, 2);
@@ -129,6 +127,62 @@ INSERT INTO quest_loot (quest_id, item_id) VALUES
   (2, 1);
 `
 
+// The augment-slot vocabulary and everything that points at it. Definitions are
+// restricted to rows the pipeline's decoder could produce (lower-case labels,
+// family/variant/qualifier agreeing with the label) — validation assertion A8
+// fails the build on anything else, so a fixture outside the vocabulary would
+// test a state production cannot reach.
+//
+// Item 2 carries one of each shape the detail view renders differently: plain
+// colour, sun, a crafting family, and a Slaver's socket that has no candidate
+// augments by design. The bonus-less Solar Gem is not padding either — 430 of
+// 1,279 shipped augments have no augment_bonuses rows yet, so a name-only
+// dropdown row is a state the view must render.
+//
+// Current-schema only: the frozen baseline predates augment_slot_types and the
+// augments tables entirely, which is exactly why the queries reading them need
+// their REQUIRED_COLUMNS entries.
+const CURRENT_AUGMENT_DATA = `
+INSERT INTO augment_slot_types (id, label, family, variant, qualifier) VALUES
+  (1, 'yellow', 'standard', 'yellow', NULL),
+  (2, 'colorless', 'standard', 'colorless', NULL),
+  (3, 'blue', 'standard', 'blue', NULL),
+  (4, 'sun', 'standard', 'sun', NULL),
+  (5, 'moon', 'standard', 'moon', NULL),
+  (6, 'lamordia: melancholic (accessory)', 'lamordia', 'melancholic', 'accessory'),
+  (7, 'slaver''s: prefix (legendary)', 'slavers', 'prefix', 'legendary');
+
+INSERT INTO item_augment_slots (item_id, sort_order, slot_id) VALUES
+  (1, 0, 1),
+  (2, 0, 2),
+  (2, 1, 3),
+  (2, 2, 4),
+  (2, 3, 6),
+  (2, 4, 7);
+
+INSERT INTO augments (id, name, slot_id, slot_color, min_level) VALUES
+  (1, 'Melancholic Charisma', 6, 'lamordia: melancholic (accessory)', 8),
+  (2, 'Melancholic Healing Amplification', 6, 'lamordia: melancholic (accessory)', 8),
+  (3, 'Solar Gem of Abjuration (Heroic)', 4, 'sun', 1),
+  (4, 'Lunar Gem of Deflection (Heroic)', 5, 'moon', 1);
+
+INSERT INTO augment_bonuses (augment_id, bonus_id, sort_order) VALUES
+  (1, 1, 0),
+  (2, 3, 0);
+`
+
+// The same sockets in the pre-definitions-table shape, so seedBaselineDb keeps
+// modelling a real old database rather than one with an empty junction table.
+const BASELINE_AUGMENT_SLOT_DATA = `
+INSERT INTO item_augment_slots (item_id, sort_order, slot_type) VALUES
+  (1, 0, 'yellow'),
+  (2, 0, 'colorless'),
+  (2, 1, 'blue'),
+  (2, 2, 'sun'),
+  (2, 3, 'lamordia: melancholic (accessory)'),
+  (2, 4, 'slaver''s: prefix (legendary)');
+`
+
 let _wasmBinary: ArrayBuffer | null = null
 function loadWasm(): ArrayBuffer {
   if (_wasmBinary) return _wasmBinary
@@ -136,7 +190,16 @@ function loadWasm(): ArrayBuffer {
   // monorepo / workspace nesting. From `src/test/fixtures/`, the project
   // root is three levels up.
   const here = dirname(fileURLToPath(import.meta.url))
-  const wasmPath = resolve(here, '..', '..', '..', 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm')
+  const wasmPath = resolve(
+    here,
+    '..',
+    '..',
+    '..',
+    'node_modules',
+    'sql.js',
+    'dist',
+    'sql-wasm.wasm',
+  )
   const buf = readFileSync(wasmPath)
   // initSqlJs's `wasmBinary` typing wants an ArrayBuffer, not a Node Buffer.
   // Slice off Buffer's view to get a plain ArrayBuffer of the same bytes.
@@ -189,6 +252,7 @@ export async function seedTestDb(): Promise<Database> {
   db.run(ddl)
   db.run(FIXTURE_DATA)
   db.run(CURRENT_QUEST_LOOT_DATA)
+  db.run(CURRENT_AUGMENT_DATA)
   return db
 }
 
@@ -218,6 +282,7 @@ export async function seedBaselineDb(): Promise<Database> {
   db.run(ddl)
   db.run(FIXTURE_DATA)
   db.run(BASELINE_QUEST_LOOT_DATA)
+  db.run(BASELINE_AUGMENT_SLOT_DATA)
   return db
 }
 

@@ -979,6 +979,91 @@
 .resources-augment-slot[data-color='green']     { --gem-color: #22c55e; }
 .resources-augment-slot[data-color='orange']    { --gem-color: #f97316; }
 .resources-augment-slot[data-color='colorless'] { --gem-color: var(--text-muted); }
+/* Sun and Moon are Isle of Dread's day/night sockets. Sun is a warmer, paler
+   gold than the yellow socket so the two never read as the same gem; moon is
+   the silver-blue the in-game icon uses. 34 rows shipped unstyled (falling
+   back to muted grey) until these landed. */
+.resources-augment-slot[data-color='sun']       { --gem-color: #f0b429; }
+.resources-augment-slot[data-color='moon']      { --gem-color: #8fa6c0; }
+
+/* Crafting-family sockets and Sun/Moon draw from a short, purpose-made pool of
+   augments, so they render as a control that expands to that pool rather than
+   as a bare gem. */
+.resources-augment-slots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+/* The socket chip itself. Worn by both the expandable control and the inert
+   Slaver's label, which differ only in whether anything happens on click. */
+.resources-augment-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-0-5) var(--space-1-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-family: inherit;
+}
+
+.resources-augment-control[aria-expanded='true'] {
+  border-color: var(--border-accent);
+  color: var(--text);
+}
+
+.resources-augment-candidates {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-px);
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+}
+
+.resources-augment-candidate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-1-5);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+
+  /* Colour plus a tinted surface, so the pick stays legible next to the
+     neighbouring row's hover highlight. Keyed off `.selected` — the same class
+     that opts the row out of `.hoverable`'s hover background, so one hook
+     drives both halves of the state. */
+  &.selected {
+    background: var(--bg-accent);
+
+    & .resources-augment-candidate-name {
+      color: var(--accent);
+      font-weight: 500;
+    }
+  }
+}
+
+.resources-augment-candidate-name {
+  color: var(--text);
+}
+
+.resources-augment-candidate-level {
+  color: var(--text-muted);
+}
+
+.resources-augment-candidate-bonuses {
+  flex-basis: 100%;
+  color: var(--text-secondary);
+}
 
 .resources-detail-description {
   color: var(--text-secondary);

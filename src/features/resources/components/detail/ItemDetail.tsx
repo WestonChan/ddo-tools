@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
-import { TooltipWrapper, WikiLinkIcon } from '../../../../components'
+import { WikiLinkIcon } from '../../../../components'
 import { ResourceChip } from '../ResourceChip'
+import { AugmentSlotList } from './AugmentSlotList'
 import { EntityHeader } from './EntityHeader'
 import { EnchantmentList } from './EnchantmentList'
 import { DetailSection } from './DetailSection'
@@ -10,7 +11,6 @@ import type {
   ItemDetail as ItemDetailRow,
   ItemQuestRef,
   ItemSpellLink,
-  ItemAugmentSlot,
   ItemUpgrade,
   ItemWeaponStats,
   ItemArmorStats,
@@ -26,25 +26,7 @@ function buildHeaderAttributes(detail: ItemDetailRow): KvItem[] {
   if (detail.augmentSlots.length > 0) {
     attrs.push({
       label: 'Augment slots',
-      value: (
-        <ul className="resources-augment-list">
-          {detail.augmentSlots.map((s: ItemAugmentSlot) => (
-            <li
-              key={s.sort_order}
-              className="resources-augment-slot"
-              data-color={s.slot_type.toLowerCase()}
-            >
-              <TooltipWrapper text={`${s.slot_type} augment slot`}>
-                <span
-                  className="resources-augment-gem"
-                  role="img"
-                  aria-label={`${s.slot_type} augment slot`}
-                />
-              </TooltipWrapper>
-            </li>
-          ))}
-        </ul>
-      ),
+      value: <AugmentSlotList slots={detail.augmentSlots} candidates={detail.slotCandidates} />,
     })
   }
   return attrs
@@ -63,7 +45,8 @@ function buildWeaponStats(stats: ItemWeaponStats): StatListItem[] {
 function buildArmorStats(stats: ItemArmorStats): StatListItem[] {
   const items: StatListItem[] = []
   if (stats.armor_bonus !== null) items.push({ label: 'Armor bonus', value: stats.armor_bonus })
-  if (stats.max_dex_bonus !== null) items.push({ label: 'Max Dex bonus', value: stats.max_dex_bonus })
+  if (stats.max_dex_bonus !== null)
+    items.push({ label: 'Max Dex bonus', value: stats.max_dex_bonus })
   return items
 }
 
@@ -81,9 +64,7 @@ export function ItemDetail({ detail }: { detail: ItemDetailRow }): JSX.Element {
         wikiUrl={detail.wiki_url}
         wikiPageName={detail.name}
       />
-      {detail.description && (
-        <p className="resources-detail-description">{detail.description}</p>
-      )}
+      {detail.description && <p className="resources-detail-description">{detail.description}</p>}
       {detail.tooltip && detail.tooltip !== detail.description && (
         <p className="resources-detail-tooltip">{detail.tooltip}</p>
       )}
@@ -128,13 +109,7 @@ export function ItemDetail({ detail }: { detail: ItemDetailRow }): JSX.Element {
                   {q.is_rare && <ResourceChip kind="rare" />}
                 </span>
                 <span className="resources-quest-meta">
-                  {[
-                    q.patron,
-                    q.pack,
-                    q.zone,
-                    q.npc,
-                    q.level !== null ? `Level ${q.level}` : null,
-                  ]
+                  {[q.patron, q.pack, q.zone, q.npc, q.level !== null ? `Level ${q.level}` : null]
                     .filter(Boolean)
                     .join(' · ')}
                 </span>

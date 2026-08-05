@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import type { Database } from 'sql.js'
 import { seedTestDb } from '../../../test/fixtures/resourcesDb'
-import { listItems, getItemDetail } from './items'
+import { listItems, getItemDetail, getAugmentsForSlot } from './items'
 
 describe('items queries (against :memory: DB)', () => {
   let db: Database
@@ -66,8 +66,62 @@ describe('items queries (against :memory: DB)', () => {
       handedness: 'Two-handed',
     })
     expect(detail!.armorStats).toBeNull()
-    expect(detail!.augmentSlots).toEqual([{ sort_order: 0, slot_type: 'Yellow' }])
+    expect(detail!.augmentSlots).toEqual([
+      { sort_order: 0, slot_id: 1, label: 'yellow', family: 'standard', qualifier: null },
+    ])
     expect(detail!.upgrades).toEqual([])
+  })
+
+  // A plain colour socket takes hundreds of augments and renders as a gem, so
+  // only the sockets that get a dropdown are resolved — the crafting families
+  // and sun/moon. Keyed by slot_id, so two sockets of the same kind on one item
+  // cost one query.
+  it('getItemDetail resolves candidate augments for non-colour slots only', () => {
+    const detail = getItemDetail(db, 2)
+    expect(Object.keys(detail!.slotCandidates).sort()).toEqual(['4', '6', '7'])
+  })
+
+  it("getItemDetail returns no candidates for a Slaver's slot", () => {
+    // Slave Lords crafting fills these with shards, not augments, so the
+    // empty list is the correct answer rather than missing data.
+    const detail = getItemDetail(db, 2)
+    expect(detail!.slotCandidates[7]).toEqual([])
+  })
+
+  it('getAugmentsForSlot returns the augments pointing at that socket', () => {
+    expect(getAugmentsForSlot(db, 6)).toEqual([
+      {
+        augment_id: 1,
+        name: 'Melancholic Charisma',
+        min_level: 8,
+        bonuses: ['Charisma +5'],
+      },
+      {
+        augment_id: 2,
+        name: 'Melancholic Healing Amplification',
+        min_level: 8,
+        bonuses: ['Heal Amplification +20'],
+      },
+    ])
+  })
+
+  it('getAugmentsForSlot keeps an augment that has no bonus rows', () => {
+    // 430 of 1,279 shipped augments have none; dropping them would hide a
+    // third of the list rather than showing a name-only row.
+    expect(getAugmentsForSlot(db, 4)).toEqual([
+      {
+        augment_id: 3,
+        name: 'Solar Gem of Abjuration (Heroic)',
+        min_level: 1,
+        bonuses: [],
+      },
+    ])
+  })
+
+  it('getAugmentsForSlot returns nothing for a socket no augment fits', () => {
+    // Socket 7 is the Slaver's prefix; 99 is no socket at all.
+    expect(getAugmentsForSlot(db, 7)).toEqual([])
+    expect(getAugmentsForSlot(db, 99)).toEqual([])
   })
 
   it('getItemDetail joins armor stats when present', () => {
@@ -80,8 +134,23 @@ describe('items queries (against :memory: DB)', () => {
   it('getItemDetail returns multiple augment slots in order', () => {
     const detail = getItemDetail(db, 2)
     expect(detail!.augmentSlots).toEqual([
-      { sort_order: 0, slot_type: 'Colorless' },
-      { sort_order: 1, slot_type: 'Blue' },
+      { sort_order: 0, slot_id: 2, label: 'colorless', family: 'standard', qualifier: null },
+      { sort_order: 1, slot_id: 3, label: 'blue', family: 'standard', qualifier: null },
+      { sort_order: 2, slot_id: 4, label: 'sun', family: 'standard', qualifier: null },
+      {
+        sort_order: 3,
+        slot_id: 6,
+        label: 'lamordia: melancholic (accessory)',
+        family: 'lamordia',
+        qualifier: 'accessory',
+      },
+      {
+        sort_order: 4,
+        slot_id: 7,
+        label: "slaver's: prefix (legendary)",
+        family: 'slavers',
+        qualifier: 'legendary',
+      },
     ])
     expect(detail!.upgrades).toEqual([{ base_item_id: 2, upgrade_tier: 2 }])
   })
@@ -135,9 +204,7 @@ describe('items queries (against :memory: DB)', () => {
 
   it('getItemDetail joins spell links with the spells table', () => {
     const detail = getItemDetail(db, 2)
-    expect(detail!.spellLinks).toEqual([
-      { spell_id: 10, name: 'Cure Moderate Wounds', charges: 3 },
-    ])
+    expect(detail!.spellLinks).toEqual([{ spell_id: 10, name: 'Cure Moderate Wounds', charges: 3 }])
   })
 
   it('getItemDetail returns null for unknown id', () => {

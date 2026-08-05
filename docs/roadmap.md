@@ -1116,11 +1116,35 @@ Large enough that it should be split when picked up — suggested slices, in ord
      `items.enhancement_bonus` was removed from the schema rather than populated. Three follow-ups
      it surfaced (orb energy resistances, `insert_augments`, multi-template bullets) are logged
      there against this phase.
-   - **2,420 augment slots missing** across five unrecognized template families (`Lamordia Slot`
-     1,001, `Dino Slot` 440, `MoonSunAugment` 427, `UpgradeableAugment` 72, `Slaver's Slot` 30).
-     Carries an open schema question — whether `slot_type` needs a companion `slot_family` — with the
-     analysis recorded in the notes. Between them these two also explain ~516 of the 830
-     content-less items.
+   - ✅ **Augment slots — shipped 2026-08-03 as slice 1b.** 2,444 slots recovered (7,054 → 9,498
+     rows): five template families plus a sixth loss the census missed (`{{Augment|X|nocat=…}}`,
+     ~578 occurrences the old regex could not cross). The open schema question resolved as a
+     **definitions table**: `augments.slot_color` already speaks a compound-label vocabulary
+     (`lamordia: miserable (weapon)`), and those labels became `augment_slot_types(id, label
+     UNIQUE, family, variant, qualifier)` with `slot_id` FKs on both sides — so
+     slot → candidate-augments is an FK join and family is a column, not a parse — which powers
+     a candidate dropdown
+     on family and Sun/Moon sockets in item detail. `UpgradeableAugment` routes to the effects
+     path as the potential effect `Upgradeable Augment` (it marks an upgrade, not a socket).
+     Also fixed en route: `insert_augments` skipped its whole enchantment loop for already-stored
+     augments (+146 `augment_bonuses` rows when unblocked), and the 102 misrouted junk
+     `item_effects` rows are repaired away. Measured outcome and residuals in
+     [DB Errors.md](notes/DB%20Errors.md).
+   - **Per-system crafting modeling — design decided 2026-08-03, implementation is future
+     slices.** All systems stay in the one `crafting_systems` registry with one mechanics shape —
+     **slot types → option pools → recipes** — differing per system only in scraper code; a new
+     `crafting_slot_types.socket_label` bridges system pools to the `item_augment_slots`
+     vocabulary; the prose-scraped `crafting_*` content is rebuilt per system rather than
+     repaired (absorbing the 4×-duplication and prose-name bullets); deterministic upgrades
+     (`UpgradeableAugment`, `UpgradeableItem`, `VaultsOfTheArtificersUpgrade`) model as systems
+     with recipes, and upgrade states are **never synthesized as `items` rows**; the 109
+     dual-magnitude augments split rows by relaxing `idx_augments_name` to `(name, min_level)`.
+     Full decisions (D-CS1–10), current-state map, and the suggested order (Slave Lords first —
+     its sockets already exist and its dropdowns are empty) in
+     [Crafting Systems](notes/Crafting%20Systems.md). Frontend deliverable riding the same work:
+     **show craftable things (bonuses, augments, slot grants, etc.) on the Resources page** as
+     each system's data lands — labeled as craftable, never merged into innate rows (D-CS8) —
+     and update the detail-view styling to carry the growing socket/candidate/crafting surface.
 2. **Maetrim-fed fixes** (small, high-certainty; these retire a stopgap):
    - 4 missing `bonus_types` rows (`Legendary`, `Penalty`, `Orb`, `Vitality`) account for ~44 NULL
      `bonus_type_id` values outright — `Legendary` is 14/14.

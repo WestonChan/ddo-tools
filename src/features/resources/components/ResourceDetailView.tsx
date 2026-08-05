@@ -33,8 +33,10 @@ export function ResourceDetailView({
   baseCategory,
 }: ResourceDetailViewProps): JSX.Element {
   const { db } = useDatabase()
-  const { stack, pushDetail, popDetail, jumpToCrumb, closeDrawer, deepLinkUrl } =
-    useDetailStack({ urlEntry, baseCategory })
+  const { stack, pushDetail, popDetail, jumpToCrumb, closeDrawer, deepLinkUrl } = useDetailStack({
+    urlEntry,
+    baseCategory,
+  })
 
   const top = stack[stack.length - 1] ?? null
 
@@ -84,7 +86,15 @@ function renderParsedBody(
 ): JSX.Element {
   if (top === null) return <DetailEmpty kind="no-selection" />
   if (top.category === 'items') {
-    return itemDetail ? <ItemDetail detail={itemDetail} /> : <DetailEmpty kind="not-found" id={top.id} />
+    // Keyed on the entity, so navigating to another item remounts the body
+    // instead of feeding new props to the old instance. Detail components hold
+    // per-item UI state — an expanded augment slot, for one — and without this
+    // the next item opens with the previous item's slot already expanded.
+    return itemDetail ? (
+      <ItemDetail key={`${top.category}-${top.id}`} detail={itemDetail} />
+    ) : (
+      <DetailEmpty kind="not-found" id={top.id} />
+    )
   }
   return <DetailEmpty kind="empty-table" category={top.category} />
 }

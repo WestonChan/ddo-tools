@@ -107,6 +107,39 @@ proficiency    TEXT,    -- display fallback
 
 ---
 
+## Closed-vocabulary definitions table
+
+When two scrapers must agree on a shared vocabulary (Phase 4m slice 1b: item sockets and the
+augments that fit them), the vocabulary gets a **definitions table** — the same
+definition + junction shape as `bonuses` ← `item_bonuses` — not parallel TEXT columns joined by
+string equality. `augment_slot_types(id, label UNIQUE, family, variant, qualifier)` is the
+reference implementation: `item_augment_slots.slot_id` and `augments.slot_id` both point at it,
+"which augments fit this slot?" is an FK join, and the decomposed columns mean **no consumer ever
+parses the label**. (Slice 1b shipped the string-join form first and normalized in the same
+branch once the pattern mismatch was recognized — the TEXT form's obligations, an assertion per
+side plus a mirror-pinning test, were the tell that a table was missing.)
+
+The pattern's obligations:
+
+- **One composition function, one inverse.** The label is composed in exactly one place
+  (`wiki/augment_slots.py::slot_label`) with an exact inverse (`decompose_label`) used by the
+  writer and the shape migration. A property test asserts every stored row recomposes its own
+  label byte-for-byte, so the decomposed columns and the label can never drift.
+- **The writer resolves, it does not invent.** Definitions rows are inserted only for labels the
+  decoder composed (`_resolve_augment_slot_type` declines and logs anything else). This is
+  deliberately *not* `_resolve_named`'s auto-create-anything — a closed vocabulary that
+  auto-creates is not closed.
+- **Normalize at the writer boundary.** Case is folded where rows are written; lookups are exact,
+  so a stray capital fails loudly instead of matching case-insensitively.
+- **Validation enforces what SQLite won't.** FKs aren't runtime-enforced here, so assertions do
+  it: stored definitions ⊆ the decoder's grammar (A8, tuple-equality against literal VALUES —
+  mirrored by name, pinned by a set-equality test); referenced definitions actually have
+  candidates on the other side (A8b); no dangling `slot_id` (A8c).
+- **The wiki-sourced TEXT column survives as display fallback** (`augments.slot_color`), per the
+  display-fallback pattern above: FK authoritative for querying, TEXT for provenance/display.
+
+---
+
 ## Index strategy
 
 **Always index**:
@@ -187,7 +220,7 @@ This pattern applies wherever a table would have a cluster of columns that are a
 CREATE TABLE item_augment_slots (
     item_id    INTEGER NOT NULL REFERENCES items(id),
     sort_order INTEGER NOT NULL,
-    slot_type  TEXT NOT NULL,
+    slot_id    INTEGER NOT NULL REFERENCES augment_slot_types(id),
     PRIMARY KEY (item_id, sort_order)
 );
 ```
@@ -262,7 +295,8 @@ slot_color TEXT CHECK (slot_color IN ('colorless', 'blue', 'yellow', ...))
 `stats`, `bonus_types`, `skills`, `damage_types`, `weapon_proficiencies`, `weapon_types`, `equipment_slots`, `spell_schools`, `item_materials`, `classes`, `races`, `adventure_packs`, `patrons`
 
 **Current CHECK enums** (candidates for future reference table migration):
-- `augments.slot_color` → `augment_slot_colors`
+- ~~`augments.slot_color` → `augment_slot_colors`~~ ✅ happened as `augment_slot_types` (Phase 4m
+  slice 1b): `augments.slot_id` is the FK, `slot_color` stays as display fallback
 - `items.rarity` → `item_rarities`
 - `item_weapon_stats.handedness` → `item_handedness` or fold into `weapon_types`
 - `items.item_category` → `item_categories`
