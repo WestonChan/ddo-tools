@@ -932,8 +932,15 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
 | 4k | done | File-structure cleanup -- feature-layout consistency, dead icon removal |
 | 4c | done | ETL template/entity normalization + rare loot (Python pipeline) |
-| **4m** | **→ NEXT** | ETL data-quality: audits & investigations -- **blocks Phase 8** (see the phase entry) |
-| 4l | planned | DDOBuilderV2 data cross-check utility -- diff `ddo.db` against Maetrim's XML data files |
+| 4m | superseded | ETL data-quality audits (Python) -- replaced by V2/V3, which source these fields from DDOBuilderV2 instead of the wiki |
+| 4l | superseded | DDOBuilderV2 cross-check utility -- inverted by V2: Maetrim's data is now the primary source and the old `ddo.db` is the fixture |
+| V1 | done | Rust API + Vercel plan -- this roadmap section, `ddo-data` workspace scaffold |
+| **V2** | **→ NEXT** | `ddo-etl` parses DDOBuilderV2 items into SQLite; item names diffed against the legacy `ddo.db` |
+| V3 | planned | `ddo-etl` covers feats, enhancement trees, classes, races, quests, set bonuses, augments, spells, icons |
+| V4 | planned | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` |
+| V5 | planned | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, validation gates, `flyctl deploy` |
+| V6 | planned | Frontend on the API -- TanStack Query, generated types, remove sql.js + `DatabaseGate`, move hosting to Vercel |
+| V7 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
@@ -945,10 +952,10 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 8 | planned | Gear |
 | 9 | planned | Comparison mode |
 | 10 | planned | Farm checklist |
-| 11 | planned | DB pipeline -- SLAs, abilities, purchasable augments |
+| 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
 | 12 | planned | Build Overview |
 | 13 | planned | Settings view cleanup |
-| 14 | planned | Build sharing via URL |
+| 14 | superseded | Build sharing via URL -- replaced by V7's server-side sharing; the URL codec is optional fallback |
 | 15 | planned | `.DDOBuild` import (DDOBuilderV2 desktop files) |
 
 Phases 4h–4k are general frontend/repo cleanup rather than Resources-browser work; they sit under
@@ -957,14 +964,17 @@ Phase 4 only because they surfaced during it. Ordered first because all are smal
 **Independence and ordering notes** (the table reads as strictly serial by default, so where that
 isn't true it is said here):
 
-- **4m is a prerequisite for Phase 8**, not optional cleanup — `{{Enhancement bonus}}` is missing on
-  4,037 items and a weapon's `+N` is unusable without it. It is `→ NEXT` for that reason and because
-  it reuses the template module 4c just built.
-- **4l can be taken in parallel with 4m** (different files: a new CLI command vs. the existing
-  writers). Its scope also shrank: the manual cross-check was already run during 4c planning and its
-  findings are recorded in [DB Errors.md](notes/DB%20Errors.md), so 4l is now "build the repeatable
-  tool", not "discover the disagreements".
-- **4d–4g remain serial** behind each other as written (4f still `requires 4e`).
+- **The V-series is the critical path.** V2 through V5 happen in the `ddo-data` repo and can run
+  while nothing changes here. V6 is the first phase that touches this repo's code, and every later
+  frontend phase (4d–4g, 5 onward) builds on V6's data layer, not on sql.js. Don't start 4d–4g before
+  V6 lands; they would be written against a data layer that is about to be deleted.
+- **The `{{Enhancement bonus}}` gap that made 4m block Phase 8** is closed by V2: every DDOBuilderV2
+  `.item` carries an explicit `<BonusType>` per `<Buff>`, which is the field 4m was trying to recover
+  from wikitext. Phase 8 now depends on V2/V3 instead.
+- **4d–4g remain serial** behind each other as written (4f still `requires 4e`), and all four wait
+  on V6.
+- **Phase 5 (`user.db`) is unchanged.** V7 adds server-side sharing on top of it; the browser copy
+  stays the working copy.
 
 ### Phase 1: Layout Restructuring (done)
 - Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
@@ -1620,6 +1630,140 @@ Import build files from [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOB
 - Parse the `.DDOBuild` XML save format (active life/build, per-level classes, ability scores, tomes, feats, past lives, enhancement spends, gear/augments/filigrees, stances) with native `DOMParser` — no XML library. ddo-builds.com's `src/utils/ddoBuildParser.ts` demonstrates the approach and doubles as format documentation; ddobuildhub.com ships `xmlbuilder2` (~374 KB chunk) for the same job — avoid that.
 - Map DDOBuilderV2's string identifiers onto our `ddo.db` IDs; surface unmapped entries as import warnings rather than failing the whole import.
 - Drag-and-drop + file-picker entry points; imported build lands as unsaved (red-dot badge, Phase 5/14 convention) until the user keeps it.
+
+---
+
+## V-series: Rust data API + Vercel hosting
+
+Decided 2026-09-20. The site moves from "static SPA that downloads a 13 MB SQLite file and queries it
+with sql.js in a worker" to "React SPA on Vercel calling a public Rust API on Fly.io". The `.dat`
+parser is retired; the wiki parser is retired until ddowiki's `api.php` is reachable again; Maetrim's
+DDOBuilderV2 data files become the primary source. The Python pipeline and `.wiki-cache/` are kept as
+test fixtures, not as production code.
+
+**Why.** The `.dat` parser was the project's largest module (10.8k lines) and still left core fields
+unrecoverable; the wiki is behind AWS WAF (see [ddowiki-api.md](ddowiki-api.md)) with feats,
+enhancement trees and quests essentially absent from the cache; and DDOBuilderV2 ships all of those
+as structured XML with permission already recorded under Phase 4l. A server also removes the 13 MB
+initial download and makes the dataset reusable by other consumers.
+
+### Repos and deployables
+
+| Repo | Contents | Host | Cost |
+|---|---|---|---|
+| `ddo-data` (sibling folder, new) | Cargo workspace: `ddo-model`, `ddo-etl`, `ddo-api` | Fly.io, one `shared-cpu-1x` 256 MB machine, `auto_stop_machines = "suspend"`, `min_machines_running = 0` | cents/month runtime + $0.15/month for a 1 GB volume (V7) |
+| `ddo-tools` (this repo) | React 19 + Vite + TanStack Router SPA | Vercel Hobby | $0 |
+
+Two repos, not three: the ETL and the API share the schema and ship in one Docker image, so they are
+one repo. The frontend is a different language, build tool, host and deploy trigger, so it is
+another. The only thing crossing the boundary is the OpenAPI spec, consumed as generated TypeScript.
+
+**Hosting decisions and the rejected options** (recorded so they aren't re-litigated):
+- Shuttle: Rust-native but its free tier ended 2025-12-19; Pro is $20/month. Rejected on price.
+- Render free tier: sleeps after 15 min idle and cold-starts in 30–60 s, visible to users. Rejected.
+- Vercel for the API: Rust only via a community serverless runtime. Wrong shape for an API with a
+  volume. Vercel is the frontend host only.
+- Fly.io: per-second billing, `suspend` resumes from a memory snapshot in well under a second, so
+  scale-to-zero is invisible. Chosen.
+- User-data store (V7): Fly volume + SQLite over Turso/Neon. Same `rusqlite` crate as the game data,
+  no third account, daily volume snapshots (5-day retention default). Turso is the upgrade path if a
+  day of loss ever matters; both are SQLite so the move is a file copy.
+
+### Crate responsibilities
+
+- **`ddo-model`** — *our* schema, not Maetrim's. A Rust port of `scripts/src/ddo_data/db/schema.py`
+  (82 `CREATE TABLE`s) and `enums.py` (40 enums): row structs deriving `serde` + `utoipa::ToSchema`,
+  closed-vocabulary enums, the DDL, and a `DatasetVersion { upstream_sha, built_at }`. Depends only on
+  `serde` and `utoipa`; no I/O, no XML, no HTTP. The frontend's queries are written against this
+  schema today, which is what makes V6 a data-layer swap rather than a rewrite.
+- **`ddo-etl`** — the adapter from DDOBuilderV2 XML (`quick-xml` + `serde`) onto `ddo-model`. Maps
+  his vocabulary onto ours (e.g. his `<BonusType>Enhancement</BonusType>` → our `bonus_types` row); a
+  string his data uses that our enum lacks is a parse error, not a silent NULL. Writes SQLite with
+  `rusqlite`. Runs offline; needs a sparse checkout of `Output/DataFiles` (~87 MB) passed as a path.
+- **`ddo-api`** — axum over the ETL's SQLite, read-only for game data. `utoipa` OpenAPI served at
+  `/openapi.json` with a Scalar UI; `tower-http` CORS + compression; strong ETags and long
+  `Cache-Control` since the dataset is immutable between deploys; `tower_governor` rate limiting;
+  bulk downloads (`/v1/dump.sqlite`, `/v1/items.json`) so scrapers take one cheap request instead of
+  thousands. Dataset version in the URL path (`/v1/<dataset>/…`) or an `X-Dataset-Version` header —
+  decide in V4; the path form makes CDN cache invalidation automatic.
+
+**Schema port rules (V2/V3):**
+- Column comments in `schema.py` are source tags: `bp:`/`ln:`/`lt:` = `.dat`, `wt:` = wikitext,
+  `c:` = computed, `fl:` = fallback. **Drop `.dat`-only columns** (`dat_id`, `tooltip`,
+  `internal_level`, `tier_multiplier`, `effect_value`, …) rather than carrying permanent NULLs. Each
+  `wt:` column needs a Maetrim equivalent or is dropped; record every drop in the V2/V3 entry.
+- Where his data exposes something we never modelled (per-`<Buff>` `BonusType` on every item,
+  `<Effect>` trees on item augments, `Quests.xml` per-difficulty XP), that is a **schema addition
+  proposed here first**, not something the ETL invents.
+- The legacy `public/data/ddo.db` is the **fixture**: V2 is done when the ETL's item names match its
+  7,249 rows at ≥ 95% after `[a-z0-9]` normalization (Phase 4l measured 95.6% by hand) and every
+  mismatch is listed in the phase entry as either "his gap", "our stale row", or "rename".
+- Honour [etl-invariants.md](etl-invariants.md) where it still applies: normalize strings at the
+  writer boundary; `bonuses.name` validates nothing. "Update in place" no longer applies — the ETL
+  rebuilds from scratch every run and the image is the artifact.
+
+### Phases
+
+#### V1 — Plan + workspace scaffold (done)
+This section; status table updated (4m, 4l, 11, 14 superseded); `../ddo-data` created as a cargo
+workspace with the three empty crates, `rust-toolchain.toml`, CI stub. Rust installed locally via
+Homebrew `rustup`.
+
+#### V2 — `ddo-etl`: items → SQLite (→ NEXT)
+Scope is exactly the tables the frontend reads today (all under `src/features/resources/queries/`):
+`items`, `item_bonuses`, `bonuses`, `effects`, `item_effects`, `unique_enchantments`,
+`item_weapon_stats`, `item_armor_stats`, `item_augment_slots`, `augments`, `item_upgrades`,
+`item_spell_links`, `item_materials`, `quest_loot`, `quests`, `adventure_packs`, `stats`, plus the
+seed tables they reference (`bonus_types`, `equipment_slots`, `weapon_types`, `damage_types`).
+- Port those tables' DDL and enums into `ddo-model`, applying the schema port rules above.
+- Parse `Output/DataFiles/Items/*.item` (8,779 files, one `<Item>` each) and `BonusTypes.xml`.
+- `ddo-etl build --source <DataFiles> --out ddo.db` and `ddo-etl diff --legacy public/data/ddo.db`
+  (the fixture check). TDD per `CLAUDE.md`: fixture `.item` files checked into `ddo-etl/tests/`.
+- Done when the diff meets the ≥ 95% bar and `cargo test` passes.
+
+#### V3 — `ddo-etl`: everything else
+Feats (`Feats.xml`), enhancement trees (`EnhancementTrees/`), classes, races, quests (`Quests.xml`,
+569 quests with patron/pack/XP), set bonuses, filigrees, augments (`Augments/`), spells
+(`Spells.xml`), and item icons (`ItemImages/`, 8,644 PNGs — publish to a static host, not through
+the API). One sub-commit per file family, each with its own fixtures. Folds in old Phase 11's SLAs
+and purchasable augments where his data has them. Same drop/add discipline as V2.
+
+#### V4 — `ddo-api`
+Endpoints for every V2 table; `/v1/version`; OpenAPI + Scalar; ETags; rate limits; bulk dumps;
+`Dockerfile` (prebuilt binary + `ddo.db` copied in, no remote build); `fly.toml` with `suspend`.
+Manual first deploy to prove the image. **User steps:** create the Fly account and add a card (the
+trial is 2 machine-hours or 7 days), then `fly tokens create deploy` scoped to the app.
+
+#### V5 — GitHub Action
+`schedule` (weekly) + `workflow_dispatch`. Steps: sparse-clone `Output/DataFiles`; short-circuit if
+Maetrim's HEAD SHA equals the last built one; `Swatinem/rust-cache`; run the ETL; **validation
+gates** (item/feat counts ≥ floor, fixture diff ≥ bar) fail the job before deploy; build the API
+binary; `superfly/flyctl-actions/setup-flyctl` + `flyctl deploy --remote-only` with `FLY_API_TOKEN`.
+A single-machine deploy means a few seconds of downtime; accepted.
+
+#### V6 — Frontend on the API
+- Add `@tanstack/react-query`; generate types from `/openapi.json` with `openapi-typescript` into
+  `src/lib/api/`; `VITE_API_URL` env var (local `.env`, Vercel dashboard for prod/preview).
+- Rewrite `src/features/resources/queries/*` against the API, `resources` first, then anything else
+  that imports `useDatabase`. Remove `sql.js`, `DatabaseGate`, `useDatabase`, `dbErrorCategorize`,
+  `clearSiteData`, `public/data/ddo.db` and the `baselineSchema.sql` fixture.
+- Hosting: `vercel.json` SPA rewrite; drop the `/ddo-tools` router basename and `404.html`; delete
+  the Pages workflow. **User steps:** create the Vercel account with GitHub login, import the repo,
+  set `VITE_API_URL`.
+- README: replace "Data extracted directly from DDO game files" and the GitHub Pages / Python lines;
+  credit Maetrim per Phase 4l.
+
+#### V7 — Build sharing with a server
+Two stores, two lifecycles: game data baked into the image (rebuilt every deploy), user data on a
+1 GB Fly volume (survives deploys). `builds` table: `id` (8–10 char URL-safe random), `edit_token`
+(random secret, returned once on create), `schema_version`, `dataset_version`, `body` JSON ≤ 64 KB,
+`created_at`, `updated_at`, `last_accessed`. Routes: `POST /v1/builds` → `{id, edit_token}`;
+`GET /v1/builds/{id}`; `PUT`/`DELETE` require the token header. No accounts — the token is the
+capability; adding GitHub OAuth later is additive (`owner_id` nullable, "claim this build").
+Write routes are `no-store` and rate-limited; reads use `updated_at` as the ETag. Frontend: `user.db`
+stays the working copy; Share posts a snapshot and stores `{id, edit_token}` beside the local build;
+a shared link opens read-only with "Import to my builds". Requires Phase 5's build structures; the
+versioned build JSON is also what Phase 15's `.DDOBuild` import targets.
 
 ---
 
