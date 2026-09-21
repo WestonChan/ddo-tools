@@ -938,8 +938,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V2 | done | `ddo-etl` parses DDOBuilderV2 items into SQLite; 97.2% of legacy item names matched |
 | V3 | done | `ddo-etl` covers augments, sets, filigrees, clickies, feats, races, classes, enhancement trees, spells |
 | V4 | done | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` (first deploy pending the Fly account) |
-| **V5** | **→ NEXT** | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, validation gates, `flyctl deploy` |
-| V6 | planned | Frontend on the API -- TanStack Query, generated types, remove sql.js + `DatabaseGate`, move hosting to Vercel |
+| V5 | done | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, icons, validation gates, `flyctl deploy` (first run pending the Fly account) |
+| **V6** | **→ NEXT** | Frontend on the API -- TanStack Query, generated types, remove sql.js + `DatabaseGate`, move hosting to Vercel |
 | V7 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
@@ -1874,7 +1874,20 @@ Endpoints for every V2 table; `/v1/version`; OpenAPI + Scalar; ETags; rate limit
 Manual first deploy to prove the image. **User steps:** create the Fly account and add a card (the
 trial is 2 machine-hours or 7 days), then `fly tokens create deploy` scoped to the app.
 
-#### V5 — GitHub Action
+#### V5 — GitHub Action (done, first run pending)
+**Shipped 2026-09-21** as `.github/workflows/deploy.yml` in `ddo-data`. Weekly plus
+`workflow_dispatch` (with a `force` input). Skips when the live API's `/v1/version` already reports
+upstream's HEAD. Builds the ETL and API in release, runs `ddo-etl build` and the new `ddo-etl
+icons`, checks row-count floors (items ≥ 8,000, feats ≥ 900, trees ≥ 100, enhancements ≥ 3,000,
+spells ≥ 600, augments ≥ 2,000, classes and races ≥ 25, modifiers ≥ 12,000, icons ≥ 8,000), keeps
+`ddo.db` as a 90-day workflow artifact, deploys with `flyctl deploy --remote-only --ha=false`, and
+polls the live version until it matches. **Icons decision reversed:** the original plan kept images
+off the API because of Shuttle's 1 GB egress cap; on Fly they are baked into the image (~40 MB,
+8,700 PNGs) and served at `/icons/<family>/<Name>.png` with the same ETag and cache headers.
+Upstream's `ItemImages/` is nested by item kind, so the ETL flattens it to the stem the `icon`
+column holds (2,234 of 2,235 item keys resolve). **User steps that remain:** create the Fly app,
+add a card, `fly tokens create deploy`, store `FLY_API_TOKEN`, then run the workflow once.
+
 `schedule` (weekly) + `workflow_dispatch`. Steps: sparse-clone `Output/DataFiles`; short-circuit if
 Maetrim's HEAD SHA equals the last built one; `Swatinem/rust-cache`; run the ETL; **validation
 gates** (item/feat counts ≥ floor, fixture diff ≥ bar) fail the job before deploy; build the API
