@@ -935,8 +935,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4m | superseded | ETL data-quality audits (Python) -- replaced by V2/V3, which source these fields from DDOBuilderV2 instead of the wiki |
 | 4l | superseded | DDOBuilderV2 cross-check utility -- inverted by V2: Maetrim's data is now the primary source and the old `ddo.db` is the fixture |
 | V1 | done | Rust API + Vercel plan -- this roadmap section, `ddo-data` workspace scaffold |
-| **V2** | **→ NEXT** | `ddo-etl` parses DDOBuilderV2 items into SQLite; item names diffed against the legacy `ddo.db` |
-| V3 | planned | `ddo-etl` covers feats, enhancement trees, classes, races, quests, set bonuses, augments, spells, icons |
+| V2 | done | `ddo-etl` parses DDOBuilderV2 items into SQLite; 97.2% of legacy item names matched |
+| **V3** | **→ NEXT** | `ddo-etl` covers feats, enhancement trees, classes, races, quests, set bonuses, augments, spells, icons |
 | V4 | planned | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` |
 | V5 | planned | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, validation gates, `flyctl deploy` |
 | V6 | planned | Frontend on the API -- TanStack Query, generated types, remove sql.js + `DatabaseGate`, move hosting to Vercel |
@@ -1696,8 +1696,11 @@ another. The only thing crossing the boundary is the OpenAPI spec, consumed as g
   `<Effect>` trees on item augments, `Quests.xml` per-difficulty XP), that is a **schema addition
   proposed here first**, not something the ETL invents.
 - The legacy `public/data/ddo.db` is the **fixture**: V2 is done when the ETL's item names match its
-  7,249 rows at ≥ 95% after `[a-z0-9]` normalization (Phase 4l measured 95.6% by hand) and every
-  mismatch is listed in the phase entry as either "his gap", "our stale row", or "rename".
+  7,430 rows at ≥ 95% after normalization (`[a-z0-9]`, and a trailing "(Level N)" removed, since he
+  files randomly-levelled loot once per level where the wiki had one page) and every mismatch is
+  listed in the phase entry as either "his gap", "our stale row", or "rename". Items the ETL
+  excludes on purpose are recorded in `excluded_items(name, reason)` and left out of the
+  denominator, so "cosmetic, by design" is never mistaken for "missing".
 - Honour [etl-invariants.md](etl-invariants.md) where it still applies: normalize strings at the
   writer boundary; `bonuses.name` validates nothing. "Update in place" no longer applies — the ETL
   rebuilds from scratch every run and the image is the artifact.
@@ -1709,7 +1712,22 @@ This section; status table updated (4m, 4l, 11, 14 superseded); `../ddo-data` cr
 workspace with the three empty crates, `rust-toolchain.toml`, CI stub. Rust installed locally via
 Homebrew `rustup`.
 
-#### V2 — `ddo-etl`: items → SQLite (→ NEXT)
+#### V2 — `ddo-etl`: items → SQLite (done)
+
+**Shipped 2026-09-20** in `ddo-data`. `ddo-etl build` reads all 8,779 `.item` files in ~4 s and
+writes 8,487 items (292 cosmetic-only excluded), 3,156 distinct bonuses, 1,617 effects, 570 quests,
+4,741 quest-loot links and 193 augment slot types. `ddo-etl diff` against the legacy `ddo.db`:
+**6,943 of 7,145 gear names matched (97.2%)**, 256 legacy rows are cosmetics excluded by design,
+202 remain unmatched: 23 Eternal Wands (not in his data), 12 event sets he skips (Cataclysmic
+shields, Dragon Cult, Black Rose), 11 wiki "Cosmetic …" weapons, 6 starter armors spelled
+differently, 4 wiki-only parenthesised variants ("(Feytwisted)", "(historic)"), and 146 others that
+are either his gaps or stale wiki rows — to be settled when the wiki path returns. 506 names exist
+only in his data (mostly randomly-levelled variants and items the wiki cache never had).
+Corpus-driven changes made along the way: the item parser reads `<Item>` children as an
+order-independent sequence (one upstream file interleaves `<Buff>`/`<Effect>`), `ItemBuffs.xml` is
+read with the event API (multi-paragraph descriptions), `item_augment_slot_options` replaced the
+planned preset columns, and `excluded_items` was added so the diff can tell "excluded" from
+"missing".
 Scope is exactly the tables the frontend reads today (all under `src/features/resources/queries/`):
 `items`, `item_bonuses`, `bonuses`, `effects`, `item_effects`, `unique_enchantments`,
 `item_weapon_stats`, `item_armor_stats`, `item_augment_slots`, `augments`, `item_upgrades`,
@@ -1720,6 +1738,52 @@ seed tables they reference (`bonus_types`, `equipment_slots`, `weapon_types`, `d
 - `ddo-etl build --source <DataFiles> --out ddo.db` and `ddo-etl diff --legacy public/data/ddo.db`
   (the fixture check). TDD per `CLAUDE.md`: fixture `.item` files checked into `ddo-etl/tests/`.
 - Done when the diff meets the ≥ 95% bar and `cargo test` passes.
+
+**Schema decisions made from the 2026-09-20 survey of all 8,779 `.item` files** (his grammar is
+one `<Item>` per file; `<Buff>` = `Type` + optional `Item` sub-target + `Value1`/`Value2` +
+`BonusType`; `ItemBuffs.xml` gives every one of the 1,699 buff types a display template):
+
+- **Dropped columns / tables** (no Maetrim source): `items.dat_id`, `rarity` (139 of 7,430 legacy
+  rows were populated; the "is rare" picker filter loses its source until a wiki path returns),
+  `level`, `durability`, `hardness`, `weight`, `binding`, `base_value`, `tooltip`, `enchant_name`,
+  `enchant_suffix`, `effect_value`, `cooldown_seconds`, `internal_level`, `tier_multiplier`;
+  denormalised `items.equipment_slot`/`material` text (FKs stay); `item_bonuses.data_source` and
+  `resolution_method` (provenance no longer varies); `unique_enchantments` (folded into
+  `effects.description`); `item_weapon_stats.proficiency`/`weapon_type` text (join
+  `weapon_types`), `damage_class`; `quests.zone`/`npc`; `quest_loot.is_rare`.
+- **Added**: `items.drop_location` (his free text), `items.set_bonus` (name only; set tables are
+  V3), `items.accepts_sentience`, `items.is_minor_artifact`; `bonuses.value2` (e.g. Deception 3/5);
+  `item_weapon_stats.base_dice`, `base_dice_bonus`, `damage_multiplier`, `critical_threat_range`,
+  `critical_multiplier`, `attack_modifier`, `damage_modifier` as structured columns (the legacy
+  `damage`/`critical` display strings are rendered from them); `item_dr_bypass(item_id, bypass)`;
+  `item_armor_stats.armor_type`, `arcane_spell_failure`, `armor_check_penalty`, `shield_bonus`,
+  `damage_reduction`, `mithral_body`, `adamantine_body`; `item_augment_slot_options` for the content he
+  embeds as `<Augment>` under a slot (one row = a crafted upgrade already applied, several = the
+  choices a crafting step offers, none = an open socket); `quests.epic_level`,
+  `favor`, `is_raid`; `effects.description`; `item_effects.target`.
+- **Seed corrections**: `equipment_slots` "Arms" → "Hands" (gloves; the legacy data itself used
+  "Hands" 186 times and "Arms" never). `bonus_types` gains Vitality, False Life, Legendary, Penalty.
+  `weapon_types` adopts DDO's spellings as he uses them ("Great Axe", "Handwraps", "Large Shield",
+  "Rune Arm") and gets its `proficiency_id` populated (legacy: all NULL).
+- **Mappings** (in `ddo-etl`, as data files, not code): his `BonusType` → ours ("Weapon
+  Enchantment"/"Armor Enhancement"/"Shield Enhancement" → Enhancement, "Insightful" → Insight,
+  "Not Set"/"" → NULL); his `EquipmentSlot` children → our 16 slots (`Weapon1`+`Weapon2` =
+  one-handed main-hand, `Weapon1` alone = two-handed or ranged, `Weapon2` alone = off-hand); his
+  buff `Type` (+`Item`) → our `stats` row for the ~90 stat-shaped types (`AbilityBonus`+`Strength` →
+  Strength, `Combustion` → Fire Spell Power, `PhysicalSheltering` → Physical Resistance Rating, …);
+  every other type becomes an `effects` row named by the type with `ItemBuffs.xml`'s text as its
+  description. `WeaponEnchantment`/`ArmorEnchantment`/`ShieldEnchantment` populate
+  `items.enhancement_bonus` rather than a bonus row.
+- **Excluded**: cosmetic-only items (`CosmeticHelm`/`CosmeticCloak`/`CosmeticArmor`/
+  `CosmeticWeapon1`, 291 files) and the one item with no slot. The 6 items listing two non-weapon
+  slots keep the first.
+- **`quest_loot` from `DropLocation`**: longest-first substring match of `Quests.xml` names
+  (570 quests) inside the text — 4,516 of 8,742 drop locations name a quest, 251 name several;
+  `loot_type` is `raid` when the quest `IsRaid`, else `reward` if the text says "reward", else
+  `chest`. The other 4,226 are vendor/turn-in/upgrade text and stay on `items.drop_location` only.
+- **Deferred to V3** although the frontend reads them: `augments`/`augment_bonuses` (his
+  `Augments/*.xml` uses the `<Effect>` grammar, not `<Buff>`), `item_upgrades` (derivable from
+  "Legendary version of Epic X" drop text), `item_spell_links` (`ItemClickies.xml`), set tables.
 
 #### V3 — `ddo-etl`: everything else
 Feats (`Feats.xml`), enhancement trees (`EnhancementTrees/`), classes, races, quests (`Quests.xml`,
