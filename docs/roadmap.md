@@ -1835,7 +1835,15 @@ augments, sets, filigrees, feats, classes, races, trees, spells and items):
   531 tiers, 1,381 item memberships across 196 sets), 437 filigrees, 219 clickies with 485 of 502
   item references resolved (17 await the spells stage), 5,002 modifiers. 40 effect types remain
   unmapped, all non-stat semantics (metamagic costs, `GhostTouch`, `SkillBonusAbility`, …).
-- **Feats / races / classes / trees / spells** follow in later sub-commits with the same pattern:
+- **Shipped 2026-09-21 (sub-commit 2): feats, races, classes.** 1,022 feats (361 standard, 541
+  class-defined, 120 race-defined, tagged by `source_kind`/`source_id`; a class file can define the
+  same name twice with a whitespace variant, so feat identity is the row), 30 races with ability
+  modifiers and 94 of 115 granted feats resolved, 28 classes with saves mapped from his `Type1`/
+  `Type2` codes (Paladin Fortitude is `Type2` = good), BAB and spell-point vectors, 2,840 spell-slot
+  rows, 2,009 class spells (`spell_id` resolves in the spells stage), 1,177 of 1,280 automatic feats
+  resolved. New tables `stances` (114), `dcs` (29), `attacks`, `feat_groups`,
+  `feat_conditional_groups`, `feat_sub_items`, `feat_bonuses` (824 derived).
+- **Trees and spells** follow in the next sub-commit with the same pattern:
   an entity table, generic `requirements`, generic `modifiers`, and derived `bonuses`. Trees keep
   `x`/`y` positions, `cost_per_rank` vectors, `ranks`, `min_spent`, `tier5`, and selector options
   as `enhancement_selections`. Classes keep BAB and spell-point vectors and per-level spell slots.
