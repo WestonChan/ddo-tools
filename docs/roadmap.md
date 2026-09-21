@@ -937,8 +937,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V1 | done | Rust API + Vercel plan -- this roadmap section, `ddo-data` workspace scaffold |
 | V2 | done | `ddo-etl` parses DDOBuilderV2 items into SQLite; 97.2% of legacy item names matched |
 | V3 | done | `ddo-etl` covers augments, sets, filigrees, clickies, feats, races, classes, enhancement trees, spells |
-| **V4** | **→ NEXT** | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` |
-| V5 | planned | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, validation gates, `flyctl deploy` |
+| V4 | done | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` (first deploy pending the Fly account) |
+| **V5** | **→ NEXT** | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, validation gates, `flyctl deploy` |
 | V6 | planned | Frontend on the API -- TanStack Query, generated types, remove sql.js + `DatabaseGate`, move hosting to Vercel |
 | V7 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
 | 4d | planned | Filter UX overhaul |
@@ -1856,7 +1856,19 @@ augments, sets, filigrees, feats, classes, races, trees, spells and items):
   generic `modifiers`, and derived `bonuses`. Trees keep `x`/`y` positions, `cost_per_rank` vectors, `ranks`, `min_spent`, `tier5`, and selector options
   as `enhancement_selections`. Classes keep BAB and spell-point vectors and per-level spell slots.
 
-#### V4 — `ddo-api`
+#### V4 — `ddo-api` (done, deploy pending)
+**Shipped 2026-09-21** in `ddo-data`. Endpoints for every family (items, augments, sets, filigrees,
+feats, races, classes, enhancement trees, spells, clickies, the lookups, `/v1/version`,
+`/v1/dump.sqlite`), Scalar docs at `/docs`, spec at `/openapi.json`. Decisions: the dataset version
+travels in an `X-Dataset-Version` header and the strong ETag (hash of dataset SHA + path + query,
+method excluded so HEAD matches GET) rather than in the URL path; `Cache-Control: public,
+max-age=86400, stale-while-revalidate=604800`; gzip/brotli; CORS `*` for GET/HEAD; per-IP
+`tower_governor` at 5/s with a burst of 100 (a page load fires a few dozen requests). List
+endpoints page (`limit` ≤ 10,000) and filter; detail endpoints nest every satellite, with
+`modifiers` and `requirements` returned as generic objects. Smoke-tested against the full
+database: every endpoint under 10 ms, the Kensei tree detail is 126 KB, the dump is 14 MB.
+**Still to do here, not in code:** the first manual `fly deploy`, which needs the account below.
+
 Endpoints for every V2 table; `/v1/version`; OpenAPI + Scalar; ETags; rate limits; bulk dumps;
 `Dockerfile` (prebuilt binary + `ddo.db` copied in, no remote build); `fly.toml` with `suspend`.
 Manual first deploy to prove the image. **User steps:** create the Fly account and add a card (the
