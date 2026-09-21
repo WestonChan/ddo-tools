@@ -936,8 +936,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4l | superseded | DDOBuilderV2 cross-check utility -- inverted by V2: Maetrim's data is now the primary source and the old `ddo.db` is the fixture |
 | V1 | done | Rust API + Vercel plan -- this roadmap section, `ddo-data` workspace scaffold |
 | V2 | done | `ddo-etl` parses DDOBuilderV2 items into SQLite; 97.2% of legacy item names matched |
-| **V3** | **→ NEXT** | `ddo-etl` covers feats, enhancement trees, classes, races, quests, set bonuses, augments, spells, icons |
-| V4 | planned | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` |
+| V3 | done | `ddo-etl` covers augments, sets, filigrees, clickies, feats, races, classes, enhancement trees, spells |
+| **V4** | **→ NEXT** | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` |
 | V5 | planned | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, validation gates, `flyctl deploy` |
 | V6 | planned | Frontend on the API -- TanStack Query, generated types, remove sql.js + `DatabaseGate`, move hosting to Vercel |
 | V7 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
@@ -1785,7 +1785,7 @@ one `<Item>` per file; `<Buff>` = `Type` + optional `Item` sub-target + `Value1`
   `Augments/*.xml` uses the `<Effect>` grammar, not `<Buff>`), `item_upgrades` (derivable from
   "Legendary version of Epic X" drop text), `item_spell_links` (`ItemClickies.xml`), set tables.
 
-#### V3 — `ddo-etl`: everything else (→ NEXT)
+#### V3 — `ddo-etl`: everything else (done)
 Feats (`Feats.xml`), enhancement trees (`EnhancementTrees/`), classes, races, set bonuses,
 filigrees, augments (`Augments/`), spells (`Spells.xml`), clickies (`ItemClickies.xml`), and item
 icons (`ItemImages/`, 8,644 PNGs — publish to a static host, not through the API). One sub-commit
@@ -1843,9 +1843,17 @@ augments, sets, filigrees, feats, classes, races, trees, spells and items):
   rows, 2,009 class spells (`spell_id` resolves in the spells stage), 1,177 of 1,280 automatic feats
   resolved. New tables `stances` (114), `dcs` (29), `attacks`, `feat_groups`,
   `feat_conditional_groups`, `feat_sub_items`, `feat_bonuses` (824 derived).
-- **Trees and spells** follow in the next sub-commit with the same pattern:
-  an entity table, generic `requirements`, generic `modifiers`, and derived `bonuses`. Trees keep
-  `x`/`y` positions, `cost_per_rank` vectors, `ranks`, `min_spent`, `tier5`, and selector options
+- **Shipped 2026-09-21 (sub-commit 3): trees and spells.** 114 enhancement trees (62 class, 30
+  racial, 13 destiny, 6 universal, 3 reaper; only `*.tree.xml` is read because upstream keeps one
+  stray malformed duplicate), 3,228 enhancements with positions, cost vectors, tier-5/clickie flags
+  and arrows, 1,953 selector choices, 85 exclusions; 706 spells (2 duplicate names collapsed) with
+  300 damage blocks and 279 DC blocks. All 2,009 class spell references and 498 of 502 item clickie
+  references now resolve (the 4 left are "Unknown"-style placeholders). Totals: 13,515 modifiers,
+  9,658 requirements, 335 stances, 152 DCs; the whole build runs in about 8 s and writes 14 MB.
+  **Icons** (`ItemImages/` and the other image folders) are deferred to V5, where the deploy
+  pipeline publishes them to static hosting; the `icon` columns already carry the keys.
+- **Design pattern, for reference:** each family is an entity table plus generic `requirements`,
+  generic `modifiers`, and derived `bonuses`. Trees keep `x`/`y` positions, `cost_per_rank` vectors, `ranks`, `min_spent`, `tier5`, and selector options
   as `enhancement_selections`. Classes keep BAB and spell-point vectors and per-level spell slots.
 
 #### V4 — `ddo-api`
