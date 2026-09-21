@@ -1785,12 +1785,60 @@ one `<Item>` per file; `<Buff>` = `Type` + optional `Item` sub-target + `Value1`
   `Augments/*.xml` uses the `<Effect>` grammar, not `<Buff>`), `item_upgrades` (derivable from
   "Legendary version of Epic X" drop text), `item_spell_links` (`ItemClickies.xml`), set tables.
 
-#### V3 — `ddo-etl`: everything else
-Feats (`Feats.xml`), enhancement trees (`EnhancementTrees/`), classes, races, quests (`Quests.xml`,
-569 quests with patron/pack/XP), set bonuses, filigrees, augments (`Augments/`), spells
-(`Spells.xml`), and item icons (`ItemImages/`, 8,644 PNGs — publish to a static host, not through
-the API). One sub-commit per file family, each with its own fixtures. Folds in old Phase 11's SLAs
-and purchasable augments where his data has them. Same drop/add discipline as V2.
+#### V3 — `ddo-etl`: everything else (→ NEXT)
+Feats (`Feats.xml`), enhancement trees (`EnhancementTrees/`), classes, races, set bonuses,
+filigrees, augments (`Augments/`), spells (`Spells.xml`), clickies (`ItemClickies.xml`), and item
+icons (`ItemImages/`, 8,644 PNGs — publish to a static host, not through the API). One sub-commit
+per file family, each with its own fixtures. Folds in old Phase 11's SLAs and purchasable augments
+where his data has them. Same drop/add discipline as V2.
+
+**Design from the 2026-09-20 survey of the remaining families** (17,348 `<Effect>` elements across
+augments, sets, filigrees, feats, classes, races, trees, spells and items):
+
+- **Two shared grammars, two generic tables.** Every family attaches `<Effect>` elements
+  (`Type`+, `Bonus`, `AType`, `Amount` vector, `Item`*, `Dice`, `Requirements`, …) and
+  `<Requirements>` blocks (`Requirement`/`RequiresOneOf`/`RequiresNoneOf` of `Type`, `Item`*,
+  `Value`). Flattening these into `bonuses` rows would lose the level vectors (`AType`
+  `TotalLevel`/`ClassLevel`/`Stacks`), the stance conditions and the dice, which the Phase 6–8
+  engine needs. So V3 stores them faithfully in **`modifiers`** (`source_kind`, `source_id`,
+  `effect_type`, `extra_types`, raw `bonus` and mapped `bonus_type_id`, `amount_type`, `amounts`
+  JSON, `targets` JSON, dice, value, percent, rank, cap, stack_source, display_name, flags) and
+  **`requirements`** (`owner_kind`, `owner_id`, `group_kind` all/one_of/none_of, `group_index`,
+  `req_type`, `items` JSON, `value`). A modifier's own requirements use `owner_kind = 'modifier'`.
+- **`bonuses` rows are still derived** for the UI wherever an effect is a plain number on a stat:
+  `AType` Simple, one `Type`, one amount, and `data/effect_map.toml` names the stat (his effect
+  vocabulary differs from the `<Buff>` one: `SpellPower`+`Fire` → Fire Spell Power, `SaveBonus`+
+  `All` → Saving Throws, `TacticalDC`+`Trip` → Trip DC, …). Unlike buffs, an **unmapped effect type
+  is not an error**: nothing is lost because the modifier row keeps it. The build report counts
+  unmapped types so the map can grow deliberately.
+- **`bonus_types` becomes the union** of our 33 and his `BonusTypes.xml` (74 types with a stacking
+  rule each): ids 1–33 unchanged, 34–73 appended (Feat, Destiny, Artifact, Reaper, Fortune, Base,
+  Epic, Combat Style, Psionic, Mythic, …), `stacks_with_self` from his `Always`/`Highest Only`.
+  "Insightful" stays an alias of Insight; "Not Set" stays NULL.
+- **Augments**: `augments` (name, description, min_level, icon, family = file stem, level-scaling
+  fields `choose_level`/`levels`/`level_values`/`level_values2`/`dual_values`, `enter_value`,
+  `suppress_set_bonus`, `set_bonus`, `adds_augment`, `grants_augment`, `effect_description`),
+  `augment_slots` (augment ↔ `augment_slot_types` via the same decoder items use; an augment lists
+  several `<Type>`), `augment_bonuses` (derived, as above), modifiers with `source_kind =
+  'augment'`. 2,246 augments in 32 files; `Type` vocabulary is 216 values and joins items' 193.
+- **Sets and filigrees**: `set_bonuses` (name, icon, `is_filigree_set`), `set_bonus_tiers`
+  (`equipped_count`, description) with modifiers `source_kind = 'set_bonus_tier'`,
+  `set_bonus_items` from `items.set_bonus` (211 of 214 item set names resolve; the 3 "Planar
+  Conflux" names are augment-granted and stay on the item), `filigrees` (name, description, icon,
+  menu, set) with modifiers flagged `is_rare` from `<Rare/>`.
+- **Clickies**: `clickies` from `ItemClickies.xml` (220: name, description, icon, school);
+  `item_clickies` from the item-level `<Effect><Type>ItemClickie</Type><Item>name</Item>` (519
+  items). The other item-level effects (`SpellLikeAbility` 92, …) become modifiers with
+  `source_kind = 'item'`. This replaces the legacy `item_spell_links`.
+- **Shipped 2026-09-21 (sub-commit 1):** the two generic tables, the bonus-type union, augments
+  (2,246 across 32 families, 4,555 slot links, 1,971 derived bonuses), sets (264 gear + 63 filigree,
+  531 tiers, 1,381 item memberships across 196 sets), 437 filigrees, 219 clickies with 485 of 502
+  item references resolved (17 await the spells stage), 5,002 modifiers. 40 effect types remain
+  unmapped, all non-stat semantics (metamagic costs, `GhostTouch`, `SkillBonusAbility`, …).
+- **Feats / races / classes / trees / spells** follow in later sub-commits with the same pattern:
+  an entity table, generic `requirements`, generic `modifiers`, and derived `bonuses`. Trees keep
+  `x`/`y` positions, `cost_per_rank` vectors, `ranks`, `min_spent`, `tier5`, and selector options
+  as `enhancement_selections`. Classes keep BAB and spell-point vectors and per-level spell slots.
 
 #### V4 — `ddo-api`
 Endpoints for every V2 table; `/v1/version`; OpenAPI + Scalar; ETags; rate limits; bulk dumps;
