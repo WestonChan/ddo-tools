@@ -17,8 +17,6 @@ function row(overrides: Partial<ItemRow> = {}): ItemRow {
   }
 }
 
-// react-window injects these three; we supply them directly so the row can be
-// tested in isolation without mounting a virtualized List.
 function renderRow(
   rows: ItemRow[],
   selectedId: number | null,
@@ -56,9 +54,6 @@ describe('PickerRow', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  // The row was a plain <div onClick>: no tabIndex, no key handler, no
-  // interactive role. Keyboard and screen-reader users had no way to open an
-  // item at all, which made the whole picker mouse-only.
   it('exposes the row as a keyboard-focusable button', async () => {
     renderRow([row()], null)
     const button = screen.getByRole('button', { name: /Bloodstone/ })
@@ -86,9 +81,6 @@ describe('PickerRow', () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }))
   })
 
-  // `aria-selected` is only valid on a handful of roles (option, tab, row…),
-  // none of which react-window's injected `role="listitem"` is. Selection is
-  // conveyed with aria-current instead.
   it('marks the selected row with aria-current and never uses aria-selected', () => {
     const { container } = render(
       <PickerRow
@@ -116,8 +108,6 @@ describe('PickerRow', () => {
     renderRow([row({ is_raid: true })], null)
     const button = screen.getByRole('button', { name: /Bloodstone/ })
     expect(button).toHaveTextContent('Raid')
-    // Chips come from the shared `ResourceChip`, which the detail drawer also
-    // uses — the data-kind attribute is the styling contract both rely on.
     expect(button.querySelector('.resources-chip[data-kind="raid"]')).not.toBeNull()
   })
 

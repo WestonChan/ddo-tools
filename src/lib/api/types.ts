@@ -1,11 +1,3 @@
-/**
- * Shapes of `ddo-api` responses, as the frontend reads them.
- *
- * Hand-written rather than generated: the API's OpenAPI spec types most bodies as free-form JSON
- * (its handlers assemble `serde_json::Value`), so `openapi-typescript` would only yield
- * `unknown`. These mirror the JSON the endpoints actually return; the API's own tests pin those
- * shapes. Revisit when the API adopts typed DTOs.
- */
 
 export interface ApiDatasetVersion {
   upstream_sha: string

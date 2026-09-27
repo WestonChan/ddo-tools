@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 
-// Reset nav bar state so layout assertions don't depend on prior runs.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.removeItem('ddo-nav-bar-expanded'))
   await page.setViewportSize({ width: 1200, height: 800 })
@@ -30,7 +29,6 @@ test.describe('active character card', () => {
 
     const card = page.locator('.landing-active-character')
     await expect(card).toContainText('Thordak')
-    // Stub character is on Thrane; server is folded into the meta line.
     await expect(card).toContainText(/Thrane server/)
   })
 
@@ -38,8 +36,6 @@ test.describe('active character card', () => {
     await page.goto('/')
 
     const card = page.locator('.landing-active-character')
-    // Thordak's stub history has heroic, epic, and racial stacks; iconic is 0
-    // and should be hidden.
     const labels = card.locator('.landing-stat-label')
     await expect(labels).not.toHaveCount(0)
     const text = await labels.allTextContents()
@@ -71,7 +67,6 @@ test.describe('site patch notes', () => {
 
     await toggle.click()
 
-    // After expansion, more than the initial 3 entries are visible.
     const entries = page.locator('.landing-patch-entry')
     expect(await entries.count()).toBeGreaterThan(3)
     await expect(toggle).toContainText('Show fewer updates')

@@ -3,8 +3,6 @@ import type { RowComponentProps } from 'react-window'
 import { ResourceChip } from './ResourceChip'
 import type { ItemRow } from '../queries/items'
 
-// Per-row props that we (the caller) supply via `<List rowProps={...}>`.
-// react-window injects the rest (`index`, `style`, `ariaAttributes`).
 export interface PickerRowOwnProps {
   rows: ItemRow[]
   selectedId: number | null
@@ -18,15 +16,6 @@ export function PickerRow(
   const row = rows[index]
   if (!row) return null
   const active = row.id === selectedId
-  // The outer div keeps react-window's absolute-positioning `style` and its
-  // injected role/aria-posinset. The interactive surface is a real <button>
-  // filling it, which buys focusability, Enter/Space activation, and correct
-  // screen-reader semantics for free — a div with onClick gave keyboard users
-  // no way to open an item at all.
-  //
-  // Selection uses `aria-current` rather than `aria-selected`: the latter is
-  // only valid on option/tab/row-style roles, and react-window injects
-  // `role="listitem"`.
   return (
     <div {...ariaAttributes} style={style} className="resources-row-shell">
       <button

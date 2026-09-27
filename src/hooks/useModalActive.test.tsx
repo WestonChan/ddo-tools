@@ -7,7 +7,6 @@ import {
 } from './useModalActive'
 
 beforeEach(() => {
-  // Module-level refcount persists across tests in the same worker.
   _resetModalActiveForTests()
 })
 
@@ -47,8 +46,6 @@ describe('useModalActive / useAnyModalActive', () => {
   })
 
   it('refcounts stacked modals — background stays inert until BOTH close', () => {
-    // The load-bearing detail per the module docstring: a boolean would
-    // un-inert the background when the first of two modals closes.
     const reader = renderHook(() => useAnyModalActive())
     const modalA = renderHook(() => useModalActive(true))
     const modalB = renderHook(() => useModalActive(true))
@@ -62,8 +59,6 @@ describe('useModalActive / useAnyModalActive', () => {
   })
 
   it('gives a late-mounting reader the current state synchronously', () => {
-    // useSyncExternalStore's first-render read — the reason this isn't
-    // useState+useEffect (docs/state-management.md).
     renderHook(() => useModalActive(true))
     const lateReader = renderHook(() => useAnyModalActive())
     expect(lateReader.result.current).toBe(true)

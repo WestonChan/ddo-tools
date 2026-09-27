@@ -47,10 +47,6 @@ export function NavBarCharacterCard({ onNavClick }: NavBarCharacterCardProps): J
   const isActive = pathname === '/characters'
   const buildDetails = [raceLabel, classLabel].filter(Boolean)
 
-  // Kept as a <div> rather than <Link>: the card contains a nested swap
-  // <button> (Phase 9 compare-mode hook), and <button> inside <a> is invalid
-  // HTML. Programmatic navigate avoids the nesting issue without changing
-  // current behavior (entire-card click target).
   return (
     <div
       className={`nav-bar-character-card${isActive ? ' active' : ''}`}

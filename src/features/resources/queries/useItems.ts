@@ -14,11 +14,6 @@ import {
   type ItemRow,
 } from './items'
 
-/**
- * TanStack Query hooks over the item endpoints. Game data is immutable for a
- * deployment, so nothing here goes stale: `staleTime: Infinity` and no
- * refetch on focus. The HTTP cache and the API's ETags handle the rest.
- */
 
 const FOREVER = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
 
@@ -41,7 +36,6 @@ export function useItemDetail(id: number | null): UseQueryResult<ItemDetail> {
     queryKey: itemKeys.detail(id ?? -1),
     queryFn: () => fetchItemDetail(id as number),
     enabled: id !== null,
-    // A missing item is a stable fact, not a transient failure.
     retry: false,
     ...FOREVER,
   })
@@ -55,8 +49,6 @@ export function useStatOptions(): UseQueryResult<string[]> {
   return useQuery({ queryKey: itemKeys.stats, queryFn: fetchStatOptions, ...FOREVER })
 }
 
-/** Items matching ANY of the stats (OR semantics), or null while any lookup
- *  is still loading or when no stats are picked. */
 export function useItemIdsByStats(stats: readonly string[]): Set<number> | null {
   const results = useQueries({
     queries: stats.map((stat) => ({
@@ -82,10 +74,6 @@ export function useItemIdsByPack(pack: string): Set<number> | null {
   return pack === '' ? null : (data ?? null)
 }
 
-/** Candidate augments per socket label, for the sockets that get a dropdown
- *  (see `slotTakesCandidateList`). One query per distinct label, not per
- *  slot: an item with two Lamordia accessory sockets offers the same augments
- *  in both. Labels still loading are simply absent from the map. */
 export function useSlotCandidates(slots: readonly ItemAugmentSlot[]): Record<string, AugmentCandidate[]> {
   const labels = [...new Set(slots.filter((s) => slotTakesCandidateList(s.family, s.label)).map((s) => s.label))]
   const results = useQueries({

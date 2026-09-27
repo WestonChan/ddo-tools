@@ -3,9 +3,6 @@ import { renderHook, act } from '@testing-library/react'
 import { useMediaQuery } from './useMediaQuery'
 import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../test/matchMediaStub'
 
-// src/test/setup.ts installs a matchMedia stub that always reports
-// `matches: false` and swallows listeners. Swap in the controllable one per
-// test, then restore the shared stub.
 let matchMedia: MatchMediaStub
 
 afterEach(restoreMatchMedia)

@@ -9,11 +9,7 @@ export interface StackEntry {
 }
 
 export interface UseDetailStackOptions {
-  /** URL-derived current entry (the depth-1 detail). Drives the URL→stack
-   *  sync effect: when it changes externally (browser back, fresh mount,
-   *  bookmark click), the stack reconciles. */
   urlEntry: StackEntry | null
-  /** Picker category to navigate back to when the stack is closed. */
   baseCategory: Category
 }
 
@@ -24,8 +20,6 @@ export interface DetailStackApi {
   popDetail: () => void
   jumpToCrumb: (index: number) => void
   closeDrawer: () => void
-  /** Absolute URL pointing at the CURRENT TOP of the stack — used by the
-   *  copy-link button so depth-2+ users share what they're actually viewing. */
   deepLinkUrl: string | null
 }
 
@@ -33,21 +27,6 @@ function entriesEqual(a: StackEntry, b: StackEntry): boolean {
   return a.category === b.category && a.id === b.id
 }
 
-/**
- * Detail-stack state for a category-driven inspector view (resources today;
- * gear/build potentially later).
- *
- * URL coordination is hybrid:
- * - Depth-1 push navigates the URL (so /resources/items/42 is bookmarkable
- *   and shareable). The URL-sync effect populates the stack from `urlEntry`.
- * - Depth-2+ push is pure in-memory — URL stays at the depth-1 entry.
- * - Close (any depth) navigates with `replace` so browser back doesn't
- *   reopen the drawer.
- *
- * Browser back/forward at depth 2+ collapses the entire stack (the URL pops,
- * the sync effect clears the stack). That's the explicit cost of "deeper
- * navigation lives only in memory."
- */
 export function useDetailStack({
   urlEntry,
   baseCategory,
@@ -55,13 +34,6 @@ export function useDetailStack({
   const navigate = useNavigate()
   const [stack, setStack] = useState<StackEntry[]>(() => (urlEntry ? [urlEntry] : []))
 
-  // URL → stack reconciliation. NOTE: the parent (ResourcesView) builds
-  // urlEntry as a fresh object literal every render, so this effect runs on
-  // EVERY parent render, not just URL changes. That's safe only because the
-  // functional updater below compares by value (entriesEqual) and returns
-  // the same `prev` reference when nothing changed — React then bails out of
-  // the state update, so there's no cascading-render loop despite the lint
-  // rule's warning. The safety lives in the updater, not the dependency.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setStack((prev) => {
@@ -70,8 +42,6 @@ export function useDetailStack({
       }
       if (prev.length === 0) return [urlEntry]
       if (entriesEqual(prev[0], urlEntry)) return prev
-      // URL changed to a different depth-1 entry — external nav resets the
-      // stack to just that entry, dropping any in-memory deeper layers.
       return [urlEntry]
     })
   }, [urlEntry])
@@ -79,15 +49,9 @@ export function useDetailStack({
   const pushDetail = useCallback(
     (entry: StackEntry) => {
       if (stack.length === 0) {
-        // Depth 1: navigate. The URL-sync effect will populate the stack
-        // once urlEntry updates on the next render.
         navigate({ to: `/resources/${entry.category}/${entry.id}` })
         return
       }
-      // Deeper: pure in-memory push, URL unchanged. Suppress a push of the
-      // entry already on top so re-clicking the cross-reference you just
-      // followed doesn't stack a duplicate crumb. Revisiting an entry that
-      // sits deeper in the stack is still allowed — A > B > A is a real path.
       setStack((prev) => {
         const top = prev[prev.length - 1]
         if (top && entriesEqual(top, entry)) return prev

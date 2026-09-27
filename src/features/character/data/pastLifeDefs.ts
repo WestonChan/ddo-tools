@@ -1,21 +1,15 @@
 import type { EpicSphere } from '../types'
 
-/** Definition of a single past life feat for the stacks UI */
 export interface PastLifeDef {
   id: string
   name: string
   category: 'heroic' | 'racial' | 'iconic' | 'epic'
-  sphere?: EpicSphere // grouping for epic feats
+  sphere?: EpicSphere
   max: number
-  bonuses: string[] // what each individual stack contributes (index 0 = 1st stack's bonus, etc.)
+  bonuses: string[]
 }
 
-/**
- * Stub past life definitions — will be replaced by data from
- * public/data/past-life-feats.json once the data pipeline produces it.
- */
 export const PAST_LIFE_DEFS: PastLifeDef[] = [
-  // Class (Heroic) — keyed by classId; each stack gives the same bonus
   {
     id: 'barbarian',
     name: 'Barbarian',
@@ -158,7 +152,6 @@ export const PAST_LIFE_DEFS: PastLifeDef[] = [
     ],
   },
 
-  // Racial — keyed by raceId; each stack adds a different bonus
   {
     id: 'aasimar',
     name: 'Aasimar',
@@ -272,7 +265,6 @@ export const PAST_LIFE_DEFS: PastLifeDef[] = [
     bonuses: ['+1 Repair', '+1 CON', '+1 Racial AP'],
   },
 
-  // Iconic — keyed by iconic race; each stack gives the same bonus
   {
     id: 'morninglord',
     name: 'Sun Elf (Morninglord)',
@@ -351,8 +343,6 @@ export const PAST_LIFE_DEFS: PastLifeDef[] = [
     bonuses: ['+1 Enchantment save', '+1 Enchantment save', '+1 Enchantment save'],
   },
 
-  // Epic — keyed by individual feat ID, grouped by sphere
-  // Arcane sphere — passive: +1% Elemental Absorption per stack
   {
     id: 'ancient-knowledge',
     name: 'Ancient Knowledge',
@@ -405,7 +395,6 @@ export const PAST_LIFE_DEFS: PastLifeDef[] = [
       '+3% Elemental crit (stance)',
     ],
   },
-  // Divine sphere — passive: +3 PRR per stack
   {
     id: 'ancient-blessings',
     name: 'Ancient Blessings',
@@ -446,7 +435,6 @@ export const PAST_LIFE_DEFS: PastLifeDef[] = [
       '+10 Pos/Neg Spell Power (stance)',
     ],
   },
-  // Martial sphere — passive: +2 AC per stack
   {
     id: 'ancient-tactics',
     name: 'Ancient Tactics',
@@ -499,7 +487,6 @@ export const PAST_LIFE_DEFS: PastLifeDef[] = [
       '+3% Trap Absorption (stance)',
     ],
   },
-  // Primal sphere — passive: +3 max HP per stack
   {
     id: 'ancient-power',
     name: 'Ancient Power',

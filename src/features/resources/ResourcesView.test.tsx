@@ -4,8 +4,6 @@ import userEvent from '@testing-library/user-event'
 import ResourcesView from './ResourcesView'
 import type { ItemDetail, ItemRow } from './queries/items'
 
-// Router params are read via `useParams({ strict: false })`; swap the value
-// per test to simulate each URL shape (/resources/items vs .../items/42).
 let mockParams: Record<string, string> = { category: 'items' }
 const navigateMock = vi.fn()
 
@@ -51,9 +49,6 @@ const DETAIL: ItemDetail = {
   quests: [],
 }
 
-// The view reads game data through the TanStack Query hooks; mocking the hook
-// module keeps these tests synchronous and free of a QueryClient. The state
-// the gate reacts to (`isPending` / `error`) is swapped per test.
 let rowsState: { data: ItemRow[] | undefined; isPending: boolean; error: unknown } = {
   data: ROWS,
   isPending: false,
@@ -102,17 +97,12 @@ describe('ResourcesView data gate', () => {
   })
 })
 
-// These shortcuts were registered on the view's root <div>, so they only fired
-// when focus was already inside it. Two everyday flows left focus elsewhere:
-// clicking "Resources" in the nav bar (focus on the nav link) and opening a
-// deep link (focus on <body>). In both cases the advertised keys did nothing.
 describe('ResourcesView keyboard shortcuts', () => {
   it('focuses the search input on "/" when focus is outside the view', async () => {
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: /search items/i })
     expect(input).not.toHaveFocus()
 
-    // Focus starts on <body> — the state after a nav-bar click or cold load.
     expect(document.body).toHaveFocus()
     await userEvent.keyboard('/')
 
@@ -131,9 +121,6 @@ describe('ResourcesView keyboard shortcuts', () => {
   it('closes the drawer on Escape even when focus sits outside the view', async () => {
     mockParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
-    // Force the pre-fix focus state: a root-scoped listener would never see
-    // this keydown, since the event fires on <body> and bubbles away from the
-    // view rather than into it.
     ;(document.activeElement as HTMLElement | null)?.blur()
     expect(document.body).toHaveFocus()
 
@@ -151,8 +138,6 @@ describe('ResourcesView keyboard shortcuts', () => {
   it('does not focus the search input on "/" while the drawer is open', async () => {
     mockParams = { category: 'items', id: '42' }
     const { container } = render(<ResourcesView />)
-    // Query the DOM directly: the picker is `inert` while the drawer is open,
-    // so the input is (correctly) absent from the accessibility tree.
     const input = container.querySelector('.resources-search-input')
     await userEvent.keyboard('/')
     expect(input).not.toHaveFocus()
@@ -163,7 +148,6 @@ describe('ResourcesView drawer', () => {
   it('labels the dialog with the item name rather than a raw id', () => {
     mockParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
-    // The id is an internal detail; a screen reader should hear the item.
     expect(screen.getByRole('dialog')).toHaveAccessibleName(/Bloodstone/)
   })
 

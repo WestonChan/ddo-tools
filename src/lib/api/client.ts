@@ -1,13 +1,4 @@
-/**
- * The one place the frontend talks to `ddo-api`.
- *
- * `VITE_API_URL` names the API origin (no trailing slash); unset means the public deployment.
- * Every response is immutable for a dataset version and carries an `X-Dataset-Version` header;
- * the browser's HTTP cache and TanStack Query's cache both lean on that, so nothing here retries
- * or refetches on its own.
- */
 
-/** The `ddo-data` Fly app; see `fly.toml` in that repo. */
 export const PUBLIC_API_URL = 'https://ddo-data.fly.dev'
 
 export const API_BASE: string = (import.meta.env.VITE_API_URL || PUBLIC_API_URL).replace(/\/$/, '')
@@ -22,7 +13,6 @@ export type ApiErrorKind = typeof API_ERROR_HTTP | typeof API_ERROR_NETWORK | ty
 
 export class ApiError extends Error {
   readonly kind: ApiErrorKind
-  /** HTTP status for `api-http`; 0 otherwise. */
   readonly status: number
   constructor(kind: ApiErrorKind, status: number, message: string, options?: ErrorOptions) {
     super(message, options)
@@ -36,7 +26,6 @@ export function isApiError(err: unknown): err is ApiError {
   return err instanceof ApiError
 }
 
-/** Build a URL under the API base, dropping empty query values. */
 export function apiUrl(path: string, query?: Record<string, string | number | boolean | undefined>): string {
   const url = `${API_BASE}${path}`
   if (!query) return url
@@ -49,7 +38,6 @@ export function apiUrl(path: string, query?: Record<string, string | number | bo
   return qs ? `${url}?${qs}` : url
 }
 
-/** GET a JSON document. Throws `ApiError` for HTTP, network and timeout failures. */
 export async function apiGet<T>(path: string, query?: Record<string, string | number | boolean | undefined>): Promise<T> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
@@ -72,7 +60,6 @@ export async function apiGet<T>(path: string, query?: Record<string, string | nu
   }
 }
 
-/** A friendly heading and hint for an error screen. */
 export function describeApiError(err: unknown): { heading: string; hint: string | null } {
   if (!isApiError(err)) return { heading: 'Something went wrong loading game data', hint: null }
   switch (err.kind) {

@@ -102,9 +102,6 @@ function FeatsTab(): JSX.Element {
 }
 
 interface BuildSidePanelProps {
-  /** When `true`, the entire panel becomes non-interactive — focus, pointer,
-   *  and keyboard events are suppressed. Set by AppLayout while the mobile
-   *  fullscreen nav overlay is covering it. */
   inert?: boolean
 }
 

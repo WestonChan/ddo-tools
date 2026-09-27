@@ -3,18 +3,6 @@ import { ampersandMarkSvg } from '../components/ampersandMarkSvg'
 
 const FALLBACK_ACCENT = '#b8962e'
 
-/**
- * Regenerates the favicon SVG to use the live --accent color and swaps
- * it via a Blob URL. Watches documentElement *style* mutations, which is
- * what `applyAccent` writes — so the favicon follows accent changes in
- * Settings. Theme changes are deliberately not observed: they write
- * `data-theme`, and by the time a user can toggle the theme, Settings has
- * already run `restoreAccent()`, which on every normal path pins an inline
- * --accent that outranks the per-theme default in index.css — so the
- * computed accent doesn't move when the theme does.
- * Uses the same helper as the in-page mark so the favicon and on-page
- * renders stay visually identical.
- */
 export function useFaviconAccent(): void {
   useEffect(() => {
     let currentBlobUrl: string | null = null

@@ -10,9 +10,6 @@ export interface IssueUrls {
   newIssueUrl: string
 }
 
-// Strip query string and hash from a URL, keeping the origin and pathname.
-// Used before including the user's URL in a public GitHub issue body, in case
-// future share-link payloads carry tokens or sensitive params.
 export function sanitizeUrl(href: string): string {
   try {
     const url = new URL(href)
@@ -22,11 +19,6 @@ export function sanitizeUrl(href: string): string {
   }
 }
 
-// Issue body template for user-initiated reports. Matches GitHub's canonical
-// bug-report sections (Describe / To Reproduce / Expected / Screenshots /
-// Additional context) so the form feels familiar to anyone who's filed a
-// GitHub issue. Auto-context (URL, UA, Sentry IDs) is appended below so
-// the user doesn't need to fill in environment details by hand.
 const USER_REPORT_TEMPLATE = `**Describe the bug**
 A clear and concise description of what the bug is.
 
@@ -47,9 +39,6 @@ Anything else worth knowing.
 
 ---`
 
-// Build the GitHub URLs to surface a user report. When `error` is undefined,
-// produces a user-feedback flow (template prompts in body). When `error` is
-// present, produces an error report with stack trace.
 export function buildIssueUrls(
   error?: Error,
   labels?: string | string[],
@@ -87,7 +76,6 @@ function pickTitle(error: Error | undefined, contextTitle: string | undefined): 
   if (!error) return 'User report'
   const msg = (error.message ?? '').trim()
   if (!msg) return 'Untitled error'
-  // First phrase before common message-prefix delimiters.
   const head = msg.split(/[—:]/, 1)[0]?.trim()
   if (!head) return 'Untitled error'
   return head

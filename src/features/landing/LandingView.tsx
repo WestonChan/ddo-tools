@@ -6,9 +6,6 @@ import { DdoPatchNotesCard } from './components/DdoPatchNotesCard'
 import { LandingFooter } from './components/LandingFooter'
 import './LandingView.css'
 
-// LandingView owns the grid layout — each child card sits inside a positioning
-// wrapper that carries the grid-area assignment, so the card components stay
-// layout-agnostic and could be reused elsewhere unchanged.
 function LandingView(): JSX.Element {
   return (
     <div className="landing-view">

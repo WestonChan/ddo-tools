@@ -39,7 +39,6 @@ describe('EditableText', () => {
     const input = screen.getByDisplayValue('Original')
     fireEvent.change(input, { target: { value: 'Changed' } })
     fireEvent.keyDown(input, { key: 'Escape' })
-    // Should exit edit mode without calling onCommit
     expect(onCommit).not.toHaveBeenCalled()
     expect(screen.getByText('Original')).toBeInTheDocument()
   })
@@ -62,12 +61,10 @@ describe('EditableText', () => {
         <EditableText value="Test" onCommit={onCommit} />
       </div>,
     )
-    // Click should NOT bubble (enters edit mode)
     fireEvent.click(screen.getByText('Test'))
     expect(parentClick).not.toHaveBeenCalled()
     expect(screen.getByDisplayValue('Test')).toBeInTheDocument()
 
-    // Input click should NOT bubble either
     const input = screen.getByDisplayValue('Test')
     fireEvent.click(input)
     expect(parentClick).not.toHaveBeenCalled()

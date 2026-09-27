@@ -1,8 +1,5 @@
 import type { JSX } from 'react'
 
-// Discriminated empty-state kinds. Each maps to a copy table below so that
-// adding a new state forces a corresponding copy entry — a future
-// `partial-detail` kind would surface as a TS error here first.
 export type DetailEmptyKind =
   | 'no-selection'
   | 'no-results'
@@ -13,7 +10,6 @@ export type DetailEmptyKind =
 
 interface DetailEmptyProps {
   kind: DetailEmptyKind
-  // Optional context strings used by some kinds (search query, missing id).
   query?: string
   id?: number | null
   category?: string

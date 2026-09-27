@@ -42,8 +42,6 @@ describe('useDetailStack — pushDetail', () => {
       result.current.pushDetail(itemA)
     })
     expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/1' })
-    // Stack stays empty until the URL-sync effect runs on next render with
-    // the updated urlEntry — caller's responsibility.
     expect(result.current.stack).toEqual([])
   })
 
@@ -72,9 +70,6 @@ describe('useDetailStack — pushDetail', () => {
     expect(result.current.stack).toEqual([itemA, itemB, itemC])
   })
 
-  // Re-clicking the cross-reference you just followed shouldn't stack the same
-  // crumb twice ("Alpha > Beta > Beta"). Guards the entry point that Phase 4c
-  // cross-category links will use.
   it('ignores a push of the entry already on top', () => {
     const { result } = renderHook(() =>
       useDetailStack({ urlEntry: itemA, baseCategory: 'items' }),
@@ -89,8 +84,6 @@ describe('useDetailStack — pushDetail', () => {
   })
 
   it('still allows revisiting an entry deeper in the stack', () => {
-    // A > B > A is a legitimate path (A links to B, B links back to A); only an
-    // immediate self-push is suppressed.
     const { result } = renderHook(() =>
       useDetailStack({ urlEntry: itemA, baseCategory: 'items' }),
     )
@@ -215,12 +208,10 @@ describe('useDetailStack — URL → stack sync', () => {
         useDetailStack({ urlEntry, baseCategory: 'items' }),
       { initialProps: { urlEntry: itemA } },
     )
-    // Build up an in-memory deeper stack
     act(() => {
       result.current.pushDetail(itemB)
     })
     expect(result.current.stack).toEqual([itemA, itemB])
-    // External URL nav (e.g., bookmark/forward) — stack resets to itemC
     rerender({ urlEntry: itemC })
     expect(result.current.stack).toEqual([itemC])
   })
@@ -234,7 +225,6 @@ describe('useDetailStack — URL → stack sync', () => {
     act(() => {
       result.current.pushDetail(itemB)
     })
-    // Re-render with the same urlEntry (no URL change) — stack should NOT reset.
     rerender({ urlEntry: itemA })
     expect(result.current.stack).toEqual([itemA, itemB])
   })

@@ -13,11 +13,6 @@ export interface PastLifeTotals {
   byCategory: Record<PastLifeCategory, number>
 }
 
-/**
- * Per-category past life count for a character — sums completed lives'
- * reincarnation events plus user-entered untracked lives. The category
- * total is what we display on the landing page.
- */
 export function countPastLives(character: Character): PastLifeTotals {
   const byCategory: Record<PastLifeCategory, number> = {
     heroic: 0,
@@ -39,8 +34,6 @@ export function countPastLives(character: Character): PastLifeTotals {
   return { total, byCategory }
 }
 
-// timeZone: 'UTC' keeps the rendered date matching the ISO input — without it,
-// '2026-04-26' gets shifted to Apr 25 in negative-UTC locales.
 const PATCH_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -48,17 +41,11 @@ const PATCH_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 })
 
-/** Render a YYYY-MM-DD ISO date as `Apr 22, 2026` in en-US, locale-stable. */
 export function formatPatchDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
   return PATCH_DATE_FORMATTER.format(new Date(Date.UTC(y, m - 1, d)))
 }
 
-/**
- * Newest patch-note date (YYYY-MM-DD) — the site's last release date.
- * Scans every entry rather than trusting index 0: newest-first ordering
- * in SITE_PATCH_NOTES is convention, not enforced.
- */
 export function latestPatchNoteDate(notes: readonly PatchNote[]): string {
   return notes.reduce((latest, note) => (note.date > latest ? note.date : latest), '')
 }

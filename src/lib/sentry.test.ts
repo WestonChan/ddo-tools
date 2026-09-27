@@ -20,8 +20,6 @@ describe('initSentry', () => {
   })
 
   it('skips init and logs an info message when no DSN is configured', () => {
-    // Force DSN empty in case the dev's .env.local or .env supplies one —
-    // we're testing the behavior, not the local env.
     vi.stubEnv('VITE_SENTRY_DSN', '')
     initSentry()
     expect(initSpy).not.toHaveBeenCalled()
@@ -94,7 +92,6 @@ describe('getLastSentryContext', () => {
   it('returns a clickable Sentry replay URL when getReplay() reports a replay ID and VITE_SENTRY_ORG is set', () => {
     vi.stubEnv('VITE_SENTRY_ORG', 'weston-00')
     lastEventIdSpy.mockReturnValueOnce('evt_a')
-    // Replay handle exposes getReplayId(); we only need the shape here.
     getReplaySpy.mockReturnValueOnce({
       getReplayId: () => 'rep_xyz',
     } as unknown as ReturnType<typeof Sentry.getReplay>)

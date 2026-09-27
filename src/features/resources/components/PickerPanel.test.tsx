@@ -9,10 +9,6 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
 }))
 
-// The panel reads its option lists and id-sets through the query hooks. The
-// id-set hooks are spied so the tests can assert they are consulted only once
-// a stat or pack is actually picked (the hooks themselves stay disabled until
-// then — see `useItems.ts`).
 const useItemIdsByStats = vi.fn((stats: readonly string[]) =>
   stats.length === 0 ? null : new Set<number>([1]),
 )
@@ -76,7 +72,6 @@ describe('PickerPanel filters', () => {
     expect(screen.getByText('1 result')).toBeInTheDocument()
   })
 
-  // The raid flag rides along on every row, so filtering is local.
   it('filters to raid items', async () => {
     renderPanel()
     await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
@@ -104,17 +99,10 @@ describe('PickerPanel filters', () => {
     expect(screen.getByText('2 results')).toBeInTheDocument()
   })
 
-  // Stats and pack genuinely need an API round trip — the row shape can't
-  // answer them (a row carries only its alphabetically-first pack, and no
-  // stat list at all). Assert the hooks are asked with a real selection only
-  // once one is picked; with none they are called with the empty selection,
-  // which is what keeps the underlying query disabled.
   it('asks for the stat item-id set only once a stat is picked', async () => {
     const { container } = renderPanel()
     expect(useItemIdsByStats).not.toHaveBeenCalledWith(expect.arrayContaining(['Charisma']))
 
-    // "Any" is also the empty option label on both selects, so target the
-    // multi-select's <summary> trigger directly.
     const trigger = container.querySelector('.resources-multiselect-trigger')
     await userEvent.click(trigger as Element)
     await userEvent.click(screen.getByRole('checkbox', { name: 'Charisma' }))
@@ -130,7 +118,6 @@ describe('PickerPanel filters', () => {
     await userEvent.selectOptions(screen.getByLabelText('Pack'), 'Shadowfell')
 
     expect(useItemIdsByPack).toHaveBeenCalledWith('Shadowfell')
-    // The mocked set contains only id 2.
     expect(rowNames().some((n) => n.includes('Cloak of Night'))).toBe(true)
   })
 
@@ -138,7 +125,6 @@ describe('PickerPanel filters', () => {
     renderPanel()
     await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
     await userEvent.selectOptions(screen.getByLabelText('Slot'), 'Back')
-    // Bloodstone is the raid item but sits in Trinket, so nothing matches.
     expect(screen.getByText(/no matches/i)).toBeInTheDocument()
   })
 })

@@ -2,13 +2,8 @@ import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateA
 
 type Listener = (json: string) => void
 
-/** Module-level subscribers keyed by localStorage key. */
 const listeners = new Map<string, Set<Listener>>()
 
-/**
- * Drop-in replacement for useState that persists to localStorage.
- * Multiple hook instances sharing the same key stay in sync within the same tab.
- */
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
@@ -21,24 +16,18 @@ export function useLocalStorage<T>(
         const parsed = JSON.parse(stored)
         return migrate ? migrate(parsed) : (parsed as T)
       }
-    } catch {
-      // corrupt data — fall back
-    }
+    } catch {}
     return initialValue
   })
 
-  // Track this instance's listener so setAndSync can skip self-notification
   const listenerRef = useRef<Listener>(null)
 
-  // Subscribe to writes from other hook instances sharing this key
   useEffect(() => {
     const set = listeners.get(key) ?? new Set()
     const handler: Listener = (json) => {
       try {
         setValue(JSON.parse(json) as T)
-      } catch {
-        // ignore parse errors
-      }
+      } catch {}
     }
     listenerRef.current = handler
     set.add(handler)
@@ -50,7 +39,6 @@ export function useLocalStorage<T>(
     }
   }, [key])
 
-  // Setter that writes to localStorage and notifies sibling instances
   const setAndSync = useCallback(
     (action: SetStateAction<T>) => {
       setValue((prev) => {
@@ -58,14 +46,11 @@ export function useLocalStorage<T>(
         try {
           const json = JSON.stringify(next)
           localStorage.setItem(key, json)
-          // Notify other instances, skip self
           const self = listenerRef.current
           listeners.get(key)?.forEach((fn) => {
             if (fn !== self) fn(json)
           })
-        } catch {
-          // storage full or unavailable
-        }
+        } catch {}
         return next
       })
     },

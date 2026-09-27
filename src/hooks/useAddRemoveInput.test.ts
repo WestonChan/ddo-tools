@@ -100,7 +100,6 @@ describe('useAddRemoveInput', () => {
 
       expect(onRemove).toHaveBeenCalledTimes(1)
 
-      // Releasing after long press should NOT fire add
       act(() => {
         touch(el, 'touchend')
       })

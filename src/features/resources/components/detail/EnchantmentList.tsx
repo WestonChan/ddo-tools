@@ -8,38 +8,16 @@ interface EnchantmentListProps {
   effects: ItemEffect[]
 }
 
-// Display row used by the merged Enchantments section. Bonuses and effects
-// are separate tables in the schema (different stacking semantics, different
-// shapes) but are visually one list to a reader inspecting an item.
-//
-// Layout note: rows render in three grid columns — `[tag] [name] [value]` —
-// so type chips and values column-align across rows of varying name length.
-// For stat-bonus rows, `name` is the bare stat name (e.g. "Charisma") and
-// `value` carries the magnitude separately ("+5"). For non-stat bonuses and
-// effects, `name` carries the full label and `value` is null.
 interface EnchantmentLine {
   key: string
-  /** Tag chip in the first column — bonus_type for bonuses, target for effects. */
   tag: string | null
-  /** Display label for the middle column. Bare stat name for stat bonuses;
-   *  full label for non-stat bonuses and effects. */
   name: string
-  /** Right-column value text for stat bonuses (e.g. "+5", "-2"). Null when
-   *  the value is folded into `name` (effects, non-stat bonuses). */
   value: string | null
-  /** Muted sub-line below the head: the bonus or effect description. */
   description: string | null
 }
 
 function bonusToLine(b: ItemBonus): EnchantmentLine {
-  // Descriptions arrive as prose: the ETL expands formatter templates from the
-  // bonus's own structured columns and resolves named enchantments to their
-  // wiki page's effect text (see populate_enchantment_descriptions). This used
-  // to strip `{{...}}` at render time to hide the gap.
   const description = b.description
-  // Stat bonuses split into separate name + value columns so values column-
-  // align across rows. Bonuses without a backing stat (e.g. "On hit: -1 AC
-  // to target") keep the full text in the name column with no separate value.
   const name = b.stat_name
   const value = b.value !== null ? formatSigned(b.value) : null
   return {
@@ -52,9 +30,6 @@ function bonusToLine(b: ItemBonus): EnchantmentLine {
 }
 
 function effectToLine(e: ItemEffect): EnchantmentLine {
-  // Effects sometimes carry a numeric `value` (e.g., Bane +4d6); fold it into
-  // the visible name so the user sees the full magnitude without us inventing
-  // a new column shape just for effects.
   const name = e.value !== null ? `${e.name} ${formatSigned(e.value)}` : e.name
   return {
     key: `e-${e.effect_id}-${e.sort_order}`,
@@ -65,16 +40,6 @@ function effectToLine(e: ItemEffect): EnchantmentLine {
   }
 }
 
-/**
- * Renders the merged enchantments section: bonuses first, then effects, each
- * row showing name + type chip + (optional) description sub-line. Returns
- * `null` when neither list has entries so the caller can compose this in
- * without an empty-section wrapper.
- *
- * Per-row wiki links and stacking-semantics tooltips are NOT wired up yet.
- * `unique_enchantments.wiki_url` now supplies the data they need; keeping this
- * in its own component gives that work a self-contained surface to land in.
- */
 export function EnchantmentList({ bonuses, effects }: EnchantmentListProps): JSX.Element | null {
   if (bonuses.length === 0 && effects.length === 0) return null
 

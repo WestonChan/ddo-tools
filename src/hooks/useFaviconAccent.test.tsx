@@ -41,7 +41,7 @@ describe('useFaviconAccent', () => {
     render(<HookHarness />)
 
     const links = document.querySelectorAll('link[rel="icon"]')
-    expect(links.length).toBe(1) // not duplicated
+    expect(links.length).toBe(1)
     expect((links[0] as HTMLLinkElement).href.startsWith('blob:')).toBe(true)
   })
 
@@ -51,7 +51,6 @@ describe('useFaviconAccent', () => {
 
     document.documentElement.style.setProperty('--accent', '#ff0000')
 
-    // MutationObserver fires asynchronously — wait a microtask.
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     const updatedHref = getFaviconLink()!.href

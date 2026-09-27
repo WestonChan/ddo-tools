@@ -15,8 +15,6 @@ afterEach(() => {
 })
 
 describe('apiUrl', () => {
-  // `API_BASE` comes from `VITE_API_URL` (Vitest loads `.env` too), so assert
-  // the path relative to whatever origin the environment picked.
   it('drops empty, undefined and false query values and encodes the rest', () => {
     expect(apiUrl('/v1/items', { q: 'a b', limit: 10, raid: false, pack: '', slot: undefined })).toBe(
       `${API_BASE}/v1/items?q=a+b&limit=10`,

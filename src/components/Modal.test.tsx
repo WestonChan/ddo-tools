@@ -5,18 +5,11 @@ import userEvent from '@testing-library/user-event'
 import { Modal } from './Modal'
 import { useAnyModalActive, _resetModalActiveForTests } from '../hooks/useModalActive'
 
-// Probe for the refcounted modal-active store AppLayout reads to inert the
-// background chrome. Rendered in its own tree so unmounting the modal
-// doesn't take the reader with it.
 function ActiveProbe(): JSX.Element {
   const active = useAnyModalActive()
   return <span data-testid="probe">{String(active)}</span>
 }
 
-// The real shape of every call site: a trigger that stays mounted while the
-// modal comes and goes, under the <StrictMode> the app actually mounts in
-// (src/main.tsx). StrictMode double-invokes effects on mount
-// (setup -> cleanup -> setup), which the focus effect has to survive.
 function StrictHarness({ open, children }: { open: boolean; children: ReactNode }): JSX.Element {
   return (
     <StrictMode>
@@ -30,13 +23,9 @@ function StrictHarness({ open, children }: { open: boolean; children: ReactNode 
   )
 }
 
-// Stand-in for the element that had focus when the modal opened (a picker
-// row, a "Delete" button). Lives outside the React trees so unmount order
-// doesn't disturb it.
 let opener: HTMLButtonElement
 
 beforeEach(() => {
-  // Module-level refcount persists across cases in the same worker.
   _resetModalActiveForTests()
   opener = document.createElement('button')
   opener.textContent = 'Opener'
@@ -78,9 +67,6 @@ describe('Modal', () => {
   })
 
   it('names the dialog from labelledBy when it resolves, falling back to label', () => {
-    // Same contract the resources drawer relies on: point at the detail
-    // heading so the dialog announces the item, but keep a label for the
-    // empty state where no heading renders.
     render(
       <Modal
         variant="drawer-right"
@@ -135,8 +121,6 @@ describe('Modal', () => {
         <p>Body</p>
       </Modal>,
     )
-    // Deep-link / stray-focus state: the listener has to be on document, not
-    // the panel, or the key never reaches the modal.
     ;(document.activeElement as HTMLElement | null)?.blur()
     expect(document.body).toHaveFocus()
 
@@ -146,9 +130,6 @@ describe('Modal', () => {
   })
 
   it('lets a capture-phase handler swallow Escape before the modal sees it', async () => {
-    // StatsMultiSelect's contract: an open popover registers a capture-phase
-    // document Escape handler and stops propagation, so the first Escape
-    // closes the popover and leaves the modal open.
     const onClose = vi.fn()
     function swallow(e: KeyboardEvent): void {
       if (e.key === 'Escape') e.stopPropagation()
@@ -216,9 +197,6 @@ describe('Modal', () => {
   })
 
   it('skips focus restore when the opener left the DOM', () => {
-    // The row that opened the modal can be unmounted while it's open (list
-    // re-query, route change). Focusing a detached node throws nothing but
-    // strands focus; the guard keeps it where the browser put it.
     opener.focus()
     const modal = render(
       <Modal variant="centered" onClose={vi.fn()} label="Dialog">
@@ -232,10 +210,6 @@ describe('Modal', () => {
   })
 
   it('restores focus to the trigger under StrictMode double-invoked effects', () => {
-    // StrictMode's synthetic cleanup must not consume the restore target: if
-    // it does, the real close has nothing to hand focus back to and the user
-    // is stranded on <body> — in dev only, so tests that skip StrictMode
-    // never see it.
     const { rerender } = render(
       <StrictHarness open={false}>
         <button>Inside</button>
@@ -261,10 +235,6 @@ describe('Modal', () => {
   })
 
   it('keeps focus inside the panel through a StrictMode remount with an autoFocus child', () => {
-    // Pragmatic contract: StrictMode's cleanup hands focus to the trigger and
-    // the re-run setup pulls it to the panel, so the autoFocus input doesn't
-    // necessarily keep it in dev. What must hold is that focus never escapes
-    // the panel while open, and the real close still returns it to the trigger.
     const input = <input aria-label="Confirmation" autoFocus />
     const { rerender } = render(<StrictHarness open={false}>{input}</StrictHarness>)
     const trigger = screen.getByRole('button', { name: 'Trigger' })
@@ -279,9 +249,6 @@ describe('Modal', () => {
   })
 
   it('ignores an Escape that cancels an IME composition', () => {
-    // Cancelling a Japanese/Chinese composition in a modal input fires Escape
-    // with isComposing set. That keystroke belongs to the IME, not the dialog
-    // — closing the modal would discard the whole form on a mis-typed kana.
     const onClose = vi.fn()
     render(
       <Modal variant="centered" onClose={onClose} label="Dialog">
@@ -311,8 +278,6 @@ describe('Modal', () => {
     await userEvent.tab({ shift: true })
     expect(second).toHaveFocus()
 
-    // Shift+Tab from the panel itself (the mount-focus position) wraps to the
-    // last control rather than escaping into the backdrop/background.
     screen.getByRole('dialog').focus()
     await userEvent.tab({ shift: true })
     expect(second).toHaveFocus()

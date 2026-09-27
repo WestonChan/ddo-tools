@@ -7,20 +7,11 @@ interface AddRemoveInputHandlers {
   onContextMenu: (e: MouseEvent) => void
 }
 
-/**
- * Unified add/remove input hook.
- * - Desktop: left-click → onAdd, right-click → onRemove
- * - Mobile: tap → onAdd, long-press → onRemove
- *
- * Returns { ref, onClick, onContextMenu } to spread onto the target element.
- * The ref attaches native touch listeners with { passive: false } to allow preventDefault.
- */
 export function useAddRemoveInput(onAdd: () => void, onRemove: () => void, ms = 500): AddRemoveInputHandlers {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const firedRef = useRef(false)
   const elRef = useRef<HTMLElement | null>(null)
 
-  // Keep callback refs current without re-attaching listeners
   const onAddRef = useRef(onAdd)
   const onRemoveRef = useRef(onRemove)
   useEffect(() => {
@@ -28,7 +19,6 @@ export function useAddRemoveInput(onAdd: () => void, onRemove: () => void, ms = 
     onRemoveRef.current = onRemove
   })
 
-  // --- Touch (mobile): tap = add, long-press = remove ---
 
   const handleTouchStart = useCallback(
     (e: TouchEvent) => {
@@ -66,7 +56,6 @@ export function useAddRemoveInput(onAdd: () => void, onRemove: () => void, ms = 
     }
   }, [handleTouchStart, handleTouchEnd, handleTouchCancel])
 
-  // --- Click (desktop): left-click = add, right-click = remove ---
 
   const onClick = useCallback(() => {
     onAddRef.current()

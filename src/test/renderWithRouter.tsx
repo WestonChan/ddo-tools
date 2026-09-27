@@ -27,7 +27,6 @@ function createStubRouter(component: () => ReactNode, initialPath = '/build-plan
   })
 }
 
-/** Renders `ui` inside a RouterProvider with a test router starting at initialPath. */
 export function renderWithRouter(ui: ReactNode, initialPath = '/build-plan'): {
   router: AnyRouter
   result: RenderResult

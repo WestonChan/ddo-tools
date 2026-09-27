@@ -11,7 +11,6 @@ import {
 import { EditableText } from '../../../components'
 import { Star, Trash2, Plus } from 'lucide-react'
 
-// --- Reincarnate types ---
 
 export type ReincarnateResult =
   | { mode: 'epic'; epicFeatId: string }
@@ -30,7 +29,6 @@ const EPIC_FEATS_BY_SPHERE = EPIC_SPHERE_LIST.map((s) => ({
   feats: PAST_LIFE_DEFS.filter((d) => d.category === 'epic' && d.sphere === s.sphere),
 }))
 
-// --- ReincarnatePanel ---
 
 function ReincarnatePanel({
   onCancel,
@@ -121,7 +119,6 @@ function ReincarnatePanel({
   )
 }
 
-// --- LifeRow (shared layout for all history/planned entries) ---
 
 function LifeRow({
   active,
@@ -167,7 +164,6 @@ function LifeRow({
   )
 }
 
-// --- LifeHistory ---
 
 export function LifeHistory({
   character,
@@ -223,7 +219,6 @@ export function LifeHistory({
   return (
     <div>
       <div className="life-history-title">Reincarnation History</div>
-      {/* Planned builds (global) */}
       <div className="section-label">Planned</div>
       <button className="add-planned-life-btn" onClick={onAddPlannedBuild}>
         <Plus size={14} /> Add Planned Build
@@ -263,7 +258,6 @@ export function LifeHistory({
         )
       })}
 
-      {/* Current life */}
       {current.map((life) => (
         <div key={life.id}>
           <div className="section-label">Current</div>
@@ -281,7 +275,6 @@ export function LifeHistory({
                 className="row-action-btn"
                 onClick={(e) => {
                   e.stopPropagation()
-                  // TODO: undo last reincarnation
                   console.log('Undo reincarnation')
                 }}
               >
@@ -304,7 +297,6 @@ export function LifeHistory({
         </div>
       ))}
 
-      {/* Completed — newest first, reading downward into the past */}
       {completed.length > 0 && <div className="section-label">Completed</div>}
       {[...completed].reverse().map((life) => {
         const n = lifeNumbers.get(life.id)

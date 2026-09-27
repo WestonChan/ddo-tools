@@ -5,15 +5,11 @@ import { ResourceDetailView } from './ResourceDetailView'
 import { ApiError, API_ERROR_HTTP } from '../../../lib/api'
 import type { ItemDetail } from '../queries/items'
 
-// Mock router (useDetailStack uses useNavigate).
 const navigateMock = vi.fn()
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
 }))
 
-// Both fixture items carry the same crafting slot, so a stale expansion would
-// look perfectly plausible on the second item — which is why the bug survived
-// a manual click-through.
 const MELANCHOLIC = {
   sort_order: 0,
   label: 'lamordia: melancholic (accessory)',
@@ -52,9 +48,6 @@ function detailFor(id: number): ItemDetail {
   }
 }
 
-// Mock the query hooks rather than the network so the body renders
-// synchronously. Id 404 stands in for an item the API doesn't know; id 500
-// for a transport failure.
 vi.mock('../queries/useItems', () => ({
   useItemDetail: (id: number | null) => {
     if (id === null) return { data: undefined, isPending: false, error: null }
@@ -82,22 +75,18 @@ describe('ResourceDetailView', () => {
         baseCategory="items"
       />,
     )
-    // Item name appears in both the breadcrumb and the EntityHeader; the
-    // EntityHeader uses an <h2>, so query by role to disambiguate.
     expect(screen.getByRole('heading', { level: 2, name: 'Test Item' })).toBeInTheDocument()
     expect(screen.getByText('A test item.')).toBeInTheDocument()
   })
 
   it('resolves a nameless URL entry to its name from the cached row list', () => {
     render(<ResourceDetailView urlEntry={{ category: 'items', id: 42 }} baseCategory="items" />)
-    // The breadcrumb is the only place the enriched stack name is rendered.
     expect(screen.getByRole('heading', { level: 2, name: 'Test Item' })).toBeInTheDocument()
     expect(screen.getAllByText('Test Item').length).toBeGreaterThan(1)
   })
 
   it('renders the no-selection empty state when urlEntry is null', () => {
     const { container } = render(<ResourceDetailView urlEntry={null} baseCategory="items" />)
-    // Only one DetailEmpty renders when the stack is empty (no parsed body).
     expect(container.querySelector('.section-placeholder')).toHaveTextContent(/select an item/i)
   })
 
@@ -118,16 +107,11 @@ describe('ResourceDetailView', () => {
         baseCategory="items"
       />,
     )
-    // "Back to items" link in EntityHeader replaces the old close-all button
     expect(screen.getByRole('button', { name: /back to items/i })).toBeInTheDocument()
-    // Back arrow hidden at depth 1 (no previous level to go back to)
     expect(screen.queryByRole('button', { name: /back one level/i })).toBeNull()
   })
 
   it('does not carry an expanded augment slot over to the next item', async () => {
-    // The detail body holds per-item UI state. Without a key on the entity,
-    // navigating feeds new props to the same component instance and item B
-    // opens with item A's slot already expanded.
     const user = userEvent.setup()
     const { rerender } = render(
       <ResourceDetailView

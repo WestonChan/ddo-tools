@@ -37,7 +37,6 @@ describe('openCompareWindow', () => {
     const [url, name, features] = open.mock.calls[0] as [string, string, string]
     expect(url).toBe('https://ddowiki.com/page/Favor')
     expect(name).toBe(WIKI_COMPARE_WINDOW)
-    // Left-half sizing: width capped at 1000, anchored to the left edge.
     expect(features).toContain('popup=yes')
     expect(features).toContain('width=1000')
     expect(features).toContain('height=1100')

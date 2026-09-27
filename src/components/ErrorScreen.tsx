@@ -4,44 +4,17 @@ import './ErrorScreen.css'
 
 export interface ErrorScreenProps {
   heading: string
-  /** Used to populate the GitHub issue link's title + stack trace. Accepts
-   *  `unknown` for compatibility with `react-error-boundary`'s `FallbackProps`
-   *  (which widened to `unknown` in v6); the component narrows to `Error`
-   *  internally. Synthetic errors are OK for non-crash use cases (e.g.,
-   *  NotFoundView passes `new Error('404 — ' + path)`). When omitted and
-   *  `body` is also omitted, no detail block renders. */
   error?: Error | unknown
-  /** Visible primary content. If omitted and `error` is present, renders
-   *  `error.message` in a monospace block. Used by NotFoundView to show
-   *  the attempted path instead of an error message. */
   body?: ReactNode
-  /** Secondary explanatory text below the body. */
   hint?: ReactNode
-  /** Action buttons row. Use shared `.btn-primary` / `.btn-ghost` classes.
-   *  Can also be a render-prop receiving `{ resetErrorBoundary }` so callers
-   *  using `<ErrorScreen>` as a `FallbackComponent` can wire the boundary's
-   *  reset into a "Try again" button. */
   actions?:
     | ReactNode
     | ((helpers: { resetErrorBoundary?: () => void }) => ReactNode)
-  /** Issue labels for the Report link. Labels must exist in the repo
-   *  (create via `gh label create <name>`); GitHub silently drops unknown
-   *  labels from new issues and search returns no results. */
   labels?: string | string[]
-  /** 'error' (default) shows danger styling on the heading; 'info' is
-   *  neutral, used for wayfinding (e.g., 404 page). */
   tone?: 'error' | 'info'
-  /** Boundary contract pass-through. When `<ErrorScreen>` is used as a
-   *  `react-error-boundary` `FallbackComponent`, the boundary supplies this
-   *  via `{...props}` spread; the component forwards it to the `actions`
-   *  render-prop helpers. */
   resetErrorBoundary?: () => void
 }
 
-/** Full-viewport error display: heading + monospace detail (or custom body)
- *  + optional hint + action buttons + GitHub Report link.
- *  Used by: root error boundary, view-level error boundary, ApiGate
- *  error mode, NotFoundView. */
 export function ErrorScreen({
   heading,
   error,
@@ -52,22 +25,13 @@ export function ErrorScreen({
   tone = 'error',
   resetErrorBoundary,
 }: ErrorScreenProps): JSX.Element {
-  // No programmatic focus on mount. `role="alert"` on the wrapper handles
-  // the SR announcement; keyboard users navigate via Tab from wherever
-  // they were; mouse users see no stray focus rings on the heading or
-  // any auto-focused button — just clean text and visible buttons.
 
-  // Narrow `error: unknown` (boundary contract) to `Error` for downstream
-  // rendering. Defined errors that aren't Error instances get wrapped so
-  // `error.message` is always safe to render.
   const err: Error | undefined = error instanceof Error
     ? error
     : error !== undefined
       ? new Error(String(error))
       : undefined
 
-  // Resolve render-prop actions so callers using `<ErrorScreen>` as a
-  // FallbackComponent can wire `resetErrorBoundary` into a "Try again" button.
   const resolvedActions = typeof actions === 'function'
     ? actions({ resetErrorBoundary })
     : actions

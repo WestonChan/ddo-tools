@@ -4,7 +4,7 @@ import { STUB_CHARACTERS } from './data/stubCharacters'
 
 export interface Selection {
   characterId: string
-  buildId: string // life ID or planned build ID — resolved by lookup
+  buildId: string
 }
 
 const defaultStub = STUB_CHARACTERS[0]
@@ -13,7 +13,6 @@ export const defaultSelection: Selection = {
   buildId: defaultStub.lives[defaultStub.currentLifeIndex]?.id ?? '',
 }
 
-/** Migrate old Selection shape (lifeId + plannedBuildId) to unified buildId. */
 export function migrateSelection(sel: unknown): Selection {
   const raw = sel as Record<string, unknown>
   if ('buildId' in raw && typeof raw.buildId === 'string') return raw as unknown as Selection
@@ -25,7 +24,6 @@ export function migrateSelection(sel: unknown): Selection {
   }
 }
 
-/** Migrate old localStorage shape: pastLifeOverrides -> untrackedLives */
 export function migrateCharacters(value: unknown): Character[] {
   const chars = value as Character[]
   return chars.map((c) => {

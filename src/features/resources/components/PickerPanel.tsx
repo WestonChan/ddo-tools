@@ -28,23 +28,14 @@ interface PickerPanelProps {
   category: Category
   rows: ItemRow[]
   selectedId: number | null
-  // Forwarded ref so the parent's "/" keyboard shortcut can focus the search.
   searchInputRef?: Ref<HTMLInputElement>
 }
 
 interface ItemFilters {
   slot: string
-  /** Adventure-pack name. Empty string = any. Filtered via the
-   *  `findItemIdsByPack` set lookup (not row-level equality on `pack`),
-   *  since the row's `pack` is only the alphabetically-first source. */
   pack: string
-  /** Boolean toggle — reads `ItemRow.is_raid`, which `listItems` already
-   *  stamped onto every row. No extra query. */
   raidOnly: boolean
-  /** Multi-select — items match if they boost ANY of these stats. Empty = any. */
   stats: string[]
-  /** Stored as raw input strings so partial entry (e.g., "1") doesn't fight
-   *  with `<input type="number">` and lose the user's typing position. */
   minLevelMin: string
   minLevelMax: string
 }
@@ -61,7 +52,6 @@ const EMPTY_FILTERS: ItemFilters = {
 const ROW_HEIGHT = 44
 const SEARCH_DEBOUNCE_MS = 120
 
-// Wraps a native <select> with a custom-themed chevron + matched border.
 function SelectShell({ children }: { children: ReactNode }): JSX.Element {
   return (
     <span className="resources-select-shell">
@@ -71,8 +61,6 @@ function SelectShell({ children }: { children: ReactNode }): JSX.Element {
   )
 }
 
-// Multi-select popover built on `<details>` for the open/close state. Click
-// outside or Escape closes; checkboxes inside set the active values.
 function StatsMultiSelect({
   options,
   selected,
@@ -192,21 +180,9 @@ export function PickerPanel({
   const statOptions = useStatOptions().data ?? []
   const packOptions = useAdventurePacks().data ?? []
 
-  // The matching item-id sets are fetched only once a stat or pack is picked,
-  // so users not filtering by them pay nothing. Items can drop from multiple
-  // packs, so pack filtering is by Set membership rather than by equality on
-  // the row's `pack` (which is alphabetically-first only).
   const statItemIdSet = useItemIdsByStats(filters.stats)
   const packItemIdSet = useItemIdsByPack(filters.pack)
 
-  // Filters apply BEFORE Fuse so the index only carries currently-visible
-  // rows. Filter changes are infrequent vs. keystrokes; rebuilding the
-  // index on filter change is fine, rebuilding it on every keystroke is not.
-  //
-  // Slot / raid / ML are all answerable from the row itself, so
-  // `applyRowFilters` handles them locally. Only stats and pack need a
-  // request: a row carries no stat list, and its `pack` is the alphabetically-
-  // first source rather than the full set.
   const filteredRows = useMemo(() => {
     let result = applyRowFilters(rows, filters)
     if (statItemIdSet) {
@@ -242,9 +218,6 @@ export function PickerPanel({
     setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
-  // Build the set of "active filter" chips for the row below the controls.
-  // Each chip's onRemove resets only that filter dimension. ML range is one
-  // chip (showing min–max / ≥min / ≤max) since min and max read together.
   interface Chip {
     key: string
     label: string

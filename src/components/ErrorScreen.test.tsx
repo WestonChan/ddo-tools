@@ -22,7 +22,6 @@ describe('ErrorScreen', () => {
         }
       />,
     )
-    // Neither the heading nor the action buttons should be focused.
     expect(screen.getByRole('heading', { level: 1 })).not.toHaveFocus()
     expect(screen.getByRole('button', { name: 'Primary' })).not.toHaveFocus()
     expect(screen.getByRole('button', { name: 'Secondary' })).not.toHaveFocus()
@@ -42,7 +41,6 @@ describe('ErrorScreen', () => {
       />,
     )
     expect(screen.getByText('/missing/path')).toBeInTheDocument()
-    // No monospace error-detail block when body is provided
     const detail = document.querySelector('.error-screen-detail')
     expect(detail).toBeNull()
   })

@@ -19,9 +19,6 @@ export interface BuildWarning {
 
 interface BottomBarProps {
   warnings: BuildWarning[]
-  /** When `true`, the entire bottom bar becomes non-interactive — focus,
-   *  pointer, and keyboard events are suppressed. Set by AppLayout while
-   *  any modal-shape overlay (resources drawer, etc.) is active. */
   inert?: boolean
 }
 
@@ -41,10 +38,6 @@ export function BottomBar({ warnings, inert }: BottomBarProps): JSX.Element {
 
 function ReportBugButton(): JSX.Element {
   function handleClick(): void {
-    // Compute the URL on click so the most-recent Sentry event ID +
-    // replay correlation lands in the issue body (lastEventId() updates
-    // whenever Sentry captures something, but BottomBar doesn't re-render
-    // on every capture).
     const sentryContext = getLastSentryContext()
     const { newIssueUrl } = buildIssueUrls(undefined, [], 'User report', sentryContext)
     window.open(newIssueUrl, '_blank', 'noopener,noreferrer')
@@ -87,8 +80,6 @@ function WarningStatus({ warnings }: { warnings: BuildWarning[] }): JSX.Element 
   const [tooltipFading, setTooltipFading] = useState(false)
   const tooltipTimer = useRef<number | null>(null)
 
-  // Clear any pending tooltip timers on unmount so state setters don't fire
-  // after the component is gone.
   useEffect(
     () => () => {
       if (tooltipTimer.current !== null) clearTimeout(tooltipTimer.current)
@@ -101,7 +92,6 @@ function WarningStatus({ warnings }: { warnings: BuildWarning[] }): JSX.Element 
       setExpanded(!expanded)
       return
     }
-    // Reset any in-flight fade chain so rapid clicks restart the tooltip.
     if (tooltipTimer.current !== null) clearTimeout(tooltipTimer.current)
     setShowTooltip(true)
     setTooltipFading(false)

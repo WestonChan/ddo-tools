@@ -19,7 +19,6 @@ describe('BottomBar', () => {
         <BottomBar warnings={[]} />
       </CharacterProvider>,
     )
-    // BuildInfo renders the character name; CharacterProvider seeds a default.
     expect(document.querySelector('.bottom-bar-build')).not.toBeNull()
   })
 
@@ -31,7 +30,6 @@ describe('BottomBar', () => {
     )
     const button = screen.getByRole('button', { name: 'Report a bug — opens GitHub issue' })
     expect(button).toBeInTheDocument()
-    // The Report button + WarningStatus are clustered in .bottom-bar-actions.
     const actions = document.querySelector('.bottom-bar-actions')
     expect(actions).not.toBeNull()
     expect(actions?.contains(button)).toBe(true)
@@ -59,7 +57,6 @@ describe('BottomBar', () => {
         <BottomBar warnings={[]} />
       </CharacterProvider>,
     )
-    // The "No warnings" pill is the existing WarningStatus zero-state.
     expect(screen.getByRole('button', { name: /No warnings/ })).toBeInTheDocument()
   })
 })

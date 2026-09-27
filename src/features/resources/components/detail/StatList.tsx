@@ -9,8 +9,6 @@ interface StatListProps {
   items: StatListItem[]
 }
 
-// Vertical list of label/value rows. Used inside `<DetailSection>` for
-// weapon/armor stat blocks. Mirrors the `.stat-row` rhythm in BuildSidePanel.
 export function StatList({ items }: StatListProps): JSX.Element {
   return (
     <ul className="resources-stat-list">

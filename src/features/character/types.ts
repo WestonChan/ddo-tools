@@ -44,30 +44,26 @@ export interface CharacterStats {
   spellPower: number
 }
 
-// --- Reincarnation & Character model ---
 
 export type ReincarnationType = 'heroic' | 'racial' | 'iconic' | 'epic'
 export type EpicSphere = 'arcane' | 'divine' | 'martial' | 'primal'
 export type Server = 'Cormyr' | 'Moonsea' | 'Shadowdale' | 'Thrane' | 'Hardcore'
 export type LifeStatus = 'completed' | 'current' | 'planned'
 
-/** How a life ended — the reincarnation event that completed it */
 export interface Reincarnation {
   type: ReincarnationType
-  epicFeatId?: string // specific epic past life feat chosen (only when type === 'epic')
-  completedAt?: string // ISO date
+  epicFeatId?: string
+  completedAt?: string
 }
 
-/** Tracks provenance of imported lives, preserving original data for future mapping */
 export type ImportFormat = 'ddo-builder-v2'
 export interface ImportSource {
   format: ImportFormat
   filename: string
-  importedAt: string // ISO date
-  rawData?: string // original XML preserved for unmapped fields
+  importedAt: string
+  rawData?: string
 }
 
-/** A single life (build) within a character's reincarnation history */
 export interface Life {
   id: string
   name: string
@@ -76,13 +72,12 @@ export interface Life {
   feats: string[]
   enhancements: string[]
   status: LifeStatus
-  reincarnation?: Reincarnation // how this life ended (only for completed lives)
-  importSource?: ImportSource // only for imported lives
+  reincarnation?: Reincarnation
+  importSource?: ImportSource
   notes?: string
-  desiredPastLives?: PastLifeCounts // only meaningful for planned builds
+  desiredPastLives?: PastLifeCounts
 }
 
-/** Past life stacks by category — used for both untracked lives and desired build targets */
 export interface PastLifeCounts {
   heroic: Record<string, number>
   racial: Record<string, number>
@@ -90,7 +85,6 @@ export interface PastLifeCounts {
   epic: Record<string, number>
 }
 
-/** A character is a container of ordered lives with past life tracking */
 export interface Character {
   id: string
   name: string
@@ -103,14 +97,11 @@ export interface Character {
   updatedAt: string
 }
 
-/** App-level settings stored in localStorage */
 export interface AppSettings {
   defaultServer?: Server
 }
 
-// --- Past life reference data (loaded from JSON) ---
 
-/** All categories that grant past life stacks (same as ReincarnationType) */
 export type PastLifeCategory = ReincarnationType
 
 export interface PastLifeBonus {
@@ -129,7 +120,6 @@ export interface PastLifeFeat {
   bonusPerStack: PastLifeBonus[]
 }
 
-// --- Derived past life summary (computed, not stored) ---
 
 export interface PastLifeStack {
   pastLifeFeatId: string

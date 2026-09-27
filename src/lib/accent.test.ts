@@ -20,9 +20,6 @@ describe('ACCENT_PRESETS', () => {
   })
 
   it('has unique names and unique accents', () => {
-    // `name` is the React key for each swatch and `accent` is the equality
-    // key for the selected state, so a duplicate in either would render a
-    // key warning or light up two swatches at once.
     expect(new Set(ACCENT_PRESETS.map((t) => t.name)).size).toBe(ACCENT_PRESETS.length)
     expect(new Set(ACCENT_PRESETS.map((t) => t.accent)).size).toBe(ACCENT_PRESETS.length)
   })
@@ -37,16 +34,10 @@ describe('applyAccent', () => {
 })
 
 describe('accent round-trip', () => {
-  // Every value below comes from ACCENT_PRESETS rather than an invented hex.
-  // The grid is the only way to set an accent, so an arbitrary color is not a
-  // state the app can reach — asserting the module round-trips one tested a
-  // contract nothing depends on, and hid the off-palette case entirely.
   it('reads back and restores exactly what applyAccent stored', () => {
     applyAccent(ACCENT_PRESETS[4].accent)
     expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[4].accent)
 
-    // Simulate a fresh page load: the inline --accent is gone, but the
-    // stored preference must still come back through restoreAccent.
     document.documentElement.removeAttribute('style')
     restoreAccent()
     expect(readAccent()).toBe(ACCENT_PRESETS[4].accent)
@@ -74,10 +65,6 @@ describe('restoreAccent', () => {
     expect(readAccent()).toBe(ACCENT_PRESETS[0].accent)
   })
 
-  // An unusable entry applies the default rather than leaving the :root value
-  // to stand. The old behavior wrote nothing, which looked identical on screen
-  // only because :root happens to match ACCENT_PRESETS[0] — and left Settings
-  // showing an applied accent with no swatch selected.
   it('falls back to the first theme without throwing when the stored JSON is malformed', () => {
     localStorage.setItem('accent', '{"accent": ')
     expect(() => restoreAccent()).not.toThrow()
@@ -120,10 +107,6 @@ describe('resolveActiveAccent', () => {
   })
 
   it('returns the first theme when the stored accent is not one of the presets', () => {
-    // A legacy entry from an older palette parses fine but names a color the
-    // grid cannot represent. Applying it leaves Settings with every swatch
-    // unselected and no way to get back to it, so it is stale data, not a
-    // preference.
     localStorage.setItem('accent', JSON.stringify({ accent: '#d4af37', hover: '#e5c158' }))
     expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[0].accent)
   })
@@ -134,9 +117,6 @@ describe('resolveActiveAccent', () => {
   })
 
   it('agrees with what restoreAccent applies in every case', () => {
-    // The regression this module exists to prevent: Settings reads the value
-    // through resolveActiveAccent and the page gets it through restoreAccent,
-    // so the two disagreeing is exactly how a swatch stops looking selected.
     for (const stored of [
       null,
       ACCENT_PRESETS[3].accent,

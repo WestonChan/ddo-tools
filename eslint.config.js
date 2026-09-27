@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import { noComments } from './eslint-rules/no-comments.js'
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -19,7 +20,12 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    plugins: {
+      local: { rules: { 'no-comments': noComments } },
+    },
     rules: {
+      'local/no-comments': 'error',
+      'no-empty': ['error', { allowEmptyCatch: true }],
       '@typescript-eslint/explicit-function-return-type': ['error', {
         allowExpressions: true,
         allowTypedFunctionExpressions: true,

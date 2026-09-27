@@ -18,7 +18,6 @@ import {
   ResourcesView,
 } from './app/routeComponents'
 
-// Routes opt into the stats panel via staticData: { showStatsPanel: true }.
 const rootRoute = createRootRoute({
   component: AppLayout,
   notFoundComponent: NotFoundView,
@@ -73,11 +72,6 @@ const farmChecklistRoute = createRoute({
   component: FarmChecklistView,
 })
 
-// Three resources routes — all render the same view, which reads `category`
-// and `id` via `useParams({ strict: false })`. Nested routes share the
-// component because the URL-shape branching lives inside the view (see
-// `useResourcesParams` in ResourcesView), and TanStack renders the component
-// un-keyed, so moving between the three doesn't remount it.
 const resourcesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'resources',
@@ -110,10 +104,8 @@ const routeTree = rootRoute.addChildren([
   resourcesItemRoute,
 ])
 
-// Strip trailing slash from Vite's BASE_URL (`/` on Vercel) — TanStack expects no trailing slash.
 const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
-// Accept optional history so tests can inject createMemoryHistory without cross-test bleed.
 export function createAppRouter(
   history?: RouterHistory,
 ): ReturnType<typeof createRouter<typeof routeTree>> {
@@ -122,11 +114,6 @@ export function createAppRouter(
 
 export const router = createAppRouter()
 
-// Register the router with TanStack's type registry so <Link to="...">,
-// useNavigate, and useMatchRoute get the real route tree for type-checking.
-// Augment StaticDataRouteOption here so route definitions get typed autocomplete
-// on staticData and consumers (AppLayout's showRightPanel check) can read it
-// without a cast.
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router

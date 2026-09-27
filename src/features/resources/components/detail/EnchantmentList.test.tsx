@@ -43,10 +43,6 @@ describe('EnchantmentList', () => {
     expect(screen.getByText('+5')).toBeInTheDocument()
   })
 
-  // Cursed gear in the real DB carries negative bonuses (Constitution -2,
-  // Intelligence -3, saves -2). An unconditional "+" prefix renders these as
-  // "+-2". 20 such bonuses span 54 items, so this is user-visible, not
-  // theoretical.
   it('renders negative stat bonus values with a single minus sign', () => {
     render(<EnchantmentList bonuses={[bonus({ name: 'Constitution -2', value: -2 })]} effects={[]} />)
     expect(screen.getByText('-2')).toBeInTheDocument()
@@ -64,9 +60,6 @@ describe('EnchantmentList', () => {
     expect(screen.getByText('Bane +4')).toBeInTheDocument()
   })
 
-  // Latent today (no negative effect values in the shipped DB) but the same
-  // formatting bug — guard it so it can't regress if the ETL starts emitting
-  // negative effect magnitudes.
   it('renders a negative effect value with a single minus sign', () => {
     render(<EnchantmentList bonuses={[]} effects={[effect({ name: 'Curse', value: -3 })]} />)
     expect(screen.getByText('Curse -3')).toBeInTheDocument()
@@ -84,8 +77,6 @@ describe('EnchantmentList', () => {
     expect(screen.getByText('Evil Outsider')).toBeInTheDocument()
   })
 
-  // The ETL expands descriptions to prose, so the component renders what it
-  // is given rather than stripping template syntax at render time.
   it('renders an expanded description as its own sub-line', () => {
     render(
       <EnchantmentList

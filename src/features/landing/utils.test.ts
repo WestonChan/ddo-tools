@@ -77,7 +77,7 @@ describe('countPastLives', () => {
         },
       }),
     )
-    expect(result.byCategory.heroic).toBe(4) // 1 from lives + 3 untracked
+    expect(result.byCategory.heroic).toBe(4)
     expect(result.byCategory.racial).toBe(1)
     expect(result.byCategory.epic).toBe(3)
     expect(result.total).toBe(8)
@@ -106,8 +106,6 @@ describe('formatPatchDate', () => {
   })
 
   it('does not shift the date by timezone (UTC-stable)', () => {
-    // Without timeZone:'UTC' on the formatter, this would render as "Apr 25"
-    // in negative-UTC locales — the test guards that regression.
     expect(formatPatchDate('2026-04-26')).toContain('26')
     expect(formatPatchDate('2026-04-26')).not.toContain('25')
   })
@@ -137,8 +135,6 @@ describe('latestPatchNoteDate', () => {
   })
 
   it('returns the newest date even when entries are out of order', () => {
-    // SITE_PATCH_NOTES is newest-first by convention only — nothing enforces
-    // the ordering, so the helper must not trust index 0.
     expect(
       latestPatchNoteDate([
         { date: '2026-04-14', changes: [] },

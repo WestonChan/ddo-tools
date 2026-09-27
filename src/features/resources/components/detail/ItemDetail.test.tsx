@@ -53,8 +53,6 @@ describe('ItemDetail drop locations', () => {
   it('renders a wiki link icon next to each quest in Drops from', () => {
     renderDetail({ ...baseDetail, quests: [quest()] })
     const link = screen.getByRole('link', { name: "Open Delera's Tomb on DDO Wiki" })
-    // No quests.wiki_url column — URL derives from the name.
-    // encodeURIComponent leaves apostrophes literal; ddowiki accepts them.
     expect(link).toHaveAttribute('href', "https://ddowiki.com/page/Delera's_Tomb")
   })
 
@@ -63,12 +61,8 @@ describe('ItemDetail drop locations', () => {
       ...baseDetail,
       quests: [quest({ patron: 'The Free Agents', is_raid: true })],
     })
-    // The chip modifies the drop location, so it lives on the name line —
-    // same `data-kind` contract the picker rows use, so both panels render
-    // the same fact identically.
     const chip = container.querySelector('.resources-quest-name .resources-chip[data-kind="raid"]')
     expect(chip).toHaveTextContent('Raid')
-    // …and the `·`-joined meta line keeps only the where-to-go facts.
     expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
       'The Free Agents · Level 8',
     )

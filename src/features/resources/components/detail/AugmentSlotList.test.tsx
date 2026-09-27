@@ -8,9 +8,6 @@ afterEach(() => {
   cleanup()
 })
 
-// Sockets as the API describes them: the component reads `family` to decide
-// what to draw and `label` to find the candidate list, so a fixture that only
-// carried one of them would not exercise the other.
 const SOCKETS = {
   red: { label: 'red', family: 'standard', qualifier: null, options: [] },
   colorless: { label: 'colorless', family: 'standard', qualifier: null, options: [] },
@@ -62,8 +59,6 @@ describe('AugmentSlotList', () => {
     )
     const gems = container.querySelectorAll('.resources-augment-gem')
     expect(gems).toHaveLength(2)
-    // data-color is what the stylesheet keys the gem colour off; it must stay
-    // the raw stored label, not a display-cased one.
     expect(
       [...container.querySelectorAll('.resources-augment-slot')].map((el) =>
         el.getAttribute('data-color'),
@@ -78,8 +73,6 @@ describe('AugmentSlotList', () => {
       name: /Lamordia: Melancholic \(Accessory\)/,
     })
     expect(button).toHaveAttribute('aria-expanded', 'false')
-    // The panel it would control does not exist yet, and a dangling
-    // aria-controls points a screen reader at nothing.
     expect(button).not.toHaveAttribute('aria-controls')
     expect(screen.queryByText('Melancholic Charisma')).toBeNull()
   })
@@ -115,8 +108,6 @@ describe('AugmentSlotList', () => {
     expect(screen.getByText('Melancholic Charisma')).toBeInTheDocument()
     expect(screen.getByText('Charisma +5')).toBeInTheDocument()
     expect(screen.getAllByText('ML 8')).toHaveLength(2)
-    // 430 of 1,279 shipped augments have no resolved bonuses; the row is still
-    // the answer to "what fits here".
     expect(screen.getByText('Melancholic Acid Spell Crit')).toBeInTheDocument()
   })
 
@@ -141,7 +132,6 @@ describe('AugmentSlotList', () => {
     await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
 
     const [first, second] = screen.getAllByRole('option')
-    // Roving tabindex: tabbing into the list lands on one option, not every one.
     expect(first).toHaveAttribute('tabindex', '0')
     expect(second).toHaveAttribute('tabindex', '-1')
 
@@ -201,8 +191,6 @@ describe('AugmentSlotList', () => {
   })
 
   it("renders a Slaver's slot as a plain pill because no augment fits it", () => {
-    // Slave Lords crafting fills these with shards from the Slave Lords
-    // crafting system, so there is nothing to choose from here.
     render(<AugmentSlotList slots={[slot(0, 'slavers')]} candidates={CANDIDATES} />)
     expect(screen.getByText("Slaver's: Prefix (Legendary)")).toBeInTheDocument()
     expect(screen.queryByRole('button')).toBeNull()

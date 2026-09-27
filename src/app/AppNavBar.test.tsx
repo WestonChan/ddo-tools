@@ -53,7 +53,6 @@ describe('AppNavBar', () => {
 
   it('renders group labels', async () => {
     renderNavBar()
-    // Build Plan appears as both group label and parent nav button
     await waitFor(() => expect(screen.getAllByText('Build Plan').length).toBeGreaterThanOrEqual(1))
     expect(screen.getByText('Tools')).toBeInTheDocument()
   })
@@ -95,9 +94,6 @@ describe('AppNavBar', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/characters'))
   })
 
-  // Below 600px the expanded nav bar is a full-screen overlay, so navigating
-  // has to dismiss it — otherwise the destination view stays hidden behind
-  // it. AppLayout owns the breakpoint check and passes `overlayActive`.
   it('collapses on navigate while it is the fullscreen overlay', async () => {
     const user = userEvent.setup()
     const { router } = renderNavBar(true, { overlayActive: true })
@@ -119,8 +115,6 @@ describe('AppNavBar', () => {
   it('dismisses the fullscreen overlay on Escape', async () => {
     renderNavBar(true, { overlayActive: true })
     await screen.findByText('Gear')
-    // Focusable panel: the overlay takes focus when it opens, so a keyboard
-    // user lands inside it rather than on the inerted content behind.
     expect(document.querySelector('.app-nav-bar')).toHaveAttribute('tabindex', '-1')
 
     await userEvent.keyboard('{Escape}')

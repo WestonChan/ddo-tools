@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test'
 
-// Clear nav bar state before each test so breakpoint defaults are predictable
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.removeItem('ddo-nav-bar-expanded'))
 })
 
-// --- Icon position stability ---
 
 test.describe('icon position stability', () => {
   test('nav bar position does not shift when toggling expand/collapse', async ({ page }) => {
@@ -21,7 +19,6 @@ test.describe('icon position stability', () => {
     const collapsedBox = await page.locator('.app-nav-bar').boundingBox()
     expect(collapsedBox).not.toBeNull()
 
-    // Nav bar should stay pinned at top-left
     expect(collapsedBox!.x).toBe(expandedBox!.x)
     expect(collapsedBox!.y).toBe(expandedBox!.y)
   })
@@ -47,7 +44,6 @@ test.describe('icon position stability', () => {
   })
 })
 
-// --- Responsive breakpoints ---
 
 test.describe('responsive breakpoints', () => {
   test('nav bar is expanded by default at >= 900px', async ({ page }) => {
@@ -56,7 +52,6 @@ test.describe('responsive breakpoints', () => {
 
     const navBar = page.locator('.app-nav-bar')
     await expect(navBar).toHaveClass(/expanded/)
-    // Should show nav labels
     await expect(page.locator('.nav-bar-label').first()).toBeVisible()
   })
 
@@ -73,11 +68,9 @@ test.describe('responsive breakpoints', () => {
     await page.goto('/')
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
-    // Collapse by crossing threshold
     await page.setViewportSize({ width: 800, height: 800 })
     await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
 
-    // Cross back above 900
     await page.setViewportSize({ width: 1000, height: 800 })
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
   })
@@ -87,11 +80,9 @@ test.describe('responsive breakpoints', () => {
     await page.goto('/')
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
-    // User manually collapses (persists to localStorage)
     await page.click('.nav-bar-collapse-btn')
     await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
 
-    // Resize below 900 and back — stored preference (collapsed) is respected
     await page.setViewportSize({ width: 800, height: 800 })
     await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
 
@@ -103,14 +94,10 @@ test.describe('responsive breakpoints', () => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Any width below 900px mounts collapsed regardless of stored preference,
-    // so expand it deliberately — this test is about how the expanded bar is
-    // laid out at this width, not about which state it starts in.
     await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
     await page.click('.nav-bar-collapse-btn')
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
-    // Nav bar should cover the full viewport (position: fixed, inset: 0)
     const box = await page.locator('.app-nav-bar').boundingBox()
     expect(box).not.toBeNull()
     expect(box!.x).toBe(0)
@@ -122,15 +109,11 @@ test.describe('responsive breakpoints', () => {
     await page.setViewportSize({ width: 500, height: 800 })
     await page.goto('/')
 
-    // Mounts collapsed below 900px, so expand it first — auto-close on
-    // navigate is only meaningful for a bar the user opened.
     await page.click('.nav-bar-collapse-btn')
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
 
-    // Click a nav item
     await page.getByRole('link', { name: 'Gear' }).click()
 
-    // Nav bar should auto-close
     await expect(page.locator('.app-nav-bar')).not.toHaveClass(/expanded/)
   })
 
@@ -141,12 +124,10 @@ test.describe('responsive breakpoints', () => {
 
     await page.getByRole('link', { name: 'Gear' }).click()
 
-    // Nav bar should stay expanded
     await expect(page.locator('.app-nav-bar')).toHaveClass(/expanded/)
   })
 })
 
-// --- Layout ---
 
 test.describe('layout', () => {
   test('bottom bar is always at viewport bottom', async ({ page }) => {
@@ -156,7 +137,6 @@ test.describe('layout', () => {
     const bottomBar = page.locator('.bottom-bar')
     const box = await bottomBar.boundingBox()
     expect(box).not.toBeNull()
-    // Bottom edge should be at or near viewport bottom
     expect(box!.y + box!.height).toBeCloseTo(800, -1)
   })
 
@@ -192,20 +172,17 @@ test.describe('layout', () => {
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
-    // Collapse button should be within the viewport
     const collapse = page.locator('.nav-bar-collapse-btn')
     await expect(collapse).toBeVisible()
     const collapseBox = await collapse.boundingBox()
     expect(collapseBox).not.toBeNull()
     expect(collapseBox!.y + collapseBox!.height).toBeLessThanOrEqual(400)
 
-    // Character card should still be visible with reasonable height
     const card = page.locator('.nav-bar-character-card')
     const cardBox = await card.boundingBox()
     expect(cardBox).not.toBeNull()
     expect(cardBox!.height).toBeGreaterThan(50)
 
-    // The scroll wrapper should have overflow (scrollHeight > clientHeight)
     const isScrollable = await page.evaluate(() => {
       const scroll = document.querySelector('.nav-bar-scroll')
       return scroll ? scroll.scrollHeight > scroll.clientHeight : false
@@ -223,7 +200,6 @@ test.describe('layout', () => {
   })
 })
 
-// --- Navigation ---
 
 test.describe('navigation', () => {
   test('clicking nav items changes the active view', async ({ page }) => {
@@ -248,7 +224,6 @@ test.describe('navigation', () => {
     const card = page.locator('.nav-bar-character-card')
     await expect(card).toHaveClass(/active/)
 
-    // Active state should have a ::before accent bar spanning the card
     const beforeWidth = await card.evaluate(
       (el) => getComputedStyle(el, '::before').width,
     )
@@ -261,7 +236,6 @@ test.describe('navigation', () => {
 
     await page.getByRole('link', { name: 'Build Plan', exact: true }).click()
 
-    // Build Plan parent + Level Plan sub-item are both active on build-plan view
     const activeBtns = page.locator('.nav-bar-btn.active')
     await expect(activeBtns).toHaveCount(2)
     await expect(activeBtns.first()).toContainText('Build Plan')
@@ -269,7 +243,6 @@ test.describe('navigation', () => {
   })
 })
 
-// --- Compact sub-items ---
 
 test.describe('compact sub-items', () => {
   test('compact items are same height as regular items (prevents icon shift)', async ({ page }) => {
@@ -286,7 +259,6 @@ test.describe('compact sub-items', () => {
       }
     })
 
-    // Same height prevents vertical shift when toggling expand/collapse
     expect(heights.compact).toBe(40)
     expect(heights.regular).toBe(40)
   })
@@ -305,14 +277,12 @@ test.describe('compact sub-items', () => {
   })
 })
 
-// --- Group hierarchy ---
 
 test.describe('group hierarchy', () => {
   test('group parent button shows for build-plan group', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    // The group should have both a label and a parent nav button
     const group = page.locator('.nav-bar-group').first()
     await expect(group.locator('.nav-bar-group-label-text')).toContainText('Build Plan')
     await expect(group.locator('.nav-bar-btn').first()).toContainText('Build Plan')
@@ -360,7 +330,6 @@ test.describe('group hierarchy', () => {
     })
 
     expect(positions.navX).not.toBeNull()
-    // All card icons should align with nav icons (within 2px for border)
     expect(Math.abs(positions.stripX! - positions.navX!)).toBeLessThanOrEqual(2)
     expect(Math.abs(positions.slotX! - positions.navX!)).toBeLessThanOrEqual(2)
   })
@@ -370,15 +339,12 @@ test.describe('group hierarchy', () => {
     await page.goto('/')
 
     await expect(page.locator('.nav-bar-character-card')).toBeVisible()
-    // Character name lives in the strip
     await expect(page.locator('.nav-bar-character-strip-name')).toContainText('Thordak')
-    // Build name + race/class live in the slot
     await expect(page.locator('.nav-bar-character-name').first()).toBeVisible()
     await expect(page.locator('.nav-bar-character-build').first()).toBeVisible()
   })
 })
 
-// --- Helpers ---
 
 async function getIconCenters(page: import('@playwright/test').Page): Promise<{ x: number; y: number }[]> {
   return page.evaluate(() => {

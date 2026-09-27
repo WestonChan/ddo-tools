@@ -6,7 +6,6 @@ import { TooltipWrapper } from '../../../components'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useAddRemoveInput } from '../../../hooks'
 
-// --- Normal mode StackBar (existing behavior) ---
 
 function StackBarNormal({
   stacks,
@@ -49,7 +48,6 @@ function StackBarNormal({
   )
 }
 
-// --- Overlay mode StackBar (planned build view) ---
 
 function StackBarOverlay({
   buildDesired,
@@ -101,7 +99,6 @@ function StackBarOverlay({
   )
 }
 
-// --- StackRow ---
 
 function StackRow({
   def,
@@ -133,7 +130,6 @@ function StackRow({
 
   const { ref, onClick, onContextMenu } = useAddRemoveInput(increment, decrement)
 
-  // Bonus text based on current stacks
   const earnedText = formatBonusList(def.bonuses.slice(0, stacks))
   const rawUnearned = formatBonusList(def.bonuses.slice(stacks))
   const unearnedText = rawUnearned !== earnedText ? rawUnearned : ''
@@ -173,7 +169,6 @@ function StackRow({
   )
 }
 
-// --- StackSection ---
 
 function StackSection({
   label,
@@ -200,7 +195,6 @@ function StackSection({
       <div className="section-label">{label}</div>
       {defs.map((def) => {
         if (isOverlay) {
-          // Overlay mode: pips = build's desired stacks, overlay = character's actual
           const stacks = Math.min(buildDesired[def.id] ?? 0, def.max)
           const fromHistory = Math.min(historyStacks[def.id] ?? 0, def.max)
           const fromOverride = (charStacks ?? {})[def.id] ?? 0
@@ -218,7 +212,6 @@ function StackSection({
             />
           )
         }
-        // Normal mode
         const fromHistory = Math.min(historyStacks[def.id] ?? 0, def.max)
         const fromCurrentHistory = Math.min(currentHistoryStacks[def.id] ?? 0, def.max)
         const fromOverride = overrides[def.id] ?? 0
@@ -240,7 +233,6 @@ function StackSection({
   )
 }
 
-// --- BonusSummary ---
 
 interface ActiveBonus {
   label: string
@@ -289,7 +281,6 @@ const STACK_SECTIONS: {
   })),
 ]
 
-// --- PastLifeStacks (main export) ---
 
 export function PastLifeStacks({
   character,
@@ -306,7 +297,6 @@ export function PastLifeStacks({
 }): JSX.Element {
   const isOverlay = !!plannedBuild
 
-  // Character's actual stacks (used in both modes)
   const viewingIndex = character.lives.findIndex((l) => l.id === viewingLifeId)
   const livesBeforeViewed =
     viewingIndex >= 0 ? character.lives.slice(0, viewingIndex) : character.lives
@@ -315,15 +305,12 @@ export function PastLifeStacks({
   const currentHistoryStacks = computeHistoryStacks(livesBeforeCurrent)
   const o = character.untrackedLives
 
-  // Build's desired stacks (only in overlay mode)
   const desired: PastLifeCounts | undefined = plannedBuild?.desiredPastLives
 
   const totalCompleted = livesBeforeViewed.filter((l) => l.status === 'completed').length
 
-  // In overlay mode, use onSetBuildDesired; in normal mode, use onSetOverride
   const handleSet = isOverlay && onSetBuildDesired ? onSetBuildDesired : onSetOverride
 
-  // Collect active bonuses (normal mode only — overlay shows build's desired bonuses)
   const activeBonuses: ActiveBonus[] = []
   if (!isOverlay) {
     for (const def of PAST_LIFE_DEFS) {

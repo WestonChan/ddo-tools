@@ -17,7 +17,6 @@ export const EMPTY_UNTRACKED: PastLifeCounts = {
   epic: {},
 }
 
-/** Update a single entry in a category map, deleting if value <= 0. */
 export function updateCategoryMap(
   map: Record<string, number>,
   id: string,
@@ -33,7 +32,6 @@ export function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
-/** Title-case a kebab-cased id: 'eladrin-chaosmancer' -> 'Eladrin Chaosmancer'. */
 export function titleCase(s: string): string {
   return s
     .split('-')
@@ -49,7 +47,6 @@ export function formatClassSummary(life: Life): string {
   return life.classes.map((c) => `${c.levels} ${titleCase(c.classId)}`).join(' / ')
 }
 
-/** Sum all stacks across all categories in an PastLifeCounts record. */
 export function sumAllStacks(stacks: PastLifeCounts): number {
   let count = 0
   for (const category of PAST_LIFE_CATEGORIES) {
@@ -60,10 +57,6 @@ export function sumAllStacks(stacks: PastLifeCounts): number {
   return count
 }
 
-/**
- * Compare a planned build's desired past lives against a character's actual stacks.
- * Returns human-readable warnings for each mismatch (build wants more than character has).
- */
 export function computeMismatchWarnings(
   desired: PastLifeCounts | undefined,
   character: Character,
@@ -91,7 +84,6 @@ export function computeMismatchWarnings(
   return warnings
 }
 
-/** Sum per-stack bonuses: ['+10 HP', '+10 HP'] → '+20 HP'. Groups by suffix and adds numbers. */
 export function formatBonusList(parts: string[]): string {
   if (parts.length === 0) return ''
   const sums = new Map<string, number>()
@@ -109,7 +101,6 @@ export function formatBonusList(parts: string[]): string {
   return [...summed, ...unsummable].join(', ')
 }
 
-/** Map each life id to its life number (tracked history + untracked lives) */
 export function computeLifeNumbers(character: Character): Map<string, number> {
   const offset = sumAllStacks(character.untrackedLives)
   const map = new Map<string, number>()
@@ -125,20 +116,17 @@ export function computeLifeNumbers(character: Character): Map<string, number> {
   return map
 }
 
-/** Get the current life number for a character */
 export function getCurrentLifeNumber(character: Character): number {
   const numbers = computeLifeNumbers(character)
   const currentLife = character.lives[character.currentLifeIndex]
   return currentLife ? (numbers.get(currentLife.id) ?? 1) : 1
 }
 
-/** Count total desired past lives for a planned build (all categories including epic) */
 export function getPlannedBuildPastLives(life: Life): number {
   if (!life.desiredPastLives) return 0
   return sumAllStacks(life.desiredPastLives)
 }
 
-/** Count past life stacks from completed lives in the history */
 export function computeHistoryStacks(lives: Life[]): Record<string, number> {
   const counts: Record<string, number> = {}
   for (const life of lives) {

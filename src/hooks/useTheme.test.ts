@@ -2,9 +2,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useTheme, _resetThemeForTests } from './useTheme'
 
-// src/test/setup.ts installs a matchMedia stub that always reports
-// `matches: false`. Swap it per-test to exercise the system-preference
-// branch, then put the shared stub back.
 const defaultMatchMedia = window.matchMedia
 
 function stubPrefersLight(prefersLight: boolean): void {
@@ -21,11 +18,6 @@ function stubPrefersLight(prefersLight: boolean): void {
 }
 
 beforeEach(() => {
-  // Inputs first, store last: dropping the cached theme notifies live
-  // subscribers, which immediately re-derive from localStorage / matchMedia.
-  // Reset before clearing and they'd re-derive from the previous case's
-  // state. Moot while RTL auto-cleanup unmounts everything between cases,
-  // but this ordering is what makes a mid-test reset safe.
   localStorage.clear()
   document.documentElement.removeAttribute('data-theme')
   _resetThemeForTests()
@@ -63,13 +55,6 @@ describe('useTheme', () => {
   })
 
   it('forces the document to match the theme it resolves on first read', () => {
-    // index.html's pre-paint script applied `dark` at load, then the inputs
-    // moved before anything read the store — the OS switched to light, or
-    // another tab toggled and wrote localStorage. The store must drag the
-    // document to whatever it resolves, or it reports a theme the page isn't
-    // rendering: Settings would mark the wrong button active, and clicking
-    // the right one is a no-op because it only toggles when the value
-    // differs.
     document.documentElement.setAttribute('data-theme', 'dark')
     stubPrefersLight(true)
 
@@ -92,10 +77,6 @@ describe('useTheme', () => {
   })
 
   it('propagates a toggle from one consumer to every other consumer', () => {
-    // The reason this hook is an external store rather than per-consumer
-    // useState: theme is shared, so a write from the settings toggle has to
-    // be visible to any other component reading `theme` without waiting for
-    // an unrelated re-render.
     stubPrefersLight(false)
     const settings = renderHook(() => useTheme())
     const observer = renderHook(() => useTheme())

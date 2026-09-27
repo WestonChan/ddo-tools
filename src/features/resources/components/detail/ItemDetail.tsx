@@ -70,7 +70,6 @@ export function ItemDetail({
   candidates,
 }: {
   detail: ItemDetailRow
-  /** Candidate augments keyed by socket label; see `useSlotCandidates`. */
   candidates: Record<string, AugmentCandidate[]>
 }): JSX.Element {
   const headerAttrs = buildHeaderAttributes(detail, candidates)
@@ -116,9 +115,6 @@ export function ItemDetail({
               <li key={q.quest_id} className="resources-quest-row">
                 <span className="resources-quest-name">
                   {q.name}
-                  {/* No quests.wiki_url column — the URL derives from the
-                      quest name. Breaks on wiki pages with disambiguation
-                      suffixes; acceptable. */}
                   <WikiLinkIcon pageName={q.name} />
                   {q.is_raid && <ResourceChip kind="raid" />}
                 </span>

@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { createElement, type Dispatch, type JSX, type SetStateAction } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 
-// Store the setter via a callback prop — avoids lint issues with refs and globals
 let setter: Dispatch<SetStateAction<unknown>> = () => {}
 
 function TestComponent({
@@ -33,7 +32,6 @@ function renderHook(key: string, initial: unknown): {
   return { getValue: () => lastValue, getSetter: () => setter }
 }
 
-/** Render two components sharing the same localStorage key, returning both values and setters. */
 function renderTwoHooks(key: string, initial: unknown): {
   getA: () => unknown
   getB: () => unknown

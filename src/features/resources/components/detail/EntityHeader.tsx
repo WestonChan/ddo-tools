@@ -7,25 +7,13 @@ import { KeyValueGrid, type KvItem } from './KeyValueGrid'
 
 interface EntityHeaderProps {
   name: string
-  // Compact KV pairs (slot, ML, material, etc.) that sit under the name.
   attributes: KvItem[]
-  // Authoritative wiki URL for the entity (e.g. `items.wiki_url`). Renders
-  // the wiki compare-window icon in the title row when set. Optional so
-  // categories without wiki coverage simply omit the icon.
   wikiUrl?: string | null
-  // Wiki page name used to derive a URL when `wikiUrl` is absent, and to
-  // give the icon's aria-label its destination name.
   wikiPageName?: string | null
 }
 
 const COPY_FEEDBACK_MS = 1500
 
-// Primary header surface for any per-category detail component. Owns:
-// - Title row: item name + copy-link, wiki compare-window, and report icons.
-// - KV grid of attributes underneath.
-// The "Back to <category>" link lives at the column root (rendered by
-// ResourceDetailView) so every category gets it for free without each
-// per-category detail wiring it up.
 export function EntityHeader({
   name,
   attributes,
@@ -53,16 +41,12 @@ export function EntityHeader({
         setCopied(false)
         copyTimer.current = null
       }, COPY_FEEDBACK_MS)
-    } catch {
-      /* clipboard write may fail in older browsers / insecure contexts —
-         silently no-op. */
-    }
+    } catch {}
   }
 
   return (
     <header className="resources-entity-header">
       <div className="resources-entity-title-row">
-        {/* `id` is the drawer's `aria-labelledby` target — see DETAIL_TITLE_ID. */}
         <h2
           id={DETAIL_TITLE_ID}
           className="resources-entity-name"

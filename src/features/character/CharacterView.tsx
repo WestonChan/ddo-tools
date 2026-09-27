@@ -43,7 +43,6 @@ function CharacterView(): JSX.Element {
 
   return (
     <div className="character-view">
-      {/* Character list */}
       <div className="section-label">Your Characters</div>
       <div className="character-list">
         {characters.map((char) => {
@@ -83,7 +82,6 @@ function CharacterView(): JSX.Element {
         </button>
       </div>
 
-      {/* Past lives */}
       <hr className="past-lives-divider" />
       <div className="past-lives-header">
         <h2>
@@ -108,7 +106,6 @@ function CharacterView(): JSX.Element {
           onToggleReincarnate={() => setShowReincarnate(!showReincarnate)}
           onCancelReincarnate={() => setShowReincarnate(false)}
           onConfirmReincarnate={(result: ReincarnateResult) => {
-            // TODO: implement actual reincarnation logic
             console.log('Reincarnate:', result)
             setShowReincarnate(false)
           }}

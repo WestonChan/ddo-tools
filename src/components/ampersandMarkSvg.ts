@@ -1,15 +1,8 @@
 export interface AmpersandMarkSvgOptions {
-  /** Glyph color. */
   fill?: string
-  /** width/height attribute on the <svg> root. */
   size?: number | string
 }
 
-/**
- * Single source of truth for the brand ampersand mark — used by the favicon,
- * the landing hero, and the nav bar brand. One bare-glyph shape rendered
- * everywhere — no framing variants.
- */
 export function ampersandMarkSvg({
   fill = 'currentColor',
   size = 64,

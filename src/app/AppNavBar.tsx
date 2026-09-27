@@ -22,7 +22,6 @@ import { AmpersandMark } from '../components'
 import { useModalBehavior } from '../hooks'
 import './AppNavBar.css'
 
-// --- Navigation structure ---
 
 interface NavItem {
   id?: string
@@ -71,24 +70,12 @@ const MAIN_NAV: NavGroupDef[] = [
   },
 ]
 
-// --- Component ---
 
 interface AppNavBarProps {
   expanded: boolean
   onToggleExpanded: () => void
-  /** Collapses the nav bar (persisting the collapsed preference). Used for
-   *  every dismissal of the mobile fullscreen overlay — Escape and
-   *  navigation — where a toggle would be wrong: dismissing must never
-   *  expand. */
   onCollapse: () => void
-  /** When `true`, the expanded nav bar is covering the viewport as the
-   *  narrow-width fullscreen overlay, so it behaves like a modal: Escape
-   *  dismisses it, focus moves in and is trapped, and navigating closes it.
-   *  AppLayout owns the breakpoint check and inerts everything behind it. */
   overlayActive?: boolean
-  /** When `true`, the entire nav bar becomes non-interactive — focus,
-   *  pointer, and keyboard events are suppressed. Set by AppLayout while
-   *  any modal-shape overlay (resources drawer, etc.) is active. */
   inert?: boolean
 }
 
@@ -101,16 +88,6 @@ function AppNavBar({
 }: AppNavBarProps): JSX.Element {
   const asideRef = useRef<HTMLElement | null>(null)
 
-  // Modal behavior for the fullscreen overlay state (Escape to dismiss,
-  // focus moved in and trapped). Two deliberate departures from <Modal>:
-  //
-  // - `registerActive: false`. The refcounted modal-active store exists so
-  //   AppLayout can inert the background *chrome* — and this overlay IS
-  //   chrome, so registering would inert the nav bar itself. AppLayout wires
-  //   the surrounding regions from the same `overlayActive` flag instead.
-  // - No `role="dialog"`. The nav bar stays a landmark <aside> wrapping a
-  //   <nav>; dialog would flatten that structure for AT. `inert` on
-  //   everything else is a stronger containment guarantee than aria-modal.
   useModalBehavior({
     active: !!overlayActive,
     onClose: onCollapse,
@@ -118,18 +95,9 @@ function AppNavBar({
     registerActive: false,
   })
 
-  // Test swap: useMatchRoute instead of useLocation-pathname equality.
-  // Upside: handles nested/param routes (e.g., a child path under /settings
-  // would still highlight the Settings nav item). Trade-off the original
-  // author flagged: useMatchRoute reads against the pending route tree, so
-  // during async `beforeLoad` redirects the matched route may lag the URL
-  // by a frame. Revert to `useLocation().pathname === '/settings'` if the
-  // mis-highlight is visible during transitions.
   const matchRoute = useMatchRoute()
   const settingsActive = !!matchRoute({ to: '/settings' })
 
-  // The fullscreen overlay covers the view it just navigated to, so dismiss
-  // it on navigate. Inline (wider) layouts stay put.
   function handleNavClick(): void {
     if (overlayActive) {
       onCollapse()
@@ -187,17 +155,10 @@ function NavGroup({
   group: NavGroupDef
   onNavClick: () => void
 }): JSX.Element {
-  // `fuzzy: true` so nested paths still light up the parent (e.g.
-  // `/resources/items/123` highlights the Resources nav item, not just the
-  // exact `/resources` URL). With strict equality (the previous approach),
-  // any deep navigation would un-highlight the corresponding nav button.
   const matchRoute = useMatchRoute()
   const matchesTo = (to: string): boolean => !!matchRoute({ to, fuzzy: true })
   const hasActive = group.items.some((item) => matchesTo(item.to))
 
-  // Precompute first index per `to` so only the first sub-item per path lights up.
-  // Several sub-items share the same path (e.g., build-plan sub-sections) — future
-  // Phase 7 will give each its own scroll anchor; until then, highlight once.
   const firstIndexByTo = new Map<string, number>()
   group.items.forEach((it, i) => {
     if (!firstIndexByTo.has(it.to)) firstIndexByTo.set(it.to, i)

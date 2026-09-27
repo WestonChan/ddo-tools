@@ -42,8 +42,6 @@ describe('ConfirmModal', () => {
   })
 
   it('cancels on Escape while the confirmation field holds focus', async () => {
-    // The typed-confirmation input takes focus on open, so an Escape handler
-    // scoped to anything narrower than the document would never see the key.
     const { onCancel } = renderConfirm({ requireInput: 'Human 20 Fighter' })
     expect(screen.getByRole('textbox')).toHaveFocus()
 
@@ -104,7 +102,6 @@ describe('ConfirmModal', () => {
 
   it('confirms on Enter when no typed confirmation is required', async () => {
     const { onConfirm } = renderConfirm()
-    // The primary action holds focus on open, so Enter activates it directly.
     expect(screen.getByRole('button', { name: 'Apply' })).toHaveFocus()
 
     await userEvent.keyboard('{Enter}')

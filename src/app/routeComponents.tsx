@@ -13,8 +13,6 @@ const makePlaceholder =
   (): JSX.Element =>
     <Placeholder message={message} />
 
-// Views fetch their own game data through TanStack Query and gate on it
-// locally (see `<ApiGate>`), so nothing wraps them here.
 export const BuildPlanView = makePlaceholder('Build Plan coming in Phase 5.')
 export const OverviewView = makePlaceholder('Build Overview coming in Phase 10.')
 export const GearView = makePlaceholder('Gear Planner coming in Phase 6.')
@@ -23,9 +21,6 @@ export const FarmChecklistView = makePlaceholder('Farm Checklist coming in Phase
 export { ResourcesView }
 
 export function NotFoundView(): JSX.Element {
-  // Strip query/hash before display + before forwarding to the GitHub issue
-  // body — Phase 5+ will introduce share-link payloads that may contain
-  // tokens, and 404s on those URLs shouldn't leak the params.
   const sanitized = typeof window !== 'undefined'
     ? sanitizeUrl(window.location.href).replace(window.location.origin, '')
     : '/'

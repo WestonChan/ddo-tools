@@ -5,9 +5,6 @@ import userEvent from '@testing-library/user-event'
 import { useModalBehavior } from './useModalBehavior'
 import { useAnyModalActive, _resetModalActiveForTests } from './useModalActive'
 
-// Only the behavior Modal.test.tsx can't express lives here: Modal engages
-// the hook on mount (mount === open), so the activate/deactivate-without-
-// remount path and the registerActive opt-out need a direct harness.
 
 function Harness({
   active,
@@ -68,9 +65,6 @@ describe('useModalBehavior', () => {
   })
 
   it('restores focus to whatever was focused at the moment it activated', () => {
-    // The restore target is captured on the false -> true render transition,
-    // not read at deactivation time: by then focus has usually moved into (or
-    // out of) the panel, and handing it to that element would be wrong.
     const onClose = vi.fn()
     opener.focus()
     const { rerender } = render(<Harness active={false} onClose={onClose} />)
@@ -83,8 +77,6 @@ describe('useModalBehavior', () => {
   })
 
   it('skips the modal-active refcount when registerActive is false', () => {
-    // The mobile nav overlay IS the chrome the refcount readers inert, so it
-    // opts out and AppLayout wires the surrounding regions itself.
     render(<ActiveProbe />)
     render(<Harness active onClose={vi.fn()} registerActive={false} />)
     expect(screen.getByTestId('probe')).toHaveTextContent('false')

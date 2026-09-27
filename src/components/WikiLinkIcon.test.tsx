@@ -40,7 +40,6 @@ describe('WikiLinkIcon', () => {
 
     const notPrevented = fireEvent.click(link)
 
-    // fireEvent returns false when preventDefault() was called.
     expect(notPrevented).toBe(false)
     expect(open).toHaveBeenCalledTimes(1)
     const [url, name] = open.mock.calls[0] as [string, string, string]

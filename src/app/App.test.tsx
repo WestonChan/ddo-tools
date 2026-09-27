@@ -4,8 +4,6 @@ import { RouterProvider, createMemoryHistory } from '@tanstack/react-router'
 import { CharacterProvider } from '../features/character'
 import { createAppRouter } from '../router'
 
-// In vitest, import.meta.env.BASE_URL resolves to '/', so the router's basepath
-// is '/' — memory history entries use plain paths without the /ddo-tools prefix.
 function renderApp(initialPath = '/build-plan'): RenderResult {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [initialPath] }))
   return render(
@@ -18,7 +16,6 @@ function renderApp(initialPath = '/build-plan'): RenderResult {
 describe('App', () => {
   it('renders the nav bar with navigation', async () => {
     renderApp()
-    // Links + buttons in the chrome (nav items, collapse toggle, bottom bar)
     await screen.findByText(/Build Plan coming/)
     const interactive = [...screen.getAllByRole('button'), ...screen.getAllByRole('link')]
     expect(interactive.length).toBeGreaterThanOrEqual(5)

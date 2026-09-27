@@ -18,10 +18,6 @@ function selectedSwatchNames(): string[] {
   )
 }
 
-/** The invariant every case below has to hold: exactly one swatch is
- *  selected, and it is the one whose color is actually applied. Asserting a
- *  specific swatch is selected cannot catch "applies a color the grid does
- *  not contain" — that failure has no expected swatch to name. */
 function expectSelectionMatchesAppliedAccent(): void {
   const applied = document.documentElement.style.getPropertyValue('--accent')
   const selected = selectedSwatchNames()
@@ -31,9 +27,6 @@ function expectSelectionMatchesAppliedAccent(): void {
 
 describe('SettingsView accent swatches', () => {
   it('marks the stored accent as selected across a reload', () => {
-    // applyAccent persists a plain string; a reload must still light up the
-    // matching swatch. Reading only the legacy {accent, hover} JSON format
-    // here left every swatch unselected.
     localStorage.setItem('accent', ACCENT_PRESETS[1].accent)
     render(<SettingsView />)
     expect(swatch(ACCENT_PRESETS[1].name)).toHaveClass('selected')
@@ -50,25 +43,17 @@ describe('SettingsView accent swatches', () => {
   })
 
   it('marks the default accent as selected when nothing is stored', () => {
-    // restoreAccent applies ACCENT_PRESETS[0] on a fresh visit, so the grid
-    // has to agree: the default is applied, therefore it is selected.
     render(<SettingsView />)
     expect(swatch(ACCENT_PRESETS[0].name)).toHaveClass('selected')
   })
 
   it('marks the default accent as selected when the stored entry is unusable', () => {
-    // Same rule for a broken entry. What the user sees is the default accent,
-    // so the default swatch is what must read as selected.
     localStorage.setItem('accent', '{"accent": ')
     render(<SettingsView />)
     expect(swatch(ACCENT_PRESETS[0].name)).toHaveClass('selected')
   })
 
   it('survives a reload of an accent written by the real click path', () => {
-    // Every other case here seeds localStorage by hand, which only ever
-    // proves the reader agrees with whatever the test wrote. This one clicks
-    // a swatch and remounts, so applyAccent's actual storage format is what
-    // gets read back — the one round trip a hand-seeded test cannot make.
     const { unmount } = render(<SettingsView />)
     fireEvent.click(swatch(ACCENT_PRESETS[3].name))
     unmount()
@@ -80,9 +65,6 @@ describe('SettingsView accent swatches', () => {
   })
 
   it('falls back to the default when the stored accent is not one of the presets', () => {
-    // A legacy {accent, hover} entry from an older palette. It parses, so it
-    // is not "unusable" — it just names a color no swatch can represent, and
-    // applying it left the grid with nothing selected.
     localStorage.setItem('accent', JSON.stringify({ accent: '#d4af37', hover: '#e5c158' }))
     render(<SettingsView />)
     expect(swatch(ACCENT_PRESETS[0].name)).toHaveClass('selected')
@@ -90,9 +72,6 @@ describe('SettingsView accent swatches', () => {
   })
 
   it('always applies an accent that one swatch reports as selected', () => {
-    // The general form of all three bugs this file has now seen: absent,
-    // broken, and off-palette entries each applied a color while leaving
-    // every swatch unselected.
     for (const stored of [
       null,
       ACCENT_PRESETS[2].accent,

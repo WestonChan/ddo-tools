@@ -20,9 +20,7 @@ describe('searchItems', () => {
   it('ranks starts-with above other substring matches for same query', () => {
     const fuse = buildItemsIndex(rows)
     const hits = searchItems(fuse, rows, 'Force')
-    expect(hits[0].name).toBe('Force Bracers') // starts-with wins
-    // The next two should be word-boundary or substring matches; both are
-    // valid, just lower-ranked than starts-with.
+    expect(hits[0].name).toBe('Force Bracers')
     expect(hits.slice(0, 3).map((r) => r.name)).toEqual(
       expect.arrayContaining(['Greatsword of Force', 'Robe of Force Resistance']),
     )

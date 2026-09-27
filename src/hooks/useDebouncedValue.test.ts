@@ -35,8 +35,6 @@ describe('useDebouncedValue', () => {
   })
 
   it('restarts the window on every change — only the final value commits', () => {
-    // The property that distinguishes a debounce from a plain delay: rapid
-    // keystrokes never surface intermediate values.
     const { result, rerender } = renderHook(({ v }) => useDebouncedValue(v, 100), {
       initialProps: { v: '' },
     })
@@ -46,7 +44,6 @@ describe('useDebouncedValue', () => {
         vi.advanceTimersByTime(50)
       })
     }
-    // 50ms after the last keystroke: still the initial value.
     expect(result.current).toBe('')
 
     act(() => {
@@ -72,8 +69,6 @@ describe('useDebouncedValue', () => {
     })
     rerender({ v: 'b' })
     unmount()
-    // Flushing the timer after unmount must not warn about setState on an
-    // unmounted component; the cleanup cleared it.
     expect(() => vi.runAllTimers()).not.toThrow()
   })
 })

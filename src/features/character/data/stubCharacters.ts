@@ -1,11 +1,7 @@
 import type { Character, Life } from '../types'
 
-// --- Stub data ---
-// Each reincarnation is its own life entry. Epic TRs duplicate the build.
-// True TRs (heroic/racial/iconic) are followed by a new build.
 
 const STUB_LIVES: Life[] = [
-  // Life 1 build: Human Fighter — did 2 epic TRs then heroic TR
   {
     id: '1a',
     name: '',
@@ -36,7 +32,6 @@ const STUB_LIVES: Life[] = [
     status: 'completed',
     reincarnation: { type: 'heroic', completedAt: '2025-01-15' },
   },
-  // Life 2 build: Elf Ranger — did 1 epic TR then racial TR
   {
     id: '2a',
     name: '',
@@ -57,7 +52,6 @@ const STUB_LIVES: Life[] = [
     status: 'completed',
     reincarnation: { type: 'racial', completedAt: '2025-06-20' },
   },
-  // Life 3 build: Human Paladin/Rogue — did 1 epic TR, still current
   {
     id: '3a',
     name: '',
@@ -86,7 +80,6 @@ const STUB_LIVES: Life[] = [
   },
 ]
 
-// --- Global planned builds (not tied to any character) ---
 export const STUB_PLANNED_BUILDS: Life[] = [
   {
     id: '4',
@@ -119,7 +112,7 @@ export const STUB_CHARACTERS: Character[] = [
     id: 'char-1',
     name: 'Thordak',
     server: 'Thrane',
-    lives: STUB_LIVES, // completed + current only (indices 0-6)
+    lives: STUB_LIVES,
     currentLifeIndex: 6,
     untrackedLives: {
       heroic: { paladin: 2, fighter: 2, rogue: 1 },

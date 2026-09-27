@@ -25,7 +25,6 @@ describe('DetailNavContext', () => {
     expect(captured).not.toBeNull()
     expect(captured!.deepLinkUrl).toBeNull()
     expect(captured!.baseCategory).toBe('items')
-    // Default methods should not throw
     expect(() => captured!.pushDetail({ category: 'items', id: 42 })).not.toThrow()
     expect(() => captured!.closeDrawer()).not.toThrow()
   })

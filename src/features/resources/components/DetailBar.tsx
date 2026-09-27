@@ -7,9 +7,7 @@ import type { StackEntry } from '../hooks/useDetailStack'
 
 interface DetailBarProps {
   stack: StackEntry[]
-  /** popDetail — back one level (or close at depth 1). */
   onBack: () => void
-  /** jumpToCrumb — truncate the stack to that index. */
   onJumpToCrumb: (index: number) => void
 }
 
@@ -17,14 +15,6 @@ function crumbLabel(entry: StackEntry): string {
   return entry.name ?? `${entry.category} #${entry.id}`
 }
 
-/**
- * Top bar of the detail popover. The breadcrumb leads with a "Back to
- * <category>" crumb (the close-all action) followed by one entry per
- * stacked detail. The depth-1 case still surfaces both: "Back to items >
- * Alpha", so the user can always exit to the picker. A separate one-step
- * back-arrow appears at depth 2+ for popping a single layer. The
- * copy-link and wiki icons live next to the item name in EntityHeader.
- */
 export function DetailBar({ stack, onBack, onJumpToCrumb }: DetailBarProps): JSX.Element {
   const { closeDrawer, baseCategory } = useDetailNav()
   const depth = stack.length
