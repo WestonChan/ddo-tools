@@ -1,213 +1,158 @@
-import { describe, it, expect, beforeAll } from 'vitest'
-import type { Database } from 'sql.js'
-import { seedTestDb } from '../../../test/fixtures/resourcesDb'
-import { listItems, getItemDetail, getAugmentsForSlot } from './items'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
+import {
+  fetchAugmentsForSlot,
+  fetchItemIdsByStat,
+  fetchItemRows,
+  isFamilySlot,
+  slotTakesCandidateList,
+  toAugmentCandidate,
+  toItemDetail,
+  toItemRow,
+} from './items'
 
-describe('items queries (against :memory: DB)', () => {
-  let db: Database
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
-  beforeAll(async () => {
-    db = await seedTestDb()
-  })
+function apiRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
+  return {
+    id: 1,
+    name: 'Bloodstone',
+    slot: 'Trinket',
+    category: 'Jewelry',
+    item_type: null,
+    minimum_level: 12,
+    enhancement_bonus: null,
+    icon: 'Trinket_1',
+    pack: 'Vault of Night',
+    is_raid: true,
+    ...overrides,
+  }
+}
 
-  it('listItems returns rows sorted by descending min level, then slot, then name', () => {
-    const rows = listItems(db)
-    // ML 29 → 12 → 8 → 1, all four fixture rows have non-null minimum_level so
-    // the IS NULL tie-break has no effect here. NULLS-LAST behavior is covered
-    // implicitly by the IS NULL clause in the ORDER BY (no NULL fixture row is
-    // needed for the assertion shape).
-    expect(rows.map((r) => r.name)).toEqual([
-      'Sigil of the Stalwart Defender',
-      'Greatsword of Force',
-      'Robe of Force Resistance',
-      '50% Discount Voucher',
-    ])
-  })
+const API_DETAIL: ApiItemDetail = {
+  id: 7,
+  name: 'Sireth, Spear of the Sky',
+  slot: 'Main Hand',
+  category: 'Weapon',
+  item_type: 'Quarterstaff',
+  minimum_level: 23,
+  enhancement_bonus: 7,
+  material: 'Steel',
+  race_required: null,
+  icon: 'Quarterstaff_6a',
+  description: 'A spear.',
+  drop_location: 'Caught in the Web, End Chest',
+  set_name: null,
+  accepts_sentience: true,
+  is_minor_artifact: false,
+  wiki_url: 'https://ddowiki.com/page/Item:Sireth,_Spear_of_the_Sky',
+  weapon: {
+    weapon_type: 'Quarterstaff',
+    proficiency: 'Simple',
+    handedness: 'Two-handed',
+    damage: '3.6[1d10] + 7 Good, Magic, Pierce, Slash',
+    critical: '16-20 / x2',
+    base_dice_count: 1,
+    base_dice_sides: 10,
+    base_dice_bonus: null,
+    damage_multiplier: 3.6,
+    critical_threat_range: 5,
+    critical_multiplier: 2,
+    attack_modifier: 'Strength',
+    damage_modifier: 'Strength',
+    dr_bypass: ['Good', 'Magic', 'Pierce', 'Slash'],
+  },
+  armor: null,
+  bonuses: [
+    { id: 3, name: 'Fire Spell Power +54', description: null, stat: 'Fire Spell Power', stat_category: 'magical', bonus_type: 'Enhancement', value: 54, value2: null },
+  ],
+  effects: [{ id: 9, name: 'Supreme Good', description: 'Smites.', value: null, target: 'All' }],
+  augment_slots: [
+    { sort_order: 0, slot_type_id: 4, label: 'crafting: attuned to heroism 1', family: 'crafting', variant: 'attuned to heroism 1', qualifier: null, options: [{ name: 'Planar Conflux', description: null, min_level: 23 }] },
+    { sort_order: 1, slot_type_id: 1, label: 'red', family: 'standard', variant: 'red', qualifier: null, options: [] },
+  ],
+  clickies: [{ name: 'Acid Shot', clickie_id: 2, spell_id: null, description: 'Shoots acid.', icon: null }],
+  set: { id: 5, name: 'Eminence of Winter', icon: null },
+  quests: [{ id: 11, name: 'Caught in the Web', level: 20, epic_level: null, is_raid: true, pack: 'Web of Chaos', patron: 'The Twelve', loot_type: 'raid' }],
+}
 
-  it('listItems shape matches ItemRow', () => {
-    const [first] = listItems(db)
-    expect(first).toMatchObject({
-      id: expect.any(Number),
-      name: expect.any(String),
+describe('mappers', () => {
+  it('toItemRow renames the API columns the picker reads', () => {
+    expect(toItemRow(apiRow())).toEqual({
+      id: 1,
+      name: 'Bloodstone',
+      equipment_slot: 'Trinket',
+      item_category: 'Jewelry',
+      minimum_level: 12,
+      pack: 'Vault of Night',
+      is_raid: true,
     })
-    expect(first).toHaveProperty('rarity')
-    expect(first).toHaveProperty('equipment_slot')
-    expect(first).toHaveProperty('minimum_level')
   })
 
-  it('getItemDetail returns the tooltip from the core row', () => {
-    const detail = getItemDetail(db, 1)
-    expect(detail).not.toBeNull()
-    expect(detail!.tooltip).toBe('Strikes with arcane force.')
+  it('toItemDetail nests every satellite the drawer renders', () => {
+    const d = toItemDetail(API_DETAIL)
+    expect(d.equipment_slot).toBe('Main Hand')
+    expect(d.enhancement_bonus).toBe(7)
+    expect(d.set_name).toBe('Eminence of Winter')
+    expect(d.weaponStats?.dr_bypass).toHaveLength(4)
+    expect(d.armorStats).toBeNull()
+    expect(d.bonuses[0]).toEqual({ bonus_id: 3, name: 'Fire Spell Power +54', description: null, bonus_type: 'Enhancement', stat_name: 'Fire Spell Power', value: 54, sort_order: 0 })
+    expect(d.effects[0]).toEqual({ effect_id: 9, name: 'Supreme Good', description: 'Smites.', target: 'All', value: null, sort_order: 0 })
+    expect(d.augmentSlots[0].options[0].name).toBe('Planar Conflux')
+    expect(d.clickies).toEqual([{ name: 'Acid Shot', description: 'Shoots acid.' }])
+    expect(d.quests[0]).toEqual({ quest_id: 11, name: 'Caught in the Web', level: 20, pack: 'Web of Chaos', patron: 'The Twelve', loot_type: 'raid', is_raid: true })
   })
 
-  // `level`, `base_value`, and `icon` exist on the items table but no UI
-  // renders them, so getItemDetail stopped selecting them. Asserting their
-  // absence keeps the query and ItemCore from drifting back apart silently.
-  it('getItemDetail omits columns no UI renders', () => {
-    const detail = getItemDetail(db, 1)
-    expect(detail).not.toBeNull()
-    expect(detail).not.toHaveProperty('base_value')
-    expect(detail).not.toHaveProperty('icon')
-    expect(detail).not.toHaveProperty('level')
+  it('toAugmentCandidate flattens bonus labels', () => {
+    const a: ApiAugment = { id: 2, name: 'Silverscale', family: 'DinosaurBone', description: null, min_level: 31, icon: null, slots: ['isle of dread: scale (armor)'], bonuses: [{ id: 1, name: 'Healing Amplification +56', description: null, stat: 'Healing Amplification', stat_category: 'other', bonus_type: 'Competence', value: 56, value2: null }] }
+    expect(toAugmentCandidate(a)).toEqual({ augment_id: 2, name: 'Silverscale', min_level: 31, bonuses: ['Healing Amplification +56'] })
   })
 
-  it('getItemDetail joins weapon stats and augment slots', () => {
-    const detail = getItemDetail(db, 1)
-    expect(detail).not.toBeNull()
-    expect(detail!.name).toBe('Greatsword of Force')
-    expect(detail!.weaponStats).toEqual({
-      damage: '2d6',
-      critical: '19-20/x2',
-      weapon_type: 'Greatsword',
-      proficiency: 'Martial',
-      // 'Two-handed' (lowercase h) is the real CHECK-constrained enum value;
-      // the fixture previously used 'Two-Handed', which cannot exist in prod.
-      handedness: 'Two-handed',
+  it('slot rules: families and Sun/Moon get candidate lists', () => {
+    expect(isFamilySlot('standard')).toBe(false)
+    expect(isFamilySlot('lamordia')).toBe(true)
+    expect(slotTakesCandidateList('standard', 'sun')).toBe(true)
+    expect(slotTakesCandidateList('standard', 'red')).toBe(false)
+    expect(slotTakesCandidateList('crafting', 'crafting: tier 2')).toBe(true)
+  })
+})
+
+describe('fetchers', () => {
+  function mockJson(body: unknown): void {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(body), { status: 200 }))
+  }
+
+  it('fetchItemRows asks for the whole list and sorts by level desc, slot, name; unleveled last', async () => {
+    mockJson({
+      total: 4,
+      limit: 10000,
+      offset: 0,
+      items: [
+        apiRow({ id: 1, name: 'b', minimum_level: 8, slot: 'Ring' }),
+        apiRow({ id: 2, name: 'a', minimum_level: null }),
+        apiRow({ id: 3, name: 'c', minimum_level: 29, slot: 'Back' }),
+        apiRow({ id: 4, name: 'A', minimum_level: 8, slot: 'Ring' }),
+      ],
     })
-    expect(detail!.armorStats).toBeNull()
-    expect(detail!.augmentSlots).toEqual([
-      { sort_order: 0, slot_id: 1, label: 'yellow', family: 'standard', qualifier: null },
-    ])
-    expect(detail!.upgrades).toEqual([])
+    const rows = await fetchItemRows()
+    expect(rows.map((r) => r.id)).toEqual([3, 4, 1, 2])
+    const url = vi.mocked(fetch).mock.calls[0][0] as string
+    expect(url).toContain('/v1/items?limit=10000')
   })
 
-  // A plain colour socket takes hundreds of augments and renders as a gem, so
-  // only the sockets that get a dropdown are resolved — the crafting families
-  // and sun/moon. Keyed by slot_id, so two sockets of the same kind on one item
-  // cost one query.
-  it('getItemDetail resolves candidate augments for non-colour slots only', () => {
-    const detail = getItemDetail(db, 2)
-    expect(Object.keys(detail!.slotCandidates).sort()).toEqual(['4', '6', '7'])
+  it('fetchItemIdsByStat returns a set of ids from the filtered list', async () => {
+    mockJson({ total: 2, limit: 10000, offset: 0, items: [apiRow({ id: 5 }), apiRow({ id: 6 })] })
+    await expect(fetchItemIdsByStat('Strength')).resolves.toEqual(new Set([5, 6]))
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('stat=Strength')
   })
 
-  it("getItemDetail returns no candidates for a Slaver's slot", () => {
-    // Slave Lords crafting fills these with shards, not augments, so the
-    // empty list is the correct answer rather than missing data.
-    const detail = getItemDetail(db, 2)
-    expect(detail!.slotCandidates[7]).toEqual([])
-  })
-
-  it('getAugmentsForSlot returns the augments pointing at that socket', () => {
-    expect(getAugmentsForSlot(db, 6)).toEqual([
-      {
-        augment_id: 1,
-        name: 'Melancholic Charisma',
-        min_level: 8,
-        bonuses: ['Charisma +5'],
-      },
-      {
-        augment_id: 2,
-        name: 'Melancholic Healing Amplification',
-        min_level: 8,
-        bonuses: ['Heal Amplification +20'],
-      },
-    ])
-  })
-
-  it('getAugmentsForSlot keeps an augment that has no bonus rows', () => {
-    // 430 of 1,279 shipped augments have none; dropping them would hide a
-    // third of the list rather than showing a name-only row.
-    expect(getAugmentsForSlot(db, 4)).toEqual([
-      {
-        augment_id: 3,
-        name: 'Solar Gem of Abjuration (Heroic)',
-        min_level: 1,
-        bonuses: [],
-      },
-    ])
-  })
-
-  it('getAugmentsForSlot returns nothing for a socket no augment fits', () => {
-    // Socket 7 is the Slaver's prefix; 99 is no socket at all.
-    expect(getAugmentsForSlot(db, 7)).toEqual([])
-    expect(getAugmentsForSlot(db, 99)).toEqual([])
-  })
-
-  it('getItemDetail joins armor stats when present', () => {
-    const detail = getItemDetail(db, 3)
-    expect(detail).not.toBeNull()
-    expect(detail!.armorStats).toEqual({ armor_bonus: 0, max_dex_bonus: null })
-    expect(detail!.weaponStats).toBeNull()
-  })
-
-  it('getItemDetail returns multiple augment slots in order', () => {
-    const detail = getItemDetail(db, 2)
-    expect(detail!.augmentSlots).toEqual([
-      { sort_order: 0, slot_id: 2, label: 'colorless', family: 'standard', qualifier: null },
-      { sort_order: 1, slot_id: 3, label: 'blue', family: 'standard', qualifier: null },
-      { sort_order: 2, slot_id: 4, label: 'sun', family: 'standard', qualifier: null },
-      {
-        sort_order: 3,
-        slot_id: 6,
-        label: 'lamordia: melancholic (accessory)',
-        family: 'lamordia',
-        qualifier: 'accessory',
-      },
-      {
-        sort_order: 4,
-        slot_id: 7,
-        label: "slaver's: prefix (legendary)",
-        family: 'slavers',
-        qualifier: 'legendary',
-      },
-    ])
-    expect(detail!.upgrades).toEqual([{ base_item_id: 2, upgrade_tier: 2 }])
-  })
-
-  it('getItemDetail joins bonuses with their type and description', () => {
-    const detail = getItemDetail(db, 2)
-    expect(detail!.bonuses).toEqual([
-      {
-        bonus_id: 1,
-        name: 'Charisma +5',
-        description: 'Enhancement bonus to Charisma',
-        bonus_type: 'Enhancement',
-        stat_name: 'Charisma',
-        value: 5,
-        sort_order: 0,
-      },
-      {
-        bonus_id: 3,
-        name: 'Heal Amplification +20',
-        description: 'Healing amplification bonus',
-        bonus_type: 'Insight',
-        stat_name: 'Heal Amplification',
-        value: 20,
-        sort_order: 1,
-      },
-    ])
-  })
-
-  it('getItemDetail returns bonus_type=null when bonuses.bonus_type_id is NULL', () => {
-    const detail = getItemDetail(db, 1)
-    expect(detail!.bonuses).toEqual([
-      {
-        bonus_id: 2,
-        name: 'Force Damage +2d6',
-        description: 'Force damage on hit',
-        bonus_type: null,
-        stat_name: null,
-        value: 2,
-        sort_order: 0,
-      },
-    ])
-  })
-
-  it('getItemDetail joins effects with their definition', () => {
-    const detail = getItemDetail(db, 1)
-    expect(detail!.effects).toEqual([
-      { effect_id: 1, name: 'Vorpal', modifier: null, value: null, sort_order: 0 },
-      { effect_id: 2, name: 'Bane', modifier: 'Outsider, Evil', value: 4, sort_order: 1 },
-    ])
-  })
-
-  it('getItemDetail joins spell links with the spells table', () => {
-    const detail = getItemDetail(db, 2)
-    expect(detail!.spellLinks).toEqual([{ spell_id: 10, name: 'Cure Moderate Wounds', charges: 3 }])
-  })
-
-  it('getItemDetail returns null for unknown id', () => {
-    expect(getItemDetail(db, 999_999)).toBeNull()
+  it('fetchAugmentsForSlot orders by level then name', async () => {
+    const aug = (id: number, name: string, min_level: number | null): ApiAugment => ({ id, name, family: 'Ruby', description: null, min_level, icon: null, slots: ['red'], bonuses: [] })
+    mockJson({ total: 3, limit: 10000, offset: 0, augments: [aug(1, 'Zed', 4), aug(2, 'Abe', null), aug(3, 'Bob', 4)] })
+    const out = await fetchAugmentsForSlot('red')
+    expect(out.map((a) => a.name)).toEqual(['Bob', 'Zed', 'Abe'])
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('slot=red')
   })
 })

@@ -6,9 +6,9 @@ import { formatSlotLabel } from './formatSlotLabel'
 
 interface AugmentSlotListProps {
   slots: ItemAugmentSlot[]
-  /** Candidate augments keyed by `slot_id`, from `getItemDetail`. A socket with
-   *  no entry (or an empty one) simply renders no list. */
-  candidates: Record<number, AugmentCandidate[]>
+  /** Candidate augments keyed by socket label, from `useSlotCandidates`. A
+   *  socket with no entry (or an empty one) simply renders no list. */
+  candidates: Record<string, AugmentCandidate[]>
 }
 
 /**
@@ -39,7 +39,7 @@ export function AugmentSlotList({ slots, candidates }: AugmentSlotListProps): JS
   const listRef = useRef<HTMLUListElement>(null)
 
   const open = slots.find((s) => s.sort_order === openSlot) ?? null
-  const openCandidates = open ? (candidates[open.slot_id] ?? []) : []
+  const openCandidates = open ? (candidates[open.label] ?? []) : []
   const panelOpen = open !== null && openCandidates.length > 0
 
   return (
@@ -124,7 +124,7 @@ export function AugmentSlotList({ slots, candidates }: AugmentSlotListProps): JS
       />
     )
     const label = formatSlotLabel(slot.label)
-    const list = candidates[slot.slot_id] ?? []
+    const list = candidates[slot.label] ?? []
 
     // A colour socket with no candidate list is the original rendering: the
     // gem alone, with the colour named in a tooltip.

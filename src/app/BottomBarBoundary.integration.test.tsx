@@ -9,10 +9,6 @@ import { createAppRouter } from '../router'
 // that slot — keeping the rest of the app shell + the Outlet view
 // fully interactive.
 
-vi.mock('../hooks/useDatabase', () => ({
-  useDatabase: () => ({ db: {}, loading: false, error: null }),
-}))
-
 vi.mock('./BottomBar', () => ({
   BottomBar: function ThrowingBottomBar(): never {
     throw new Error('bottom-bar-crash-for-test')

@@ -8,8 +8,8 @@ function row(overrides: Partial<ItemRow> = {}): ItemRow {
   return {
     id: 1,
     name: 'Bloodstone',
-    rarity: null,
     equipment_slot: 'Trinket',
+    item_category: 'Trinket',
     minimum_level: 12,
     pack: 'Vault of Night',
     is_raid: false,
@@ -112,19 +112,17 @@ describe('PickerRow', () => {
     expect(screen.getByRole('button', { name: /Bloodstone/ })).not.toHaveAttribute('aria-current')
   })
 
-  it('shows Raid and Rare chips and includes them in the accessible name', () => {
-    renderRow([row({ is_raid: true, rarity: 'Rare' })], null)
+  it('shows the Raid chip and includes it in the accessible name', () => {
+    renderRow([row({ is_raid: true })], null)
     const button = screen.getByRole('button', { name: /Bloodstone/ })
     expect(button).toHaveTextContent('Raid')
-    expect(button).toHaveTextContent('Rare')
     // Chips come from the shared `ResourceChip`, which the detail drawer also
     // uses — the data-kind attribute is the styling contract both rely on.
     expect(button.querySelector('.resources-chip[data-kind="raid"]')).not.toBeNull()
-    expect(button.querySelector('.resources-chip[data-kind="rare"]')).not.toBeNull()
   })
 
   it('omits meta segments that have no data', () => {
-    renderRow([row({ minimum_level: null, equipment_slot: null, pack: null })], null)
+    renderRow([row({ minimum_level: null, pack: null })], null)
     const button = screen.getByRole('button', { name: /Bloodstone/ })
     expect(button).not.toHaveTextContent('ML')
   })

@@ -1,31 +1,36 @@
-import type { Database } from 'sql.js'
-import { runQuery, runQueryFirst } from './sqlHelpers'
+import { apiGet } from '../../../lib/api'
+import type {
+  ApiAdventurePack,
+  ApiAugment,
+  ApiAugmentsPage,
+  ApiItemDetail,
+  ApiItemRow,
+  ApiItemsPage,
+  ApiStat,
+} from '../../../lib/api'
 
 /**
- * The exact `items.rarity` value the pipeline writes for rare loot.
+ * The item surface of `ddo-api`, shaped for the resources views.
  *
- * Shared so the filter and its tests can't drift from each other or from the
- * ETL: the Python writer emits `Rarity.RARE` ("Rare"), and
- * `etlRegression.test.ts` asserts the shipped database actually contains it.
- * Before rarity was populated, the filter compared against a string no row ever
- * held and quietly matched nothing.
+ * Two halves: `fetch*` functions call the API (one endpoint each, no caching
+ * here — the hooks in `useItems.ts` own that), and `to*` mappers turn the
+ * API's JSON into the view types below. The mappers are pure so the shapes
+ * the views depend on are pinned by unit tests without a network.
  */
-export const RARE_RARITY = 'Rare'
+
+/** The API returns at most this many rows per page; the whole item list fits. */
+const PAGE_LIMIT = 10_000
 
 // Picker shape: just enough to render a row in PickerPanel and rank in Fuse.
 // `pack` is the alphabetically-first adventure pack the item drops in (an
 // approximation for items that drop from quests in multiple packs — most
 // items only have one source). For accurate "show items from pack X"
-// filtering, use `findItemIdsByPack` rather than equality on this column.
-// `is_raid` is true if any of the item's quest sources is tagged as raid loot
-// in `quest_loot.loot_type` (computed via `findRaidItemIds`). It is stamped on
-// every row, so the picker's "Raid only" filter reads it directly rather than
-// re-querying.
+// filtering, use `fetchItemIdsByPack` rather than equality on this column.
 export interface ItemRow {
   id: number
   name: string
-  rarity: string | null
-  equipment_slot: string | null
+  equipment_slot: string
+  item_category: string
   minimum_level: number | null
   pack: string | null
   is_raid: boolean
@@ -36,55 +41,69 @@ export interface ItemRow {
 export interface ItemCore {
   id: number
   name: string
-  rarity: string | null
-  equipment_slot: string | null
-  item_category: string | null
+  equipment_slot: string
+  item_category: string
+  item_type: string | null
   minimum_level: number | null
+  enhancement_bonus: number | null
   material: string | null
-  binding: string | null
-  tooltip: string | null
+  race_required: string | null
   description: string | null
+  drop_location: string | null
+  set_name: string | null
+  accepts_sentience: boolean
+  is_minor_artifact: boolean
   wiki_url: string | null
 }
 
 export interface ItemWeaponStats {
   damage: string | null
   critical: string | null
-  weapon_type: string | null
+  weapon_type: string
   proficiency: string | null
   handedness: string | null
+  dr_bypass: string[]
 }
 
 export interface ItemArmorStats {
+  armor_type: string
   armor_bonus: number | null
   max_dex_bonus: number | null
+  arcane_spell_failure: number | null
+  armor_check_penalty: number | null
+  shield_bonus: number | null
+  damage_reduction: number | null
+}
+
+/** Fixed content upstream recorded for a socket: one entry is a crafted
+ *  upgrade already applied, several are the choices a crafting step offers. */
+export interface ItemAugmentSlotOption {
+  name: string
+  description: string | null
+  min_level: number | null
 }
 
 export interface ItemAugmentSlot {
   sort_order: number
-  /** The `augment_slot_types` row this socket is, and the key `slotCandidates`
-   *  is indexed by. Two sockets of the same kind on one item share it. */
-  slot_id: number
   /**
    * The socket's canonical label, from one closed vocabulary the ETL composes:
    * a bare colour (`red`, `colorless`, `sun`, `moon`, …) for a gem socket, or
    * `family: variant (qualifier)` for a crafting socket —
    * `lamordia: melancholic (accessory)`, `isle of dread: set bonus`,
-   * `slaver's: prefix (legendary)`.
+   * `upgrade: tier 2`.
    *
    * Lower-case as stored; display casing is applied at render time by
    * `formatSlotLabel`. The view never parses it — `family` below is what says
-   * what kind of socket this is.
+   * what kind of socket this is. It is also the key `candidates` is indexed by.
    */
   label: string
   /** `standard` for a gem socket, otherwise the crafting family (`lamordia`,
-   *  `dino`, `slavers`). Read instead of pattern-matching the label. */
+   *  `dino`, `upgrade`, `crafting`). Read instead of pattern-matching the label. */
   family: string
   /** The augment pool a crafting socket draws from (`weapon` / `armor` /
-   *  `accessory`) or a Slaver's socket's `legendary` grade; null when the
-   *  socket has neither. Carried so no consumer has to take it out of the
-   *  label. */
+   *  `accessory`) or a grade; null when the socket has neither. */
   qualifier: string | null
+  options: ItemAugmentSlotOption[]
 }
 
 /** One augment that fits a slot: what the candidate dropdown renders. */
@@ -92,14 +111,9 @@ export interface AugmentCandidate {
   augment_id: number
   name: string
   min_level: number | null
-  /** Generated bonus labels ("Charisma +5"). Empty for the 430 shipped
-   *  augments whose bonuses the pipeline has not resolved yet. */
+  /** Bonus labels ("Charisma +5"), derived by the ETL from the augment's
+   *  simple effects. Empty for augments whose effects are dice or conditions. */
   bonuses: string[]
-}
-
-export interface ItemUpgrade {
-  base_item_id: number
-  upgrade_tier: number
 }
 
 export interface ItemBonus {
@@ -107,10 +121,9 @@ export interface ItemBonus {
   name: string
   description: string | null
   bonus_type: string | null
-  /** The underlying stat the bonus modifies (e.g. "Strength", "Spell Power").
-   *  Null for non-stat bonuses (e.g. "On hit: -1 AC to target"). Drives the
-   *  per-row wiki link — links resolve to `https://ddowiki.com/page/<stat>`. */
-  stat_name: string | null
+  /** The stat the bonus modifies (e.g. "Strength", "Fire Spell Power").
+   *  Drives the per-row wiki link — links resolve to `https://ddowiki.com/page/<stat>`. */
+  stat_name: string
   value: number | null
   sort_order: number
 }
@@ -118,15 +131,16 @@ export interface ItemBonus {
 export interface ItemEffect {
   effect_id: number
   name: string
-  modifier: string | null
+  description: string | null
+  /** What the effect applies to when it says (`Fire`, `All`). */
+  target: string | null
   value: number | null
   sort_order: number
 }
 
-export interface ItemSpellLink {
-  spell_id: number
+export interface ItemClickie {
   name: string
-  charges: number | null
+  description: string | null
 }
 
 export interface ItemQuestRef {
@@ -135,152 +149,114 @@ export interface ItemQuestRef {
   level: number | null
   pack: string | null
   patron: string | null
-  zone: string | null
-  npc: string | null
-  /** True when this particular drop is rare loot. Mapping-level, from
-   *  `quest_loot.is_rare` — the same item can be a rare drop in one place and
-   *  a guaranteed reward in another, which the item-level `rarity` can't say. */
-  is_rare: boolean
+  loot_type: string | null
+  is_raid: boolean
 }
 
 export interface ItemDetail extends ItemCore {
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
   augmentSlots: ItemAugmentSlot[]
-  /** Candidate augments per `slot_id`, for the sockets that get a dropdown
-   *  (see `slotTakesCandidateList`). Plain colour sockets are absent: they
-   *  accept hundreds of augments and render as a gem, not a list. */
-  slotCandidates: Record<number, AugmentCandidate[]>
-  upgrades: ItemUpgrade[]
   bonuses: ItemBonus[]
   effects: ItemEffect[]
-  spellLinks: ItemSpellLink[]
+  clickies: ItemClickie[]
   quests: ItemQuestRef[]
 }
 
-/** Distinct stat names referenced by any item bonus. Populates the picker's
- *  stat filter dropdown. */
-export function listBonusStats(db: Database): string[] {
-  return runQuery<{ name: string }>(
-    db,
-    `SELECT DISTINCT s.name AS name
-       FROM stats s
-       JOIN bonuses b ON b.stat_id = s.id
-       JOIN item_bonuses ib ON ib.bonus_id = b.id
-       ORDER BY s.name COLLATE NOCASE`,
-  ).map((r) => r.name)
+export function toItemRow(row: ApiItemRow): ItemRow {
+  return {
+    id: row.id,
+    name: row.name,
+    equipment_slot: row.slot,
+    item_category: row.category,
+    minimum_level: row.minimum_level,
+    pack: row.pack,
+    is_raid: row.is_raid,
+  }
 }
 
-/**
- * Return the set of item IDs that drop from a raid.
- *
- * Reads `quest_loot.loot_type`, which the Python pipeline populates from the
- * wiki's own loot categories (`Chest_loot` / `Quest_rewards` / `Raid_loot`).
- * This replaced a hardcoded list of raid quest names in this file — five of
- * those names matched no quest row, silently hiding 262 items.
- *
- * Note the column is currently filled by an offline backfill rather than a
- * live scrape (ddowiki is behind a WAF challenge) — see
- * `scripts/src/ddo_data/game_data/raid_quests.py`. That's invisible from here:
- * either way the answer comes from the DB.
- */
-export function findRaidItemIds(db: Database): Set<number> {
-  const rows = runQuery<{ item_id: number }>(
-    db,
-    `SELECT DISTINCT item_id
-       FROM quest_loot
-      WHERE loot_type = 'raid'`,
-  )
-  return new Set(rows.map((r) => r.item_id))
+export function toItemDetail(d: ApiItemDetail): ItemDetail {
+  return {
+    id: d.id,
+    name: d.name,
+    equipment_slot: d.slot,
+    item_category: d.category,
+    item_type: d.item_type,
+    minimum_level: d.minimum_level,
+    enhancement_bonus: d.enhancement_bonus,
+    material: d.material,
+    race_required: d.race_required,
+    description: d.description,
+    drop_location: d.drop_location,
+    set_name: d.set?.name ?? d.set_name,
+    accepts_sentience: d.accepts_sentience,
+    is_minor_artifact: d.is_minor_artifact,
+    wiki_url: d.wiki_url,
+    weaponStats: d.weapon
+      ? {
+          damage: d.weapon.damage,
+          critical: d.weapon.critical,
+          weapon_type: d.weapon.weapon_type,
+          proficiency: d.weapon.proficiency,
+          handedness: d.weapon.handedness,
+          dr_bypass: d.weapon.dr_bypass,
+        }
+      : null,
+    armorStats: d.armor
+      ? {
+          armor_type: d.armor.armor_type,
+          armor_bonus: d.armor.armor_bonus,
+          max_dex_bonus: d.armor.max_dex_bonus,
+          arcane_spell_failure: d.armor.arcane_spell_failure,
+          armor_check_penalty: d.armor.armor_check_penalty,
+          shield_bonus: d.armor.shield_bonus,
+          damage_reduction: d.armor.damage_reduction,
+        }
+      : null,
+    augmentSlots: d.augment_slots.map((s) => ({
+      sort_order: s.sort_order,
+      label: s.label,
+      family: s.family,
+      qualifier: s.qualifier,
+      options: s.options,
+    })),
+    bonuses: d.bonuses.map((b, i) => ({
+      bonus_id: b.id,
+      name: b.name,
+      description: b.description,
+      bonus_type: b.bonus_type,
+      stat_name: b.stat,
+      value: b.value,
+      sort_order: i,
+    })),
+    effects: d.effects.map((e, i) => ({
+      effect_id: e.id,
+      name: e.name,
+      description: e.description,
+      target: e.target,
+      value: e.value,
+      sort_order: i,
+    })),
+    clickies: d.clickies.map((c) => ({ name: c.name, description: c.description })),
+    quests: d.quests.map((q) => ({
+      quest_id: q.id,
+      name: q.name,
+      level: q.level,
+      pack: q.pack,
+      patron: q.patron,
+      loot_type: q.loot_type,
+      is_raid: q.is_raid,
+    })),
+  }
 }
 
-/**
- * Return the set of item IDs that carry a bonus boosting ANY of the listed
- * stats (OR semantics — a player browsing for "Cha or Wis gear" expects
- * everything matching either). Returns an empty set when no stats are
- * passed; callers should skip the call entirely in that case.
- */
-export function findItemIdsByStats(db: Database, stats: readonly string[]): Set<number> {
-  if (stats.length === 0) return new Set()
-  const placeholders = stats.map(() => '?').join(', ')
-  const rows = runQuery<{ item_id: number }>(
-    db,
-    `SELECT DISTINCT ib.item_id AS item_id
-       FROM item_bonuses ib
-       JOIN bonuses b ON b.id = ib.bonus_id
-       JOIN stats s ON s.id = b.stat_id
-      WHERE s.name IN (${placeholders})`,
-    stats as unknown as string[],
-  )
-  return new Set(rows.map((r) => r.item_id))
-}
-
-/** Lightweight name lookup — used by the breadcrumb to resolve display
- *  labels for stack entries that don't carry a name yet (e.g., URL-seeded
- *  depth-1 entries). One indexed-PK query, sub-millisecond. */
-export function findItemNameById(db: Database, id: number): string | null {
-  const rows = runQuery<{ name: string }>(db, 'SELECT name FROM items WHERE id = ?', [id])
-  return rows[0]?.name ?? null
-}
-
-// Pull every item the picker might display. Search ranking happens client-side
-// via Fuse.js — the SQL layer just hands over the raw rows in a stable initial
-// order. Default sort is descending `minimum_level` so the highest-level items
-// surface first; ties break by slot then name for deterministic ordering
-// within a level band. The leading `minimum_level IS NULL` term sorts
-// un-leveled placeholder items last rather than letting them dominate the top
-// (SQLite has no `NULLS LAST` in this position).
-//
-// The `pack` correlated subquery picks the alphabetically-first adventure
-// pack across the item's quest sources (cheap approximation; most items drop
-// in one pack). `is_raid` is applied in JS from one `findRaidItemIds` set
-// lookup rather than a correlated EXISTS per row — one query, O(1) per row.
-export function listItems(db: Database): ItemRow[] {
-  const rows = runQuery<Omit<ItemRow, 'is_raid'>>(
-    db,
-    `SELECT i.id, i.name, i.rarity, i.equipment_slot, i.minimum_level,
-            (SELECT MIN(ap.name)
-               FROM quest_loot ql
-               JOIN quests q ON q.id = ql.quest_id
-               LEFT JOIN adventure_packs ap ON ap.id = q.pack_id
-               WHERE ql.item_id = i.id) AS pack
-       FROM items i
-       ORDER BY i.minimum_level IS NULL, i.minimum_level DESC,
-                i.equipment_slot, i.name COLLATE NOCASE`,
-  )
-  const raidIds = findRaidItemIds(db)
-  return rows.map((r) => ({ ...r, is_raid: raidIds.has(r.id) }))
-}
-
-/** Distinct adventure-pack names that have at least one item-dropping quest.
- *  Powers the picker's "Pack" filter dropdown — packs with no droppable items
- *  would just be empty options. */
-export function listAdventurePacks(db: Database): string[] {
-  return runQuery<{ name: string }>(
-    db,
-    `SELECT DISTINCT ap.name AS name
-       FROM adventure_packs ap
-       JOIN quests q ON q.pack_id = ap.id
-       JOIN quest_loot ql ON ql.quest_id = q.id
-       ORDER BY ap.name COLLATE NOCASE`,
-  ).map((r) => r.name)
-}
-
-/** Items that drop from any quest in the given adventure pack. Returns a Set
- *  for O(1) membership checks during PickerPanel's filter pass. The display
- *  column `ItemRow.pack` is alphabetically-first only — for "items from this
- *  pack" semantics we need the full source set, hence this query. */
-export function findItemIdsByPack(db: Database, pack: string): Set<number> {
-  const rows = runQuery<{ item_id: number }>(
-    db,
-    `SELECT DISTINCT ql.item_id AS item_id
-       FROM quest_loot ql
-       JOIN quests q ON q.id = ql.quest_id
-       JOIN adventure_packs ap ON ap.id = q.pack_id
-       WHERE ap.name = ?`,
-    [pack],
-  )
-  return new Set(rows.map((r) => r.item_id))
+export function toAugmentCandidate(a: ApiAugment): AugmentCandidate {
+  return {
+    augment_id: a.id,
+    name: a.name,
+    min_level: a.min_level,
+    bonuses: a.bonuses.map((b) => b.name),
+  }
 }
 
 /**
@@ -309,177 +285,59 @@ export function slotTakesCandidateList(family: string, label: string): boolean {
   return isFamilySlot(family) || label === 'sun' || label === 'moon'
 }
 
-/**
- * The augments that fit a socket, in the order a player scans them (level, then
- * name), each with its bonus labels.
- *
- * Joined on `augments.slot_id`, the FK the pipeline backfills from the socket's
- * label — the wiki-sourced `slot_color` is a display fallback and is never
- * queried on. A socket with no matching augments returns an empty list, which
- * is correct for Slaver's sockets: Slave Lords crafting fills those with shards
- * rather than augments.
- */
-export function getAugmentsForSlot(db: Database, slotId: number): AugmentCandidate[] {
-  const rows = runQuery<{
-    augment_id: number
-    name: string
-    min_level: number | null
-    bonus: string | null
-  }>(
-    db,
-    `SELECT a.id AS augment_id, a.name AS name, a.min_level AS min_level,
-            b.name AS bonus
-       FROM augments a
-       LEFT JOIN augment_bonuses ab ON ab.augment_id = a.id
-       LEFT JOIN bonuses b ON b.id = ab.bonus_id
-      WHERE a.slot_id = ?
-      ORDER BY a.min_level IS NULL, a.min_level, a.name COLLATE NOCASE,
-               ab.sort_order`,
-    [slotId],
-  )
-
-  // One row per (augment, bonus) — folded here rather than with GROUP_CONCAT
-  // so a bonus name containing a comma stays one bonus.
-  const byId = new Map<number, AugmentCandidate>()
-  for (const row of rows) {
-    let candidate = byId.get(row.augment_id)
-    if (!candidate) {
-      candidate = {
-        augment_id: row.augment_id,
-        name: row.name,
-        min_level: row.min_level,
-        bonuses: [],
-      }
-      byId.set(row.augment_id, candidate)
-    }
-    if (row.bonus) candidate.bonuses.push(row.bonus)
-  }
-  return [...byId.values()]
+/** Every item the picker might display. Search ranking happens client-side via
+ *  Fuse.js. Sorted by descending minimum level so the highest-level items
+ *  surface first; ties break by slot then name. Un-leveled items sort last. */
+export async function fetchItemRows(): Promise<ItemRow[]> {
+  const page = await apiGet<ApiItemsPage>('/v1/items', { limit: PAGE_LIMIT })
+  return page.items.map(toItemRow).sort(compareRows)
 }
 
-export function getItemDetail(db: Database, id: number): ItemDetail | null {
-  // Column list matches ItemCore exactly. `level`, `base_value`, and `icon`
-  // exist on the table but no UI surfaces them — add them back here when
-  // something renders them, rather than paying for columns nobody reads.
-  const core = runQueryFirst<ItemCore>(
-    db,
-    `SELECT id, name, rarity, equipment_slot, item_category, minimum_level,
-            material, binding, tooltip,
-            description, wiki_url
-       FROM items
-       WHERE id = ?`,
-    [id],
-  )
-  if (!core) return null
+function compareRows(a: ItemRow, b: ItemRow): number {
+  if (a.minimum_level === null && b.minimum_level !== null) return 1
+  if (b.minimum_level === null && a.minimum_level !== null) return -1
+  if (a.minimum_level !== b.minimum_level) return (b.minimum_level ?? 0) - (a.minimum_level ?? 0)
+  const slot = a.equipment_slot.localeCompare(b.equipment_slot)
+  if (slot !== 0) return slot
+  return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+}
 
-  const weaponStats = runQueryFirst<ItemWeaponStats>(
-    db,
-    `SELECT damage, critical, weapon_type, proficiency, handedness
-       FROM item_weapon_stats
-       WHERE item_id = ?`,
-    [id],
-  )
+export async function fetchItemDetail(id: number): Promise<ItemDetail> {
+  return toItemDetail(await apiGet<ApiItemDetail>(`/v1/items/${id}`))
+}
 
-  const armorStats = runQueryFirst<ItemArmorStats>(
-    db,
-    `SELECT armor_bonus, max_dex_bonus
-       FROM item_armor_stats
-       WHERE item_id = ?`,
-    [id],
-  )
+/** Adventure packs, for the picker's "Pack" filter dropdown. */
+export async function fetchAdventurePacks(): Promise<string[]> {
+  const packs = await apiGet<ApiAdventurePack[]>('/v1/adventure-packs')
+  return packs.map((p) => p.name)
+}
 
-  const augmentSlots = runQuery<ItemAugmentSlot>(
-    db,
-    `SELECT s.sort_order AS sort_order, s.slot_id AS slot_id, t.label AS label,
-            t.family AS family, t.qualifier AS qualifier
-       FROM item_augment_slots s
-       JOIN augment_slot_types t ON t.id = s.slot_id
-       WHERE s.item_id = ?
-       ORDER BY s.sort_order`,
-    [id],
-  )
+/** Stat names, for the picker's stat filter dropdown. */
+export async function fetchStatOptions(): Promise<string[]> {
+  const stats = await apiGet<ApiStat[]>('/v1/stats')
+  return stats.map((s) => s.name).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+}
 
-  // One query per distinct socket, not per slot: an item with two Lamordia
-  // accessory sockets offers the same augments in both.
-  const slotCandidates: Record<number, AugmentCandidate[]> = {}
-  for (const slot of augmentSlots) {
-    if (!slotTakesCandidateList(slot.family, slot.label)) continue
-    if (slot.slot_id in slotCandidates) continue
-    slotCandidates[slot.slot_id] = getAugmentsForSlot(db, slot.slot_id)
-  }
+/** Ids of the items carrying a bonus to `stat`. */
+export async function fetchItemIdsByStat(stat: string): Promise<Set<number>> {
+  const page = await apiGet<ApiItemsPage>('/v1/items', { stat, limit: PAGE_LIMIT })
+  return new Set(page.items.map((r) => r.id))
+}
 
-  const upgrades = runQuery<ItemUpgrade>(
-    db,
-    `SELECT base_item_id, upgrade_tier
-       FROM item_upgrades
-       WHERE item_id = ?
-       ORDER BY upgrade_tier`,
-    [id],
-  )
+/** Ids of the items dropping from any quest in `pack`. */
+export async function fetchItemIdsByPack(pack: string): Promise<Set<number>> {
+  const page = await apiGet<ApiItemsPage>('/v1/items', { pack, limit: PAGE_LIMIT })
+  return new Set(page.items.map((r) => r.id))
+}
 
-  const bonuses = runQuery<ItemBonus>(
-    db,
-    `SELECT b.id AS bonus_id, b.name AS name, b.description AS description,
-            bt.name AS bonus_type, s.name AS stat_name,
-            b.value AS value, ib.sort_order AS sort_order
-       FROM item_bonuses ib
-       JOIN bonuses b ON b.id = ib.bonus_id
-       LEFT JOIN bonus_types bt ON bt.id = b.bonus_type_id
-       LEFT JOIN stats s ON s.id = b.stat_id
-       WHERE ib.item_id = ?
-       ORDER BY ib.sort_order`,
-    [id],
-  )
-
-  const effects = runQuery<ItemEffect>(
-    db,
-    `SELECT e.id AS effect_id, e.name AS name, e.modifier AS modifier,
-            ie.value AS value, ie.sort_order AS sort_order
-       FROM item_effects ie
-       JOIN effects e ON e.id = ie.effect_id
-       WHERE ie.item_id = ?
-       ORDER BY ie.sort_order`,
-    [id],
-  )
-
-  const spellLinks = runQuery<ItemSpellLink>(
-    db,
-    `SELECT s.id AS spell_id, s.name AS name, isl.charges AS charges
-       FROM item_spell_links isl
-       JOIN spells s ON s.id = isl.spell_id
-       WHERE isl.item_id = ?
-       ORDER BY s.name`,
-    [id],
-  )
-
-  // `q.npc` is read but the column is universally null today — the ETL doesn't
-  // populate it yet (see Phase 4c in docs/roadmap.md). The UI already filters
-  // null segments out, so this is harmless pre-wiring; once the scraper ships
-  // npc data, the meta line surfaces it without a frontend change.
-  const quests = runQuery<Omit<ItemQuestRef, 'is_rare'> & { is_rare: number }>(
-    db,
-    `SELECT q.id AS quest_id, q.name AS name, q.level AS level,
-            ap.name AS pack, p.name AS patron, q.zone AS zone,
-            q.npc AS npc, ql.is_rare AS is_rare
-       FROM quest_loot ql
-       JOIN quests q ON q.id = ql.quest_id
-       LEFT JOIN adventure_packs ap ON ap.id = q.pack_id
-       LEFT JOIN patrons p ON p.id = q.patron_id
-       WHERE ql.item_id = ?
-       ORDER BY q.level, q.name`,
-    [id],
-  ).map((q) => ({ ...q, is_rare: q.is_rare === 1 }))
-
-  return {
-    ...core,
-    weaponStats,
-    armorStats,
-    augmentSlots,
-    slotCandidates,
-    upgrades,
-    bonuses,
-    effects,
-    spellLinks,
-    quests,
-  }
+/** The augments that fit a socket, in the order a player scans them (level,
+ *  then name). A socket with no matching augments returns an empty list. */
+export async function fetchAugmentsForSlot(label: string): Promise<AugmentCandidate[]> {
+  const page = await apiGet<ApiAugmentsPage>('/v1/augments', { slot: label, limit: PAGE_LIMIT })
+  return page.augments.map(toAugmentCandidate).sort((a, b) => {
+    if (a.min_level === null && b.min_level !== null) return 1
+    if (b.min_level === null && a.min_level !== null) return -1
+    if (a.min_level !== b.min_level) return (a.min_level ?? 0) - (b.min_level ?? 0)
+    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  })
 }

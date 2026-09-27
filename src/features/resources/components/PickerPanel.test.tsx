@@ -2,39 +2,35 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { PickerPanel } from './PickerPanel'
-import { RARE_RARITY, type ItemRow } from '../queries/items'
+import type { ItemRow } from '../queries/items'
 
 const navigateMock = vi.fn()
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
 }))
 
-vi.mock('../../../hooks/useDatabase', () => ({
-  useDatabase: () => ({ db: {}, loading: false, error: null }),
+// The panel reads its option lists and id-sets through the query hooks. The
+// id-set hooks are spied so the tests can assert they are consulted only once
+// a stat or pack is actually picked (the hooks themselves stay disabled until
+// then — see `useItems.ts`).
+const useItemIdsByStats = vi.fn((stats: readonly string[]) =>
+  stats.length === 0 ? null : new Set<number>([1]),
+)
+const useItemIdsByPack = vi.fn((pack: string) => (pack === '' ? null : new Set<number>([2])))
+
+vi.mock('../queries/useItems', () => ({
+  useStatOptions: () => ({ data: ['Charisma', 'Strength'] }),
+  useAdventurePacks: () => ({ data: ['Vault of Night', 'Shadowfell'] }),
+  useItemIdsByStats: (stats: readonly string[]) => useItemIdsByStats(stats),
+  useItemIdsByPack: (pack: string) => useItemIdsByPack(pack),
 }))
-
-const findRaidItemIds = vi.fn(() => new Set<number>())
-const findItemIdsByStats = vi.fn(() => new Set<number>([1]))
-const findItemIdsByPack = vi.fn(() => new Set<number>([2]))
-
-vi.mock('../queries/items', async () => {
-  const actual = await vi.importActual<typeof import('../queries/items')>('../queries/items')
-  return {
-    ...actual,
-    listBonusStats: vi.fn(() => ['Charisma', 'Strength']),
-    listAdventurePacks: vi.fn(() => ['Vault of Night', 'Shadowfell']),
-    findRaidItemIds: (...args: unknown[]) => findRaidItemIds(...(args as [])),
-    findItemIdsByStats: (...args: unknown[]) => findItemIdsByStats(...(args as [])),
-    findItemIdsByPack: (...args: unknown[]) => findItemIdsByPack(...(args as [])),
-  }
-})
 
 function row(overrides: Partial<ItemRow> = {}): ItemRow {
   return {
     id: 1,
     name: 'Bloodstone',
-    rarity: null,
     equipment_slot: 'Trinket',
+    item_category: 'Trinket',
     minimum_level: 12,
     pack: 'Vault of Night',
     is_raid: false,
@@ -42,14 +38,8 @@ function row(overrides: Partial<ItemRow> = {}): ItemRow {
   }
 }
 
-// `RARE_RARITY` rather than a literal: the picker compares against the exact
-// string the ETL writes, and this fixture has to hold the same one. It seeded
-// 'Rare' for months while `items.rarity` was 100% empty in the shipped DB, so
-// the filter passed here and matched nothing in production.
-// `etlRegression.test.ts` is the other half — it asserts the real database
-// actually contains this value.
 const ROWS: ItemRow[] = [
-  row({ id: 1, name: 'Bloodstone', is_raid: true, rarity: RARE_RARITY, minimum_level: 12 }),
+  row({ id: 1, name: 'Bloodstone', is_raid: true, minimum_level: 12 }),
   row({ id: 2, name: 'Cloak of Night', equipment_slot: 'Back', minimum_level: 20 }),
   row({ id: 3, name: 'Ring of Spell Storing', equipment_slot: 'Ring', minimum_level: 4 }),
 ]
@@ -86,22 +76,13 @@ describe('PickerPanel filters', () => {
     expect(screen.getByText('1 result')).toBeInTheDocument()
   })
 
-  // The raid flag already rides along on every row (listItems stamps it), so
-  // filtering must not fire a second `findRaidItemIds` query. Before this, the
-  // join ran once at mount for everyone AND again on toggle.
-  it('filters to raid items without issuing another raid query', async () => {
+  // The raid flag rides along on every row, so filtering is local.
+  it('filters to raid items', async () => {
     renderPanel()
     await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
 
     expect(screen.getByText('1 result')).toBeInTheDocument()
     expect(rowNames().some((n) => n.includes('Bloodstone'))).toBe(true)
-    expect(findRaidItemIds).not.toHaveBeenCalled()
-  })
-
-  it('filters to rare items', async () => {
-    renderPanel()
-    await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
-    expect(screen.getByText('1 result')).toBeInTheDocument()
   })
 
   it('filters by equipment slot', async () => {
@@ -123,12 +104,14 @@ describe('PickerPanel filters', () => {
     expect(screen.getByText('2 results')).toBeInTheDocument()
   })
 
-  // Stats and pack genuinely need a SQL round trip — the row shape can't
+  // Stats and pack genuinely need an API round trip — the row shape can't
   // answer them (a row carries only its alphabetically-first pack, and no
-  // stat list at all). Assert they're queried lazily, not on mount.
-  it('queries the stat item-id set only once a stat is picked', async () => {
+  // stat list at all). Assert the hooks are asked with a real selection only
+  // once one is picked; with none they are called with the empty selection,
+  // which is what keeps the underlying query disabled.
+  it('asks for the stat item-id set only once a stat is picked', async () => {
     const { container } = renderPanel()
-    expect(findItemIdsByStats).not.toHaveBeenCalled()
+    expect(useItemIdsByStats).not.toHaveBeenCalledWith(expect.arrayContaining(['Charisma']))
 
     // "Any" is also the empty option label on both selects, so target the
     // multi-select's <summary> trigger directly.
@@ -136,17 +119,17 @@ describe('PickerPanel filters', () => {
     await userEvent.click(trigger as Element)
     await userEvent.click(screen.getByRole('checkbox', { name: 'Charisma' }))
 
-    expect(findItemIdsByStats).toHaveBeenCalledWith(expect.anything(), ['Charisma'])
+    expect(useItemIdsByStats).toHaveBeenCalledWith(['Charisma'])
     expect(screen.getByText('1 result')).toBeInTheDocument()
   })
 
-  it('queries the pack item-id set only once a pack is picked', async () => {
+  it('asks for the pack item-id set only once a pack is picked', async () => {
     renderPanel()
-    expect(findItemIdsByPack).not.toHaveBeenCalled()
+    expect(useItemIdsByPack).not.toHaveBeenCalledWith('Shadowfell')
 
     await userEvent.selectOptions(screen.getByLabelText('Pack'), 'Shadowfell')
 
-    expect(findItemIdsByPack).toHaveBeenCalledWith(expect.anything(), 'Shadowfell')
+    expect(useItemIdsByPack).toHaveBeenCalledWith('Shadowfell')
     // The mocked set contains only id 2.
     expect(rowNames().some((n) => n.includes('Cloak of Night'))).toBe(true)
   })
@@ -164,13 +147,13 @@ describe('PickerPanel active-filter chips', () => {
   it('renders a chip per active filter and clears just that one', async () => {
     renderPanel()
     await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
+    await userEvent.selectOptions(screen.getByLabelText('Slot'), 'Back')
 
     const remove = screen.getByRole('button', { name: 'Remove filter: Raid' })
     await userEvent.click(remove)
 
     expect(screen.queryByRole('button', { name: 'Remove filter: Raid' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Remove filter: Rare' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Remove filter: .*Back/ })).toBeInTheDocument()
   })
 
   it('renders the min/max level range as a single chip', async () => {

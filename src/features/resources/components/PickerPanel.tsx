@@ -12,15 +12,13 @@ import { useNavigate } from '@tanstack/react-router'
 import { List } from 'react-window'
 import { ChevronDown, X } from 'lucide-react'
 import type { Category } from '../types'
+import type { ItemRow } from '../queries/items'
 import {
-  findItemIdsByPack,
-  findItemIdsByStats,
-  listAdventurePacks,
-  listBonusStats,
-  RARE_RARITY,
-  type ItemRow,
-} from '../queries/items'
-import { useDatabase } from '../../../hooks/useDatabase'
+  useAdventurePacks,
+  useItemIdsByPack,
+  useItemIdsByStats,
+  useStatOptions,
+} from '../queries/useItems'
 import { useDebouncedValue } from '../../../hooks'
 import { buildItemsIndex, searchItems } from '../search'
 import { PickerRow } from './PickerRow'
@@ -40,10 +38,6 @@ interface ItemFilters {
    *  `findItemIdsByPack` set lookup (not row-level equality on `pack`),
    *  since the row's `pack` is only the alphabetically-first source. */
   pack: string
-  /** Boolean toggle — items.rarity === 'Rare'. Other rarity values aren't
-   *  reliably populated by the scraper and "Rare" is the most useful filter
-   *  in the meantime. */
-  rareOnly: boolean
   /** Boolean toggle — reads `ItemRow.is_raid`, which `listItems` already
    *  stamped onto every row. No extra query. */
   raidOnly: boolean
@@ -58,7 +52,6 @@ interface ItemFilters {
 const EMPTY_FILTERS: ItemFilters = {
   slot: '',
   pack: '',
-  rareOnly: false,
   raidOnly: false,
   stats: [],
   minLevelMin: '',
@@ -165,7 +158,6 @@ function applyRowFilters(rows: ItemRow[], filters: ItemFilters): ItemRow[] {
   const max = filters.minLevelMax ? Number(filters.minLevelMax) : null
   return rows.filter((r) => {
     if (filters.slot && r.equipment_slot !== filters.slot) return false
-    if (filters.rareOnly && r.rarity !== RARE_RARITY) return false
     if (filters.raidOnly && !r.is_raid) return false
     if (min !== null && (r.minimum_level === null || r.minimum_level < min)) return false
     if (max !== null && (r.minimum_level === null || r.minimum_level > max)) return false
@@ -173,7 +165,7 @@ function applyRowFilters(rows: ItemRow[], filters: ItemFilters): ItemRow[] {
   })
 }
 
-function distinctSorted(rows: ItemRow[], pick: (r: ItemRow) => string | null): string[] {
+function distinctSorted(rows: ItemRow[], pick: (r: ItemRow) => string): string[] {
   const set = new Set<string>()
   for (const r of rows) {
     const v = pick(r)
@@ -190,7 +182,6 @@ export function PickerPanel({
   searchInputRef,
 }: PickerPanelProps): JSX.Element {
   const navigate = useNavigate()
-  const { db } = useDatabase()
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<ItemFilters>(EMPTY_FILTERS)
   const debounced = useDebouncedValue(search, SEARCH_DEBOUNCE_MS)
@@ -198,31 +189,23 @@ export function PickerPanel({
   const slotSelectId = useId()
   const packSelectId = useId()
 
-  const statOptions = useMemo(() => (db ? listBonusStats(db) : []), [db])
-  const packOptions = useMemo(() => (db ? listAdventurePacks(db) : []), [db])
+  const statOptions = useStatOptions().data ?? []
+  const packOptions = useAdventurePacks().data ?? []
 
-  // Compute the matching item-id set only when at least one stat is picked,
-  // so users not filtering by stat pay nothing for the JOIN.
-  const statItemIdSet = useMemo(() => {
-    if (!db || filters.stats.length === 0) return null
-    return findItemIdsByStats(db, filters.stats)
-  }, [db, filters.stats])
-
-  // Pack item-id set — same lazy pattern as raid/stats. Items can drop from
-  // multiple packs, so we filter by Set membership rather than by equality
-  // on the row's `pack` (which is alphabetically-first only).
-  const packItemIdSet = useMemo(() => {
-    if (!db || !filters.pack) return null
-    return findItemIdsByPack(db, filters.pack)
-  }, [db, filters.pack])
+  // The matching item-id sets are fetched only once a stat or pack is picked,
+  // so users not filtering by them pay nothing. Items can drop from multiple
+  // packs, so pack filtering is by Set membership rather than by equality on
+  // the row's `pack` (which is alphabetically-first only).
+  const statItemIdSet = useItemIdsByStats(filters.stats)
+  const packItemIdSet = useItemIdsByPack(filters.pack)
 
   // Filters apply BEFORE Fuse so the index only carries currently-visible
   // rows. Filter changes are infrequent vs. keystrokes; rebuilding the
   // index on filter change is fine, rebuilding it on every keystroke is not.
   //
-  // Slot / rarity / raid / ML are all answerable from the row itself, so
-  // `applyRowFilters` handles them with no SQL. Only stats and pack need a
-  // query: a row carries no stat list, and its `pack` is the alphabetically-
+  // Slot / raid / ML are all answerable from the row itself, so
+  // `applyRowFilters` handles them locally. Only stats and pack need a
+  // request: a row carries no stat list, and its `pack` is the alphabetically-
   // first source rather than the full set.
   const filteredRows = useMemo(() => {
     let result = applyRowFilters(rows, filters)
@@ -246,7 +229,6 @@ export function PickerPanel({
   const hasActiveFilters =
     !!filters.slot ||
     !!filters.pack ||
-    filters.rareOnly ||
     filters.raidOnly ||
     filters.stats.length > 0 ||
     !!filters.minLevelMin ||
@@ -274,13 +256,6 @@ export function PickerPanel({
       key: 'slot',
       label: filters.slot,
       onRemove: () => updateFilter('slot', ''),
-    })
-  }
-  if (filters.rareOnly) {
-    activeChips.push({
-      key: 'rare',
-      label: 'Rare',
-      onRemove: () => updateFilter('rareOnly', false),
     })
   }
   if (filters.raidOnly) {
@@ -370,14 +345,6 @@ export function PickerPanel({
             </select>
           </SelectShell>
         </label>
-        <button
-          type="button"
-          className={`resources-filter-toggle${filters.rareOnly ? ' active' : ''}`}
-          aria-pressed={filters.rareOnly}
-          onClick={() => updateFilter('rareOnly', !filters.rareOnly)}
-        >
-          Rare only
-        </button>
         <button
           type="button"
           className={`resources-filter-toggle${filters.raidOnly ? ' active' : ''}`}

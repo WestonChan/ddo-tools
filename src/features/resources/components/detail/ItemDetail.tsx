@@ -7,26 +7,33 @@ import { EnchantmentList } from './EnchantmentList'
 import { DetailSection } from './DetailSection'
 import { StatList, type StatListItem } from './StatList'
 import type { KvItem } from './KeyValueGrid'
+import { formatSigned } from './formatSigned'
 import type {
+  AugmentCandidate,
   ItemDetail as ItemDetailRow,
   ItemQuestRef,
-  ItemSpellLink,
-  ItemUpgrade,
   ItemWeaponStats,
   ItemArmorStats,
 } from '../../queries/items'
 
-function buildHeaderAttributes(detail: ItemDetailRow): KvItem[] {
+function buildHeaderAttributes(
+  detail: ItemDetailRow,
+  candidates: Record<string, AugmentCandidate[]>,
+): KvItem[] {
   const attrs: KvItem[] = []
-  if (detail.equipment_slot) attrs.push({ label: 'Slot', value: detail.equipment_slot })
-  if (detail.item_category) attrs.push({ label: 'Type', value: detail.item_category })
+  attrs.push({ label: 'Slot', value: detail.equipment_slot })
+  attrs.push({ label: 'Type', value: detail.item_type ?? detail.item_category })
   if (detail.minimum_level !== null) attrs.push({ label: 'Min level', value: detail.minimum_level })
+  if (detail.enhancement_bonus !== null) {
+    attrs.push({ label: 'Enhancement', value: formatSigned(detail.enhancement_bonus) })
+  }
   if (detail.material) attrs.push({ label: 'Material', value: detail.material })
-  if (detail.binding) attrs.push({ label: 'Binding', value: detail.binding })
+  if (detail.race_required) attrs.push({ label: 'Race', value: detail.race_required })
+  if (detail.set_name) attrs.push({ label: 'Set', value: detail.set_name })
   if (detail.augmentSlots.length > 0) {
     attrs.push({
       label: 'Augment slots',
-      value: <AugmentSlotList slots={detail.augmentSlots} candidates={detail.slotCandidates} />,
+      value: <AugmentSlotList slots={detail.augmentSlots} candidates={candidates} />,
     })
   }
   return attrs
@@ -36,7 +43,7 @@ function buildWeaponStats(stats: ItemWeaponStats): StatListItem[] {
   const items: StatListItem[] = []
   if (stats.damage) items.push({ label: 'Damage', value: stats.damage })
   if (stats.critical) items.push({ label: 'Critical', value: stats.critical })
-  if (stats.weapon_type) items.push({ label: 'Type', value: stats.weapon_type })
+  items.push({ label: 'Type', value: stats.weapon_type })
   if (stats.proficiency) items.push({ label: 'Proficiency', value: stats.proficiency })
   if (stats.handedness) items.push({ label: 'Handedness', value: stats.handedness })
   return items
@@ -44,14 +51,29 @@ function buildWeaponStats(stats: ItemWeaponStats): StatListItem[] {
 
 function buildArmorStats(stats: ItemArmorStats): StatListItem[] {
   const items: StatListItem[] = []
+  items.push({ label: 'Type', value: stats.armor_type })
   if (stats.armor_bonus !== null) items.push({ label: 'Armor bonus', value: stats.armor_bonus })
+  if (stats.shield_bonus !== null) items.push({ label: 'Shield bonus', value: stats.shield_bonus })
   if (stats.max_dex_bonus !== null)
     items.push({ label: 'Max Dex bonus', value: stats.max_dex_bonus })
+  if (stats.arcane_spell_failure !== null)
+    items.push({ label: 'Arcane spell failure', value: `${stats.arcane_spell_failure}%` })
+  if (stats.armor_check_penalty !== null)
+    items.push({ label: 'Armor check penalty', value: stats.armor_check_penalty })
+  if (stats.damage_reduction !== null)
+    items.push({ label: 'Damage reduction', value: stats.damage_reduction })
   return items
 }
 
-export function ItemDetail({ detail }: { detail: ItemDetailRow }): JSX.Element {
-  const headerAttrs = buildHeaderAttributes(detail)
+export function ItemDetail({
+  detail,
+  candidates,
+}: {
+  detail: ItemDetailRow
+  /** Candidate augments keyed by socket label; see `useSlotCandidates`. */
+  candidates: Record<string, AugmentCandidate[]>
+}): JSX.Element {
+  const headerAttrs = buildHeaderAttributes(detail, candidates)
   const weaponStats = detail.weaponStats ? buildWeaponStats(detail.weaponStats) : []
   const armorStats = detail.armorStats ? buildArmorStats(detail.armorStats) : []
 
@@ -59,15 +81,11 @@ export function ItemDetail({ detail }: { detail: ItemDetailRow }): JSX.Element {
     <article className="resources-detail-body">
       <EntityHeader
         name={detail.name}
-        rarity={detail.rarity}
         attributes={headerAttrs}
         wikiUrl={detail.wiki_url}
         wikiPageName={detail.name}
       />
       {detail.description && <p className="resources-detail-description">{detail.description}</p>}
-      {detail.tooltip && detail.tooltip !== detail.description && (
-        <p className="resources-detail-tooltip">{detail.tooltip}</p>
-      )}
       {weaponStats.length > 0 && (
         <DetailSection label="Weapon">
           <StatList items={weaponStats} />
@@ -79,37 +97,38 @@ export function ItemDetail({ detail }: { detail: ItemDetailRow }): JSX.Element {
         </DetailSection>
       )}
       <EnchantmentList bonuses={detail.bonuses} effects={detail.effects} />
-      {detail.spellLinks.length > 0 && (
-        <DetailSection label="Spells">
+      {detail.clickies.length > 0 && (
+        <DetailSection label="Clickies">
           <ul className="resources-flat-list">
-            {detail.spellLinks.map((s: ItemSpellLink) => (
-              <li key={s.spell_id}>
-                {s.name}
-                {s.charges !== null && ` — ${s.charges} charges`}
+            {detail.clickies.map((c) => (
+              <li key={c.name}>
+                {c.name}
+                {c.description && <p className="resources-bonus-description">{c.description}</p>}
               </li>
             ))}
           </ul>
         </DetailSection>
       )}
-      {detail.quests.length > 0 && (
+      {detail.quests.length > 0 ? (
         <DetailSection label="Drops from">
           <ul className="resources-quest-list">
             {detail.quests.map((q: ItemQuestRef) => (
               <li key={q.quest_id} className="resources-quest-row">
                 <span className="resources-quest-name">
                   {q.name}
-                  {/* No quests.wiki_url column yet (roadmap Phase 4c) — the
-                      URL derives from the quest name. Breaks on wiki pages
-                      with disambiguation suffixes; acceptable until the
-                      column ships and this switches to href. */}
+                  {/* No quests.wiki_url column — the URL derives from the
+                      quest name. Breaks on wiki pages with disambiguation
+                      suffixes; acceptable. */}
                   <WikiLinkIcon pageName={q.name} />
-                  {/* Rare is a property of this drop location, not another
-                      where-to-go fact, so it sits on the name line as the
-                      same chip the picker rows use — not in the meta line. */}
-                  {q.is_rare && <ResourceChip kind="rare" />}
+                  {q.is_raid && <ResourceChip kind="raid" />}
                 </span>
                 <span className="resources-quest-meta">
-                  {[q.patron, q.pack, q.zone, q.npc, q.level !== null ? `Level ${q.level}` : null]
+                  {[
+                    q.patron,
+                    q.pack,
+                    q.level !== null ? `Level ${q.level}` : null,
+                    q.loot_type === 'reward' ? 'End reward' : null,
+                  ]
                     .filter(Boolean)
                     .join(' · ')}
                 </span>
@@ -117,15 +136,12 @@ export function ItemDetail({ detail }: { detail: ItemDetailRow }): JSX.Element {
             ))}
           </ul>
         </DetailSection>
-      )}
-      {detail.upgrades.length > 0 && (
-        <DetailSection label="Upgrades">
-          <ul className="resources-flat-list">
-            {detail.upgrades.map((u: ItemUpgrade) => (
-              <li key={u.upgrade_tier}>Tier {u.upgrade_tier}</li>
-            ))}
-          </ul>
-        </DetailSection>
+      ) : (
+        detail.drop_location && (
+          <DetailSection label="Drops from">
+            <p className="resources-detail-description">{detail.drop_location}</p>
+          </DetailSection>
+        )
       )}
     </article>
   )

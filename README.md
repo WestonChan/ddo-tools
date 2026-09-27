@@ -7,49 +7,39 @@
 
 A toolkit for [Dungeons & Dragons Online](https://www.ddo.com/) — plan character builds and gear sets.
 
-**Live site:** [westonchan.github.io/ddo-tools](https://westonchan.github.io/ddo-tools/)
+**Live site:** [ddo-tools.vercel.app](https://ddo-tools.vercel.app/)
 
 ## Features (Planned)
 
 - Character builder: race, class splits, feats, enhancements
 - Gear planner: items, augments, set bonuses
-- Shareable builds via URL
-- Data extracted directly from DDO game files
+- Shareable builds
+- Game data from Maetrim's DDOBuilderV2 data files, served by the public [`ddo-data`](https://github.com/WestonChan/ddo-data) API
 
 ## Tech Stack
 
-- **Frontend:** React + TypeScript + Vite
-- **Hosting:** GitHub Pages
-- **Data Pipeline:** Python scripts for parsing DDO game files and scraping DDO Wiki
+- **Frontend:** React + TypeScript + Vite, with TanStack Query for data fetching
+- **Hosting:** Vercel (static SPA)
+- **Game data:** [`ddo-data`](https://github.com/WestonChan/ddo-data) — a Rust ETL over DDOBuilderV2's XML plus an axum read-only API on Fly.io. This repo only reads that API.
 
 ## Configuration
 
-Copy `.env.example` to `.env` and set your DDO installation path:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` to match your system. The default assumes a CrossOver/Steam install on macOS.
+`VITE_API_URL` points the frontend at an API deployment. Leave it unset to use the public API, or set
+it to a local `ddo-api` (see the `ddo-data` README) while working on both sides.
 
 Production builds report uncaught errors to Sentry when configured. Setup is optional — see [docs/sentry.md](docs/sentry.md).
 
 ## Getting Started
 
-### Frontend
-
 ```bash
 npm install
 npm run dev
-```
-
-### Data Pipeline
-
-```bash
-cd scripts
-pip install -e ".[dev]"
-ddo-data --help
-ddo-data info
 ```
 
 ### Available Commands
@@ -60,32 +50,23 @@ ddo-data info
 | `npm run build` | Production build |
 | `npm run lint` | Run ESLint |
 | `npm run format` | Format code with Prettier |
-| `ddo-data info` | Show DDO installation info |
-| `ddo-data parse <file>` | Parse a .dat archive header |
-| `ddo-data list <file>` | List all files in a .dat archive |
-| `ddo-data dat-extract <file>` | Extract raw files from a .dat archive |
-| `ddo-data dat-peek <file> --id <hex>` | Hex dump of a single entry |
-| `ddo-data dat-stats <file>` | Show compression and file type statistics |
-| `ddo-data dat-dump <file> --id <hex>` | Extract, decompress, and analyze an entry |
-| `ddo-data dat-compare <file>` | Compare brute-force vs B-tree scanner results |
-| `ddo-data dat-survey <file>` | Survey entry structure: type codes, sizes, string density |
-| `ddo-data dat-compare-entries <file> --type <hex>` | Compare entries by type code to find field patterns |
-| `ddo-data dat-validate <file>` | Validate TLV hypotheses against real game data |
-| `ddo-data dat-probe <file> --id <hex>` | Probe entry binary structure and decode |
-| `ddo-data dat-registry <file>` | Build empirical property key registry from decoded entries |
-| `ddo-data icons <file> -o <dir>` | Extract DDS textures and convert to PNG |
-| `ddo-data dat-namemap` | Cross-reference wiki items with gamelogic to map property key names |
-| `ddo-data scrape --type items` | Scrape item data from DDO Wiki (cached, rate-limited) |
+| `npm test` | Vitest unit and integration tests |
+| `npm run test:e2e` | Playwright end-to-end tests |
+
+The `scripts/` directory holds the previous Python pipeline (DDO `.dat` archive parsing and DDO Wiki
+scraping). It is superseded by `ddo-data` and kept for reference only.
 
 ## Deployment
 
-Every push to `main` runs the CI workflow (lint, tests, build) and, on success, deploys the
-built site to GitHub Pages via `actions/deploy-pages`. There is no manual deploy step — merging
-to `main` is the release.
+Every push to `main` runs the CI workflow (lint, tests, build). Vercel's GitHub integration builds and
+deploys the site on the same push, with preview deployments for branches. There is no manual deploy
+step — merging to `main` is the release. Game-data deployments are scheduled separately in the
+`ddo-data` repo.
 
 ## Credits
 
-- [DDO Wiki](https://ddowiki.com/) -- the source of most game data in `ddo.db` (items, quests, effects), scraped via `ddo-data scrape`; wiki content is available under CC BY-SA
+- [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOBuilder) -- the source of the game data (items, augments, sets, feats, enhancements, spells), used with permission via the `ddo-data` pipeline
+- [DDO Wiki](https://ddowiki.com/) -- item, quest, and effect data for the previous pipeline, and the per-entity wiki links in the app; wiki content is available under CC BY-SA
 - [DATUnpacker](https://github.com/Middle-earth-Revenge/DATUnpacker) (Middle-earth-Revenge) -- C#/.NET reference for the Turbine .dat archive format and compression scheme
 - [DATExplorer](https://github.com/Middle-earth-Revenge/DATExplorer) (Middle-earth-Revenge) -- C# tool documenting the B-tree directory structure and header field layout
 - [LotroCompanion/lotro-tools](https://github.com/LotroCompanion/lotro-tools) (LotroCompanion) -- Java extraction tools revealing the PropertiesSet/DataFacade pattern for Turbine game data
@@ -99,4 +80,4 @@ to `main` is the release.
 
 DDO Tools is an unaffiliated fan project. Dungeons & Dragons Online is © Standing Stone Games;
 game content, names, imagery, and data belong to their respective owners. The MIT license covers
-this repository's code, not the game data it extracts or the wiki content it aggregates.
+this repository's code, not the game data it displays or the wiki content it links to.

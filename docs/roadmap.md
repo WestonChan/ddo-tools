@@ -939,8 +939,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V3 | done | `ddo-etl` covers augments, sets, filigrees, clickies, feats, races, classes, enhancement trees, spells |
 | V4 | done | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` (first deploy pending the Fly account) |
 | V5 | done | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, icons, validation gates, `flyctl deploy` (first run pending the Fly account) |
-| **V6** | **→ NEXT** | Frontend on the API -- TanStack Query, generated types, remove sql.js + `DatabaseGate`, move hosting to Vercel |
-| V7 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
+| V6 | done | Frontend on the API -- TanStack Query, hand-written API types, sql.js + `DatabaseGate` removed, Vercel config (first deploy pending the Vercel account) |
+| **V7** | **→ NEXT** | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
@@ -1894,17 +1894,23 @@ gates** (item/feat counts ≥ floor, fixture diff ≥ bar) fail the job before d
 binary; `superfly/flyctl-actions/setup-flyctl` + `flyctl deploy --remote-only` with `FLY_API_TOKEN`.
 A single-machine deploy means a few seconds of downtime; accepted.
 
-#### V6 — Frontend on the API
-- Add `@tanstack/react-query`; generate types from `/openapi.json` with `openapi-typescript` into
-  `src/lib/api/`; `VITE_API_URL` env var (local `.env`, Vercel dashboard for prod/preview).
-- Rewrite `src/features/resources/queries/*` against the API, `resources` first, then anything else
-  that imports `useDatabase`. Remove `sql.js`, `DatabaseGate`, `useDatabase`, `dbErrorCategorize`,
-  `clearSiteData`, `public/data/ddo.db` and the `baselineSchema.sql` fixture.
-- Hosting: `vercel.json` SPA rewrite; drop the `/ddo-tools` router basename and `404.html`; delete
-  the Pages workflow. **User steps:** create the Vercel account with GitHub login, import the repo,
-  set `VITE_API_URL`.
-- README: replace "Data extracted directly from DDO game files" and the GitHub Pages / Python lines;
-  credit Maetrim per Phase 4l.
+#### V6 — Frontend on the API (done)
+- `@tanstack/react-query` with `staleTime: Infinity`; `src/lib/api/` holds the client
+  (`apiGet`, `ApiError`, `describeApiError`) and **hand-written** response types. Deviation from the
+  plan: `openapi-typescript` was dropped because the API's OpenAPI bodies are generic `Value`
+  schemas, which would have generated `unknown` for every field. Revisit if V4 gains typed
+  `ToSchema` bodies. `VITE_API_URL` selects the deployment; unset means `https://ddo-data.fly.dev`.
+- `features/resources/queries/items.ts` is fetchers + pure mappers; `useItems.ts` is the hook layer
+  (`useItemRows` fetches the whole list once, search and row filters stay client-side; stat/pack
+  id-sets and slot candidates are lazy `useQueries`). `<ApiGate>` replaces `DatabaseGate`.
+- Removed: `sql.js`, `DatabaseGate`, `useDatabase`, `dbErrorCategorize`, `clearSiteData`, the
+  service worker, `404.html`, `public/data/`, `sqlHelpers`, the sql.js fixtures and the
+  `etlRegression` / `schemaCompat` / `raidLoot` tests. Rarity (`Rare only`, rare chips, name tints)
+  went with them: DDOBuilderV2 records raid loot but not per-quest rarity.
+- Hosting: `vercel.json` SPA rewrite + immutable asset caching; Vite `base` is `/`; the Pages
+  jobs are gone from `ci.yml`. **User steps still open:** create the Vercel account with GitHub
+  login, import the repo, set `VITE_API_URL` (or leave unset for the public API); the Python
+  `scripts/` package is now reference-only and can be deleted in a follow-up when you say so.
 
 #### V7 — Build sharing with a server
 Two stores, two lifecycles: game data baked into the image (rebuilt every deploy), user data on a
@@ -1934,8 +1940,6 @@ A phase is **done** when all of the following hold. Anything less stays `→ NEX
 
 **Unit tests** (vitest) required for pure logic, by phase: `user.db` migrations (Phase 5), stats
 engine (Phase 6), AP validation + feat prereqs (Phase 7), gear stacking (Phase 8), share codec
-round-trip (Phase 14). Phase 4c shipped its ETL regression spot-check as
-`src/features/resources/queries/etlRegression.test.ts`, which asserts against the real
-`public/data/ddo.db` rather than a fixture — a hand-written fixture cannot catch an ETL regression,
-because the fixture is whatever we typed rather than whatever the pipeline produced. Extend it
-whenever a pipeline invariant gains a user-visible consequence.
+round-trip (Phase 14). ETL regression checks live in the `ddo-data` repo (`crates/ddo-etl/tests`
+and the deploy workflow's row-count floors), against the real pipeline output rather than a
+hand-written fixture — a fixture is whatever we typed, not whatever the pipeline produced.

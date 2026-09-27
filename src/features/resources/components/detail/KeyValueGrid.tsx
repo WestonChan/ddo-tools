@@ -10,7 +10,7 @@ interface KeyValueGridProps {
 }
 
 // Compact 2-column key/value grid used by EntityHeader for the item's primary
-// attributes (rarity, slot, ML, material, binding). Differs from `StatList`
+// attributes (slot, ML, material, set). Differs from `StatList`
 // in that the columns are aligned on a grid rather than flowing free.
 export function KeyValueGrid({ items }: KeyValueGridProps): JSX.Element {
   return (

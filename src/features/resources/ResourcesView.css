@@ -498,7 +498,7 @@
   border-color: var(--accent);
 }
 
-/* Boolean filter toggle (Rare / Raid). aria-pressed drives the active state
+/* Boolean filter toggle (Raid). aria-pressed drives the active state
    so screen readers know whether the filter is on. */
 .resources-filter-toggle {
   align-self: flex-end;
@@ -621,7 +621,7 @@
   border-left: 2px solid var(--accent);
 }
 
-/* Top line of the picker row: name on the left, raid/rare chips on the
+/* Top line of the picker row: name on the left, the raid chip on the
    right. Flex layout lets the chips hug the right edge while the name
    truncates with ellipsis if it overflows. */
 .resources-row-title {
@@ -648,11 +648,10 @@
   flex-shrink: 0;
 }
 
-/* Small status chip (Raid / Rare), rendered by the shared `ResourceChip`
-   component in both the picker rows and the detail drawer's drop-location
-   rows. Tinted via data-kind so themes/accent swaps don't hardcode hue —
-   both colors derive from --accent or a neutral so they stay legible in
-   light/dark. */
+/* Small status chip (Raid), rendered by the shared `ResourceChip` component
+   in both the picker rows and the detail drawer's drop-location rows. Tinted
+   via data-kind so themes/accent swaps don't hardcode hue — the color derives
+   from --accent so it stays legible in light/dark. */
 .resources-chip {
   font-size: var(--text-xs);
   font-weight: 600;
@@ -671,12 +670,6 @@
   color: var(--accent);
   border-color: color-mix(in oklch, var(--accent) 40%, transparent);
   background: color-mix(in oklch, var(--accent) 10%, transparent);
-}
-
-.resources-chip[data-kind='rare'] {
-  color: var(--text-secondary);
-  border-color: var(--border);
-  background: var(--bg-subtle);
 }
 
 .resources-row-meta {
@@ -749,14 +742,6 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
-
-/* Rarity tints — keyed off data-rarity, themed by light/dark via accent
-   neutral so palette swaps don't break legibility. */
-.resources-entity-name[data-rarity='common'] { color: var(--text); }
-.resources-entity-name[data-rarity='uncommon'] { color: color-mix(in oklch, var(--accent) 55%, var(--text)); }
-.resources-entity-name[data-rarity='rare'] { color: color-mix(in oklch, var(--accent) 80%, var(--text)); }
-.resources-entity-name[data-rarity='epic'] { color: var(--accent); }
-.resources-entity-name[data-rarity='legendary'] { color: var(--accent); font-weight: 700; }
 
 /* KeyValueGrid — 2-col compact grid */
 .resources-kv-grid {
@@ -922,7 +907,7 @@
   gap: var(--space-0-5);
 }
 
-/* Name, wiki-link icon, and (for rare drop locations) a Rare chip share one
+/* Name, wiki-link icon, and (for raids) a Raid chip share one
    line. Wraps rather than overflowing on narrow viewports, where a long
    quest name has already used up the drawer's width. */
 .resources-quest-name {

@@ -20,7 +20,8 @@ function effect(overrides: Partial<ItemEffect> = {}): ItemEffect {
   return {
     effect_id: 1,
     name: 'Bane',
-    modifier: 'Evil Outsider',
+    description: null,
+    target: 'Evil Outsider',
     value: 4,
     sort_order: 0,
     ...overrides,
@@ -76,18 +77,15 @@ describe('EnchantmentList', () => {
     render(
       <EnchantmentList
         bonuses={[bonus({ bonus_type: 'Insight' })]}
-        effects={[effect({ modifier: 'Evil Outsider' })]}
+        effects={[effect({ target: 'Evil Outsider' })]}
       />,
     )
     expect(screen.getByText('Insight')).toBeInTheDocument()
     expect(screen.getByText('Evil Outsider')).toBeInTheDocument()
   })
 
-  // The ETL now expands descriptions to prose, so the component renders what
-  // it is given rather than stripping template syntax at render time. The
-  // guarantee that no `{{` reaches here is enforced upstream: validation
-  // assertion A3 in the pipeline, and etlRegression.test.ts against the
-  // shipped database.
+  // The ETL expands descriptions to prose, so the component renders what it
+  // is given rather than stripping template syntax at render time.
   it('renders an expanded description as its own sub-line', () => {
     render(
       <EnchantmentList

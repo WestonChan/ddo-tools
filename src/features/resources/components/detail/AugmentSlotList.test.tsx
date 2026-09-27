@@ -8,39 +8,39 @@ afterEach(() => {
   cleanup()
 })
 
-// Sockets as `augment_slot_types` rows, ids and all: the component reads
-// `family` to decide what to draw and `slot_id` to find the candidate list, so
-// a fixture that only carried the label would not exercise either.
+// Sockets as the API describes them: the component reads `family` to decide
+// what to draw and `label` to find the candidate list, so a fixture that only
+// carried one of them would not exercise the other.
 const SOCKETS = {
-  red: { slot_id: 1, label: 'red', family: 'standard', qualifier: null },
-  colorless: { slot_id: 2, label: 'colorless', family: 'standard', qualifier: null },
-  sun: { slot_id: 4, label: 'sun', family: 'standard', qualifier: null },
+  red: { label: 'red', family: 'standard', qualifier: null, options: [] },
+  colorless: { label: 'colorless', family: 'standard', qualifier: null, options: [] },
+  sun: { label: 'sun', family: 'standard', qualifier: null, options: [] },
   melancholic: {
-    slot_id: 6,
     label: 'lamordia: melancholic (accessory)',
     family: 'lamordia',
     qualifier: 'accessory',
+    options: [],
   },
   slavers: {
-    slot_id: 7,
     label: "slaver's: prefix (legendary)",
     family: 'slavers',
     qualifier: 'legendary',
+    options: [],
   },
   setBonus: {
-    slot_id: 14,
     label: 'isle of dread: set bonus',
     family: 'dino',
     qualifier: null,
+    options: [],
   },
 } satisfies Record<string, Omit<ItemAugmentSlot, 'sort_order'>>
 
-const CANDIDATES: Record<number, AugmentCandidate[]> = {
-  [SOCKETS.melancholic.slot_id]: [
+const CANDIDATES: Record<string, AugmentCandidate[]> = {
+  [SOCKETS.melancholic.label]: [
     { augment_id: 1, name: 'Melancholic Charisma', min_level: 8, bonuses: ['Charisma +5'] },
     { augment_id: 2, name: 'Melancholic Acid Spell Crit', min_level: 8, bonuses: [] },
   ],
-  [SOCKETS.sun.slot_id]: [
+  [SOCKETS.sun.label]: [
     {
       augment_id: 3,
       name: 'Solar Gem of Abjuration (Heroic)',
@@ -48,7 +48,7 @@ const CANDIDATES: Record<number, AugmentCandidate[]> = {
       bonuses: ['Abjuration Spell Focus +2'],
     },
   ],
-  [SOCKETS.slavers.slot_id]: [],
+  [SOCKETS.slavers.label]: [],
 }
 
 function slot(sort_order: number, socket: keyof typeof SOCKETS): ItemAugmentSlot {
@@ -100,7 +100,7 @@ describe('AugmentSlotList', () => {
     render(
       <AugmentSlotList
         slots={[slot(0, 'setBonus')]}
-        candidates={{ [SOCKETS.setBonus.slot_id]: [] }}
+        candidates={{ [SOCKETS.setBonus.label]: [] }}
       />,
     )
     expect(screen.getByText('Isle of Dread: Set Bonus')).toBeInTheDocument()

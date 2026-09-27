@@ -148,9 +148,15 @@ When writing a new hook of this shape:
 
 ### Reference implementations
 
-- [`src/hooks/useDatabase.ts`](../src/hooks/useDatabase.ts) — async DB
-  load, exposes `{ db, loading, error }`. Reference example for "async
-  resource + multiple consumers."
+- **Async server data is TanStack Query's job, not a hand-rolled store.**
+  Game data comes from `ddo-api` through the hooks in
+  [`src/features/resources/queries/useItems.ts`](../src/features/resources/queries/useItems.ts);
+  the `QueryClient` in `main.tsx` is the shared external store (dedupes
+  in-flight requests, caches forever since the data is immutable per
+  deployment). The pattern below is for state that is *not* server data.
+  (`useDatabase`, the former reference example of "async resource +
+  multiple consumers", was removed with sql.js in V6; the code samples
+  below keep its name as a worked example.)
 - [`src/hooks/useTheme.ts`](../src/hooks/useTheme.ts) — synchronous shared
   preference resolved from an external source (localStorage + `matchMedia`)
   that the store also writes back to. Reference for "lazy first-read init,

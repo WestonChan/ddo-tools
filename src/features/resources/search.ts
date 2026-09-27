@@ -10,7 +10,7 @@ const ITEMS_FUSE_OPTIONS: IFuseOptions<ItemRow> = {
   keys: [
     { name: 'name', weight: 0.7 },
     { name: 'equipment_slot', weight: 0.2 },
-    { name: 'rarity', weight: 0.1 },
+    { name: 'item_category', weight: 0.1 },
   ],
   threshold: 0.4,
   ignoreLocation: true,

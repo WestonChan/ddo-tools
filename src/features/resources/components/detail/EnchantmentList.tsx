@@ -19,7 +19,7 @@ interface EnchantmentListProps {
 // effects, `name` carries the full label and `value` is null.
 interface EnchantmentLine {
   key: string
-  /** Tag chip in the first column — bonus_type for bonuses, modifier for effects. */
+  /** Tag chip in the first column — bonus_type for bonuses, target for effects. */
   tag: string | null
   /** Display label for the middle column. Bare stat name for stat bonuses;
    *  full label for non-stat bonuses and effects. */
@@ -27,7 +27,7 @@ interface EnchantmentLine {
   /** Right-column value text for stat bonuses (e.g. "+5", "-2"). Null when
    *  the value is folded into `name` (effects, non-stat bonuses). */
   value: string | null
-  /** Muted sub-line below the head. Bonuses-only; null for effects. */
+  /** Muted sub-line below the head: the bonus or effect description. */
   description: string | null
 }
 
@@ -40,9 +40,8 @@ function bonusToLine(b: ItemBonus): EnchantmentLine {
   // Stat bonuses split into separate name + value columns so values column-
   // align across rows. Bonuses without a backing stat (e.g. "On hit: -1 AC
   // to target") keep the full text in the name column with no separate value.
-  const isStatBonus = b.stat_name !== null
-  const name = isStatBonus ? (b.stat_name ?? b.name) : b.name
-  const value = isStatBonus && b.value !== null ? formatSigned(b.value) : null
+  const name = b.stat_name
+  const value = b.value !== null ? formatSigned(b.value) : null
   return {
     key: `b-${b.bonus_id}-${b.sort_order}`,
     tag: b.bonus_type,
@@ -59,10 +58,10 @@ function effectToLine(e: ItemEffect): EnchantmentLine {
   const name = e.value !== null ? `${e.name} ${formatSigned(e.value)}` : e.name
   return {
     key: `e-${e.effect_id}-${e.sort_order}`,
-    tag: e.modifier,
+    tag: e.target,
     name,
     value: null,
-    description: null,
+    description: e.description && e.description !== e.name ? e.description : null,
   }
 }
 

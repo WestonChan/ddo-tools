@@ -5,6 +5,15 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-09-27',
+    changes: [
+      "Game data now comes from Maetrim's DDOBuilderV2 data files through a public API instead of a database downloaded into the browser, so the site loads without a multi-megabyte fetch and updates weekly",
+      'The site moved to Vercel at the root path; old links under /ddo-tools/ no longer resolve',
+      'Item detail shows the enhancement bonus, set name, clickies, and drop location for items without a linked quest',
+      'The "Rare only" filter and rare chips are gone: the new data source records raid loot but not per-quest rarity',
+    ],
+  },
+  {
     date: '2026-08-03',
     changes: [
       "Recover ~2,400 missing augment slots: crafting-slot families (Lamordia, Isle of Dread, Slaver's) were dropped entirely, and Purple/Sun/Moon slots were undercounted",

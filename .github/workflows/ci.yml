@@ -69,8 +69,6 @@ jobs:
         run: uv sync --extra dev
       - name: Test
         run: uv run --project scripts pytest scripts/
-      - name: Validate Database
-        run: uv run --project scripts ddo-data validate-db public/data/ddo.db
 
   e2e:
     name: E2E Tests
@@ -128,27 +126,3 @@ jobs:
           # no-ops when the token is unset, so absence of the secret is
           # safe.
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: dist
-
-  deploy:
-    name: Deploy
-    if: github.event_name == 'push'
-    needs: [lint, test, python, e2e, build]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    concurrency:
-      group: pages
-      cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

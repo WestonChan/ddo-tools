@@ -2,12 +2,14 @@ import type { JSX } from 'react'
 
 // Discriminated empty-state kinds. Each maps to a copy table below so that
 // adding a new state forces a corresponding copy entry — a future
-// `partial-detail` or `loading` kind would surface as a TS error here first.
+// `partial-detail` kind would surface as a TS error here first.
 export type DetailEmptyKind =
   | 'no-selection'
   | 'no-results'
   | 'empty-table'
   | 'not-found'
+  | 'loading'
+  | 'error'
 
 interface DetailEmptyProps {
   kind: DetailEmptyKind
@@ -33,13 +35,20 @@ function getCopy({ kind, query, id, category }: DetailEmptyProps): { title: stri
         title: id !== null && id !== undefined ? `No item with id ${id}.` : 'Not found.',
         hint: 'Pick another row from the list.',
       }
+    case 'loading':
+      return { title: 'Loading\u2026' }
+    case 'error':
+      return {
+        title: 'Could not load this item.',
+        hint: 'Check your connection and pick the row again.',
+      }
   }
 }
 
 export function DetailEmpty(props: DetailEmptyProps): JSX.Element {
   const { title, hint } = getCopy(props)
   return (
-    <div className="resources-detail-empty section-placeholder">
+    <div className="resources-detail-empty section-placeholder" role="status">
       <p>{title}</p>
       {hint && <p className="resources-detail-empty-hint">{hint}</p>}
     </div>

@@ -25,18 +25,13 @@ export default defineConfig({
       telemetry: false,
     }),
   ],
-  base: '/ddo-tools/',
   define: {
     // Site version shown in the landing footer. Sourced from package.json,
     // which is patch-bumped on every push to main (see CLAUDE.md, Commits).
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
-  optimizeDeps: {
-    // sql.js JS module must be pre-bundled (CJS -> ESM conversion).
-    // The WASM binary is loaded separately via ?url import.
-  },
   build: {
-    // Source maps ship to GitHub Pages as .map files alongside the bundle.
+    // Source maps ship to Vercel as .map files alongside the bundle.
     // Required for Sentry symbolication; also makes prod stack traces in
     // GitHub issue reports human-readable. The bundle is already public
     // (open-source repo), so source maps add no new exposure.

@@ -18,7 +18,6 @@ export function PickerRow(
   const row = rows[index]
   if (!row) return null
   const active = row.id === selectedId
-  const isRare = row.rarity === 'Rare'
   // The outer div keeps react-window's absolute-positioning `style` and its
   // injected role/aria-posinset. The interactive surface is a real <button>
   // filling it, which buys focusability, Enter/Space activation, and correct
@@ -38,16 +37,15 @@ export function PickerRow(
       >
         <div className="resources-row-title">
           <span className="resources-row-name">{row.name}</span>
-          {(row.is_raid || isRare) && (
+          {row.is_raid && (
             <span className="resources-row-chips">
-              {row.is_raid && <ResourceChip kind="raid" />}
-              {isRare && <ResourceChip kind="rare" />}
+              <ResourceChip kind="raid" />
             </span>
           )}
         </div>
         <span className="resources-row-meta">
           {row.minimum_level !== null && <span>ML {row.minimum_level}</span>}
-          {row.equipment_slot && <span>{row.equipment_slot}</span>}
+          <span>{row.equipment_slot}</span>
           {row.pack && <span>{row.pack}</span>}
         </span>
       </button>

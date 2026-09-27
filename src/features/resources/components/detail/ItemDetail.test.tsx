@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import { ItemDetail } from './ItemDetail'
-import type { ItemDetail as ItemDetailRow } from '../../queries/items'
+import type { ItemDetail as ItemDetailRow, ItemQuestRef } from '../../queries/items'
 
 afterEach(() => {
   cleanup()
@@ -10,116 +10,105 @@ afterEach(() => {
 const baseDetail: ItemDetailRow = {
   id: 42,
   name: 'Voice of the Master',
-  rarity: null,
   equipment_slot: 'Trinket',
-  item_category: null,
+  item_category: 'Trinket',
+  item_type: null,
   minimum_level: 5,
+  enhancement_bonus: null,
   material: null,
-  binding: null,
-  tooltip: null,
+  race_required: null,
   description: null,
+  drop_location: null,
+  set_name: null,
+  accepts_sentience: false,
+  is_minor_artifact: false,
   wiki_url: null,
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],
-  slotCandidates: {},
-  upgrades: [],
   bonuses: [],
   effects: [],
-  spellLinks: [],
+  clickies: [],
   quests: [],
 }
 
-describe('ItemDetail quest wiki links', () => {
+function quest(overrides: Partial<ItemQuestRef> = {}): ItemQuestRef {
+  return {
+    quest_id: 7,
+    name: "Delera's Tomb",
+    patron: null,
+    pack: null,
+    level: 8,
+    is_raid: false,
+    loot_type: 'quest',
+    ...overrides,
+  }
+}
+
+function renderDetail(detail: ItemDetailRow): RenderResult {
+  return render(<ItemDetail detail={detail} candidates={{}} />)
+}
+
+describe('ItemDetail drop locations', () => {
   it('renders a wiki link icon next to each quest in Drops from', () => {
-    render(
-      <ItemDetail
-        detail={{
-          ...baseDetail,
-          quests: [
-            {
-              quest_id: 7,
-              name: "Delera's Tomb",
-              patron: null,
-              pack: null,
-              zone: null,
-              npc: null,
-              level: 8,
-              is_rare: false,
-            },
-          ],
-        }}
-      />,
-    )
+    renderDetail({ ...baseDetail, quests: [quest()] })
     const link = screen.getByRole('link', { name: "Open Delera's Tomb on DDO Wiki" })
-    // No quests.wiki_url column yet (roadmap Phase 4c) — URL derives from
-    // the name. encodeURIComponent leaves apostrophes literal; ddowiki
-    // accepts them.
+    // No quests.wiki_url column — URL derives from the name.
+    // encodeURIComponent leaves apostrophes literal; ddowiki accepts them.
     expect(link).toHaveAttribute('href', "https://ddowiki.com/page/Delera's_Tomb")
   })
 
-  // `quest_loot.is_rare` is mapping-level: the same item can be a rare drop in
-  // one quest and a guaranteed reward in another, so the marker belongs on the
-  // row rather than on the item header.
-  it('marks a rare drop location with a chip on the quest name, not in the meta line', () => {
-    const { container } = render(
-      <ItemDetail
-        detail={{
-          ...baseDetail,
-          quests: [
-            {
-              quest_id: 7,
-              name: "Delera's Tomb",
-              patron: 'The Free Agents',
-              pack: null,
-              zone: null,
-              npc: null,
-              level: 8,
-              is_rare: true,
-            },
-          ],
-        }}
-      />,
-    )
+  it('marks a raid drop location with a chip on the quest name, not in the meta line', () => {
+    const { container } = renderDetail({
+      ...baseDetail,
+      quests: [quest({ patron: 'The Free Agents', is_raid: true })],
+    })
     // The chip modifies the drop location, so it lives on the name line —
     // same `data-kind` contract the picker rows use, so both panels render
     // the same fact identically.
-    const chip = container.querySelector('.resources-quest-name .resources-chip[data-kind="rare"]')
-    expect(chip).not.toBeNull()
-    expect(chip).toHaveTextContent('Rare')
+    const chip = container.querySelector('.resources-quest-name .resources-chip[data-kind="raid"]')
+    expect(chip).toHaveTextContent('Raid')
     // …and the `·`-joined meta line keeps only the where-to-go facts.
     expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
       'The Free Agents · Level 8',
     )
-    expect(screen.queryByText(/\(rare\)/)).toBeNull()
   })
 
-  it('does not mark a non-rare drop location', () => {
-    const { container } = render(
-      <ItemDetail
-        detail={{
-          ...baseDetail,
-          quests: [
-            {
-              quest_id: 7,
-              name: "Delera's Tomb",
-              patron: 'The Free Agents',
-              pack: null,
-              zone: null,
-              npc: null,
-              level: 8,
-              is_rare: false,
-            },
-          ],
-        }}
-      />,
-    )
+  it('labels end rewards in the meta line', () => {
+    const { container } = renderDetail({
+      ...baseDetail,
+      quests: [quest({ loot_type: 'reward' })],
+    })
     expect(container.querySelector('.resources-chip')).toBeNull()
-    expect(screen.queryByText(/\(rare\)/)).toBeNull()
+    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent('Level 8 · End reward')
   })
 
-  it('renders no quest links when the item drops from no quests', () => {
-    render(<ItemDetail detail={baseDetail} />)
+  it('falls back to the free-text drop location when no quests are linked', () => {
+    renderDetail({ ...baseDetail, drop_location: 'Vendor: House Kundarak' })
+    expect(screen.getByText('Drops from')).toBeInTheDocument()
+    expect(screen.getByText('Vendor: House Kundarak')).toBeInTheDocument()
+  })
+
+  it('renders no Drops from section when the item has no source at all', () => {
+    renderDetail(baseDetail)
     expect(screen.queryByText('Drops from')).toBeNull()
+  })
+})
+
+describe('ItemDetail header attributes', () => {
+  it('shows the enhancement bonus signed and the set name when present', () => {
+    renderDetail({ ...baseDetail, enhancement_bonus: 5, set_name: 'Adherent of the Mists' })
+    expect(screen.getByText('Enhancement')).toBeInTheDocument()
+    expect(screen.getByText('+5')).toBeInTheDocument()
+    expect(screen.getByText('Adherent of the Mists')).toBeInTheDocument()
+  })
+
+  it('lists clickies with their description', () => {
+    renderDetail({
+      ...baseDetail,
+      clickies: [{ name: 'Haste', description: 'Haste (3 charges)', spell_id: null }],
+    })
+    expect(screen.getByText('Clickies')).toBeInTheDocument()
+    expect(screen.getByText('Haste (3 charges)')).toBeInTheDocument()
   })
 })

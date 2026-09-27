@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
-import { DatabaseGate, ErrorScreen } from '../components'
-import { ResourcesView as RawResourcesView } from '../features/resources'
+import { ErrorScreen } from '../components'
+import { ResourcesView } from '../features/resources'
 import { sanitizeUrl, buildIssueUrls } from '../lib/githubIssue'
 
 function Placeholder({ message }: { message: string }): JSX.Element {
@@ -13,31 +13,14 @@ const makePlaceholder =
   (): JSX.Element =>
     <Placeholder message={message} />
 
-const RawBuildPlanView = makePlaceholder('Build Plan coming in Phase 5.')
-const RawOverviewView = makePlaceholder('Build Overview coming in Phase 10.')
-const RawGearView = makePlaceholder('Gear Planner coming in Phase 6.')
-const RawDamageCalcView = makePlaceholder('Damage Calculator coming in a future update.')
-const RawFarmChecklistView = makePlaceholder('Farm Checklist coming in Phase 8.')
-
-// Wrap each DB-needing placeholder in DatabaseGate so the loading-skeleton
-// + error-categorization UX is in place from day one. Settings, Characters,
-// and Landing skip the gate (they don't need the game DB).
-function gated(View: () => JSX.Element): () => JSX.Element {
-  return function GatedView(): JSX.Element {
-    return (
-      <DatabaseGate>
-        <View />
-      </DatabaseGate>
-    )
-  }
-}
-
-export const BuildPlanView = gated(RawBuildPlanView)
-export const OverviewView = gated(RawOverviewView)
-export const GearView = gated(RawGearView)
-export const DamageCalcView = gated(RawDamageCalcView)
-export const FarmChecklistView = gated(RawFarmChecklistView)
-export const ResourcesView = gated(RawResourcesView)
+// Views fetch their own game data through TanStack Query and gate on it
+// locally (see `<ApiGate>`), so nothing wraps them here.
+export const BuildPlanView = makePlaceholder('Build Plan coming in Phase 5.')
+export const OverviewView = makePlaceholder('Build Overview coming in Phase 10.')
+export const GearView = makePlaceholder('Gear Planner coming in Phase 6.')
+export const DamageCalcView = makePlaceholder('Damage Calculator coming in a future update.')
+export const FarmChecklistView = makePlaceholder('Farm Checklist coming in Phase 8.')
+export { ResourcesView }
 
 export function NotFoundView(): JSX.Element {
   // Strip query/hash before display + before forwarding to the GitHub issue

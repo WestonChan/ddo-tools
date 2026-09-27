@@ -1,8 +1,9 @@
 import { useMemo, type JSX } from 'react'
-import { useDatabase } from '../../../hooks/useDatabase'
 import { DetailNavProvider } from '../contexts/DetailNavContext'
 import { useDetailStack, type StackEntry } from '../hooks/useDetailStack'
-import { findItemNameById, getItemDetail } from '../queries/items'
+import { isApiError } from '../../../lib/api'
+import type { AugmentCandidate, ItemDetail as ItemDetailRow } from '../queries/items'
+import { useItemDetail, useItemRows, useSlotCandidates } from '../queries/useItems'
 import type { Category } from '../types'
 import { DetailBar } from './DetailBar'
 import { DetailEmpty } from './DetailEmpty'
@@ -25,43 +26,36 @@ interface ResourceDetailViewProps {
  * killed the old embedded preview — see lib/wiki/client.ts).
  *
  * Category-dispatched body: renders the right per-category detail
- * component for the current top of stack. Today only `items` is wired;
- * Phase 4c will grow the switch as feats/enhancements/bonuses ship.
+ * component for the current top of stack. Today only `items` is wired.
  */
 export function ResourceDetailView({
   urlEntry,
   baseCategory,
 }: ResourceDetailViewProps): JSX.Element {
-  const { db } = useDatabase()
   const { stack, pushDetail, popDetail, jumpToCrumb, closeDrawer, deepLinkUrl } = useDetailStack({
     urlEntry,
     baseCategory,
   })
 
   const top = stack[stack.length - 1] ?? null
+  const topItemId = top !== null && top.category === 'items' ? top.id : null
 
-  // Item detail for the current top — only when category === 'items'.
-  // Future categories add their own queries here (or a per-category hook).
-  const itemDetail = useMemo(() => {
-    if (!db || top === null || top.category !== 'items') return null
-    return getItemDetail(db, top.id)
-  }, [db, top])
+  const detail = useItemDetail(topItemId)
+  const candidates = useSlotCandidates(detail.data?.augmentSlots ?? [])
 
-  // Resolve display names from the DB for any stack entry that doesn't
-  // already carry one (e.g., URL-seeded depth-1 entries on page reload).
-  // Cheap — one indexed-PK SELECT per missing name. Recomputes only when
-  // the stack or db identity changes.
+  // Resolve display names for any stack entry that doesn't already carry
+  // one (e.g., URL-seeded depth-1 entries on page reload). The item list is
+  // already cached for the picker, so this is a lookup, not a request.
+  const rows = useItemRows(false)
   const enrichedStack = useMemo(() => {
-    if (!db) return stack
+    const names = new Map((rows.data ?? []).map((r) => [r.id, r.name] as const))
+    if (detail.data) names.set(detail.data.id, detail.data.name)
     return stack.map((entry) => {
       if (entry.name) return entry
-      if (entry.category === 'items') {
-        const name = findItemNameById(db, entry.id)
-        if (name) return { ...entry, name }
-      }
-      return entry
+      const name = entry.category === 'items' ? names.get(entry.id) : undefined
+      return name ? { ...entry, name } : entry
     })
-  }, [stack, db])
+  }, [stack, rows.data, detail.data])
 
   return (
     <DetailNavProvider api={{ pushDetail, deepLinkUrl, closeDrawer, baseCategory }}>
@@ -69,7 +63,9 @@ export function ResourceDetailView({
         <DetailBar stack={enrichedStack} onBack={popDetail} onJumpToCrumb={jumpToCrumb} />
       </div>
       <div className="resources-drawer-body">
-        <section className="resources-detail">{renderParsedBody(top, itemDetail)}</section>
+        <section className="resources-detail">
+          {renderParsedBody(top, detail.data ?? null, detail.isPending, detail.error, candidates)}
+        </section>
       </div>
     </DetailNavProvider>
   )
@@ -78,23 +74,32 @@ export function ResourceDetailView({
 /**
  * Category dispatch for the parsed-detail body. Today only `items` has a
  * real renderer; other categories fall through to a "coming soon"
- * placeholder until Phase 4c ships their detail components.
+ * placeholder.
  */
 function renderParsedBody(
   top: StackEntry | null,
-  itemDetail: ReturnType<typeof getItemDetail> | null,
+  itemDetail: ItemDetailRow | null,
+  isPending: boolean,
+  error: unknown,
+  candidates: Record<string, AugmentCandidate[]>,
 ): JSX.Element {
   if (top === null) return <DetailEmpty kind="no-selection" />
   if (top.category === 'items') {
-    // Keyed on the entity, so navigating to another item remounts the body
-    // instead of feeding new props to the old instance. Detail components hold
-    // per-item UI state — an expanded augment slot, for one — and without this
-    // the next item opens with the previous item's slot already expanded.
-    return itemDetail ? (
-      <ItemDetail key={`${top.category}-${top.id}`} detail={itemDetail} />
-    ) : (
-      <DetailEmpty kind="not-found" id={top.id} />
-    )
+    if (itemDetail) {
+      // Keyed on the entity, so navigating to another item remounts the body
+      // instead of feeding new props to the old instance. Detail components
+      // hold per-item UI state — an expanded augment slot, for one — and
+      // without this the next item opens with the previous item's slot
+      // already expanded.
+      return (
+        <ItemDetail key={`${top.category}-${top.id}`} detail={itemDetail} candidates={candidates} />
+      )
+    }
+    if (isPending && !error) return <DetailEmpty kind="loading" />
+    if (error && !(isApiError(error) && error.status === 404)) {
+      return <DetailEmpty kind="error" />
+    }
+    return <DetailEmpty kind="not-found" id={top.id} />
   }
   return <DetailEmpty kind="empty-table" category={top.category} />
 }

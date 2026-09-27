@@ -12,10 +12,6 @@ import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../te
 // rendered, the user sees ErrorScreen inside the Outlet area, and
 // Sentry receives the captureException with the React component stack.
 
-vi.mock('../hooks/useDatabase', () => ({
-  useDatabase: () => ({ db: {}, loading: false, error: null }),
-}))
-
 // Replace BuildPlanView with a deliberately-throwing component so we can
 // observe the view boundary catching it. Other route exports stay real
 // so the surrounding shell renders normally.

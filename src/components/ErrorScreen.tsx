@@ -40,7 +40,7 @@ export interface ErrorScreenProps {
 
 /** Full-viewport error display: heading + monospace detail (or custom body)
  *  + optional hint + action buttons + GitHub Report link.
- *  Used by: root error boundary, view-level error boundary, DatabaseGate
+ *  Used by: root error boundary, view-level error boundary, ApiGate
  *  error mode, NotFoundView. */
 export function ErrorScreen({
   heading,

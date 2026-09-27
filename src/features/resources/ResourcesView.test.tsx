@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ResourcesView from './ResourcesView'
-import type { ItemRow } from './queries/items'
+import type { ItemDetail, ItemRow } from './queries/items'
 
 // Router params are read via `useParams({ strict: false })`; swap the value
 // per test to simulate each URL shape (/resources/items vs .../items/42).
@@ -14,61 +14,92 @@ vi.mock('@tanstack/react-router', () => ({
   useParams: () => mockParams,
 }))
 
-vi.mock('../../hooks/useDatabase', () => ({
-  useDatabase: () => ({ db: {}, loading: false, error: null }),
-}))
-
 const ROWS: ItemRow[] = [
   {
     id: 42,
     name: 'Bloodstone',
-    rarity: 'Rare',
     equipment_slot: 'Trinket',
+    item_category: 'Trinket',
     minimum_level: 12,
     pack: 'Vault of Night',
     is_raid: true,
   },
 ]
 
-vi.mock('./queries/items', async () => {
-  const actual = await vi.importActual<typeof import('./queries/items')>('./queries/items')
-  return {
-    ...actual,
-    listItems: vi.fn(() => ROWS),
-    listBonusStats: vi.fn(() => ['Charisma']),
-    listAdventurePacks: vi.fn(() => ['Vault of Night']),
-    findItemNameById: vi.fn(() => 'Bloodstone'),
-    getItemDetail: vi.fn(() => ({
-      id: 42,
-      name: 'Bloodstone',
-      rarity: 'Rare',
-      equipment_slot: 'Trinket',
-      item_category: null,
-      minimum_level: 12,
-      material: null,
-      binding: null,
-      tooltip: null,
-      description: null,
-      wiki_url: null,
-      weaponStats: null,
-      armorStats: null,
-      augmentSlots: [],
-      upgrades: [],
-      bonuses: [],
-      effects: [],
-      spellLinks: [],
-      quests: [],
-    })),
-  }
-})
+const DETAIL: ItemDetail = {
+  id: 42,
+  name: 'Bloodstone',
+  equipment_slot: 'Trinket',
+  item_category: 'Trinket',
+  item_type: null,
+  minimum_level: 12,
+  enhancement_bonus: null,
+  material: null,
+  race_required: null,
+  description: null,
+  drop_location: null,
+  set_name: null,
+  accepts_sentience: false,
+  is_minor_artifact: false,
+  wiki_url: null,
+  weaponStats: null,
+  armorStats: null,
+  augmentSlots: [],
+  bonuses: [],
+  effects: [],
+  clickies: [],
+  quests: [],
+}
+
+// The view reads game data through the TanStack Query hooks; mocking the hook
+// module keeps these tests synchronous and free of a QueryClient. The state
+// the gate reacts to (`isPending` / `error`) is swapped per test.
+let rowsState: { data: ItemRow[] | undefined; isPending: boolean; error: unknown } = {
+  data: ROWS,
+  isPending: false,
+  error: null,
+}
+const refetchMock = vi.fn()
+
+vi.mock('./queries/useItems', () => ({
+  useItemRows: () => ({ ...rowsState, refetch: refetchMock }),
+  useItemDetail: (id: number | null) => ({
+    data: id === 42 ? DETAIL : undefined,
+    isPending: false,
+    error: null,
+  }),
+  useAdventurePacks: () => ({ data: ['Vault of Night'] }),
+  useStatOptions: () => ({ data: ['Charisma'] }),
+  useItemIdsByStats: () => null,
+  useItemIdsByPack: () => null,
+  useSlotCandidates: () => ({}),
+}))
 
 beforeEach(() => {
   mockParams = { category: 'items' }
+  rowsState = { data: ROWS, isPending: false, error: null }
   navigateMock.mockClear()
+  refetchMock.mockClear()
 })
 
 afterEach(() => {
   cleanup()
+})
+
+describe('ResourcesView data gate', () => {
+  it('shows the loading skeleton instead of the picker while rows load', () => {
+    rowsState = { data: undefined, isPending: true, error: null }
+    render(<ResourcesView />)
+    expect(screen.getByRole('status', { name: /loading game data/i })).toBeInTheDocument()
+    expect(screen.queryByRole('searchbox')).toBeNull()
+  })
+
+  it('shows the error screen with a retry that refetches', async () => {
+    rowsState = { data: undefined, isPending: false, error: new TypeError('Failed to fetch') }
+    render(<ResourcesView />)
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(refetchMock).toHaveBeenCalledOnce()
+  })
 })
 
 // These shortcuts were registered on the view's root <div>, so they only fired

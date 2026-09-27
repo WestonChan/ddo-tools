@@ -110,7 +110,7 @@ const routeTree = rootRoute.addChildren([
   resourcesItemRoute,
 ])
 
-// Strip trailing slash from Vite's BASE_URL (`/ddo-tools/`) — TanStack expects no trailing slash.
+// Strip trailing slash from Vite's BASE_URL (`/` on Vercel) — TanStack expects no trailing slash.
 const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
 // Accept optional history so tests can inject createMemoryHistory without cross-test bleed.

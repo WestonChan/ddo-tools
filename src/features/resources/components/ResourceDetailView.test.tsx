@@ -2,6 +2,8 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ResourceDetailView } from './ResourceDetailView'
+import { ApiError, API_ERROR_HTTP } from '../../../lib/api'
+import type { ItemDetail } from '../queries/items'
 
 // Mock router (useDetailStack uses useNavigate).
 const navigateMock = vi.fn()
@@ -9,62 +11,64 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
 }))
 
-// Mock useDatabase + getItemDetail so we don't need a real sql.js DB.
-vi.mock('../../../hooks/useDatabase', () => ({
-  useDatabase: () => ({
-    db: {
-      /* sentinel */
-    },
-  }),
-}))
-
 // Both fixture items carry the same crafting slot, so a stale expansion would
 // look perfectly plausible on the second item — which is why the bug survived
 // a manual click-through.
 const MELANCHOLIC = {
   sort_order: 0,
-  slot_id: 6,
   label: 'lamordia: melancholic (accessory)',
   family: 'lamordia',
   qualifier: 'accessory',
+  options: [],
 }
 const SLOT_CANDIDATES = {
-  [MELANCHOLIC.slot_id]: [
-    { augment_id: 1, name: 'Melancholic Charisma', min_level: 8, bonuses: [] },
-  ],
+  [MELANCHOLIC.label]: [{ augment_id: 1, name: 'Melancholic Charisma', min_level: 8, bonuses: [] }],
 }
 
-vi.mock('../queries/items', async () => {
-  const actual = await vi.importActual<typeof import('../queries/items')>('../queries/items')
+function detailFor(id: number): ItemDetail {
   return {
-    ...actual,
-    getItemDetail: vi.fn((_db: unknown, id: number) => ({
-      id,
-      name: id === 42 ? 'Test Item' : 'Other Item',
-      rarity: 'Rare',
-      equipment_slot: 'Trinket',
-      item_category: null,
-      level: null,
-      minimum_level: 12,
-      material: null,
-      binding: null,
-      base_value: null,
-      tooltip: null,
-      icon: null,
-      description: 'A test item.',
-      wiki_url: 'https://ddowiki.com/page/Item:Test_Item',
-      weaponStats: null,
-      armorStats: null,
-      augmentSlots: [MELANCHOLIC],
-      slotCandidates: SLOT_CANDIDATES,
-      upgrades: [],
-      bonuses: [],
-      effects: [],
-      spellLinks: [],
-      quests: [],
-    })),
+    id,
+    name: id === 42 ? 'Test Item' : 'Other Item',
+    equipment_slot: 'Trinket',
+    item_category: 'Trinket',
+    item_type: null,
+    minimum_level: 12,
+    enhancement_bonus: null,
+    material: null,
+    race_required: null,
+    description: 'A test item.',
+    drop_location: null,
+    set_name: null,
+    accepts_sentience: false,
+    is_minor_artifact: false,
+    wiki_url: 'https://ddowiki.com/page/Item:Test_Item',
+    weaponStats: null,
+    armorStats: null,
+    augmentSlots: [MELANCHOLIC],
+    bonuses: [],
+    effects: [],
+    clickies: [],
+    quests: [],
   }
-})
+}
+
+// Mock the query hooks rather than the network so the body renders
+// synchronously. Id 404 stands in for an item the API doesn't know; id 500
+// for a transport failure.
+vi.mock('../queries/useItems', () => ({
+  useItemDetail: (id: number | null) => {
+    if (id === null) return { data: undefined, isPending: false, error: null }
+    if (id === 404) {
+      return { data: undefined, isPending: false, error: new ApiError(API_ERROR_HTTP, 404, 'no') }
+    }
+    if (id === 500) {
+      return { data: undefined, isPending: false, error: new TypeError('Failed to fetch') }
+    }
+    return { data: detailFor(id), isPending: false, error: null }
+  },
+  useItemRows: () => ({ data: [{ id: 42, name: 'Test Item' }] }),
+  useSlotCandidates: () => SLOT_CANDIDATES,
+}))
 
 afterEach(() => {
   cleanup()
@@ -84,10 +88,27 @@ describe('ResourceDetailView', () => {
     expect(screen.getByText('A test item.')).toBeInTheDocument()
   })
 
+  it('resolves a nameless URL entry to its name from the cached row list', () => {
+    render(<ResourceDetailView urlEntry={{ category: 'items', id: 42 }} baseCategory="items" />)
+    // The breadcrumb is the only place the enriched stack name is rendered.
+    expect(screen.getByRole('heading', { level: 2, name: 'Test Item' })).toBeInTheDocument()
+    expect(screen.getAllByText('Test Item').length).toBeGreaterThan(1)
+  })
+
   it('renders the no-selection empty state when urlEntry is null', () => {
     const { container } = render(<ResourceDetailView urlEntry={null} baseCategory="items" />)
     // Only one DetailEmpty renders when the stack is empty (no parsed body).
     expect(container.querySelector('.section-placeholder')).toHaveTextContent(/select an item/i)
+  })
+
+  it('renders not-found for an id the API does not know', () => {
+    render(<ResourceDetailView urlEntry={{ category: 'items', id: 404 }} baseCategory="items" />)
+    expect(screen.getByRole('status')).toHaveTextContent('No item with id 404.')
+  })
+
+  it('renders an error state for a transport failure', () => {
+    render(<ResourceDetailView urlEntry={{ category: 'items', id: 500 }} baseCategory="items" />)
+    expect(screen.getByRole('status')).toHaveTextContent(/could not load this item/i)
   })
 
   it('renders the DetailBar with breadcrumb at depth 1 (no back arrow)', () => {

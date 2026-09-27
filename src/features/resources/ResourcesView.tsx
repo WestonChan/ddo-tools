@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, type JSX } from 'react'
+import { useCallback, useEffect, useRef, type JSX } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { CategoryTabs } from './components/CategoryTabs'
 import { PickerPanel } from './components/PickerPanel'
 import { ResourceDetailView } from './components/ResourceDetailView'
-import { Modal } from '../../components'
-import { useDatabase } from '../../hooks/useDatabase'
-import { listItems } from './queries/items'
+import { ApiGate, Modal } from '../../components'
+import { useItemRows } from './queries/useItems'
 import { DETAIL_TITLE_ID, isCategory, type Category } from './types'
 import './ResourcesView.css'
 
@@ -29,12 +28,11 @@ function useResourcesParams(): { category: Category; id: number | null } {
 function ResourcesView(): JSX.Element {
   const { category, id } = useResourcesParams()
   const navigate = useNavigate()
-  const { db } = useDatabase()
   const searchRef = useRef<HTMLInputElement | null>(null)
 
-  // DatabaseGate (in routeComponents.tsx) blocks rendering until db is ready,
-  // so non-null is guaranteed by the time this component mounts.
-  const itemRows = useMemo(() => (db && category === 'items' ? listItems(db) : []), [db, category])
+  // The whole item list, once per session: search and most filters run
+  // client-side over it. Cached by TanStack Query for the page's lifetime.
+  const items = useItemRows(category === 'items')
 
   function handleSelect(next: Category): void {
     navigate({ to: `/resources/${next}` })
@@ -79,8 +77,8 @@ function ResourcesView(): JSX.Element {
   }, [id])
 
   // The popover only needs identity (category + id). Display names are
-  // resolved against the DB by ResourceDetailView at render time, so the
-  // entry passed in here doesn't need to carry a name.
+  // resolved by ResourceDetailView at render time, so the entry passed in
+  // here doesn't need to carry a name.
   const urlEntry = id !== null ? { category, id } : null
 
   return (
@@ -95,12 +93,14 @@ function ResourcesView(): JSX.Element {
           inert={id !== null || undefined}
         >
           {category === 'items' ? (
-            <PickerPanel
-              category={category}
-              rows={itemRows}
-              selectedId={id}
-              searchInputRef={searchRef}
-            />
+            <ApiGate isPending={items.isPending} error={items.error} onRetry={() => void items.refetch()}>
+              <PickerPanel
+                category={category}
+                rows={items.data ?? []}
+                selectedId={id}
+                searchInputRef={searchRef}
+              />
+            </ApiGate>
           ) : (
             <p className="section-placeholder">{category} coming soon.</p>
           )}

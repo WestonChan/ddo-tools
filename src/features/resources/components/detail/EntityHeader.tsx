@@ -7,10 +7,6 @@ import { KeyValueGrid, type KvItem } from './KeyValueGrid'
 
 interface EntityHeaderProps {
   name: string
-  // Per-rarity tint on the title. Light/dark themes both adjust at runtime via
-  // the `data-rarity` attribute → CSS variable lookup, so the component never
-  // hardcodes hue.
-  rarity?: string | null
   // Compact KV pairs (slot, ML, material, etc.) that sit under the name.
   attributes: KvItem[]
   // Authoritative wiki URL for the entity (e.g. `items.wiki_url`). Renders
@@ -32,7 +28,6 @@ const COPY_FEEDBACK_MS = 1500
 // per-category detail wiring it up.
 export function EntityHeader({
   name,
-  rarity,
   attributes,
   wikiUrl,
   wikiPageName,
@@ -71,7 +66,6 @@ export function EntityHeader({
         <h2
           id={DETAIL_TITLE_ID}
           className="resources-entity-name"
-          data-rarity={rarity?.toLowerCase() ?? undefined}
         >
           {name}
         </h2>
