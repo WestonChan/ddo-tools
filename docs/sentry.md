@@ -19,28 +19,30 @@ DDO Tools uses [Sentry](https://sentry.io) for automatic error capture in produc
 
 ### 2. Configure local development
 
-Copy [`.env.example`](../.env.example) to `.env.local` and fill in:
+Copy [`.env.example`](../.env.example) to `.env` and fill in:
 
 ```
-VITE_SENTRY_DSN=https://<your-key>@<org>.ingest.sentry.io/<project-id>
+SENTRY_DSN=https://<your-key>@<org>.ingest.sentry.io/<project-id>
 ```
 
-Restart `npm run dev` after creating `.env.local`. Sentry init logs `[sentry] no DSN configured; skipping init` when the DSN is missing — once configured, that line goes away and capture starts working.
+Restart `npm run dev` after editing `.env`. Sentry init logs `[sentry] no DSN configured; skipping init` when the DSN is missing — once configured, that line goes away and capture starts working.
 
-Optionally, set `VITE_SENTRY_ORG` to your org slug (the part before `.sentry.io` in your dashboard URL — e.g. `weston-00` for `https://weston-00.sentry.io/...`). When set, the bottom-bar "Report a bug" issue body includes a clickable Sentry replay URL so you can jump from a GitHub issue straight into the recorded session. Without it, only the replay ID lands in the body and you'd look it up manually.
+Optionally, set `SENTRY_ORG` to your org slug (the part before `.sentry.io` in your dashboard URL — e.g. `weston-00` for `https://weston-00.sentry.io/...`). When set, the bottom-bar "Report a bug" issue body includes a clickable Sentry replay URL so you can jump from a GitHub issue straight into the recorded session. Without it, only the replay ID lands in the body and you'd look it up manually.
 
-`VITE_SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` are needed for **CI source-map upload** (used by `@sentry/vite-plugin` during production builds). They're not needed for local dev.
+`SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` are needed for **CI source-map upload** (used by `@sentry/vite-plugin` during production builds). They're not needed for local dev.
 
-> **Browser-extension blocking.** Most ad/tracker blockers (uBlock Origin, Brave Shield, AdBlock, AdGuard, Privacy Badger) include `*.ingest.sentry.io` on their default blocklists, so you'll see `net::ERR_BLOCKED_BY_CLIENT` in the console when an event tries to upload. To verify locally, whitelist `localhost` in your blocker. In production, expect ~25-40% of users to be filtered this way — typical industry baseline. If the loss matters enough later, set up a Sentry tunnel (a same-origin endpoint that proxies to Sentry; needs a Cloudflare Worker / Vercel Edge function since this is GitHub Pages with no backend).
+> **Browser-extension blocking.** Most ad/tracker blockers (uBlock Origin, Brave Shield, AdBlock, AdGuard, Privacy Badger) include `*.ingest.sentry.io` on their default blocklists, so you'll see `net::ERR_BLOCKED_BY_CLIENT` in the console when an event tries to upload. To verify locally, whitelist `localhost` in your blocker. In production, expect ~25-40% of users to be filtered this way — typical industry baseline. If the loss matters enough later, set up a Sentry tunnel (a same-origin endpoint that proxies to Sentry; a Vercel Edge function or a route on `ddo-api` would do).
 
-### 3. Configure GitHub Actions for production builds
+### 3. Configure production builds
 
-Add these as GitHub repo secrets (Settings → Secrets and variables → Actions):
+The variable names are the ones [Vercel's Sentry integration](https://vercel.com/integrations/sentry) injects, so on Vercel you install the integration, pick the project, scope it to **Production**, and you're done. Vite only exposes `VITE_`-prefixed variables to client code, so [`vite.config.ts`](../vite.config.ts) inlines `SENTRY_DSN` and `SENTRY_ORG` explicitly with `define`; the token and project slug stay build-side.
 
-- `VITE_SENTRY_DSN` — same DSN as local. Inlined into the production JS bundle. DSNs are write-only ingestion keys, designed to be public, so shipping it in the bundle is safe.
-- `VITE_SENTRY_ORG` — your Sentry org slug. Inlined into the bundle so the bottom-bar "Report a bug" can build clickable replay URLs.
-- `VITE_SENTRY_PROJECT` — your Sentry project slug. Inlined too (used by the build-time source-map plugin).
-- `SENTRY_AUTH_TOKEN` — generate at [sentry.io/settings/account/api/auth-tokens/](https://sentry.io/settings/account/api/auth-tokens/) with `project:releases` scope. **Secret** — never `VITE_`-prefixed since it must stay out of the public client bundle.
+For the GitHub Actions build check, add the same four as repo secrets (Settings → Secrets and variables → Actions):
+
+- `SENTRY_DSN` — same DSN as local. Inlined into the production JS bundle. DSNs are write-only ingestion keys, designed to be public, so shipping it in the bundle is safe.
+- `SENTRY_ORG` — your Sentry org slug. Inlined into the bundle so the bottom-bar "Report a bug" can build clickable replay URLs.
+- `SENTRY_PROJECT` — your Sentry project slug. Build-time only (source-map plugin).
+- `SENTRY_AUTH_TOKEN` — generate at [sentry.io/settings/account/api/auth-tokens/](https://sentry.io/settings/account/api/auth-tokens/) with `project:releases` scope. **Secret** — used only by the build-time plugin and never inlined into the bundle.
 
 The CI workflow ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) forwards all four to the build step. When any is missing, the Vite plugin falls back to no-op for source-map upload — the deploy still succeeds, you just don't get symbolicated stacks.
 

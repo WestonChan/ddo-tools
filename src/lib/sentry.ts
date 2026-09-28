@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react'
 import { sanitizeUrl } from './githubIssue'
 
 export function initSentry(): void {
-  const dsn = import.meta.env.VITE_SENTRY_DSN
+  const dsn = import.meta.env.SENTRY_DSN
   if (!dsn) {
     console.info('[sentry] no DSN configured; skipping init')
     return
@@ -61,7 +61,7 @@ export function getLastSentryContext(): SentryContextSnapshot {
     const eventId = Sentry.lastEventId() ?? undefined
     const replay = Sentry.getReplay?.()
     const replayId = replay?.getReplayId?.() ?? undefined
-    const orgSlug = import.meta.env.VITE_SENTRY_ORG
+    const orgSlug = import.meta.env.SENTRY_ORG
     const replayUrl = replayId && orgSlug
       ? `https://${orgSlug}.sentry.io/replays/${replayId}/`
       : undefined

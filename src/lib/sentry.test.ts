@@ -20,14 +20,14 @@ describe('initSentry', () => {
   })
 
   it('skips init and logs an info message when no DSN is configured', () => {
-    vi.stubEnv('VITE_SENTRY_DSN', '')
+    vi.stubEnv('SENTRY_DSN', '')
     initSentry()
     expect(initSpy).not.toHaveBeenCalled()
     expect(infoSpy).toHaveBeenCalled()
   })
 
   it('does not crash when Sentry.init throws (e.g. malformed DSN)', () => {
-    vi.stubEnv('VITE_SENTRY_DSN', 'not-a-real-dsn')
+    vi.stubEnv('SENTRY_DSN', 'not-a-real-dsn')
     initSpy.mockImplementationOnce(() => {
       throw new Error('Invalid DSN')
     })
@@ -89,8 +89,8 @@ describe('getLastSentryContext', () => {
     expect(getLastSentryContext().eventId).toBe('evt_test')
   })
 
-  it('returns a clickable Sentry replay URL when getReplay() reports a replay ID and VITE_SENTRY_ORG is set', () => {
-    vi.stubEnv('VITE_SENTRY_ORG', 'weston-00')
+  it('returns a clickable Sentry replay URL when getReplay() reports a replay ID and SENTRY_ORG is set', () => {
+    vi.stubEnv('SENTRY_ORG', 'weston-00')
     lastEventIdSpy.mockReturnValueOnce('evt_a')
     getReplaySpy.mockReturnValueOnce({
       getReplayId: () => 'rep_xyz',
@@ -101,8 +101,8 @@ describe('getLastSentryContext', () => {
     vi.unstubAllEnvs()
   })
 
-  it('omits replayUrl when VITE_SENTRY_ORG is unset (replay ID alone is not enough to build a link)', () => {
-    vi.stubEnv('VITE_SENTRY_ORG', '')
+  it('omits replayUrl when SENTRY_ORG is unset (replay ID alone is not enough to build a link)', () => {
+    vi.stubEnv('SENTRY_ORG', '')
     lastEventIdSpy.mockReturnValueOnce('evt_a')
     getReplaySpy.mockReturnValueOnce({
       getReplayId: () => 'rep_xyz',

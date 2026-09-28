@@ -119,9 +119,9 @@ jobs:
           # Inlined into the production bundle. DSNs are designed to be
           # public; org and project slugs are visible in dashboard URLs
           # anyway. Org powers replay-URL construction at runtime.
-          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          VITE_SENTRY_ORG: ${{ secrets.VITE_SENTRY_ORG }}
-          VITE_SENTRY_PROJECT: ${{ secrets.VITE_SENTRY_PROJECT }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
           # Secret — source-map upload via @sentry/vite-plugin. Plugin
           # no-ops when the token is unset, so absence of the secret is
           # safe.
