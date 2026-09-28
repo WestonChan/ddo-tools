@@ -43,7 +43,6 @@ htmlcov/
 
 # Claude Code
 .claude/
-CLAUDE.md
 .mcp.json
 test-results/
 playwright-report/

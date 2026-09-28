@@ -1,0 +1,117 @@
+# DDO Tools
+
+A toolkit for Dungeons & Dragons Online (DDO) — character builds and gear planning.
+
+This file is the instruction set for every coding agent working in the repo (Claude Code, Codex, and others that read `AGENTS.md`). `CLAUDE.md` is a symlink to it, so there is one source. Claude Code additionally loads the path-scoped rules under `.claude/rules/` when editing matching files; agents that don't support that should read those files directly when working in the areas they name.
+
+## Quick Reference
+
+```bash
+# Frontend
+npm run dev          # Dev server at http://localhost:5173/ (needs VITE_API_URL in .env, or the public API)
+npm run build        # Production build
+npm run lint         # ESLint (includes the no-comments rule)
+npm run lint:fix     # ESLint with autofix; strips comments and docblocks
+npm run format       # Prettier
+
+# Python data pipeline (run from scripts/)
+pip install -e "scripts/.[dev]"  # Install with dev deps (or: uv pip install -e "scripts/.[dev]")
+ddo-data --help                  # CLI commands
+ddo-data info                    # Show DDO install info and .dat files
+ddo-data parse <file>            # Parse a .dat archive header
+cd scripts && uv run pytest tests/   # Run Python tests (see note below)
+```
+
+## Project Structure
+
+- **Stack** — React 19 + TypeScript + Vite + TanStack Query on the frontend; Python (`click`-based CLI, type hints required) in `scripts/` (legacy pipeline, superseded by the `ddo-data` Rust repo). The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
+- **App shell** — `src/app/` contains only components that appear on every page (root App, nav bar, bottom bar, loading gate, error boundary). The shell should still render with all features removed.
+- **Feature modules** — domain features live under `src/features/`, each owning its own views, components, types, and CSS. See `.claude/rules/frontend.md` for the per-feature breakdown.
+- **Shared frontend code** — non-feature code lives at the `src/` level (`src/components/`, `src/hooks/`, `src/stores/`).
+- **Dependency direction** — imports flow downward only: `app/` → `features/` → shared. Shared code never imports from `features/` or `app/`; features never import from `app/` or each other.
+- **Python data pipeline** — `scripts/` is a standalone Python package (`ddo-data`) with its own `pyproject.toml`. See `.claude/rules/python.md` for the package layout.
+- **Data flow** — the sibling `ddo-data` repo parses DDOBuilderV2's data files into SQLite and serves it as a read-only HTTP API (`ddo-api`, on Fly.io). The React app reads that API through `src/lib/api/` + TanStack Query; `VITE_API_URL` selects the deployment.
+- **Hosting** — Vercel (static SPA, `vercel.json` rewrite). Every push to `main` deploys via Vercel's GitHub integration; CI on GitHub Actions only lints, tests, and builds.
+
+## Roadmap
+
+[`docs/roadmap.md`](docs/roadmap.md) is the single source of truth for project organization. Architecture decisions, feature specs, and the phased implementation plan all live there.
+
+- **Read it** before proposing a new feature, picking up the next phase, or making non-trivial scope decisions. Phase numbering and ordering are intentional.
+- **Write to it** when new tasks, features, or phases are agreed with the user. Don't create parallel planning docs, scratch TODO files, or sprinkle TODO comments in code for work that belongs on the roadmap. If a task is too small for a phase, append it to the relevant existing phase.
+- **Keep it current** — when a phase ships, mark it done (see existing `(done)` markers, e.g. Phase 1, Phase 2, Phase 3). When scope changes mid-phase, update the phase rather than relying on memory or chat history.
+- **Update the roadmap in the same commit that ships the work.** When a commit implements a roadmap entry, remove the bullet (or mark the phase `(done)`) as part of that same commit so the roadmap never lags behind reality. Don't leave roadmap cleanup as a follow-up commit.
+- The plan files under `.claude/plans.local/` are scratch space for an individual planning session and are not a substitute for the roadmap.
+
+### Detailed task notes (`docs/notes/`)
+
+`docs/notes/` holds long-form task notes for specific features/views, viewed in Obsidian. Use it when bullets would bloat the roadmap (deep nested lists, design exploration, per-feature backlogs). The roadmap stays the source of truth for **what ships and when**; notes are detail scratch the roadmap can link to.
+
+- **One file per view/feature**, Title Case filename matching the view name (e.g., [`docs/notes/Resource View.md`](docs/notes/Resource%20View.md), [`docs/notes/Gear View.md`](docs/notes/Gear%20View.md)). Use [`docs/notes/To Do.md`](docs/notes/To%20Do.md) only for unscoped catch-all items.
+- **Tag each phase-scoped bullet with its roadmap phase** (e.g., `🚧 Phase 4b — ...`, `📋 Phase 4c — ...`). Each notes file starts with a status legend; the canonical set is `✅ done · 🚧 in this phase · 📋 planned (future phase, see tag) · ❌ won't do · 🐛 bug`. Bullets that span multiple phases (e.g. comparison-view detail in [`docs/notes/Gear View.md`](docs/notes/Gear%20View.md)) get the most specific tag that applies. **You are free to add new icons to the legend** when a situation calls for one that doesn't exist yet (e.g., a `⚠ blocked` state, a `🔁 cleanup` category) — just add it to the legend at the top of the file alongside the others, define it in one short phrase, and use it consistently.
+- **Roadmap entries should be terse and link out** to the matching note when detail lives there, rather than duplicating bullets in both places.
+- **Prune notes in the same commit that ships the work**, same rule as the roadmap — when a `🚧` bullet ships, mark it `✅` (or delete it). Don't let notes drift behind reality.
+- **Plain markdown only** (Obsidian renders these). No fenced HTML, no JSX, no code-as-prose tricks. Wikilinks (`[[Resource View]]`) are fine if useful.
+- **`Developer Notes:` block at the bottom** — the user occasionally appends a freeform `Developer Notes:` (or `## Developer Notes`) section at the bottom of a note file as inbox-style raw thoughts. When you encounter one: read every line, fold each item into the appropriate phase-tagged bullet in the structured section above (creating new bullets with the right `🚧 Phase N…` / `⏭ Phase N…` prefix as needed), then **delete the `Developer Notes:` block** in the same edit. If an item is genuinely unscoped, move it into [`docs/notes/To Do.md`](docs/notes/To%20Do.md) rather than leaving it loose. If an item is ambiguous (you can't tell which phase it belongs to or which existing bullet it refines), ask the user before integrating — don't guess.
+- **Notes are not a substitute for `.claude/plans.local/`** — plan files there remain per-session scratch for an individual planning session; notes in `docs/notes/` are durable, feature-scoped backlogs.
+
+## Working directory
+
+The agent's cwd is already the project root (`ddo-tools`). **Do not `cd` into it.** Don't prefix bash commands with `cd "/Users/.../ddo-tools" && ...`. Use relative paths (preferred) or absolute paths directly.
+
+If you genuinely need to run a command from a subdirectory, use `cd subdir && ...` for that single command — don't `cd` to the project root, you're already there.
+
+## Code Quality
+
+- **Keep code clean.** When working in a file, improve adjacent code that is messy, inconsistent, or overly complex. Don't leave a file worse than you found it.
+- **Refactor freely.** Extract shared logic, simplify conditionals, improve naming, remove dead code. If a refactor makes the code meaningfully better, do it — don't wait to be asked. Follow refactors wherever they lead; don't artificially limit scope.
+- **No comments, no docstrings.** Code carries its meaning in names, types, and tests, so a future agent reads it without any prose. Do not write inline comments, docblocks, JSDoc, Python docstrings, or per-parameter descriptions. If something seems to need a comment to be understood, that is the signal to rename, split, or restructure it until it doesn't. Reasoning that genuinely can't live in code (a decision, an external quirk, a rejected alternative) goes in `docs/` or the roadmap, not next to the code. Enforced by the local ESLint rule in `eslint-rules/no-comments.js`; `npm run lint:fix` strips offenders. Directive comments (`eslint-disable`, `@ts-expect-error`, `/// <reference>`) are the only survivors. Scope the name to the scope of the thing:
+  - **Specific things get purpose names.** A hook, component, or function that exists for one job is named for that job, not its mechanism: `useSlotCandidates`, `fetchItemIdsByPack`, `ApiGate` — not `useQueries2`, `getIds`, `Wrapper`.
+  - **Shared things get general names.** Code in `src/components/`, `src/hooks/`, `src/lib/` serves many callers, so its name describes the capability, not the first caller: `Modal`, `useLocalStorage`, `apiGet` — not `ItemDrawer`, `useThemePref`, `fetchItems`. If a shared name only makes sense from one feature's point of view, either the name is wrong or the code belongs in that feature.
+  - **Booleans read as predicates** (`isPending`, `slotTakesCandidateList`), **collections as plurals** (`rows`, `candidates`), **mappers as `toX`**, **fetchers as `fetchX`**, **hooks as `useX`**. A variable whose name needs a comment to explain it needs a better name instead.
+
+## Testing
+
+Python: `cd scripts && uv run pytest tests/` -- Frontend: `npx vitest run` -- both must pass before committing.
+
+**Don't use `uvx pytest scripts/`.** It fails with `ModuleNotFoundError: No module named 'ddo_data'`, because `uvx` builds a throwaway environment that has pytest but not this package, and `scripts/tests/conftest.py` imports `ddo_data` at collection time. `uv run` from inside `scripts/` uses the project's own environment, where the package is installed editable. (`uvx` is still right for tools that don't import project code — `uvx ruff check scripts/`.)
+
+### Test-driven development
+
+Write tests **before** the code they cover. The required loop:
+
+1. **Write a failing test** that captures the new behavior or reproduces the bug.
+2. **Run the test and confirm it fails** for the expected reason — not a syntax error, not a missing import. Quote the failure in your response so it's clear the test actually exercised the gap.
+3. **Write the minimum code** needed to make the test pass.
+4. **Run the test and confirm it passes.** Then run the full suite (`cd scripts && uv run pytest tests/` or `npx vitest run`) to confirm nothing else broke.
+5. **Refactor** if needed, keeping tests green.
+
+This applies to new pipeline code, new hooks/components with logic, bug fixes, and behavior changes. It does **not** apply to:
+- Pure refactors that don't change behavior (existing tests must still pass).
+- Presentational components with no logic.
+- Doc, config, or styling-only changes.
+
+If a test is hard to write before the code, that's a signal the design is unclear — pause and clarify the contract before implementing. Don't write the code first and back-fill the test; that produces tests that mirror the implementation rather than the intent.
+
+Test conventions (where tests live, what to test, mocking patterns) are in `.claude/rules/testing.md`; read it when editing test files.
+
+## Commits
+
+- **Atomic commits**: Each commit is a single logical change that passes lint (`npm run lint`) and builds (`npm run build`). No broken intermediate states.
+- **Feature branches**: Implementation work happens on feature branches (e.g., `navigation-refactor`), then merges directly into `main` — fast-forward where possible, matching the linear history — after which the local branch is deleted. Feature branches stay local; only `main` is pushed. (The `Merge pull request #1`–`#4` commits are historical; work no longer routes through review-before-merge.)
+- **Commit per step**: When following a multi-step implementation plan, each step gets its own commit. Don't batch unrelated changes.
+- **Tests pass**: All existing tests must pass before committing. New pure logic (stats engine, validation, etc.) must include vitest unit tests.
+- **Patch notes upkeep**: When user-visible changes (new features, UI changes, bug fixes that change behavior) ship, add an entry to [`src/features/landing/data/sitePatchNotes.ts`](src/features/landing/data/sitePatchNotes.ts). Either append a new dated entry (today's ship date in `YYYY-MM-DD`) or add a bullet to today's entry if one already exists. Keep bullets terse and imperative — match commit-subject voice. Skip purely-internal changes (refactors with no user-visible effect, comment-only edits, test-only changes).
+- **Version bump before merging to `main`**: Every push to `main` ships a new site version, so before a branch merges into `main`, bump the `version` in [`package.json`](package.json) by one **patch** step (e.g. `0.0.4` → `0.0.5`) as part of the branch. The landing footer displays this version at build time. **Never bump the major version** — it stays `0` until the developer explicitly declares the site fully released; minor/major bumps happen only on the developer's explicit instruction.
+
+## Reference Docs
+
+Path-relevant docs (styling, testing, db, dat) are surfaced by `.claude/rules/*.md` when editing matching files (automatically in Claude Code; read them yourself elsewhere). The docs below are not path-scoped — read them when the situation calls for it.
+
+| Doc | Read when |
+|-----|-----------|
+| [`docs/etl-invariants.md`](docs/etl-invariants.md) | **Before changing any parser or writer in `scripts/`.** Hard rules established in Phase 4c: templates are structure to expand (never strip), normalize strings at the writer boundary, `bonuses.name` cannot validate anything, `build-db` updates in place so idempotency is a correctness property |
+| [`docs/ddowiki-api.md`](docs/ddowiki-api.md) | Looking up DDO game data from ddowiki.com via WebFetch, or scraping/fetching wiki content from either the Python pipeline or the frontend client. Also: what the AWS WAF blocks, and what the `.wiki-cache` index can still enumerate offline |
+| [`docs/sentry.md`](docs/sentry.md) | Configuring Sentry, troubleshooting error capture, or working with `src/lib/sentry.ts` |
+| [`docs/stacking-rules.md`](docs/stacking-rules.md) | Designing or implementing anything that computes stats from bonuses — the Phase 6–8 stats/gear engine, bonus stacking, effect resolution, or the stacking-semantics tooltip. Documents DDO's rules as game facts (sourced from DDOBuilderV2's model; see the licensing note in roadmap Phase 6) |
+| [`docs/stacking-rules.md`](docs/stacking-rules.md) | Implementing or reasoning about bonus stacking, effect resolution, or stat breakdowns (Phases 6–8 stats/gear engine) |
