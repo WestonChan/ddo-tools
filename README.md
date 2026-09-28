@@ -53,9 +53,6 @@ npm run dev
 | `npm test` | Vitest unit and integration tests |
 | `npm run test:e2e` | Playwright end-to-end tests |
 
-The `scripts/` directory holds the previous Python pipeline (DDO `.dat` archive parsing and DDO Wiki
-scraping). It is superseded by `ddo-data` and kept for reference only.
-
 ## Deployment
 
 Every push to `main` runs the CI workflow (lint, tests, build). Vercel's GitHub integration builds and
@@ -66,13 +63,7 @@ step — merging to `main` is the release. Game-data deployments are scheduled s
 ## Credits
 
 - [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOBuilder) -- the source of the game data (items, augments, sets, feats, enhancements, spells), used with permission via the `ddo-data` pipeline
-- [DDO Wiki](https://ddowiki.com/) -- item, quest, and effect data for the previous pipeline, and the per-entity wiki links in the app; wiki content is available under CC BY-SA
-- [DATUnpacker](https://github.com/Middle-earth-Revenge/DATUnpacker) (Middle-earth-Revenge) -- C#/.NET reference for the Turbine .dat archive format and compression scheme
-- [DATExplorer](https://github.com/Middle-earth-Revenge/DATExplorer) (Middle-earth-Revenge) -- C# tool documenting the B-tree directory structure and header field layout
-- [LotroCompanion/lotro-tools](https://github.com/LotroCompanion/lotro-tools) (LotroCompanion) -- Java extraction tools revealing the PropertiesSet/DataFacade pattern for Turbine game data
-- [jtauber/lotro](https://github.com/jtauber/lotro) (James Tauber) -- Python dat explorer with entry header patterns for textures and localization
-- [LocalDataExtractor](https://github.com/Middle-earth-Revenge/LocalDataExtractor) (Middle-earth-Revenge) -- C# localization parser documenting variable-length encoding and UTF-16LE string format
-- [lulrai/bot-client](https://github.com/lulrai/bot-client) (lulrai) -- Python LOTRO tools documenting VLE encoding and Turbine property stream primitives
+- [DDO Wiki](https://ddowiki.com/) -- the per-entity wiki links in the app, and the data source of the retired Python pipeline; wiki content is available under CC BY-SA
 
 ## License
 

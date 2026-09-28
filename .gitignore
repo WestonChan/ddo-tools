@@ -19,27 +19,8 @@ build/
 *.swo
 .DS_Store
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-*.egg
-.eggs/
 dist/
 build/
-.venv/
-venv/
-env/
-
-# Extracted raw data (large files, not committed)
-scripts/raw_data/
-scripts/extracted/
-
-# Test / Coverage
-.coverage
-htmlcov/
-.pytest_cache/
 
 # Claude Code
 .claude/
@@ -53,11 +34,8 @@ playwright-report/
 # Screenshots
 screenshots/
 
-# Wiki scraper cache
+# Wiki page cache from the retired Python scraper (kept locally; ddowiki's WAF blocks refetching)
 .wiki-cache/
-
-# Diagnostic scripts (throwaway investigation tools)
-scripts/diag_*.py
 
 # SQLite temp files
 *.db-shm

@@ -1,28 +1,13 @@
 # Testing Guide
 
-Testing conventions for the Python data pipeline, the React frontend (unit/integration), and end-to-end browser tests. Three runners, three file-naming patterns:
+Testing conventions for the React frontend (unit/integration) and end-to-end browser tests. Two runners, two file-naming patterns:
 
 | Runner | File pattern | Location |
 |---|---|---|
-| pytest | `test_*.py` | `scripts/tests/` |
 | Vitest | `*.test.{ts,tsx}` | co-located in `src/` |
 | Playwright | `*.spec.ts` | `e2e/` |
 
 The directory and the filename suffix together identify which runner picks up a file. Don't cross them — `.spec.*` belongs to Playwright, `.test.*` belongs to Vitest.
-
-## Python (pytest)
-
-- **Always write tests** for new pipeline code (parsers, writers, scrapers, CLI commands).
-- **Test location:** `scripts/tests/` -- mirrors the source structure (e.g., `test_db.py` for `db/writers.py`, `test_cli.py` for `cli.py`).
-- **File naming:** `test_*.py` (pytest's default discovery pattern). Don't use `*_test.py`.
-- **Run tests:** `pytest scripts/` before committing. All tests must pass.
-- **What to test:**
-  - New writer functions (`insert_*`, `populate_*`, `backfill_*`) -- verify row counts and spot-check data.
-  - New parser functions -- test with representative wiki template strings and edge cases.
-  - New CLI commands -- use `CliRunner` with mocked wiki/binary data (see existing `test_cli.py` patterns).
-  - Schema changes -- ensure `create_schema()` succeeds and new tables/columns exist.
-- **Mock external dependencies:** Wiki API calls, binary file reads, and filesystem access should be mocked in tests. Use `unittest.mock.patch` with `contextlib.ExitStack` for multiple mocks.
-- **Don't skip tests:** If a test breaks due to your changes, fix the test -- don't delete it.
 
 ## Frontend (vitest + @testing-library/react)
 

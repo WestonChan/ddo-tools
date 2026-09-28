@@ -13,23 +13,18 @@ npm run build        # Production build
 npm run lint         # ESLint (includes the no-comments rule)
 npm run lint:fix     # ESLint with autofix; strips comments and docblocks
 npm run format       # Prettier
-
-# Python data pipeline (run from scripts/)
-pip install -e "scripts/.[dev]"  # Install with dev deps (or: uv pip install -e "scripts/.[dev]")
-ddo-data --help                  # CLI commands
-ddo-data info                    # Show DDO install info and .dat files
-ddo-data parse <file>            # Parse a .dat archive header
-cd scripts && uv run pytest tests/   # Run Python tests (see note below)
+npx vitest run       # Unit and integration tests
 ```
+
+Game data comes from the sibling `ddo-data` repo (Rust ETL + API); this repo has no data pipeline.
 
 ## Project Structure
 
-- **Stack** — React 19 + TypeScript + Vite + TanStack Query on the frontend; Python (`click`-based CLI, type hints required) in `scripts/` (legacy pipeline, superseded by the `ddo-data` Rust repo). The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
+- **Stack** — React 19 + TypeScript + Vite + TanStack Query. The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
 - **App shell** — `src/app/` contains only components that appear on every page (root App, nav bar, bottom bar, loading gate, error boundary). The shell should still render with all features removed.
 - **Feature modules** — domain features live under `src/features/`, each owning its own views, components, types, and CSS. See `.claude/rules/frontend.md` for the per-feature breakdown.
 - **Shared frontend code** — non-feature code lives at the `src/` level (`src/components/`, `src/hooks/`, `src/stores/`).
 - **Dependency direction** — imports flow downward only: `app/` → `features/` → shared. Shared code never imports from `features/` or `app/`; features never import from `app/` or each other.
-- **Python data pipeline** — `scripts/` is a standalone Python package (`ddo-data`) with its own `pyproject.toml`. See `.claude/rules/python.md` for the package layout.
 - **Data flow** — the sibling `ddo-data` repo parses DDOBuilderV2's data files into SQLite and serves it as a read-only HTTP API (`ddo-api`, on Fly.io). The React app reads that API through `src/lib/api/` + TanStack Query; `VITE_API_URL` selects the deployment.
 - **Hosting** — Vercel (static SPA, `vercel.json` rewrite). Every push to `main` deploys via Vercel's GitHub integration; CI on GitHub Actions only lints, tests, and builds.
 
@@ -72,9 +67,7 @@ If you genuinely need to run a command from a subdirectory, use `cd subdir && ..
 
 ## Testing
 
-Python: `cd scripts && uv run pytest tests/` -- Frontend: `npx vitest run` -- both must pass before committing.
-
-**Don't use `uvx pytest scripts/`.** It fails with `ModuleNotFoundError: No module named 'ddo_data'`, because `uvx` builds a throwaway environment that has pytest but not this package, and `scripts/tests/conftest.py` imports `ddo_data` at collection time. `uv run` from inside `scripts/` uses the project's own environment, where the package is installed editable. (`uvx` is still right for tools that don't import project code — `uvx ruff check scripts/`.)
+`npx vitest run` must pass before committing. The ETL and API have their own suites in the `ddo-data` repo (`cargo test`).
 
 ### Test-driven development
 
@@ -83,10 +76,10 @@ Write tests **before** the code they cover. The required loop:
 1. **Write a failing test** that captures the new behavior or reproduces the bug.
 2. **Run the test and confirm it fails** for the expected reason — not a syntax error, not a missing import. Quote the failure in your response so it's clear the test actually exercised the gap.
 3. **Write the minimum code** needed to make the test pass.
-4. **Run the test and confirm it passes.** Then run the full suite (`cd scripts && uv run pytest tests/` or `npx vitest run`) to confirm nothing else broke.
+4. **Run the test and confirm it passes.** Then run the full suite (`npx vitest run`) to confirm nothing else broke.
 5. **Refactor** if needed, keeping tests green.
 
-This applies to new pipeline code, new hooks/components with logic, bug fixes, and behavior changes. It does **not** apply to:
+This applies to new hooks/components with logic, bug fixes, and behavior changes. It does **not** apply to:
 - Pure refactors that don't change behavior (existing tests must still pass).
 - Presentational components with no logic.
 - Doc, config, or styling-only changes.
@@ -106,12 +99,10 @@ Test conventions (where tests live, what to test, mocking patterns) are in `.cla
 
 ## Reference Docs
 
-Path-relevant docs (styling, testing, db, dat) are surfaced by `.claude/rules/*.md` when editing matching files (automatically in Claude Code; read them yourself elsewhere). The docs below are not path-scoped — read them when the situation calls for it.
+Path-relevant docs (styling, testing) are surfaced by `.claude/rules/*.md` when editing matching files (automatically in Claude Code; read them yourself elsewhere). The docs below are not path-scoped — read them when the situation calls for it.
 
 | Doc | Read when |
 |-----|-----------|
-| [`docs/etl-invariants.md`](docs/etl-invariants.md) | **Before changing any parser or writer in `scripts/`.** Hard rules established in Phase 4c: templates are structure to expand (never strip), normalize strings at the writer boundary, `bonuses.name` cannot validate anything, `build-db` updates in place so idempotency is a correctness property |
-| [`docs/ddowiki-api.md`](docs/ddowiki-api.md) | Looking up DDO game data from ddowiki.com via WebFetch, or scraping/fetching wiki content from either the Python pipeline or the frontend client. Also: what the AWS WAF blocks, and what the `.wiki-cache` index can still enumerate offline |
+| [`docs/ddowiki-api.md`](docs/ddowiki-api.md) | Looking up DDO game data from ddowiki.com via WebFetch, or building wiki links from the frontend. Also: what the AWS WAF blocks (relevant if the wiki parser is ever ported to `ddo-data`) |
 | [`docs/sentry.md`](docs/sentry.md) | Configuring Sentry, troubleshooting error capture, or working with `src/lib/sentry.ts` |
 | [`docs/stacking-rules.md`](docs/stacking-rules.md) | Designing or implementing anything that computes stats from bonuses — the Phase 6–8 stats/gear engine, bonus stacking, effect resolution, or the stacking-semantics tooltip. Documents DDO's rules as game facts (sourced from DDOBuilderV2's model; see the licensing note in roadmap Phase 6) |
-| [`docs/stacking-rules.md`](docs/stacking-rules.md) | Implementing or reasoning about bonus stacking, effect resolution, or stat breakdowns (Phases 6–8 stats/gear engine) |

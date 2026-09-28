@@ -1909,8 +1909,10 @@ A single-machine deploy means a few seconds of downtime; accepted.
   went with them: DDOBuilderV2 records raid loot but not per-quest rarity.
 - Hosting: `vercel.json` SPA rewrite + immutable asset caching; Vite `base` is `/`; the Pages
   jobs are gone from `ci.yml`. **User steps still open:** create the Vercel account with GitHub
-  login, import the repo, set `VITE_API_URL` (or leave unset for the public API); the Python
-  `scripts/` package is now reference-only and can be deleted in a follow-up when you say so.
+  login, import the repo, set `VITE_API_URL` (or leave unset for the public API). Both done
+  2026-09-27; the site is at https://ddo-tools.vercel.app. The Python `scripts/` package, its
+  rules, and its docs (`dat-format`, `binary-reverse-engineering`, `db-guidelines`,
+  `etl-invariants`) were deleted the same day; `git log` before that date has them.
 
 #### V7 — Build sharing with a server
 Two stores, two lifecycles: game data baked into the image (rebuilt every deploy), user data on a
@@ -1930,7 +1932,7 @@ versioned build JSON is also what Phase 15's `.DDOBuild` import targets.
 
 A phase is **done** when all of the following hold. Anything less stays `→ NEXT` in the status table.
 
-- `npx vitest run` + `pytest scripts/` -- all pass (both, regardless of which side you touched)
+- `npx vitest run` -- all pass (and `cargo test` in `ddo-data` when the change touches the API contract)
 - `npm run lint` + `npm run build` -- no errors
 - `npm run dev` -- layout renders correctly; browser-tool screenshot verification per `.claude/rules/frontend.md`
 - Feature-specific: can interact with the new UI (click, search, equip)
