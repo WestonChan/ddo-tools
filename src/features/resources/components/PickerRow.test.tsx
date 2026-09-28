@@ -13,6 +13,7 @@ function row(overrides: Partial<ItemRow> = {}): ItemRow {
     minimum_level: 12,
     pack: 'Vault of Night',
     is_raid: false,
+    is_rare: false,
     ...overrides,
   }
 }
@@ -109,6 +110,26 @@ describe('PickerRow', () => {
     const button = screen.getByRole('button', { name: /Bloodstone/ })
     expect(button).toHaveTextContent('Raid')
     expect(button.querySelector('.resources-chip[data-kind="raid"]')).not.toBeNull()
+  })
+
+  it('shows the Rare chip after the Raid chip', () => {
+    renderRow([row({ is_raid: true, is_rare: true })], null)
+    const button = screen.getByRole('button', { name: /Bloodstone/ })
+    const kinds = Array.from(button.querySelectorAll('.resources-chip')).map((c) => c.getAttribute('data-kind'))
+    expect(kinds).toEqual(['raid', 'rare'])
+    expect(button).toHaveTextContent('Rare')
+  })
+
+  it('shows the Rare chip alone on a rare non-raid item', () => {
+    renderRow([row({ is_rare: true })], null)
+    const button = screen.getByRole('button', { name: /Bloodstone/ })
+    expect(button.querySelector('.resources-chip[data-kind="rare"]')).not.toBeNull()
+    expect(button.querySelector('.resources-chip[data-kind="raid"]')).toBeNull()
+  })
+
+  it('shows no chips on a plain item', () => {
+    renderRow([row()], null)
+    expect(screen.getByRole('button', { name: /Bloodstone/ }).querySelector('.resources-chip')).toBeNull()
   })
 
   it('omits meta segments that have no data', () => {

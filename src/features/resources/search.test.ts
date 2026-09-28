@@ -3,11 +3,11 @@ import { buildItemsIndex, searchItems } from './search'
 import type { ItemRow } from './queries/items'
 
 const rows: ItemRow[] = [
-  { id: 1, name: 'Greatsword of Force', equipment_slot: 'Weapon', item_category: 'Item', pack: null, is_raid: false, minimum_level: 12 },
-  { id: 2, name: 'Force Bracers', equipment_slot: 'Wrist', item_category: 'Item', pack: null, is_raid: false, minimum_level: 6 },
-  { id: 3, name: 'Robe of Force Resistance', equipment_slot: 'Body', item_category: 'Item', pack: null, is_raid: false, minimum_level: 8 },
-  { id: 4, name: 'Boots of the Innocent', equipment_slot: 'Feet', item_category: 'Item', pack: null, is_raid: false, minimum_level: 14 },
-  { id: 5, name: 'Sigil of the Stalwart Defender', equipment_slot: 'Trinket', item_category: 'Item', pack: null, is_raid: false, minimum_level: 29 },
+  { id: 1, name: 'Greatsword of Force', equipment_slot: 'Weapon', item_category: 'Item', pack: null, is_raid: false, is_rare: false, minimum_level: 12 },
+  { id: 2, name: 'Force Bracers', equipment_slot: 'Wrist', item_category: 'Item', pack: null, is_raid: false, is_rare: false, minimum_level: 6 },
+  { id: 3, name: 'Robe of Force Resistance', equipment_slot: 'Body', item_category: 'Item', pack: null, is_raid: false, is_rare: false, minimum_level: 8 },
+  { id: 4, name: 'Boots of the Innocent', equipment_slot: 'Feet', item_category: 'Item', pack: null, is_raid: false, is_rare: false, minimum_level: 14 },
+  { id: 5, name: 'Sigil of the Stalwart Defender', equipment_slot: 'Trinket', item_category: 'Item', pack: null, is_raid: false, is_rare: false, minimum_level: 29 },
 ]
 
 describe('searchItems', () => {

@@ -21,6 +21,7 @@ export interface ApiItemRow {
   icon: string | null
   pack: string | null
   is_raid: boolean
+  is_rare: boolean
 }
 
 export interface ApiItemsPage {
@@ -82,6 +83,10 @@ export interface ApiItemQuest {
   pack: string | null
   patron: string | null
   loot_type: string | null
+  is_rare: boolean
+  duration: string | null
+  is_free_to_play: boolean
+  difficulties: string[]
 }
 
 export interface ApiWeaponStats {

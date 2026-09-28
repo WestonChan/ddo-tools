@@ -10,7 +10,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
       "Game data now comes from Maetrim's DDOBuilderV2 data files through a public API instead of a database downloaded into the browser, so the site loads without a multi-megabyte fetch and updates weekly",
       'The site moved to Vercel at the root path; old links under /ddo-tools/ no longer resolve',
       'Item detail shows the enhancement bonus, set name, clickies, and drop location for items without a linked quest',
-      'The "Rare only" filter and rare chips are gone: the new data source records raid loot but not per-quest rarity',
+      'Bring back the "Rare only" filter and the Rare chip on item rows and on the quests an item drops from as rare loot',
     ],
   },
   {

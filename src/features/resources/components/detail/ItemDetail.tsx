@@ -117,6 +117,7 @@ export function ItemDetail({
                   {q.name}
                   <WikiLinkIcon pageName={q.name} />
                   {q.is_raid && <ResourceChip kind="raid" />}
+                  {q.is_rare && <ResourceChip kind="rare" />}
                 </span>
                 <span className="resources-quest-meta">
                   {[

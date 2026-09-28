@@ -21,6 +21,7 @@ const ROWS: ItemRow[] = [
     minimum_level: 12,
     pack: 'Vault of Night',
     is_raid: true,
+    is_rare: false,
   },
 ]
 

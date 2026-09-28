@@ -9,7 +9,6 @@ import type {
   ApiStat,
 } from '../../../lib/api'
 
-
 const PAGE_LIMIT = 10_000
 
 export interface ItemRow {
@@ -20,6 +19,7 @@ export interface ItemRow {
   minimum_level: number | null
   pack: string | null
   is_raid: boolean
+  is_rare: boolean
 }
 
 export interface ItemCore {
@@ -112,6 +112,9 @@ export interface ItemQuestRef {
   patron: string | null
   loot_type: string | null
   is_raid: boolean
+  is_rare: boolean
+  duration: string | null
+  is_free_to_play: boolean
 }
 
 export interface ItemDetail extends ItemCore {
@@ -133,6 +136,7 @@ export function toItemRow(row: ApiItemRow): ItemRow {
     minimum_level: row.minimum_level,
     pack: row.pack,
     is_raid: row.is_raid,
+    is_rare: row.is_rare,
   }
 }
 
@@ -207,6 +211,9 @@ export function toItemDetail(d: ApiItemDetail): ItemDetail {
       patron: q.patron,
       loot_type: q.loot_type,
       is_raid: q.is_raid,
+      is_rare: q.is_rare,
+      duration: q.duration,
+      is_free_to_play: q.is_free_to_play,
     })),
   }
 }

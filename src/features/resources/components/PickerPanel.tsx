@@ -34,6 +34,7 @@ interface PickerPanelProps {
 interface ItemFilters {
   slot: string
   pack: string
+  rareOnly: boolean
   raidOnly: boolean
   stats: string[]
   minLevelMin: string
@@ -43,6 +44,7 @@ interface ItemFilters {
 const EMPTY_FILTERS: ItemFilters = {
   slot: '',
   pack: '',
+  rareOnly: false,
   raidOnly: false,
   stats: [],
   minLevelMin: '',
@@ -146,6 +148,7 @@ function applyRowFilters(rows: ItemRow[], filters: ItemFilters): ItemRow[] {
   const max = filters.minLevelMax ? Number(filters.minLevelMax) : null
   return rows.filter((r) => {
     if (filters.slot && r.equipment_slot !== filters.slot) return false
+    if (filters.rareOnly && !r.is_rare) return false
     if (filters.raidOnly && !r.is_raid) return false
     if (min !== null && (r.minimum_level === null || r.minimum_level < min)) return false
     if (max !== null && (r.minimum_level === null || r.minimum_level > max)) return false
@@ -161,7 +164,6 @@ function distinctSorted(rows: ItemRow[], pick: (r: ItemRow) => string): string[]
   }
   return Array.from(set).sort()
 }
-
 
 export function PickerPanel({
   category,
@@ -205,6 +207,7 @@ export function PickerPanel({
   const hasActiveFilters =
     !!filters.slot ||
     !!filters.pack ||
+    filters.rareOnly ||
     filters.raidOnly ||
     filters.stats.length > 0 ||
     !!filters.minLevelMin ||
@@ -229,6 +232,13 @@ export function PickerPanel({
       key: 'slot',
       label: filters.slot,
       onRemove: () => updateFilter('slot', ''),
+    })
+  }
+  if (filters.rareOnly) {
+    activeChips.push({
+      key: 'rare',
+      label: 'Rare',
+      onRemove: () => updateFilter('rareOnly', false),
     })
   }
   if (filters.raidOnly) {
@@ -318,6 +328,14 @@ export function PickerPanel({
             </select>
           </SelectShell>
         </label>
+        <button
+          type="button"
+          className={`resources-filter-toggle${filters.rareOnly ? ' active' : ''}`}
+          aria-pressed={filters.rareOnly}
+          onClick={() => updateFilter('rareOnly', !filters.rareOnly)}
+        >
+          Rare only
+        </button>
         <button
           type="button"
           className={`resources-filter-toggle${filters.raidOnly ? ' active' : ''}`}

@@ -30,6 +30,7 @@ function row(overrides: Partial<ItemRow> = {}): ItemRow {
     minimum_level: 12,
     pack: 'Vault of Night',
     is_raid: false,
+    is_rare: false,
     ...overrides,
   }
 }
@@ -37,7 +38,7 @@ function row(overrides: Partial<ItemRow> = {}): ItemRow {
 const ROWS: ItemRow[] = [
   row({ id: 1, name: 'Bloodstone', is_raid: true, minimum_level: 12 }),
   row({ id: 2, name: 'Cloak of Night', equipment_slot: 'Back', minimum_level: 20 }),
-  row({ id: 3, name: 'Ring of Spell Storing', equipment_slot: 'Ring', minimum_level: 4 }),
+  row({ id: 3, name: 'Ring of Spell Storing', equipment_slot: 'Ring', minimum_level: 4, is_rare: true }),
 ]
 
 function renderPanel(rows: ItemRow[] = ROWS): RenderResult {
@@ -78,6 +79,23 @@ describe('PickerPanel filters', () => {
 
     expect(screen.getByText('1 result')).toBeInTheDocument()
     expect(rowNames().some((n) => n.includes('Bloodstone'))).toBe(true)
+  })
+
+  it('filters to rare items', async () => {
+    renderPanel()
+    const toggle = screen.getByRole('button', { name: 'Rare only' })
+    await userEvent.click(toggle)
+
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('1 result')).toBeInTheDocument()
+    expect(rowNames().some((n) => n.includes('Ring of Spell Storing'))).toBe(true)
+  })
+
+  it('combines the rare and raid toggles with AND semantics', async () => {
+    renderPanel()
+    await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
+    expect(screen.getByText(/no matches/i)).toBeInTheDocument()
   })
 
   it('filters by equipment slot', async () => {
@@ -140,6 +158,15 @@ describe('PickerPanel active-filter chips', () => {
 
     expect(screen.queryByRole('button', { name: 'Remove filter: Raid' })).toBeNull()
     expect(screen.getByRole('button', { name: /Remove filter: .*Back/ })).toBeInTheDocument()
+  })
+
+  it('renders a Rare chip that clears the rare toggle', async () => {
+    renderPanel()
+    await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Remove filter: Rare' }))
+
+    expect(screen.getByRole('button', { name: 'Rare only' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByText('3 results')).toBeInTheDocument()
   })
 
   it('renders the min/max level range as a single chip', async () => {

@@ -27,6 +27,7 @@ function apiRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
     icon: 'Trinket_1',
     pack: 'Vault of Night',
     is_raid: true,
+    is_rare: false,
     ...overrides,
   }
 }
@@ -75,7 +76,7 @@ const API_DETAIL: ApiItemDetail = {
   ],
   clickies: [{ name: 'Acid Shot', clickie_id: 2, spell_id: null, description: 'Shoots acid.', icon: null }],
   set: { id: 5, name: 'Eminence of Winter', icon: null },
-  quests: [{ id: 11, name: 'Caught in the Web', level: 20, epic_level: null, is_raid: true, pack: 'Web of Chaos', patron: 'The Twelve', loot_type: 'raid' }],
+  quests: [{ id: 11, name: 'Caught in the Web', level: 20, epic_level: null, is_raid: true, is_rare: true, pack: 'Web of Chaos', patron: 'The Twelve', loot_type: 'raid', duration: 'Long', is_free_to_play: false, difficulties: ['normal', 'hard', 'elite'] }],
 }
 
 describe('mappers', () => {
@@ -88,7 +89,12 @@ describe('mappers', () => {
       minimum_level: 12,
       pack: 'Vault of Night',
       is_raid: true,
+      is_rare: false,
     })
+  })
+
+  it('toItemRow carries the rare-loot flag', () => {
+    expect(toItemRow(apiRow({ is_rare: true })).is_rare).toBe(true)
   })
 
   it('toItemDetail nests every satellite the drawer renders', () => {
@@ -102,7 +108,7 @@ describe('mappers', () => {
     expect(d.effects[0]).toEqual({ effect_id: 9, name: 'Supreme Good', description: 'Smites.', target: 'All', value: null, sort_order: 0 })
     expect(d.augmentSlots[0].options[0].name).toBe('Planar Conflux')
     expect(d.clickies).toEqual([{ name: 'Acid Shot', description: 'Shoots acid.' }])
-    expect(d.quests[0]).toEqual({ quest_id: 11, name: 'Caught in the Web', level: 20, pack: 'Web of Chaos', patron: 'The Twelve', loot_type: 'raid', is_raid: true })
+    expect(d.quests[0]).toEqual({ quest_id: 11, name: 'Caught in the Web', level: 20, pack: 'Web of Chaos', patron: 'The Twelve', loot_type: 'raid', is_raid: true, is_rare: true, duration: 'Long', is_free_to_play: false })
   })
 
   it('toAugmentCandidate flattens bonus labels', () => {

@@ -40,6 +40,9 @@ function quest(overrides: Partial<ItemQuestRef> = {}): ItemQuestRef {
     pack: null,
     level: 8,
     is_raid: false,
+    is_rare: false,
+    duration: null,
+    is_free_to_play: false,
     loot_type: 'quest',
     ...overrides,
   }
@@ -66,6 +69,28 @@ describe('ItemDetail drop locations', () => {
     expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
       'The Free Agents · Level 8',
     )
+  })
+
+  it('marks a rare drop location with a chip on the quest name after the raid chip', () => {
+    const { container } = renderDetail({
+      ...baseDetail,
+      quests: [quest({ is_raid: true, is_rare: true })],
+    })
+    const kinds = Array.from(container.querySelectorAll('.resources-quest-name .resources-chip')).map((c) =>
+      c.getAttribute('data-kind'),
+    )
+    expect(kinds).toEqual(['raid', 'rare'])
+    expect(container.querySelector('.resources-quest-meta .resources-chip')).toBeNull()
+  })
+
+  it('shows the Rare chip only on the quests where the item is rare', () => {
+    const { container } = renderDetail({
+      ...baseDetail,
+      quests: [quest({ quest_id: 1, name: 'Tempest Spine', is_rare: true }), quest({ quest_id: 2, name: 'The Pit' })],
+    })
+    const rows = container.querySelectorAll('.resources-quest-row')
+    expect(rows[0].querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+    expect(rows[1].querySelector('.resources-chip')).toBeNull()
   })
 
   it('labels end rewards in the meta line', () => {

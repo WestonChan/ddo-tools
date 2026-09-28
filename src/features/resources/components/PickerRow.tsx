@@ -26,9 +26,10 @@ export function PickerRow(
       >
         <div className="resources-row-title">
           <span className="resources-row-name">{row.name}</span>
-          {row.is_raid && (
+          {(row.is_raid || row.is_rare) && (
             <span className="resources-row-chips">
-              <ResourceChip kind="raid" />
+              {row.is_raid && <ResourceChip kind="raid" />}
+              {row.is_rare && <ResourceChip kind="rare" />}
             </span>
           )}
         </div>
