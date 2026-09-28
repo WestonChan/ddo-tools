@@ -16,7 +16,39 @@ npm run format       # Prettier
 npx vitest run       # Unit and integration tests
 ```
 
-Game data comes from the sibling `ddo-data` repo (Rust ETL + API); this repo has no data pipeline.
+## Orientation
+
+Two repos, side by side under `~/Documents/Personal Projects/`:
+
+| | `ddo-tools` (this repo) | `ddo-data` |
+|---|---|---|
+| What | React SPA: the site users see | Rust workspace: ETL + the game-data API |
+| GitHub | `WestonChan/ddo-tools` | `WestonChan/ddo-data` |
+| Live | https://ddo-tools.vercel.app | https://ddo-data.fly.dev (`/docs` is the OpenAPI UI) |
+| Deploy | Vercel GitHub integration on every push to `main` | GitHub Action `deploy.yml`: weekly schedule or manual dispatch; builds the DB from Maetrim's DDOBuilderV2 checkout, then `flyctl deploy`. Never `fly deploy` by hand |
+| Instructions | this file | `ddo-data/AGENTS.md` |
+
+**Data flow.** DDOBuilderV2 XML → `ddo-etl` → SQLite (`ddo.db`, ~14 MB) → `ddo-api` (axum, read-only, immutable per deployment) → this app via `src/lib/api/` + TanStack Query. The frontend holds no game data and has no pipeline; the old Python `scripts/` package and `public/data/ddo.db` were removed in September 2026. `VITE_API_URL` picks the API origin; unset means the public Fly deployment.
+
+**Running locally, end to end.**
+
+1. `npm install && npm run dev` — the site on http://localhost:5173/, reading the public API. That is enough for most frontend work.
+2. To run against a local API (schema changes, new endpoints): in `ddo-data`, `export PATH="/opt/homebrew/opt/rustup/bin:$PATH"`, build the DB with `cargo run --release -p ddo-etl -- build --source upstream/Output/DataFiles --out ddo.db`, serve it with `DDO_DB_PATH=ddo.db ICONS_DIR=icons PORT=8089 cargo run --release -p ddo-api`, and set `VITE_API_URL=http://localhost:8089` in this repo's `.env`. Docker is not installed on the maintainer's Mac; the image is CI-only.
+3. `.env` is gitignored; `.env.example` lists every variable (`VITE_API_URL`, Sentry's `SENTRY_*`).
+
+**Where things are.**
+
+- `src/app/` — shell: `AppLayout`, `AppNavBar`, `BottomBar`, `routeComponents` (one export per route; placeholder views for unbuilt phases).
+- `src/router.tsx`, `src/appPaths.ts` — TanStack Router tree and the path list.
+- `src/features/resources/` — the game-data browser (the only feature reading the API today): `ResourcesView`, `components/` (picker, detail drawer, `detail/*`), `queries/items.ts` (fetchers + mappers) and `queries/useItems.ts` (query hooks), `search.ts` (Fuse index).
+- `src/features/character/`, `gear/`, `landing/`, `settings/` — the other features; `landing/data/sitePatchNotes.ts` is the user-facing changelog.
+- `src/components/` — shared UI (`Modal`, `ErrorScreen`, `ApiGate`, `Tooltip`, `WikiLinkIcon`); `src/hooks/` — shared hooks; `src/lib/` — non-React helpers (`api/`, `sentry`, `githubIssue`, `wiki/`).
+- `src/test/` — Vitest setup and helpers; `e2e/` — Playwright specs; `eslint-rules/` — the local no-comments rule.
+- `docs/roadmap.md` — every phase, past and planned, including the V-series that built `ddo-data`; `docs/notes/` — per-view backlogs; `docs/*.md` — reference (styling, testing, state management, stacking rules, Sentry, ddowiki).
+- `.claude/rules/` — path-scoped conventions (frontend layout, testing). Gitignored, so present only on the maintainer's machine.
+- `.claude/launch.json` — the `dev` (attach to a running server) and `dev-start` (launch `npm run dev`) preview configs.
+
+**Status.** Phases 1–4c and V1–V6 are done. V7 (build sharing on a Fly volume, `/v1/builds`) is next, then Phases 4d–4g and 5 onward. The roadmap's status table is authoritative.
 
 ## Project Structure
 
