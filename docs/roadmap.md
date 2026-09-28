@@ -940,7 +940,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V4 | done | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` (first deploy pending the Fly account) |
 | V5 | done | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, icons, validation gates, `flyctl deploy` (first run pending the Fly account) |
 | V6 | done | Frontend on the API -- TanStack Query, hand-written API types, sql.js + `DatabaseGate` removed, Vercel config (first deploy pending the Vercel account) |
-| **V7** | **→ NEXT** | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
+| **V7** | **→ NEXT** | Wiki gap-fill -- quest loot rarity, quests and crafting that DDOBuilderV2 does not carry, read by agents from ddowiki into ETL overrides; plus the unread parts of Maetrim's files |
+| V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
@@ -955,7 +956,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
 | 12 | planned | Build Overview |
 | 13 | planned | Settings view cleanup |
-| 14 | superseded | Build sharing via URL -- replaced by V7's server-side sharing; the URL codec is optional fallback |
+| 14 | superseded | Build sharing via URL -- replaced by V8's server-side sharing; the URL codec is optional fallback |
 | 15 | planned | `.DDOBuild` import (DDOBuilderV2 desktop files) |
 
 Phases 4h–4k are general frontend/repo cleanup rather than Resources-browser work; they sit under
@@ -973,7 +974,7 @@ isn't true it is said here):
   from wikitext. Phase 8 now depends on V2/V3 instead.
 - **4d–4g remain serial** behind each other as written (4f still `requires 4e`), and all four wait
   on V6.
-- **Phase 5 (`user.db`) is unchanged.** V7 adds server-side sharing on top of it; the browser copy
+- **Phase 5 (`user.db`) is unchanged.** V8 adds server-side sharing on top of it; the browser copy
   stays the working copy.
 
 ### Phase 1: Layout Restructuring (done)
@@ -1651,7 +1652,7 @@ initial download and makes the dataset reusable by other consumers.
 
 | Repo | Contents | Host | Cost |
 |---|---|---|---|
-| `ddo-data` (sibling folder, new) | Cargo workspace: `ddo-model`, `ddo-etl`, `ddo-api` | Fly.io, one `shared-cpu-1x` 256 MB machine, `auto_stop_machines = "suspend"`, `min_machines_running = 0` | cents/month runtime + $0.15/month for a 1 GB volume (V7) |
+| `ddo-data` (sibling folder, new) | Cargo workspace: `ddo-model`, `ddo-etl`, `ddo-api` | Fly.io, one `shared-cpu-1x` 256 MB machine, `auto_stop_machines = "suspend"`, `min_machines_running = 0` | cents/month runtime + $0.15/month for a 1 GB volume (V8) |
 | `ddo-tools` (this repo) | React 19 + Vite + TanStack Router SPA | Vercel Hobby | $0 |
 
 Two repos, not three: the ETL and the API share the schema and ship in one Docker image, so they are
@@ -1665,7 +1666,7 @@ another. The only thing crossing the boundary is the OpenAPI spec, consumed as g
   volume. Vercel is the frontend host only.
 - Fly.io: per-second billing, `suspend` resumes from a memory snapshot in well under a second, so
   scale-to-zero is invisible. Chosen.
-- User-data store (V7): Fly volume + SQLite over Turso/Neon. Same `rusqlite` crate as the game data,
+- User-data store (V8): Fly volume + SQLite over Turso/Neon. Same `rusqlite` crate as the game data,
   no third account, daily volume snapshots (5-day retention default). Turso is the upgrade path if a
   day of loss ever matters; both are SQLite so the move is a file copy.
 
@@ -1914,7 +1915,57 @@ A single-machine deploy means a few seconds of downtime; accepted.
   rules, and its docs (`dat-format`, `binary-reverse-engineering`, `db-guidelines`,
   `etl-invariants`) were deleted the same day; `git log` before that date has them.
 
-#### V7 — Build sharing with a server
+#### V7 — Wiki gap-fill: quest loot and crafting
+
+**Principle.** DDOBuilderV2 is authoritative for every field it carries; the wiki fills only what it
+lacks. Decided 2026-09-28 after a column-by-column survey of the Maetrim-only build (every table
+populated; the only structural absences are per-drop rarity, quests without named loot, crafting
+materials, and a few blank descriptions). Named items only: random-loot generation tables are out of
+scope for good. The legacy `ddo.db` and the old `.wiki-cache` are not inputs; both are discarded.
+
+**Storage.** Wiki-sourced rows live in `ddo-data` as data files, `crates/ddo-etl/data/wiki/*.toml`,
+keyed by entity name, each row citing its wiki page and the date it was read. The ETL merges them
+after Maetrim's files: a wiki row may add a fact he has no field for, never replace one he has.
+A test fails when a wiki row names an entity absent from his files, so the overrides cannot rot
+silently across his updates. The database stays the ETL's output only; nobody edits it by hand.
+
+**Reading the wiki.** ddowiki's WAF admits only top-level browser navigation
+([ddowiki-api.md](ddowiki-api.md)), so the reads are done by agents driving the built-in browser,
+one page at a time at a human pace, never through `api.php`, curl, or anything that works around the
+challenge. Each agent batch gets a list of page titles and the exact TOML shape to produce; a second
+agent spot-checks a sample of every batch against the pages before merge. Wiki content is CC BY-SA
+and credited in both READMEs.
+
+**Step 0 — the rest of Maetrim's files (scriptable, no wiki).** Map the 81 effect types (410 rows)
+that still land only in `modifiers`, adding stats to `ddo-model` as needed; per-difficulty quest XP
+and `EpicName` from `Quests.xml`; the unread files `Stances.xml`, `GuildBuffs.xml`,
+`SelfAndPartyBuffs.xml`, `Sentient.gems.xml`, `Challenges.xml`; enhancement `Cooldown`, `Duration`,
+`FollowOn`; the 67 gear sets whose items name them but have no `set_bonus_items` rows.
+
+**Step 1 — per-drop rarity.** `quest_loot.is_rare` from each quest page's loot table (about 570
+pages, one page covers all its items). Frontend: restore the Rare chip and the "Rare only" filter
+removed in V6.
+
+**Step 2 — quests he does not list, and quest facts he does not carry.** Quests without named loot,
+wilderness and explorer areas, and chains, with pack, patron, level, favor; plus zone and flagging
+prerequisites for all quests. Also the pack-type (adventure pack vs expansion) and free-to-play
+markers that Phase 4d's "content you own" filter needs (see
+[Resource View](notes/Resource%20View.md)). Schema: `quests.zone`, `quests.is_free_to_play`,
+`adventure_packs.kind`, a `quest_flagging` table.
+
+**Step 3 — crafting.** Recipes and ingredients per system, into the model decided in
+[Crafting Systems](notes/Crafting%20Systems.md) (`crafting_systems`, `crafting_slot_types`,
+`crafting_options`, `crafting_recipes`, `crafting_ingredients`, `crafting_recipe_ingredients`),
+bridged to Maetrim's sockets through `augment_slot_types`. About 40 system pages. Feeds Phase 8's
+inline crafting options and Phase 10's materials summary.
+
+**Step 4 — blank descriptions.** 225 items, 12 augments reading "Drops in: ?", 3 races, 4 feats,
+1 enhancement. One page read each.
+
+**Out of scope.** Items absent from Maetrim's files are reported upstream to DDOBuilderV2 rather
+than stored here, so the item set stays single-sourced.
+
+#### V8 — Build sharing with a server
 Two stores, two lifecycles: game data baked into the image (rebuilt every deploy), user data on a
 1 GB Fly volume (survives deploys). `builds` table: `id` (8–10 char URL-safe random), `edit_token`
 (random secret, returned once on create), `schema_version`, `dataset_version`, `body` JSON ≤ 64 KB,

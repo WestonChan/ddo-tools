@@ -48,7 +48,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 - `.claude/rules/` — path-scoped conventions (frontend layout, testing). Gitignored, so present only on the maintainer's machine.
 - `.claude/launch.json` — the `dev` (attach to a running server) and `dev-start` (launch `npm run dev`) preview configs.
 
-**Status.** Phases 1–4c and V1–V6 are done. V7 (build sharing on a Fly volume, `/v1/builds`) is next, then Phases 4d–4g and 5 onward. The roadmap's status table is authoritative.
+**Status.** Phases 1–4c and V1–V6 are done. V7 (wiki gap-fill: quest loot rarity, quests and crafting read from ddowiki into ETL overrides) is next, then V8 (build sharing on a Fly volume, `/v1/builds`), then Phases 4d–4g and 5 onward. The roadmap's status table is authoritative.
 
 ## Project Structure
 
