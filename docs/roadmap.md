@@ -1936,28 +1936,37 @@ challenge. Each agent batch gets a list of page titles and the exact TOML shape 
 agent spot-checks a sample of every batch against the pages before merge. Wiki content is CC BY-SA
 and credited in both READMEs.
 
-**Step 0 — the rest of Maetrim's files (scriptable, no wiki).** Map the 81 effect types (410 rows)
-that still land only in `modifiers`, adding stats to `ddo-model` as needed; per-difficulty quest XP
-and `EpicName` from `Quests.xml`; the unread files `Stances.xml`, `GuildBuffs.xml`,
-`SelfAndPartyBuffs.xml`, `Sentient.gems.xml`, `Challenges.xml`; enhancement `Cooldown`, `Duration`,
-`FollowOn`; the 67 gear sets whose items name them but have no `set_bonus_items` rows.
+**Step 0 — the rest of Maetrim's files (done 2026-09-27).** 81 effect types mapped to stats (47 new
+stats) or declared engine-only in `effect_map.toml`, so the build reports zero unmapped types; quest
+difficulty flags and epic names; standalone stances, guild buffs, self and party buffs, sentient
+gems, and challenges (33, as `quests` rows with `is_challenge`) as new tables and routes; attack
+cooldowns, durations, this-attack and follow-on bonuses on feats and enhancements; the 67 memberless
+sets linked to the augments that grant them. Corrections to the plan: the `Normal`/`Hard`/`Elite`
+tags in `Quests.xml` are difficulty flags, not XP; the empty sets had no items naming them at all.
 
-**Step 1 — per-drop rarity.** `quest_loot.is_rare` from each quest page's loot table (about 570
-pages, one page covers all its items). Frontend: restore the Rare chip and the "Rare only" filter
-removed in V6.
+**Step 1 — per-drop rarity (done 2026-09-27).** Maetrim's own drop text marks rare loot
+(`(rare)` / `rare drop`, but not `rare encounter`, which is a rare monster), and parsing it sets
+`quest_loot.is_rare` on 125 items across 36 quests, 125 of the 139 the old wiki scrape knew. The
+override layer (`crates/ddo-etl/data/wiki/quest_loot.toml`, merged after his files, never
+overriding them) carries the rest: a 50-quest browser read found 13 more rares, all in the 6 quests
+the old data pointed at, and none in 44 random quests. So the full 570-page read is not worth its
+cost; rarity is his text plus that file, extended only when a gap is reported. `/v1/items` exposes
+`is_rare` and a `rare` filter; the frontend restores the Rare chip and "Rare only" filter.
 
-**Step 2 — quests he does not list, and quest facts he does not carry.** Quests without named loot,
-wilderness and explorer areas, and chains, with pack, patron, level, favor; plus zone and flagging
-prerequisites for all quests. Also the pack-type (adventure pack vs expansion) and free-to-play
-markers that Phase 4d's "content you own" filter needs (see
-[Resource View](notes/Resource%20View.md)). Schema: `quests.zone`, `quests.is_free_to_play`,
-`adventure_packs.kind`, a `quest_flagging` table.
+**Step 2 — quest facts (done 2026-09-27, one page).** The wiki's "Quests by level and XP" index is
+a single table, so `data/wiki/quests.toml` (548 of 570 quests) carries duration, per-difficulty XP
+for heroic, epic and legendary tiers, legendary level, and free-to-play, into `quests` and
+`quest_xp`, served by `/v1/quests`. Only 14 quests exist on the wiki and not in his files, all epic
+versions or spelling variants, so nothing is created from the wiki. Still open, per-page reads:
+`zone`, `bestowed_by`, `flagging` (fields accepted, unread), and the pack-type marker for the
+"content you own" filter.
 
-**Step 3 — crafting.** Recipes and ingredients per system, into the model decided in
-[Crafting Systems](notes/Crafting%20Systems.md) (`crafting_systems`, `crafting_slot_types`,
-`crafting_options`, `crafting_recipes`, `crafting_ingredients`, `crafting_recipe_ingredients`),
-bridged to Maetrim's sockets through `augment_slot_types`. About 40 system pages. Feeds Phase 8's
-inline crafting options and Phase 10's materials summary.
+**Step 3 — crafting.** Maetrim carries each system's options as augment families and its sockets;
+the wiki contributes ingredients (name, tier, bind, source) and recipes (option, the augments it
+yields, ingredient quantities per tier). One `data/wiki/crafting.toml` shape for all 41 system
+pages listed on the wiki's Crafting page; layouts differ per page, so one reading agent per
+system. Tables per the model in [Crafting Systems](notes/Crafting%20Systems.md), with augments as
+the option pool (D-CS3).
 
 **Step 4 — blank descriptions.** 225 items, 12 augments reading "Drops in: ?", 3 races, 4 feats,
 1 enhancement. One page read each.
