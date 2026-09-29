@@ -1458,6 +1458,11 @@ predate this pass.
   helpers left `landing/pastLifeCounts.ts` for `landing/patchNoteDates.ts`.
 - Fields persisted in localStorage (`Life.race`, `feats`, `enhancements`, `importSource`, the legacy
   `{ accent }` JSON) and every `Api*` wire field kept their names.
+- `ddo-data` got the same pass (`bdc6373`, about 550 renames across ddo-model, ddo-etl, ddo-api and
+  xtask). Its external contracts held: a full upstream build's SQL dump is byte-identical apart from
+  the build timestamp, and every endpoint returns the same JSON. The OpenAPI spec changed only in
+  `operationId` values, which follow the handler names and are now unique, and in the `VersionInfo`
+  schema, now `VersionReport`.
 - `tsconfig.app.json` excludes test files, so type errors in tests never surface in `tsc -b` or
   Vitest. Three pre-existing ones remain (`spell_id` in an `ItemClickie` fixture, missing
   `aria-posinset`/`aria-setsize` in `ItemPickerRow.test.tsx`, a `null` rerender prop in
