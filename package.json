@@ -1,13 +1,13 @@
 {
   "name": "ddo-tools",
   "private": true,
-  "version": "0.0.12",
+  "version": "0.0.13",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/WestonChan/ddo-tools.git"
   },
-  "homepage": "https://westonchan.github.io/ddo-tools/",
+  "homepage": "https://ddo-tools.com/",
   "type": "module",
   "scripts": {
     "dev": "vite",
