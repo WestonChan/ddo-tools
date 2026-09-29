@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import { noComments } from './eslint-rules/no-comments.js'
+import { noCaseCollidingModules } from './eslint-rules/no-case-colliding-modules.js'
 
 const FEATURE_NAMES = ['character', 'gear', 'landing', 'resources', 'settings']
 
@@ -108,10 +109,11 @@ export default defineConfig([
       globals: globals.browser,
     },
     plugins: {
-      local: { rules: { 'no-comments': noComments } },
+      local: { rules: { 'no-comments': noComments, 'no-case-colliding-modules': noCaseCollidingModules } },
     },
     rules: {
       'local/no-comments': 'error',
+      'local/no-case-colliding-modules': 'error',
       'no-empty': ['error', { allowEmptyCatch: true }],
       '@typescript-eslint/explicit-function-return-type': ['error', {
         allowExpressions: true,
