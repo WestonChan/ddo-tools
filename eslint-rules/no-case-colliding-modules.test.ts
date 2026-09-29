@@ -1,7 +1,7 @@
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { RuleTester } from 'eslint'
+import { RuleTester, type Rule } from 'eslint'
 import tseslint from 'typescript-eslint'
 import { noCaseCollidingModules } from './no-case-colliding-modules.js'
 
@@ -24,7 +24,7 @@ const tester = new RuleTester({
   languageOptions: { parser: tseslint.parser },
 })
 
-tester.run('no-case-colliding-modules', noCaseCollidingModules, {
+tester.run('no-case-colliding-modules', noCaseCollidingModules as Rule.RuleModule, {
   valid: [
     { code: 'export {}\n', filename: join(distinctModules, 'characterContext.ts') },
     { code: 'export {}\n', filename: join(distinctModules, 'CharacterProvider.tsx') },

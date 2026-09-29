@@ -12,7 +12,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint . && stylelint \"src/**/*.css\" && npm run format:check",
+    "lint": "eslint . && stylelint \"src/**/*.css\" && npm run lint:types && npm run format:check",
+    "lint:types": "tsc -p tsconfig.test.json --noEmit",
     "lint:fix": "eslint . --fix && stylelint \"src/**/*.css\" --fix && npm run format",
     "preview": "vite preview",
     "test": "vitest run",

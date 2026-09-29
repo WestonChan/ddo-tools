@@ -4,9 +4,9 @@ import { useTheme, resetThemeForTests } from './useTheme'
 
 const originalMatchMedia = window.matchMedia
 
-function stubPrefersLight(prefersLight: boolean): void {
+function stubPrefersLight(isLightPreferred: boolean): void {
   window.matchMedia = ((query: string) => ({
-    matches: prefersLight && query.includes('prefers-color-scheme: light'),
+    matches: isLightPreferred && query.includes('prefers-color-scheme: light'),
     media: query,
     onchange: null,
     addListener: () => {},

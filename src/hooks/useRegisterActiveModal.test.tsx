@@ -18,7 +18,7 @@ describe('useRegisterActiveModal / useIsAnyModalActive', () => {
 
   it('reports active while a modal asserts itself', () => {
     const reader = renderHook(() => useIsAnyModalActive())
-    const modal = renderHook(({ active }) => useRegisterActiveModal(active), {
+    const modal = renderHook(({ active: isActive }) => useRegisterActiveModal(isActive), {
       initialProps: { active: true },
     })
     expect(reader.result.current).toBe(true)
@@ -29,7 +29,7 @@ describe('useRegisterActiveModal / useIsAnyModalActive', () => {
 
   it('toggles with the active flag without remounting', () => {
     const reader = renderHook(() => useIsAnyModalActive())
-    const modal = renderHook(({ active }) => useRegisterActiveModal(active), {
+    const modal = renderHook(({ active: isActive }) => useRegisterActiveModal(isActive), {
       initialProps: { active: false },
     })
     expect(reader.result.current).toBe(false)

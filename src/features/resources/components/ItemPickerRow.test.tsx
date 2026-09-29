@@ -46,7 +46,7 @@ describe('ItemPickerRow', () => {
       <ItemPickerRow
         index={5}
         style={{}}
-        ariaAttributes={{ role: 'listitem' }}
+        ariaAttributes={{ role: 'listitem', 'aria-posinset': 6, 'aria-setsize': 0 }}
         items={[]}
         selectedItemId={null}
         onSelect={vi.fn()}
@@ -87,7 +87,7 @@ describe('ItemPickerRow', () => {
       <ItemPickerRow
         index={0}
         style={{}}
-        ariaAttributes={{ role: 'listitem' }}
+        ariaAttributes={{ role: 'listitem', 'aria-posinset': 1, 'aria-setsize': 1 }}
         items={[itemRow()]}
         selectedItemId={1}
         onSelect={vi.fn()}

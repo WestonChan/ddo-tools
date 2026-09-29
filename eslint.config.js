@@ -95,10 +95,10 @@ const typeNamingRules = {
 }
 
 const booleanNamingRules = {
-  files: ['src/**/*.{ts,tsx}'],
-  ignores: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/lib/api/types.ts'],
+  files: ['src/**/*.{ts,tsx}', 'e2e/**/*.ts', 'eslint-rules/**/*.ts'],
+  ignores: ['src/lib/api/types.ts'],
   languageOptions: {
-    parserOptions: { project: './tsconfig.app.json', tsconfigRootDir: import.meta.dirname },
+    parserOptions: { project: './tsconfig.test.json', tsconfigRootDir: import.meta.dirname },
   },
   rules: {
     '@typescript-eslint/naming-convention': [
@@ -110,7 +110,7 @@ const booleanNamingRules = {
         types: ['boolean'],
         format: ['PascalCase'],
         prefix: ['is', 'has', 'can', 'should', 'was', 'will', 'does', 'did', 'are', 'includes'],
-        filter: { regex: '^(aria-|data-|inert$)', match: false },
+        filter: { regex: '^(aria-|data-|inert$|matches$)', match: false },
       },
     ],
   },

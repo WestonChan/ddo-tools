@@ -130,7 +130,7 @@ describe('ItemDetailBody header attributes', () => {
   it('lists clickies with their description', () => {
     renderItemDetailBody({
       ...plainItem,
-      clickies: [{ name: 'Haste', description: 'Haste (3 charges)', spell_id: null }],
+      clickies: [{ name: 'Haste', description: 'Haste (3 charges)' }],
     })
     expect(screen.getByText('Clickies')).toBeInTheDocument()
     expect(screen.getByText('Haste (3 charges)')).toBeInTheDocument()

@@ -58,11 +58,11 @@ export function installMatchMedia(
 
   const stub: MatchMediaStub = {
     stubbedMediaQueryFor,
-    emitChange(query, matches) {
+    emitChange(query, isMatching) {
       const state = stubbedMediaQueryFor(query)
-      state.matches = matches
+      state.matches = isMatching
       state.changeListeners.forEach((listener) =>
-        listener({ matches, media: query } as MediaQueryListEvent),
+        listener({ matches: isMatching, media: query } as MediaQueryListEvent),
       )
     },
     restore() {

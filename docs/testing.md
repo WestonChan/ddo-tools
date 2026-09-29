@@ -13,6 +13,7 @@ The directory and the filename suffix together identify which runner picks up a 
 
 - **Run tests:** `npx vitest run` before committing. Setup file: `src/test/setup.ts`.
 - **Test location:** Co-locate test files next to source: `useRouter.test.ts` next to `useRouter.ts`, `AppNavBar.test.tsx` next to `AppNavBar.tsx`.
+- **Type-checked by lint, not by Vitest.** Vitest strips types without checking them and `tsconfig.app.json` excludes tests, so `npm run lint:types` (part of `npm run lint`) checks `src`, `e2e` and `eslint-rules` through `tsconfig.test.json`. A type error in a test fails lint and CI.
 - **File naming:** `*.test.ts` for plain TypeScript (hooks, utils, parsers); `*.test.tsx` for components. Vitest's `include` pattern in [vite.config.ts](../vite.config.ts) only matches `.test.{ts,tsx}` — `.spec.*` is reserved for Playwright (see below).
 - **Integration tests:** For tests that exercise multiple modules wired together (vs. a single hook/component in isolation), use the `*.integration.test.tsx` middle-segment convention. Examples: [AppLayout.integration.test.tsx](../src/app/AppLayout.integration.test.tsx), [BottomBarBoundary.integration.test.tsx](../src/app/BottomBarBoundary.integration.test.tsx). The `.integration.` segment is purely a naming signal — Vitest still discovers them via the `.test.tsx` suffix.
 - **What to test:**

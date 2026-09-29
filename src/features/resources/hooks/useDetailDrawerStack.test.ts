@@ -185,7 +185,7 @@ describe('useDetailDrawerStack — URL → stack sync', () => {
     const { result, rerender } = renderHook(
       ({ resourceInUrl }: { resourceInUrl: ResourceReference | null }) =>
         useDetailDrawerStack({ resourceInUrl, pickerCategory: 'items' }),
-      { initialProps: { resourceInUrl: itemA } },
+      { initialProps: { resourceInUrl: itemA as ResourceReference | null } },
     )
     expect(result.current.stack).toEqual([itemA])
     rerender({ resourceInUrl: null })

@@ -121,7 +121,7 @@ Language-specific prefixes carry the kind of work:
 
 The shape of a name can be checked mechanically, not its meaning, so lint covers only the shape and this guide covers the rest.
 
-- `ddo-tools`: `@typescript-eslint/naming-convention` in `eslint.config.js` rejects type names ending in an empty suffix (`Manager`, `Helper`, `Util`, `Info`, `Data`, `Wrapper`, `Handler`, `Processor`, `Impl`) and interfaces prefixed `I`, and, in app code, requires boolean variables, parameters and properties to start with `is`, `has`, `can`, `should`, `was`, `will`, `does`, `did`, `are` or `includes`. Object-literal keys and the `Api*` wire types are exempt, because their names belong to libraries and the API.
+- `ddo-tools`: `@typescript-eslint/naming-convention` in `eslint.config.js` rejects type names ending in an empty suffix (`Manager`, `Helper`, `Util`, `Info`, `Data`, `Wrapper`, `Handler`, `Processor`, `Impl`) and interfaces prefixed `I`, and requires boolean variables, parameters and properties (tests and e2e included) to start with `is`, `has`, `can`, `should`, `was`, `will`, `does`, `did`, `are` or `includes`. Object-literal keys, the `Api*` wire types and DOM-mirroring names (`inert`, `matches`, `aria-*`, `data-*`) are exempt, because their names belong to libraries, the API or the platform.
 - `ddo-data`: `clippy.toml` lists `disallowed-names`, and `[workspace.lints]` turns on `many_single_char_names` and `similar_names`.
 
 ## Sources

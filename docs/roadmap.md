@@ -1490,8 +1490,8 @@ whenever a finding could have been caught by one.
 - CI's `npx tsc --noEmit` checked nothing (the root tsconfig only references others); it is `tsc -b`.
 - `ddo-data`: `unreachable_pub`, `disallowed_names`, `many_single_char_names` and `similar_names`
   via `[workspace.lints]` and `clippy.toml` (`f274ef8`).
-- Still open, as their own tasks: type-checking test files as part of lint, and a lint for unused
-  exports behind barrels.
+- Test files are type-checked by `npm run lint:types` through `tsconfig.test.json`; that surfaced
+  three stale fixtures, and the typed naming rule now covers tests and e2e too.
 
 #### Phase 4l — DDOBuilderV2 data cross-check utility
 

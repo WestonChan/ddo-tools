@@ -1,4 +1,4 @@
-import { RuleTester } from 'eslint'
+import { RuleTester, type Rule } from 'eslint'
 import tseslint from 'typescript-eslint'
 import { noComments } from './no-comments.js'
 
@@ -9,7 +9,7 @@ const tester = new RuleTester({
   },
 })
 
-tester.run('no-comments', noComments, {
+tester.run('no-comments', noComments as Rule.RuleModule, {
   valid: [
     'const a = 1\n',
     '/// <reference types="vite/client" />\n',

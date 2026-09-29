@@ -11,10 +11,10 @@ function AnyModalActiveProbe(): JSX.Element {
 }
 
 function StrictModeModalHarness({
-  open: isOpen,
+  isOpen,
   children,
 }: {
-  open: boolean
+  isOpen: boolean
   children: ReactNode
 }): JSX.Element {
   return (
@@ -217,7 +217,7 @@ describe('Modal', () => {
 
   it('restores focus to the trigger under StrictMode double-invoked effects', () => {
     const { rerender } = render(
-      <StrictModeModalHarness open={false}>
+      <StrictModeModalHarness isOpen={false}>
         <button>Inside</button>
       </StrictModeModalHarness>,
     )
@@ -225,14 +225,14 @@ describe('Modal', () => {
     trigger.focus()
 
     rerender(
-      <StrictModeModalHarness open>
+      <StrictModeModalHarness isOpen>
         <button>Inside</button>
       </StrictModeModalHarness>,
     )
     expect(screen.getByRole('dialog')).toHaveFocus()
 
     rerender(
-      <StrictModeModalHarness open={false}>
+      <StrictModeModalHarness isOpen={false}>
         <button>Inside</button>
       </StrictModeModalHarness>,
     )
@@ -243,15 +243,15 @@ describe('Modal', () => {
   it('keeps focus inside the panel through a StrictMode remount with an autoFocus child', () => {
     const autoFocusInput = <input aria-label="Confirmation" autoFocus />
     const { rerender } = render(
-      <StrictModeModalHarness open={false}>{autoFocusInput}</StrictModeModalHarness>,
+      <StrictModeModalHarness isOpen={false}>{autoFocusInput}</StrictModeModalHarness>,
     )
     const trigger = screen.getByRole('button', { name: 'Trigger' })
     trigger.focus()
 
-    rerender(<StrictModeModalHarness open>{autoFocusInput}</StrictModeModalHarness>)
+    rerender(<StrictModeModalHarness isOpen>{autoFocusInput}</StrictModeModalHarness>)
     expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement)
 
-    rerender(<StrictModeModalHarness open={false}>{autoFocusInput}</StrictModeModalHarness>)
+    rerender(<StrictModeModalHarness isOpen={false}>{autoFocusInput}</StrictModeModalHarness>)
 
     expect(trigger).toHaveFocus()
   })
