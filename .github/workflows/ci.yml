@@ -32,7 +32,7 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npx tsc -b
 
   test:
     name: Test
