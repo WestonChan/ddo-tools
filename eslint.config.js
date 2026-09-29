@@ -122,6 +122,7 @@ export default defineConfig([
       }],
       'object-shorthand': ['error', 'always'],
       'no-useless-rename': 'error',
+      'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
     },
   },
   sharedCodeImportRestriction,

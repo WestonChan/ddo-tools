@@ -273,10 +273,7 @@ export function LifeHistory({
             {completedLives.length > 0 && (
               <button
                 className="row-action-btn"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  console.log('Undo reincarnation')
-                }}
+                onClick={(e) => e.stopPropagation()}
               >
                 Undo
               </button>

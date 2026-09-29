@@ -10,7 +10,7 @@ import { useCharacters } from './hooks/useCharacters'
 import { ConfirmModal } from '../../components'
 import { Star, Plus } from 'lucide-react'
 import { PastLifeStacks } from './components/PastLifeStacks'
-import { LifeHistory, type ReincarnationChoice } from './components/LifeHistory'
+import { LifeHistory } from './components/LifeHistory'
 import './CharacterView.css'
 
 function CharacterView(): JSX.Element {
@@ -105,10 +105,7 @@ function CharacterView(): JSX.Element {
           isReincarnationPanelOpen={isReincarnationPanelOpen}
           onToggleReincarnationPanel={() => setIsReincarnationPanelOpen(!isReincarnationPanelOpen)}
           onCancelReincarnation={() => setIsReincarnationPanelOpen(false)}
-          onConfirmReincarnation={(reincarnationChoice: ReincarnationChoice) => {
-            console.log('Reincarnate:', reincarnationChoice)
-            setIsReincarnationPanelOpen(false)
-          }}
+          onConfirmReincarnation={() => setIsReincarnationPanelOpen(false)}
           onViewLife={selectBuild}
           onCopyLifeToPlannedBuilds={(lifeId) => {
             const life = selectedCharacter.lives.find((l) => l.id === lifeId)
