@@ -24,7 +24,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 |---|---|---|
 | What | React SPA: the site users see | Rust workspace: ETL + the game-data API |
 | GitHub | `WestonChan/ddo-tools` | `WestonChan/ddo-data` |
-| Live | https://ddo-tools.vercel.app | https://ddo-data.fly.dev (`/docs` is the OpenAPI UI) |
+| Live | https://ddo-tools.com | https://ddo-data.fly.dev (`/docs` is the OpenAPI UI) |
 | Deploy | Vercel GitHub integration on every push to `main` | GitHub Action `deploy.yml`: weekly schedule or manual dispatch; builds the DB from Maetrim's DDOBuilderV2 checkout, then `flyctl deploy`. Never `fly deploy` by hand |
 | Instructions | this file | `ddo-data/AGENTS.md` |
 

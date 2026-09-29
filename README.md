@@ -7,7 +7,7 @@
 
 A toolkit for [Dungeons & Dragons Online](https://www.ddo.com/) — plan character builds and gear sets.
 
-**Live site:** [ddo-tools.vercel.app](https://ddo-tools.vercel.app/)
+**Live site:** [ddo-tools.com](https://ddo-tools.com/)
 
 ## Features (Planned)
 

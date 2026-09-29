@@ -1970,7 +1970,7 @@ A single-machine deploy means a few seconds of downtime; accepted.
 - Hosting: `vercel.json` SPA rewrite + immutable asset caching; Vite `base` is `/`; the Pages
   jobs are gone from `ci.yml`. **User steps still open:** create the Vercel account with GitHub
   login, import the repo, set `VITE_API_URL` (or leave unset for the public API). Both done
-  2026-09-27; the site is at https://ddo-tools.vercel.app. The Python `scripts/` package, its
+  2026-09-27; the site is at https://ddo-tools.com. The Python `scripts/` package, its
   rules, and its docs (`dat-format`, `binary-reverse-engineering`, `db-guidelines`,
   `etl-invariants`) were deleted the same day; `git log` before that date has them.
 
