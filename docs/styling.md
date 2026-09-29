@@ -4,7 +4,7 @@ CSS conventions, design tokens, layout architecture, and responsive breakpoints 
 
 ## Design Principles
 
-- **Flat surfaces, no elevation.** No `box-shadow` anywhere — the UI is a single plane. Surface separation comes from subtle bg tint steps and hairline borders, never drop shadows. Even modals and tooltips sit flush, relying on border + bg contrast against a dimmed scrim.
+- **Flat surfaces, no elevation.** No drop shadows — the UI is a single plane. The only `box-shadow` allowed is a zero-offset, zero-blur ring (`0 0 0 <spread>`), which draws an outline, not elevation. Surface separation comes from subtle bg tint steps and hairline borders, never drop shadows. Even modals and tooltips sit flush, relying on border + bg contrast against a dimmed scrim.
 - **Derive, don't duplicate.** The light theme only overrides 3 primitives: `--bg`, `--tint`, `--accent`. Everything else — `--text`, secondary/tertiary bgs, borders, semantic colors — is derived via `color-mix()` or `rgb(from ... / alpha)`. Adding a new theme means picking 3 colors, not redefining the whole palette.
 - **Tint, not text, is the shift direction.** Backgrounds and borders mix toward `--tint` (white in dark, black in light), not `--text`. Keeps intent clear: `--tint` is "the direction to shift for more contrast," `--text` is a content color. Adding colored text won't break surface derivations.
 - **Solid vs transparent tokens serve different roles.**
@@ -24,6 +24,7 @@ Use `lucide-react` for all icons. Pass the `size` prop for sizing — never use 
 - **Plain CSS** with native nesting (no Sass/SCSS). All modern browsers support `&` nesting.
 - **BEM naming**: Block-Element-Modifier. `nav-bar-btn`, `nav-bar-btn--active`, `nav-bar-build-row`. Use `--` for modifiers, `-` for multi-word blocks/elements.
 - **CSS custom properties** for shared values: colors in `index.css` `:root`, component-scoped vars (e.g., `--icon-col`) at the component root.
+- **Enforced by Stylelint** (`stylelint.config.mjs`, run by `npm run lint`): a color literal (hex, `rgb()`/`hsl()` of raw channels, `white`/`black`) may appear only in a custom-property definition, and `box-shadow` may only be a `0 0 0 <spread>` ring. Relative color from a token (`rgb(from var(--tint) …)`) and `color-mix()` over tokens are fine.
 - **Nesting**: Use native CSS nesting for states (`&:hover`, `&.active`), pseudo-elements (`&::before`), child selectors (`& > svg`), and parent-context overrides (`.app-nav-bar:not(.expanded) &`). Note: `&-suffix` concatenation is NOT supported in native CSS (that's Sass only). Use separate selectors instead.
 - **Shared classes** for repeated patterns: e.g., `.nav-bar-collapsible` for all text that hides on collapse.
 - **No `!important`**. Fix specificity issues with nesting or more specific selectors.
@@ -61,6 +62,8 @@ Solid tint-based surfaces for structural UI, plus transparent overlays for conte
 | `--bg-subtle` | `rgb(from tint r g b / 0.10)` | **Transparent.** Dual-purpose overlay — hover highlight via the `.hoverable` utility AND neutral inset surfaces (checkbox fills, unfilled pips) that need to read distinct from any parent bg |
 | `--bg-accent` | `color-mix(accent 8%, bg)` | Accent-tinted surface (tracks theme color) — selected/active option backgrounds |
 | `--bg-accent-muted` | `rgb(from accent r g b / 0.35)` | **Transparent.** Dimmed-but-visible accent overlay — muted pip fills and other accent-tinted inset surfaces that must composite over varying parent backgrounds while still reading clearly |
+| `--accent-hover` | `color-mix(in oklch, accent 70%, white)` | Hover state of accent-colored links and primary buttons |
+| `--scrim` | `rgb(0 0 0 / 0.45)` | Dim layer behind modals and the fullscreen nav overlay |
 | `--bg-danger` | `rgb(from danger r g b / 0.1)` | Danger/warning state background |
 
 ### Borders (derived)

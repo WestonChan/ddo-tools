@@ -23,6 +23,8 @@
   /* Backgrounds — accent-tinted */
   --bg-accent: color-mix(in srgb, var(--accent) 8%, var(--bg));
   --bg-accent-muted: rgb(from var(--accent) r g b / 0.35);
+  --accent-hover: color-mix(in oklch, var(--accent) 70%, white);
+  --scrim: rgb(0 0 0 / 0.45);
 
   /* Backgrounds — semantic */
   --bg-danger: rgb(from var(--danger) r g b / 0.1);
@@ -137,7 +139,7 @@ a {
 }
 
 a:hover {
-  color: color-mix(in oklch, var(--accent) 70%, white);
+  color: var(--accent-hover);
 }
 
 h1 {
@@ -250,7 +252,7 @@ h1 {
 }
 
 .btn-primary:hover {
-  background: color-mix(in oklch, var(--accent) 70%, white);
+  background: var(--accent-hover);
   transform: translateY(-1px);
 }
 
@@ -280,7 +282,7 @@ h1 {
 }
 
 .btn-primary-sm:hover {
-  background: color-mix(in oklch, var(--accent) 70%, white);
+  background: var(--accent-hover);
   transform: translateY(-1px);
 }
 

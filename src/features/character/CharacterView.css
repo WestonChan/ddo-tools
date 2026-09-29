@@ -88,7 +88,7 @@
 }
 
 .row-action-btn.btn-primary-sm:hover {
-  background: color-mix(in oklch, var(--accent) 70%, white);
+  background: var(--accent-hover);
 }
 
 .row-action-btn.delete:hover {
