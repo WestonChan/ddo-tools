@@ -47,6 +47,52 @@ const barrelReExportRestriction = {
   },
 }
 
+const EMPTY_TYPE_NAME_SUFFIXES = ['Manager', 'Helper', 'Helpers', 'Util', 'Utils', 'Info', 'Data', 'Wrapper', 'Handler', 'Processor', 'Impl']
+
+const typeNamingConvention = {
+  selector: 'typeLike',
+  format: ['PascalCase'],
+  custom: {
+    regex: `(${EMPTY_TYPE_NAME_SUFFIXES.join('|')})$`,
+    match: false,
+  },
+}
+
+const interfacePrefixConvention = {
+  selector: 'interface',
+  format: ['PascalCase'],
+  custom: { regex: '^I[A-Z]', match: false },
+}
+
+const typeNamingRules = {
+  files: ['**/*.{ts,tsx}'],
+  rules: {
+    '@typescript-eslint/naming-convention': ['error', typeNamingConvention, interfacePrefixConvention],
+  },
+}
+
+const booleanNamingRules = {
+  files: ['src/**/*.{ts,tsx}'],
+  ignores: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/lib/api/types.ts'],
+  languageOptions: {
+    parserOptions: { project: './tsconfig.app.json', tsconfigRootDir: import.meta.dirname },
+  },
+  rules: {
+    '@typescript-eslint/naming-convention': [
+      'error',
+      typeNamingConvention,
+      interfacePrefixConvention,
+      {
+        selector: ['variable', 'parameter', 'typeProperty', 'classProperty', 'accessor'],
+        types: ['boolean'],
+        format: ['PascalCase'],
+        prefix: ['is', 'has', 'can', 'should', 'was', 'will', 'does', 'did', 'are', 'includes'],
+        filter: { regex: '^(aria-|data-|inert$)', match: false },
+      },
+    ],
+  },
+}
+
 export default defineConfig([
   globalIgnores(['dist']),
   {
@@ -79,4 +125,6 @@ export default defineConfig([
   sharedCodeImportRestriction,
   ...featureImportRestrictions,
   barrelReExportRestriction,
+  typeNamingRules,
+  booleanNamingRules,
 ])

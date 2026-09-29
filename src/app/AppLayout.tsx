@@ -34,11 +34,11 @@ const BottomBarCrashCard = (props: FallbackProps): JSX.Element => (
 
 function AppLayout(): JSX.Element {
   useAccentColoredFavicon()
-  const [prefersExpandedNavBar, setPrefersExpandedNavBar] = useLocalStorage('ddo-nav-bar-expanded', true)
+  const [shouldExpandNavBar, setShouldExpandNavBar] = useLocalStorage('ddo-nav-bar-expanded', true)
   const [isNavBarExpanded, setIsNavBarExpanded] = useState(() => {
     const width = window.innerWidth
     if (width < 900) return false
-    return prefersExpandedNavBar
+    return shouldExpandNavBar
   })
 
   const previousWindowWidth = useRef(window.innerWidth)
@@ -49,24 +49,24 @@ function AppLayout(): JSX.Element {
         setIsNavBarExpanded(false)
       }
       if (previousWindowWidth.current < 900 && width >= 900) {
-        setIsNavBarExpanded(prefersExpandedNavBar)
+        setIsNavBarExpanded(shouldExpandNavBar)
       }
       previousWindowWidth.current = width
     }
     window.addEventListener('resize', syncNavBarToWindowWidth)
     return () => window.removeEventListener('resize', syncNavBarToWindowWidth)
-  }, [prefersExpandedNavBar])
+  }, [shouldExpandNavBar])
 
   function toggleNavBar(): void {
-    const next = !isNavBarExpanded
-    setIsNavBarExpanded(next)
-    setPrefersExpandedNavBar(next)
+    const willBeExpanded = !isNavBarExpanded
+    setIsNavBarExpanded(willBeExpanded)
+    setShouldExpandNavBar(willBeExpanded)
   }
 
   const collapseNavBar = useCallback((): void => {
     setIsNavBarExpanded(false)
-    setPrefersExpandedNavBar(false)
-  }, [setPrefersExpandedNavBar])
+    setShouldExpandNavBar(false)
+  }, [setShouldExpandNavBar])
 
   const isMobileViewport = useMediaQuery('(max-width: 599px)')
   const isNavBarOverlayOpen = isNavBarExpanded && isMobileViewport
@@ -76,8 +76,8 @@ function AppLayout(): JSX.Element {
   const { pathname } = useLocation()
 
   const isAnyModalOpen = useIsAnyModalActive()
-  const inertWhileModalOpen = isAnyModalOpen || undefined
-  const inertWhileNavBarOverlayOpen = isNavBarOverlayOpen || undefined
+  const isInertBehindModal = isAnyModalOpen || undefined
+  const isInertBehindNavBarOverlay = isNavBarOverlayOpen || undefined
 
   return (
     <div className="app-shell">
@@ -87,10 +87,10 @@ function AppLayout(): JSX.Element {
           onToggleExpanded={toggleNavBar}
           onCollapse={collapseNavBar}
           isFullscreenOverlay={isNavBarOverlayOpen}
-          inert={inertWhileModalOpen}
+          inert={isInertBehindModal}
         />
 
-        <div className="app-content" inert={inertWhileNavBarOverlayOpen}>
+        <div className="app-content" inert={isInertBehindNavBarOverlay}>
           <ErrorBoundary
             FallbackComponent={ViewCrashScreen}
             onError={captureBoundaryError}
@@ -100,11 +100,11 @@ function AppLayout(): JSX.Element {
           </ErrorBoundary>
         </div>
 
-        {hasBuildSidePanel && <BuildSidePanel inert={inertWhileNavBarOverlayOpen} />}
+        {hasBuildSidePanel && <BuildSidePanel inert={isInertBehindNavBarOverlay} />}
       </div>
 
       <ErrorBoundary FallbackComponent={BottomBarCrashCard} onError={captureBoundaryError}>
-        <BottomBar warnings={buildWarnings} inert={inertWhileModalOpen || inertWhileNavBarOverlayOpen} />
+        <BottomBar warnings={buildWarnings} inert={isInertBehindModal || isInertBehindNavBarOverlay} />
       </ErrorBoundary>
     </div>
   )

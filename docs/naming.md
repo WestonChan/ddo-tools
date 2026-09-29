@@ -117,6 +117,13 @@ Language-specific prefixes carry the kind of work:
 - **One verb per operation.** Don't mix `fetch`, `load`, `get` and `retrieve` for the same kind of work.
 - **A breaking rename in the API needs a new API version.** Follow the versioning rules in `ddo-data/AGENTS.md` rather than letting the two repos drift apart.
 
+## What lint enforces
+
+The shape of a name can be checked mechanically, not its meaning, so lint covers only the shape and this guide covers the rest.
+
+- `ddo-tools`: `@typescript-eslint/naming-convention` in `eslint.config.js` rejects type names ending in an empty suffix (`Manager`, `Helper`, `Util`, `Info`, `Data`, `Wrapper`, `Handler`, `Processor`, `Impl`) and interfaces prefixed `I`, and, in app code, requires boolean variables, parameters and properties to start with `is`, `has`, `can`, `should`, `was`, `will`, `does`, `did`, `are` or `includes`. Object-literal keys and the `Api*` wire types are exempt, because their names belong to libraries and the API.
+- `ddo-data`: `clippy.toml` lists `disallowed-names`, and `[workspace.lints]` turns on `many_single_char_names` and `similar_names`.
+
 ## Sources
 
 - Dror Feitelson et al., [How Developers Choose Names](https://arxiv.org/abs/2103.07487), IEEE Transactions on Software Engineering, 2020: the three-step model and the 6.9% agreement figure.
