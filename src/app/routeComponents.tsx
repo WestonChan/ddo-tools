@@ -10,15 +10,16 @@ function Placeholder({ message }: { message: string }): JSX.Element {
   return <div className="section-placeholder">{message}</div>
 }
 
-const createPlaceholderView =
-  (message: string) =>
-  (): JSX.Element =>
-    <Placeholder message={message} />
+const createPlaceholderView = (message: string) => (): JSX.Element => (
+  <Placeholder message={message} />
+)
 
 export const BuildPlanView = createPlaceholderView('Build Plan coming in Phase 5.')
 export const OverviewView = createPlaceholderView('Build Overview coming in Phase 10.')
 export const GearView = createPlaceholderView('Gear Planner coming in Phase 6.')
-export const DamageCalculatorView = createPlaceholderView('Damage Calculator coming in a future update.')
+export const DamageCalculatorView = createPlaceholderView(
+  'Damage Calculator coming in a future update.',
+)
 export const FarmChecklistView = createPlaceholderView('Farm Checklist coming in Phase 8.')
 export { ResourcesView }
 
@@ -27,9 +28,10 @@ export function LandingRoute(): JSX.Element {
 }
 
 export function NotFoundView(): JSX.Element {
-  const sanitizedPath = typeof window !== 'undefined'
-    ? urlWithoutQueryOrFragment(window.location.href).replace(window.location.origin, '')
-    : '/'
+  const sanitizedPath =
+    typeof window !== 'undefined'
+      ? urlWithoutQueryOrFragment(window.location.href).replace(window.location.origin, '')
+      : '/'
   const hasNonRootPath = !!sanitizedPath && sanitizedPath !== '/'
   const notFoundError = hasNonRootPath
     ? new Error(`404 — ${sanitizedPath}`)

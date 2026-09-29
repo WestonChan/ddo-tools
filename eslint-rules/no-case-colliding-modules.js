@@ -33,7 +33,11 @@ export const noCaseCollidingModules = {
     return {
       Program(program) {
         for (const siblingFileName of siblingFileNames) {
-          context.report({ node: program, messageId: 'caseCollidingModule', data: { siblingFileName } })
+          context.report({
+            node: program,
+            messageId: 'caseCollidingModule',
+            data: { siblingFileName },
+          })
         }
       },
     }

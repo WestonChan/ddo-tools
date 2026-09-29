@@ -35,7 +35,13 @@ const PLACEHOLDER_OFFENSE_STATS = [
   { label: 'Spell Power', value: '108' },
 ]
 
-const PLACEHOLDER_ACTIVE_FEATS = ['Cleave', 'Great Cleave', 'Smite Evil', 'Lay on Hands', 'Turn Undead']
+const PLACEHOLDER_ACTIVE_FEATS = [
+  'Cleave',
+  'Great Cleave',
+  'Smite Evil',
+  'Lay on Hands',
+  'Turn Undead',
+]
 
 const PLACEHOLDER_PASSIVE_FEATS = [
   'Power Attack',

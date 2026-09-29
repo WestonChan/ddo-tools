@@ -183,7 +183,11 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
       label: s.label,
       family: s.family,
       qualifier: s.qualifier,
-      options: s.options.map((o) => ({ name: o.name, description: o.description, minimumLevel: o.min_level })),
+      options: s.options.map((o) => ({
+        name: o.name,
+        description: o.description,
+        minimumLevel: o.min_level,
+      })),
     })),
     bonuses: apiItemDetail.bonuses.map((b, i) => ({
       id: b.id,
@@ -260,21 +264,32 @@ export async function fetchAdventurePackNames(): Promise<string[]> {
 
 export async function fetchStatNames(): Promise<string[]> {
   const stats = await fetchApiJson<ApiStat[]>('/v1/stats')
-  return stats.map((s) => s.name).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+  return stats
+    .map((s) => s.name)
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 }
 
 export async function fetchItemIdsWithStat(statName: string): Promise<Set<number>> {
-  const page = await fetchApiJson<ApiItemsPage>('/v1/items', { stat: statName, limit: WHOLE_LIST_LIMIT })
+  const page = await fetchApiJson<ApiItemsPage>('/v1/items', {
+    stat: statName,
+    limit: WHOLE_LIST_LIMIT,
+  })
   return new Set(page.items.map((r) => r.id))
 }
 
 export async function fetchItemIdsInPack(packName: string): Promise<Set<number>> {
-  const page = await fetchApiJson<ApiItemsPage>('/v1/items', { pack: packName, limit: WHOLE_LIST_LIMIT })
+  const page = await fetchApiJson<ApiItemsPage>('/v1/items', {
+    pack: packName,
+    limit: WHOLE_LIST_LIMIT,
+  })
   return new Set(page.items.map((r) => r.id))
 }
 
 export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<AugmentSummary[]> {
-  const page = await fetchApiJson<ApiAugmentsPage>('/v1/augments', { slot: slotLabel, limit: WHOLE_LIST_LIMIT })
+  const page = await fetchApiJson<ApiAugmentsPage>('/v1/augments', {
+    slot: slotLabel,
+    limit: WHOLE_LIST_LIMIT,
+  })
   return page.augments.map(toAugmentSummary).sort((a, b) => {
     if (a.minimumLevel === null && b.minimumLevel !== null) return 1
     if (b.minimumLevel === null && a.minimumLevel !== null) return -1

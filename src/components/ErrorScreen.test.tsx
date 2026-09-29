@@ -6,7 +6,9 @@ describe('ErrorScreen', () => {
   it('renders heading and the role="alert" landmark', () => {
     render(<ErrorScreen heading="Something went wrong" error={new Error('boom')} />)
     expect(screen.getByRole('alert')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'Something went wrong' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Something went wrong' }),
+    ).toBeInTheDocument()
   })
 
   it('does not auto-focus anything on mount (role="alert" handles SR announcement)', () => {
@@ -33,13 +35,7 @@ describe('ErrorScreen', () => {
   })
 
   it('renders a custom body in place of the error detail', () => {
-    render(
-      <ErrorScreen
-        heading="Page not found"
-        detail="/missing/path"
-        tone="info"
-      />,
-    )
+    render(<ErrorScreen heading="Page not found" detail="/missing/path" tone="info" />)
     expect(screen.getByText('/missing/path')).toBeInTheDocument()
     const detail = document.querySelector('.error-screen-detail')
     expect(detail).toBeNull()
@@ -87,9 +83,7 @@ describe('ErrorScreen', () => {
   })
 
   it('applies the info modifier class when tone is info', () => {
-    const { container } = render(
-      <ErrorScreen heading="Page not found" detail="/x" tone="info" />,
-    )
+    const { container } = render(<ErrorScreen heading="Page not found" detail="/x" tone="info" />)
     expect(container.querySelector('.error-screen--info')).not.toBeNull()
   })
 
@@ -99,7 +93,9 @@ describe('ErrorScreen', () => {
   })
 
   it('accepts an array of labels for the report links', () => {
-    render(<ErrorScreen heading="X" error={new Error('y')} issueLabels={['runtime', 'not-found']} />)
+    render(
+      <ErrorScreen heading="X" error={new Error('y')} issueLabels={['runtime', 'not-found']} />,
+    )
     const knownIssueLink = screen.getByRole('link', { name: 'known issue' })
     expect(knownIssueLink).toHaveAttribute('href', expect.stringContaining('label%3Aruntime'))
     expect(knownIssueLink).toHaveAttribute('href', expect.stringContaining('label%3Anot-found'))

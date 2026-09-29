@@ -42,7 +42,10 @@ export function useLocalStorage<T>(
   const setStoredValue = useCallback(
     (nextValueOrUpdater: SetStateAction<T>) => {
       setInstanceValue((previousValue) => {
-        const nextValue = typeof nextValueOrUpdater === 'function' ? (nextValueOrUpdater as (prev: T) => T)(previousValue) : nextValueOrUpdater
+        const nextValue =
+          typeof nextValueOrUpdater === 'function'
+            ? (nextValueOrUpdater as (prev: T) => T)(previousValue)
+            : nextValueOrUpdater
         try {
           const nextJson = JSON.stringify(nextValue)
           localStorage.setItem(storageKey, nextJson)

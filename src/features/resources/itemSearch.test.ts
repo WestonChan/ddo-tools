@@ -3,11 +3,56 @@ import { createItemSearchIndex, itemsMatchingQuery } from './itemSearch'
 import type { ItemSummary } from './queries/items'
 
 const itemSummaries: ItemSummary[] = [
-  { id: 1, name: 'Greatsword of Force', equipmentSlot: 'Weapon', category: 'Item', pack: null, isRaidLoot: false, isRareLoot: false, minimumLevel: 12 },
-  { id: 2, name: 'Force Bracers', equipmentSlot: 'Wrist', category: 'Item', pack: null, isRaidLoot: false, isRareLoot: false, minimumLevel: 6 },
-  { id: 3, name: 'Robe of Force Resistance', equipmentSlot: 'Body', category: 'Item', pack: null, isRaidLoot: false, isRareLoot: false, minimumLevel: 8 },
-  { id: 4, name: 'Boots of the Innocent', equipmentSlot: 'Feet', category: 'Item', pack: null, isRaidLoot: false, isRareLoot: false, minimumLevel: 14 },
-  { id: 5, name: 'Sigil of the Stalwart Defender', equipmentSlot: 'Trinket', category: 'Item', pack: null, isRaidLoot: false, isRareLoot: false, minimumLevel: 29 },
+  {
+    id: 1,
+    name: 'Greatsword of Force',
+    equipmentSlot: 'Weapon',
+    category: 'Item',
+    pack: null,
+    isRaidLoot: false,
+    isRareLoot: false,
+    minimumLevel: 12,
+  },
+  {
+    id: 2,
+    name: 'Force Bracers',
+    equipmentSlot: 'Wrist',
+    category: 'Item',
+    pack: null,
+    isRaidLoot: false,
+    isRareLoot: false,
+    minimumLevel: 6,
+  },
+  {
+    id: 3,
+    name: 'Robe of Force Resistance',
+    equipmentSlot: 'Body',
+    category: 'Item',
+    pack: null,
+    isRaidLoot: false,
+    isRareLoot: false,
+    minimumLevel: 8,
+  },
+  {
+    id: 4,
+    name: 'Boots of the Innocent',
+    equipmentSlot: 'Feet',
+    category: 'Item',
+    pack: null,
+    isRaidLoot: false,
+    isRareLoot: false,
+    minimumLevel: 14,
+  },
+  {
+    id: 5,
+    name: 'Sigil of the Stalwart Defender',
+    equipmentSlot: 'Trinket',
+    category: 'Item',
+    pack: null,
+    isRaidLoot: false,
+    isRareLoot: false,
+    minimumLevel: 29,
+  },
 ]
 
 describe('itemsMatchingQuery', () => {

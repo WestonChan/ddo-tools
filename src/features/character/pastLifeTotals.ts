@@ -29,6 +29,7 @@ export function pastLifeTotalsOf(character: Character): PastLifeTotals {
       countByCategory[category] += untrackedLifeCount
     }
   }
-  const totalCount = countByCategory.heroic + countByCategory.racial + countByCategory.iconic + countByCategory.epic
+  const totalCount =
+    countByCategory.heroic + countByCategory.racial + countByCategory.iconic + countByCategory.epic
   return { totalCount, countByCategory }
 }

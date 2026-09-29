@@ -1,4 +1,5 @@
-const DIRECTIVE_COMMENT_PATTERN = /^\s*(\/\s*<reference|eslint|global\b|exported\b|@ts-|@jsx|@vitest-environment)/
+const DIRECTIVE_COMMENT_PATTERN =
+  /^\s*(\/\s*<reference|eslint|global\b|exported\b|@ts-|@jsx|@vitest-environment)/
 
 function isDirective(comment) {
   return DIRECTIVE_COMMENT_PATTERN.test(comment.value)
@@ -27,7 +28,8 @@ function removalRange(sourceCode, comment) {
   const node = sourceCode.getNodeByRangeIndex(comment.range[0])
   const container = node?.type === 'JSXEmptyExpression' ? node.parent : node
   const isJsxOnlyComment =
-    container?.type === 'JSXExpressionContainer' && container.expression?.type === 'JSXEmptyExpression'
+    container?.type === 'JSXExpressionContainer' &&
+    container.expression?.type === 'JSXEmptyExpression'
   const range = isJsxOnlyComment ? container.range : comment.range
   return rangeIncludingSurroundingWhitespace(text, range)
 }
@@ -37,7 +39,8 @@ export const noComments = {
     type: 'suggestion',
     fixable: 'code',
     docs: {
-      description: 'Code carries its meaning in names, types, and tests; comments and docblocks are removed',
+      description:
+        'Code carries its meaning in names, types, and tests; comments and docblocks are removed',
     },
     messages: {
       noComments: 'Comments are not allowed; express this in a name, a type, a test, or docs/.',

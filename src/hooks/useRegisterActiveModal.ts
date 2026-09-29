@@ -1,6 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react'
 
-
 let activeModalCount = 0
 const activeModalCountListeners = new Set<() => void>()
 

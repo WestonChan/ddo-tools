@@ -22,7 +22,6 @@ import { AmpersandMark } from '../components'
 import { useModalAccessibility } from '../hooks'
 import './AppNavBar.css'
 
-
 interface NavBarLink {
   sectionId?: string
   to: string
@@ -69,7 +68,6 @@ const NAV_BAR_GROUPS: NavBarGroup[] = [
     ],
   },
 ]
-
 
 interface AppNavBarProps {
   isExpanded: boolean
@@ -120,14 +118,22 @@ function AppNavBar({
           onClick={collapseIfFullscreenOverlay}
         >
           <AmpersandMark className="nav-bar-brand-mark" size={26} />
-          <span className="nav-bar-brand-text nav-bar-collapsible">DDO<br />Tools</span>
+          <span className="nav-bar-brand-text nav-bar-collapsible">
+            DDO
+            <br />
+            Tools
+          </span>
         </Link>
 
         <NavBarCharacterCard onNavigate={collapseIfFullscreenOverlay} />
 
         <nav className="nav-bar-items">
           {NAV_BAR_GROUPS.map((group) => (
-            <NavBarGroupSection key={group.id} group={group} onNavigate={collapseIfFullscreenOverlay} />
+            <NavBarGroupSection
+              key={group.id}
+              group={group}
+              onNavigate={collapseIfFullscreenOverlay}
+            />
           ))}
         </nav>
 

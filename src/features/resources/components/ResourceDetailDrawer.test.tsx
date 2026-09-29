@@ -18,7 +18,9 @@ const MELANCHOLIC_SLOT = {
   options: [],
 }
 const AUGMENTS_BY_SLOT_LABEL = {
-  [MELANCHOLIC_SLOT.label]: [{ id: 1, name: 'Melancholic Charisma', minimumLevel: 8, bonusNames: [] }],
+  [MELANCHOLIC_SLOT.label]: [
+    { id: 1, name: 'Melancholic Charisma', minimumLevel: 8, bonusNames: [] },
+  ],
 }
 
 function itemDetailFor(id: number): Item {
@@ -80,23 +82,37 @@ describe('ResourceDetailDrawer', () => {
   })
 
   it('resolves a nameless URL entry to its name from the cached row list', () => {
-    render(<ResourceDetailDrawer resourceInUrl={{ category: 'items', id: 42 }} pickerCategory="items" />)
+    render(
+      <ResourceDetailDrawer resourceInUrl={{ category: 'items', id: 42 }} pickerCategory="items" />,
+    )
     expect(screen.getByRole('heading', { level: 2, name: 'Test Item' })).toBeInTheDocument()
     expect(screen.getAllByText('Test Item').length).toBeGreaterThan(1)
   })
 
   it('renders the no-selection empty state when resourceInUrl is null', () => {
-    const { container } = render(<ResourceDetailDrawer resourceInUrl={null} pickerCategory="items" />)
+    const { container } = render(
+      <ResourceDetailDrawer resourceInUrl={null} pickerCategory="items" />,
+    )
     expect(container.querySelector('.section-placeholder')).toHaveTextContent(/select an item/i)
   })
 
   it('renders not-found for an id the API does not know', () => {
-    render(<ResourceDetailDrawer resourceInUrl={{ category: 'items', id: 404 }} pickerCategory="items" />)
+    render(
+      <ResourceDetailDrawer
+        resourceInUrl={{ category: 'items', id: 404 }}
+        pickerCategory="items"
+      />,
+    )
     expect(screen.getByRole('status')).toHaveTextContent('No item with id 404.')
   })
 
   it('renders an error state for a transport failure', () => {
-    render(<ResourceDetailDrawer resourceInUrl={{ category: 'items', id: 500 }} pickerCategory="items" />)
+    render(
+      <ResourceDetailDrawer
+        resourceInUrl={{ category: 'items', id: 500 }}
+        pickerCategory="items"
+      />,
+    )
     expect(screen.getByRole('status')).toHaveTextContent(/could not load this item/i)
   })
 

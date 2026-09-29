@@ -73,7 +73,10 @@ export function missingPastLifeWarnings(
       const historyStackCount = historyStackCounts[pastLifeId] ?? 0
       const untrackedStackCount = untrackedStackCounts[pastLifeId] ?? 0
       const pastLife = PAST_LIFE_DEFINITIONS.find((d) => d.id === pastLifeId)
-      const ownedStackCount = Math.min(historyStackCount + untrackedStackCount, pastLife?.maximumStackCount ?? 3)
+      const ownedStackCount = Math.min(
+        historyStackCount + untrackedStackCount,
+        pastLife?.maximumStackCount ?? 3,
+      )
       if (desiredStackCount > ownedStackCount) {
         const name = pastLife?.name ?? capitalized(pastLifeId)
         warnings.push(`${desiredStackCount - ownedStackCount}× ${name} (${category})`)

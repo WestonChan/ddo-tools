@@ -12,7 +12,11 @@ export interface ActiveCharacterCardSummary {
   plannedBuildCount: number
 }
 
-export function ActiveCharacterCard({ summary }: { summary: ActiveCharacterCardSummary | null }): JSX.Element {
+export function ActiveCharacterCard({
+  summary,
+}: {
+  summary: ActiveCharacterCardSummary | null
+}): JSX.Element {
   if (summary === null) {
     return (
       <section className="landing-card landing-active-character landing-active-character--empty">
@@ -43,7 +47,9 @@ export function ActiveCharacterCard({ summary }: { summary: ActiveCharacterCardS
           <dt>Current build</dt>
           <dd className="landing-build-detail">
             {summary.buildName && <span className="landing-build-name">{summary.buildName}</span>}
-            {summary.buildSubtitle && <span className="landing-build-classes">{summary.buildSubtitle}</span>}
+            {summary.buildSubtitle && (
+              <span className="landing-build-classes">{summary.buildSubtitle}</span>
+            )}
             {summary.classLabel && <span className="landing-build-meta">{summary.classLabel}</span>}
           </dd>
         </div>

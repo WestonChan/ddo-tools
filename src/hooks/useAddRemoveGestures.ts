@@ -7,7 +7,11 @@ interface AddRemoveGestureProps {
   onContextMenu: (e: MouseEvent) => void
 }
 
-export function useAddRemoveGestures(onAdd: () => void, onRemove: () => void, longPressDelayMs = 500): AddRemoveGestureProps {
+export function useAddRemoveGestures(
+  onAdd: () => void,
+  onRemove: () => void,
+  longPressDelayMs = 500,
+): AddRemoveGestureProps {
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasLongPressFiredRef = useRef(false)
   const pressTargetRef = useRef<HTMLElement | null>(null)
@@ -18,7 +22,6 @@ export function useAddRemoveGestures(onAdd: () => void, onRemove: () => void, lo
     latestOnAddRef.current = onAdd
     latestOnRemoveRef.current = onRemove
   })
-
 
   const startLongPressTimer = useCallback(
     (e: TouchEvent) => {
@@ -55,7 +58,6 @@ export function useAddRemoveGestures(onAdd: () => void, onRemove: () => void, lo
       pressTarget.removeEventListener('touchcancel', cancelLongPressTimer)
     }
   }, [startLongPressTimer, addIfShortTap, cancelLongPressTimer])
-
 
   const onClick = useCallback(() => {
     latestOnAddRef.current()

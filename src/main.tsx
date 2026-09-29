@@ -28,11 +28,7 @@ createRoot(document.getElementById('root')!).render(
           hint="Your character data is safe in your browser."
           issueLabels="runtime"
           actions={
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => window.location.reload()}
-            >
+            <button type="button" className="btn-primary" onClick={() => window.location.reload()}>
               Reload
             </button>
           }

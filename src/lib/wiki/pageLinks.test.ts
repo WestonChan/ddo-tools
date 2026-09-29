@@ -14,7 +14,7 @@ describe('wikiPageUrlFor', () => {
   })
 
   it('percent-encodes special characters', () => {
-    expect(wikiPageUrlFor("Item:Sting of the Ninja")).toBe(
+    expect(wikiPageUrlFor('Item:Sting of the Ninja')).toBe(
       'https://ddowiki.com/page/Item%3ASting_of_the_Ninja',
     )
   })
@@ -34,7 +34,11 @@ describe('openWikiCompareWindow', () => {
     openWikiCompareWindow('https://ddowiki.com/page/Favor')
 
     expect(windowOpenMock).toHaveBeenCalledTimes(1)
-    const [url, windowName, windowFeatures] = windowOpenMock.mock.calls[0] as [string, string, string]
+    const [url, windowName, windowFeatures] = windowOpenMock.mock.calls[0] as [
+      string,
+      string,
+      string,
+    ]
     expect(url).toBe('https://ddowiki.com/page/Favor')
     expect(windowName).toBe(WIKI_COMPARE_WINDOW_NAME)
     expect(windowFeatures).toContain('popup=yes')

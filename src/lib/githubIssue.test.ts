@@ -13,7 +13,9 @@ describe('urlWithoutQueryOrFragment', () => {
   })
 
   it('strips both query and hash when both present', () => {
-    expect(urlWithoutQueryOrFragment('https://example.com/?a=1&b=2#section')).toBe('https://example.com/')
+    expect(urlWithoutQueryOrFragment('https://example.com/?a=1&b=2#section')).toBe(
+      'https://example.com/',
+    )
   })
 
   it('falls back to a simple split when URL parsing fails', () => {

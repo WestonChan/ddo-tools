@@ -1,6 +1,5 @@
 import type { Character, Life } from '../types'
 
-
 const THORDAK_STUB_LIVES: Life[] = [
   {
     id: '1a',

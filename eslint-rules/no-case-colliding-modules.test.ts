@@ -11,7 +11,12 @@ function directoryWith(fileNames: string[]): string {
   return directory
 }
 
-const distinctModules = directoryWith(['characterContext.ts', 'CharacterProvider.tsx', 'CharacterProvider.test.tsx', 'Modal.css'])
+const distinctModules = directoryWith([
+  'characterContext.ts',
+  'CharacterProvider.tsx',
+  'CharacterProvider.test.tsx',
+  'Modal.css',
+])
 const caseColliding = directoryWith(['characterContext.ts', 'CharacterContext.tsx'])
 const extensionColliding = directoryWith(['itemSearch.ts', 'itemSearch.tsx'])
 
@@ -28,7 +33,9 @@ tester.run('no-case-colliding-modules', noCaseCollidingModules, {
     {
       code: 'export {}\n',
       filename: join(caseColliding, 'characterContext.ts'),
-      errors: [{ messageId: 'caseCollidingModule', data: { siblingFileName: 'CharacterContext.tsx' } }],
+      errors: [
+        { messageId: 'caseCollidingModule', data: { siblingFileName: 'CharacterContext.tsx' } },
+      ],
     },
     {
       code: 'export {}\n',

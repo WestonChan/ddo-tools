@@ -7,7 +7,6 @@ import { CharacterProvider } from '../features/character'
 import { createAppRouter } from '../router'
 import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../test/matchMediaStub'
 
-
 vi.mock('./routeComponents', async (importActual) => {
   const actual = await importActual<typeof import('./routeComponents')>()
   return {
@@ -58,7 +57,9 @@ describe('AppLayout error boundaries', () => {
     const [exception, captureContext] = captureExceptionSpy.mock.calls[0]
     expect(exception).toBeInstanceOf(Error)
     expect((exception as Error).message).toBe('view-crash-for-test')
-    const componentStack = (captureContext as { contexts?: { react?: { componentStack?: string } } })?.contexts?.react?.componentStack
+    const componentStack = (
+      captureContext as { contexts?: { react?: { componentStack?: string } } }
+    )?.contexts?.react?.componentStack
     expect(componentStack).toBeTypeOf('string')
   })
 })

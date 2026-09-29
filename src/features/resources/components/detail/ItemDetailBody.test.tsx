@@ -76,9 +76,9 @@ describe('ItemDetailBody drop locations', () => {
       ...plainItem,
       quests: [quest({ isRaid: true, isRareLoot: true })],
     })
-    const kinds = Array.from(container.querySelectorAll('.resources-quest-name .resources-chip')).map((c) =>
-      c.getAttribute('data-kind'),
-    )
+    const kinds = Array.from(
+      container.querySelectorAll('.resources-quest-name .resources-chip'),
+    ).map((c) => c.getAttribute('data-kind'))
     expect(kinds).toEqual(['raid', 'rare'])
     expect(container.querySelector('.resources-quest-meta .resources-chip')).toBeNull()
   })
@@ -86,7 +86,10 @@ describe('ItemDetailBody drop locations', () => {
   it('shows the Rare chip only on the quests where the item is rare', () => {
     const { container } = renderItemDetailBody({
       ...plainItem,
-      quests: [quest({ id: 1, name: 'Tempest Spine', isRareLoot: true }), quest({ id: 2, name: 'The Pit' })],
+      quests: [
+        quest({ id: 1, name: 'Tempest Spine', isRareLoot: true }),
+        quest({ id: 2, name: 'The Pit' }),
+      ],
     })
     const rows = container.querySelectorAll('.resources-quest-row')
     expect(rows[0].querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
@@ -99,7 +102,9 @@ describe('ItemDetailBody drop locations', () => {
       quests: [quest({ lootType: 'reward' })],
     })
     expect(container.querySelector('.resources-chip')).toBeNull()
-    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent('Level 8 · End reward')
+    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
+      'Level 8 · End reward',
+    )
   })
 
   it('falls back to the free-text drop location when no quests are linked', () => {

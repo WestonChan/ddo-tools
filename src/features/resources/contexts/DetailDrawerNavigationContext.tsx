@@ -11,15 +11,15 @@ export interface DetailDrawerNavigation {
 }
 
 const NO_OP_DETAIL_DRAWER_NAVIGATION: DetailDrawerNavigation = {
-  pushResource: () => {
-  },
+  pushResource: () => {},
   deepLinkUrl: null,
-  closeDrawer: () => {
-  },
+  closeDrawer: () => {},
   pickerCategory: 'items',
 }
 
-const DetailDrawerNavigationContext = createContext<DetailDrawerNavigation>(NO_OP_DETAIL_DRAWER_NAVIGATION)
+const DetailDrawerNavigationContext = createContext<DetailDrawerNavigation>(
+  NO_OP_DETAIL_DRAWER_NAVIGATION,
+)
 
 export function DetailDrawerNavigationProvider({
   navigation,
@@ -28,7 +28,11 @@ export function DetailDrawerNavigationProvider({
   navigation: DetailDrawerNavigation
   children: ReactNode
 }): JSX.Element {
-  return <DetailDrawerNavigationContext.Provider value={navigation}>{children}</DetailDrawerNavigationContext.Provider>
+  return (
+    <DetailDrawerNavigationContext.Provider value={navigation}>
+      {children}
+    </DetailDrawerNavigationContext.Provider>
+  )
 }
 
 export function useDetailDrawerNavigation(): DetailDrawerNavigation {

@@ -1,4 +1,3 @@
-
 type MediaQueryChangeListener = (event: MediaQueryListEvent) => void
 
 export interface StubbedMediaQuery {
@@ -15,16 +14,23 @@ export interface MatchMediaStub {
 
 let installedStub: MatchMediaStub | null = null
 
-export function installMatchMedia(initialMatches: boolean | ((query: string) => boolean)): MatchMediaStub {
+export function installMatchMedia(
+  initialMatches: boolean | ((query: string) => boolean),
+): MatchMediaStub {
   restoreMatchMedia()
   const originalMatchMedia = window.matchMedia
   const stubbedMediaQueriesByQuery = new Map<string, StubbedMediaQuery>()
-  const initialMatchesFor = typeof initialMatches === 'function' ? initialMatches : (): boolean => initialMatches
+  const initialMatchesFor =
+    typeof initialMatches === 'function' ? initialMatches : (): boolean => initialMatches
 
   function stubbedMediaQueryFor(query: string): StubbedMediaQuery {
     const existing = stubbedMediaQueriesByQuery.get(query)
     if (existing) return existing
-    const created: StubbedMediaQuery = { matches: initialMatchesFor(query), changeListeners: new Set(), removedListenerCount: 0 }
+    const created: StubbedMediaQuery = {
+      matches: initialMatchesFor(query),
+      changeListeners: new Set(),
+      removedListenerCount: 0,
+    }
     stubbedMediaQueriesByQuery.set(query, created)
     return created
   }

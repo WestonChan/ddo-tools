@@ -145,13 +145,23 @@ function StatMultiSelect({
 
 function itemsMatchingRowFilters(items: ItemSummary[], filters: ItemFilters): ItemSummary[] {
   const lowestMinimumLevel = filters.lowestMinimumLevel ? Number(filters.lowestMinimumLevel) : null
-  const highestMinimumLevel = filters.highestMinimumLevel ? Number(filters.highestMinimumLevel) : null
+  const highestMinimumLevel = filters.highestMinimumLevel
+    ? Number(filters.highestMinimumLevel)
+    : null
   return items.filter((r) => {
     if (filters.equipmentSlot && r.equipmentSlot !== filters.equipmentSlot) return false
     if (filters.isRareOnly && !r.isRareLoot) return false
     if (filters.isRaidOnly && !r.isRaidLoot) return false
-    if (lowestMinimumLevel !== null && (r.minimumLevel === null || r.minimumLevel < lowestMinimumLevel)) return false
-    if (highestMinimumLevel !== null && (r.minimumLevel === null || r.minimumLevel > highestMinimumLevel)) return false
+    if (
+      lowestMinimumLevel !== null &&
+      (r.minimumLevel === null || r.minimumLevel < lowestMinimumLevel)
+    )
+      return false
+    if (
+      highestMinimumLevel !== null &&
+      (r.minimumLevel === null || r.minimumLevel > highestMinimumLevel)
+    )
+      return false
     return true
   })
 }
@@ -217,7 +227,10 @@ export function ItemPicker({
     navigate({ to: `/resources/${category}/${item.id}` })
   }
 
-  function setItemFilter<K extends keyof ItemFilters>(filterName: K, filterValue: ItemFilters[K]): void {
+  function setItemFilter<K extends keyof ItemFilters>(
+    filterName: K,
+    filterValue: ItemFilters[K],
+  ): void {
     setFilters((prev) => ({ ...prev, [filterName]: filterValue }))
   }
 
@@ -252,14 +265,19 @@ export function ItemPicker({
     activeFilterChips.push({
       key: `stat-${stat}`,
       label: stat,
-      clearFilter: () => setItemFilter('stats', filters.stats.filter((s) => s !== stat)),
+      clearFilter: () =>
+        setItemFilter(
+          'stats',
+          filters.stats.filter((s) => s !== stat),
+        ),
     })
   }
   if (filters.lowestMinimumLevel || filters.highestMinimumLevel) {
     const lowestMinimumLevel = filters.lowestMinimumLevel
     const highestMinimumLevel = filters.highestMinimumLevel
     let levelRangeLabel = 'ML '
-    if (lowestMinimumLevel && highestMinimumLevel) levelRangeLabel += `${lowestMinimumLevel}–${highestMinimumLevel}`
+    if (lowestMinimumLevel && highestMinimumLevel)
+      levelRangeLabel += `${lowestMinimumLevel}–${highestMinimumLevel}`
     else if (lowestMinimumLevel) levelRangeLabel += `≥ ${lowestMinimumLevel}`
     else levelRangeLabel += `≤ ${highestMinimumLevel}`
     activeFilterChips.push({
@@ -391,11 +409,7 @@ export function ItemPicker({
         )}
       </div>
       {activeFilterChips.length > 0 && (
-        <div
-          className="resources-active-filters"
-          role="region"
-          aria-label="Active filters"
-        >
+        <div className="resources-active-filters" role="region" aria-label="Active filters">
           {activeFilterChips.map((chip) => (
             <button
               key={chip.key}

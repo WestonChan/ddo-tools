@@ -44,7 +44,6 @@ export interface CharacterStats {
   spellPower: number
 }
 
-
 export type ReincarnationType = 'heroic' | 'racial' | 'iconic' | 'epic'
 export type EpicSphere = 'arcane' | 'divine' | 'martial' | 'primal'
 export type GameServer = 'Cormyr' | 'Moonsea' | 'Shadowdale' | 'Thrane' | 'Hardcore'
@@ -101,7 +100,6 @@ export interface AppSettings {
   defaultServer?: GameServer
 }
 
-
 export type PastLifeCategory = ReincarnationType
 
 export interface PastLifeBonus {
@@ -119,7 +117,6 @@ export interface PastLifeFeat {
   maximumStackCount: number
   bonusesPerStack: PastLifeBonus[]
 }
-
 
 export interface PastLifeStack {
   pastLifeFeatId: string

@@ -4,7 +4,6 @@ import { RouterProvider, createMemoryHistory } from '@tanstack/react-router'
 import { CharacterProvider } from '../features/character'
 import { createAppRouter } from '../router'
 
-
 vi.mock('./BottomBar', () => ({
   BottomBar: function ThrowingBottomBar(): never {
     throw new Error('bottom-bar-crash-for-test')

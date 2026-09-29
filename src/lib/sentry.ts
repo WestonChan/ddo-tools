@@ -62,9 +62,10 @@ export function lastSentryEventReference(): SentryEventReference {
     const replay = Sentry.getReplay?.()
     const replayId = replay?.getReplayId?.() ?? undefined
     const organizationSlug = import.meta.env.SENTRY_ORG
-    const replayUrl = replayId && organizationSlug
-      ? `https://${organizationSlug}.sentry.io/replays/${replayId}/`
-      : undefined
+    const replayUrl =
+      replayId && organizationSlug
+        ? `https://${organizationSlug}.sentry.io/replays/${replayId}/`
+        : undefined
     return { eventId, replayUrl }
   } catch {
     return {}

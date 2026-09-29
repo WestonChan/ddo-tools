@@ -78,7 +78,10 @@ function issueTitle(error: Error | undefined, preferredTitle: string | undefined
   return firstClause
 }
 
-function issueBody(error: Error | undefined, sentryEventReference: SentryEventReference | undefined): string {
+function issueBody(
+  error: Error | undefined,
+  sentryEventReference: SentryEventReference | undefined,
+): string {
   const bodySections: string[] = []
 
   if (error) {

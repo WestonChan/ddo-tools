@@ -17,9 +17,12 @@ describe('useDebouncedValue', () => {
   })
 
   it('holds the old value until the delay elapses', () => {
-    const { result, rerender } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, 100), {
-      initialProps: { v: 'a' },
-    })
+    const { result, rerender } = renderHook(
+      ({ v: latestValue }) => useDebouncedValue(latestValue, 100),
+      {
+        initialProps: { v: 'a' },
+      },
+    )
     rerender({ v: 'b' })
     expect(result.current).toBe('a')
 
@@ -35,9 +38,12 @@ describe('useDebouncedValue', () => {
   })
 
   it('restarts the window on every change — only the final value commits', () => {
-    const { result, rerender } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, 100), {
-      initialProps: { v: '' },
-    })
+    const { result, rerender } = renderHook(
+      ({ v: latestValue }) => useDebouncedValue(latestValue, 100),
+      {
+        initialProps: { v: '' },
+      },
+    )
     for (const v of ['f', 'fo', 'for', 'forc', 'force']) {
       rerender({ v })
       act(() => {
@@ -53,9 +59,12 @@ describe('useDebouncedValue', () => {
   })
 
   it('clamps a negative delay to zero instead of breaking setTimeout', () => {
-    const { result, rerender } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, -50), {
-      initialProps: { v: 'a' },
-    })
+    const { result, rerender } = renderHook(
+      ({ v: latestValue }) => useDebouncedValue(latestValue, -50),
+      {
+        initialProps: { v: 'a' },
+      },
+    )
     rerender({ v: 'b' })
     act(() => {
       vi.advanceTimersByTime(0)
@@ -64,9 +73,12 @@ describe('useDebouncedValue', () => {
   })
 
   it('cancels the pending commit on unmount', () => {
-    const { rerender, unmount } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, 100), {
-      initialProps: { v: 'a' },
-    })
+    const { rerender, unmount } = renderHook(
+      ({ v: latestValue }) => useDebouncedValue(latestValue, 100),
+      {
+        initialProps: { v: 'a' },
+      },
+    )
     rerender({ v: 'b' })
     unmount()
     expect(() => vi.runAllTimers()).not.toThrow()

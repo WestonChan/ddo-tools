@@ -22,13 +22,18 @@ function NavBarBuildSummary({
       <Icon size={18} />
       <div className="nav-bar-character-info nav-bar-collapsible">
         <span className="nav-bar-character-name">{name}</span>
-        {raceAndClassLabels
-          ? raceAndClassLabels.map((d, i) => <span key={i} className="nav-bar-character-build">{d}</span>)
-          : <>
-              <span className="nav-bar-character-build-placeholder" />
-              <span className="nav-bar-character-build-placeholder" />
-            </>
-        }
+        {raceAndClassLabels ? (
+          raceAndClassLabels.map((d, i) => (
+            <span key={i} className="nav-bar-character-build">
+              {d}
+            </span>
+          ))
+        ) : (
+          <>
+            <span className="nav-bar-character-build-placeholder" />
+            <span className="nav-bar-character-build-placeholder" />
+          </>
+        )}
       </div>
     </div>
   )
@@ -57,7 +62,9 @@ export function NavBarCharacterCard({ onNavigate }: NavBarCharacterCardProps): J
     >
       <div className="nav-bar-character-strip">
         <User size={18} />
-        <span className="nav-bar-character-strip-name nav-bar-collapsible">{selectedCharacter.name}</span>
+        <span className="nav-bar-character-strip-name nav-bar-collapsible">
+          {selectedCharacter.name}
+        </span>
       </div>
       <div className="nav-bar-divider" />
 

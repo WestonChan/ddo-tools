@@ -1,11 +1,6 @@
 import { useState, type JSX } from 'react'
 import type { Life } from './types'
-import {
-  missingPastLifeWarnings,
-  classSplitLabel,
-  raceLabelOf,
-  currentLifeNumberOf,
-} from './utils'
+import { missingPastLifeWarnings, classSplitLabel, raceLabelOf, currentLifeNumberOf } from './utils'
 import { useCharacters } from './hooks/useCharacters'
 import { ConfirmModal } from '../../components'
 import { Star, Plus } from 'lucide-react'
@@ -142,7 +137,10 @@ function CharacterView(): JSX.Element {
             const plannedBuild = plannedBuilds.find((b) => b.id === buildId)
             if (!plannedBuild) return
             const buildLabel = `${raceLabelOf(plannedBuild.race)} ${classSplitLabel(plannedBuild)}`
-            const warnings = missingPastLifeWarnings(plannedBuild.desiredPastLives, selectedCharacter)
+            const warnings = missingPastLifeWarnings(
+              plannedBuild.desiredPastLives,
+              selectedCharacter,
+            )
             setBuildToApply({ buildId, buildLabel, missingPastLifeWarnings: warnings })
           }}
           onDeletePlannedBuild={(buildId: string) => {

@@ -10,7 +10,13 @@ function AnyModalActiveProbe(): JSX.Element {
   return <span data-testid="probe">{String(isAnyModalActive)}</span>
 }
 
-function StrictModeModalHarness({ open: isOpen, children }: { open: boolean; children: ReactNode }): JSX.Element {
+function StrictModeModalHarness({
+  open: isOpen,
+  children,
+}: {
+  open: boolean
+  children: ReactNode
+}): JSX.Element {
   return (
     <StrictMode>
       <button>Trigger</button>
@@ -236,7 +242,9 @@ describe('Modal', () => {
 
   it('keeps focus inside the panel through a StrictMode remount with an autoFocus child', () => {
     const autoFocusInput = <input aria-label="Confirmation" autoFocus />
-    const { rerender } = render(<StrictModeModalHarness open={false}>{autoFocusInput}</StrictModeModalHarness>)
+    const { rerender } = render(
+      <StrictModeModalHarness open={false}>{autoFocusInput}</StrictModeModalHarness>,
+    )
     const trigger = screen.getByRole('button', { name: 'Trigger' })
     trigger.focus()
 

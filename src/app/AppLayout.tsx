@@ -4,7 +4,12 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
 import { BottomBar, type BuildWarning } from './BottomBar'
 import { ErrorCard, ErrorScreen } from '../components'
-import { useIsAnyModalActive, useAccentColoredFavicon, useLocalStorage, useMediaQuery } from '../hooks'
+import {
+  useIsAnyModalActive,
+  useAccentColoredFavicon,
+  useLocalStorage,
+  useMediaQuery,
+} from '../hooks'
 import { captureBoundaryError } from '../lib/sentry'
 import { BuildSidePanel } from '../features/character'
 import './App.css'
@@ -17,11 +22,7 @@ const ViewCrashScreen = (props: FallbackProps): JSX.Element => (
     heading="This view crashed"
     issueLabels="runtime"
     actions={({ resetErrorBoundary }) => (
-      <button
-        type="button"
-        className="btn-primary"
-        onClick={resetErrorBoundary}
-      >
+      <button type="button" className="btn-primary" onClick={resetErrorBoundary}>
         Try again
       </button>
     )}
@@ -81,7 +82,9 @@ function AppLayout(): JSX.Element {
 
   return (
     <div className="app-shell">
-      <div className={`app${isNavBarExpanded ? '' : ' app--nav-bar-collapsed'}${hasBuildSidePanel ? '' : ' app--no-stats'}`}>
+      <div
+        className={`app${isNavBarExpanded ? '' : ' app--nav-bar-collapsed'}${hasBuildSidePanel ? '' : ' app--no-stats'}`}
+      >
         <AppNavBar
           isExpanded={isNavBarExpanded}
           onToggleExpanded={toggleNavBar}
@@ -104,7 +107,10 @@ function AppLayout(): JSX.Element {
       </div>
 
       <ErrorBoundary FallbackComponent={BottomBarCrashCard} onError={captureBoundaryError}>
-        <BottomBar warnings={buildWarnings} inert={isInertBehindModal || isInertBehindNavBarOverlay} />
+        <BottomBar
+          warnings={buildWarnings}
+          inert={isInertBehindModal || isInertBehindNavBarOverlay}
+        />
       </ErrorBoundary>
     </div>
   )

@@ -15,9 +15,12 @@ export const defaultBuildSelection: BuildSelection = {
 
 export function migrateBuildSelection(storedSelection: unknown): BuildSelection {
   const storedFields = storedSelection as Record<string, unknown>
-  if ('buildId' in storedFields && typeof storedFields.buildId === 'string') return storedFields as unknown as BuildSelection
+  if ('buildId' in storedFields && typeof storedFields.buildId === 'string')
+    return storedFields as unknown as BuildSelection
   const buildId =
-    (storedFields.plannedBuildId as string) ?? (storedFields.lifeId as string) ?? defaultBuildSelection.buildId
+    (storedFields.plannedBuildId as string) ??
+    (storedFields.lifeId as string) ??
+    defaultBuildSelection.buildId
   return {
     characterId: (storedFields.characterId as string) ?? defaultBuildSelection.characterId,
     buildId,

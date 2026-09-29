@@ -21,7 +21,10 @@ function AddRemoveGestureHarness({
   })
 }
 
-function dispatchTouchEvent(pressTarget: HTMLElement, touchEventType: 'touchstart' | 'touchend' | 'touchcancel'): void {
+function dispatchTouchEvent(
+  pressTarget: HTMLElement,
+  touchEventType: 'touchstart' | 'touchend' | 'touchcancel',
+): void {
   pressTarget.dispatchEvent(new Event(touchEventType, { bubbles: true, cancelable: true }))
 }
 
@@ -56,7 +59,9 @@ describe('useAddRemoveGestures', () => {
       const pressTarget = getByTestId('target')
 
       act(() => {
-        pressTarget.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+        pressTarget.dispatchEvent(
+          new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+        )
       })
 
       expect(onRemove).toHaveBeenCalledTimes(1)
@@ -68,7 +73,9 @@ describe('useAddRemoveGestures', () => {
     it('fires onAdd on quick tap (touch start + end before timeout)', () => {
       const onAdd = vi.fn()
       const onRemove = vi.fn()
-      const { getByTestId } = render(createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 500 }))
+      const { getByTestId } = render(
+        createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 500 }),
+      )
       const pressTarget = getByTestId('target')
 
       act(() => {
@@ -88,7 +95,9 @@ describe('useAddRemoveGestures', () => {
     it('fires onRemove when held past timeout', () => {
       const onAdd = vi.fn()
       const onRemove = vi.fn()
-      const { getByTestId } = render(createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 500 }))
+      const { getByTestId } = render(
+        createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 500 }),
+      )
       const pressTarget = getByTestId('target')
 
       act(() => {
@@ -109,7 +118,9 @@ describe('useAddRemoveGestures', () => {
     it('does not fire either callback on cancel', () => {
       const onAdd = vi.fn()
       const onRemove = vi.fn()
-      const { getByTestId } = render(createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 500 }))
+      const { getByTestId } = render(
+        createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 500 }),
+      )
       const pressTarget = getByTestId('target')
 
       act(() => {
@@ -129,7 +140,9 @@ describe('useAddRemoveGestures', () => {
     it('respects custom timeout duration', () => {
       const onAdd = vi.fn()
       const onRemove = vi.fn()
-      const { getByTestId } = render(createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 200 }))
+      const { getByTestId } = render(
+        createElement(AddRemoveGestureHarness, { onAdd, onRemove, longPressDelayMs: 200 }),
+      )
       const pressTarget = getByTestId('target')
 
       act(() => {

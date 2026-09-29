@@ -17,8 +17,16 @@ export interface CharacterContextValue {
   viewedPlannedBuild: Life | undefined
   selectCharacter: (characterId: string) => void
   selectBuild: (buildId: string) => void
-  setUntrackedStackCount: (category: keyof PastLifeCounts, pastLifeId: string, stackCount: number) => void
-  setDesiredStackCount: (category: keyof PastLifeCounts, pastLifeId: string, stackCount: number) => void
+  setUntrackedStackCount: (
+    category: keyof PastLifeCounts,
+    pastLifeId: string,
+    stackCount: number,
+  ) => void
+  setDesiredStackCount: (
+    category: keyof PastLifeCounts,
+    pastLifeId: string,
+    stackCount: number,
+  ) => void
 }
 
 export const CharacterContext = createContext<CharacterContextValue | null>(null)

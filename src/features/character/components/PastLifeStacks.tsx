@@ -6,7 +6,6 @@ import { HoverTooltip } from '../../../components'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useAddRemoveGestures } from '../../../hooks'
 
-
 function OwnedStackBar({
   stackCount,
   maximumStackCount,
@@ -47,7 +46,6 @@ function OwnedStackBar({
     </span>
   )
 }
-
 
 function DesiredStackBar({
   desiredStackCount,
@@ -98,7 +96,6 @@ function DesiredStackBar({
     </span>
   )
 }
-
 
 function PastLifeStackRow({
   pastLife,
@@ -163,12 +160,13 @@ function PastLifeStackRow({
       </span>
       <span className="stack-bonus">
         {earnedBonusText && <span className="bonus-earned">{earnedBonusText}</span>}
-        {unearnedBonusTextToShow && <span className="bonus-remaining">{unearnedBonusTextToShow}</span>}
+        {unearnedBonusTextToShow && (
+          <span className="bonus-remaining">{unearnedBonusTextToShow}</span>
+        )}
       </span>
     </div>
   )
 }
-
 
 function PastLifeStackSection({
   label,
@@ -195,10 +193,19 @@ function PastLifeStackSection({
       <div className="section-label">{label}</div>
       {pastLives.map((pastLife) => {
         if (isViewingPlannedBuild) {
-          const stackCount = Math.min(desiredStackCounts[pastLife.id] ?? 0, pastLife.maximumStackCount)
-          const historyStackCount = Math.min(historyStackCounts[pastLife.id] ?? 0, pastLife.maximumStackCount)
+          const stackCount = Math.min(
+            desiredStackCounts[pastLife.id] ?? 0,
+            pastLife.maximumStackCount,
+          )
+          const historyStackCount = Math.min(
+            historyStackCounts[pastLife.id] ?? 0,
+            pastLife.maximumStackCount,
+          )
           const untrackedStackCount = (ownedUntrackedStackCounts ?? {})[pastLife.id] ?? 0
-          const ownedStackCount = Math.min(historyStackCount + untrackedStackCount, pastLife.maximumStackCount)
+          const ownedStackCount = Math.min(
+            historyStackCount + untrackedStackCount,
+            pastLife.maximumStackCount,
+          )
           return (
             <PastLifeStackRow
               key={pastLife.id}
@@ -212,11 +219,23 @@ function PastLifeStackSection({
             />
           )
         }
-        const historyStackCount = Math.min(historyStackCounts[pastLife.id] ?? 0, pastLife.maximumStackCount)
-        const historyStackCountAtCurrentLife = Math.min(historyStackCountsAtCurrentLife[pastLife.id] ?? 0, pastLife.maximumStackCount)
+        const historyStackCount = Math.min(
+          historyStackCounts[pastLife.id] ?? 0,
+          pastLife.maximumStackCount,
+        )
+        const historyStackCountAtCurrentLife = Math.min(
+          historyStackCountsAtCurrentLife[pastLife.id] ?? 0,
+          pastLife.maximumStackCount,
+        )
         const untrackedStackCount = untrackedStackCounts[pastLife.id] ?? 0
-        const stackCount = Math.min(historyStackCount + untrackedStackCount, pastLife.maximumStackCount)
-        const stackCountAtCurrentLife = Math.min(historyStackCountAtCurrentLife + untrackedStackCount, pastLife.maximumStackCount)
+        const stackCount = Math.min(
+          historyStackCount + untrackedStackCount,
+          pastLife.maximumStackCount,
+        )
+        const stackCountAtCurrentLife = Math.min(
+          historyStackCountAtCurrentLife + untrackedStackCount,
+          pastLife.maximumStackCount,
+        )
         return (
           <PastLifeStackRow
             key={pastLife.id}
@@ -225,14 +244,15 @@ function PastLifeStackSection({
             historyStackCount={historyStackCount}
             historyStackCountAtCurrentLife={historyStackCountAtCurrentLife}
             stackCountAtCurrentLife={stackCountAtCurrentLife}
-            onSetStackCount={(value) => onSetStackCount(pastLife.id, Math.max(0, value - historyStackCount))}
+            onSetStackCount={(value) =>
+              onSetStackCount(pastLife.id, Math.max(0, value - historyStackCount))
+            }
           />
         )
       })}
     </>
   )
 }
-
 
 interface ActivePastLifeBonus {
   pastLifeName: string
@@ -281,7 +301,6 @@ const PAST_LIFE_SECTIONS: {
   })),
 ]
 
-
 export function PastLifeStacks({
   character,
   viewedLifeId,
@@ -292,8 +311,16 @@ export function PastLifeStacks({
   character: Character
   viewedLifeId: string
   viewedPlannedBuild?: Life
-  onSetUntrackedStackCount: (category: keyof PastLifeCounts, pastLifeId: string, stackCount: number) => void
-  onSetDesiredStackCount?: (category: keyof PastLifeCounts, pastLifeId: string, stackCount: number) => void
+  onSetUntrackedStackCount: (
+    category: keyof PastLifeCounts,
+    pastLifeId: string,
+    stackCount: number,
+  ) => void
+  onSetDesiredStackCount?: (
+    category: keyof PastLifeCounts,
+    pastLifeId: string,
+    stackCount: number,
+  ) => void
 }): JSX.Element {
   const isViewingPlannedBuild = !!viewedPlannedBuild
 
@@ -309,15 +336,25 @@ export function PastLifeStacks({
 
   const completedLifeCount = livesBeforeViewedLife.filter((l) => l.status === 'completed').length
 
-  const setStackCount = isViewingPlannedBuild && onSetDesiredStackCount ? onSetDesiredStackCount : onSetUntrackedStackCount
+  const setStackCount =
+    isViewingPlannedBuild && onSetDesiredStackCount
+      ? onSetDesiredStackCount
+      : onSetUntrackedStackCount
 
   const activeBonuses: ActivePastLifeBonus[] = []
   if (!isViewingPlannedBuild) {
     for (const pastLife of PAST_LIFE_DEFINITIONS) {
-      const untrackedStackCounts = untrackedLives[pastLife.category as keyof typeof untrackedLives] ?? {}
-      const historyStackCount = Math.min(historyStackCounts[pastLife.id] ?? 0, pastLife.maximumStackCount)
+      const untrackedStackCounts =
+        untrackedLives[pastLife.category as keyof typeof untrackedLives] ?? {}
+      const historyStackCount = Math.min(
+        historyStackCounts[pastLife.id] ?? 0,
+        pastLife.maximumStackCount,
+      )
       const untrackedStackCount = untrackedStackCounts[pastLife.id] ?? 0
-      const stackCount = Math.min(historyStackCount + untrackedStackCount, pastLife.maximumStackCount)
+      const stackCount = Math.min(
+        historyStackCount + untrackedStackCount,
+        pastLife.maximumStackCount,
+      )
       if (stackCount > 0) {
         activeBonuses.push({
           pastLifeName: pastLife.name,
@@ -330,7 +367,9 @@ export function PastLifeStacks({
   return (
     <div className="past-life-stacks">
       {PAST_LIFE_SECTIONS.map(({ category, label, includesPastLife }) => {
-        const sectionPastLives = PAST_LIFE_DEFINITIONS.filter((d) => d.category === category && (!includesPastLife || includesPastLife(d)))
+        const sectionPastLives = PAST_LIFE_DEFINITIONS.filter(
+          (d) => d.category === category && (!includesPastLife || includesPastLife(d)),
+        )
         return (
           <PastLifeStackSection
             key={label}
@@ -340,7 +379,9 @@ export function PastLifeStacks({
             historyStackCounts={historyStackCounts}
             historyStackCountsAtCurrentLife={historyStackCountsAtCurrentLife}
             onSetStackCount={(id, v) => setStackCount(category, id, v)}
-            desiredStackCounts={isViewingPlannedBuild ? (desiredPastLives?.[category] ?? {}) : undefined}
+            desiredStackCounts={
+              isViewingPlannedBuild ? (desiredPastLives?.[category] ?? {}) : undefined
+            }
             ownedUntrackedStackCounts={isViewingPlannedBuild ? untrackedLives[category] : undefined}
           />
         )
@@ -350,7 +391,9 @@ export function PastLifeStacks({
           ? 'Tap to add desired · long-press to remove'
           : 'Tap to add · long-press to remove'}
       </div>
-      {!isViewingPlannedBuild && <div className="total-past-lives">Total Past Lives: {completedLifeCount}</div>}
+      {!isViewingPlannedBuild && (
+        <div className="total-past-lives">Total Past Lives: {completedLifeCount}</div>
+      )}
       {activeBonuses.length > 0 && <ActiveBonusSummary bonuses={activeBonuses} />}
     </div>
   )

@@ -33,7 +33,12 @@ function toHeaderAttributes(
   if (item.augmentSlots.length > 0) {
     attributes.push({
       label: 'Augment slots',
-      value: <AugmentSlotList augmentSlots={item.augmentSlots} augmentsBySlotLabel={augmentsBySlotLabel} />,
+      value: (
+        <AugmentSlotList
+          augmentSlots={item.augmentSlots}
+          augmentsBySlotLabel={augmentsBySlotLabel}
+        />
+      ),
     })
   }
   return attributes
@@ -44,20 +49,27 @@ function toLabeledWeaponStats(weaponStats: ItemWeaponStats): LabeledStat[] {
   if (weaponStats.damage) labeledStats.push({ label: 'Damage', value: weaponStats.damage })
   if (weaponStats.critical) labeledStats.push({ label: 'Critical', value: weaponStats.critical })
   labeledStats.push({ label: 'Type', value: weaponStats.weaponType })
-  if (weaponStats.proficiency) labeledStats.push({ label: 'Proficiency', value: weaponStats.proficiency })
-  if (weaponStats.handedness) labeledStats.push({ label: 'Handedness', value: weaponStats.handedness })
+  if (weaponStats.proficiency)
+    labeledStats.push({ label: 'Proficiency', value: weaponStats.proficiency })
+  if (weaponStats.handedness)
+    labeledStats.push({ label: 'Handedness', value: weaponStats.handedness })
   return labeledStats
 }
 
 function toLabeledArmorStats(armorStats: ItemArmorStats): LabeledStat[] {
   const labeledStats: LabeledStat[] = []
   labeledStats.push({ label: 'Type', value: armorStats.armorType })
-  if (armorStats.armorBonus !== null) labeledStats.push({ label: 'Armor bonus', value: armorStats.armorBonus })
-  if (armorStats.shieldBonus !== null) labeledStats.push({ label: 'Shield bonus', value: armorStats.shieldBonus })
+  if (armorStats.armorBonus !== null)
+    labeledStats.push({ label: 'Armor bonus', value: armorStats.armorBonus })
+  if (armorStats.shieldBonus !== null)
+    labeledStats.push({ label: 'Shield bonus', value: armorStats.shieldBonus })
   if (armorStats.maximumDexterityBonus !== null)
     labeledStats.push({ label: 'Max Dex bonus', value: armorStats.maximumDexterityBonus })
   if (armorStats.arcaneSpellFailurePercent !== null)
-    labeledStats.push({ label: 'Arcane spell failure', value: `${armorStats.arcaneSpellFailurePercent}%` })
+    labeledStats.push({
+      label: 'Arcane spell failure',
+      value: `${armorStats.arcaneSpellFailurePercent}%`,
+    })
   if (armorStats.armorCheckPenalty !== null)
     labeledStats.push({ label: 'Armor check penalty', value: armorStats.armorCheckPenalty })
   if (armorStats.damageReduction !== null)

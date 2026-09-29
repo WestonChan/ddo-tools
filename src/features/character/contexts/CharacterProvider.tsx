@@ -29,7 +29,8 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
   )
 
   const characterContextValue = useMemo<CharacterContextValue>(() => {
-    const selectedCharacter = characters.find((c) => c.id === buildSelection.characterId) ?? characters[0]
+    const selectedCharacter =
+      characters.find((c) => c.id === buildSelection.characterId) ?? characters[0]
     const currentLife = selectedCharacter.lives[selectedCharacter.currentLifeIndex]
     const lifeNumbersByLifeId = lifeNumbersOf(selectedCharacter)
     const currentLifeNumber = currentLifeNumberOf(selectedCharacter)
@@ -51,7 +52,11 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
       setBuildSelection((prev) => ({ ...prev, buildId }))
     }
 
-    function setUntrackedStackCount(category: keyof PastLifeCounts, pastLifeId: string, stackCount: number): void {
+    function setUntrackedStackCount(
+      category: keyof PastLifeCounts,
+      pastLifeId: string,
+      stackCount: number,
+    ): void {
       setCharacters((prev) =>
         prev.map((c) => {
           if (c.id !== buildSelection.characterId) return c
@@ -67,7 +72,11 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
       )
     }
 
-    function setDesiredStackCount(category: keyof PastLifeCounts, pastLifeId: string, stackCount: number): void {
+    function setDesiredStackCount(
+      category: keyof PastLifeCounts,
+      pastLifeId: string,
+      stackCount: number,
+    ): void {
       if (!viewedPlannedBuild) return
       const viewedPlannedBuildId = buildSelection.buildId
       setPlannedBuilds((prev) =>
@@ -103,7 +112,16 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
       setUntrackedStackCount,
       setDesiredStackCount,
     }
-  }, [characters, buildSelection, plannedBuilds, setCharacters, setBuildSelection, setPlannedBuilds])
+  }, [
+    characters,
+    buildSelection,
+    plannedBuilds,
+    setCharacters,
+    setBuildSelection,
+    setPlannedBuilds,
+  ])
 
-  return <CharacterContext.Provider value={characterContextValue}>{children}</CharacterContext.Provider>
+  return (
+    <CharacterContext.Provider value={characterContextValue}>{children}</CharacterContext.Provider>
+  )
 }

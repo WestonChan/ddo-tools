@@ -18,7 +18,8 @@ export function ConfirmModal({
   onCancel: () => void
 }): JSX.Element {
   const [typedPhrase, setTypedPhrase] = useState('')
-  const canConfirm = !confirmationPhrase || typedPhrase.toLowerCase() === confirmationPhrase.toLowerCase()
+  const canConfirm =
+    !confirmationPhrase || typedPhrase.toLowerCase() === confirmationPhrase.toLowerCase()
   const titleId = useId()
 
   return (

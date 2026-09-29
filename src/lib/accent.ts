@@ -41,8 +41,10 @@ export function saveAccent(accent: string): void {
 
 export function activeAccent(): string {
   const lowercaseStoredAccent = storedAccent()?.toLowerCase()
-  return ACCENT_PRESETS.find((p) => p.color.toLowerCase() === lowercaseStoredAccent)?.color
-    ?? ACCENT_PRESETS[0].color
+  return (
+    ACCENT_PRESETS.find((p) => p.color.toLowerCase() === lowercaseStoredAccent)?.color ??
+    ACCENT_PRESETS[0].color
+  )
 }
 
 export function restoreAccent(): void {

@@ -27,7 +27,10 @@ function createStubRouter(renderContent: () => ReactNode, initialPath = '/build-
   })
 }
 
-export function renderWithRouter(ui: ReactNode, initialPath = '/build-plan'): {
+export function renderWithRouter(
+  ui: ReactNode,
+  initialPath = '/build-plan',
+): {
   router: AnyRouter
   renderResult: RenderResult
 } {

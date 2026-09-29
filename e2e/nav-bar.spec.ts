@@ -4,7 +4,6 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.removeItem('ddo-nav-bar-expanded'))
 })
 
-
 test.describe('icon position stability', () => {
   test('nav bar position does not shift when toggling expand/collapse', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
@@ -43,7 +42,6 @@ test.describe('icon position stability', () => {
     }
   })
 })
-
 
 test.describe('responsive breakpoints', () => {
   test('nav bar is expanded by default at >= 900px', async ({ page }) => {
@@ -128,7 +126,6 @@ test.describe('responsive breakpoints', () => {
   })
 })
 
-
 test.describe('layout', () => {
   test('bottom bar is always at viewport bottom', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
@@ -200,7 +197,6 @@ test.describe('layout', () => {
   })
 })
 
-
 test.describe('navigation', () => {
   test('clicking nav items changes the active view', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 })
@@ -224,9 +220,7 @@ test.describe('navigation', () => {
     const card = page.locator('.nav-bar-character-card')
     await expect(card).toHaveClass(/active/)
 
-    const accentBarWidth = await card.evaluate(
-      (el) => getComputedStyle(el, '::before').width,
-    )
+    const accentBarWidth = await card.evaluate((el) => getComputedStyle(el, '::before').width)
     expect(parseInt(accentBarWidth)).toBe(3)
   })
 
@@ -242,7 +236,6 @@ test.describe('navigation', () => {
     await expect(activeNavBarButtons.last()).toContainText('Level Plan')
   })
 })
-
 
 test.describe('compact sub-items', () => {
   test('compact items are same height as regular items (prevents icon shift)', async ({ page }) => {
@@ -276,7 +269,6 @@ test.describe('compact sub-items', () => {
     expect(parseFloat(compactIconOpacity)).toBeLessThan(1)
   })
 })
-
 
 test.describe('group hierarchy', () => {
   test('group parent button shows for build-plan group', async ({ page }) => {
@@ -324,14 +316,22 @@ test.describe('group hierarchy', () => {
       const navRect = navIcon?.getBoundingClientRect()
       return {
         navIconCenterX: navRect ? navRect.x + navRect.width / 2 : null,
-        stripIconCenterX: stripIcon ? stripIcon.getBoundingClientRect().x + stripIcon.getBoundingClientRect().width / 2 : null,
-        buildSummaryIconCenterX: slotIcon ? slotIcon.getBoundingClientRect().x + slotIcon.getBoundingClientRect().width / 2 : null,
+        stripIconCenterX: stripIcon
+          ? stripIcon.getBoundingClientRect().x + stripIcon.getBoundingClientRect().width / 2
+          : null,
+        buildSummaryIconCenterX: slotIcon
+          ? slotIcon.getBoundingClientRect().x + slotIcon.getBoundingClientRect().width / 2
+          : null,
       }
     })
 
     expect(iconCenterXs.navIconCenterX).not.toBeNull()
-    expect(Math.abs(iconCenterXs.stripIconCenterX! - iconCenterXs.navIconCenterX!)).toBeLessThanOrEqual(2)
-    expect(Math.abs(iconCenterXs.buildSummaryIconCenterX! - iconCenterXs.navIconCenterX!)).toBeLessThanOrEqual(2)
+    expect(
+      Math.abs(iconCenterXs.stripIconCenterX! - iconCenterXs.navIconCenterX!),
+    ).toBeLessThanOrEqual(2)
+    expect(
+      Math.abs(iconCenterXs.buildSummaryIconCenterX! - iconCenterXs.navIconCenterX!),
+    ).toBeLessThanOrEqual(2)
   })
 
   test('character card shows character name, build name, and race/class', async ({ page }) => {
@@ -345,8 +345,9 @@ test.describe('group hierarchy', () => {
   })
 })
 
-
-async function navBarIconCenters(page: import('@playwright/test').Page): Promise<{ x: number; y: number }[]> {
+async function navBarIconCenters(
+  page: import('@playwright/test').Page,
+): Promise<{ x: number; y: number }[]> {
   return page.evaluate(() => {
     const icons = document.querySelectorAll('.app-nav-bar svg')
     return Array.from(icons).map((el) => {

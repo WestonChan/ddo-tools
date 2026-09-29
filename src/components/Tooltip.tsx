@@ -30,7 +30,10 @@ export function Tooltip({
           left = anchorRect.left - tooltipRect.width - 6
         }
 
-        top = Math.max(viewportMarginPx, Math.min(top, window.innerHeight - tooltipRect.height - viewportMarginPx))
+        top = Math.max(
+          viewportMarginPx,
+          Math.min(top, window.innerHeight - tooltipRect.height - viewportMarginPx),
+        )
       } else {
         top = anchorRect.bottom + 6
         if (top + tooltipRect.height + viewportMarginPx > window.innerHeight) {
@@ -38,7 +41,10 @@ export function Tooltip({
         }
 
         left = anchorRect.left + anchorRect.width / 2 - tooltipRect.width / 2
-        left = Math.max(viewportMarginPx, Math.min(left, window.innerWidth - tooltipRect.width - viewportMarginPx))
+        left = Math.max(
+          viewportMarginPx,
+          Math.min(left, window.innerWidth - tooltipRect.width - viewportMarginPx),
+        )
       }
 
       setTooltipPosition({ top, left })
@@ -50,7 +56,11 @@ export function Tooltip({
     <div
       ref={positionTooltipBesideAnchor}
       className="tooltip-portal"
-      style={tooltipPosition ? { top: tooltipPosition.top, left: tooltipPosition.left } : { visibility: 'hidden' as const }}
+      style={
+        tooltipPosition
+          ? { top: tooltipPosition.top, left: tooltipPosition.left }
+          : { visibility: 'hidden' as const }
+      }
     >
       {text}
     </div>,

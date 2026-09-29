@@ -1,4 +1,3 @@
-
 export const WIKI_ORIGIN = 'https://ddowiki.com'
 
 export const WIKI_PAGE_BASE_URL = `${WIKI_ORIGIN}/page`

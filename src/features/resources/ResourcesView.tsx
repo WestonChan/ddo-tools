@@ -5,10 +5,17 @@ import { ItemPicker } from './components/ItemPicker'
 import { ResourceDetailDrawer } from './components/ResourceDetailDrawer'
 import { ApiGate, Modal } from '../../components'
 import { useItemSummaries } from './queries/useItems'
-import { DETAIL_DRAWER_TITLE_ID, isResourceCategory, type ResourceCategory } from './resourceCategories'
+import {
+  DETAIL_DRAWER_TITLE_ID,
+  isResourceCategory,
+  type ResourceCategory,
+} from './resourceCategories'
 import './ResourcesView.css'
 
-function useResourceRouteParams(): { category: ResourceCategory; selectedResourceId: number | null } {
+function useResourceRouteParams(): {
+  category: ResourceCategory
+  selectedResourceId: number | null
+} {
   const params = useParams({ strict: false })
   const category: ResourceCategory =
     params.category && isResourceCategory(params.category) ? params.category : 'items'
@@ -55,14 +62,20 @@ function ResourcesView(): JSX.Element {
       <header className="resources-header">
         <CategoryTabs activeCategory={category} onSelect={navigateToCategory} />
       </header>
-      <div className={`resources-body${selectedResourceId !== null ? ' resources-body--inspect' : ''}`}>
+      <div
+        className={`resources-body${selectedResourceId !== null ? ' resources-body--inspect' : ''}`}
+      >
         <aside
           className="resources-picker"
           aria-hidden={selectedResourceId !== null || undefined}
           inert={selectedResourceId !== null || undefined}
         >
           {category === 'items' ? (
-            <ApiGate isPending={itemSummariesQuery.isPending} error={itemSummariesQuery.error} onRetry={() => void itemSummariesQuery.refetch()}>
+            <ApiGate
+              isPending={itemSummariesQuery.isPending}
+              error={itemSummariesQuery.error}
+              onRetry={() => void itemSummariesQuery.refetch()}
+            >
               <ItemPicker
                 category={category}
                 items={itemSummariesQuery.data ?? []}

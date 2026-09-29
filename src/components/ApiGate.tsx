@@ -29,7 +29,12 @@ export function ApiGate({ isPending, error, onRetry, children }: ApiGateProps): 
   }
   if (isPending) {
     return (
-      <div className="api-gate-skeleton" role="status" aria-live="polite" aria-label="Loading game data">
+      <div
+        className="api-gate-skeleton"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading game data"
+      >
         <div className="api-gate-bar" />
         <div className="api-gate-bar api-gate-bar--short" />
         <div className="api-gate-bar" />

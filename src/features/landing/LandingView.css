@@ -49,9 +49,15 @@
   gap: var(--space-5);
 }
 
-.landing-grid-area-character { grid-area: character; }
-.landing-grid-area-ddo { grid-area: ddo; }
-.landing-grid-area-patch { grid-area: patch; }
+.landing-grid-area-character {
+  grid-area: character;
+}
+.landing-grid-area-ddo {
+  grid-area: ddo;
+}
+.landing-grid-area-patch {
+  grid-area: patch;
+}
 
 /* Each grid cell is a flex column so the card inside fills the cell's height —
    keeps the equal-row-height behavior we'd otherwise lose by adding the wrapper. */
@@ -219,7 +225,9 @@
   font-weight: 600;
   color: var(--accent);
   text-decoration: none;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .landing-cta:hover {
@@ -276,7 +284,9 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   cursor: pointer;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .landing-patch-toggle:hover {

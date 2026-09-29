@@ -16,12 +16,7 @@ export function ErrorCard({ error, issueLabels, issueTitle }: ErrorCardProps): J
   return (
     <div className="error-card" role="status" aria-live="polite">
       <span className="error-card-msg">{coercedError.message}</span>
-      <a
-        className="error-card-report"
-        href={newIssueUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <a className="error-card-report" href={newIssueUrl} target="_blank" rel="noopener noreferrer">
         Report
       </a>
     </div>

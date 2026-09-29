@@ -41,7 +41,11 @@ export function itemsMatchingQuery(
 
   const searchHits = searchIndex.search(trimmedQuery)
   return searchHits
-    .map(({ item, score }) => ({ item, score: score ?? 1, rank: nameMatchRank(item.name, trimmedQuery) }))
+    .map(({ item, score }) => ({
+      item,
+      score: score ?? 1,
+      rank: nameMatchRank(item.name, trimmedQuery),
+    }))
     .sort((a, b) => {
       if (a.rank !== b.rank) return a.rank - b.rank
       return a.score - b.score

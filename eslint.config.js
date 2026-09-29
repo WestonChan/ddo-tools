@@ -17,7 +17,10 @@ const sharedCodeImportRestriction = {
   files: ['src/components/**', 'src/hooks/**', 'src/lib/**', 'src/stores/**', 'src/test/**'],
   rules: {
     'no-restricted-imports': restrictedImportRegexes([
-      { regex: '^(\\.\\./)+(features|app)(/|$)', message: 'Shared code never imports from features/ or app/.' },
+      {
+        regex: '^(\\.\\./)+(features|app)(/|$)',
+        message: 'Shared code never imports from features/ or app/.',
+      },
     ]),
   },
 }
@@ -29,7 +32,8 @@ const featureImportRestrictions = FEATURE_NAMES.map((featureName) => ({
       { regex: '^(\\.\\./)+app(/|$)', message: 'Features never import from app/.' },
       {
         regex: `^(\\.\\./)+(features/)?(${FEATURE_NAMES.filter((other) => other !== featureName).join('|')})(/|$)`,
-        message: 'Features never import from each other; move shared code to src/components, src/hooks or src/lib.',
+        message:
+          'Features never import from each other; move shared code to src/components, src/hooks or src/lib.',
       },
     ]),
   },
@@ -41,14 +45,27 @@ const barrelReExportRestriction = {
     'no-restricted-syntax': [
       'error',
       {
-        selector: 'ExportNamedDeclaration[source.value=/^\\.\\.\\//], ExportAllDeclaration[source.value=/^\\.\\.\\//]',
+        selector:
+          'ExportNamedDeclaration[source.value=/^\\.\\.\\//], ExportAllDeclaration[source.value=/^\\.\\.\\//]',
         message: "A barrel re-exports its own directory's modules, never a sibling directory's.",
       },
     ],
   },
 }
 
-const EMPTY_TYPE_NAME_SUFFIXES = ['Manager', 'Helper', 'Helpers', 'Util', 'Utils', 'Info', 'Data', 'Wrapper', 'Handler', 'Processor', 'Impl']
+const EMPTY_TYPE_NAME_SUFFIXES = [
+  'Manager',
+  'Helper',
+  'Helpers',
+  'Util',
+  'Utils',
+  'Info',
+  'Data',
+  'Wrapper',
+  'Handler',
+  'Processor',
+  'Impl',
+]
 
 const typeNamingConvention = {
   selector: 'typeLike',
@@ -68,7 +85,11 @@ const interfacePrefixConvention = {
 const typeNamingRules = {
   files: ['**/*.{ts,tsx}'],
   rules: {
-    '@typescript-eslint/naming-convention': ['error', typeNamingConvention, interfacePrefixConvention],
+    '@typescript-eslint/naming-convention': [
+      'error',
+      typeNamingConvention,
+      interfacePrefixConvention,
+    ],
   },
 }
 
@@ -109,17 +130,22 @@ export default defineConfig([
       globals: globals.browser,
     },
     plugins: {
-      local: { rules: { 'no-comments': noComments, 'no-case-colliding-modules': noCaseCollidingModules } },
+      local: {
+        rules: { 'no-comments': noComments, 'no-case-colliding-modules': noCaseCollidingModules },
+      },
     },
     rules: {
       'local/no-comments': 'error',
       'local/no-case-colliding-modules': 'error',
       'no-empty': ['error', { allowEmptyCatch: true }],
-      '@typescript-eslint/explicit-function-return-type': ['error', {
-        allowExpressions: true,
-        allowTypedFunctionExpressions: true,
-        allowHigherOrderFunctions: true,
-      }],
+      '@typescript-eslint/explicit-function-return-type': [
+        'error',
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+        },
+      ],
       'object-shorthand': ['error', 'always'],
       'no-useless-rename': 'error',
       'no-console': ['error', { allow: ['info', 'warn', 'error'] }],

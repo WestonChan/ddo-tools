@@ -32,7 +32,9 @@ export function useDetailDrawerStack({
   pickerCategory,
 }: UseDetailDrawerStackOptions): DetailDrawerStack {
   const navigate = useNavigate()
-  const [stack, setStack] = useState<ResourceReference[]>(() => (resourceInUrl ? [resourceInUrl] : []))
+  const [stack, setStack] = useState<ResourceReference[]>(() =>
+    resourceInUrl ? [resourceInUrl] : [],
+  )
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

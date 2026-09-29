@@ -29,7 +29,11 @@ export function activeCharacterSummaryOf({
   return {
     characterName: selectedCharacter.name,
     buildName: viewedBuild?.name?.trim() ?? '',
-    buildSubtitle: [viewedBuild ? raceLabelOf(viewedBuild.race) : '', `Life ${currentLifeNumber}`, serverLabel]
+    buildSubtitle: [
+      viewedBuild ? raceLabelOf(viewedBuild.race) : '',
+      `Life ${currentLifeNumber}`,
+      serverLabel,
+    ]
       .filter(Boolean)
       .join(' · '),
     classLabel: viewedBuild ? classSplitLabel(viewedBuild) : '',

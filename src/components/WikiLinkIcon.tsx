@@ -1,7 +1,11 @@
 import type { JSX } from 'react'
 import { BookOpen } from 'lucide-react'
 import { HoverTooltip } from './Tooltip'
-import { wikiPageUrlFor, openWikiCompareWindow, WIKI_COMPARE_WINDOW_NAME } from '../lib/wiki/pageLinks'
+import {
+  wikiPageUrlFor,
+  openWikiCompareWindow,
+  WIKI_COMPARE_WINDOW_NAME,
+} from '../lib/wiki/pageLinks'
 import './WikiLinkIcon.css'
 
 interface WikiLinkIconProps {

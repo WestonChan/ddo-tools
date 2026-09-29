@@ -19,12 +19,18 @@ function LocalStorageHarness({
   return createElement('div', { 'data-testid': 'value' }, JSON.stringify(storedValue))
 }
 
-function renderLocalStorageHook(storageKey: string, initial: unknown): {
+function renderLocalStorageHook(
+  storageKey: string,
+  initial: unknown,
+): {
   getValue: () => unknown
   getSetter: () => Dispatch<SetStateAction<unknown>>
 } {
   let lastRenderedValue: unknown
-  const onRender = (renderedValue: unknown, setStoredValue: Dispatch<SetStateAction<unknown>>): void => {
+  const onRender = (
+    renderedValue: unknown,
+    setStoredValue: Dispatch<SetStateAction<unknown>>,
+  ): void => {
     lastRenderedValue = renderedValue
     lastSetter = setStoredValue
   }
@@ -32,7 +38,10 @@ function renderLocalStorageHook(storageKey: string, initial: unknown): {
   return { getValue: () => lastRenderedValue, getSetter: () => lastSetter }
 }
 
-function renderTwoLocalStorageHooks(key: string, initialValue: unknown): {
+function renderTwoLocalStorageHooks(
+  key: string,
+  initialValue: unknown,
+): {
   getValueA: () => unknown
   getValueB: () => unknown
   getSetterA: () => Dispatch<SetStateAction<unknown>>
@@ -42,11 +51,17 @@ function renderTwoLocalStorageHooks(key: string, initialValue: unknown): {
   let setterA: Dispatch<SetStateAction<unknown>> = () => {}
   let setterB: Dispatch<SetStateAction<unknown>> = () => {}
 
-  const onRenderA = (renderedValue: unknown, setStoredValue: Dispatch<SetStateAction<unknown>>): void => {
+  const onRenderA = (
+    renderedValue: unknown,
+    setStoredValue: Dispatch<SetStateAction<unknown>>,
+  ): void => {
     valueA = renderedValue
     setterA = setStoredValue
   }
-  const onRenderB = (renderedValue: unknown, setStoredValue: Dispatch<SetStateAction<unknown>>): void => {
+  const onRenderB = (
+    renderedValue: unknown,
+    setStoredValue: Dispatch<SetStateAction<unknown>>,
+  ): void => {
     valueB = renderedValue
     setterB = setStoredValue
   }
@@ -122,7 +137,10 @@ describe('useLocalStorage', () => {
   })
 
   it('syncs in both directions', () => {
-    const { getValueA, getValueB, getSetterA, getSetterB } = renderTwoLocalStorageHooks('sync-key', 0)
+    const { getValueA, getValueB, getSetterA, getSetterB } = renderTwoLocalStorageHooks(
+      'sync-key',
+      0,
+    )
 
     act(() => {
       getSetterA()(10)

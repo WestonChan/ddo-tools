@@ -5,7 +5,6 @@ import userEvent from '@testing-library/user-event'
 import { useModalAccessibility } from './useModalAccessibility'
 import { useIsAnyModalActive, resetActiveModalCountForTests } from './useRegisterActiveModal'
 
-
 function ModalAccessibilityHarness({
   isActive,
   onClose,
@@ -78,7 +77,9 @@ describe('useModalAccessibility', () => {
 
   it('skips the modal-active refcount when shouldRegisterAsActiveModal is false', () => {
     render(<AnyModalActiveProbe />)
-    render(<ModalAccessibilityHarness isActive onClose={vi.fn()} shouldRegisterAsActiveModal={false} />)
+    render(
+      <ModalAccessibilityHarness isActive onClose={vi.fn()} shouldRegisterAsActiveModal={false} />,
+    )
     expect(screen.getByTestId('probe')).toHaveTextContent('false')
   })
 })

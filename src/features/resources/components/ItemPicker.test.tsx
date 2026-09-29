@@ -38,13 +38,17 @@ function itemRow(overrides: Partial<ItemSummary> = {}): ItemSummary {
 const SAMPLE_ITEMS: ItemSummary[] = [
   itemRow({ id: 1, name: 'Bloodstone', isRaidLoot: true, minimumLevel: 12 }),
   itemRow({ id: 2, name: 'Cloak of Night', equipmentSlot: 'Back', minimumLevel: 20 }),
-  itemRow({ id: 3, name: 'Ring of Spell Storing', equipmentSlot: 'Ring', minimumLevel: 4, isRareLoot: true }),
+  itemRow({
+    id: 3,
+    name: 'Ring of Spell Storing',
+    equipmentSlot: 'Ring',
+    minimumLevel: 4,
+    isRareLoot: true,
+  }),
 ]
 
 function renderItemPicker(items: ItemSummary[] = SAMPLE_ITEMS): RenderResult {
-  return render(
-    <ItemPicker category="items" items={items} selectedItemId={null} />,
-  )
+  return render(<ItemPicker category="items" items={items} selectedItemId={null} />)
 }
 
 function shownItemNames(): string[] {
@@ -165,7 +169,10 @@ describe('ItemPicker active-filter chips', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
     await userEvent.click(screen.getByRole('button', { name: 'Remove filter: Rare' }))
 
-    expect(screen.getByRole('button', { name: 'Rare only' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Rare only' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     expect(screen.getByText('3 results')).toBeInTheDocument()
   })
 

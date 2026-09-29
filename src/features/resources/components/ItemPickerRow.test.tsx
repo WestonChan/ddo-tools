@@ -115,7 +115,9 @@ describe('ItemPickerRow', () => {
   it('shows the Rare chip after the Raid chip', () => {
     renderItemPickerRow([itemRow({ isRaidLoot: true, isRareLoot: true })], null)
     const button = screen.getByRole('button', { name: /Bloodstone/ })
-    const kinds = Array.from(button.querySelectorAll('.resources-chip')).map((c) => c.getAttribute('data-kind'))
+    const kinds = Array.from(button.querySelectorAll('.resources-chip')).map((c) =>
+      c.getAttribute('data-kind'),
+    )
     expect(kinds).toEqual(['raid', 'rare'])
     expect(button).toHaveTextContent('Rare')
   })
@@ -129,7 +131,9 @@ describe('ItemPickerRow', () => {
 
   it('shows no chips on a plain item', () => {
     renderItemPickerRow([itemRow()], null)
-    expect(screen.getByRole('button', { name: /Bloodstone/ }).querySelector('.resources-chip')).toBeNull()
+    expect(
+      screen.getByRole('button', { name: /Bloodstone/ }).querySelector('.resources-chip'),
+    ).toBeNull()
   })
 
   it('omits meta segments that have no data', () => {

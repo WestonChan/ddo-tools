@@ -7,7 +7,10 @@ function createLife(overrides: Partial<Life> = {}): Life {
     id: 'life-1',
     name: '',
     race: 'human',
-    classes: [{ classId: 'paladin', levels: 18 }, { classId: 'rogue', levels: 2 }],
+    classes: [
+      { classId: 'paladin', levels: 18 },
+      { classId: 'rogue', levels: 2 },
+    ],
     feats: [],
     enhancements: [],
     status: 'current',

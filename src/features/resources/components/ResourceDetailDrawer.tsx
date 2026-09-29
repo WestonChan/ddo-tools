@@ -18,16 +18,19 @@ export function ResourceDetailDrawer({
   resourceInUrl,
   pickerCategory,
 }: ResourceDetailDrawerProps): JSX.Element {
-  const { stack, pushResource, popResource, jumpToBreadcrumb, closeDrawer, deepLinkUrl } = useDetailDrawerStack({
-    resourceInUrl,
-    pickerCategory,
-  })
+  const { stack, pushResource, popResource, jumpToBreadcrumb, closeDrawer, deepLinkUrl } =
+    useDetailDrawerStack({
+      resourceInUrl,
+      pickerCategory,
+    })
 
   const topEntry = stack[stack.length - 1] ?? null
   const topItemId = topEntry !== null && topEntry.category === 'items' ? topEntry.id : null
 
   const itemDetailQuery = useItem(topItemId)
-  const augmentsBySlotLabel = useFittingAugmentsBySlotLabel(itemDetailQuery.data?.augmentSlots ?? [])
+  const augmentsBySlotLabel = useFittingAugmentsBySlotLabel(
+    itemDetailQuery.data?.augmentSlots ?? [],
+  )
 
   const itemsQuery = useItemSummaries(false)
   const namedDetailStack = useMemo(() => {
@@ -41,13 +44,25 @@ export function ResourceDetailDrawer({
   }, [stack, itemsQuery.data, itemDetailQuery.data])
 
   return (
-    <DetailDrawerNavigationProvider navigation={{ pushResource, deepLinkUrl, closeDrawer, pickerCategory }}>
+    <DetailDrawerNavigationProvider
+      navigation={{ pushResource, deepLinkUrl, closeDrawer, pickerCategory }}
+    >
       <div className="resources-drawer-bar">
-        <DetailBreadcrumbBar detailStack={namedDetailStack} onBackOneLevel={popResource} onJumpToCrumb={jumpToBreadcrumb} />
+        <DetailBreadcrumbBar
+          detailStack={namedDetailStack}
+          onBackOneLevel={popResource}
+          onJumpToCrumb={jumpToBreadcrumb}
+        />
       </div>
       <div className="resources-drawer-body">
         <section className="resources-detail">
-          {renderedDetailBody(topEntry, itemDetailQuery.data ?? null, itemDetailQuery.isPending, itemDetailQuery.error, augmentsBySlotLabel)}
+          {renderedDetailBody(
+            topEntry,
+            itemDetailQuery.data ?? null,
+            itemDetailQuery.isPending,
+            itemDetailQuery.error,
+            augmentsBySlotLabel,
+          )}
         </section>
       </div>
     </DetailDrawerNavigationProvider>
@@ -65,7 +80,11 @@ function renderedDetailBody(
   if (topEntry.category === 'items') {
     if (itemDetail) {
       return (
-        <ItemDetailBody key={`${topEntry.category}-${topEntry.id}`} item={itemDetail} augmentsBySlotLabel={augmentsBySlotLabel} />
+        <ItemDetailBody
+          key={`${topEntry.category}-${topEntry.id}`}
+          item={itemDetail}
+          augmentsBySlotLabel={augmentsBySlotLabel}
+        />
       )
     }
     if (isPending && !error) return <StatusPlaceholder reason="loading" />

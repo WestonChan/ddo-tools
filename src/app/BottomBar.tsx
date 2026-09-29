@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Bug, TriangleAlert, Check, ChevronDown } from 'lucide-react'
-import {
-  useCharacters,
-  classSplitLabel,
-  raceLabelOf,
-} from '../features/character'
+import { useCharacters, classSplitLabel, raceLabelOf } from '../features/character'
 import { HoverTooltip } from '../components'
 import { githubIssueUrls } from '../lib/githubIssue'
 import { lastSentryEventReference } from '../lib/sentry'
@@ -66,9 +62,7 @@ function ActiveBuildSummary(): JSX.Element {
   return (
     <div className="bottom-bar-build">
       <span className="bottom-bar-name">{selectedCharacter.name}</span>
-      {buildDescription && (
-        <span className="bottom-bar-description">{buildDescription}</span>
-      )}
+      {buildDescription && <span className="bottom-bar-description">{buildDescription}</span>}
     </div>
   )
 }
@@ -108,20 +102,30 @@ function WarningStatus({ warnings }: { warnings: BuildWarning[] }): JSX.Element 
   return (
     <div className="bottom-bar-status">
       {warnings.length > 0 ? (
-        <button className="bottom-bar-btn hoverable bottom-bar-warnings" onClick={toggleWarningList}>
+        <button
+          className="bottom-bar-btn hoverable bottom-bar-warnings"
+          onClick={toggleWarningList}
+        >
           <TriangleAlert size={14} />
-          <span>{warnings.length} warning{warnings.length !== 1 ? 's' : ''}</span>
+          <span>
+            {warnings.length} warning{warnings.length !== 1 ? 's' : ''}
+          </span>
           <ChevronDown size={12} />
         </button>
       ) : (
-        <button className="bottom-bar-btn hoverable bottom-bar-ok" onClick={showValidationComingSoonTooltip}>
+        <button
+          className="bottom-bar-btn hoverable bottom-bar-ok"
+          onClick={showValidationComingSoonTooltip}
+        >
           <Check size={14} />
           <span>No warnings</span>
         </button>
       )}
 
       {isTooltipVisible && (
-        <div className={`bottom-bar-tooltip${isTooltipFading ? ' fading' : ''}`}>Build validation coming soon</div>
+        <div className={`bottom-bar-tooltip${isTooltipFading ? ' fading' : ''}`}>
+          Build validation coming soon
+        </div>
       )}
 
       {isWarningListOpen && warnings.length > 0 && (

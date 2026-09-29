@@ -48,14 +48,20 @@ const AUGMENTS_BY_SLOT_LABEL: Record<string, AugmentSummary[]> = {
   [SAMPLE_AUGMENT_SLOTS.slavers.label]: [],
 }
 
-function augmentSlot(sortOrder: number, slotName: keyof typeof SAMPLE_AUGMENT_SLOTS): ItemAugmentSlot {
+function augmentSlot(
+  sortOrder: number,
+  slotName: keyof typeof SAMPLE_AUGMENT_SLOTS,
+): ItemAugmentSlot {
   return { sortOrder, ...SAMPLE_AUGMENT_SLOTS[slotName] }
 }
 
 describe('AugmentSlotList', () => {
   it('renders a plain colour socket as a gem with no control', () => {
     const { container } = render(
-      <AugmentSlotList augmentSlots={[augmentSlot(0, 'red'), augmentSlot(1, 'colorless')]} augmentsBySlotLabel={{}} />,
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'red'), augmentSlot(1, 'colorless')]}
+        augmentsBySlotLabel={{}}
+      />,
     )
     const gems = container.querySelectorAll('.resources-augment-gem')
     expect(gems).toHaveLength(2)
@@ -68,7 +74,12 @@ describe('AugmentSlotList', () => {
   })
 
   it('renders a crafting slot as an expandable control with a readable label', () => {
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
     const button = screen.getByRole('button', {
       name: /Lamordia: Melancholic \(Accessory\)/,
     })
@@ -79,7 +90,12 @@ describe('AugmentSlotList', () => {
 
   it('points aria-controls at the panel once it exists', async () => {
     const user = userEvent.setup()
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
     const button = screen.getByRole('button', { name: /Lamordia: Melancholic/ })
 
     await user.click(button)
@@ -101,7 +117,12 @@ describe('AugmentSlotList', () => {
 
   it('lists the candidate augments when the slot is expanded', async () => {
     const user = userEvent.setup()
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
 
     await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
 
@@ -113,7 +134,12 @@ describe('AugmentSlotList', () => {
 
   it('selecting a candidate marks that row and nothing else', async () => {
     const user = userEvent.setup()
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
     await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
 
     const row = screen.getByRole('option', { name: /Melancholic Charisma/ })
@@ -128,7 +154,12 @@ describe('AugmentSlotList', () => {
 
   it('moves between candidates with the arrow keys, one tab stop for the list', async () => {
     const user = userEvent.setup()
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
     await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
 
     const [first, second] = screen.getAllByRole('option')
@@ -148,7 +179,12 @@ describe('AugmentSlotList', () => {
 
   it('does not move past the ends of the candidate list', async () => {
     const user = userEvent.setup()
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
     await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
     const [first] = screen.getAllByRole('option')
 
@@ -161,7 +197,10 @@ describe('AugmentSlotList', () => {
   it('opens one slot at a time', async () => {
     const user = userEvent.setup()
     render(
-      <AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic'), augmentSlot(1, 'sun')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />,
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic'), augmentSlot(1, 'sun')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
     )
     await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
     await user.click(screen.getByRole('button', { name: /Sun/ }))
@@ -172,7 +211,12 @@ describe('AugmentSlotList', () => {
 
   it('closes an open slot when its control is clicked again', async () => {
     const user = userEvent.setup()
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'melancholic')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
     const button = screen.getByRole('button', { name: /Lamordia: Melancholic/ })
 
     await user.click(button)
@@ -184,14 +228,22 @@ describe('AugmentSlotList', () => {
 
   it('keeps the gem on a Sun socket that also expands', () => {
     const { container } = render(
-      <AugmentSlotList augmentSlots={[augmentSlot(0, 'sun')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />,
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'sun')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
     )
     expect(container.querySelector('.resources-augment-gem')).not.toBeNull()
     expect(screen.getByRole('button', { name: /Sun/ })).toBeInTheDocument()
   })
 
   it("renders a Slaver's slot as a plain pill because no augment fits it", () => {
-    render(<AugmentSlotList augmentSlots={[augmentSlot(0, 'slavers')]} augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL} />)
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'slavers')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
     expect(screen.getByText("Slaver's: Prefix (Legendary)")).toBeInTheDocument()
     expect(screen.queryByRole('button')).toBeNull()
   })

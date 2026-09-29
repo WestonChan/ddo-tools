@@ -9,9 +9,7 @@ export interface ItemPickerRowProps {
   onSelect: (row: ItemSummary) => void
 }
 
-export function ItemPickerRow(
-  props: RowComponentProps<ItemPickerRowProps>,
-): JSX.Element | null {
+export function ItemPickerRow(props: RowComponentProps<ItemPickerRowProps>): JSX.Element | null {
   const { index, style, ariaAttributes, items, selectedItemId, onSelect } = props
   const item = items[index]
   if (!item) return null

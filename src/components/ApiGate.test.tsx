@@ -31,7 +31,11 @@ describe('ApiGate', () => {
   it('shows a categorized error with a working retry', async () => {
     const onRetry = vi.fn()
     render(
-      <ApiGate isPending={false} error={new ApiError(API_NETWORK_ERROR, 0, 'Failed to fetch')} onRetry={onRetry}>
+      <ApiGate
+        isPending={false}
+        error={new ApiError(API_NETWORK_ERROR, 0, 'Failed to fetch')}
+        onRetry={onRetry}
+      >
         <p>content</p>
       </ApiGate>,
     )

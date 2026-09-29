@@ -50,7 +50,11 @@ const BLOODSTONE_ITEM: Item = {
   quests: [],
 }
 
-let itemSummariesQueryState: { data: ItemSummary[] | undefined; isPending: boolean; error: unknown } = {
+let itemSummariesQueryState: {
+  data: ItemSummary[] | undefined
+  isPending: boolean
+  error: unknown
+} = {
   data: ITEM_SUMMARIES,
   isPending: false,
   error: null,
@@ -91,7 +95,11 @@ describe('ResourcesView data gate', () => {
   })
 
   it('shows the error screen with a retry that refetches', async () => {
-    itemSummariesQueryState = { data: undefined, isPending: false, error: new TypeError('Failed to fetch') }
+    itemSummariesQueryState = {
+      data: undefined,
+      isPending: false,
+      error: new TypeError('Failed to fetch'),
+    }
     render(<ResourcesView />)
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
     expect(refetchMock).toHaveBeenCalledOnce()

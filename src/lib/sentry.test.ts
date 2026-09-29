@@ -32,7 +32,10 @@ describe('initializeSentry', () => {
       throw new Error('Invalid DSN')
     })
     expect(() => initializeSentry()).not.toThrow()
-    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('init failed'), expect.anything())
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('init failed'),
+      expect.anything(),
+    )
   })
 })
 

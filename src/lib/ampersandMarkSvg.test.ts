@@ -19,9 +19,7 @@ describe('ampersandMarkSvg', () => {
   })
 
   it('uses Vollkorn as the primary font with serif fallbacks', () => {
-    expect(ampersandMarkSvg()).toMatch(
-      /font-family="'Vollkorn','Georgia','Times New Roman',serif"/,
-    )
+    expect(ampersandMarkSvg()).toMatch(/font-family="'Vollkorn','Georgia','Times New Roman',serif"/)
   })
 
   it('centers the glyph at the box center using dy="0.35em"', () => {

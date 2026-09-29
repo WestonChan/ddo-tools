@@ -16,9 +16,9 @@ afterEach(() => {
 
 describe('apiUrl', () => {
   it('drops empty, undefined and false query values and encodes the rest', () => {
-    expect(apiUrl('/v1/items', { q: 'a b', limit: 10, raid: false, pack: '', slot: undefined })).toBe(
-      `${API_BASE_URL}/v1/items?q=a+b&limit=10`,
-    )
+    expect(
+      apiUrl('/v1/items', { q: 'a b', limit: 10, raid: false, pack: '', slot: undefined }),
+    ).toBe(`${API_BASE_URL}/v1/items?q=a+b&limit=10`)
     expect(apiUrl('/v1/items', { raid: true })).toBe(`${API_BASE_URL}/v1/items?raid=true`)
     expect(apiUrl('/v1/version')).toBe(`${API_BASE_URL}/v1/version`)
   })
@@ -32,13 +32,18 @@ describe('apiUrl', () => {
 describe('fetchApiJson', () => {
   it('returns the parsed body on success', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ total: 1 }), { status: 200, headers: { 'content-type': 'application/json' } }),
+      new Response(JSON.stringify({ total: 1 }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
     )
     await expect(fetchApiJson<{ total: number }>('/v1/items')).resolves.toEqual({ total: 1 })
   })
 
   it('throws a tagged error for a non-OK status with the body as detail', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"error":"not found"}', { status: 404, statusText: 'Not Found' }))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('{"error":"not found"}', { status: 404, statusText: 'Not Found' }),
+    )
     const err = await fetchApiJson('/v1/items/9').catch((e: unknown) => e)
     expect(isApiError(err)).toBe(true)
     if (!isApiError(err)) throw new Error('unreachable')

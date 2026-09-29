@@ -1,7 +1,13 @@
 import { useState, useEffect, type JSX } from 'react'
 import { Sun, Moon, Check } from 'lucide-react'
 import { useTheme } from '../../hooks'
-import { ACCENT_PRESETS, applyAccent, saveAccent, activeAccent, restoreAccent } from '../../lib/accent'
+import {
+  ACCENT_PRESETS,
+  applyAccent,
+  saveAccent,
+  activeAccent,
+  restoreAccent,
+} from '../../lib/accent'
 import './SettingsView.css'
 
 export function SettingsView(): JSX.Element {
@@ -19,13 +25,17 @@ export function SettingsView(): JSX.Element {
         <div className="settings-view-theme-toggle">
           <button
             className={`settings-view-theme-opt hoverable${theme === 'light' ? ' active' : ''}`}
-            onClick={() => { if (theme !== 'light') toggleTheme() }}
+            onClick={() => {
+              if (theme !== 'light') toggleTheme()
+            }}
           >
             <Sun size={16} /> Light
           </button>
           <button
             className={`settings-view-theme-opt hoverable${theme === 'dark' ? ' active' : ''}`}
-            onClick={() => { if (theme !== 'dark') toggleTheme() }}
+            onClick={() => {
+              if (theme !== 'dark') toggleTheme()
+            }}
           >
             <Moon size={16} /> Dark
           </button>
@@ -45,10 +55,15 @@ export function SettingsView(): JSX.Element {
                 setSelectedAccent(accentPreset.color)
               }}
             >
-              <span className="settings-view-accent-dot" style={{ background: accentPreset.color }} />
+              <span
+                className="settings-view-accent-dot"
+                style={{ background: accentPreset.color }}
+              />
               <span className="settings-view-accent-name">{accentPreset.name}</span>
               {selectedAccent === accentPreset.color && (
-                <span className="settings-view-accent-check"><Check size={14} /></span>
+                <span className="settings-view-accent-check">
+                  <Check size={14} />
+                </span>
               )}
             </button>
           ))}

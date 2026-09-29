@@ -11,7 +11,6 @@ import {
 import { EditableText } from '../../../components'
 import { Star, Trash2, Plus } from 'lucide-react'
 
-
 export type ReincarnationChoice =
   | { mode: 'epic'; epicFeatId: string }
   | { mode: 'true'; reincarnationType: ReincarnationType }
@@ -28,7 +27,6 @@ const EPIC_PAST_LIVES_BY_SPHERE = EPIC_SPHERES.map((s) => ({
   sphere: s,
   pastLives: PAST_LIFE_DEFINITIONS.filter((d) => d.category === 'epic' && d.sphere === s.id),
 }))
-
 
 function ReincarnationPanel({
   onCancel,
@@ -108,7 +106,9 @@ function ReincarnationPanel({
           className="btn-primary"
           onClick={() =>
             onConfirm(
-              reincarnationMode === 'epic' ? { mode: 'epic', epicFeatId } : { mode: 'true', reincarnationType: trueReincarnationType },
+              reincarnationMode === 'epic'
+                ? { mode: 'epic', epicFeatId }
+                : { mode: 'true', reincarnationType: trueReincarnationType },
             )
           }
         >
@@ -118,7 +118,6 @@ function ReincarnationPanel({
     </div>
   )
 }
-
 
 function LifeRow({
   isViewed,
@@ -147,12 +146,7 @@ function LifeRow({
       <span className="life-marker">{isViewed ? <Star size={14} /> : ''}</span>
       {lifeNumberLabel != null && <span className="life-number">{lifeNumberLabel}</span>}
       {isViewed ? (
-        <EditableText
-          text={name}
-          placeholder="Name..."
-          className="life-name"
-          onCommit={onRename}
-        />
+        <EditableText text={name} placeholder="Name..." className="life-name" onCommit={onRename} />
       ) : (
         <span className="life-name">
           {name || <span className="editable-text-placeholder">Name...</span>}
@@ -163,7 +157,6 @@ function LifeRow({
     </div>
   )
 }
-
 
 export function LifeHistory({
   character,
@@ -204,7 +197,8 @@ export function LifeHistory({
 }): JSX.Element {
   const completedLives = character.lives.filter((l) => l.status === 'completed')
   const currentLives = character.lives.filter((l) => l.status === 'current')
-  const raceAndClassLabel = (life: Life): string => `${raceLabelOf(life.race)} ${classSplitLabel(life)}`
+  const raceAndClassLabel = (life: Life): string =>
+    `${raceLabelOf(life.race)} ${classSplitLabel(life)}`
 
   const reincarnationLabel = (life: Life): string => {
     if (!life.reincarnation) return ''
@@ -271,10 +265,7 @@ export function LifeHistory({
             onRename={(name) => onRenameLife(life.id, name)}
           >
             {completedLives.length > 0 && (
-              <button
-                className="row-action-btn"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <button className="row-action-btn" onClick={(e) => e.stopPropagation()}>
                 Undo
               </button>
             )}
@@ -289,7 +280,10 @@ export function LifeHistory({
             </button>
           </LifeRow>
           {isReincarnationPanelOpen && (
-            <ReincarnationPanel onCancel={onCancelReincarnation} onConfirm={onConfirmReincarnation} />
+            <ReincarnationPanel
+              onCancel={onCancelReincarnation}
+              onConfirm={onConfirmReincarnation}
+            />
           )}
         </div>
       ))}

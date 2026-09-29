@@ -2,7 +2,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DetailBreadcrumbBar } from './DetailBreadcrumbBar'
-import { DetailDrawerNavigationProvider, type DetailDrawerNavigation } from '../contexts/DetailDrawerNavigationContext'
+import {
+  DetailDrawerNavigationProvider,
+  type DetailDrawerNavigation,
+} from '../contexts/DetailDrawerNavigationContext'
 import type { ResourceReference } from '../hooks/useDetailDrawerStack'
 
 const alphaEntry: ResourceReference = { category: 'items', id: 1, name: 'Alpha' }
@@ -31,7 +34,11 @@ function renderBreadcrumbBar(options: BreadcrumbBarRenderOptions): {
   }
   render(
     <DetailDrawerNavigationProvider navigation={api}>
-      <DetailBreadcrumbBar detailStack={options.stack} onBackOneLevel={onBackOneLevel} onJumpToCrumb={onJumpToCrumb} />
+      <DetailBreadcrumbBar
+        detailStack={options.stack}
+        onBackOneLevel={onBackOneLevel}
+        onJumpToCrumb={onJumpToCrumb}
+      />
     </DetailDrawerNavigationProvider>,
   )
   return { onBackOneLevel, onJumpToCrumb, closeDrawer }

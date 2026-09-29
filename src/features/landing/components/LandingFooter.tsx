@@ -11,7 +11,12 @@ export function LandingFooter(): JSX.Element {
       <span aria-hidden="true">·</span>
       <span>Updated {formattedPatchDate(latestPatchNoteDate(SITE_PATCH_NOTES))}</span>
       <span aria-hidden="true">·</span>
-      <a className="landing-footer-link" href={REPOSITORY_URL} target="_blank" rel="noopener noreferrer">
+      <a
+        className="landing-footer-link"
+        href={REPOSITORY_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         <span>GitHub</span>
         <ExternalLink size={12} />
       </a>

@@ -47,10 +47,7 @@ export function DetailHeader({
   return (
     <header className="resources-entity-header">
       <div className="resources-entity-title-row">
-        <h2
-          id={DETAIL_DRAWER_TITLE_ID}
-          className="resources-entity-name"
-        >
+        <h2 id={DETAIL_DRAWER_TITLE_ID} className="resources-entity-name">
           {name}
         </h2>
         <HoverTooltip text={isLinkCopied ? 'Copied!' : 'Copy link to this item'}>
@@ -64,11 +61,7 @@ export function DetailHeader({
             {isLinkCopied ? <Check size={14} /> : <LinkIcon size={14} />}
           </button>
         </HoverTooltip>
-        <WikiLinkIcon
-          href={wikiUrl ?? undefined}
-          pageName={wikiPageName ?? undefined}
-          size={14}
-        />
+        <WikiLinkIcon href={wikiUrl ?? undefined} pageName={wikiPageName ?? undefined} size={14} />
         <HoverTooltip text="Report mismatch — coming soon">
           <button
             type="button"

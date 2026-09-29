@@ -50,7 +50,8 @@
 }
 
 /* --- Collapsible text --- */
-.nav-bar-collapsible {}
+.nav-bar-collapsible {
+}
 
 /* --- Brand (Home link) --- */
 .nav-bar-brand {
@@ -79,7 +80,6 @@
   line-height: 1.15;
   color: var(--accent);
 }
-
 
 /* Reusable 1px horizontal divider (used by child components like the character card) */
 .nav-bar-divider {
@@ -249,7 +249,6 @@
   margin-top: auto;
   flex-shrink: 0;
   width: 100%;
-
 }
 
 /* --- Collapse toggle --- */
@@ -268,5 +267,3 @@
     z-index: var(--z-overlay);
   }
 }
-
-

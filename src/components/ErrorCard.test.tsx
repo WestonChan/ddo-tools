@@ -33,9 +33,6 @@ describe('ErrorCard', () => {
   it('uses context as the issue title when provided', () => {
     render(<ErrorCard error={new Error('x')} issueTitle="patch-notes-2026-04-27" />)
     const link = screen.getByRole('link', { name: 'Report' })
-    expect(link).toHaveAttribute(
-      'href',
-      expect.stringContaining('title=patch-notes-2026-04-27'),
-    )
+    expect(link).toHaveAttribute('href', expect.stringContaining('title=patch-notes-2026-04-27'))
   })
 })

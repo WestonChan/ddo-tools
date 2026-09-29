@@ -20,7 +20,9 @@ function PatchNoteEntry({ note }: { note: PatchNote }): JSX.Element {
 
 export function SitePatchNotesCard(): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
-  const visiblePatchNotes = isExpanded ? SITE_PATCH_NOTES : SITE_PATCH_NOTES.slice(0, INITIALLY_VISIBLE_PATCH_NOTE_COUNT)
+  const visiblePatchNotes = isExpanded
+    ? SITE_PATCH_NOTES
+    : SITE_PATCH_NOTES.slice(0, INITIALLY_VISIBLE_PATCH_NOTE_COUNT)
   const olderPatchNoteCount = SITE_PATCH_NOTES.length - INITIALLY_VISIBLE_PATCH_NOTE_COUNT
 
   return (
@@ -39,7 +41,11 @@ export function SitePatchNotesCard(): JSX.Element {
             size={14}
             className={`landing-patch-toggle-chevron${isExpanded ? ' is-open' : ''}`}
           />
-          <span>{isExpanded ? 'Show fewer updates' : `Show ${olderPatchNoteCount} older update${olderPatchNoteCount === 1 ? '' : 's'}`}</span>
+          <span>
+            {isExpanded
+              ? 'Show fewer updates'
+              : `Show ${olderPatchNoteCount} older update${olderPatchNoteCount === 1 ? '' : 's'}`}
+          </span>
         </button>
       )}
     </section>

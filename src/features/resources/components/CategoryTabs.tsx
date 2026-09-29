@@ -1,6 +1,11 @@
 import type { JSX } from 'react'
 import { HoverTooltip } from '../../../components'
-import { RESOURCE_CATEGORIES, LABEL_BY_RESOURCE_CATEGORY, ENABLED_RESOURCE_CATEGORIES, type ResourceCategory } from '../resourceCategories'
+import {
+  RESOURCE_CATEGORIES,
+  LABEL_BY_RESOURCE_CATEGORY,
+  ENABLED_RESOURCE_CATEGORIES,
+  type ResourceCategory,
+} from '../resourceCategories'
 
 interface CategoryTabsProps {
   activeCategory: ResourceCategory

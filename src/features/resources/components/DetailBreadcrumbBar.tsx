@@ -15,7 +15,11 @@ function crumbLabel(entry: ResourceReference): string {
   return entry.name ?? `${entry.category} #${entry.id}`
 }
 
-export function DetailBreadcrumbBar({ detailStack, onBackOneLevel, onJumpToCrumb }: DetailBreadcrumbBarProps): JSX.Element {
+export function DetailBreadcrumbBar({
+  detailStack,
+  onBackOneLevel,
+  onJumpToCrumb,
+}: DetailBreadcrumbBarProps): JSX.Element {
   const { closeDrawer, pickerCategory } = useDetailDrawerNavigation()
   const stackDepth = detailStack.length
   const canGoBackOneLevel = stackDepth > 1
@@ -52,11 +56,7 @@ export function DetailBreadcrumbBar({ detailStack, onBackOneLevel, onJumpToCrumb
           {detailStack.map((entry, index) => {
             const isLast = index === lastEntryIndex
             const separator = (
-              <ChevronRight
-                size={12}
-                className="resources-detail-breadcrumb-sep"
-                aria-hidden
-              />
+              <ChevronRight size={12} className="resources-detail-breadcrumb-sep" aria-hidden />
             )
             if (isLast) {
               return (

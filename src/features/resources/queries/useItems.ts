@@ -14,7 +14,6 @@ import {
   type ItemSummary,
 } from './items'
 
-
 const NEVER_STALE_QUERY_OPTIONS = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
 
 export const resourceQueryKeys = {
@@ -28,7 +27,12 @@ export const resourceQueryKeys = {
 }
 
 export function useItemSummaries(isFetchEnabled = true): UseQueryResult<ItemSummary[]> {
-  return useQuery({ queryKey: resourceQueryKeys.itemSummaries, queryFn: fetchItemSummaries, enabled: isFetchEnabled, ...NEVER_STALE_QUERY_OPTIONS })
+  return useQuery({
+    queryKey: resourceQueryKeys.itemSummaries,
+    queryFn: fetchItemSummaries,
+    enabled: isFetchEnabled,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
 }
 
 export function useItem(id: number | null): UseQueryResult<Item> {
@@ -42,11 +46,19 @@ export function useItem(id: number | null): UseQueryResult<Item> {
 }
 
 export function useAdventurePackNames(): UseQueryResult<string[]> {
-  return useQuery({ queryKey: resourceQueryKeys.adventurePackNames, queryFn: fetchAdventurePackNames, ...NEVER_STALE_QUERY_OPTIONS })
+  return useQuery({
+    queryKey: resourceQueryKeys.adventurePackNames,
+    queryFn: fetchAdventurePackNames,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
 }
 
 export function useStatNames(): UseQueryResult<string[]> {
-  return useQuery({ queryKey: resourceQueryKeys.statNames, queryFn: fetchStatNames, ...NEVER_STALE_QUERY_OPTIONS })
+  return useQuery({
+    queryKey: resourceQueryKeys.statNames,
+    queryFn: fetchStatNames,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
 }
 
 export function useItemIdsWithAnyStat(statNames: readonly string[]): Set<number> | null {
@@ -74,8 +86,14 @@ export function useItemIdsInPack(packName: string): Set<number> | null {
   return packName === '' ? null : (itemIdsInPack ?? null)
 }
 
-export function useFittingAugmentsBySlotLabel(augmentSlots: readonly ItemAugmentSlot[]): Record<string, AugmentSummary[]> {
-  const listedSlotLabels = [...new Set(augmentSlots.filter((s) => canListFittingAugments(s.family, s.label)).map((s) => s.label))]
+export function useFittingAugmentsBySlotLabel(
+  augmentSlots: readonly ItemAugmentSlot[],
+): Record<string, AugmentSummary[]> {
+  const listedSlotLabels = [
+    ...new Set(
+      augmentSlots.filter((s) => canListFittingAugments(s.family, s.label)).map((s) => s.label),
+    ),
+  ]
   const augmentQueries = useQueries({
     queries: listedSlotLabels.map((label) => ({
       queryKey: resourceQueryKeys.augmentsFittingSlot(label),

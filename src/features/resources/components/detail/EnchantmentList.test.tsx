@@ -44,7 +44,9 @@ describe('EnchantmentList', () => {
   })
 
   it('renders negative stat bonus values with a single minus sign', () => {
-    render(<EnchantmentList bonuses={[bonus({ name: 'Constitution -2', value: -2 })]} effects={[]} />)
+    render(
+      <EnchantmentList bonuses={[bonus({ name: 'Constitution -2', value: -2 })]} effects={[]} />,
+    )
     expect(screen.getByText('-2')).toBeInTheDocument()
     expect(screen.queryByText('+-2')).toBeNull()
   })
@@ -80,17 +82,17 @@ describe('EnchantmentList', () => {
   it('renders an expanded description as its own sub-line', () => {
     render(
       <EnchantmentList
-        bonuses={[bonus({
-          name: 'Fire Resistance +30',
-          statName: 'Fire Resistance',
-          description: '+30 Enhancement bonus to Fire Resistance',
-        })]}
+        bonuses={[
+          bonus({
+            name: 'Fire Resistance +30',
+            statName: 'Fire Resistance',
+            description: '+30 Enhancement bonus to Fire Resistance',
+          }),
+        ]}
         effects={[]}
       />,
     )
-    expect(
-      screen.getByText('+30 Enhancement bonus to Fire Resistance'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('+30 Enhancement bonus to Fire Resistance')).toBeInTheDocument()
   })
 
   it('omits the sub-line when there is no description', () => {

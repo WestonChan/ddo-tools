@@ -15,7 +15,12 @@ interface StatusPlaceholderProps {
   category?: string
 }
 
-function placeholderMessage({ reason, searchQuery, missingItemId, category }: StatusPlaceholderProps): { title: string; hint?: string } {
+function placeholderMessage({
+  reason,
+  searchQuery,
+  missingItemId,
+  category,
+}: StatusPlaceholderProps): { title: string; hint?: string } {
   switch (reason) {
     case 'no-selection':
       return { title: 'Select an item to view details.' }
@@ -28,7 +33,10 @@ function placeholderMessage({ reason, searchQuery, missingItemId, category }: St
       return { title: `No ${category ?? 'rows'} in database.` }
     case 'not-found':
       return {
-        title: missingItemId !== null && missingItemId !== undefined ? `No item with id ${missingItemId}.` : 'Not found.',
+        title:
+          missingItemId !== null && missingItemId !== undefined
+            ? `No item with id ${missingItemId}.`
+            : 'Not found.',
         hint: 'Pick another row from the list.',
       }
     case 'loading':

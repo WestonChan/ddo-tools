@@ -1,7 +1,11 @@
 import { useRef, useState, type JSX, type KeyboardEvent } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { HoverTooltip } from '../../../../components'
-import { isCraftingSlotFamily, type AugmentSummary, type ItemAugmentSlot } from '../../queries/items'
+import {
+  isCraftingSlotFamily,
+  type AugmentSummary,
+  type ItemAugmentSlot,
+} from '../../queries/items'
 import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 
 interface AugmentSlotListProps {
@@ -9,7 +13,10 @@ interface AugmentSlotListProps {
   augmentsBySlotLabel: Record<string, AugmentSummary[]>
 }
 
-export function AugmentSlotList({ augmentSlots, augmentsBySlotLabel }: AugmentSlotListProps): JSX.Element {
+export function AugmentSlotList({
+  augmentSlots,
+  augmentsBySlotLabel,
+}: AugmentSlotListProps): JSX.Element {
   const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
   const [pickedAugmentId, setPickedAugmentId] = useState<number | null>(null)
   const [focusedAugmentIndex, setFocusedAugmentIndex] = useState(0)
@@ -82,9 +89,13 @@ export function AugmentSlotList({ augmentSlots, augmentsBySlotLabel }: AugmentSl
     const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0
     if (step === 0) return
     event.preventDefault()
-    const nextFocusedIndex = Math.min(Math.max(focusedAugmentIndex + step, 0), expandedSlotAugments.length - 1)
+    const nextFocusedIndex = Math.min(
+      Math.max(focusedAugmentIndex + step, 0),
+      expandedSlotAugments.length - 1,
+    )
     setFocusedAugmentIndex(nextFocusedIndex)
-    const augmentOptionElements = augmentListboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]')
+    const augmentOptionElements =
+      augmentListboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]')
     augmentOptionElements?.[nextFocusedIndex]?.focus()
   }
 

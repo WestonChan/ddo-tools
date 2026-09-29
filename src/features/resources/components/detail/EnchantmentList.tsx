@@ -30,23 +30,22 @@ function toBonusLine(bonus: ItemBonus): EnchantmentLine {
 }
 
 function toEffectLine(effect: ItemEffect): EnchantmentLine {
-  const name = effect.value !== null ? `${effect.name} ${numberWithPlusSign(effect.value)}` : effect.name
+  const name =
+    effect.value !== null ? `${effect.name} ${numberWithPlusSign(effect.value)}` : effect.name
   return {
     key: `e-${effect.id}-${effect.sortOrder}`,
     tag: effect.target,
     name,
     signedValue: null,
-    description: effect.description && effect.description !== effect.name ? effect.description : null,
+    description:
+      effect.description && effect.description !== effect.name ? effect.description : null,
   }
 }
 
 export function EnchantmentList({ bonuses, effects }: EnchantmentListProps): JSX.Element | null {
   if (bonuses.length === 0 && effects.length === 0) return null
 
-  const lines: EnchantmentLine[] = [
-    ...bonuses.map(toBonusLine),
-    ...effects.map(toEffectLine),
-  ]
+  const lines: EnchantmentLine[] = [...bonuses.map(toBonusLine), ...effects.map(toEffectLine)]
 
   return (
     <DetailSection heading="Enchantments">
@@ -58,9 +57,7 @@ export function EnchantmentList({ bonuses, effects }: EnchantmentListProps): JSX
               <span className="resources-bonus-name">{line.name}</span>
               <span className="resources-bonus-value">{line.signedValue ?? ''}</span>
             </div>
-            {line.description && (
-              <p className="resources-bonus-description">{line.description}</p>
-            )}
+            {line.description && <p className="resources-bonus-description">{line.description}</p>}
           </li>
         ))}
       </ul>

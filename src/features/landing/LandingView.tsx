@@ -1,6 +1,9 @@
 import type { JSX } from 'react'
 import { LandingHero } from './components/LandingHero'
-import { ActiveCharacterCard, type ActiveCharacterCardSummary } from './components/ActiveCharacterCard'
+import {
+  ActiveCharacterCard,
+  type ActiveCharacterCardSummary,
+} from './components/ActiveCharacterCard'
 import { SitePatchNotesCard } from './components/SitePatchNotesCard'
 import { DdoPatchNotesCard } from './components/DdoPatchNotesCard'
 import { LandingFooter } from './components/LandingFooter'

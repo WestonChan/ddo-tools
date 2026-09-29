@@ -26,7 +26,10 @@ const onCollapseMock = vi.fn()
 
 function renderNavBar(
   isExpanded = true,
-  { initialPath = '/build-plan', isFullscreenOverlay }: { initialPath?: string; isFullscreenOverlay?: boolean } = {},
+  {
+    initialPath = '/build-plan',
+    isFullscreenOverlay,
+  }: { initialPath?: string; isFullscreenOverlay?: boolean } = {},
 ): ReturnType<typeof renderWithRouter> {
   return renderWithRouter(
     <AppNavBar

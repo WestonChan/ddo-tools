@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
-import { DetailDrawerNavigationProvider, useDetailDrawerNavigation, type DetailDrawerNavigation } from './DetailDrawerNavigationContext'
+import {
+  DetailDrawerNavigationProvider,
+  useDetailDrawerNavigation,
+  type DetailDrawerNavigation,
+} from './DetailDrawerNavigationContext'
 
 function DetailDrawerNavigationReader({
   onRead,

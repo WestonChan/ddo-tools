@@ -131,7 +131,11 @@ export const PAST_LIFE_DEFINITIONS: PastLifeDefinition[] = [
     name: 'Druid',
     category: 'heroic',
     maximumStackCount: 3,
-    stackBonuses: ['+2 Summon ability scores', '+2 Summon ability scores', '+2 Summon ability scores'],
+    stackBonuses: [
+      '+2 Summon ability scores',
+      '+2 Summon ability scores',
+      '+2 Summon ability scores',
+    ],
   },
   {
     id: 'warlock',
@@ -333,7 +337,11 @@ export const PAST_LIFE_DEFINITIONS: PastLifeDefinition[] = [
     name: 'Eladrin Chaosmancer',
     category: 'iconic',
     maximumStackCount: 3,
-    stackBonuses: ['+3 Universal Spell Power', '+3 Universal Spell Power', '+3 Universal Spell Power'],
+    stackBonuses: [
+      '+3 Universal Spell Power',
+      '+3 Universal Spell Power',
+      '+3 Universal Spell Power',
+    ],
   },
   {
     id: 'dhampir-dark-bargainer',
@@ -517,6 +525,10 @@ export const PAST_LIFE_DEFINITIONS: PastLifeDefinition[] = [
     category: 'epic',
     sphere: 'primal',
     maximumStackCount: 3,
-    stackBonuses: ['+5 HP/min regen (stance)', '+5 HP/min regen (stance)', '+5 HP/min regen (stance)'],
+    stackBonuses: [
+      '+5 HP/min regen (stance)',
+      '+5 HP/min regen (stance)',
+      '+5 HP/min regen (stance)',
+    ],
   },
 ]
