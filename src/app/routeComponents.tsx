@@ -1,6 +1,8 @@
 import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ErrorScreen } from '../components'
+import { useActiveCharacterSummary } from '../features/character'
+import { LandingView } from '../features/landing'
 import { ResourcesView } from '../features/resources'
 import { urlWithoutQueryOrFragment, githubIssueUrls } from '../lib/githubIssue'
 
@@ -19,6 +21,10 @@ export const GearView = createPlaceholderView('Gear Planner coming in Phase 6.')
 export const DamageCalculatorView = createPlaceholderView('Damage Calculator coming in a future update.')
 export const FarmChecklistView = createPlaceholderView('Farm Checklist coming in Phase 8.')
 export { ResourcesView }
+
+export function LandingRoute(): JSX.Element {
+  return <LandingView activeCharacterSummary={useActiveCharacterSummary()} />
+}
 
 export function NotFoundView(): JSX.Element {
   const sanitizedPath = typeof window !== 'undefined'

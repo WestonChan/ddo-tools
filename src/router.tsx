@@ -6,13 +6,13 @@ import {
 } from '@tanstack/react-router'
 import AppLayout from './app/AppLayout'
 import { CharacterView } from './features/character'
-import { LandingView } from './features/landing'
 import { SettingsView } from './features/settings'
 import {
   BuildPlanView,
   DamageCalculatorView,
   FarmChecklistView,
   GearView,
+  LandingRoute,
   NotFoundView,
   OverviewView,
   ResourcesView,
@@ -26,7 +26,7 @@ const rootRoute = createRootRoute({
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: LandingView,
+  component: LandingRoute,
 })
 
 const buildPlanRoute = createRoute({

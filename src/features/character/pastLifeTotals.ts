@@ -1,4 +1,4 @@
-import type { Character, PastLifeCategory } from '../character'
+import type { Character, PastLifeCategory } from './types'
 
 export const ORDERED_PAST_LIFE_CATEGORIES: { category: PastLifeCategory; label: string }[] = [
   { category: 'heroic', label: 'heroic' },
@@ -7,12 +7,12 @@ export const ORDERED_PAST_LIFE_CATEGORIES: { category: PastLifeCategory; label: 
   { category: 'iconic', label: 'iconic' },
 ]
 
-export interface PastLifeCounts {
+export interface PastLifeTotals {
   totalCount: number
   countByCategory: Record<PastLifeCategory, number>
 }
 
-export function pastLifeCountsOf(character: Character): PastLifeCounts {
+export function pastLifeTotalsOf(character: Character): PastLifeTotals {
   const countByCategory: Record<PastLifeCategory, number> = {
     heroic: 0,
     racial: 0,

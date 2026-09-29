@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { pastLifeCountsOf } from './pastLifeCounts'
-import type { Character, Life } from '../character'
+import { pastLifeTotalsOf } from './pastLifeTotals'
+import type { Character, Life } from './types'
 
 function createLife(overrides: Partial<Life> = {}): Life {
   return {
@@ -28,15 +28,15 @@ function createCharacter(overrides: Partial<Character> = {}): Character {
   }
 }
 
-describe('pastLifeCountsOf', () => {
+describe('pastLifeTotalsOf', () => {
   it('returns zeros for a fresh character', () => {
-    const pastLifeCounts = pastLifeCountsOf(createCharacter())
-    expect(pastLifeCounts.totalCount).toBe(0)
-    expect(pastLifeCounts.countByCategory).toEqual({ heroic: 0, racial: 0, iconic: 0, epic: 0 })
+    const pastLifeTotals = pastLifeTotalsOf(createCharacter())
+    expect(pastLifeTotals.totalCount).toBe(0)
+    expect(pastLifeTotals.countByCategory).toEqual({ heroic: 0, racial: 0, iconic: 0, epic: 0 })
   })
 
   it('counts each completed life with a reincarnation event by category', () => {
-    const pastLifeCounts = pastLifeCountsOf(
+    const pastLifeTotals = pastLifeTotalsOf(
       createCharacter({
         lives: [
           createLife({ id: 'a', reincarnation: { type: 'heroic' } }),
@@ -46,15 +46,15 @@ describe('pastLifeCountsOf', () => {
         ],
       }),
     )
-    expect(pastLifeCounts.countByCategory.heroic).toBe(2)
-    expect(pastLifeCounts.countByCategory.epic).toBe(1)
-    expect(pastLifeCounts.countByCategory.racial).toBe(1)
-    expect(pastLifeCounts.countByCategory.iconic).toBe(0)
-    expect(pastLifeCounts.totalCount).toBe(4)
+    expect(pastLifeTotals.countByCategory.heroic).toBe(2)
+    expect(pastLifeTotals.countByCategory.epic).toBe(1)
+    expect(pastLifeTotals.countByCategory.racial).toBe(1)
+    expect(pastLifeTotals.countByCategory.iconic).toBe(0)
+    expect(pastLifeTotals.totalCount).toBe(4)
   })
 
   it('skips lives without a reincarnation event (current life)', () => {
-    const pastLifeCounts = pastLifeCountsOf(
+    const pastLifeTotals = pastLifeTotalsOf(
       createCharacter({
         lives: [
           createLife({ id: 'a', status: 'current', reincarnation: undefined }),
@@ -62,11 +62,11 @@ describe('pastLifeCountsOf', () => {
         ],
       }),
     )
-    expect(pastLifeCounts.totalCount).toBe(1)
+    expect(pastLifeTotals.totalCount).toBe(1)
   })
 
   it('adds untracked lives on top of completed lives', () => {
-    const pastLifeCounts = pastLifeCountsOf(
+    const pastLifeTotals = pastLifeTotalsOf(
       createCharacter({
         lives: [createLife({ id: 'a', reincarnation: { type: 'heroic' } })],
         untrackedLives: {
@@ -77,14 +77,14 @@ describe('pastLifeCountsOf', () => {
         },
       }),
     )
-    expect(pastLifeCounts.countByCategory.heroic).toBe(4)
-    expect(pastLifeCounts.countByCategory.racial).toBe(1)
-    expect(pastLifeCounts.countByCategory.epic).toBe(3)
-    expect(pastLifeCounts.totalCount).toBe(8)
+    expect(pastLifeTotals.countByCategory.heroic).toBe(4)
+    expect(pastLifeTotals.countByCategory.racial).toBe(1)
+    expect(pastLifeTotals.countByCategory.epic).toBe(3)
+    expect(pastLifeTotals.totalCount).toBe(8)
   })
 
   it('handles iconic and epic together', () => {
-    const pastLifeCounts = pastLifeCountsOf(
+    const pastLifeTotals = pastLifeTotalsOf(
       createCharacter({
         untrackedLives: {
           heroic: {},
@@ -94,8 +94,8 @@ describe('pastLifeCountsOf', () => {
         },
       }),
     )
-    expect(pastLifeCounts.countByCategory.iconic).toBe(1)
-    expect(pastLifeCounts.countByCategory.epic).toBe(2)
-    expect(pastLifeCounts.totalCount).toBe(3)
+    expect(pastLifeTotals.countByCategory.iconic).toBe(1)
+    expect(pastLifeTotals.countByCategory.epic).toBe(2)
+    expect(pastLifeTotals.totalCount).toBe(3)
   })
 })

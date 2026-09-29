@@ -1,13 +1,19 @@
 import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowRight, UserPlus } from 'lucide-react'
-import { useCharacters, classSplitLabel, raceLabelOf } from '../../character'
-import { ORDERED_PAST_LIFE_CATEGORIES, pastLifeCountsOf } from '../pastLifeCounts'
 
-export function ActiveCharacterCard(): JSX.Element {
-  const { selectedCharacter, viewedBuild, currentLifeNumber, characters, plannedBuilds } = useCharacters()
+export interface ActiveCharacterCardSummary {
+  characterName: string
+  buildName: string
+  buildSubtitle: string
+  classLabel: string
+  pastLifeTotalCount: number
+  pastLifeCategoryCounts: { category: string; label: string; count: number }[]
+  plannedBuildCount: number
+}
 
-  if (characters.length === 0) {
+export function ActiveCharacterCard({ summary }: { summary: ActiveCharacterCardSummary | null }): JSX.Element {
+  if (summary === null) {
     return (
       <section className="landing-card landing-active-character landing-active-character--empty">
         <div className="landing-active-character-heading">
@@ -25,42 +31,31 @@ export function ActiveCharacterCard(): JSX.Element {
     )
   }
 
-  const buildName = viewedBuild?.name?.trim()
-  const raceLabel = viewedBuild ? raceLabelOf(viewedBuild.race) : ''
-  const classLabel = viewedBuild ? classSplitLabel(viewedBuild) : ''
-  const serverLabel = selectedCharacter.server ? `${selectedCharacter.server} server` : ''
-  const buildSubtitleParts = [raceLabel, `Life ${currentLifeNumber}`, serverLabel].filter(Boolean)
-
-  const pastLifeCounts = pastLifeCountsOf(selectedCharacter)
-  const pastLifeCategoriesToShow = ORDERED_PAST_LIFE_CATEGORIES.filter(({ category }) => pastLifeCounts.countByCategory[category] > 0)
-
   return (
     <section className="landing-card landing-active-character">
       <header className="landing-active-character-heading">
         <span className="landing-card-eyebrow">Continue where you left off</span>
-        <h2 className="landing-card-title">{selectedCharacter.name}</h2>
+        <h2 className="landing-card-title">{summary.characterName}</h2>
       </header>
 
       <dl className="landing-active-character-sections">
         <div className="landing-section">
           <dt>Current build</dt>
           <dd className="landing-build-detail">
-            {buildName && <span className="landing-build-name">{buildName}</span>}
-            {buildSubtitleParts.length > 0 && (
-              <span className="landing-build-classes">{buildSubtitleParts.join(' · ')}</span>
-            )}
-            {classLabel && <span className="landing-build-meta">{classLabel}</span>}
+            {summary.buildName && <span className="landing-build-name">{summary.buildName}</span>}
+            {summary.buildSubtitle && <span className="landing-build-classes">{summary.buildSubtitle}</span>}
+            {summary.classLabel && <span className="landing-build-meta">{summary.classLabel}</span>}
           </dd>
         </div>
 
-        {pastLifeCounts.totalCount > 0 && (
+        {summary.pastLifeTotalCount > 0 && (
           <div className="landing-section">
-            <dt>Past lives ({pastLifeCounts.totalCount})</dt>
+            <dt>Past lives ({summary.pastLifeTotalCount})</dt>
             <dd>
               <ul className="landing-stat-rows">
-                {pastLifeCategoriesToShow.map(({ category, label }) => (
+                {summary.pastLifeCategoryCounts.map(({ category, label, count }) => (
                   <li key={category}>
-                    <span className="landing-stat-count">{pastLifeCounts.countByCategory[category]}</span>
+                    <span className="landing-stat-count">{count}</span>
                     <span className="landing-stat-label">{label}</span>
                   </li>
                 ))}
@@ -69,11 +64,11 @@ export function ActiveCharacterCard(): JSX.Element {
           </div>
         )}
 
-        {plannedBuilds.length > 0 && (
+        {summary.plannedBuildCount > 0 && (
           <div className="landing-section">
             <dt>Planned builds</dt>
             <dd>
-              <span className="landing-build-classes">{plannedBuilds.length}</span>
+              <span className="landing-build-classes">{summary.plannedBuildCount}</span>
               <span className="landing-inline-meta"> saved</span>
             </dd>
           </div>
