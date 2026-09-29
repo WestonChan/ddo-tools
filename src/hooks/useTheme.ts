@@ -2,65 +2,65 @@ import { useSyncExternalStore } from 'react'
 
 export type Theme = 'dark' | 'light'
 
-interface ThemeApi {
+interface ThemeControls {
   theme: Theme
-  toggle: () => void
+  toggleTheme: () => void
 }
 
-function getInitialTheme(): Theme {
-  const stored = localStorage.getItem('theme')
-  if (stored === 'light' || stored === 'dark') return stored
+function storedOrSystemTheme(): Theme {
+  const storedTheme = localStorage.getItem('theme')
+  if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
 }
 
-let _theme: Theme | null = null
-const _listeners = new Set<() => void>()
+let currentTheme: Theme | null = null
+const themeListeners = new Set<() => void>()
 
-function notify(): void {
-  _listeners.forEach((fn) => fn())
+function notifyThemeListeners(): void {
+  themeListeners.forEach((fn) => fn())
 }
 
-function subscribe(listener: () => void): () => void {
-  _listeners.add(listener)
+function subscribeToTheme(listener: () => void): () => void {
+  themeListeners.add(listener)
   return () => {
-    _listeners.delete(listener)
+    themeListeners.delete(listener)
   }
 }
 
-function applyTheme(next: Theme): void {
-  _theme = next
-  document.documentElement.setAttribute('data-theme', next)
+function applyTheme(nextTheme: Theme): void {
+  currentTheme = nextTheme
+  document.documentElement.setAttribute('data-theme', nextTheme)
 }
 
-function ensureInit(): Theme {
-  const current = _theme
+function ensureThemeInitialized(): Theme {
+  const current = currentTheme
   if (current !== null) return current
-  const initial = getInitialTheme()
+  const initial = storedOrSystemTheme()
   applyTheme(initial)
   return initial
 }
 
-function getSnapshot(): Theme {
-  return ensureInit()
+function themeSnapshot(): Theme {
+  return ensureThemeInitialized()
 }
 
-function setTheme(next: Theme): void {
-  applyTheme(next)
-  localStorage.setItem('theme', next)
-  notify()
+function setTheme(nextTheme: Theme): void {
+  applyTheme(nextTheme)
+  localStorage.setItem('theme', nextTheme)
+  notifyThemeListeners()
 }
 
-function toggle(): void {
-  setTheme(ensureInit() === 'dark' ? 'light' : 'dark')
+function toggleTheme(): void {
+  setTheme(ensureThemeInitialized() === 'dark' ? 'light' : 'dark')
 }
 
-export function useTheme(): ThemeApi {
-  ensureInit()
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
-  return { theme, toggle }
+export function useTheme(): ThemeControls {
+  ensureThemeInitialized()
+  const theme = useSyncExternalStore(subscribeToTheme, themeSnapshot, themeSnapshot)
+  return { theme, toggleTheme }
 }
 
-export function _resetThemeForTests(): void {
-  _theme = null
-  notify()
+export function resetThemeForTests(): void {
+  currentTheme = null
+  notifyThemeListeners()
 }

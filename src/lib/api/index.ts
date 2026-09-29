@@ -1,12 +1,12 @@
 export {
-  API_BASE,
-  API_ERROR_HTTP,
-  API_ERROR_NETWORK,
-  API_ERROR_TIMEOUT,
+  API_BASE_URL,
+  API_HTTP_ERROR,
+  API_NETWORK_ERROR,
+  API_TIMEOUT_ERROR,
   ApiError,
-  apiGet,
+  fetchApiJson,
   apiUrl,
-  describeApiError,
+  apiErrorDescription,
   isApiError,
 } from './client'
 export type { ApiErrorKind } from './client'

@@ -1,24 +1,24 @@
 import { createContext, type Dispatch, type SetStateAction } from 'react'
 import type { Character, Life, PastLifeCounts } from '../types'
-import type { Selection } from '../migrations'
+import type { BuildSelection } from '../migrations'
 
 export interface CharacterContextValue {
   characters: Character[]
   setCharacters: Dispatch<SetStateAction<Character[]>>
-  character: Character
+  selectedCharacter: Character
   currentLife: Life
-  lifeNumbers: Map<string, number>
-  lifeNumber: number
-  activeBuild: Life
-  selection: Selection
-  setSelection: Dispatch<SetStateAction<Selection>>
+  lifeNumbersByLifeId: Map<string, number>
+  currentLifeNumber: number
+  viewedBuild: Life
+  buildSelection: BuildSelection
+  setBuildSelection: Dispatch<SetStateAction<BuildSelection>>
   plannedBuilds: Life[]
   setPlannedBuilds: Dispatch<SetStateAction<Life[]>>
-  viewingPlannedBuild: Life | undefined
-  selectCharacter: (charId: string) => void
+  viewedPlannedBuild: Life | undefined
+  selectCharacter: (characterId: string) => void
   selectBuild: (buildId: string) => void
-  setOverride: (category: keyof PastLifeCounts, id: string, value: number) => void
-  setBuildDesired: (category: keyof PastLifeCounts, id: string, value: number) => void
+  setUntrackedStackCount: (category: keyof PastLifeCounts, pastLifeId: string, stackCount: number) => void
+  setDesiredStackCount: (category: keyof PastLifeCounts, pastLifeId: string, stackCount: number) => void
 }
 
 export const CharacterContext = createContext<CharacterContextValue | null>(null)

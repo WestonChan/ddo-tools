@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { ACCENT_PRESETS, applyAccent, resolveActiveAccent, restoreAccent } from './accent'
+import { ACCENT_PRESETS, applyAccent, saveAccent, activeAccent, restoreAccent } from './accent'
 
-function readAccent(): string {
+function appliedAccent(): string {
   return document.documentElement.style.getPropertyValue('--accent')
 }
 
@@ -15,32 +15,40 @@ describe('ACCENT_PRESETS', () => {
     expect(ACCENT_PRESETS.length).toBeGreaterThan(0)
     for (const preset of ACCENT_PRESETS) {
       expect(preset.name).toBeTruthy()
-      expect(preset.accent).toMatch(/^#[0-9a-f]{6}$/i)
+      expect(preset.color).toMatch(/^#[0-9a-f]{6}$/i)
     }
   })
 
   it('has unique names and unique accents', () => {
     expect(new Set(ACCENT_PRESETS.map((t) => t.name)).size).toBe(ACCENT_PRESETS.length)
-    expect(new Set(ACCENT_PRESETS.map((t) => t.accent)).size).toBe(ACCENT_PRESETS.length)
+    expect(new Set(ACCENT_PRESETS.map((t) => t.color)).size).toBe(ACCENT_PRESETS.length)
   })
 })
 
 describe('applyAccent', () => {
-  it('writes both the --accent custom property and localStorage', () => {
+  it('sets the --accent custom property without touching localStorage', () => {
     applyAccent('#123456')
-    expect(readAccent()).toBe('#123456')
+    expect(appliedAccent()).toBe('#123456')
+    expect(localStorage.getItem('accent')).toBeNull()
+  })
+})
+
+describe('saveAccent', () => {
+  it('writes the accent to localStorage without applying it', () => {
+    saveAccent('#123456')
     expect(localStorage.getItem('accent')).toBe('#123456')
+    expect(appliedAccent()).toBe('')
   })
 })
 
 describe('accent round-trip', () => {
-  it('reads back and restores exactly what applyAccent stored', () => {
-    applyAccent(ACCENT_PRESETS[4].accent)
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[4].accent)
+  it('reads back and restores exactly what saveAccent stored', () => {
+    saveAccent(ACCENT_PRESETS[4].color)
+    expect(activeAccent()).toBe(ACCENT_PRESETS[4].color)
 
     document.documentElement.removeAttribute('style')
     restoreAccent()
-    expect(readAccent()).toBe(ACCENT_PRESETS[4].accent)
+    expect(appliedAccent()).toBe(ACCENT_PRESETS[4].color)
   })
 })
 
@@ -48,87 +56,87 @@ describe('restoreAccent', () => {
   it('reads the accent field out of the legacy {accent, hover} JSON format', () => {
     localStorage.setItem(
       'accent',
-      JSON.stringify({ accent: ACCENT_PRESETS[6].accent, hover: '#fedcba' }),
+      JSON.stringify({ accent: ACCENT_PRESETS[6].color, hover: '#fedcba' }),
     )
     restoreAccent()
-    expect(readAccent()).toBe(ACCENT_PRESETS[6].accent)
+    expect(appliedAccent()).toBe(ACCENT_PRESETS[6].color)
   })
 
   it('applies a plain hex string stored in the current format', () => {
-    localStorage.setItem('accent', ACCENT_PRESETS[3].accent)
+    localStorage.setItem('accent', ACCENT_PRESETS[3].color)
     restoreAccent()
-    expect(readAccent()).toBe(ACCENT_PRESETS[3].accent)
+    expect(appliedAccent()).toBe(ACCENT_PRESETS[3].color)
   })
 
   it('falls back to the first theme when nothing is stored', () => {
     restoreAccent()
-    expect(readAccent()).toBe(ACCENT_PRESETS[0].accent)
+    expect(appliedAccent()).toBe(ACCENT_PRESETS[0].color)
   })
 
   it('falls back to the first theme without throwing when the stored JSON is malformed', () => {
     localStorage.setItem('accent', '{"accent": ')
     expect(() => restoreAccent()).not.toThrow()
-    expect(readAccent()).toBe(ACCENT_PRESETS[0].accent)
+    expect(appliedAccent()).toBe(ACCENT_PRESETS[0].color)
   })
 
   it('falls back to the first theme when the stored JSON has no accent key', () => {
     localStorage.setItem('accent', JSON.stringify({ hover: '#fedcba' }))
     restoreAccent()
-    expect(readAccent()).toBe(ACCENT_PRESETS[0].accent)
+    expect(appliedAccent()).toBe(ACCENT_PRESETS[0].color)
   })
 })
 
-describe('resolveActiveAccent', () => {
+describe('activeAccent', () => {
   it('returns a plain hex string stored in the current format', () => {
-    localStorage.setItem('accent', ACCENT_PRESETS[3].accent)
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[3].accent)
+    localStorage.setItem('accent', ACCENT_PRESETS[3].color)
+    expect(activeAccent()).toBe(ACCENT_PRESETS[3].color)
   })
 
   it('returns the accent field out of the legacy {accent, hover} JSON format', () => {
     localStorage.setItem(
       'accent',
-      JSON.stringify({ accent: ACCENT_PRESETS[6].accent, hover: '#fedcba' }),
+      JSON.stringify({ accent: ACCENT_PRESETS[6].color, hover: '#fedcba' }),
     )
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[6].accent)
+    expect(activeAccent()).toBe(ACCENT_PRESETS[6].color)
   })
 
   it('returns the first theme when nothing is stored', () => {
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[0].accent)
+    expect(activeAccent()).toBe(ACCENT_PRESETS[0].color)
   })
 
   it('returns the first theme when the stored JSON is malformed', () => {
     localStorage.setItem('accent', '{"accent": ')
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[0].accent)
+    expect(activeAccent()).toBe(ACCENT_PRESETS[0].color)
   })
 
   it('returns the first theme when the stored JSON has no accent key', () => {
     localStorage.setItem('accent', JSON.stringify({ hover: '#fedcba' }))
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[0].accent)
+    expect(activeAccent()).toBe(ACCENT_PRESETS[0].color)
   })
 
   it('returns the first theme when the stored accent is not one of the presets', () => {
     localStorage.setItem('accent', JSON.stringify({ accent: '#d4af37', hover: '#e5c158' }))
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[0].accent)
+    expect(activeAccent()).toBe(ACCENT_PRESETS[0].color)
   })
 
   it('matches a preset case-insensitively and returns the canonical casing', () => {
-    localStorage.setItem('accent', ACCENT_PRESETS[1].accent.toUpperCase())
-    expect(resolveActiveAccent()).toBe(ACCENT_PRESETS[1].accent)
+    localStorage.setItem('accent', ACCENT_PRESETS[1].color.toUpperCase())
+    expect(activeAccent()).toBe(ACCENT_PRESETS[1].color)
   })
 
   it('agrees with what restoreAccent applies in every case', () => {
-    for (const stored of [
+    for (const storedText of [
       null,
-      ACCENT_PRESETS[3].accent,
+      ACCENT_PRESETS[3].color,
       '{"accent": ',
       JSON.stringify({ hover: '#abc' }),
       JSON.stringify({ accent: '#d4af37', hover: '#e5c158' }),
     ]) {
       localStorage.clear()
-      if (stored !== null) localStorage.setItem('accent', stored)
+      if (storedText !== null) localStorage.setItem('accent', storedText)
       document.documentElement.removeAttribute('style')
       restoreAccent()
-      expect(readAccent()).toBe(resolveActiveAccent())
+      expect(appliedAccent()).toBe(activeAccent())
     }
   })
 })

@@ -25,13 +25,13 @@ describe('ErrorCard', () => {
   })
 
   it('encodes the labels prop into the new-issue URL', () => {
-    render(<ErrorCard error={new Error('x')} labels="runtime" />)
+    render(<ErrorCard error={new Error('x')} issueLabels="runtime" />)
     const link = screen.getByRole('link', { name: 'Report' })
     expect(link).toHaveAttribute('href', expect.stringContaining('labels=runtime'))
   })
 
   it('uses context as the issue title when provided', () => {
-    render(<ErrorCard error={new Error('x')} context="patch-notes-2026-04-27" />)
+    render(<ErrorCard error={new Error('x')} issueTitle="patch-notes-2026-04-27" />)
     const link = screen.getByRole('link', { name: 'Report' })
     expect(link).toHaveAttribute(
       'href',

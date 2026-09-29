@@ -1,4 +1,4 @@
-import { apiGet } from '../../../lib/api'
+import { fetchApiJson } from '../../../lib/api'
 import type {
   ApiAdventurePack,
   ApiAugment,
@@ -9,94 +9,94 @@ import type {
   ApiStat,
 } from '../../../lib/api'
 
-const PAGE_LIMIT = 10_000
+const WHOLE_LIST_LIMIT = 10_000
 
-export interface ItemRow {
+export interface ItemSummary {
   id: number
   name: string
-  equipment_slot: string
-  item_category: string
-  minimum_level: number | null
+  equipmentSlot: string
+  category: string
+  minimumLevel: number | null
   pack: string | null
-  is_raid: boolean
-  is_rare: boolean
+  isRaidLoot: boolean
+  isRareLoot: boolean
 }
 
-export interface ItemCore {
+export interface ItemAttributes {
   id: number
   name: string
-  equipment_slot: string
-  item_category: string
-  item_type: string | null
-  minimum_level: number | null
-  enhancement_bonus: number | null
+  equipmentSlot: string
+  category: string
+  type: string | null
+  minimumLevel: number | null
+  enhancementBonus: number | null
   material: string | null
-  race_required: string | null
+  requiredRace: string | null
   description: string | null
-  drop_location: string | null
-  set_name: string | null
-  accepts_sentience: boolean
-  is_minor_artifact: boolean
-  wiki_url: string | null
+  dropLocation: string | null
+  setName: string | null
+  canAcceptSentience: boolean
+  isMinorArtifact: boolean
+  wikiUrl: string | null
 }
 
 export interface ItemWeaponStats {
   damage: string | null
   critical: string | null
-  weapon_type: string
+  weaponType: string
   proficiency: string | null
   handedness: string | null
-  dr_bypass: string[]
+  damageReductionBypasses: string[]
 }
 
 export interface ItemArmorStats {
-  armor_type: string
-  armor_bonus: number | null
-  max_dex_bonus: number | null
-  arcane_spell_failure: number | null
-  armor_check_penalty: number | null
-  shield_bonus: number | null
-  damage_reduction: number | null
+  armorType: string
+  armorBonus: number | null
+  maximumDexterityBonus: number | null
+  arcaneSpellFailurePercent: number | null
+  armorCheckPenalty: number | null
+  shieldBonus: number | null
+  damageReduction: number | null
 }
 
 export interface ItemAugmentSlotOption {
   name: string
   description: string | null
-  min_level: number | null
+  minimumLevel: number | null
 }
 
 export interface ItemAugmentSlot {
-  sort_order: number
+  sortOrder: number
   label: string
   family: string
   qualifier: string | null
   options: ItemAugmentSlotOption[]
 }
 
-export interface AugmentCandidate {
-  augment_id: number
+export interface AugmentSummary {
+  id: number
   name: string
-  min_level: number | null
-  bonuses: string[]
+  minimumLevel: number | null
+  bonusNames: string[]
 }
 
 export interface ItemBonus {
-  bonus_id: number
+  id: number
   name: string
   description: string | null
-  bonus_type: string | null
-  stat_name: string
+  bonusType: string | null
+  statName: string
   value: number | null
-  sort_order: number
+  sortOrder: number
 }
 
 export interface ItemEffect {
-  effect_id: number
+  id: number
   name: string
   description: string | null
   target: string | null
   value: number | null
-  sort_order: number
+  sortOrder: number
 }
 
 export interface ItemClickie {
@@ -104,181 +104,181 @@ export interface ItemClickie {
   description: string | null
 }
 
-export interface ItemQuestRef {
-  quest_id: number
+export interface ItemDropQuest {
+  id: number
   name: string
   level: number | null
   pack: string | null
   patron: string | null
-  loot_type: string | null
-  is_raid: boolean
-  is_rare: boolean
+  lootType: string | null
+  isRaid: boolean
+  isRareLoot: boolean
   duration: string | null
-  is_free_to_play: boolean
+  isFreeToPlay: boolean
 }
 
-export interface ItemDetail extends ItemCore {
+export interface Item extends ItemAttributes {
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
   augmentSlots: ItemAugmentSlot[]
   bonuses: ItemBonus[]
   effects: ItemEffect[]
   clickies: ItemClickie[]
-  quests: ItemQuestRef[]
+  quests: ItemDropQuest[]
 }
 
-export function toItemRow(row: ApiItemRow): ItemRow {
+export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
   return {
-    id: row.id,
-    name: row.name,
-    equipment_slot: row.slot,
-    item_category: row.category,
-    minimum_level: row.minimum_level,
-    pack: row.pack,
-    is_raid: row.is_raid,
-    is_rare: row.is_rare,
+    id: apiItemRow.id,
+    name: apiItemRow.name,
+    equipmentSlot: apiItemRow.slot,
+    category: apiItemRow.category,
+    minimumLevel: apiItemRow.minimum_level,
+    pack: apiItemRow.pack,
+    isRaidLoot: apiItemRow.is_raid,
+    isRareLoot: apiItemRow.is_rare,
   }
 }
 
-export function toItemDetail(d: ApiItemDetail): ItemDetail {
+export function toItem(apiItemDetail: ApiItemDetail): Item {
   return {
-    id: d.id,
-    name: d.name,
-    equipment_slot: d.slot,
-    item_category: d.category,
-    item_type: d.item_type,
-    minimum_level: d.minimum_level,
-    enhancement_bonus: d.enhancement_bonus,
-    material: d.material,
-    race_required: d.race_required,
-    description: d.description,
-    drop_location: d.drop_location,
-    set_name: d.set?.name ?? d.set_name,
-    accepts_sentience: d.accepts_sentience,
-    is_minor_artifact: d.is_minor_artifact,
-    wiki_url: d.wiki_url,
-    weaponStats: d.weapon
+    id: apiItemDetail.id,
+    name: apiItemDetail.name,
+    equipmentSlot: apiItemDetail.slot,
+    category: apiItemDetail.category,
+    type: apiItemDetail.item_type,
+    minimumLevel: apiItemDetail.minimum_level,
+    enhancementBonus: apiItemDetail.enhancement_bonus,
+    material: apiItemDetail.material,
+    requiredRace: apiItemDetail.race_required,
+    description: apiItemDetail.description,
+    dropLocation: apiItemDetail.drop_location,
+    setName: apiItemDetail.set?.name ?? apiItemDetail.set_name,
+    canAcceptSentience: apiItemDetail.accepts_sentience,
+    isMinorArtifact: apiItemDetail.is_minor_artifact,
+    wikiUrl: apiItemDetail.wiki_url,
+    weaponStats: apiItemDetail.weapon
       ? {
-          damage: d.weapon.damage,
-          critical: d.weapon.critical,
-          weapon_type: d.weapon.weapon_type,
-          proficiency: d.weapon.proficiency,
-          handedness: d.weapon.handedness,
-          dr_bypass: d.weapon.dr_bypass,
+          damage: apiItemDetail.weapon.damage,
+          critical: apiItemDetail.weapon.critical,
+          weaponType: apiItemDetail.weapon.weapon_type,
+          proficiency: apiItemDetail.weapon.proficiency,
+          handedness: apiItemDetail.weapon.handedness,
+          damageReductionBypasses: apiItemDetail.weapon.dr_bypass,
         }
       : null,
-    armorStats: d.armor
+    armorStats: apiItemDetail.armor
       ? {
-          armor_type: d.armor.armor_type,
-          armor_bonus: d.armor.armor_bonus,
-          max_dex_bonus: d.armor.max_dex_bonus,
-          arcane_spell_failure: d.armor.arcane_spell_failure,
-          armor_check_penalty: d.armor.armor_check_penalty,
-          shield_bonus: d.armor.shield_bonus,
-          damage_reduction: d.armor.damage_reduction,
+          armorType: apiItemDetail.armor.armor_type,
+          armorBonus: apiItemDetail.armor.armor_bonus,
+          maximumDexterityBonus: apiItemDetail.armor.max_dex_bonus,
+          arcaneSpellFailurePercent: apiItemDetail.armor.arcane_spell_failure,
+          armorCheckPenalty: apiItemDetail.armor.armor_check_penalty,
+          shieldBonus: apiItemDetail.armor.shield_bonus,
+          damageReduction: apiItemDetail.armor.damage_reduction,
         }
       : null,
-    augmentSlots: d.augment_slots.map((s) => ({
-      sort_order: s.sort_order,
+    augmentSlots: apiItemDetail.augment_slots.map((s) => ({
+      sortOrder: s.sort_order,
       label: s.label,
       family: s.family,
       qualifier: s.qualifier,
-      options: s.options,
+      options: s.options.map((o) => ({ name: o.name, description: o.description, minimumLevel: o.min_level })),
     })),
-    bonuses: d.bonuses.map((b, i) => ({
-      bonus_id: b.id,
+    bonuses: apiItemDetail.bonuses.map((b, i) => ({
+      id: b.id,
       name: b.name,
       description: b.description,
-      bonus_type: b.bonus_type,
-      stat_name: b.stat,
+      bonusType: b.bonus_type,
+      statName: b.stat,
       value: b.value,
-      sort_order: i,
+      sortOrder: i,
     })),
-    effects: d.effects.map((e, i) => ({
-      effect_id: e.id,
+    effects: apiItemDetail.effects.map((e, i) => ({
+      id: e.id,
       name: e.name,
       description: e.description,
       target: e.target,
       value: e.value,
-      sort_order: i,
+      sortOrder: i,
     })),
-    clickies: d.clickies.map((c) => ({ name: c.name, description: c.description })),
-    quests: d.quests.map((q) => ({
-      quest_id: q.id,
+    clickies: apiItemDetail.clickies.map((c) => ({ name: c.name, description: c.description })),
+    quests: apiItemDetail.quests.map((q) => ({
+      id: q.id,
       name: q.name,
       level: q.level,
       pack: q.pack,
       patron: q.patron,
-      loot_type: q.loot_type,
-      is_raid: q.is_raid,
-      is_rare: q.is_rare,
+      lootType: q.loot_type,
+      isRaid: q.is_raid,
+      isRareLoot: q.is_rare,
       duration: q.duration,
-      is_free_to_play: q.is_free_to_play,
+      isFreeToPlay: q.is_free_to_play,
     })),
   }
 }
 
-export function toAugmentCandidate(a: ApiAugment): AugmentCandidate {
+export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
   return {
-    augment_id: a.id,
-    name: a.name,
-    min_level: a.min_level,
-    bonuses: a.bonuses.map((b) => b.name),
+    id: apiAugment.id,
+    name: apiAugment.name,
+    minimumLevel: apiAugment.min_level,
+    bonusNames: apiAugment.bonuses.map((b) => b.name),
   }
 }
 
-export function isFamilySlot(family: string): boolean {
+export function isCraftingSlotFamily(family: string): boolean {
   return family !== 'standard'
 }
 
-export function slotTakesCandidateList(family: string, label: string): boolean {
-  return isFamilySlot(family) || label === 'sun' || label === 'moon'
+export function canListFittingAugments(slotFamily: string, slotLabel: string): boolean {
+  return isCraftingSlotFamily(slotFamily) || slotLabel === 'sun' || slotLabel === 'moon'
 }
 
-export async function fetchItemRows(): Promise<ItemRow[]> {
-  const page = await apiGet<ApiItemsPage>('/v1/items', { limit: PAGE_LIMIT })
-  return page.items.map(toItemRow).sort(compareRows)
+export async function fetchItemSummaries(): Promise<ItemSummary[]> {
+  const page = await fetchApiJson<ApiItemsPage>('/v1/items', { limit: WHOLE_LIST_LIMIT })
+  return page.items.map(toItemSummary).sort(compareHighestLevelFirst)
 }
 
-function compareRows(a: ItemRow, b: ItemRow): number {
-  if (a.minimum_level === null && b.minimum_level !== null) return 1
-  if (b.minimum_level === null && a.minimum_level !== null) return -1
-  if (a.minimum_level !== b.minimum_level) return (b.minimum_level ?? 0) - (a.minimum_level ?? 0)
-  const slot = a.equipment_slot.localeCompare(b.equipment_slot)
-  if (slot !== 0) return slot
+function compareHighestLevelFirst(a: ItemSummary, b: ItemSummary): number {
+  if (a.minimumLevel === null && b.minimumLevel !== null) return 1
+  if (b.minimumLevel === null && a.minimumLevel !== null) return -1
+  if (a.minimumLevel !== b.minimumLevel) return (b.minimumLevel ?? 0) - (a.minimumLevel ?? 0)
+  const slotComparison = a.equipmentSlot.localeCompare(b.equipmentSlot)
+  if (slotComparison !== 0) return slotComparison
   return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
 }
 
-export async function fetchItemDetail(id: number): Promise<ItemDetail> {
-  return toItemDetail(await apiGet<ApiItemDetail>(`/v1/items/${id}`))
+export async function fetchItem(id: number): Promise<Item> {
+  return toItem(await fetchApiJson<ApiItemDetail>(`/v1/items/${id}`))
 }
 
-export async function fetchAdventurePacks(): Promise<string[]> {
-  const packs = await apiGet<ApiAdventurePack[]>('/v1/adventure-packs')
+export async function fetchAdventurePackNames(): Promise<string[]> {
+  const packs = await fetchApiJson<ApiAdventurePack[]>('/v1/adventure-packs')
   return packs.map((p) => p.name)
 }
 
-export async function fetchStatOptions(): Promise<string[]> {
-  const stats = await apiGet<ApiStat[]>('/v1/stats')
+export async function fetchStatNames(): Promise<string[]> {
+  const stats = await fetchApiJson<ApiStat[]>('/v1/stats')
   return stats.map((s) => s.name).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 }
 
-export async function fetchItemIdsByStat(stat: string): Promise<Set<number>> {
-  const page = await apiGet<ApiItemsPage>('/v1/items', { stat, limit: PAGE_LIMIT })
+export async function fetchItemIdsWithStat(statName: string): Promise<Set<number>> {
+  const page = await fetchApiJson<ApiItemsPage>('/v1/items', { stat: statName, limit: WHOLE_LIST_LIMIT })
   return new Set(page.items.map((r) => r.id))
 }
 
-export async function fetchItemIdsByPack(pack: string): Promise<Set<number>> {
-  const page = await apiGet<ApiItemsPage>('/v1/items', { pack, limit: PAGE_LIMIT })
+export async function fetchItemIdsInPack(packName: string): Promise<Set<number>> {
+  const page = await fetchApiJson<ApiItemsPage>('/v1/items', { pack: packName, limit: WHOLE_LIST_LIMIT })
   return new Set(page.items.map((r) => r.id))
 }
 
-export async function fetchAugmentsForSlot(label: string): Promise<AugmentCandidate[]> {
-  const page = await apiGet<ApiAugmentsPage>('/v1/augments', { slot: label, limit: PAGE_LIMIT })
-  return page.augments.map(toAugmentCandidate).sort((a, b) => {
-    if (a.min_level === null && b.min_level !== null) return 1
-    if (b.min_level === null && a.min_level !== null) return -1
-    if (a.min_level !== b.min_level) return (a.min_level ?? 0) - (b.min_level ?? 0)
+export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<AugmentSummary[]> {
+  const page = await fetchApiJson<ApiAugmentsPage>('/v1/augments', { slot: slotLabel, limit: WHOLE_LIST_LIMIT })
+  return page.augments.map(toAugmentSummary).sort((a, b) => {
+    if (a.minimumLevel === null && b.minimumLevel !== null) return 1
+    if (b.minimumLevel === null && a.minimumLevel !== null) return -1
+    if (a.minimumLevel !== b.minimumLevel) return (a.minimumLevel ?? 0) - (b.minimumLevel ?? 0)
     return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
   })
 }

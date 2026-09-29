@@ -28,18 +28,18 @@ test.describe('icon position stability', () => {
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
-    const expandedPositions = await getIconCenters(page)
-    expect(expandedPositions.length).toBeGreaterThan(0)
+    const expandedIconCenters = await navBarIconCenters(page)
+    expect(expandedIconCenters.length).toBeGreaterThan(0)
 
     await page.click('.nav-bar-collapse-btn')
     await page.waitForTimeout(100)
 
-    const collapsedPositions = await getIconCenters(page)
-    expect(collapsedPositions.length).toBe(expandedPositions.length)
+    const collapsedIconCenters = await navBarIconCenters(page)
+    expect(collapsedIconCenters.length).toBe(expandedIconCenters.length)
 
-    for (let i = 0; i < expandedPositions.length; i++) {
-      expect(collapsedPositions[i].x).toBe(expandedPositions[i].x)
-      expect(collapsedPositions[i].y).toBe(expandedPositions[i].y)
+    for (let i = 0; i < expandedIconCenters.length; i++) {
+      expect(collapsedIconCenters[i].x).toBe(expandedIconCenters[i].x)
+      expect(collapsedIconCenters[i].y).toBe(expandedIconCenters[i].y)
     }
   })
 })
@@ -172,11 +172,11 @@ test.describe('layout', () => {
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
-    const collapse = page.locator('.nav-bar-collapse-btn')
-    await expect(collapse).toBeVisible()
-    const collapseBox = await collapse.boundingBox()
-    expect(collapseBox).not.toBeNull()
-    expect(collapseBox!.y + collapseBox!.height).toBeLessThanOrEqual(400)
+    const collapseButton = page.locator('.nav-bar-collapse-btn')
+    await expect(collapseButton).toBeVisible()
+    const collapseButtonBox = await collapseButton.boundingBox()
+    expect(collapseButtonBox).not.toBeNull()
+    expect(collapseButtonBox!.y + collapseButtonBox!.height).toBeLessThanOrEqual(400)
 
     const card = page.locator('.nav-bar-character-card')
     const cardBox = await card.boundingBox()
@@ -184,8 +184,8 @@ test.describe('layout', () => {
     expect(cardBox!.height).toBeGreaterThan(50)
 
     const isScrollable = await page.evaluate(() => {
-      const scroll = document.querySelector('.nav-bar-scroll')
-      return scroll ? scroll.scrollHeight > scroll.clientHeight : false
+      const scrollContainer = document.querySelector('.nav-bar-scroll')
+      return scrollContainer ? scrollContainer.scrollHeight > scrollContainer.clientHeight : false
     })
     expect(isScrollable).toBe(true)
   })
@@ -224,10 +224,10 @@ test.describe('navigation', () => {
     const card = page.locator('.nav-bar-character-card')
     await expect(card).toHaveClass(/active/)
 
-    const beforeWidth = await card.evaluate(
+    const accentBarWidth = await card.evaluate(
       (el) => getComputedStyle(el, '::before').width,
     )
-    expect(parseInt(beforeWidth)).toBe(3)
+    expect(parseInt(accentBarWidth)).toBe(3)
   })
 
   test('active nav items have accent indicator', async ({ page }) => {
@@ -236,10 +236,10 @@ test.describe('navigation', () => {
 
     await page.getByRole('link', { name: 'Build Plan', exact: true }).click()
 
-    const activeBtns = page.locator('.nav-bar-btn.active')
-    await expect(activeBtns).toHaveCount(2)
-    await expect(activeBtns.first()).toContainText('Build Plan')
-    await expect(activeBtns.last()).toContainText('Level Plan')
+    const activeNavBarButtons = page.locator('.nav-bar-btn.active')
+    await expect(activeNavBarButtons).toHaveCount(2)
+    await expect(activeNavBarButtons.first()).toContainText('Build Plan')
+    await expect(activeNavBarButtons.last()).toContainText('Level Plan')
   })
 })
 
@@ -250,7 +250,7 @@ test.describe('compact sub-items', () => {
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
-    const heights = await page.evaluate(() => {
+    const buttonHeights = await page.evaluate(() => {
       const compact = document.querySelector('.nav-bar-btn--compact')
       const regular = document.querySelector('.nav-bar-btn:not(.nav-bar-btn--compact)')
       return {
@@ -259,8 +259,8 @@ test.describe('compact sub-items', () => {
       }
     })
 
-    expect(heights.compact).toBe(40)
-    expect(heights.regular).toBe(40)
+    expect(buttonHeights.compact).toBe(40)
+    expect(buttonHeights.regular).toBe(40)
   })
 
   test('compact items have muted styling', async ({ page }) => {
@@ -268,12 +268,12 @@ test.describe('compact sub-items', () => {
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
-    const opacity = await page.evaluate(() => {
+    const compactIconOpacity = await page.evaluate(() => {
       const icon = document.querySelector('.nav-bar-btn--compact:not(.active) svg')
       return icon ? getComputedStyle(icon).opacity : '1'
     })
 
-    expect(parseFloat(opacity)).toBeLessThan(1)
+    expect(parseFloat(compactIconOpacity)).toBeLessThan(1)
   })
 })
 
@@ -283,9 +283,9 @@ test.describe('group hierarchy', () => {
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto('/')
 
-    const group = page.locator('.nav-bar-group').first()
-    await expect(group.locator('.nav-bar-group-label-text')).toContainText('Build Plan')
-    await expect(group.locator('.nav-bar-btn').first()).toContainText('Build Plan')
+    const buildPlanGroup = page.locator('.nav-bar-group').first()
+    await expect(buildPlanGroup.locator('.nav-bar-group-label-text')).toContainText('Build Plan')
+    await expect(buildPlanGroup.locator('.nav-bar-btn').first()).toContainText('Build Plan')
   })
 
   test('swap button has border and background', async ({ page }) => {
@@ -293,23 +293,23 @@ test.describe('group hierarchy', () => {
     await page.goto('/')
     await page.locator('.nav-bar-character-swap-btn').waitFor()
 
-    const styles = await page.evaluate(() => {
-      const btn = document.querySelector('.nav-bar-character-swap-btn')
-      if (!btn) return null
-      const s = getComputedStyle(btn)
+    const swapButtonStyles = await page.evaluate(() => {
+      const swapButton = document.querySelector('.nav-bar-character-swap-btn')
+      if (!swapButton) return null
+      const computedStyle = getComputedStyle(swapButton)
       return {
-        borderWidth: s.borderTopWidth,
-        hasBackground: s.backgroundColor !== 'rgba(0, 0, 0, 0)',
-        width: btn.getBoundingClientRect().width,
-        height: btn.getBoundingClientRect().height,
+        borderTopWidth: computedStyle.borderTopWidth,
+        hasBackground: computedStyle.backgroundColor !== 'rgba(0, 0, 0, 0)',
+        width: swapButton.getBoundingClientRect().width,
+        height: swapButton.getBoundingClientRect().height,
       }
     })
 
-    expect(styles).not.toBeNull()
-    expect(parseInt(styles!.borderWidth)).toBe(1)
-    expect(styles!.hasBackground).toBe(true)
-    expect(styles!.width).toBe(24)
-    expect(styles!.height).toBe(24)
+    expect(swapButtonStyles).not.toBeNull()
+    expect(parseInt(swapButtonStyles!.borderTopWidth)).toBe(1)
+    expect(swapButtonStyles!.hasBackground).toBe(true)
+    expect(swapButtonStyles!.width).toBe(24)
+    expect(swapButtonStyles!.height).toBe(24)
   })
 
   test('character card icons align with nav icons when collapsed', async ({ page }) => {
@@ -317,21 +317,21 @@ test.describe('group hierarchy', () => {
     await page.goto('/')
     await page.locator('.nav-bar-btn').first().waitFor()
 
-    const positions = await page.evaluate(() => {
+    const iconCenterXs = await page.evaluate(() => {
       const navIcon = document.querySelector('.nav-bar-btn svg')
       const stripIcon = document.querySelector('.nav-bar-character-strip > svg')
       const slotIcon = document.querySelector('.nav-bar-character-slot > svg')
       const navRect = navIcon?.getBoundingClientRect()
       return {
-        navX: navRect ? navRect.x + navRect.width / 2 : null,
-        stripX: stripIcon ? stripIcon.getBoundingClientRect().x + stripIcon.getBoundingClientRect().width / 2 : null,
-        slotX: slotIcon ? slotIcon.getBoundingClientRect().x + slotIcon.getBoundingClientRect().width / 2 : null,
+        navIconCenterX: navRect ? navRect.x + navRect.width / 2 : null,
+        stripIconCenterX: stripIcon ? stripIcon.getBoundingClientRect().x + stripIcon.getBoundingClientRect().width / 2 : null,
+        buildSummaryIconCenterX: slotIcon ? slotIcon.getBoundingClientRect().x + slotIcon.getBoundingClientRect().width / 2 : null,
       }
     })
 
-    expect(positions.navX).not.toBeNull()
-    expect(Math.abs(positions.stripX! - positions.navX!)).toBeLessThanOrEqual(2)
-    expect(Math.abs(positions.slotX! - positions.navX!)).toBeLessThanOrEqual(2)
+    expect(iconCenterXs.navIconCenterX).not.toBeNull()
+    expect(Math.abs(iconCenterXs.stripIconCenterX! - iconCenterXs.navIconCenterX!)).toBeLessThanOrEqual(2)
+    expect(Math.abs(iconCenterXs.buildSummaryIconCenterX! - iconCenterXs.navIconCenterX!)).toBeLessThanOrEqual(2)
   })
 
   test('character card shows character name, build name, and race/class', async ({ page }) => {
@@ -346,7 +346,7 @@ test.describe('group hierarchy', () => {
 })
 
 
-async function getIconCenters(page: import('@playwright/test').Page): Promise<{ x: number; y: number }[]> {
+async function navBarIconCenters(page: import('@playwright/test').Page): Promise<{ x: number; y: number }[]> {
   return page.evaluate(() => {
     const icons = document.querySelectorAll('.app-nav-bar svg')
     return Array.from(icons).map((el) => {

@@ -1,31 +1,31 @@
 import { useCallback, useEffect, useRef, type JSX } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { CategoryTabs } from './components/CategoryTabs'
-import { PickerPanel } from './components/PickerPanel'
-import { ResourceDetailView } from './components/ResourceDetailView'
+import { ItemPicker } from './components/ItemPicker'
+import { ResourceDetailDrawer } from './components/ResourceDetailDrawer'
 import { ApiGate, Modal } from '../../components'
-import { useItemRows } from './queries/useItems'
-import { DETAIL_TITLE_ID, isCategory, type Category } from './types'
+import { useItemSummaries } from './queries/useItems'
+import { DETAIL_DRAWER_TITLE_ID, isResourceCategory, type ResourceCategory } from './resourceCategories'
 import './ResourcesView.css'
 
-function useResourcesParams(): { category: Category; id: number | null } {
+function useResourceRouteParams(): { category: ResourceCategory; selectedResourceId: number | null } {
   const params = useParams({ strict: false })
-  const category: Category =
-    params.category && isCategory(params.category) ? params.category : 'items'
+  const category: ResourceCategory =
+    params.category && isResourceCategory(params.category) ? params.category : 'items'
   const parsed = params.id !== undefined ? Number(params.id) : NaN
-  const id = Number.isFinite(parsed) && parsed >= 0 ? parsed : null
-  return { category, id }
+  const selectedResourceId = Number.isFinite(parsed) && parsed >= 0 ? parsed : null
+  return { category, selectedResourceId }
 }
 
 function ResourcesView(): JSX.Element {
-  const { category, id } = useResourcesParams()
+  const { category, selectedResourceId } = useResourceRouteParams()
   const navigate = useNavigate()
-  const searchRef = useRef<HTMLInputElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
-  const items = useItemRows(category === 'items')
+  const itemSummariesQuery = useItemSummaries(category === 'items')
 
-  function handleSelect(next: Category): void {
-    navigate({ to: `/resources/${next}` })
+  function navigateToCategory(nextCategory: ResourceCategory): void {
+    navigate({ to: `/resources/${nextCategory}` })
   }
 
   const closeDrawer = useCallback((): void => {
@@ -33,56 +33,56 @@ function ResourcesView(): JSX.Element {
   }, [navigate, category])
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent): void {
+    function focusSearchOnSlash(e: KeyboardEvent): void {
       const target = e.target as HTMLElement | null
-      const inField =
+      const isTypingInTextField =
         target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
-      if (e.key === '/' && !inField && id === null) {
+      if (e.key === '/' && !isTypingInTextField && selectedResourceId === null) {
         e.preventDefault()
-        searchRef.current?.focus()
+        searchInputRef.current?.focus()
       }
     }
-    document.addEventListener('keydown', onKey)
+    document.addEventListener('keydown', focusSearchOnSlash)
     return () => {
-      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('keydown', focusSearchOnSlash)
     }
-  }, [id])
+  }, [selectedResourceId])
 
-  const urlEntry = id !== null ? { category, id } : null
+  const resourceInUrl = selectedResourceId !== null ? { category, id: selectedResourceId } : null
 
   return (
     <div className="resources-view">
       <header className="resources-header">
-        <CategoryTabs active={category} onSelect={handleSelect} />
+        <CategoryTabs activeCategory={category} onSelect={navigateToCategory} />
       </header>
-      <div className={`resources-body${id !== null ? ' resources-body--inspect' : ''}`}>
+      <div className={`resources-body${selectedResourceId !== null ? ' resources-body--inspect' : ''}`}>
         <aside
           className="resources-picker"
-          aria-hidden={id !== null || undefined}
-          inert={id !== null || undefined}
+          aria-hidden={selectedResourceId !== null || undefined}
+          inert={selectedResourceId !== null || undefined}
         >
           {category === 'items' ? (
-            <ApiGate isPending={items.isPending} error={items.error} onRetry={() => void items.refetch()}>
-              <PickerPanel
+            <ApiGate isPending={itemSummariesQuery.isPending} error={itemSummariesQuery.error} onRetry={() => void itemSummariesQuery.refetch()}>
+              <ItemPicker
                 category={category}
-                rows={items.data ?? []}
-                selectedId={id}
-                searchInputRef={searchRef}
+                items={itemSummariesQuery.data ?? []}
+                selectedItemId={selectedResourceId}
+                searchInputRef={searchInputRef}
               />
             </ApiGate>
           ) : (
             <p className="section-placeholder">{category} coming soon.</p>
           )}
         </aside>
-        {id !== null && (
+        {selectedResourceId !== null && (
           <Modal
             variant="drawer-right"
             onClose={closeDrawer}
-            labelledBy={DETAIL_TITLE_ID}
+            labelledBy={DETAIL_DRAWER_TITLE_ID}
             label="Item details"
             backdropLabel="Close item details"
           >
-            <ResourceDetailView urlEntry={urlEntry} baseCategory={category} />
+            <ResourceDetailDrawer resourceInUrl={resourceInUrl} pickerCategory={category} />
           </Modal>
         )}
       </div>

@@ -1,22 +1,22 @@
-const DIRECTIVE = /^\s*(\/\s*<reference|eslint|global\b|exported\b|@ts-|@jsx|@vitest-environment)/
+const DIRECTIVE_COMMENT_PATTERN = /^\s*(\/\s*<reference|eslint|global\b|exported\b|@ts-|@jsx|@vitest-environment)/
 
 function isDirective(comment) {
-  return DIRECTIVE.test(comment.value)
+  return DIRECTIVE_COMMENT_PATTERN.test(comment.value)
 }
 
-function lineBoundsAround(text, [start, end]) {
+function rangeIncludingSurroundingWhitespace(text, [start, end]) {
   let from = start
   while (from > 0 && (text[from - 1] === ' ' || text[from - 1] === '\t')) from--
-  const ownsLineStart = from === 0 || text[from - 1] === '\n'
+  const isFirstOnLine = from === 0 || text[from - 1] === '\n'
 
   let to = end
   while (to < text.length && (text[to] === ' ' || text[to] === '\t')) to++
-  const ownsLineEnd = to === text.length || text[to] === '\n'
+  const isLastOnLine = to === text.length || text[to] === '\n'
 
-  if (ownsLineStart && ownsLineEnd) {
+  if (isFirstOnLine && isLastOnLine) {
     return [from, to < text.length ? to + 1 : to]
   }
-  if (ownsLineEnd) {
+  if (isLastOnLine) {
     return [from, end]
   }
   return [start, to]
@@ -29,7 +29,7 @@ function removalRange(sourceCode, comment) {
   const isJsxOnlyComment =
     container?.type === 'JSXExpressionContainer' && container.expression?.type === 'JSXEmptyExpression'
   const range = isJsxOnlyComment ? container.range : comment.range
-  return lineBoundsAround(text, range)
+  return rangeIncludingSurroundingWhitespace(text, range)
 }
 
 export const noComments = {

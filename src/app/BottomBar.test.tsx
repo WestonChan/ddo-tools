@@ -5,15 +5,15 @@ import { CharacterProvider } from '../features/character'
 import { BottomBar } from './BottomBar'
 
 describe('BottomBar', () => {
-  let openSpy: ReturnType<typeof vi.spyOn>
+  let windowOpenSpy: ReturnType<typeof vi.spyOn>
   beforeEach(() => {
-    openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
   })
   afterEach(() => {
-    openSpy.mockRestore()
+    windowOpenSpy.mockRestore()
   })
 
-  it('preserves BuildInfo on the LEFT (character name still renders)', () => {
+  it('preserves ActiveBuildSummary on the LEFT (character name still renders)', () => {
     render(
       <CharacterProvider>
         <BottomBar warnings={[]} />
@@ -43,8 +43,8 @@ describe('BottomBar', () => {
       </CharacterProvider>,
     )
     await user.click(screen.getByRole('button', { name: 'Report a bug — opens GitHub issue' }))
-    expect(openSpy).toHaveBeenCalledOnce()
-    const [url, target, features] = openSpy.mock.calls[0]
+    expect(windowOpenSpy).toHaveBeenCalledOnce()
+    const [url, target, features] = windowOpenSpy.mock.calls[0]
     expect(url).toContain('github.com/WestonChan/ddo-tools/issues/new')
     expect(url).toContain('title=User%20report')
     expect(target).toBe('_blank')

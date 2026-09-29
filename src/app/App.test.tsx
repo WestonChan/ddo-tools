@@ -17,8 +17,8 @@ describe('App', () => {
   it('renders the nav bar with navigation', async () => {
     renderApp()
     await screen.findByText(/Build Plan coming/)
-    const interactive = [...screen.getAllByRole('button'), ...screen.getAllByRole('link')]
-    expect(interactive.length).toBeGreaterThanOrEqual(5)
+    const interactiveElements = [...screen.getAllByRole('button'), ...screen.getAllByRole('link')]
+    expect(interactiveElements.length).toBeGreaterThanOrEqual(5)
   })
 
   it('renders placeholder content for default view', async () => {

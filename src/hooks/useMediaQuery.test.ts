@@ -3,17 +3,17 @@ import { renderHook, act } from '@testing-library/react'
 import { useMediaQuery } from './useMediaQuery'
 import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../test/matchMediaStub'
 
-let matchMedia: MatchMediaStub
+let matchMediaStub: MatchMediaStub
 
 afterEach(restoreMatchMedia)
 
 describe('useMediaQuery', () => {
   beforeEach(() => {
-    matchMedia = installMatchMedia(false)
+    matchMediaStub = installMatchMedia(false)
   })
 
   it('reports the current match state on first render', () => {
-    matchMedia = installMatchMedia(true)
+    matchMediaStub = installMatchMedia(true)
     const { result } = renderHook(() => useMediaQuery('(max-width: 599px)'))
     expect(result.current).toBe(true)
   })
@@ -22,19 +22,19 @@ describe('useMediaQuery', () => {
     const { result } = renderHook(() => useMediaQuery('(max-width: 599px)'))
     expect(result.current).toBe(false)
 
-    act(() => matchMedia.emitChange('(max-width: 599px)', true))
+    act(() => matchMediaStub.emitChange('(max-width: 599px)', true))
 
     expect(result.current).toBe(true)
   })
 
   it('drops its change listener on unmount', () => {
     const { unmount } = renderHook(() => useMediaQuery('(max-width: 599px)'))
-    const state = matchMedia.stateFor('(max-width: 599px)')
-    expect(state.listeners.size).toBe(1)
+    const stubbedQueryState = matchMediaStub.stubbedMediaQueryFor('(max-width: 599px)')
+    expect(stubbedQueryState.changeListeners.size).toBe(1)
 
     unmount()
 
-    expect(state.listeners.size).toBe(0)
-    expect(state.removed).toBeGreaterThan(0)
+    expect(stubbedQueryState.changeListeners.size).toBe(0)
+    expect(stubbedQueryState.removedListenerCount).toBeGreaterThan(0)
   })
 })

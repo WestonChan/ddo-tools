@@ -14,22 +14,22 @@ if (
   typeof globalThis.localStorage === 'undefined' ||
   typeof globalThis.localStorage.getItem !== 'function'
 ) {
-  const store: Record<string, string> = {}
+  const storedValuesByKey: Record<string, string> = {}
   globalThis.localStorage = {
-    getItem: (key: string) => store[key] ?? null,
+    getItem: (key: string) => storedValuesByKey[key] ?? null,
     setItem: (key: string, value: string) => {
-      store[key] = value
+      storedValuesByKey[key] = value
     },
     removeItem: (key: string) => {
-      delete store[key]
+      delete storedValuesByKey[key]
     },
     clear: () => {
-      for (const k in store) delete store[k]
+      for (const k in storedValuesByKey) delete storedValuesByKey[k]
     },
     get length() {
-      return Object.keys(store).length
+      return Object.keys(storedValuesByKey).length
     },
-    key: (i: number) => Object.keys(store)[i] ?? null,
+    key: (i: number) => Object.keys(storedValuesByKey)[i] ?? null,
   }
 }
 

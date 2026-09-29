@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Bug, TriangleAlert, Check, ChevronDown } from 'lucide-react'
 import {
-  useCharacter,
-  formatClassSummary,
-  formatRace,
+  useCharacters,
+  classSplitLabel,
+  raceLabelOf,
 } from '../features/character'
-import { TooltipWrapper } from '../components'
-import { buildIssueUrls } from '../lib/githubIssue'
-import { getLastSentryContext } from '../lib/sentry'
+import { HoverTooltip } from '../components'
+import { githubIssueUrls } from '../lib/githubIssue'
+import { lastSentryEventReference } from '../lib/sentry'
 import './BottomBar.css'
 
 export interface BuildWarning {
@@ -26,7 +26,7 @@ export function BottomBar({ warnings, inert }: BottomBarProps): JSX.Element {
   return (
     <div className="bottom-bar" inert={inert}>
       <div className="bottom-bar-row">
-        <BuildInfo />
+        <ActiveBuildSummary />
         <div className="bottom-bar-actions">
           <WarningStatus warnings={warnings} />
           <ReportBugButton />
@@ -37,35 +37,35 @@ export function BottomBar({ warnings, inert }: BottomBarProps): JSX.Element {
 }
 
 function ReportBugButton(): JSX.Element {
-  function handleClick(): void {
-    const sentryContext = getLastSentryContext()
-    const { newIssueUrl } = buildIssueUrls(undefined, [], 'User report', sentryContext)
+  function openBugReportIssue(): void {
+    const lastSentryEvent = lastSentryEventReference()
+    const { newIssueUrl } = githubIssueUrls(undefined, [], 'User report', lastSentryEvent)
     window.open(newIssueUrl, '_blank', 'noopener,noreferrer')
   }
   return (
-    <TooltipWrapper text="Report a bug">
+    <HoverTooltip text="Report a bug">
       <button
         type="button"
         className="bottom-bar-btn hoverable bottom-bar-report"
-        onClick={handleClick}
+        onClick={openBugReportIssue}
         aria-label="Report a bug — opens GitHub issue"
       >
         <Bug size={14} />
       </button>
-    </TooltipWrapper>
+    </HoverTooltip>
   )
 }
 
-function BuildInfo(): JSX.Element {
-  const { character, activeBuild } = useCharacter()
+function ActiveBuildSummary(): JSX.Element {
+  const { selectedCharacter, viewedBuild } = useCharacters()
 
-  const buildDescription = activeBuild
-    ? `${formatRace(activeBuild.race)} ${formatClassSummary(activeBuild)}`
+  const buildDescription = viewedBuild
+    ? `${raceLabelOf(viewedBuild.race)} ${classSplitLabel(viewedBuild)}`
     : ''
 
   return (
     <div className="bottom-bar-build">
-      <span className="bottom-bar-name">{character.name}</span>
+      <span className="bottom-bar-name">{selectedCharacter.name}</span>
       {buildDescription && (
         <span className="bottom-bar-description">{buildDescription}</span>
       )}
@@ -75,56 +75,56 @@ function BuildInfo(): JSX.Element {
 
 function WarningStatus({ warnings }: { warnings: BuildWarning[] }): JSX.Element {
   const navigate = useNavigate()
-  const [expanded, setExpanded] = useState(false)
-  const [showTooltip, setShowTooltip] = useState(false)
-  const [tooltipFading, setTooltipFading] = useState(false)
-  const tooltipTimer = useRef<number | null>(null)
+  const [isWarningListOpen, setIsWarningListOpen] = useState(false)
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false)
+  const [isTooltipFading, setIsTooltipFading] = useState(false)
+  const tooltipTimeoutId = useRef<number | null>(null)
 
   useEffect(
     () => () => {
-      if (tooltipTimer.current !== null) clearTimeout(tooltipTimer.current)
+      if (tooltipTimeoutId.current !== null) clearTimeout(tooltipTimeoutId.current)
     },
     [],
   )
 
-  const handleClick = useCallback(() => {
-    if (warnings.length > 0) {
-      setExpanded(!expanded)
-      return
-    }
-    if (tooltipTimer.current !== null) clearTimeout(tooltipTimer.current)
-    setShowTooltip(true)
-    setTooltipFading(false)
-    tooltipTimer.current = window.setTimeout(() => {
-      setTooltipFading(true)
-      tooltipTimer.current = window.setTimeout(() => {
-        setShowTooltip(false)
-        setTooltipFading(false)
-        tooltipTimer.current = null
+  const toggleWarningList = useCallback(() => {
+    setIsWarningListOpen((wasOpen) => !wasOpen)
+  }, [])
+
+  const showValidationComingSoonTooltip = useCallback(() => {
+    if (tooltipTimeoutId.current !== null) clearTimeout(tooltipTimeoutId.current)
+    setIsTooltipVisible(true)
+    setIsTooltipFading(false)
+    tooltipTimeoutId.current = window.setTimeout(() => {
+      setIsTooltipFading(true)
+      tooltipTimeoutId.current = window.setTimeout(() => {
+        setIsTooltipVisible(false)
+        setIsTooltipFading(false)
+        tooltipTimeoutId.current = null
       }, 200)
     }, 1800)
-  }, [warnings.length, expanded])
+  }, [])
 
   return (
     <div className="bottom-bar-status">
       {warnings.length > 0 ? (
-        <button className="bottom-bar-btn hoverable bottom-bar-warnings" onClick={handleClick}>
+        <button className="bottom-bar-btn hoverable bottom-bar-warnings" onClick={toggleWarningList}>
           <TriangleAlert size={14} />
           <span>{warnings.length} warning{warnings.length !== 1 ? 's' : ''}</span>
           <ChevronDown size={12} />
         </button>
       ) : (
-        <button className="bottom-bar-btn hoverable bottom-bar-ok" onClick={handleClick}>
+        <button className="bottom-bar-btn hoverable bottom-bar-ok" onClick={showValidationComingSoonTooltip}>
           <Check size={14} />
           <span>No warnings</span>
         </button>
       )}
 
-      {showTooltip && (
-        <div className={`bottom-bar-tooltip${tooltipFading ? ' fading' : ''}`}>Build validation coming soon</div>
+      {isTooltipVisible && (
+        <div className={`bottom-bar-tooltip${isTooltipFading ? ' fading' : ''}`}>Build validation coming soon</div>
       )}
 
-      {expanded && warnings.length > 0 && (
+      {isWarningListOpen && warnings.length > 0 && (
         <div className="bottom-bar-warning-list">
           {warnings.map((w, i) => (
             <button

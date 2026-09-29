@@ -17,7 +17,7 @@ describe('useDebouncedValue', () => {
   })
 
   it('holds the old value until the delay elapses', () => {
-    const { result, rerender } = renderHook(({ v }) => useDebouncedValue(v, 100), {
+    const { result, rerender } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, 100), {
       initialProps: { v: 'a' },
     })
     rerender({ v: 'b' })
@@ -35,7 +35,7 @@ describe('useDebouncedValue', () => {
   })
 
   it('restarts the window on every change — only the final value commits', () => {
-    const { result, rerender } = renderHook(({ v }) => useDebouncedValue(v, 100), {
+    const { result, rerender } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, 100), {
       initialProps: { v: '' },
     })
     for (const v of ['f', 'fo', 'for', 'forc', 'force']) {
@@ -53,7 +53,7 @@ describe('useDebouncedValue', () => {
   })
 
   it('clamps a negative delay to zero instead of breaking setTimeout', () => {
-    const { result, rerender } = renderHook(({ v }) => useDebouncedValue(v, -50), {
+    const { result, rerender } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, -50), {
       initialProps: { v: 'a' },
     })
     rerender({ v: 'b' })
@@ -64,7 +64,7 @@ describe('useDebouncedValue', () => {
   })
 
   it('cancels the pending commit on unmount', () => {
-    const { rerender, unmount } = renderHook(({ v }) => useDebouncedValue(v, 100), {
+    const { rerender, unmount } = renderHook(({ v: latestValue }) => useDebouncedValue(latestValue, 100), {
       initialProps: { v: 'a' },
     })
     rerender({ v: 'b' })

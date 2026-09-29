@@ -3,18 +3,18 @@ import { StrictMode, type JSX, type ReactNode } from 'react'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Modal } from './Modal'
-import { useAnyModalActive, _resetModalActiveForTests } from '../hooks/useModalActive'
+import { useIsAnyModalActive, resetActiveModalCountForTests } from '../hooks/useRegisterActiveModal'
 
-function ActiveProbe(): JSX.Element {
-  const active = useAnyModalActive()
-  return <span data-testid="probe">{String(active)}</span>
+function AnyModalActiveProbe(): JSX.Element {
+  const isAnyModalActive = useIsAnyModalActive()
+  return <span data-testid="probe">{String(isAnyModalActive)}</span>
 }
 
-function StrictHarness({ open, children }: { open: boolean; children: ReactNode }): JSX.Element {
+function StrictModeModalHarness({ open: isOpen, children }: { open: boolean; children: ReactNode }): JSX.Element {
   return (
     <StrictMode>
       <button>Trigger</button>
-      {open && (
+      {isOpen && (
         <Modal variant="centered" onClose={vi.fn()} label="Dialog">
           {children}
         </Modal>
@@ -26,7 +26,7 @@ function StrictHarness({ open, children }: { open: boolean; children: ReactNode 
 let opener: HTMLButtonElement
 
 beforeEach(() => {
-  _resetModalActiveForTests()
+  resetActiveModalCountForTests()
   opener = document.createElement('button')
   opener.textContent = 'Opener'
   document.body.appendChild(opener)
@@ -51,7 +51,7 @@ describe('Modal', () => {
 
     cleanup()
 
-    const drawer = render(
+    const renderedDrawer = render(
       <Modal variant="drawer-right" onClose={vi.fn()} label="Drawer" className="extra-class">
         <p>Body copy</p>
       </Modal>,
@@ -61,7 +61,7 @@ describe('Modal', () => {
       'modal-panel--drawer-right',
       'extra-class',
     )
-    expect(drawer.container.querySelector('.modal-backdrop')).toHaveClass(
+    expect(renderedDrawer.container.querySelector('.modal-backdrop')).toHaveClass(
       'modal-backdrop--drawer-right',
     )
   })
@@ -131,10 +131,10 @@ describe('Modal', () => {
 
   it('lets a capture-phase handler swallow Escape before the modal sees it', async () => {
     const onClose = vi.fn()
-    function swallow(e: KeyboardEvent): void {
+    function stopEscapePropagation(e: KeyboardEvent): void {
       if (e.key === 'Escape') e.stopPropagation()
     }
-    document.addEventListener('keydown', swallow, true)
+    document.addEventListener('keydown', stopEscapePropagation, true)
     try {
       render(
         <Modal variant="centered" onClose={onClose} label="Dialog">
@@ -144,20 +144,20 @@ describe('Modal', () => {
       await userEvent.keyboard('{Escape}')
       expect(onClose).not.toHaveBeenCalled()
     } finally {
-      document.removeEventListener('keydown', swallow, true)
+      document.removeEventListener('keydown', stopEscapePropagation, true)
     }
   })
 
   it('registers as an active modal while mounted so AppLayout inerts the chrome', () => {
-    render(<ActiveProbe />)
-    const modal = render(
+    render(<AnyModalActiveProbe />)
+    const renderedModal = render(
       <Modal variant="centered" onClose={vi.fn()} label="Dialog">
         <p>Body</p>
       </Modal>,
     )
     expect(screen.getByTestId('probe')).toHaveTextContent('true')
 
-    modal.unmount()
+    renderedModal.unmount()
 
     expect(screen.getByTestId('probe')).toHaveTextContent('false')
   })
@@ -184,66 +184,66 @@ describe('Modal', () => {
 
   it('restores focus to the opener on unmount', () => {
     opener.focus()
-    const modal = render(
+    const renderedModal = render(
       <Modal variant="centered" onClose={vi.fn()} label="Dialog">
         <button>Inside</button>
       </Modal>,
     )
     expect(screen.getByRole('dialog')).toHaveFocus()
 
-    modal.unmount()
+    renderedModal.unmount()
 
     expect(opener).toHaveFocus()
   })
 
   it('skips focus restore when the opener left the DOM', () => {
     opener.focus()
-    const modal = render(
+    const renderedModal = render(
       <Modal variant="centered" onClose={vi.fn()} label="Dialog">
         <button>Inside</button>
       </Modal>,
     )
     opener.remove()
 
-    expect(() => modal.unmount()).not.toThrow()
+    expect(() => renderedModal.unmount()).not.toThrow()
     expect(document.body).toHaveFocus()
   })
 
   it('restores focus to the trigger under StrictMode double-invoked effects', () => {
     const { rerender } = render(
-      <StrictHarness open={false}>
+      <StrictModeModalHarness open={false}>
         <button>Inside</button>
-      </StrictHarness>,
+      </StrictModeModalHarness>,
     )
     const trigger = screen.getByRole('button', { name: 'Trigger' })
     trigger.focus()
 
     rerender(
-      <StrictHarness open>
+      <StrictModeModalHarness open>
         <button>Inside</button>
-      </StrictHarness>,
+      </StrictModeModalHarness>,
     )
     expect(screen.getByRole('dialog')).toHaveFocus()
 
     rerender(
-      <StrictHarness open={false}>
+      <StrictModeModalHarness open={false}>
         <button>Inside</button>
-      </StrictHarness>,
+      </StrictModeModalHarness>,
     )
 
     expect(trigger).toHaveFocus()
   })
 
   it('keeps focus inside the panel through a StrictMode remount with an autoFocus child', () => {
-    const input = <input aria-label="Confirmation" autoFocus />
-    const { rerender } = render(<StrictHarness open={false}>{input}</StrictHarness>)
+    const autoFocusInput = <input aria-label="Confirmation" autoFocus />
+    const { rerender } = render(<StrictModeModalHarness open={false}>{autoFocusInput}</StrictModeModalHarness>)
     const trigger = screen.getByRole('button', { name: 'Trigger' })
     trigger.focus()
 
-    rerender(<StrictHarness open>{input}</StrictHarness>)
+    rerender(<StrictModeModalHarness open>{autoFocusInput}</StrictModeModalHarness>)
     expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement)
 
-    rerender(<StrictHarness open={false}>{input}</StrictHarness>)
+    rerender(<StrictModeModalHarness open={false}>{autoFocusInput}</StrictModeModalHarness>)
 
     expect(trigger).toHaveFocus()
   })
@@ -268,19 +268,19 @@ describe('Modal', () => {
         <button>Second</button>
       </Modal>,
     )
-    const first = screen.getByRole('button', { name: 'First' })
-    const second = screen.getByRole('button', { name: 'Second' })
+    const firstButton = screen.getByRole('button', { name: 'First' })
+    const secondButton = screen.getByRole('button', { name: 'Second' })
 
-    second.focus()
+    secondButton.focus()
     await userEvent.tab()
-    expect(first).toHaveFocus()
+    expect(firstButton).toHaveFocus()
 
     await userEvent.tab({ shift: true })
-    expect(second).toHaveFocus()
+    expect(secondButton).toHaveFocus()
 
     screen.getByRole('dialog').focus()
     await userEvent.tab({ shift: true })
-    expect(second).toHaveFocus()
+    expect(secondButton).toHaveFocus()
   })
 
   it('parks focus on the panel when it has no focusable children', async () => {

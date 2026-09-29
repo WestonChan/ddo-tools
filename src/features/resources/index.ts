@@ -1,2 +1,2 @@
 export { default as ResourcesView } from './ResourcesView'
-export { CATEGORIES, CATEGORY_LABELS, type Category, isCategory } from './types'
+export { RESOURCE_CATEGORIES, LABEL_BY_RESOURCE_CATEGORY, type ResourceCategory, isResourceCategory } from './resourceCategories'

@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { ampersandMarkSvg } from './ampersandMarkSvg'
+import { ampersandMarkSvg } from '../lib/ampersandMarkSvg'
 
 interface AmpersandMarkProps {
   size?: number | string

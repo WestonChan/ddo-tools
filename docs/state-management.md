@@ -161,7 +161,7 @@ When writing a new hook of this shape:
   preference resolved from an external source (localStorage + `matchMedia`)
   that the store also writes back to. Reference for "lazy first-read init,
   and one function that owns the side effect so no path can skip it."
-- [`src/hooks/useModalActive.ts`](../src/hooks/useModalActive.ts) —
+- [`src/hooks/useRegisterActiveModal.ts`](../src/hooks/useRegisterActiveModal.ts) —
   refcounted signal: writers assert while mounted, a separate reader hook
   exposes the boolean. One writer and one reader today
   (`ResourcesView` → `AppLayout`); the refcount exists so stacked overlays
@@ -180,8 +180,8 @@ When writing a new hook of this shape:
 - **Tests need to reset state between runs.** Module-level state persists
   across vitest test cases in the same file. Provide a test-only reset
   helper if assertions depend on initial state — e.g.
-  `_resetThemeForTests()` in `useTheme.ts`, `_resetModalActiveForTests()`
-  in `useModalActive.ts`.
+  `resetThemeForTests()` in `useTheme.ts`, `resetActiveModalCountForTests()`
+  in `useRegisterActiveModal.ts`.
 
 ### When NOT to use it
 

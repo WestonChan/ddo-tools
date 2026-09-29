@@ -1,16 +1,16 @@
 import type { JSX, ReactNode } from 'react'
 
 interface DetailSectionProps {
-  label: string
+  heading: string
   children: ReactNode
   className?: string
 }
 
-export function DetailSection({ label, children, className }: DetailSectionProps): JSX.Element {
-  const classes = ['resources-section', className].filter(Boolean).join(' ')
+export function DetailSection({ heading, children, className }: DetailSectionProps): JSX.Element {
+  const sectionClassName = ['resources-section', className].filter(Boolean).join(' ')
   return (
-    <section className={classes}>
-      <h3 className="section-label">{label}</h3>
+    <section className={sectionClassName}>
+      <h3 className="section-label">{heading}</h3>
       <div className="resources-section-body">{children}</div>
     </section>
   )

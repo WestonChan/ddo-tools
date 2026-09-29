@@ -6,19 +6,19 @@ export function ConfirmModal({
   title,
   message,
   confirmLabel,
-  requireInput,
+  confirmationPhrase,
   onConfirm,
   onCancel,
 }: {
   title: string
   message: string
   confirmLabel: string
-  requireInput?: string
+  confirmationPhrase?: string
   onConfirm: () => void
   onCancel: () => void
 }): JSX.Element {
-  const [inputValue, setInputValue] = useState('')
-  const canConfirm = !requireInput || inputValue.toLowerCase() === requireInput.toLowerCase()
+  const [typedPhrase, setTypedPhrase] = useState('')
+  const canConfirm = !confirmationPhrase || typedPhrase.toLowerCase() === confirmationPhrase.toLowerCase()
   const titleId = useId()
 
   return (
@@ -33,16 +33,16 @@ export function ConfirmModal({
           {title}
         </div>
         <div className="confirm-modal-message">{message}</div>
-        {requireInput && (
+        {confirmationPhrase && (
           <div className="confirm-modal-input">
             <label>
-              Type <strong>{requireInput}</strong> to confirm
+              Type <strong>{confirmationPhrase}</strong> to confirm
             </label>
             <input
               type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder={requireInput}
+              value={typedPhrase}
+              onChange={(e) => setTypedPhrase(e.target.value)}
+              placeholder={confirmationPhrase}
               autoFocus
             />
           </div>
@@ -55,7 +55,7 @@ export function ConfirmModal({
             type="submit"
             className="btn-primary"
             disabled={!canConfirm}
-            autoFocus={!requireInput}
+            autoFocus={!confirmationPhrase}
           >
             {confirmLabel}
           </button>

@@ -2,68 +2,68 @@ import { useState, useRef, useEffect, type JSX } from 'react'
 import './EditableText.css'
 
 interface EditableTextProps {
-  value: string
+  text: string
   placeholder?: string
   className?: string
-  onCommit: (newValue: string) => void
+  onCommit: (committedText: string) => void
 }
 
 export function EditableText({
-  value,
+  text,
   placeholder = 'Name...',
   className,
   onCommit,
 }: EditableTextProps): JSX.Element {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(value)
+  const [isEditing, setIsEditing] = useState(false)
+  const [draftText, setDraftText] = useState(text)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (editing && inputRef.current) {
+    if (isEditing && inputRef.current) {
       inputRef.current.focus()
       inputRef.current.select()
     }
-  }, [editing])
+  }, [isEditing])
 
-  function startEdit(e: React.MouseEvent): void {
+  function startEditing(e: React.MouseEvent): void {
     e.stopPropagation()
     e.preventDefault()
-    setDraft(value)
-    setEditing(true)
+    setDraftText(text)
+    setIsEditing(true)
   }
 
-  function commit(): void {
-    const trimmed = draft.trim()
-    setEditing(false)
+  function commitDraftText(): void {
+    const trimmed = draftText.trim()
+    setIsEditing(false)
     onCommit(trimmed)
   }
 
-  function cancel(): void {
-    setEditing(false)
-    setDraft(value)
+  function cancelEditing(): void {
+    setIsEditing(false)
+    setDraftText(text)
   }
 
-  if (editing) {
+  if (isEditing) {
     return (
       <input
         ref={inputRef}
         className={`editable-text-input ${className ?? ''}`}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        value={draftText}
+        onChange={(e) => setDraftText(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') commit()
-          if (e.key === 'Escape') cancel()
+          if (e.key === 'Enter') commitDraftText()
+          if (e.key === 'Escape') cancelEditing()
         }}
-        onBlur={commit}
+        onBlur={commitDraftText}
         onClick={(e) => e.stopPropagation()}
       />
     )
   }
 
   return (
-    <span className={`editable-text ${className ?? ''}`} onClick={startEdit}>
-      {value ? (
-        <span className="editable-text-display">{value}</span>
+    <span className={`editable-text ${className ?? ''}`} onClick={startEditing}>
+      {text ? (
+        <span className="editable-text-display">{text}</span>
       ) : (
         <span className="editable-text-display editable-text-placeholder">{placeholder}</span>
       )}

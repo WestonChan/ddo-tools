@@ -10,8 +10,8 @@ import {
 } from '@tanstack/react-router'
 import { APP_PATHS } from '../appPaths'
 
-function createStubRouter(component: () => ReactNode, initialPath = '/build-plan'): AnyRouter {
-  const rootRoute = createRootRoute({ component: () => <>{component()}</> })
+function createStubRouter(renderContent: () => ReactNode, initialPath = '/build-plan'): AnyRouter {
+  const rootRoute = createRootRoute({ component: () => <>{renderContent()}</> })
   const indexRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: '/',
@@ -29,9 +29,9 @@ function createStubRouter(component: () => ReactNode, initialPath = '/build-plan
 
 export function renderWithRouter(ui: ReactNode, initialPath = '/build-plan'): {
   router: AnyRouter
-  result: RenderResult
+  renderResult: RenderResult
 } {
   const router = createStubRouter(() => ui, initialPath)
-  const result = render(<RouterProvider router={router} />)
-  return { router, result }
+  const renderResult = render(<RouterProvider router={router} />)
+  return { router, renderResult }
 }

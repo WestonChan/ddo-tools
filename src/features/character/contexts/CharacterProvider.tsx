@@ -2,14 +2,14 @@ import { useMemo, type JSX, type ReactNode } from 'react'
 import { STUB_CHARACTERS, STUB_PLANNED_BUILDS } from '../data/stubCharacters'
 import type { Character, Life, PastLifeCounts } from '../types'
 import {
-  computeLifeNumbers,
-  getCurrentLifeNumber,
-  EMPTY_UNTRACKED,
-  updateCategoryMap,
+  lifeNumbersOf,
+  currentLifeNumberOf,
+  EMPTY_PAST_LIFE_COUNTS,
+  withStackCount,
 } from '../utils'
 import { useLocalStorage } from '../../../hooks'
-import { defaultSelection, migrateCharacters, migrateSelection } from '../migrations'
-import type { Selection } from '../migrations'
+import { defaultBuildSelection, migrateCharacters, migrateBuildSelection } from '../migrations'
+import type { BuildSelection } from '../migrations'
 import { CharacterContext, type CharacterContextValue } from './characterContext'
 
 export function CharacterProvider({ children }: { children: ReactNode }): JSX.Element {
@@ -18,67 +18,67 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
     STUB_CHARACTERS,
     migrateCharacters,
   )
-  const [selection, setSelection] = useLocalStorage<Selection>(
+  const [buildSelection, setBuildSelection] = useLocalStorage<BuildSelection>(
     'ddo-selection',
-    defaultSelection,
-    migrateSelection,
+    defaultBuildSelection,
+    migrateBuildSelection,
   )
   const [plannedBuilds, setPlannedBuilds] = useLocalStorage<Life[]>(
     'ddo-plannedBuilds',
     STUB_PLANNED_BUILDS,
   )
 
-  const value = useMemo<CharacterContextValue>(() => {
-    const character = characters.find((c) => c.id === selection.characterId) ?? characters[0]
-    const currentLife = character.lives[character.currentLifeIndex]
-    const lifeNumbers = computeLifeNumbers(character)
-    const lifeNumber = getCurrentLifeNumber(character)
+  const characterContextValue = useMemo<CharacterContextValue>(() => {
+    const selectedCharacter = characters.find((c) => c.id === buildSelection.characterId) ?? characters[0]
+    const currentLife = selectedCharacter.lives[selectedCharacter.currentLifeIndex]
+    const lifeNumbersByLifeId = lifeNumbersOf(selectedCharacter)
+    const currentLifeNumber = currentLifeNumberOf(selectedCharacter)
 
-    const viewingPlannedBuild = plannedBuilds.find((b) => b.id === selection.buildId)
-    const viewingLife = character.lives.find((l) => l.id === selection.buildId)
-    const activeBuild = viewingPlannedBuild ?? viewingLife ?? currentLife
+    const viewedPlannedBuild = plannedBuilds.find((b) => b.id === buildSelection.buildId)
+    const viewedLife = selectedCharacter.lives.find((l) => l.id === buildSelection.buildId)
+    const viewedBuild = viewedPlannedBuild ?? viewedLife ?? currentLife
 
-    function selectCharacter(charId: string): void {
-      const char = characters.find((c) => c.id === charId)
-      if (!char) return
-      setSelection({
-        characterId: charId,
-        buildId: char.lives[char.currentLifeIndex]?.id ?? '',
+    function selectCharacter(characterId: string): void {
+      const chosenCharacter = characters.find((c) => c.id === characterId)
+      if (!chosenCharacter) return
+      setBuildSelection({
+        characterId,
+        buildId: chosenCharacter.lives[chosenCharacter.currentLifeIndex]?.id ?? '',
       })
     }
 
     function selectBuild(buildId: string): void {
-      setSelection((prev) => ({ ...prev, buildId }))
+      setBuildSelection((prev) => ({ ...prev, buildId }))
     }
 
-    function setOverride(category: keyof PastLifeCounts, id: string, value: number): void {
+    function setUntrackedStackCount(category: keyof PastLifeCounts, pastLifeId: string, stackCount: number): void {
       setCharacters((prev) =>
         prev.map((c) => {
-          if (c.id !== selection.characterId) return c
-          const untracked = { ...c.untrackedLives }
+          if (c.id !== buildSelection.characterId) return c
+          const untrackedLives = { ...c.untrackedLives }
           return {
             ...c,
             untrackedLives: {
-              ...untracked,
-              [category]: updateCategoryMap(untracked[category], id, value),
+              ...untrackedLives,
+              [category]: withStackCount(untrackedLives[category], pastLifeId, stackCount),
             },
           }
         }),
       )
     }
 
-    function setBuildDesired(category: keyof PastLifeCounts, id: string, value: number): void {
-      if (!viewingPlannedBuild) return
-      const currentBuildId = selection.buildId
+    function setDesiredStackCount(category: keyof PastLifeCounts, pastLifeId: string, stackCount: number): void {
+      if (!viewedPlannedBuild) return
+      const viewedPlannedBuildId = buildSelection.buildId
       setPlannedBuilds((prev) =>
         prev.map((b) => {
-          if (b.id !== currentBuildId) return b
-          const desired: PastLifeCounts = b.desiredPastLives ?? EMPTY_UNTRACKED
+          if (b.id !== viewedPlannedBuildId) return b
+          const desiredPastLives: PastLifeCounts = b.desiredPastLives ?? EMPTY_PAST_LIFE_COUNTS
           return {
             ...b,
             desiredPastLives: {
-              ...desired,
-              [category]: updateCategoryMap(desired[category], id, value),
+              ...desiredPastLives,
+              [category]: withStackCount(desiredPastLives[category], pastLifeId, stackCount),
             },
           }
         }),
@@ -88,22 +88,22 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
     return {
       characters,
       setCharacters,
-      character,
+      selectedCharacter,
       currentLife,
-      lifeNumbers,
-      lifeNumber,
-      activeBuild,
-      selection,
-      setSelection,
+      lifeNumbersByLifeId,
+      currentLifeNumber,
+      viewedBuild,
+      buildSelection,
+      setBuildSelection,
       plannedBuilds,
       setPlannedBuilds,
-      viewingPlannedBuild,
+      viewedPlannedBuild,
       selectCharacter,
       selectBuild,
-      setOverride,
-      setBuildDesired,
+      setUntrackedStackCount,
+      setDesiredStackCount,
     }
-  }, [characters, selection, plannedBuilds, setCharacters, setSelection, setPlannedBuilds])
+  }, [characters, buildSelection, plannedBuilds, setCharacters, setBuildSelection, setPlannedBuilds])
 
-  return <CharacterContext.Provider value={value}>{children}</CharacterContext.Provider>
+  return <CharacterContext.Provider value={characterContextValue}>{children}</CharacterContext.Provider>
 }

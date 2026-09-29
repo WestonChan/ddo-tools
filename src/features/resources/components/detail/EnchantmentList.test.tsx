@@ -5,25 +5,25 @@ import type { ItemBonus, ItemEffect } from '../../queries/items'
 
 function bonus(overrides: Partial<ItemBonus> = {}): ItemBonus {
   return {
-    bonus_id: 1,
+    id: 1,
     name: 'Charisma +5',
     description: null,
-    bonus_type: 'Enhancement',
-    stat_name: 'Charisma',
+    bonusType: 'Enhancement',
+    statName: 'Charisma',
     value: 5,
-    sort_order: 0,
+    sortOrder: 0,
     ...overrides,
   }
 }
 
 function effect(overrides: Partial<ItemEffect> = {}): ItemEffect {
   return {
-    effect_id: 1,
+    id: 1,
     name: 'Bane',
     description: null,
     target: 'Evil Outsider',
     value: 4,
-    sort_order: 0,
+    sortOrder: 0,
     ...overrides,
   }
 }
@@ -69,7 +69,7 @@ describe('EnchantmentList', () => {
   it('renders bonuses before effects, each with its type chip', () => {
     render(
       <EnchantmentList
-        bonuses={[bonus({ bonus_type: 'Insight' })]}
+        bonuses={[bonus({ bonusType: 'Insight' })]}
         effects={[effect({ target: 'Evil Outsider' })]}
       />,
     )
@@ -82,7 +82,7 @@ describe('EnchantmentList', () => {
       <EnchantmentList
         bonuses={[bonus({
           name: 'Fire Resistance +30',
-          stat_name: 'Fire Resistance',
+          statName: 'Fire Resistance',
           description: '+30 Enhancement bonus to Fire Resistance',
         })]}
         effects={[]}

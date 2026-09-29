@@ -1,22 +1,22 @@
 export { default as BuildSidePanel } from './components/BuildSidePanel'
 export { default as CharacterView } from './CharacterView'
 export { CharacterProvider } from './contexts/CharacterProvider'
-export { useCharacter } from './hooks/useCharacter'
-export { formatClassSummary, formatRace } from './utils'
+export { useCharacters } from './hooks/useCharacters'
+export { classSplitLabel, raceLabelOf } from './utils'
 export type {
   Race,
   CharacterClass,
   Feat,
   Enhancement,
-  AbilityScore,
+  Ability,
   CharacterStats,
   ReincarnationType,
   EpicSphere,
-  Server,
+  GameServer,
   LifeStatus,
   Reincarnation,
   ImportFormat,
-  ImportSource,
+  ImportedBuildFile,
   Life,
   PastLifeCategory,
   PastLifeCounts,

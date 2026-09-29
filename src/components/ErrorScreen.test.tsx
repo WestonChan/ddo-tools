@@ -36,7 +36,7 @@ describe('ErrorScreen', () => {
     render(
       <ErrorScreen
         heading="Page not found"
-        body="/missing/path"
+        detail="/missing/path"
         tone="info"
       />,
     )
@@ -68,11 +68,11 @@ describe('ErrorScreen', () => {
   })
 
   it('renders a labeled "known issue" search link plus a report link when labels are provided', () => {
-    render(<ErrorScreen heading="Failed" error={new Error('boom')} labels="db-loading" />)
-    const knownIssue = screen.getByRole('link', { name: 'known issue' })
-    const reportIt = screen.getByRole('link', { name: 'report it' })
-    expect(knownIssue).toHaveAttribute('href', expect.stringContaining('label%3Adb-loading'))
-    expect(reportIt).toHaveAttribute('href', expect.stringContaining('labels=db-loading'))
+    render(<ErrorScreen heading="Failed" error={new Error('boom')} issueLabels="db-loading" />)
+    const knownIssueLink = screen.getByRole('link', { name: 'known issue' })
+    const reportItLink = screen.getByRole('link', { name: 'report it' })
+    expect(knownIssueLink).toHaveAttribute('href', expect.stringContaining('label%3Adb-loading'))
+    expect(reportItLink).toHaveAttribute('href', expect.stringContaining('labels=db-loading'))
   })
 
   it('renders only "Report this issue" (no search link) when no labels are provided', () => {
@@ -82,13 +82,13 @@ describe('ErrorScreen', () => {
   })
 
   it('does not render any report link when neither error nor labels are provided', () => {
-    render(<ErrorScreen heading="Page not found" body="/x" tone="info" />)
+    render(<ErrorScreen heading="Page not found" detail="/x" tone="info" />)
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
   })
 
   it('applies the info modifier class when tone is info', () => {
     const { container } = render(
-      <ErrorScreen heading="Page not found" body="/x" tone="info" />,
+      <ErrorScreen heading="Page not found" detail="/x" tone="info" />,
     )
     expect(container.querySelector('.error-screen--info')).not.toBeNull()
   })
@@ -99,9 +99,9 @@ describe('ErrorScreen', () => {
   })
 
   it('accepts an array of labels for the report links', () => {
-    render(<ErrorScreen heading="X" error={new Error('y')} labels={['runtime', 'not-found']} />)
-    const knownIssue = screen.getByRole('link', { name: 'known issue' })
-    expect(knownIssue).toHaveAttribute('href', expect.stringContaining('label%3Aruntime'))
-    expect(knownIssue).toHaveAttribute('href', expect.stringContaining('label%3Anot-found'))
+    render(<ErrorScreen heading="X" error={new Error('y')} issueLabels={['runtime', 'not-found']} />)
+    const knownIssueLink = screen.getByRole('link', { name: 'known issue' })
+    expect(knownIssueLink).toHaveAttribute('href', expect.stringContaining('label%3Aruntime'))
+    expect(knownIssueLink).toHaveAttribute('href', expect.stringContaining('label%3Anot-found'))
   })
 })

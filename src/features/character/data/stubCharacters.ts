@@ -1,7 +1,7 @@
 import type { Character, Life } from '../types'
 
 
-const STUB_LIVES: Life[] = [
+const THORDAK_STUB_LIVES: Life[] = [
   {
     id: '1a',
     name: '',
@@ -112,7 +112,7 @@ export const STUB_CHARACTERS: Character[] = [
     id: 'char-1',
     name: 'Thordak',
     server: 'Thrane',
-    lives: STUB_LIVES,
+    lives: THORDAK_STUB_LIVES,
     currentLifeIndex: 6,
     untrackedLives: {
       heroic: { paladin: 2, fighter: 2, rogue: 1 },

@@ -3,9 +3,9 @@ import { useCallback, useSyncExternalStore } from 'react'
 export function useMediaQuery(query: string): boolean {
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      const mql = window.matchMedia(query)
-      mql.addEventListener('change', onStoreChange)
-      return () => mql.removeEventListener('change', onStoreChange)
+      const mediaQueryList = window.matchMedia(query)
+      mediaQueryList.addEventListener('change', onStoreChange)
+      return () => mediaQueryList.removeEventListener('change', onStoreChange)
     },
     [query],
   )

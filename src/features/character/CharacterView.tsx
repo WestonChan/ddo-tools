@@ -1,66 +1,66 @@
 import { useState, type JSX } from 'react'
 import type { Life } from './types'
 import {
-  computeMismatchWarnings,
-  formatClassSummary,
-  formatRace,
-  getCurrentLifeNumber,
+  missingPastLifeWarnings,
+  classSplitLabel,
+  raceLabelOf,
+  currentLifeNumberOf,
 } from './utils'
-import { useCharacter } from './hooks/useCharacter'
+import { useCharacters } from './hooks/useCharacters'
 import { ConfirmModal } from '../../components'
 import { Star, Plus } from 'lucide-react'
 import { PastLifeStacks } from './components/PastLifeStacks'
-import { LifeHistory, type ReincarnateResult } from './components/LifeHistory'
+import { LifeHistory, type ReincarnationChoice } from './components/LifeHistory'
 import './CharacterView.css'
 
 function CharacterView(): JSX.Element {
   const {
     characters,
     setCharacters,
-    character: selected,
+    selectedCharacter,
     currentLife,
-    lifeNumbers,
-    selection,
-    setSelection,
+    lifeNumbersByLifeId,
+    buildSelection,
+    setBuildSelection,
     plannedBuilds,
     setPlannedBuilds,
-    viewingPlannedBuild,
+    viewedPlannedBuild,
     selectCharacter,
     selectBuild,
-    setOverride,
-    setBuildDesired,
-  } = useCharacter()
+    setUntrackedStackCount,
+    setDesiredStackCount,
+  } = useCharacters()
 
-  const [showReincarnate, setShowReincarnate] = useState(false)
-  const [applyConfirm, setApplyConfirm] = useState<{
+  const [isReincarnationPanelOpen, setIsReincarnationPanelOpen] = useState(false)
+  const [buildToApply, setBuildToApply] = useState<{
     buildId: string
-    desc: string
-    warnings: string[]
+    buildLabel: string
+    missingPastLifeWarnings: string[]
   } | null>(null)
 
-  const viewingLifeId = viewingPlannedBuild ? '' : selection.buildId
-  const viewingPlannedBuildId = viewingPlannedBuild ? selection.buildId : null
+  const viewedLifeId = viewedPlannedBuild ? '' : buildSelection.buildId
+  const viewedPlannedBuildId = viewedPlannedBuild ? buildSelection.buildId : null
 
   return (
     <div className="character-view">
       <div className="section-label">Your Characters</div>
       <div className="character-list">
-        {characters.map((char) => {
-          const charCurrentLife = char.lives[char.currentLifeIndex]
-          const isActive = char.id === selection.characterId
+        {characters.map((character) => {
+          const characterCurrentLife = character.lives[character.currentLifeIndex]
+          const isSelected = character.id === buildSelection.characterId
           return (
             <div
-              key={char.id}
-              className={`character-row hoverable ${isActive ? 'active' : ''}`}
-              onClick={() => selectCharacter(char.id)}
+              key={character.id}
+              className={`character-row hoverable ${isSelected ? 'active' : ''}`}
+              onClick={() => selectCharacter(character.id)}
             >
-              <span className="character-marker">{isActive ? <Star size={14} /> : ''}</span>
-              <span className="character-name">{char.name}</span>
-              <span className="character-server">{char.server}</span>
+              <span className="character-marker">{isSelected ? <Star size={14} /> : ''}</span>
+              <span className="character-name">{character.name}</span>
+              <span className="character-server">{character.server}</span>
               <span className="character-class-summary">
-                {charCurrentLife ? formatClassSummary(charCurrentLife) : '—'}
+                {characterCurrentLife ? classSplitLabel(characterCurrentLife) : '—'}
               </span>
-              <span className="character-life-count">Life {getCurrentLifeNumber(char)}</span>
+              <span className="character-life-count">Life {currentLifeNumberOf(character)}</span>
               <span className="character-row-actions">
                 <button className="row-action-btn">Export</button>
                 <button className="row-action-btn delete">Delete</button>
@@ -85,47 +85,47 @@ function CharacterView(): JSX.Element {
       <hr className="past-lives-divider" />
       <div className="past-lives-header">
         <h2>
-          {viewingPlannedBuild
-            ? `Past Lives — ${viewingPlannedBuild.name || 'Planned Build'} × ${selected.name}`
-            : `Past Lives (${selected.name})`}
+          {viewedPlannedBuild
+            ? `Past Lives — ${viewedPlannedBuild.name || 'Planned Build'} × ${selectedCharacter.name}`
+            : `Past Lives (${selectedCharacter.name})`}
         </h2>
       </div>
       <div className="past-lives-content">
         <PastLifeStacks
-          character={selected}
-          viewingLifeId={viewingPlannedBuildId ? '' : viewingLifeId}
-          plannedBuild={viewingPlannedBuild}
-          onSetOverride={setOverride}
-          onSetBuildDesired={viewingPlannedBuildId ? setBuildDesired : undefined}
+          character={selectedCharacter}
+          viewedLifeId={viewedPlannedBuildId ? '' : viewedLifeId}
+          viewedPlannedBuild={viewedPlannedBuild}
+          onSetUntrackedStackCount={setUntrackedStackCount}
+          onSetDesiredStackCount={viewedPlannedBuildId ? setDesiredStackCount : undefined}
         />
         <LifeHistory
-          character={selected}
-          lifeNumbers={lifeNumbers}
-          viewingLifeId={viewingLifeId}
-          showReincarnate={showReincarnate}
-          onToggleReincarnate={() => setShowReincarnate(!showReincarnate)}
-          onCancelReincarnate={() => setShowReincarnate(false)}
-          onConfirmReincarnate={(result: ReincarnateResult) => {
-            console.log('Reincarnate:', result)
-            setShowReincarnate(false)
+          character={selectedCharacter}
+          lifeNumbersByLifeId={lifeNumbersByLifeId}
+          viewedLifeId={viewedLifeId}
+          isReincarnationPanelOpen={isReincarnationPanelOpen}
+          onToggleReincarnationPanel={() => setIsReincarnationPanelOpen(!isReincarnationPanelOpen)}
+          onCancelReincarnation={() => setIsReincarnationPanelOpen(false)}
+          onConfirmReincarnation={(reincarnationChoice: ReincarnationChoice) => {
+            console.log('Reincarnate:', reincarnationChoice)
+            setIsReincarnationPanelOpen(false)
           }}
           onViewLife={selectBuild}
-          onCopyToPlanned={(lifeId) => {
-            const life = selected.lives.find((l) => l.id === lifeId)
+          onCopyLifeToPlannedBuilds={(lifeId) => {
+            const life = selectedCharacter.lives.find((l) => l.id === lifeId)
             if (!life) return
-            const newBuild: Life = {
+            const copiedPlannedBuild: Life = {
               ...life,
               id: crypto.randomUUID(),
               status: 'planned',
               reincarnation: undefined,
               notes: undefined,
             }
-            setPlannedBuilds((prev) => [...prev, newBuild])
+            setPlannedBuilds((prev) => [...prev, copiedPlannedBuild])
           }}
           onRenameLife={(lifeId, newName) => {
             setCharacters((prev) =>
               prev.map((c) => {
-                if (c.id !== selection.characterId) return c
+                if (c.id !== buildSelection.characterId) return c
                 return {
                   ...c,
                   lives: c.lives.map((l) => (l.id === lifeId ? { ...l, name: newName } : l)),
@@ -134,31 +134,31 @@ function CharacterView(): JSX.Element {
             )
           }}
           plannedBuilds={plannedBuilds}
-          viewingPlannedBuildId={viewingPlannedBuildId}
-          onSelectPlannedBuild={selectBuild}
+          viewedPlannedBuildId={viewedPlannedBuildId}
+          onViewPlannedBuild={selectBuild}
           onRenamePlannedBuild={(buildId: string, newName: string) => {
             setPlannedBuilds((prev) =>
               prev.map((b) => (b.id === buildId ? { ...b, name: newName } : b)),
             )
           }}
           onApplyPlannedBuild={(buildId: string) => {
-            const build = plannedBuilds.find((b) => b.id === buildId)
-            if (!build) return
-            const desc = `${formatRace(build.race)} ${formatClassSummary(build)}`
-            const warnings = computeMismatchWarnings(build.desiredPastLives, selected)
-            setApplyConfirm({ buildId, desc, warnings })
+            const plannedBuild = plannedBuilds.find((b) => b.id === buildId)
+            if (!plannedBuild) return
+            const buildLabel = `${raceLabelOf(plannedBuild.race)} ${classSplitLabel(plannedBuild)}`
+            const warnings = missingPastLifeWarnings(plannedBuild.desiredPastLives, selectedCharacter)
+            setBuildToApply({ buildId, buildLabel, missingPastLifeWarnings: warnings })
           }}
           onDeletePlannedBuild={(buildId: string) => {
             setPlannedBuilds((prev) => prev.filter((b) => b.id !== buildId))
-            if (viewingPlannedBuildId === buildId) {
-              setSelection((prev) => ({
+            if (viewedPlannedBuildId === buildId) {
+              setBuildSelection((prev) => ({
                 ...prev,
                 buildId: currentLife?.id ?? '',
               }))
             }
           }}
           onAddPlannedBuild={() => {
-            const newBuild: Life = {
+            const blankPlannedBuild: Life = {
               id: crypto.randomUUID(),
               name: '',
               race: 'human',
@@ -167,42 +167,42 @@ function CharacterView(): JSX.Element {
               enhancements: [],
               status: 'planned',
             }
-            setPlannedBuilds((prev) => [...prev, newBuild])
+            setPlannedBuilds((prev) => [...prev, blankPlannedBuild])
           }}
         />
       </div>
 
-      {applyConfirm && (
+      {buildToApply && (
         <ConfirmModal
           title="Apply Planned Build"
           message={
-            applyConfirm.warnings.length > 0
-              ? `This will overwrite your current life's build data with "${applyConfirm.desc}". This cannot be undone.\n\nWarning: ${selected.name} is missing past lives this build expects:\n${applyConfirm.warnings.join('\n')}`
-              : `This will overwrite your current life's build data with "${applyConfirm.desc}". This cannot be undone.`
+            buildToApply.missingPastLifeWarnings.length > 0
+              ? `This will overwrite your current life's build data with "${buildToApply.buildLabel}". This cannot be undone.\n\nWarning: ${selectedCharacter.name} is missing past lives this build expects:\n${buildToApply.missingPastLifeWarnings.join('\n')}`
+              : `This will overwrite your current life's build data with "${buildToApply.buildLabel}". This cannot be undone.`
           }
           confirmLabel="Apply"
-          requireInput="Apply"
-          onCancel={() => setApplyConfirm(null)}
+          confirmationPhrase="Apply"
+          onCancel={() => setBuildToApply(null)}
           onConfirm={() => {
-            const build = plannedBuilds.find((b) => b.id === applyConfirm.buildId)
-            if (build) {
+            const plannedBuild = plannedBuilds.find((b) => b.id === buildToApply.buildId)
+            if (plannedBuild) {
               setCharacters((prev) =>
                 prev.map((c) => {
-                  if (c.id !== selection.characterId) return c
+                  if (c.id !== buildSelection.characterId) return c
                   const lives = c.lives.map((l, i) => {
                     if (i !== c.currentLifeIndex) return l
                     return {
                       ...l,
-                      name: build.name || l.name,
-                      race: build.race,
-                      classes: [...build.classes],
+                      name: plannedBuild.name || l.name,
+                      race: plannedBuild.race,
+                      classes: [...plannedBuild.classes],
                     }
                   })
                   return { ...c, lives }
                 }),
               )
             }
-            setApplyConfirm(null)
+            setBuildToApply(null)
           }}
         />
       )}

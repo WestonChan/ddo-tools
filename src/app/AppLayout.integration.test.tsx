@@ -18,12 +18,12 @@ vi.mock('./routeComponents', async (importActual) => {
   }
 })
 
-let errorSpy: ReturnType<typeof vi.spyOn>
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
-  errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 afterEach(() => {
-  errorSpy.mockRestore()
+  consoleErrorSpy.mockRestore()
 })
 
 function renderApp(initialPath = '/build-plan'): void {
@@ -50,21 +50,21 @@ describe('AppLayout error boundaries', () => {
   })
 
   it('captures the view-crash error to Sentry with the React component stack', async () => {
-    const captureSpy = vi.mocked(Sentry.captureException)
-    captureSpy.mockClear()
+    const captureExceptionSpy = vi.mocked(Sentry.captureException)
+    captureExceptionSpy.mockClear()
     renderApp('/build-plan')
     await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
-    expect(captureSpy).toHaveBeenCalled()
-    const [exception, context] = captureSpy.mock.calls[0]
+    expect(captureExceptionSpy).toHaveBeenCalled()
+    const [exception, captureContext] = captureExceptionSpy.mock.calls[0]
     expect(exception).toBeInstanceOf(Error)
     expect((exception as Error).message).toBe('view-crash-for-test')
-    const stack = (context as { contexts?: { react?: { componentStack?: string } } })?.contexts?.react?.componentStack
-    expect(stack).toBeTypeOf('string')
+    const componentStack = (captureContext as { contexts?: { react?: { componentStack?: string } } })?.contexts?.react?.componentStack
+    expect(componentStack).toBeTypeOf('string')
   })
 })
 
 describe('AppLayout mobile nav overlay', () => {
-  const realWidth = window.innerWidth
+  const originalWindowWidth = window.innerWidth
 
   function setViewportWidth(width: number): MatchMediaStub {
     Object.defineProperty(window, 'innerWidth', {
@@ -84,7 +84,7 @@ describe('AppLayout mobile nav overlay', () => {
   afterEach(() => {
     restoreMatchMedia()
     Object.defineProperty(window, 'innerWidth', {
-      value: realWidth,
+      value: originalWindowWidth,
       writable: true,
       configurable: true,
     })
@@ -121,14 +121,14 @@ describe('AppLayout mobile nav overlay', () => {
   })
 
   it('drops the overlay when the viewport grows past the breakpoint, keeping the nav expanded', async () => {
-    const matchMedia = setViewportWidth(500)
+    const matchMediaStub = setViewportWidth(500)
     localStorage.setItem('ddo-nav-bar-expanded', 'false')
     renderApp('/build-plan')
     await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
     await expandNavBar()
     expect(document.querySelector('.app-content')).toHaveAttribute('inert')
 
-    act(() => matchMedia.emitChange('(max-width: 599px)', false))
+    act(() => matchMediaStub.emitChange('(max-width: 599px)', false))
 
     expect(document.querySelector('.app-nav-bar')).toHaveClass('expanded')
     expect(document.querySelector('.app-content')).not.toHaveAttribute('inert')

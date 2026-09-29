@@ -1,16 +1,16 @@
 import type { JSX, ReactNode } from 'react'
-import { buildIssueUrls } from '../lib/githubIssue'
+import { githubIssueUrls } from '../lib/githubIssue'
 import './ErrorScreen.css'
 
 export interface ErrorScreenProps {
   heading: string
   error?: Error | unknown
-  body?: ReactNode
+  detail?: ReactNode
   hint?: ReactNode
   actions?:
     | ReactNode
-    | ((helpers: { resetErrorBoundary?: () => void }) => ReactNode)
-  labels?: string | string[]
+    | ((errorBoundaryControls: { resetErrorBoundary?: () => void }) => ReactNode)
+  issueLabels?: string | string[]
   tone?: 'error' | 'info'
   resetErrorBoundary?: () => void
 }
@@ -18,31 +18,31 @@ export interface ErrorScreenProps {
 export function ErrorScreen({
   heading,
   error,
-  body,
+  detail,
   hint,
   actions,
-  labels,
+  issueLabels,
   tone = 'error',
   resetErrorBoundary,
 }: ErrorScreenProps): JSX.Element {
 
-  const err: Error | undefined = error instanceof Error
+  const coercedError: Error | undefined = error instanceof Error
     ? error
     : error !== undefined
       ? new Error(String(error))
       : undefined
 
-  const resolvedActions = typeof actions === 'function'
+  const renderedActions = typeof actions === 'function'
     ? actions({ resetErrorBoundary })
     : actions
 
-  const labelList = labels ? (Array.isArray(labels) ? labels : [labels]) : []
-  const showReportLink = labelList.length > 0 || err !== undefined
+  const normalizedIssueLabels = issueLabels ? (Array.isArray(issueLabels) ? issueLabels : [issueLabels]) : []
+  const shouldShowReportLink = normalizedIssueLabels.length > 0 || coercedError !== undefined
 
-  const detail = body !== undefined
-    ? body
-    : err !== undefined
-      ? <p className="error-screen-detail">{err.message}</p>
+  const detailToShow = detail !== undefined
+    ? detail
+    : coercedError !== undefined
+      ? <p className="error-screen-detail">{coercedError.message}</p>
       : null
 
   return (
@@ -51,20 +51,20 @@ export function ErrorScreen({
       role="alert"
     >
       <h1>{heading}</h1>
-      {detail}
+      {detailToShow}
       {hint && <p className="error-screen-hint">{hint}</p>}
-      {resolvedActions && <div className="error-screen-actions">{resolvedActions}</div>}
-      {showReportLink && <ReportLink error={err} labels={labelList} />}
+      {renderedActions && <div className="error-screen-actions">{renderedActions}</div>}
+      {shouldShowReportLink && <IssueReportLinks error={coercedError} issueLabels={normalizedIssueLabels} />}
     </div>
   )
 }
 
-function ReportLink({ error, labels }: { error?: Error; labels: string[] }): JSX.Element {
-  const { searchUrl, newIssueUrl } = buildIssueUrls(error, labels)
-  const showSearchLink = labels.length > 0
+function IssueReportLinks({ error, issueLabels }: { error?: Error; issueLabels: string[] }): JSX.Element {
+  const { searchUrl, newIssueUrl } = githubIssueUrls(error, issueLabels)
+  const shouldShowSearchLink = issueLabels.length > 0
   return (
     <p className="error-screen-report">
-      {showSearchLink ? (
+      {shouldShowSearchLink ? (
         <>
           This may be a{' '}
           <a href={searchUrl} target="_blank" rel="noopener noreferrer">

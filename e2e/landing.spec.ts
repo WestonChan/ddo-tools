@@ -36,11 +36,11 @@ test.describe('active character card', () => {
     await page.goto('/')
 
     const card = page.locator('.landing-active-character')
-    const labels = card.locator('.landing-stat-label')
-    await expect(labels).not.toHaveCount(0)
-    const text = await labels.allTextContents()
-    expect(text.some((t) => /heroic/i.test(t))).toBe(true)
-    expect(text.every((t) => !/iconic/i.test(t))).toBe(true)
+    const statLabels = card.locator('.landing-stat-label')
+    await expect(statLabels).not.toHaveCount(0)
+    const statLabelTexts = await statLabels.allTextContents()
+    expect(statLabelTexts.some((t) => /heroic/i.test(t))).toBe(true)
+    expect(statLabelTexts.every((t) => !/iconic/i.test(t))).toBe(true)
   })
 
   test('"Open build plan" CTA navigates to /build-plan', async ({ page }) => {
@@ -55,32 +55,32 @@ test.describe('site patch notes', () => {
   test('shows three entries by default', async ({ page }) => {
     await page.goto('/')
 
-    const entries = page.locator('.landing-patch-entry')
-    await expect(entries).toHaveCount(3)
+    const patchNotes = page.locator('.landing-patch-entry')
+    await expect(patchNotes).toHaveCount(3)
   })
 
   test('"Show older updates" toggle reveals the rest', async ({ page }) => {
     await page.goto('/')
 
-    const toggle = page.locator('.landing-patch-toggle')
-    await expect(toggle).toContainText(/Show \d+ older update/)
+    const olderUpdatesToggle = page.locator('.landing-patch-toggle')
+    await expect(olderUpdatesToggle).toContainText(/Show \d+ older update/)
 
-    await toggle.click()
+    await olderUpdatesToggle.click()
 
-    const entries = page.locator('.landing-patch-entry')
-    expect(await entries.count()).toBeGreaterThan(3)
-    await expect(toggle).toContainText('Show fewer updates')
+    const patchNotes = page.locator('.landing-patch-entry')
+    expect(await patchNotes.count()).toBeGreaterThan(3)
+    await expect(olderUpdatesToggle).toContainText('Show fewer updates')
   })
 
   test('toggle collapses again on second click', async ({ page }) => {
     await page.goto('/')
 
-    const toggle = page.locator('.landing-patch-toggle')
-    await toggle.click()
-    await expect(toggle).toContainText('Show fewer updates')
+    const olderUpdatesToggle = page.locator('.landing-patch-toggle')
+    await olderUpdatesToggle.click()
+    await expect(olderUpdatesToggle).toContainText('Show fewer updates')
 
-    await toggle.click()
-    await expect(toggle).toContainText(/Show \d+ older update/)
+    await olderUpdatesToggle.click()
+    await expect(olderUpdatesToggle).toContainText(/Show \d+ older update/)
     await expect(page.locator('.landing-patch-entry')).toHaveCount(3)
   })
 
@@ -96,10 +96,10 @@ test.describe('DDO patch notes card', () => {
   test('links to DDO Wiki Updates page in a new tab', async ({ page }) => {
     await page.goto('/')
 
-    const anchor = page.locator('.landing-ddo-patch-notes a')
-    await expect(anchor).toHaveAttribute('href', 'https://ddowiki.com/page/Updates')
-    await expect(anchor).toHaveAttribute('target', '_blank')
-    await expect(anchor).toHaveAttribute('rel', /noopener/)
+    const wikiUpdatesLink = page.locator('.landing-ddo-patch-notes a')
+    await expect(wikiUpdatesLink).toHaveAttribute('href', 'https://ddowiki.com/page/Updates')
+    await expect(wikiUpdatesLink).toHaveAttribute('target', '_blank')
+    await expect(wikiUpdatesLink).toHaveAttribute('rel', /noopener/)
   })
 })
 

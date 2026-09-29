@@ -3,67 +3,67 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { createElement, type Dispatch, type JSX, type SetStateAction } from 'react'
 import { useLocalStorage } from './useLocalStorage'
 
-let setter: Dispatch<SetStateAction<unknown>> = () => {}
+let lastSetter: Dispatch<SetStateAction<unknown>> = () => {}
 
-function TestComponent({
+function LocalStorageHarness({
   storageKey,
-  initial,
+  initialValue,
   onRender,
 }: {
   storageKey: string
-  initial: unknown
+  initialValue: unknown
   onRender: (val: unknown, set: Dispatch<SetStateAction<unknown>>) => void
 }): JSX.Element {
-  const [value, setValue] = useLocalStorage(storageKey, initial)
-  onRender(value, setValue as Dispatch<SetStateAction<unknown>>)
-  return createElement('div', { 'data-testid': 'value' }, JSON.stringify(value))
+  const [storedValue, setStoredValue] = useLocalStorage(storageKey, initialValue)
+  onRender(storedValue, setStoredValue as Dispatch<SetStateAction<unknown>>)
+  return createElement('div', { 'data-testid': 'value' }, JSON.stringify(storedValue))
 }
 
-function renderHook(key: string, initial: unknown): {
+function renderLocalStorageHook(storageKey: string, initial: unknown): {
   getValue: () => unknown
   getSetter: () => Dispatch<SetStateAction<unknown>>
 } {
-  let lastValue: unknown
-  const onRender = (val: unknown, set: Dispatch<SetStateAction<unknown>>): void => {
-    lastValue = val
-    setter = set
+  let lastRenderedValue: unknown
+  const onRender = (renderedValue: unknown, setStoredValue: Dispatch<SetStateAction<unknown>>): void => {
+    lastRenderedValue = renderedValue
+    lastSetter = setStoredValue
   }
-  render(createElement(TestComponent, { storageKey: key, initial, onRender }))
-  return { getValue: () => lastValue, getSetter: () => setter }
+  render(createElement(LocalStorageHarness, { storageKey, initialValue: initial, onRender }))
+  return { getValue: () => lastRenderedValue, getSetter: () => lastSetter }
 }
 
-function renderTwoHooks(key: string, initial: unknown): {
-  getA: () => unknown
-  getB: () => unknown
-  setA: () => Dispatch<SetStateAction<unknown>>
-  setB: () => Dispatch<SetStateAction<unknown>>
+function renderTwoLocalStorageHooks(key: string, initialValue: unknown): {
+  getValueA: () => unknown
+  getValueB: () => unknown
+  getSetterA: () => Dispatch<SetStateAction<unknown>>
+  getSetterB: () => Dispatch<SetStateAction<unknown>>
 } {
   let valueA: unknown, valueB: unknown
   let setterA: Dispatch<SetStateAction<unknown>> = () => {}
   let setterB: Dispatch<SetStateAction<unknown>> = () => {}
 
-  const onRenderA = (val: unknown, set: Dispatch<SetStateAction<unknown>>): void => {
-    valueA = val
-    setterA = set
+  const onRenderA = (renderedValue: unknown, setStoredValue: Dispatch<SetStateAction<unknown>>): void => {
+    valueA = renderedValue
+    setterA = setStoredValue
   }
-  const onRenderB = (val: unknown, set: Dispatch<SetStateAction<unknown>>): void => {
-    valueB = val
-    setterB = set
+  const onRenderB = (renderedValue: unknown, setStoredValue: Dispatch<SetStateAction<unknown>>): void => {
+    valueB = renderedValue
+    setterB = setStoredValue
   }
 
   render(
     createElement(
       'div',
       null,
-      createElement(TestComponent, { storageKey: key, initial, onRender: onRenderA }),
-      createElement(TestComponent, { storageKey: key, initial, onRender: onRenderB }),
+      createElement(LocalStorageHarness, { storageKey: key, initialValue, onRender: onRenderA }),
+      createElement(LocalStorageHarness, { storageKey: key, initialValue, onRender: onRenderB }),
     ),
   )
   return {
-    getA: () => valueA,
-    getB: () => valueB,
-    setA: () => setterA,
-    setB: () => setterB,
+    getValueA: () => valueA,
+    getValueB: () => valueB,
+    getSetterA: () => setterA,
+    getSetterB: () => setterB,
   }
 }
 
@@ -73,18 +73,18 @@ describe('useLocalStorage', () => {
   })
 
   it('returns initialValue when localStorage is empty', () => {
-    const { getValue } = renderHook('test-key', 'hello')
+    const { getValue } = renderLocalStorageHook('test-key', 'hello')
     expect(getValue()).toBe('hello')
   })
 
   it('returns stored value when localStorage has data', () => {
     localStorage.setItem('test-key', JSON.stringify({ a: 1 }))
-    const { getValue } = renderHook('test-key', {})
+    const { getValue } = renderLocalStorageHook('test-key', {})
     expect(getValue()).toEqual({ a: 1 })
   })
 
   it('writes to localStorage when value changes', () => {
-    const { getValue, getSetter } = renderHook('test-key', 'start')
+    const { getValue, getSetter } = renderLocalStorageHook('test-key', 'start')
     act(() => {
       getSetter()('updated')
     })
@@ -94,12 +94,12 @@ describe('useLocalStorage', () => {
 
   it('falls back to initialValue when stored data is corrupt JSON', () => {
     localStorage.setItem('test-key', 'not-valid-json{{{')
-    const { getValue } = renderHook('test-key', 'fallback')
+    const { getValue } = renderLocalStorageHook('test-key', 'fallback')
     expect(getValue()).toBe('fallback')
   })
 
   it('works with functional updater form of setState', () => {
-    const { getValue, getSetter } = renderHook('test-key', 5)
+    const { getValue, getSetter } = renderLocalStorageHook('test-key', 5)
     act(() => {
       getSetter()((prev: unknown) => (prev as number) + 10)
     })
@@ -108,32 +108,32 @@ describe('useLocalStorage', () => {
   })
 
   it('syncs value across two hook instances sharing the same key', () => {
-    const { getA, getB, setA } = renderTwoHooks('sync-key', 'initial')
-    expect(getA()).toBe('initial')
-    expect(getB()).toBe('initial')
+    const { getValueA, getValueB, getSetterA } = renderTwoLocalStorageHooks('sync-key', 'initial')
+    expect(getValueA()).toBe('initial')
+    expect(getValueB()).toBe('initial')
 
     act(() => {
-      setA()('updated-by-A')
+      getSetterA()('updated-by-A')
     })
 
-    expect(getA()).toBe('updated-by-A')
-    expect(getB()).toBe('updated-by-A')
+    expect(getValueA()).toBe('updated-by-A')
+    expect(getValueB()).toBe('updated-by-A')
     expect(JSON.parse(localStorage.getItem('sync-key')!)).toBe('updated-by-A')
   })
 
   it('syncs in both directions', () => {
-    const { getA, getB, setA, setB } = renderTwoHooks('sync-key', 0)
+    const { getValueA, getValueB, getSetterA, getSetterB } = renderTwoLocalStorageHooks('sync-key', 0)
 
     act(() => {
-      setA()(10)
+      getSetterA()(10)
     })
-    expect(getA()).toBe(10)
-    expect(getB()).toBe(10)
+    expect(getValueA()).toBe(10)
+    expect(getValueB()).toBe(10)
 
     act(() => {
-      setB()(20)
+      getSetterB()(20)
     })
-    expect(getA()).toBe(20)
-    expect(getB()).toBe(20)
+    expect(getValueA()).toBe(20)
+    expect(getValueB()).toBe(20)
   })
 })

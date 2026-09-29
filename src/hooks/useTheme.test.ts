@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useTheme, _resetThemeForTests } from './useTheme'
+import { useTheme, resetThemeForTests } from './useTheme'
 
-const defaultMatchMedia = window.matchMedia
+const originalMatchMedia = window.matchMedia
 
 function stubPrefersLight(prefersLight: boolean): void {
   window.matchMedia = ((query: string) => ({
@@ -20,11 +20,11 @@ function stubPrefersLight(prefersLight: boolean): void {
 beforeEach(() => {
   localStorage.clear()
   document.documentElement.removeAttribute('data-theme')
-  _resetThemeForTests()
+  resetThemeForTests()
 })
 
 afterEach(() => {
-  window.matchMedia = defaultMatchMedia
+  window.matchMedia = originalMatchMedia
 })
 
 describe('useTheme', () => {
@@ -69,7 +69,7 @@ describe('useTheme', () => {
     const { result } = renderHook(() => useTheme())
     expect(result.current.theme).toBe('dark')
 
-    act(() => result.current.toggle())
+    act(() => result.current.toggleTheme())
 
     expect(result.current.theme).toBe('light')
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
@@ -78,13 +78,13 @@ describe('useTheme', () => {
 
   it('propagates a toggle from one consumer to every other consumer', () => {
     stubPrefersLight(false)
-    const settings = renderHook(() => useTheme())
-    const observer = renderHook(() => useTheme())
-    expect(observer.result.current.theme).toBe('dark')
+    const togglingConsumer = renderHook(() => useTheme())
+    const observingConsumer = renderHook(() => useTheme())
+    expect(observingConsumer.result.current.theme).toBe('dark')
 
-    act(() => settings.result.current.toggle())
+    act(() => togglingConsumer.result.current.toggleTheme())
 
-    expect(settings.result.current.theme).toBe('light')
-    expect(observer.result.current.theme).toBe('light')
+    expect(togglingConsumer.result.current.theme).toBe('light')
+    expect(observingConsumer.result.current.theme).toBe('light')
   })
 })

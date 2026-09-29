@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ApiGate } from './ApiGate'
-import { ApiError, API_ERROR_NETWORK } from '../lib/api'
+import { ApiError, API_NETWORK_ERROR } from '../lib/api'
 
 afterEach(() => {
   cleanup()
@@ -31,7 +31,7 @@ describe('ApiGate', () => {
   it('shows a categorized error with a working retry', async () => {
     const onRetry = vi.fn()
     render(
-      <ApiGate isPending={false} error={new ApiError(API_ERROR_NETWORK, 0, 'Failed to fetch')} onRetry={onRetry}>
+      <ApiGate isPending={false} error={new ApiError(API_NETWORK_ERROR, 0, 'Failed to fetch')} onRetry={onRetry}>
         <p>content</p>
       </ApiGate>,
     )

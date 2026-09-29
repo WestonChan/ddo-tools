@@ -1,70 +1,70 @@
 import { useRef, useState, type JSX, type KeyboardEvent } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { TooltipWrapper } from '../../../../components'
-import { isFamilySlot, type AugmentCandidate, type ItemAugmentSlot } from '../../queries/items'
-import { formatSlotLabel } from './formatSlotLabel'
+import { HoverTooltip } from '../../../../components'
+import { isCraftingSlotFamily, type AugmentSummary, type ItemAugmentSlot } from '../../queries/items'
+import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 
 interface AugmentSlotListProps {
-  slots: ItemAugmentSlot[]
-  candidates: Record<string, AugmentCandidate[]>
+  augmentSlots: ItemAugmentSlot[]
+  augmentsBySlotLabel: Record<string, AugmentSummary[]>
 }
 
-export function AugmentSlotList({ slots, candidates }: AugmentSlotListProps): JSX.Element {
-  const [openSlot, setOpenSlot] = useState<number | null>(null)
-  const [picked, setPicked] = useState<number | null>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const listRef = useRef<HTMLUListElement>(null)
+export function AugmentSlotList({ augmentSlots, augmentsBySlotLabel }: AugmentSlotListProps): JSX.Element {
+  const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
+  const [pickedAugmentId, setPickedAugmentId] = useState<number | null>(null)
+  const [focusedAugmentIndex, setFocusedAugmentIndex] = useState(0)
+  const augmentListboxRef = useRef<HTMLUListElement>(null)
 
-  const open = slots.find((s) => s.sort_order === openSlot) ?? null
-  const openCandidates = open ? (candidates[open.label] ?? []) : []
-  const panelOpen = open !== null && openCandidates.length > 0
+  const expandedSlot = augmentSlots.find((s) => s.sortOrder === expandedSlotSortOrder) ?? null
+  const expandedSlotAugments = expandedSlot ? (augmentsBySlotLabel[expandedSlot.label] ?? []) : []
+  const isAugmentListboxShown = expandedSlot !== null && expandedSlotAugments.length > 0
 
   return (
     <div className="resources-augment-slots">
       <ul className="resources-augment-list">
-        {slots.map((slot) => (
-          <li key={slot.sort_order} className="resources-augment-slot" data-color={slot.label}>
-            {renderSlot(slot)}
+        {augmentSlots.map((slot) => (
+          <li key={slot.sortOrder} className="resources-augment-slot" data-color={slot.label}>
+            {renderedAugmentSlot(slot)}
           </li>
         ))}
       </ul>
-      {panelOpen && (
+      {isAugmentListboxShown && (
         <ul
-          ref={listRef}
+          ref={augmentListboxRef}
           className="resources-augment-candidates"
-          id={candidatePanelId(open.sort_order)}
+          id={augmentListboxId(expandedSlot.sortOrder)}
           role="listbox"
-          aria-label={`Augments that fit the ${formatSlotLabel(open.label)} slot`}
-          onKeyDown={handleListKeyDown}
+          aria-label={`Augments that fit the ${titleCasedSlotLabel(expandedSlot.label)} slot`}
+          onKeyDown={moveAugmentFocusWithArrowKeys}
         >
-          {openCandidates.map((augment, index) => (
+          {expandedSlotAugments.map((augment, index) => (
             <li
-              key={augment.augment_id}
+              key={augment.id}
               className={
                 'resources-augment-candidate hoverable' +
-                (picked === augment.augment_id ? ' selected' : '')
+                (pickedAugmentId === augment.id ? ' selected' : '')
               }
               role="option"
-              aria-selected={picked === augment.augment_id}
-              tabIndex={index === activeIndex ? 0 : -1}
+              aria-selected={pickedAugmentId === augment.id}
+              tabIndex={index === focusedAugmentIndex ? 0 : -1}
               onClick={() => {
-                setActiveIndex(index)
-                togglePicked(augment.augment_id)
+                setFocusedAugmentIndex(index)
+                togglePickedAugment(augment.id)
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  togglePicked(augment.augment_id)
+                  togglePickedAugment(augment.id)
                 }
               }}
             >
               <span className="resources-augment-candidate-name">{augment.name}</span>
-              {augment.min_level !== null && (
-                <span className="resources-augment-candidate-level">ML {augment.min_level}</span>
+              {augment.minimumLevel !== null && (
+                <span className="resources-augment-candidate-level">ML {augment.minimumLevel}</span>
               )}
-              {augment.bonuses.length > 0 && (
+              {augment.bonusNames.length > 0 && (
                 <span className="resources-augment-candidate-bonuses">
-                  {augment.bonuses.join(' · ')}
+                  {augment.bonusNames.join(' · ')}
                 </span>
               )}
             </li>
@@ -74,61 +74,61 @@ export function AugmentSlotList({ slots, candidates }: AugmentSlotListProps): JS
     </div>
   )
 
-  function togglePicked(augmentId: number): void {
-    setPicked((current) => (current === augmentId ? null : augmentId))
+  function togglePickedAugment(augmentId: number): void {
+    setPickedAugmentId((current) => (current === augmentId ? null : augmentId))
   }
 
-  function handleListKeyDown(event: KeyboardEvent<HTMLUListElement>): void {
+  function moveAugmentFocusWithArrowKeys(event: KeyboardEvent<HTMLUListElement>): void {
     const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0
     if (step === 0) return
     event.preventDefault()
-    const next = Math.min(Math.max(activeIndex + step, 0), openCandidates.length - 1)
-    setActiveIndex(next)
-    const options = listRef.current?.querySelectorAll<HTMLElement>('[role="option"]')
-    options?.[next]?.focus()
+    const nextFocusedIndex = Math.min(Math.max(focusedAugmentIndex + step, 0), expandedSlotAugments.length - 1)
+    setFocusedAugmentIndex(nextFocusedIndex)
+    const augmentOptionElements = augmentListboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]')
+    augmentOptionElements?.[nextFocusedIndex]?.focus()
   }
 
-  function renderSlot(slot: ItemAugmentSlot): JSX.Element {
-    const isFamily = isFamilySlot(slot.family)
-    const gem = isFamily ? null : (
+  function renderedAugmentSlot(slot: ItemAugmentSlot): JSX.Element {
+    const isFamily = isCraftingSlotFamily(slot.family)
+    const gemIcon = isFamily ? null : (
       <span
         className="resources-augment-gem"
         role="img"
         aria-label={`${slot.label} augment slot`}
       />
     )
-    const label = formatSlotLabel(slot.label)
-    const list = candidates[slot.label] ?? []
+    const displayedSlotLabel = titleCasedSlotLabel(slot.label)
+    const slotAugments = augmentsBySlotLabel[slot.label] ?? []
 
-    if (list.length === 0 && !isFamily) {
-      return <TooltipWrapper text={`${label} augment slot`}>{gem}</TooltipWrapper>
+    if (slotAugments.length === 0 && !isFamily) {
+      return <HoverTooltip text={`${displayedSlotLabel} augment slot`}>{gemIcon}</HoverTooltip>
     }
 
-    if (list.length === 0) {
-      return <span className="resources-augment-pill">{label}</span>
+    if (slotAugments.length === 0) {
+      return <span className="resources-augment-pill">{displayedSlotLabel}</span>
     }
 
-    const expanded = openSlot === slot.sort_order
+    const isExpanded = expandedSlotSortOrder === slot.sortOrder
     return (
       <button
         type="button"
         className="resources-augment-pill resources-augment-control hoverable"
-        aria-expanded={expanded}
-        aria-controls={expanded ? candidatePanelId(slot.sort_order) : undefined}
+        aria-expanded={isExpanded}
+        aria-controls={isExpanded ? augmentListboxId(slot.sortOrder) : undefined}
         onClick={() => {
-          setOpenSlot(expanded ? null : slot.sort_order)
-          setPicked(null)
-          setActiveIndex(0)
+          setExpandedSlotSortOrder(isExpanded ? null : slot.sortOrder)
+          setPickedAugmentId(null)
+          setFocusedAugmentIndex(0)
         }}
       >
-        {gem}
-        <span className="resources-augment-label">{label}</span>
-        {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        {gemIcon}
+        <span className="resources-augment-label">{displayedSlotLabel}</span>
+        {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
       </button>
     )
   }
 }
 
-function candidatePanelId(sortOrder: number): string {
-  return `augment-candidates-${sortOrder}`
+function augmentListboxId(slotSortOrder: number): string {
+  return `augment-candidates-${slotSortOrder}`
 }

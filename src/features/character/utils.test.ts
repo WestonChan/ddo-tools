@@ -1,20 +1,20 @@
 import { describe, it, expect } from 'vitest'
 import {
-  capitalize,
-  computeLifeNumbers,
-  computeMismatchWarnings,
-  computeHistoryStacks,
-  formatBonusList,
-  formatClassSummary,
-  formatRace,
-  getCurrentLifeNumber,
-  getPlannedBuildPastLives,
-  sumAllStacks,
-  updateCategoryMap,
+  capitalized,
+  lifeNumbersOf,
+  missingPastLifeWarnings,
+  stackCountsEarnedBy,
+  summedBonusText,
+  classSplitLabel,
+  raceLabelOf,
+  currentLifeNumberOf,
+  desiredPastLifeCountOf,
+  totalStackCountOf,
+  withStackCount,
 } from './utils'
 import type { Character, Life, PastLifeCounts } from './types'
 
-function makeCharacter(overrides: Partial<Character> = {}): Character {
+function createTestCharacter(fields: Partial<Character> = {}): Character {
   return {
     id: 'test-char',
     name: 'Test',
@@ -23,11 +23,11 @@ function makeCharacter(overrides: Partial<Character> = {}): Character {
     untrackedLives: { heroic: {}, racial: {}, iconic: {}, epic: {} },
     createdAt: '',
     updatedAt: '',
-    ...overrides,
+    ...fields,
   }
 }
 
-function makeLife(overrides: Partial<Life> = {}): Life {
+function createTestLife(fields: Partial<Life> = {}): Life {
   return {
     id: 'life-1',
     name: '',
@@ -36,56 +36,56 @@ function makeLife(overrides: Partial<Life> = {}): Life {
     feats: [],
     enhancements: [],
     status: 'completed',
-    ...overrides,
+    ...fields,
   }
 }
 
 describe('capitalize', () => {
   it('capitalizes first letter', () => {
-    expect(capitalize('fighter')).toBe('Fighter')
+    expect(capitalized('fighter')).toBe('Fighter')
   })
 
   it('handles empty string', () => {
-    expect(capitalize('')).toBe('')
+    expect(capitalized('')).toBe('')
   })
 })
 
-describe('formatClassSummary', () => {
+describe('classSplitLabel', () => {
   it('formats single class', () => {
-    const life = makeLife({ classes: [{ classId: 'paladin', levels: 20 }] })
-    expect(formatClassSummary(life)).toBe('20 Paladin')
+    const life = createTestLife({ classes: [{ classId: 'paladin', levels: 20 }] })
+    expect(classSplitLabel(life)).toBe('20 Paladin')
   })
 
   it('formats multiclass with separator', () => {
-    const life = makeLife({
+    const life = createTestLife({
       classes: [
         { classId: 'paladin', levels: 18 },
         { classId: 'rogue', levels: 2 },
       ],
     })
-    expect(formatClassSummary(life)).toBe('18 Paladin / 2 Rogue')
+    expect(classSplitLabel(life)).toBe('18 Paladin / 2 Rogue')
   })
 })
 
-describe('computeHistoryStacks', () => {
+describe('stackCountsEarnedBy', () => {
   it('counts heroic TRs by class', () => {
-    const lives = [makeLife({ reincarnation: { type: 'heroic' } })]
-    expect(computeHistoryStacks(lives)).toEqual({ fighter: 1 })
+    const lives = [createTestLife({ reincarnation: { type: 'heroic' } })]
+    expect(stackCountsEarnedBy(lives)).toEqual({ fighter: 1 })
   })
 
   it('counts epic TRs by feat', () => {
-    const lives = [makeLife({ reincarnation: { type: 'epic', epicFeatId: 'doublestrike' } })]
-    expect(computeHistoryStacks(lives)).toEqual({ doublestrike: 1 })
+    const lives = [createTestLife({ reincarnation: { type: 'epic', epicFeatId: 'doublestrike' } })]
+    expect(stackCountsEarnedBy(lives)).toEqual({ doublestrike: 1 })
   })
 
   it('skips epic TRs without epicFeatId', () => {
-    const lives = [makeLife({ reincarnation: { type: 'epic' } })]
-    expect(computeHistoryStacks(lives)).toEqual({})
+    const lives = [createTestLife({ reincarnation: { type: 'epic' } })]
+    expect(stackCountsEarnedBy(lives)).toEqual({})
   })
 
   it('counts only majority class for multiclass heroic TR', () => {
     const lives = [
-      makeLife({
+      createTestLife({
         classes: [
           { classId: 'paladin', levels: 18 },
           { classId: 'rogue', levels: 2 },
@@ -93,121 +93,121 @@ describe('computeHistoryStacks', () => {
         reincarnation: { type: 'heroic' },
       }),
     ]
-    expect(computeHistoryStacks(lives)).toEqual({ paladin: 1 })
+    expect(stackCountsEarnedBy(lives)).toEqual({ paladin: 1 })
   })
 
   it('ignores non-completed lives', () => {
-    const lives = [makeLife({ status: 'current', reincarnation: undefined })]
-    expect(computeHistoryStacks(lives)).toEqual({})
+    const lives = [createTestLife({ status: 'current', reincarnation: undefined })]
+    expect(stackCountsEarnedBy(lives)).toEqual({})
   })
 })
 
-describe('sumAllStacks', () => {
+describe('totalStackCountOf', () => {
   it('sums all categories', () => {
-    const stacks: PastLifeCounts = {
+    const pastLifeCounts: PastLifeCounts = {
       heroic: { fighter: 2, paladin: 1 },
       racial: { human: 2 },
       iconic: {},
       epic: { doublestrike: 3 },
     }
-    expect(sumAllStacks(stacks)).toBe(8)
+    expect(totalStackCountOf(pastLifeCounts)).toBe(8)
   })
 
   it('returns 0 for empty stacks', () => {
-    expect(sumAllStacks({ heroic: {}, racial: {}, iconic: {}, epic: {} })).toBe(0)
+    expect(totalStackCountOf({ heroic: {}, racial: {}, iconic: {}, epic: {} })).toBe(0)
   })
 })
 
-describe('formatRace', () => {
+describe('raceLabelOf', () => {
   it('capitalizes race name', () => {
-    expect(formatRace('human')).toBe('Human')
+    expect(raceLabelOf('human')).toBe('Human')
   })
 
   it('handles single-word races', () => {
-    expect(formatRace('elf')).toBe('Elf')
+    expect(raceLabelOf('elf')).toBe('Elf')
   })
 
   it('title-cases hyphenated race ids', () => {
-    expect(formatRace('eladrin-chaosmancer')).toBe('Eladrin Chaosmancer')
+    expect(raceLabelOf('eladrin-chaosmancer')).toBe('Eladrin Chaosmancer')
   })
 })
 
-describe('formatClassSummary kebab-case classes', () => {
+describe('classSplitLabel kebab-case classes', () => {
   it('title-cases hyphenated class ids', () => {
-    const life = makeLife({
+    const life = createTestLife({
       classes: [
         { classId: 'favored-soul', levels: 12 },
         { classId: 'artificer', levels: 6 },
       ],
     })
-    expect(formatClassSummary(life)).toBe('12 Favored Soul / 6 Artificer')
+    expect(classSplitLabel(life)).toBe('12 Favored Soul / 6 Artificer')
   })
 })
 
-describe('computeLifeNumbers', () => {
+describe('lifeNumbersOf', () => {
   it('starts at 1 with no untracked lives', () => {
-    const char = makeCharacter({
-      lives: [makeLife({ id: 'a', status: 'current', reincarnation: undefined })],
+    const character = createTestCharacter({
+      lives: [createTestLife({ id: 'a', status: 'current', reincarnation: undefined })],
     })
-    const numbers = computeLifeNumbers(char)
-    expect(numbers.get('a')).toBe(1)
+    const lifeNumbersByLifeId = lifeNumbersOf(character)
+    expect(lifeNumbersByLifeId.get('a')).toBe(1)
   })
 
   it('offsets by untracked lives count', () => {
-    const char = makeCharacter({
+    const character = createTestCharacter({
       untrackedLives: { heroic: { fighter: 3 }, racial: {}, iconic: {}, epic: {} },
-      lives: [makeLife({ id: 'a', status: 'current', reincarnation: undefined })],
+      lives: [createTestLife({ id: 'a', status: 'current', reincarnation: undefined })],
     })
-    const numbers = computeLifeNumbers(char)
-    expect(numbers.get('a')).toBe(4)
+    const lifeNumbersByLifeId = lifeNumbersOf(character)
+    expect(lifeNumbersByLifeId.get('a')).toBe(4)
   })
 
   it('increments on each reincarnation', () => {
-    const char = makeCharacter({
+    const character = createTestCharacter({
       lives: [
-        makeLife({ id: 'a', reincarnation: { type: 'heroic' } }),
-        makeLife({
+        createTestLife({ id: 'a', reincarnation: { type: 'heroic' } }),
+        createTestLife({
           id: 'b',
           reincarnation: { type: 'epic', epicFeatId: 'doublestrike' },
         }),
-        makeLife({ id: 'c', status: 'current', reincarnation: undefined }),
+        createTestLife({ id: 'c', status: 'current', reincarnation: undefined }),
       ],
       currentLifeIndex: 2,
     })
-    const numbers = computeLifeNumbers(char)
-    expect(numbers.get('a')).toBe(1)
-    expect(numbers.get('b')).toBe(2)
-    expect(numbers.get('c')).toBe(3)
+    const lifeNumbersByLifeId = lifeNumbersOf(character)
+    expect(lifeNumbersByLifeId.get('a')).toBe(1)
+    expect(lifeNumbersByLifeId.get('b')).toBe(2)
+    expect(lifeNumbersByLifeId.get('c')).toBe(3)
   })
 })
 
-describe('getCurrentLifeNumber', () => {
+describe('currentLifeNumberOf', () => {
   it('returns current life number', () => {
-    const char = makeCharacter({
+    const character = createTestCharacter({
       untrackedLives: { heroic: { fighter: 2 }, racial: {}, iconic: {}, epic: {} },
       lives: [
-        makeLife({ id: 'a', reincarnation: { type: 'heroic' } }),
-        makeLife({ id: 'b', status: 'current', reincarnation: undefined }),
+        createTestLife({ id: 'a', reincarnation: { type: 'heroic' } }),
+        createTestLife({ id: 'b', status: 'current', reincarnation: undefined }),
       ],
       currentLifeIndex: 1,
     })
-    expect(getCurrentLifeNumber(char)).toBe(4)
+    expect(currentLifeNumberOf(character)).toBe(4)
   })
 
   it('returns 1 for empty character', () => {
-    const char = makeCharacter({ lives: [], currentLifeIndex: 0 })
-    expect(getCurrentLifeNumber(char)).toBe(1)
+    const character = createTestCharacter({ lives: [], currentLifeIndex: 0 })
+    expect(currentLifeNumberOf(character)).toBe(1)
   })
 })
 
-describe('getPlannedBuildPastLives', () => {
+describe('desiredPastLifeCountOf', () => {
   it('returns 0 when no desiredPastLives', () => {
-    const life = makeLife({ status: 'planned' })
-    expect(getPlannedBuildPastLives(life)).toBe(0)
+    const life = createTestLife({ status: 'planned' })
+    expect(desiredPastLifeCountOf(life)).toBe(0)
   })
 
   it('counts all categories', () => {
-    const life = makeLife({
+    const life = createTestLife({
       status: 'planned',
       desiredPastLives: {
         heroic: { barbarian: 3 },
@@ -216,18 +216,18 @@ describe('getPlannedBuildPastLives', () => {
         epic: { doublestrike: 3 },
       },
     })
-    expect(getPlannedBuildPastLives(life)).toBe(7)
+    expect(desiredPastLifeCountOf(life)).toBe(7)
   })
 })
 
-describe('computeMismatchWarnings', () => {
+describe('missingPastLifeWarnings', () => {
   it('returns empty array when no desired past lives', () => {
-    const char = makeCharacter()
-    expect(computeMismatchWarnings(undefined, char)).toEqual([])
+    const character = createTestCharacter()
+    expect(missingPastLifeWarnings(undefined, character)).toEqual([])
   })
 
   it('returns empty array when character meets all desired stacks', () => {
-    const char = makeCharacter({
+    const character = createTestCharacter({
       untrackedLives: {
         heroic: { fighter: 3 },
         racial: {},
@@ -235,17 +235,17 @@ describe('computeMismatchWarnings', () => {
         epic: {},
       },
     })
-    const desired: PastLifeCounts = {
+    const desiredPastLives: PastLifeCounts = {
       heroic: { fighter: 2 },
       racial: {},
       iconic: {},
       epic: {},
     }
-    expect(computeMismatchWarnings(desired, char)).toEqual([])
+    expect(missingPastLifeWarnings(desiredPastLives, character)).toEqual([])
   })
 
   it('returns warnings when character is missing desired stacks', () => {
-    const char = makeCharacter({
+    const character = createTestCharacter({
       untrackedLives: {
         heroic: { fighter: 1 },
         racial: {},
@@ -253,69 +253,69 @@ describe('computeMismatchWarnings', () => {
         epic: {},
       },
     })
-    const desired: PastLifeCounts = {
+    const desiredPastLives: PastLifeCounts = {
       heroic: { fighter: 3 },
       racial: {},
       iconic: {},
       epic: {},
     }
-    const warnings = computeMismatchWarnings(desired, char)
+    const warnings = missingPastLifeWarnings(desiredPastLives, character)
     expect(warnings).toHaveLength(1)
     expect(warnings[0]).toContain('Fighter')
     expect(warnings[0]).toContain('heroic')
   })
 
   it('accounts for history stacks from completed lives', () => {
-    const char = makeCharacter({
-      lives: [makeLife({ reincarnation: { type: 'heroic' } })],
+    const character = createTestCharacter({
+      lives: [createTestLife({ reincarnation: { type: 'heroic' } })],
       untrackedLives: { heroic: {}, racial: {}, iconic: {}, epic: {} },
     })
-    const desired: PastLifeCounts = {
+    const desiredPastLives: PastLifeCounts = {
       heroic: { fighter: 1 },
       racial: {},
       iconic: {},
       epic: {},
     }
-    expect(computeMismatchWarnings(desired, char)).toEqual([])
+    expect(missingPastLifeWarnings(desiredPastLives, character)).toEqual([])
   })
 })
 
-describe('formatBonusList', () => {
+describe('summedBonusText', () => {
   it('returns empty string for empty array', () => {
-    expect(formatBonusList([])).toBe('')
+    expect(summedBonusText([])).toBe('')
   })
 
   it('sums matching suffixes', () => {
-    expect(formatBonusList(['+10 HP', '+10 HP'])).toBe('+20 HP')
+    expect(summedBonusText(['+10 HP', '+10 HP'])).toBe('+20 HP')
   })
 
   it('groups different suffixes separately', () => {
-    expect(formatBonusList(['+10 HP', '+3 STR'])).toBe('+10 HP, +3 STR')
+    expect(summedBonusText(['+10 HP', '+3 STR'])).toBe('+10 HP, +3 STR')
   })
 
   it('handles comma-separated parts within a single string', () => {
-    expect(formatBonusList(['+1 Balance, +1 CON, +1 Racial AP'])).toBe(
+    expect(summedBonusText(['+1 Balance, +1 CON, +1 Racial AP'])).toBe(
       '+1 Balance, +1 CON, +1 Racial AP',
     )
   })
 
   it('preserves unsummable parts', () => {
-    expect(formatBonusList(['Random effect'])).toBe('Random effect')
+    expect(summedBonusText(['Random effect'])).toBe('Random effect')
   })
 })
 
-describe('updateCategoryMap', () => {
+describe('withStackCount', () => {
   it('sets a value', () => {
-    expect(updateCategoryMap({}, 'fighter', 2)).toEqual({ fighter: 2 })
+    expect(withStackCount({}, 'fighter', 2)).toEqual({ fighter: 2 })
   })
 
   it('deletes when value <= 0', () => {
-    expect(updateCategoryMap({ fighter: 1 }, 'fighter', 0)).toEqual({})
+    expect(withStackCount({ fighter: 1 }, 'fighter', 0)).toEqual({})
   })
 
   it('does not mutate original', () => {
     const original = { fighter: 1 }
-    updateCategoryMap(original, 'fighter', 0)
+    withStackCount(original, 'fighter', 0)
     expect(original).toEqual({ fighter: 1 })
   })
 })

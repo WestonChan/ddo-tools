@@ -1,75 +1,75 @@
 
-type ChangeListener = (event: MediaQueryListEvent) => void
+type MediaQueryChangeListener = (event: MediaQueryListEvent) => void
 
-export interface StubbedQuery {
+export interface StubbedMediaQuery {
   matches: boolean
-  listeners: Set<ChangeListener>
-  removed: number
+  changeListeners: Set<MediaQueryChangeListener>
+  removedListenerCount: number
 }
 
 export interface MatchMediaStub {
-  stateFor(query: string): StubbedQuery
+  stubbedMediaQueryFor(query: string): StubbedMediaQuery
   emitChange(query: string, matches: boolean): void
   restore(): void
 }
 
-let active: MatchMediaStub | null = null
+let installedStub: MatchMediaStub | null = null
 
-export function installMatchMedia(initial: boolean | ((query: string) => boolean)): MatchMediaStub {
+export function installMatchMedia(initialMatches: boolean | ((query: string) => boolean)): MatchMediaStub {
   restoreMatchMedia()
-  const previous = window.matchMedia
-  const queries = new Map<string, StubbedQuery>()
-  const initialFor = typeof initial === 'function' ? initial : (): boolean => initial
+  const originalMatchMedia = window.matchMedia
+  const stubbedMediaQueriesByQuery = new Map<string, StubbedMediaQuery>()
+  const initialMatchesFor = typeof initialMatches === 'function' ? initialMatches : (): boolean => initialMatches
 
-  function stateFor(query: string): StubbedQuery {
-    const existing = queries.get(query)
+  function stubbedMediaQueryFor(query: string): StubbedMediaQuery {
+    const existing = stubbedMediaQueriesByQuery.get(query)
     if (existing) return existing
-    const created: StubbedQuery = { matches: initialFor(query), listeners: new Set(), removed: 0 }
-    queries.set(query, created)
+    const created: StubbedMediaQuery = { matches: initialMatchesFor(query), changeListeners: new Set(), removedListenerCount: 0 }
+    stubbedMediaQueriesByQuery.set(query, created)
     return created
   }
 
   window.matchMedia = ((query: string) => {
-    const state = stateFor(query)
+    const stubbedMediaQuery = stubbedMediaQueryFor(query)
     return {
       get matches(): boolean {
-        return state.matches
+        return stubbedMediaQuery.matches
       },
       media: query,
       onchange: null,
       addListener: () => {},
       removeListener: () => {},
-      addEventListener: (_type: string, listener: ChangeListener) => {
-        state.listeners.add(listener)
+      addEventListener: (_type: string, listener: MediaQueryChangeListener) => {
+        stubbedMediaQuery.changeListeners.add(listener)
       },
-      removeEventListener: (_type: string, listener: ChangeListener) => {
-        state.listeners.delete(listener)
-        state.removed += 1
+      removeEventListener: (_type: string, listener: MediaQueryChangeListener) => {
+        stubbedMediaQuery.changeListeners.delete(listener)
+        stubbedMediaQuery.removedListenerCount += 1
       },
       dispatchEvent: () => false,
     }
   }) as unknown as typeof window.matchMedia
 
   const stub: MatchMediaStub = {
-    stateFor,
+    stubbedMediaQueryFor,
     emitChange(query, matches) {
-      const state = stateFor(query)
+      const state = stubbedMediaQueryFor(query)
       state.matches = matches
-      state.listeners.forEach((listener) =>
+      state.changeListeners.forEach((listener) =>
         listener({ matches, media: query } as MediaQueryListEvent),
       )
     },
     restore() {
-      window.matchMedia = previous
-      queries.clear()
-      if (active === stub) active = null
+      window.matchMedia = originalMatchMedia
+      stubbedMediaQueriesByQuery.clear()
+      if (installedStub === stub) installedStub = null
     },
   }
-  active = stub
+  installedStub = stub
   return stub
 }
 
 export function restoreMatchMedia(): void {
-  active?.restore()
-  active = null
+  installedStub?.restore()
+  installedStub = null
 }

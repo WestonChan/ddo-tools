@@ -4,18 +4,18 @@ import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
 import { BottomBar, type BuildWarning } from './BottomBar'
 import { ErrorCard, ErrorScreen } from '../components'
-import { useAnyModalActive, useFaviconAccent, useLocalStorage, useMediaQuery } from '../hooks'
-import { captureBoundary } from '../lib/sentry'
+import { useIsAnyModalActive, useAccentColoredFavicon, useLocalStorage, useMediaQuery } from '../hooks'
+import { captureBoundaryError } from '../lib/sentry'
 import { BuildSidePanel } from '../features/character'
 import './App.css'
 
-const warnings: BuildWarning[] = []
+const buildWarnings: BuildWarning[] = []
 
-const ViewFallback = (props: FallbackProps): JSX.Element => (
+const ViewCrashScreen = (props: FallbackProps): JSX.Element => (
   <ErrorScreen
     {...props}
     heading="This view crashed"
-    labels="runtime"
+    issueLabels="runtime"
     actions={({ resetErrorBoundary }) => (
       <button
         type="button"
@@ -28,83 +28,83 @@ const ViewFallback = (props: FallbackProps): JSX.Element => (
   />
 )
 
-const BottomBarFallback = (props: FallbackProps): JSX.Element => (
-  <ErrorCard {...props} context="bottom-bar" labels="runtime" />
+const BottomBarCrashCard = (props: FallbackProps): JSX.Element => (
+  <ErrorCard {...props} issueTitle="bottom-bar" issueLabels="runtime" />
 )
 
 function AppLayout(): JSX.Element {
-  useFaviconAccent()
-  const [storedExpanded, setStoredExpanded] = useLocalStorage('ddo-nav-bar-expanded', true)
-  const [navBarExpanded, setNavBarExpanded] = useState(() => {
+  useAccentColoredFavicon()
+  const [prefersExpandedNavBar, setPrefersExpandedNavBar] = useLocalStorage('ddo-nav-bar-expanded', true)
+  const [isNavBarExpanded, setIsNavBarExpanded] = useState(() => {
     const width = window.innerWidth
     if (width < 900) return false
-    return storedExpanded
+    return prefersExpandedNavBar
   })
 
-  const prevWidth = useRef(window.innerWidth)
+  const previousWindowWidth = useRef(window.innerWidth)
   useEffect(() => {
-    function handleResize(): void {
+    function syncNavBarToWindowWidth(): void {
       const width = window.innerWidth
-      if (prevWidth.current >= 900 && width < 900) {
-        setNavBarExpanded(false)
+      if (previousWindowWidth.current >= 900 && width < 900) {
+        setIsNavBarExpanded(false)
       }
-      if (prevWidth.current < 900 && width >= 900) {
-        setNavBarExpanded(storedExpanded)
+      if (previousWindowWidth.current < 900 && width >= 900) {
+        setIsNavBarExpanded(prefersExpandedNavBar)
       }
-      prevWidth.current = width
+      previousWindowWidth.current = width
     }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [storedExpanded])
+    window.addEventListener('resize', syncNavBarToWindowWidth)
+    return () => window.removeEventListener('resize', syncNavBarToWindowWidth)
+  }, [prefersExpandedNavBar])
 
   function toggleNavBar(): void {
-    const next = !navBarExpanded
-    setNavBarExpanded(next)
-    setStoredExpanded(next)
+    const next = !isNavBarExpanded
+    setIsNavBarExpanded(next)
+    setPrefersExpandedNavBar(next)
   }
 
   const collapseNavBar = useCallback((): void => {
-    setNavBarExpanded(false)
-    setStoredExpanded(false)
-  }, [setStoredExpanded])
+    setIsNavBarExpanded(false)
+    setPrefersExpandedNavBar(false)
+  }, [setPrefersExpandedNavBar])
 
-  const isMobileNav = useMediaQuery('(max-width: 599px)')
-  const navOverlayActive = navBarExpanded && isMobileNav
+  const isMobileViewport = useMediaQuery('(max-width: 599px)')
+  const isNavBarOverlayOpen = isNavBarExpanded && isMobileViewport
 
   const matches = useMatches()
-  const showRightPanel = matches.some((m) => m.staticData.showStatsPanel)
+  const hasBuildSidePanel = matches.some((m) => m.staticData.hasBuildSidePanel)
   const { pathname } = useLocation()
 
-  const modalActive = useAnyModalActive()
-  const inertProp = modalActive || undefined
-  const navOverlayInert = navOverlayActive || undefined
+  const isAnyModalOpen = useIsAnyModalActive()
+  const inertWhileModalOpen = isAnyModalOpen || undefined
+  const inertWhileNavBarOverlayOpen = isNavBarOverlayOpen || undefined
 
   return (
     <div className="app-shell">
-      <div className={`app${navBarExpanded ? '' : ' app--nav-bar-collapsed'}${showRightPanel ? '' : ' app--no-stats'}`}>
+      <div className={`app${isNavBarExpanded ? '' : ' app--nav-bar-collapsed'}${hasBuildSidePanel ? '' : ' app--no-stats'}`}>
         <AppNavBar
-          expanded={navBarExpanded}
+          isExpanded={isNavBarExpanded}
           onToggleExpanded={toggleNavBar}
           onCollapse={collapseNavBar}
-          overlayActive={navOverlayActive}
-          inert={inertProp}
+          isFullscreenOverlay={isNavBarOverlayOpen}
+          inert={inertWhileModalOpen}
         />
 
-        <div className="app-content" inert={navOverlayInert}>
+        <div className="app-content" inert={inertWhileNavBarOverlayOpen}>
           <ErrorBoundary
-            FallbackComponent={ViewFallback}
-            onError={captureBoundary}
+            FallbackComponent={ViewCrashScreen}
+            onError={captureBoundaryError}
             resetKeys={[pathname]}
           >
             <Outlet />
           </ErrorBoundary>
         </div>
 
-        {showRightPanel && <BuildSidePanel inert={navOverlayInert} />}
+        {hasBuildSidePanel && <BuildSidePanel inert={inertWhileNavBarOverlayOpen} />}
       </div>
 
-      <ErrorBoundary FallbackComponent={BottomBarFallback} onError={captureBoundary}>
-        <BottomBar warnings={warnings} inert={inertProp || navOverlayInert} />
+      <ErrorBoundary FallbackComponent={BottomBarCrashCard} onError={captureBoundaryError}>
+        <BottomBar warnings={buildWarnings} inert={inertWhileModalOpen || inertWhileNavBarOverlayOpen} />
       </ErrorBoundary>
     </div>
   )

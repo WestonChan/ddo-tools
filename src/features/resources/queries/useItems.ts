@@ -1,92 +1,92 @@
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query'
 import {
-  fetchAdventurePacks,
-  fetchAugmentsForSlot,
-  fetchItemDetail,
-  fetchItemIdsByPack,
-  fetchItemIdsByStat,
-  fetchItemRows,
-  fetchStatOptions,
-  slotTakesCandidateList,
-  type AugmentCandidate,
+  fetchAdventurePackNames,
+  fetchAugmentsFittingSlot,
+  fetchItem,
+  fetchItemIdsInPack,
+  fetchItemIdsWithStat,
+  fetchItemSummaries,
+  fetchStatNames,
+  canListFittingAugments,
+  type AugmentSummary,
   type ItemAugmentSlot,
-  type ItemDetail,
-  type ItemRow,
+  type Item,
+  type ItemSummary,
 } from './items'
 
 
-const FOREVER = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
+const NEVER_STALE_QUERY_OPTIONS = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
 
-export const itemKeys = {
-  rows: ['items', 'rows'] as const,
-  detail: (id: number) => ['items', 'detail', id] as const,
-  packs: ['items', 'packs'] as const,
-  stats: ['items', 'stats'] as const,
-  byStat: (stat: string) => ['items', 'by-stat', stat] as const,
-  byPack: (pack: string) => ['items', 'by-pack', pack] as const,
-  augments: (label: string) => ['augments', 'for-slot', label] as const,
+export const resourceQueryKeys = {
+  itemSummaries: ['items', 'rows'] as const,
+  item: (id: number) => ['items', 'detail', id] as const,
+  adventurePackNames: ['items', 'packs'] as const,
+  statNames: ['items', 'stats'] as const,
+  itemIdsWithStat: (statName: string) => ['items', 'by-stat', statName] as const,
+  itemIdsInPack: (packName: string) => ['items', 'by-pack', packName] as const,
+  augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
 }
 
-export function useItemRows(enabled = true): UseQueryResult<ItemRow[]> {
-  return useQuery({ queryKey: itemKeys.rows, queryFn: fetchItemRows, enabled, ...FOREVER })
+export function useItemSummaries(isFetchEnabled = true): UseQueryResult<ItemSummary[]> {
+  return useQuery({ queryKey: resourceQueryKeys.itemSummaries, queryFn: fetchItemSummaries, enabled: isFetchEnabled, ...NEVER_STALE_QUERY_OPTIONS })
 }
 
-export function useItemDetail(id: number | null): UseQueryResult<ItemDetail> {
+export function useItem(id: number | null): UseQueryResult<Item> {
   return useQuery({
-    queryKey: itemKeys.detail(id ?? -1),
-    queryFn: () => fetchItemDetail(id as number),
+    queryKey: resourceQueryKeys.item(id ?? -1),
+    queryFn: () => fetchItem(id as number),
     enabled: id !== null,
     retry: false,
-    ...FOREVER,
+    ...NEVER_STALE_QUERY_OPTIONS,
   })
 }
 
-export function useAdventurePacks(): UseQueryResult<string[]> {
-  return useQuery({ queryKey: itemKeys.packs, queryFn: fetchAdventurePacks, ...FOREVER })
+export function useAdventurePackNames(): UseQueryResult<string[]> {
+  return useQuery({ queryKey: resourceQueryKeys.adventurePackNames, queryFn: fetchAdventurePackNames, ...NEVER_STALE_QUERY_OPTIONS })
 }
 
-export function useStatOptions(): UseQueryResult<string[]> {
-  return useQuery({ queryKey: itemKeys.stats, queryFn: fetchStatOptions, ...FOREVER })
+export function useStatNames(): UseQueryResult<string[]> {
+  return useQuery({ queryKey: resourceQueryKeys.statNames, queryFn: fetchStatNames, ...NEVER_STALE_QUERY_OPTIONS })
 }
 
-export function useItemIdsByStats(stats: readonly string[]): Set<number> | null {
-  const results = useQueries({
-    queries: stats.map((stat) => ({
-      queryKey: itemKeys.byStat(stat),
-      queryFn: () => fetchItemIdsByStat(stat),
-      ...FOREVER,
+export function useItemIdsWithAnyStat(statNames: readonly string[]): Set<number> | null {
+  const itemIdQueries = useQueries({
+    queries: statNames.map((stat) => ({
+      queryKey: resourceQueryKeys.itemIdsWithStat(stat),
+      queryFn: () => fetchItemIdsWithStat(stat),
+      ...NEVER_STALE_QUERY_OPTIONS,
     })),
   })
-  if (stats.length === 0) return null
-  if (results.some((r) => r.data === undefined)) return null
+  if (statNames.length === 0) return null
+  if (itemIdQueries.some((r) => r.data === undefined)) return null
   const union = new Set<number>()
-  for (const r of results) for (const id of r.data as Set<number>) union.add(id)
+  for (const r of itemIdQueries) for (const id of r.data as Set<number>) union.add(id)
   return union
 }
 
-export function useItemIdsByPack(pack: string): Set<number> | null {
-  const { data } = useQuery({
-    queryKey: itemKeys.byPack(pack),
-    queryFn: () => fetchItemIdsByPack(pack),
-    enabled: pack !== '',
-    ...FOREVER,
+export function useItemIdsInPack(packName: string): Set<number> | null {
+  const { data: itemIdsInPack } = useQuery({
+    queryKey: resourceQueryKeys.itemIdsInPack(packName),
+    queryFn: () => fetchItemIdsInPack(packName),
+    enabled: packName !== '',
+    ...NEVER_STALE_QUERY_OPTIONS,
   })
-  return pack === '' ? null : (data ?? null)
+  return packName === '' ? null : (itemIdsInPack ?? null)
 }
 
-export function useSlotCandidates(slots: readonly ItemAugmentSlot[]): Record<string, AugmentCandidate[]> {
-  const labels = [...new Set(slots.filter((s) => slotTakesCandidateList(s.family, s.label)).map((s) => s.label))]
-  const results = useQueries({
-    queries: labels.map((label) => ({
-      queryKey: itemKeys.augments(label),
-      queryFn: () => fetchAugmentsForSlot(label),
-      ...FOREVER,
+export function useFittingAugmentsBySlotLabel(augmentSlots: readonly ItemAugmentSlot[]): Record<string, AugmentSummary[]> {
+  const listedSlotLabels = [...new Set(augmentSlots.filter((s) => canListFittingAugments(s.family, s.label)).map((s) => s.label))]
+  const augmentQueries = useQueries({
+    queries: listedSlotLabels.map((label) => ({
+      queryKey: resourceQueryKeys.augmentsFittingSlot(label),
+      queryFn: () => fetchAugmentsFittingSlot(label),
+      ...NEVER_STALE_QUERY_OPTIONS,
     })),
   })
-  const out: Record<string, AugmentCandidate[]> = {}
-  labels.forEach((label, i) => {
-    const data = results[i]?.data
-    if (data) out[label] = data
+  const augmentsBySlotLabel: Record<string, AugmentSummary[]> = {}
+  listedSlotLabels.forEach((label, i) => {
+    const fittingAugments = augmentQueries[i]?.data
+    if (fittingAugments) augmentsBySlotLabel[label] = fittingAugments
   })
-  return out
+  return augmentsBySlotLabel
 }

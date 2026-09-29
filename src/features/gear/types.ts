@@ -14,5 +14,5 @@ export interface ItemEffect {
 
 export interface GearSet {
   name: string
-  items: Record<string, string>
+  itemIdsBySlot: Record<string, string>
 }

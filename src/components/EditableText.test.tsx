@@ -4,18 +4,18 @@ import { EditableText } from './EditableText'
 
 describe('EditableText', () => {
   it('renders value text in display mode', () => {
-    render(<EditableText value="My Build" onCommit={vi.fn()} />)
+    render(<EditableText text="My Build" onCommit={vi.fn()} />)
     expect(screen.getByText('My Build')).toBeInTheDocument()
   })
 
   it('renders placeholder when value is empty', () => {
-    render(<EditableText value="" placeholder="Name..." onCommit={vi.fn()} />)
+    render(<EditableText text="" placeholder="Name..." onCommit={vi.fn()} />)
     expect(screen.getByText('Name...')).toBeInTheDocument()
     expect(screen.getByText('Name...')).toHaveClass('editable-text-placeholder')
   })
 
   it('switches to input on click', () => {
-    render(<EditableText value="My Build" onCommit={vi.fn()} />)
+    render(<EditableText text="My Build" onCommit={vi.fn()} />)
     fireEvent.click(screen.getByText('My Build'))
     const input = screen.getByDisplayValue('My Build')
     expect(input).toBeInTheDocument()
@@ -24,7 +24,7 @@ describe('EditableText', () => {
 
   it('commits on Enter with trimmed value', () => {
     const onCommit = vi.fn()
-    render(<EditableText value="Old" onCommit={onCommit} />)
+    render(<EditableText text="Old" onCommit={onCommit} />)
     fireEvent.click(screen.getByText('Old'))
     const input = screen.getByDisplayValue('Old')
     fireEvent.change(input, { target: { value: '  New Value  ' } })
@@ -34,7 +34,7 @@ describe('EditableText', () => {
 
   it('reverts on Escape', () => {
     const onCommit = vi.fn()
-    render(<EditableText value="Original" onCommit={onCommit} />)
+    render(<EditableText text="Original" onCommit={onCommit} />)
     fireEvent.click(screen.getByText('Original'))
     const input = screen.getByDisplayValue('Original')
     fireEvent.change(input, { target: { value: 'Changed' } })
@@ -45,7 +45,7 @@ describe('EditableText', () => {
 
   it('commits on blur', () => {
     const onCommit = vi.fn()
-    render(<EditableText value="Start" onCommit={onCommit} />)
+    render(<EditableText text="Start" onCommit={onCommit} />)
     fireEvent.click(screen.getByText('Start'))
     const input = screen.getByDisplayValue('Start')
     fireEvent.change(input, { target: { value: 'Blurred' } })
@@ -54,19 +54,19 @@ describe('EditableText', () => {
   })
 
   it('click does not bubble to parent (enters edit mode)', () => {
-    const parentClick = vi.fn()
+    const parentClickListener = vi.fn()
     const onCommit = vi.fn()
     render(
-      <div onClick={parentClick}>
-        <EditableText value="Test" onCommit={onCommit} />
+      <div onClick={parentClickListener}>
+        <EditableText text="Test" onCommit={onCommit} />
       </div>,
     )
     fireEvent.click(screen.getByText('Test'))
-    expect(parentClick).not.toHaveBeenCalled()
+    expect(parentClickListener).not.toHaveBeenCalled()
     expect(screen.getByDisplayValue('Test')).toBeInTheDocument()
 
     const input = screen.getByDisplayValue('Test')
     fireEvent.click(input)
-    expect(parentClick).not.toHaveBeenCalled()
+    expect(parentClickListener).not.toHaveBeenCalled()
   })
 })

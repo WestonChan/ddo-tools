@@ -19,42 +19,42 @@ import {
 } from 'lucide-react'
 import { NavBarCharacterCard } from './NavBarCharacterCard'
 import { AmpersandMark } from '../components'
-import { useModalBehavior } from '../hooks'
+import { useModalAccessibility } from '../hooks'
 import './AppNavBar.css'
 
 
-interface NavItem {
-  id?: string
+interface NavBarLink {
+  sectionId?: string
   to: string
   label: string
   Icon: React.FC<{ size?: number }>
 }
 
-interface NavGroupDef {
+interface NavBarGroup {
   id: string
   label: string
   to?: string
   Icon?: React.FC<{ size?: number }>
-  items: NavItem[]
+  links: NavBarLink[]
 }
 
 function SkillsIcon(props: { size?: number }): JSX.Element {
   return <TableProperties {...props} style={{ transform: 'scaleX(-1)' }} />
 }
 
-const MAIN_NAV: NavGroupDef[] = [
+const NAV_BAR_GROUPS: NavBarGroup[] = [
   {
     id: 'build-plan',
     label: 'Build Plan',
     to: '/build-plan',
     Icon: NotepadText,
-    items: [
-      { id: 'levels', to: '/build-plan', label: 'Level Plan', Icon: ListOrdered },
-      { id: 'skills', to: '/build-plan', label: 'Skills', Icon: SkillsIcon },
-      { id: 'spells', to: '/build-plan', label: 'Spells', Icon: Sparkles },
-      { id: 'enhancements', to: '/build-plan', label: 'Enhancements', Icon: GitBranch },
-      { id: 'reaper', to: '/build-plan', label: 'Reaper', Icon: Skull },
-      { id: 'destinies', to: '/build-plan', label: 'Destinies', Icon: Orbit },
+    links: [
+      { sectionId: 'levels', to: '/build-plan', label: 'Level Plan', Icon: ListOrdered },
+      { sectionId: 'skills', to: '/build-plan', label: 'Skills', Icon: SkillsIcon },
+      { sectionId: 'spells', to: '/build-plan', label: 'Spells', Icon: Sparkles },
+      { sectionId: 'enhancements', to: '/build-plan', label: 'Enhancements', Icon: GitBranch },
+      { sectionId: 'reaper', to: '/build-plan', label: 'Reaper', Icon: Skull },
+      { sectionId: 'destinies', to: '/build-plan', label: 'Destinies', Icon: Orbit },
       { to: '/gear', label: 'Gear', Icon: ShieldHalf },
       { to: '/overview', label: 'Build Overview', Icon: Swords },
     ],
@@ -62,7 +62,7 @@ const MAIN_NAV: NavGroupDef[] = [
   {
     id: 'tools',
     label: 'Tools',
-    items: [
+    links: [
       { to: '/damage-calc', label: 'Damage Calc', Icon: Calculator },
       { to: '/farm-checklist', label: 'Farm Checklist', Icon: ListTodo },
       { to: '/resources', label: 'Resources', Icon: Library },
@@ -72,43 +72,43 @@ const MAIN_NAV: NavGroupDef[] = [
 
 
 interface AppNavBarProps {
-  expanded: boolean
+  isExpanded: boolean
   onToggleExpanded: () => void
   onCollapse: () => void
-  overlayActive?: boolean
+  isFullscreenOverlay?: boolean
   inert?: boolean
 }
 
 function AppNavBar({
-  expanded,
+  isExpanded,
   onToggleExpanded,
   onCollapse,
-  overlayActive,
+  isFullscreenOverlay,
   inert,
 }: AppNavBarProps): JSX.Element {
-  const asideRef = useRef<HTMLElement | null>(null)
+  const navBarRef = useRef<HTMLElement | null>(null)
 
-  useModalBehavior({
-    active: !!overlayActive,
+  useModalAccessibility({
+    isActive: !!isFullscreenOverlay,
     onClose: onCollapse,
-    panelRef: asideRef,
-    registerActive: false,
+    panelRef: navBarRef,
+    shouldRegisterAsActiveModal: false,
   })
 
   const matchRoute = useMatchRoute()
-  const settingsActive = !!matchRoute({ to: '/settings' })
+  const isSettingsRouteActive = !!matchRoute({ to: '/settings' })
 
-  function handleNavClick(): void {
-    if (overlayActive) {
+  function collapseIfFullscreenOverlay(): void {
+    if (isFullscreenOverlay) {
       onCollapse()
     }
   }
 
   return (
     <aside
-      ref={asideRef}
+      ref={navBarRef}
       tabIndex={-1}
-      className={`app-nav-bar${expanded ? ' expanded' : ''}`}
+      className={`app-nav-bar${isExpanded ? ' expanded' : ''}`}
       inert={inert}
     >
       <div className="nav-bar-scroll">
@@ -117,106 +117,106 @@ function AppNavBar({
           className="nav-bar-brand hoverable"
           activeOptions={{ exact: true }}
           activeProps={{ className: 'nav-bar-brand hoverable active' }}
-          onClick={handleNavClick}
+          onClick={collapseIfFullscreenOverlay}
         >
           <AmpersandMark className="nav-bar-brand-mark" size={26} />
           <span className="nav-bar-brand-text nav-bar-collapsible">DDO<br />Tools</span>
         </Link>
 
-        <NavBarCharacterCard onNavClick={handleNavClick} />
+        <NavBarCharacterCard onNavigate={collapseIfFullscreenOverlay} />
 
         <nav className="nav-bar-items">
-          {MAIN_NAV.map((group) => (
-            <NavGroup key={group.id} group={group} onNavClick={handleNavClick} />
+          {NAV_BAR_GROUPS.map((group) => (
+            <NavBarGroupSection key={group.id} group={group} onNavigate={collapseIfFullscreenOverlay} />
           ))}
         </nav>
 
         <div className="nav-bar-bottom">
-          <NavButton
-            item={{ to: '/settings', label: 'Settings', Icon: Settings }}
-            active={settingsActive}
-            onNavClick={handleNavClick}
+          <NavBarLinkButton
+            link={{ to: '/settings', label: 'Settings', Icon: Settings }}
+            isActive={isSettingsRouteActive}
+            onNavigate={collapseIfFullscreenOverlay}
           />
         </div>
       </div>
 
       <button className="nav-bar-collapse-btn hoverable" onClick={onToggleExpanded}>
-        {expanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-        <span className="nav-bar-label nav-bar-collapsible">{expanded ? 'Collapse' : ''}</span>
+        {isExpanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
+        <span className="nav-bar-label nav-bar-collapsible">{isExpanded ? 'Collapse' : ''}</span>
       </button>
     </aside>
   )
 }
 
-function NavGroup({
+function NavBarGroupSection({
   group,
-  onNavClick,
+  onNavigate,
 }: {
-  group: NavGroupDef
-  onNavClick: () => void
+  group: NavBarGroup
+  onNavigate: () => void
 }): JSX.Element {
   const matchRoute = useMatchRoute()
-  const matchesTo = (to: string): boolean => !!matchRoute({ to, fuzzy: true })
-  const hasActive = group.items.some((item) => matchesTo(item.to))
+  const isPathActive = (to: string): boolean => !!matchRoute({ to, fuzzy: true })
+  const hasActiveLink = group.links.some((item) => isPathActive(item.to))
 
-  const firstIndexByTo = new Map<string, number>()
-  group.items.forEach((it, i) => {
-    if (!firstIndexByTo.has(it.to)) firstIndexByTo.set(it.to, i)
+  const firstLinkIndexByPath = new Map<string, number>()
+  group.links.forEach((it, i) => {
+    if (!firstLinkIndexByPath.has(it.to)) firstLinkIndexByPath.set(it.to, i)
   })
 
   return (
     <div className="nav-bar-group">
-      <span className={`nav-bar-group-label${hasActive ? ' has-active' : ''}`}>
+      <span className={`nav-bar-group-label${hasActiveLink ? ' has-active' : ''}`}>
         <span className="nav-bar-group-label-text nav-bar-collapsible">{group.label}</span>
       </span>
       {group.to && group.Icon && (
-        <NavButton
-          item={{ to: group.to, label: group.label, Icon: group.Icon }}
-          active={group.items.some((item) => item.id && matchesTo(item.to))}
-          onNavClick={onNavClick}
-          header
+        <NavBarLinkButton
+          link={{ to: group.to, label: group.label, Icon: group.Icon }}
+          isActive={group.links.some((item) => item.sectionId && isPathActive(item.to))}
+          onNavigate={onNavigate}
+          isGroupHeader
         />
       )}
-      {group.items.map((item, i) => (
-        <NavButton
-          key={item.id || `${item.to}-${i}`}
-          item={item}
-          active={matchesTo(item.to) && firstIndexByTo.get(item.to) === i}
-          onNavClick={onNavClick}
-          compact={!!item.id}
+      {group.links.map((item, i) => (
+        <NavBarLinkButton
+          key={item.sectionId || `${item.to}-${i}`}
+          link={item}
+          isActive={isPathActive(item.to) && firstLinkIndexByPath.get(item.to) === i}
+          onNavigate={onNavigate}
+          isCompact={!!item.sectionId}
         />
       ))}
     </div>
   )
 }
 
-function NavButton({
-  item,
-  active,
-  onNavClick,
-  compact,
-  header,
+function NavBarLinkButton({
+  link,
+  isActive,
+  onNavigate,
+  isCompact,
+  isGroupHeader,
 }: {
-  item: NavItem
-  active: boolean
-  onNavClick: () => void
-  compact?: boolean
-  header?: boolean
+  link: NavBarLink
+  isActive: boolean
+  onNavigate: () => void
+  isCompact?: boolean
+  isGroupHeader?: boolean
 }): JSX.Element {
-  const cls = [
+  const linkClassName = [
     'nav-bar-btn',
     'hoverable',
-    active && 'active',
-    compact && 'nav-bar-btn--compact',
-    header && 'nav-bar-btn--header',
+    isActive && 'active',
+    isCompact && 'nav-bar-btn--compact',
+    isGroupHeader && 'nav-bar-btn--header',
   ]
     .filter(Boolean)
     .join(' ')
 
   return (
-    <Link to={item.to} className={cls} onClick={onNavClick} activeProps={{}}>
-      <item.Icon size={compact ? 16 : 18} />
-      <span className="nav-bar-label nav-bar-collapsible">{item.label}</span>
+    <Link to={link.to} className={linkClassName} onClick={onNavigate} activeProps={{}}>
+      <link.Icon size={isCompact ? 16 : 18} />
+      <span className="nav-bar-label nav-bar-collapsible">{link.label}</span>
     </Link>
   )
 }

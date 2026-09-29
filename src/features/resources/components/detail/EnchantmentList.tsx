@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
 import { DetailSection } from './DetailSection'
-import { formatSigned } from './formatSigned'
+import { numberWithPlusSign } from './numberWithPlusSign'
 import type { ItemBonus, ItemEffect } from '../../queries/items'
 
 interface EnchantmentListProps {
@@ -12,31 +12,31 @@ interface EnchantmentLine {
   key: string
   tag: string | null
   name: string
-  value: string | null
+  signedValue: string | null
   description: string | null
 }
 
-function bonusToLine(b: ItemBonus): EnchantmentLine {
-  const description = b.description
-  const name = b.stat_name
-  const value = b.value !== null ? formatSigned(b.value) : null
+function toBonusLine(bonus: ItemBonus): EnchantmentLine {
+  const description = bonus.description
+  const name = bonus.statName
+  const signedValue = bonus.value !== null ? numberWithPlusSign(bonus.value) : null
   return {
-    key: `b-${b.bonus_id}-${b.sort_order}`,
-    tag: b.bonus_type,
+    key: `b-${bonus.id}-${bonus.sortOrder}`,
+    tag: bonus.bonusType,
     name,
-    value,
-    description: description && description !== b.name ? description : null,
+    signedValue,
+    description: description && description !== bonus.name ? description : null,
   }
 }
 
-function effectToLine(e: ItemEffect): EnchantmentLine {
-  const name = e.value !== null ? `${e.name} ${formatSigned(e.value)}` : e.name
+function toEffectLine(effect: ItemEffect): EnchantmentLine {
+  const name = effect.value !== null ? `${effect.name} ${numberWithPlusSign(effect.value)}` : effect.name
   return {
-    key: `e-${e.effect_id}-${e.sort_order}`,
-    tag: e.target,
+    key: `e-${effect.id}-${effect.sortOrder}`,
+    tag: effect.target,
     name,
-    value: null,
-    description: e.description && e.description !== e.name ? e.description : null,
+    signedValue: null,
+    description: effect.description && effect.description !== effect.name ? effect.description : null,
   }
 }
 
@@ -44,19 +44,19 @@ export function EnchantmentList({ bonuses, effects }: EnchantmentListProps): JSX
   if (bonuses.length === 0 && effects.length === 0) return null
 
   const lines: EnchantmentLine[] = [
-    ...bonuses.map(bonusToLine),
-    ...effects.map(effectToLine),
+    ...bonuses.map(toBonusLine),
+    ...effects.map(toEffectLine),
   ]
 
   return (
-    <DetailSection label="Enchantments">
+    <DetailSection heading="Enchantments">
       <ul className="resources-bonus-list">
         {lines.map((line) => (
           <li key={line.key} className="resources-bonus-row">
             <div className="resources-bonus-head">
               <span className="resources-bonus-type">{line.tag ?? ''}</span>
               <span className="resources-bonus-name">{line.name}</span>
-              <span className="resources-bonus-value">{line.value ?? ''}</span>
+              <span className="resources-bonus-value">{line.signedValue ?? ''}</span>
             </div>
             {line.description && (
               <p className="resources-bonus-description">{line.description}</p>

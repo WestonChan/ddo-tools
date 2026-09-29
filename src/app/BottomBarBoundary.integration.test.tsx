@@ -11,12 +11,12 @@ vi.mock('./BottomBar', () => ({
   },
 }))
 
-let errorSpy: ReturnType<typeof vi.spyOn>
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
-  errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 })
 afterEach(() => {
-  errorSpy.mockRestore()
+  consoleErrorSpy.mockRestore()
 })
 
 function renderApp(): void {

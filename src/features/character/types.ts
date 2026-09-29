@@ -1,7 +1,7 @@
 export interface Race {
   id: string
   name: string
-  statModifiers: Record<string, number>
+  modifierByAbility: Record<string, number>
 }
 
 export interface CharacterClass {
@@ -22,22 +22,22 @@ export interface Enhancement {
   name: string
   treeName: string
   tier: number
-  cost: number
+  actionPointCost: number
   description: string
 }
 
-export type AbilityScore = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA'
+export type Ability = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA'
 
 export interface CharacterStats {
-  abilityScores: Record<AbilityScore, number>
-  hp: number
-  sp: number
-  bab: number
-  fortification: number
-  ac: number
-  prr: number
-  mrr: number
-  dodge: number
+  abilityScores: Record<Ability, number>
+  hitPoints: number
+  spellPoints: number
+  baseAttackBonus: number
+  fortificationPercent: number
+  armorClass: number
+  physicalResistanceRating: number
+  magicalResistanceRating: number
+  dodgePercent: number
   saves: { fortitude: number; reflex: number; will: number }
   meleePower: number
   rangedPower: number
@@ -47,7 +47,7 @@ export interface CharacterStats {
 
 export type ReincarnationType = 'heroic' | 'racial' | 'iconic' | 'epic'
 export type EpicSphere = 'arcane' | 'divine' | 'martial' | 'primal'
-export type Server = 'Cormyr' | 'Moonsea' | 'Shadowdale' | 'Thrane' | 'Hardcore'
+export type GameServer = 'Cormyr' | 'Moonsea' | 'Shadowdale' | 'Thrane' | 'Hardcore'
 export type LifeStatus = 'completed' | 'current' | 'planned'
 
 export interface Reincarnation {
@@ -57,7 +57,7 @@ export interface Reincarnation {
 }
 
 export type ImportFormat = 'ddo-builder-v2'
-export interface ImportSource {
+export interface ImportedBuildFile {
   format: ImportFormat
   filename: string
   importedAt: string
@@ -73,7 +73,7 @@ export interface Life {
   enhancements: string[]
   status: LifeStatus
   reincarnation?: Reincarnation
-  importSource?: ImportSource
+  importSource?: ImportedBuildFile
   notes?: string
   desiredPastLives?: PastLifeCounts
 }
@@ -88,7 +88,7 @@ export interface PastLifeCounts {
 export interface Character {
   id: string
   name: string
-  server?: Server
+  server?: GameServer
   notes?: string
   lives: Life[]
   currentLifeIndex: number
@@ -98,7 +98,7 @@ export interface Character {
 }
 
 export interface AppSettings {
-  defaultServer?: Server
+  defaultServer?: GameServer
 }
 
 
@@ -106,7 +106,7 @@ export type PastLifeCategory = ReincarnationType
 
 export interface PastLifeBonus {
   stat: string
-  value: number
+  amount: number
   description: string
 }
 
@@ -116,8 +116,8 @@ export interface PastLifeFeat {
   description: string
   category: PastLifeCategory
   sourceId: string
-  maxStacks: number
-  bonusPerStack: PastLifeBonus[]
+  maximumStackCount: number
+  bonusesPerStack: PastLifeBonus[]
 }
 
 
@@ -125,9 +125,9 @@ export interface PastLifeStack {
   pastLifeFeatId: string
   category: PastLifeCategory
   sourceId: string
-  stacks: number
-  fromLives: number
-  fromOverride: number
+  stackCount: number
+  historyStackCount: number
+  untrackedStackCount: number
 }
 
 export interface PastLifeSummary {
@@ -135,5 +135,5 @@ export interface PastLifeSummary {
   racial: PastLifeStack[]
   iconic: PastLifeStack[]
   epic: PastLifeStack[]
-  totalPastLives: number
+  totalPastLifeCount: number
 }

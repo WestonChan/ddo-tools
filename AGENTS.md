@@ -40,7 +40,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 
 - `src/app/` — shell: `AppLayout`, `AppNavBar`, `BottomBar`, `routeComponents` (one export per route; placeholder views for unbuilt phases).
 - `src/router.tsx`, `src/appPaths.ts` — TanStack Router tree and the path list.
-- `src/features/resources/` — the game-data browser (the only feature reading the API today): `ResourcesView`, `components/` (picker, detail drawer, `detail/*`), `queries/items.ts` (fetchers + mappers) and `queries/useItems.ts` (query hooks), `search.ts` (Fuse index).
+- `src/features/resources/` — the game-data browser (the only feature reading the API today): `ResourcesView`, `components/` (picker, detail drawer, `detail/*`), `queries/items.ts` (fetchers + mappers) and `queries/useItems.ts` (query hooks), `itemSearch.ts` (Fuse index).
 - `src/features/character/`, `gear/`, `landing/`, `settings/` — the other features; `landing/data/sitePatchNotes.ts` is the user-facing changelog.
 - `src/components/` — shared UI (`Modal`, `ErrorScreen`, `ApiGate`, `Tooltip`, `WikiLinkIcon`); `src/hooks/` — shared hooks; `src/lib/` — non-React helpers (`api/`, `sentry`, `githubIssue`, `wiki/`).
 - `src/test/` — Vitest setup and helpers; `e2e/` — Playwright specs; `eslint-rules/` — the local no-comments rule.

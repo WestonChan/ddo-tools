@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { BookOpen } from 'lucide-react'
-import { TooltipWrapper } from './Tooltip'
-import { buildWikiPageUrl, openCompareWindow, WIKI_COMPARE_WINDOW } from '../lib/wiki/client'
+import { HoverTooltip } from './Tooltip'
+import { wikiPageUrlFor, openWikiCompareWindow, WIKI_COMPARE_WINDOW_NAME } from '../lib/wiki/pageLinks'
 import './WikiLinkIcon.css'
 
 interface WikiLinkIconProps {
@@ -11,27 +11,27 @@ interface WikiLinkIconProps {
 }
 
 export function WikiLinkIcon({ href, pageName, size = 12 }: WikiLinkIconProps): JSX.Element | null {
-  const url = href ?? (pageName ? buildWikiPageUrl(pageName) : null)
-  if (!url) return null
+  const wikiPageUrl = href ?? (pageName ? wikiPageUrlFor(pageName) : null)
+  if (!wikiPageUrl) return null
 
   const ariaLabel = pageName ? `Open ${pageName} on DDO Wiki` : 'Open on DDO Wiki'
 
   return (
-    <TooltipWrapper text="Open in DDO Wiki (compare window)">
+    <HoverTooltip text="Open in DDO Wiki (compare window)">
       <a
-        href={url}
-        target={WIKI_COMPARE_WINDOW}
+        href={wikiPageUrl}
+        target={WIKI_COMPARE_WINDOW_NAME}
         rel="nofollow"
         className="wiki-link-icon hoverable"
         aria-label={ariaLabel}
         onClick={(e) => {
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
           e.preventDefault()
-          openCompareWindow(url)
+          openWikiCompareWindow(wikiPageUrl)
         }}
       >
         <BookOpen size={size} aria-hidden />
       </a>
-    </TooltipWrapper>
+    </HoverTooltip>
   )
 }

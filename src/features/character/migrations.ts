@@ -1,40 +1,40 @@
 import type { Character } from './types'
-import { EMPTY_UNTRACKED } from './utils'
+import { EMPTY_PAST_LIFE_COUNTS } from './utils'
 import { STUB_CHARACTERS } from './data/stubCharacters'
 
-export interface Selection {
+export interface BuildSelection {
   characterId: string
   buildId: string
 }
 
-const defaultStub = STUB_CHARACTERS[0]
-export const defaultSelection: Selection = {
-  characterId: defaultStub.id,
-  buildId: defaultStub.lives[defaultStub.currentLifeIndex]?.id ?? '',
+const defaultStubCharacter = STUB_CHARACTERS[0]
+export const defaultBuildSelection: BuildSelection = {
+  characterId: defaultStubCharacter.id,
+  buildId: defaultStubCharacter.lives[defaultStubCharacter.currentLifeIndex]?.id ?? '',
 }
 
-export function migrateSelection(sel: unknown): Selection {
-  const raw = sel as Record<string, unknown>
-  if ('buildId' in raw && typeof raw.buildId === 'string') return raw as unknown as Selection
+export function migrateBuildSelection(storedSelection: unknown): BuildSelection {
+  const storedFields = storedSelection as Record<string, unknown>
+  if ('buildId' in storedFields && typeof storedFields.buildId === 'string') return storedFields as unknown as BuildSelection
   const buildId =
-    (raw.plannedBuildId as string) ?? (raw.lifeId as string) ?? defaultSelection.buildId
+    (storedFields.plannedBuildId as string) ?? (storedFields.lifeId as string) ?? defaultBuildSelection.buildId
   return {
-    characterId: (raw.characterId as string) ?? defaultSelection.characterId,
+    characterId: (storedFields.characterId as string) ?? defaultBuildSelection.characterId,
     buildId,
   }
 }
 
-export function migrateCharacters(value: unknown): Character[] {
-  const chars = value as Character[]
-  return chars.map((c) => {
+export function migrateCharacters(storedCharacters: unknown): Character[] {
+  const characters = storedCharacters as Character[]
+  return characters.map((character) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw = c as any
-    if (!c.untrackedLives && raw.pastLifeOverrides) {
-      return { ...c, untrackedLives: raw.pastLifeOverrides }
+    const legacyCharacter = character as any
+    if (!character.untrackedLives && legacyCharacter.pastLifeOverrides) {
+      return { ...character, untrackedLives: legacyCharacter.pastLifeOverrides }
     }
-    if (!c.untrackedLives) {
-      return { ...c, untrackedLives: EMPTY_UNTRACKED }
+    if (!character.untrackedLives) {
+      return { ...character, untrackedLives: EMPTY_PAST_LIFE_COUNTS }
     }
-    return c
+    return character
   })
 }

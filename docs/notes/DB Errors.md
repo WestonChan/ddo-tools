@@ -84,7 +84,7 @@ Noticed by the user on [item 3179](http://localhost:5173/ddo-tools/resources/ite
 	- `SELECT COUNT(*) FROM quests WHERE pack_id IS NULL AND patron_id IS NULL AND level IS NULL AND zone IS NULL;` → 121
 	- `SELECT q.name, COUNT(ql.item_id) n FROM quests q JOIN quest_loot ql ON ql.quest_id=q.id WHERE q.pack_id IS NULL GROUP BY q.id ORDER BY n DESC;`
 	- Items with no pack anywhere: `SELECT COUNT(DISTINCT ql.item_id) FROM quest_loot ql WHERE ql.item_id NOT IN (SELECT ql2.item_id FROM quest_loot ql2 JOIN quests q2 ON q2.id=ql2.quest_id WHERE q2.pack_id IS NOT NULL);` → 1,995
-- 🐛 📋 Phase 4g — **Empty metadata line under "Drops from".** When a drop location has no pack, patron, zone, npc or level, `ItemDetail` still renders the `·`-joined `.resources-quest-meta` span, producing a blank line (visible on item 3179). Render nothing when the joined string is empty. Cosmetic, and it will mostly disappear once the loot-source issue above is fixed.
+- 🐛 📋 Phase 4g — **Empty metadata line under "Drops from".** When a drop location has no pack, patron, zone, npc or level, `ItemDetailBody` still renders the `·`-joined `.resources-quest-meta` span, producing a blank line (visible on item 3179). Render nothing when the joined string is empty. Cosmetic, and it will mostly disappear once the loot-source issue above is fixed.
 - ⚠ 📋 Phase 4d — **`adventure_packs.is_free_to_play` is populated on 1 of 77 rows.** Already noted in [[Resource View]] as a blocker for the "Content you own" filter; recorded here with the count. Repro: `SELECT COUNT(*) FROM adventure_packs WHERE is_free_to_play=1;`
 
 ### Found while fixing 4c — 2026-07-29

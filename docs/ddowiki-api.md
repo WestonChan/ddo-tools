@@ -9,7 +9,7 @@ The DDO Wiki (ddowiki.com) is a MediaWiki site. Use `WebFetch` with its API to l
 > - **`WebFetch`, `curl`, Python `requests`, and any pipeline scraping fail** — they can't run the challenge JS. Expect 202/empty from every endpoint below.
 > - **Cross-origin `fetch` from the frontend fails** — the clearance token is a ddowiki.com cookie; cross-site fetches send no cookies, and `access-control-allow-origin: *` forbids credentialed requests. The `x-amzn-waf-action` response header *is* CORS-exposed, so client code can at least detect the block.
 > - **Iframes can never pass** — the token binds to the top-level browsing context. Plain, `credentialless`, and pre-cleared-cookie iframes all fail with AWS's "Max challenge attempts exceeded" page (this is what killed the Resource View's embedded wiki preview).
-> - **Only top-level browser navigation works** — the challenge solves invisibly in ~1s. The frontend's wiki links therefore open a shared compare window (see `src/lib/wiki/client.ts`).
+> - **Only top-level browser navigation works** — the challenge solves invisibly in ~1s. The frontend's wiki links therefore open a shared compare window (see `src/lib/wiki/pageLinks.ts`).
 > - **Do not script around the challenge** (headless token harvesting, challenge-solving proxies) — that's circumvention of an intentional bot policy.
 >
 > **Still blocked as of 2026-07-28** — re-verified with a bare `api.php` `allpages` request: `HTTP 202`, empty body.

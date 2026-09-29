@@ -1,45 +1,45 @@
 import { useState, type JSX } from 'react'
 import type { Character, Life, ReincarnationType } from '../types'
-import { PAST_LIFE_DEFS } from '../data/pastLifeDefs'
+import { PAST_LIFE_DEFINITIONS } from '../data/pastLifeDefinitions'
 import {
-  capitalize,
-  EPIC_SPHERE_LIST,
-  formatClassSummary,
-  formatRace,
-  getPlannedBuildPastLives,
+  capitalized,
+  EPIC_SPHERES,
+  classSplitLabel,
+  raceLabelOf,
+  desiredPastLifeCountOf,
 } from '../utils'
 import { EditableText } from '../../../components'
 import { Star, Trash2, Plus } from 'lucide-react'
 
 
-export type ReincarnateResult =
+export type ReincarnationChoice =
   | { mode: 'epic'; epicFeatId: string }
-  | { mode: 'true'; type: ReincarnationType }
+  | { mode: 'true'; reincarnationType: ReincarnationType }
 
-type ReincarnateMode = 'epic' | 'true'
+type ReincarnationMode = 'epic' | 'true'
 
-const TRUE_REINCARNATION_TYPES: { value: ReincarnationType; label: string }[] = [
-  { value: 'heroic', label: 'Class (Heroic TR)' },
-  { value: 'racial', label: 'Racial' },
-  { value: 'iconic', label: 'Iconic' },
+const TRUE_REINCARNATION_TYPES: { reincarnationType: ReincarnationType; label: string }[] = [
+  { reincarnationType: 'heroic', label: 'Class (Heroic TR)' },
+  { reincarnationType: 'racial', label: 'Racial' },
+  { reincarnationType: 'iconic', label: 'Iconic' },
 ]
 
-const EPIC_FEATS_BY_SPHERE = EPIC_SPHERE_LIST.map((s) => ({
+const EPIC_PAST_LIVES_BY_SPHERE = EPIC_SPHERES.map((s) => ({
   sphere: s,
-  feats: PAST_LIFE_DEFS.filter((d) => d.category === 'epic' && d.sphere === s.sphere),
+  pastLives: PAST_LIFE_DEFINITIONS.filter((d) => d.category === 'epic' && d.sphere === s.id),
 }))
 
 
-function ReincarnatePanel({
+function ReincarnationPanel({
   onCancel,
   onConfirm,
 }: {
   onCancel: () => void
-  onConfirm: (result: ReincarnateResult) => void
+  onConfirm: (reincarnationChoice: ReincarnationChoice) => void
 }): JSX.Element {
-  const [mode, setMode] = useState<ReincarnateMode>('epic')
-  const [epicFeatId, setEpicFeatId] = useState(EPIC_FEATS_BY_SPHERE[0].feats[0]?.id ?? '')
-  const [trueType, setTrueType] = useState<ReincarnationType>('heroic')
+  const [reincarnationMode, setReincarnationMode] = useState<ReincarnationMode>('epic')
+  const [epicFeatId, setEpicFeatId] = useState(EPIC_PAST_LIVES_BY_SPHERE[0].pastLives[0]?.id ?? '')
+  const [trueReincarnationType, setTrueReincarnationType] = useState<ReincarnationType>('heroic')
 
   return (
     <div className="reincarnate-panel">
@@ -48,28 +48,28 @@ function ReincarnatePanel({
         <label>Reincarnation type</label>
         <div className="reincarnate-type-options">
           <button
-            className={`reincarnate-type-btn ${mode === 'epic' ? 'active' : ''}`}
-            onClick={() => setMode('epic')}
+            className={`reincarnate-type-btn ${reincarnationMode === 'epic' ? 'active' : ''}`}
+            onClick={() => setReincarnationMode('epic')}
           >
             Epic TR
           </button>
           <button
-            className={`reincarnate-type-btn ${mode === 'true' ? 'active' : ''}`}
-            onClick={() => setMode('true')}
+            className={`reincarnate-type-btn ${reincarnationMode === 'true' ? 'active' : ''}`}
+            onClick={() => setReincarnationMode('true')}
           >
             True Reincarnate
           </button>
         </div>
       </div>
-      {mode === 'epic' && (
+      {reincarnationMode === 'epic' && (
         <div className="reincarnate-panel-field">
           <label>Epic Past Life Feat</label>
           <div className="epic-feat-select">
-            {EPIC_FEATS_BY_SPHERE.map(({ sphere, feats }) => (
-              <div key={sphere.sphere} className="epic-feat-group">
+            {EPIC_PAST_LIVES_BY_SPHERE.map(({ sphere, pastLives }) => (
+              <div key={sphere.id} className="epic-feat-group">
                 <div className="epic-feat-group-label">{sphere.label}</div>
                 <div className="reincarnate-type-options">
-                  {feats.map((f) => (
+                  {pastLives.map((f) => (
                     <button
                       key={f.id}
                       className={`reincarnate-type-btn ${epicFeatId === f.id ? 'active' : ''}`}
@@ -84,15 +84,15 @@ function ReincarnatePanel({
           </div>
         </div>
       )}
-      {mode === 'true' && (
+      {reincarnationMode === 'true' && (
         <div className="reincarnate-panel-field">
           <label>This ends the current life and starts a new build</label>
           <div className="reincarnate-type-options">
             {TRUE_REINCARNATION_TYPES.map((rt) => (
               <button
-                key={rt.value}
-                className={`reincarnate-type-btn ${trueType === rt.value ? 'active' : ''}`}
-                onClick={() => setTrueType(rt.value)}
+                key={rt.reincarnationType}
+                className={`reincarnate-type-btn ${trueReincarnationType === rt.reincarnationType ? 'active' : ''}`}
+                onClick={() => setTrueReincarnationType(rt.reincarnationType)}
               >
                 {rt.label}
               </button>
@@ -108,7 +108,7 @@ function ReincarnatePanel({
           className="btn-primary"
           onClick={() =>
             onConfirm(
-              mode === 'epic' ? { mode: 'epic', epicFeatId } : { mode: 'true', type: trueType },
+              reincarnationMode === 'epic' ? { mode: 'epic', epicFeatId } : { mode: 'true', reincarnationType: trueReincarnationType },
             )
           }
         >
@@ -121,34 +121,34 @@ function ReincarnatePanel({
 
 
 function LifeRow({
-  active,
-  lifeNumber,
+  isViewed,
+  lifeNumberLabel,
   name,
-  summary,
-  onClick,
+  buildSummary,
+  onView,
   onRename,
   className,
   children,
 }: {
-  active: boolean
-  lifeNumber?: number | string
+  isViewed: boolean
+  lifeNumberLabel?: number | string
   name: string
-  summary: string
-  onClick: () => void
-  onRename: (name: string) => void
+  buildSummary: string
+  onView: () => void
+  onRename: (newName: string) => void
   className?: string
   children?: React.ReactNode
 }): JSX.Element {
   return (
     <div
-      className={`life-entry hoverable ${className ?? ''} ${active ? 'viewing' : ''}`}
-      onClick={onClick}
+      className={`life-entry hoverable ${className ?? ''} ${isViewed ? 'viewing' : ''}`}
+      onClick={onView}
     >
-      <span className="life-marker">{active ? <Star size={14} /> : ''}</span>
-      {lifeNumber != null && <span className="life-number">{lifeNumber}</span>}
-      {active ? (
+      <span className="life-marker">{isViewed ? <Star size={14} /> : ''}</span>
+      {lifeNumberLabel != null && <span className="life-number">{lifeNumberLabel}</span>}
+      {isViewed ? (
         <EditableText
-          value={name}
+          text={name}
           placeholder="Name..."
           className="life-name"
           onCommit={onRename}
@@ -158,7 +158,7 @@ function LifeRow({
           {name || <span className="editable-text-placeholder">Name...</span>}
         </span>
       )}
-      <span className="life-summary">{summary}</span>
+      <span className="life-summary">{buildSummary}</span>
       <div className="life-actions">{children}</div>
     </div>
   )
@@ -167,53 +167,53 @@ function LifeRow({
 
 export function LifeHistory({
   character,
-  lifeNumbers,
-  viewingLifeId,
-  showReincarnate,
-  onToggleReincarnate,
-  onCancelReincarnate,
-  onConfirmReincarnate,
+  lifeNumbersByLifeId,
+  viewedLifeId,
+  isReincarnationPanelOpen,
+  onToggleReincarnationPanel,
+  onCancelReincarnation,
+  onConfirmReincarnation,
   onViewLife,
-  onCopyToPlanned,
+  onCopyLifeToPlannedBuilds,
   onRenameLife,
   plannedBuilds,
-  viewingPlannedBuildId,
-  onSelectPlannedBuild,
+  viewedPlannedBuildId,
+  onViewPlannedBuild,
   onRenamePlannedBuild,
   onApplyPlannedBuild,
   onDeletePlannedBuild,
   onAddPlannedBuild,
 }: {
   character: Character
-  lifeNumbers: Map<string, number>
-  viewingLifeId: string
-  showReincarnate: boolean
-  onToggleReincarnate: () => void
-  onCancelReincarnate: () => void
-  onConfirmReincarnate: (result: ReincarnateResult) => void
+  lifeNumbersByLifeId: Map<string, number>
+  viewedLifeId: string
+  isReincarnationPanelOpen: boolean
+  onToggleReincarnationPanel: () => void
+  onCancelReincarnation: () => void
+  onConfirmReincarnation: (reincarnationChoice: ReincarnationChoice) => void
   onViewLife: (lifeId: string) => void
-  onCopyToPlanned: (lifeId: string) => void
+  onCopyLifeToPlannedBuilds: (lifeId: string) => void
   onRenameLife: (lifeId: string, newName: string) => void
   plannedBuilds: Life[]
-  viewingPlannedBuildId: string | null
-  onSelectPlannedBuild: (buildId: string) => void
+  viewedPlannedBuildId: string | null
+  onViewPlannedBuild: (buildId: string) => void
   onRenamePlannedBuild: (buildId: string, newName: string) => void
   onApplyPlannedBuild: (buildId: string) => void
   onDeletePlannedBuild: (buildId: string) => void
   onAddPlannedBuild: () => void
 }): JSX.Element {
-  const completed = character.lives.filter((l) => l.status === 'completed')
-  const current = character.lives.filter((l) => l.status === 'current')
-  const buildDesc = (life: Life): string => `${formatRace(life.race)} ${formatClassSummary(life)}`
+  const completedLives = character.lives.filter((l) => l.status === 'completed')
+  const currentLives = character.lives.filter((l) => l.status === 'current')
+  const raceAndClassLabel = (life: Life): string => `${raceLabelOf(life.race)} ${classSplitLabel(life)}`
 
-  const reincLabel = (life: Life): string => {
+  const reincarnationLabel = (life: Life): string => {
     if (!life.reincarnation) return ''
     const r = life.reincarnation
     if (r.type === 'epic') {
-      const feat = PAST_LIFE_DEFS.find((d) => d.id === r.epicFeatId)
-      return `Epic TR: ${feat?.name ?? r.epicFeatId ?? ''}`
+      const epicPastLife = PAST_LIFE_DEFINITIONS.find((d) => d.id === r.epicFeatId)
+      return `Epic TR: ${epicPastLife?.name ?? r.epicFeatId ?? ''}`
     }
-    return `${capitalize(r.type)} TR`
+    return `${capitalized(r.type)} TR`
   }
 
   return (
@@ -224,15 +224,15 @@ export function LifeHistory({
         <Plus size={14} /> Add Planned Build
       </button>
       {[...plannedBuilds].reverse().map((build) => {
-        const pastLives = getPlannedBuildPastLives(build)
+        const desiredPastLifeCount = desiredPastLifeCountOf(build)
         return (
           <LifeRow
             key={build.id}
-            active={viewingPlannedBuildId === build.id}
-            lifeNumber={`Needs ${pastLives} PLs`}
+            isViewed={viewedPlannedBuildId === build.id}
+            lifeNumberLabel={`Needs ${desiredPastLifeCount} PLs`}
             name={build.name}
-            summary={buildDesc(build)}
-            onClick={() => onSelectPlannedBuild(build.id)}
+            buildSummary={raceAndClassLabel(build)}
+            onView={() => onViewPlannedBuild(build.id)}
             onRename={(name) => onRenamePlannedBuild(build.id, name)}
           >
             <button
@@ -258,19 +258,19 @@ export function LifeHistory({
         )
       })}
 
-      {current.map((life) => (
+      {currentLives.map((life) => (
         <div key={life.id}>
           <div className="section-label">Current</div>
           <LifeRow
-            active={viewingLifeId === life.id}
-            lifeNumber={`Life ${lifeNumbers.get(life.id) ?? '?'}`}
+            isViewed={viewedLifeId === life.id}
+            lifeNumberLabel={`Life ${lifeNumbersByLifeId.get(life.id) ?? '?'}`}
             name={life.name}
-            summary={buildDesc(life)}
+            buildSummary={raceAndClassLabel(life)}
             className="current-life-entry"
-            onClick={() => onViewLife(life.id)}
+            onView={() => onViewLife(life.id)}
             onRename={(name) => onRenameLife(life.id, name)}
           >
-            {completed.length > 0 && (
+            {completedLives.length > 0 && (
               <button
                 className="row-action-btn"
                 onClick={(e) => {
@@ -285,36 +285,36 @@ export function LifeHistory({
               className="row-action-btn btn-primary-sm"
               onClick={(e) => {
                 e.stopPropagation()
-                onToggleReincarnate()
+                onToggleReincarnationPanel()
               }}
             >
               Reincarnate
             </button>
           </LifeRow>
-          {showReincarnate && (
-            <ReincarnatePanel onCancel={onCancelReincarnate} onConfirm={onConfirmReincarnate} />
+          {isReincarnationPanelOpen && (
+            <ReincarnationPanel onCancel={onCancelReincarnation} onConfirm={onConfirmReincarnation} />
           )}
         </div>
       ))}
 
-      {completed.length > 0 && <div className="section-label">Completed</div>}
-      {[...completed].reverse().map((life) => {
-        const n = lifeNumbers.get(life.id)
+      {completedLives.length > 0 && <div className="section-label">Completed</div>}
+      {[...completedLives].reverse().map((life) => {
+        const lifeNumber = lifeNumbersByLifeId.get(life.id)
         return (
           <LifeRow
             key={life.id}
-            active={viewingLifeId === life.id}
-            lifeNumber={n != null ? `Life ${n}` : undefined}
+            isViewed={viewedLifeId === life.id}
+            lifeNumberLabel={lifeNumber != null ? `Life ${lifeNumber}` : undefined}
             name={life.name}
-            summary={`${reincLabel(life)} — ${buildDesc(life)}`}
-            onClick={() => onViewLife(life.id)}
+            buildSummary={`${reincarnationLabel(life)} — ${raceAndClassLabel(life)}`}
+            onView={() => onViewLife(life.id)}
             onRename={(name) => onRenameLife(life.id, name)}
           >
             <button
               className="row-action-btn"
               onClick={(e) => {
                 e.stopPropagation()
-                onCopyToPlanned(life.id)
+                onCopyLifeToPlannedBuilds(life.id)
               }}
             >
               Copy to Planned

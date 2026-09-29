@@ -4,9 +4,9 @@ import AppNavBar from './AppNavBar'
 import { renderWithRouter } from '../test/renderWithRouter'
 
 vi.mock('../features/character', () => ({
-  useCharacter: () => ({
-    character: { id: '1', name: 'Thordak', server: 'Thrane' },
-    activeBuild: {
+  useCharacters: () => ({
+    selectedCharacter: { id: '1', name: 'Thordak', server: 'Thrane' },
+    viewedBuild: {
       id: 'b1',
       name: '',
       race: 'human',
@@ -15,33 +15,33 @@ vi.mock('../features/character', () => ({
         { classId: 'rogue', levels: 2 },
       ],
     },
-    lifeNumbers: new Map([['b1', 3]]),
+    lifeNumbersByLifeId: new Map([['b1', 3]]),
   }),
-  formatClassSummary: () => '18 Paladin / 2 Rogue',
-  formatRace: () => 'Human',
+  classSplitLabel: () => '18 Paladin / 2 Rogue',
+  raceLabelOf: () => 'Human',
 }))
 
-const mockToggle = vi.fn()
-const mockCollapse = vi.fn()
+const onToggleExpandedMock = vi.fn()
+const onCollapseMock = vi.fn()
 
 function renderNavBar(
-  expanded = true,
-  { initialPath = '/build-plan', overlayActive }: { initialPath?: string; overlayActive?: boolean } = {},
+  isExpanded = true,
+  { initialPath = '/build-plan', isFullscreenOverlay }: { initialPath?: string; isFullscreenOverlay?: boolean } = {},
 ): ReturnType<typeof renderWithRouter> {
   return renderWithRouter(
     <AppNavBar
-      expanded={expanded}
-      onToggleExpanded={mockToggle}
-      onCollapse={mockCollapse}
-      overlayActive={overlayActive}
+      isExpanded={isExpanded}
+      onToggleExpanded={onToggleExpandedMock}
+      onCollapse={onCollapseMock}
+      isFullscreenOverlay={isFullscreenOverlay}
     />,
     initialPath,
   )
 }
 
 beforeEach(() => {
-  mockToggle.mockClear()
-  mockCollapse.mockClear()
+  onToggleExpandedMock.mockClear()
+  onCollapseMock.mockClear()
 })
 
 describe('AppNavBar', () => {
@@ -96,11 +96,11 @@ describe('AppNavBar', () => {
 
   it('collapses on navigate while it is the fullscreen overlay', async () => {
     const user = userEvent.setup()
-    const { router } = renderNavBar(true, { overlayActive: true })
+    const { router } = renderNavBar(true, { isFullscreenOverlay: true })
     await user.click(await screen.findByText('Gear'))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/gear'))
-    expect(mockCollapse).toHaveBeenCalled()
+    expect(onCollapseMock).toHaveBeenCalled()
   })
 
   it('stays open on navigate when it is inline chrome', async () => {
@@ -109,23 +109,23 @@ describe('AppNavBar', () => {
     await user.click(await screen.findByText('Gear'))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/gear'))
-    expect(mockCollapse).not.toHaveBeenCalled()
+    expect(onCollapseMock).not.toHaveBeenCalled()
   })
 
   it('dismisses the fullscreen overlay on Escape', async () => {
-    renderNavBar(true, { overlayActive: true })
+    renderNavBar(true, { isFullscreenOverlay: true })
     await screen.findByText('Gear')
     expect(document.querySelector('.app-nav-bar')).toHaveAttribute('tabindex', '-1')
 
     await userEvent.keyboard('{Escape}')
 
-    expect(mockCollapse).toHaveBeenCalledTimes(1)
+    expect(onCollapseMock).toHaveBeenCalledTimes(1)
   })
 
   it('ignores Escape when the nav bar is inline chrome', async () => {
     renderNavBar(true)
     await screen.findByText('Gear')
     await userEvent.keyboard('{Escape}')
-    expect(mockCollapse).not.toHaveBeenCalled()
+    expect(onCollapseMock).not.toHaveBeenCalled()
   })
 })

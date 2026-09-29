@@ -62,4 +62,4 @@ Sample rates are env-aware (defined in [src/lib/sentry.ts](../src/lib/sentry.ts)
 | `replaysSessionSampleRate` | 1.0 | 0.1 |
 | `replaysOnErrorSampleRate` | 1.0 | 1.0 |
 
-Full capture in dev means you can verify the integration works during build-out. Light sampling in prod protects the free-tier quota once the site has visitors. Adjust `import.meta.env.DEV ? 1.0 : 0.1` in `initSentry()` if your usage profile shifts.
+Full capture in dev means you can verify the integration works during build-out. Light sampling in prod protects the free-tier quota once the site has visitors. Adjust `import.meta.env.DEV ? 1.0 : 0.1` in `initializeSentry()` if your usage profile shifts.

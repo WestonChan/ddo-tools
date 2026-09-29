@@ -1,61 +1,61 @@
 import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from 'react'
 
-type Listener = (json: string) => void
+type StoredJsonListener = (json: string) => void
 
-const listeners = new Map<string, Set<Listener>>()
+const listenersByStorageKey = new Map<string, Set<StoredJsonListener>>()
 
 export function useLocalStorage<T>(
-  key: string,
+  storageKey: string,
   initialValue: T,
-  migrate?: (value: unknown) => T,
+  migrateStoredValue?: (parsedStoredValue: unknown) => T,
 ): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => {
+  const [instanceValue, setInstanceValue] = useState<T>(() => {
     try {
-      const stored = localStorage.getItem(key)
-      if (stored !== null) {
-        const parsed = JSON.parse(stored)
-        return migrate ? migrate(parsed) : (parsed as T)
+      const storedJson = localStorage.getItem(storageKey)
+      if (storedJson !== null) {
+        const parsed = JSON.parse(storedJson)
+        return migrateStoredValue ? migrateStoredValue(parsed) : (parsed as T)
       }
     } catch {}
     return initialValue
   })
 
-  const listenerRef = useRef<Listener>(null)
+  const ownListenerRef = useRef<StoredJsonListener>(null)
 
   useEffect(() => {
-    const set = listeners.get(key) ?? new Set()
-    const handler: Listener = (json) => {
+    const keyListeners = listenersByStorageKey.get(storageKey) ?? new Set()
+    const applySyncedJson: StoredJsonListener = (json) => {
       try {
-        setValue(JSON.parse(json) as T)
+        setInstanceValue(JSON.parse(json) as T)
       } catch {}
     }
-    listenerRef.current = handler
-    set.add(handler)
-    listeners.set(key, set)
+    ownListenerRef.current = applySyncedJson
+    keyListeners.add(applySyncedJson)
+    listenersByStorageKey.set(storageKey, keyListeners)
     return () => {
-      set.delete(handler)
-      listenerRef.current = null
-      if (set.size === 0) listeners.delete(key)
+      keyListeners.delete(applySyncedJson)
+      ownListenerRef.current = null
+      if (keyListeners.size === 0) listenersByStorageKey.delete(storageKey)
     }
-  }, [key])
+  }, [storageKey])
 
-  const setAndSync = useCallback(
-    (action: SetStateAction<T>) => {
-      setValue((prev) => {
-        const next = typeof action === 'function' ? (action as (prev: T) => T)(prev) : action
+  const setStoredValue = useCallback(
+    (nextValueOrUpdater: SetStateAction<T>) => {
+      setInstanceValue((previousValue) => {
+        const nextValue = typeof nextValueOrUpdater === 'function' ? (nextValueOrUpdater as (prev: T) => T)(previousValue) : nextValueOrUpdater
         try {
-          const json = JSON.stringify(next)
-          localStorage.setItem(key, json)
-          const self = listenerRef.current
-          listeners.get(key)?.forEach((fn) => {
-            if (fn !== self) fn(json)
+          const nextJson = JSON.stringify(nextValue)
+          localStorage.setItem(storageKey, nextJson)
+          const ownListener = ownListenerRef.current
+          listenersByStorageKey.get(storageKey)?.forEach((listener) => {
+            if (listener !== ownListener) listener(nextJson)
           })
         } catch {}
-        return next
+        return nextValue
       })
     },
-    [key],
+    [storageKey],
   )
 
-  return [value, setAndSync]
+  return [instanceValue, setStoredValue]
 }

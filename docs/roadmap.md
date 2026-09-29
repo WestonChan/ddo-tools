@@ -931,6 +931,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4i | done | `<Modal>` primitive consolidation (+ mobile fullscreen nav modal behavior) |
 | 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
 | 4k | done | File-structure cleanup -- feature-layout consistency, dead icon removal |
+| 4n | done | Naming pass -- every identifier in `src/` and `e2e/` checked against `docs/naming.md` and renamed where it failed |
 | 4c | done | ETL template/entity normalization + rare loot (Python pipeline) |
 | 4m | superseded | ETL data-quality audits (Python) -- replaced by V2/V3, which source these fields from DDOBuilderV2 instead of the wiki |
 | 4l | superseded | DDOBuilderV2 cross-check utility -- inverted by V2: Maetrim's data is now the primary source and the old `ddo.db` is the fixture |
@@ -959,7 +960,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 14 | superseded | Build sharing via URL -- replaced by V8's server-side sharing; the URL codec is optional fallback |
 | 15 | planned | `.DDOBuild` import (DDOBuilderV2 desktop files) |
 
-Phases 4h–4k are general frontend/repo cleanup rather than Resources-browser work; they sit under
+Phases 4h–4k and 4n are general frontend/repo cleanup rather than Resources-browser work; they sit under
 Phase 4 only because they surfaced during it. Ordered first because all are small and self-contained.
 
 **Independence and ordering notes** (the table reads as strictly serial by default, so where that
@@ -1212,7 +1213,7 @@ Filters today are scattered across the top bar (Slot select, Pack select, Stats 
 
 - **Unified filter UI.** Replace the strip of disparate controls with a single filter surface (popover or inline panel) that lists every available filter in one place. Active filters render as removable chips above the result list — visible at a glance, one-click clear. Removes the "where's the rare toggle vs the slot select" cognitive split.
 - **Tiered visibility for rarely-used filters.** Some filters (Slot, Pack, Stats, ML) get used constantly; others (per-stat to-hit, per-stat to-damage, weapon proficiency, material, binding, augment-slot color, future power-user fields) are useful occasionally and would clutter the primary surface. The unified UI groups filters into "common" (always visible) and "more" (collapsed behind a disclosure or secondary tab) so adding new filters doesn't degrade the day-to-day view. Goal: every filter we'd reasonably want is *available*, not *visible*.
-- **Searchable selects.** The Pack dropdown already has 50+ options and will grow; Stats, future Bonus-type, and future Patron filters have similar shapes. Replace the native `<select>` with a typeahead-style combobox so users can find an option by typing instead of scrolling. Build it as a **shared primitive in `src/components/`** serving every filter dropdown alike — Pack, Stats, per-raid, future Bonus-type/Patron — with `StatsMultiSelect` migrating onto it (preserve its capture-phase Escape precedence over modal dismissal; see `useModalBehavior`'s bubble-phase contract). Deliberately *not* built on the Phase 4i `<Modal>` — combobox popovers are non-modal anatomy (no backdrop, no inert, focus stays in the trigger's flow). Library research (2026-07-26): **Base UI**'s `Combobox` (`multiple` + filtering; headless, token-friendly; MUI + ex-Radix team; 1.0.0-rc, pushed daily, 439k wk downloads) is the best fit and matches the tech-stack section's existing Base UI earmark; runner-up downshift (hooks-only, 4.2M wk). Radix has no combobox; react-select drags in emotion; Headless UI assumes Tailwind. Re-verify Base UI has reached 1.0 stable when this phase starts.
+- **Searchable selects.** The Pack dropdown already has 50+ options and will grow; Stats, future Bonus-type, and future Patron filters have similar shapes. Replace the native `<select>` with a typeahead-style combobox so users can find an option by typing instead of scrolling. Build it as a **shared primitive in `src/components/`** serving every filter dropdown alike — Pack, Stats, per-raid, future Bonus-type/Patron — with `StatMultiSelect` migrating onto it (preserve its capture-phase Escape precedence over modal dismissal; see `useModalAccessibility`'s bubble-phase contract). Deliberately *not* built on the Phase 4i `<Modal>` — combobox popovers are non-modal anatomy (no backdrop, no inert, focus stays in the trigger's flow). Library research (2026-07-26): **Base UI**'s `Combobox` (`multiple` + filtering; headless, token-friendly; MUI + ex-Radix team; 1.0.0-rc, pushed daily, 439k wk downloads) is the best fit and matches the tech-stack section's existing Base UI earmark; runner-up downshift (hooks-only, 4.2M wk). Radix has no combobox; react-select drags in emotion; Headless UI assumes Tailwind. Re-verify Base UI has reached 1.0 stable when this phase starts.
 - **Per-raid filter.** Today "Raid" is a boolean toggle (any raid) and pack is a separate dropdown — neither lets the user filter to a *specific* raid. Add a Raid filter (combobox listing the entries in `KNOWN_RAID_QUESTS`, or the `is_raid` quests once the Phase 4c migration lands) so "show me items that drop from Tower of the Twelve" works directly. The boolean "any raid" toggle can stay as a quick-access shortcut alongside the per-raid select, or fold into "Raid: Any" inside the unified UI.
 - **"Content you own" filter** — items whose source quests the user can actually run, from an account-type setting (F2P/Premium/VIP) + owned packs/expansions + an "apply free code" shortcut for the recurring pack-giveaway codes. Needs spec expansion before starting; ownership model, wiki sources, and data prerequisites are in [docs/notes/Resource View.md](notes/Resource%20View.md).
 
@@ -1236,12 +1237,12 @@ Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes ea
 - Add `bonus_alias` table mapping freeform aliases (typos, alternate spellings, common shorthand) to canonical bonus rows; powers fuzzy search in user-facing bonus selectors
 
 #### Phase 4f — Categories
-- Wire feats, enhancements, a new bonuses category, and a new stats category into the picker. Each gets its own query layer + detail component. Bonuses category surfaces backlinks to items/augments/enhancements/sets that apply them. Once stats are a first-class category, swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushDetail({ category: 'stats', id })` so the inspector navigates *inside* our app — keeps users in the same view, builds the same cross-link affordance bonuses already have between items/feats/etc.
+- Wire feats, enhancements, a new bonuses category, and a new stats category into the picker. Each gets its own query layer + detail component. Bonuses category surfaces backlinks to items/augments/enhancements/sets that apply them. Once stats are a first-class category, swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushResource({ category: 'stats', id })` so the inspector navigates *inside* our app — keeps users in the same view, builds the same cross-link affordance bonuses already have between items/feats/etc.
 
 #### Phase 4g — Polish
 - Filter persistence per category via `useLocalStorage`. Expand Fuse search to material/binding/item_category.
-- **Improve the visual treatment of the Raid and Rare indicators.** Phase 4c extracted `ResourceChip` so the picker list and the item-detail "Drops from" line render the same fact identically, but the styling is inherited rather than designed: `raid` is accent-tinted and `rare` is neutral (`--text-secondary` / `--border` / `--bg-subtle`), which was a picker-local choice made when raid was the only notable property. Open questions for a proper pass — should rarity get its own hue (the genre convention is gold/amber) rather than borrowing the accent or a neutral; should the two chips read as the same *kind* of thing at all, given one is a drop-source property and the other a loot-list property; and do they belong as chips, as a column in the Phase 4g sortable table (see below), or as inline name decorations. Note that no shipped item is currently both raid *and* rare, so the side-by-side case is untested against real data. Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
-- **Suppress the empty metadata line under "Drops from".** When a drop location has no pack, patron, zone, npc or level, `ItemDetail` still renders the `·`-joined meta span and leaves a blank line (visible on item 3179). Mostly a symptom of the loot-source problem in Phase 4m, but the guard is worth having regardless.
+- **Improve the visual treatment of the Raid and Rare indicators.** Phase 4c extracted `DropTagChip` so the picker list and the item-detail "Drops from" line render the same fact identically, but the styling is inherited rather than designed: `raid` is accent-tinted and `rare` is neutral (`--text-secondary` / `--border` / `--bg-subtle`), which was a picker-local choice made when raid was the only notable property. Open questions for a proper pass — should rarity get its own hue (the genre convention is gold/amber) rather than borrowing the accent or a neutral; should the two chips read as the same *kind* of thing at all, given one is a drop-source property and the other a loot-list property; and do they belong as chips, as a column in the Phase 4g sortable table (see below), or as inline name decorations. Note that no shipped item is currently both raid *and* rare, so the side-by-side case is untested against real data. Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
+- **Suppress the empty metadata line under "Drops from".** When a drop location has no pack, patron, zone, npc or level, `ItemDetailBody` still renders the `·`-joined meta span and leaves a blank line (visible on item 3179). Mostly a symptom of the loot-source problem in Phase 4m, but the guard is worth having regardless.
 - **Item icons in the picker list.** Show each item's icon beside its name so the list is scannable by shape/colour rather than by reading every row (reference: ddo-builds.com's item list). Blocked on an icon-asset source — see the image-extraction item in [docs/notes/To Do.md](notes/To%20Do.md); resolve that first, then wire icons into both the stacked-list and sortable-table picker modes. Needs a placeholder for items with no icon and must not shift row height (virtualized list assumes fixed rows).
 - **Promote the wiki compare window to a first-class "linked window" feature.** Have the window follow the selected resource automatically (not just explicit link clicks), and give both the picker list and the detail view a pair of buttons — one that drives the linked window, one that opens a plain new tab in the current window. Detail: [docs/notes/Resource View.md](notes/Resource%20View.md).
 - **Convert the picker to a true sortable table.** Today's picker is a virtualized stacked list: each row shows the name on top and meta fields (`ML · Slot · Pack`) inline below. That works at narrow widths but can't be sorted or column-aligned. Phase 4g reshapes it into a virtualized table with explicit columns (Name, ML, Slot, Pack, Rarity-or-Raid chip, etc.) and clickable column headers that toggle ascending/descending sort. Browse mode (wider picker) is the right home for this since the table needs horizontal space the drawer-sliver doesn't have. Stacked-list view stays as the narrow-mode fallback. The current chips (Raid/Rare) collapse into either a dedicated column or remain as inline name decorations — decide when implementing.
@@ -1437,6 +1438,30 @@ re-verified against the tree before implementing — which corrected two of them
   barrel's provider export silently resolved to the context-object module (16 tests failed with
   `Element type is invalid`). `tsc -b` did **not** catch it. Hence `CharacterProvider.tsx`. Recorded
   as a rule in [`.claude/rules/frontend.md`](../.claude/rules/frontend.md).
+
+#### Phase 4n — Naming pass (done)
+
+**Shipped 2026-09-29** on `apply-naming-rules`. Every identifier in `src/` and `e2e/` was reviewed
+against [`docs/naming.md`](naming.md) and about 1,300 were renamed, along with 44 files named after
+their main export. Identifiers quoted in earlier phase entries above are the names at the time and
+predate this pass.
+
+- Renames went through the TypeScript language service rather than text search, so tests, JSX props
+  and barrels followed. Key-preserving mode was required: renaming a local that sits in an object
+  shorthand otherwise changes the object's key as well.
+- The language service cannot link a renamed property to keys in object literals it can't
+  contextually type (arrays built in `.map()`, `toEqual` expectations, untyped config arrays). A
+  renamed required property shows up as a type error there; a renamed optional one does not. That
+  is how `PastLifeStacks`' epic-sphere filter briefly went missing: it now has a test.
+- Functions whose honest name needed "and" or "or" were split: `applyAccent` / `saveAccent`, and
+  the bottom bar's `toggleWarningList` / `showValidationComingSoonTooltip`. The patch-note date
+  helpers left `landing/pastLifeCounts.ts` for `landing/patchNoteDates.ts`.
+- Fields persisted in localStorage (`Life.race`, `feats`, `enhancements`, `importSource`, the legacy
+  `{ accent }` JSON) and every `Api*` wire field kept their names.
+- `tsconfig.app.json` excludes test files, so type errors in tests never surface in `tsc -b` or
+  Vitest. Three pre-existing ones remain (`spell_id` in an `ItemClickie` fixture, missing
+  `aria-posinset`/`aria-setsize` in `ItemPickerRow.test.tsx`, a `null` rerender prop in
+  `useDetailDrawerStack.test.ts`).
 
 #### Phase 4l — DDOBuilderV2 data cross-check utility
 

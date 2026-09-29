@@ -1,0 +1,52 @@
+import type { JSX } from 'react'
+
+export type StatusPlaceholderReason =
+  | 'no-selection'
+  | 'no-results'
+  | 'empty-table'
+  | 'not-found'
+  | 'loading'
+  | 'error'
+
+interface StatusPlaceholderProps {
+  reason: StatusPlaceholderReason
+  searchQuery?: string
+  missingItemId?: number | null
+  category?: string
+}
+
+function placeholderMessage({ reason, searchQuery, missingItemId, category }: StatusPlaceholderProps): { title: string; hint?: string } {
+  switch (reason) {
+    case 'no-selection':
+      return { title: 'Select an item to view details.' }
+    case 'no-results':
+      return {
+        title: searchQuery ? `No matches for "${searchQuery}".` : 'No matches.',
+        hint: 'Try a shorter or different search term.',
+      }
+    case 'empty-table':
+      return { title: `No ${category ?? 'rows'} in database.` }
+    case 'not-found':
+      return {
+        title: missingItemId !== null && missingItemId !== undefined ? `No item with id ${missingItemId}.` : 'Not found.',
+        hint: 'Pick another row from the list.',
+      }
+    case 'loading':
+      return { title: 'Loading\u2026' }
+    case 'error':
+      return {
+        title: 'Could not load this item.',
+        hint: 'Check your connection and pick the row again.',
+      }
+  }
+}
+
+export function StatusPlaceholder(props: StatusPlaceholderProps): JSX.Element {
+  const { title, hint } = placeholderMessage(props)
+  return (
+    <div className="resources-detail-empty section-placeholder" role="status">
+      <p>{title}</p>
+      {hint && <p className="resources-detail-empty-hint">{hint}</p>}
+    </div>
+  )
+}

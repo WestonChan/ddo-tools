@@ -3,7 +3,7 @@
    owns its positioning, width, and the <900px full-screen switch); this file
    styles the picker and the drawer's contents. Wiki access is the
    compare-window icon in the entity header (the embedded preview died with
-   ddowiki's bot protection — see lib/wiki/client.ts).
+   ddowiki's bot protection — see lib/wiki/pageLinks.ts).
 */
 
 .resources-view {
@@ -89,7 +89,7 @@
 /* The drawer itself is <Modal variant="drawer-right"> — backdrop, fixed
    positioning, width clamp, and the <900px full-screen behavior live in
    src/components/Modal.css. The `-bar` / `-body` rules below are the drawer's
-   contents, owned by ResourceDetailView. */
+   contents, owned by ResourceDetailDrawer. */
 .resources-drawer-bar {
   flex-shrink: 0;
   display: flex;
@@ -126,9 +126,9 @@
   color: var(--accent);
 }
 
-/* DetailBar — populates the drawer-bar slot with the breadcrumb nav:
+/* DetailBreadcrumbBar — populates the drawer-bar slot with the breadcrumb nav:
    optional back arrow + "Back to <category>" crumb + one crumb per stack
-   level. Per-entity actions (copy-link, wiki, report) live in EntityHeader. */
+   level. Per-entity actions (copy-link, wiki, report) live in DetailHeader. */
 .resources-detail-bar {
   flex: 1;
   display: flex;
@@ -321,7 +321,7 @@
 }
 
 /* Custom-themed select. Uses `appearance: none` to drop the OS chrome,
-   then a `<SelectShell>` wrapper layers a ChevronDown icon on the right
+   then a `<SelectWithChevron>` wrapper layers a ChevronDown icon on the right
    so the closed state matches the rest of the site. */
 .resources-select-shell {
   position: relative;
@@ -648,7 +648,7 @@
   flex-shrink: 0;
 }
 
-/* Small status chip (Raid / Rare), rendered by the shared `ResourceChip`
+/* Small status chip (Raid / Rare), rendered by the shared `DropTagChip`
    component in both the picker rows and the detail drawer's drop-location
    rows. Tinted via data-kind so themes/accent swaps don't hardcode hue —
    raid derives from --accent, rare is neutral, so both stay legible in
@@ -694,14 +694,14 @@
   min-width: 0;
 }
 
-/* Detail body — built from EntityHeader + DetailSection + StatList + KeyValueGrid. */
+/* Detail body — built from DetailHeader + DetailSection + StatList + KeyValueGrid. */
 .resources-detail-body {
   padding: var(--space-4);
 }
 
-/* EntityHeader — name + copy-link/wiki/report icons + KV grid. The
-   "Back to <category>" link lives at the column root (ResourceDetailView).
-   The wiki icon opens the shared compare window (see lib/wiki/client.ts —
+/* DetailHeader — name + copy-link/wiki/report icons + KV grid. The
+   "Back to <category>" link lives at the column root (ResourceDetailDrawer).
+   The wiki icon opens the shared compare window (see lib/wiki/pageLinks.ts —
    ddowiki's bot protection killed the old embedded preview pane). */
 .resources-entity-header {
   margin-bottom: var(--space-3);

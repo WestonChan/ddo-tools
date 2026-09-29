@@ -1,38 +1,38 @@
 import type { JSX } from 'react'
-import { TooltipWrapper } from '../../../components'
-import { CATEGORIES, CATEGORY_LABELS, ENABLED_CATEGORIES, type Category } from '../types'
+import { HoverTooltip } from '../../../components'
+import { RESOURCE_CATEGORIES, LABEL_BY_RESOURCE_CATEGORY, ENABLED_RESOURCE_CATEGORIES, type ResourceCategory } from '../resourceCategories'
 
 interface CategoryTabsProps {
-  active: Category
-  onSelect: (category: Category) => void
+  activeCategory: ResourceCategory
+  onSelect: (category: ResourceCategory) => void
 }
 
-export function CategoryTabs({ active, onSelect }: CategoryTabsProps): JSX.Element {
+export function CategoryTabs({ activeCategory, onSelect }: CategoryTabsProps): JSX.Element {
   return (
     <div role="tablist" aria-label="Resource categories" className="resources-tabs">
-      {CATEGORIES.map((category) => {
-        const enabled = ENABLED_CATEGORIES.has(category)
-        const label = CATEGORY_LABELS[category]
-        const button = (
+      {RESOURCE_CATEGORIES.map((category) => {
+        const isEnabled = ENABLED_RESOURCE_CATEGORIES.has(category)
+        const label = LABEL_BY_RESOURCE_CATEGORY[category]
+        const tabButton = (
           <button
             key={category}
             role="tab"
             type="button"
-            aria-selected={active === category}
-            aria-disabled={!enabled || undefined}
-            disabled={!enabled}
-            onClick={enabled ? () => onSelect(category) : undefined}
-            className={`resources-tab hoverable${active === category ? ' active' : ''}${!enabled ? ' disabled' : ''}`}
+            aria-selected={activeCategory === category}
+            aria-disabled={!isEnabled || undefined}
+            disabled={!isEnabled}
+            onClick={isEnabled ? () => onSelect(category) : undefined}
+            className={`resources-tab hoverable${activeCategory === category ? ' active' : ''}${!isEnabled ? ' disabled' : ''}`}
           >
             {label}
           </button>
         )
-        return enabled ? (
-          button
+        return isEnabled ? (
+          tabButton
         ) : (
-          <TooltipWrapper key={category} text="Coming soon">
-            {button}
-          </TooltipWrapper>
+          <HoverTooltip key={category} text="Coming soon">
+            {tabButton}
+          </HoverTooltip>
         )
       })}
     </div>

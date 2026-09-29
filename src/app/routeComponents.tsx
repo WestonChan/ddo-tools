@@ -2,46 +2,46 @@ import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ErrorScreen } from '../components'
 import { ResourcesView } from '../features/resources'
-import { sanitizeUrl, buildIssueUrls } from '../lib/githubIssue'
+import { urlWithoutQueryOrFragment, githubIssueUrls } from '../lib/githubIssue'
 
 function Placeholder({ message }: { message: string }): JSX.Element {
   return <div className="section-placeholder">{message}</div>
 }
 
-const makePlaceholder =
+const createPlaceholderView =
   (message: string) =>
   (): JSX.Element =>
     <Placeholder message={message} />
 
-export const BuildPlanView = makePlaceholder('Build Plan coming in Phase 5.')
-export const OverviewView = makePlaceholder('Build Overview coming in Phase 10.')
-export const GearView = makePlaceholder('Gear Planner coming in Phase 6.')
-export const DamageCalcView = makePlaceholder('Damage Calculator coming in a future update.')
-export const FarmChecklistView = makePlaceholder('Farm Checklist coming in Phase 8.')
+export const BuildPlanView = createPlaceholderView('Build Plan coming in Phase 5.')
+export const OverviewView = createPlaceholderView('Build Overview coming in Phase 10.')
+export const GearView = createPlaceholderView('Gear Planner coming in Phase 6.')
+export const DamageCalculatorView = createPlaceholderView('Damage Calculator coming in a future update.')
+export const FarmChecklistView = createPlaceholderView('Farm Checklist coming in Phase 8.')
 export { ResourcesView }
 
 export function NotFoundView(): JSX.Element {
-  const sanitized = typeof window !== 'undefined'
-    ? sanitizeUrl(window.location.href).replace(window.location.origin, '')
+  const sanitizedPath = typeof window !== 'undefined'
+    ? urlWithoutQueryOrFragment(window.location.href).replace(window.location.origin, '')
     : '/'
-  const showPath = !!sanitized && sanitized !== '/'
-  const reportIssue = showPath
-    ? new Error(`404 — ${sanitized}`)
+  const hasNonRootPath = !!sanitizedPath && sanitizedPath !== '/'
+  const notFoundError = hasNonRootPath
+    ? new Error(`404 — ${sanitizedPath}`)
     : new Error('404 — Page not found')
 
   return (
     <ErrorScreen
       heading="Page not found"
       tone="info"
-      body={
-        showPath ? (
-          <p className="error-screen-detail">{sanitized}</p>
+      detail={
+        hasNonRootPath ? (
+          <p className="error-screen-detail">{sanitizedPath}</p>
         ) : (
           <p className="error-screen-hint">We couldn&rsquo;t find that page.</p>
         )
       }
-      error={reportIssue}
-      labels="not-found"
+      error={notFoundError}
+      issueLabels="not-found"
       actions={
         <>
           <Link to="/" className="btn-primary">
@@ -49,7 +49,7 @@ export function NotFoundView(): JSX.Element {
           </Link>
           <a
             className="btn-ghost"
-            href={buildIssueUrls(reportIssue, 'not-found', sanitized).newIssueUrl}
+            href={githubIssueUrls(notFoundError, 'not-found', sanitizedPath).newIssueUrl}
             target="_blank"
             rel="noopener noreferrer"
           >

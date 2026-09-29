@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react'
-import { sanitizeUrl } from './githubIssue'
+import { urlWithoutQueryOrFragment } from './githubIssue'
 
-export function initSentry(): void {
+export function initializeSentry(): void {
   const dsn = import.meta.env.SENTRY_DSN
   if (!dsn) {
     console.info('[sentry] no DSN configured; skipping init')
@@ -24,7 +24,7 @@ export function initSentry(): void {
       sendDefaultPii: false,
       beforeSend(event) {
         if (event.request?.url) {
-          event.request.url = sanitizeUrl(event.request.url)
+          event.request.url = urlWithoutQueryOrFragment(event.request.url)
         }
         if (event.request) {
           delete event.request.headers
@@ -38,32 +38,32 @@ export function initSentry(): void {
   }
 }
 
-export interface BoundaryErrorInfo {
+export interface ErrorComponentTrace {
   componentStack?: string | null
 }
 
-export function captureBoundary(error: unknown, info: BoundaryErrorInfo): void {
-  const err = error instanceof Error ? error : new Error(String(error))
+export function captureBoundaryError(error: unknown, componentTrace: ErrorComponentTrace): void {
+  const errorToCapture = error instanceof Error ? error : new Error(String(error))
   try {
-    Sentry.captureException(err, {
-      contexts: { react: { componentStack: info.componentStack ?? '' } },
+    Sentry.captureException(errorToCapture, {
+      contexts: { react: { componentStack: componentTrace.componentStack ?? '' } },
     })
   } catch {}
 }
 
-export interface SentryContextSnapshot {
+export interface SentryEventReference {
   eventId?: string
   replayUrl?: string
 }
 
-export function getLastSentryContext(): SentryContextSnapshot {
+export function lastSentryEventReference(): SentryEventReference {
   try {
     const eventId = Sentry.lastEventId() ?? undefined
     const replay = Sentry.getReplay?.()
     const replayId = replay?.getReplayId?.() ?? undefined
-    const orgSlug = import.meta.env.SENTRY_ORG
-    const replayUrl = replayId && orgSlug
-      ? `https://${orgSlug}.sentry.io/replays/${replayId}/`
+    const organizationSlug = import.meta.env.SENTRY_ORG
+    const replayUrl = replayId && organizationSlug
+      ? `https://${organizationSlug}.sentry.io/replays/${replayId}/`
       : undefined
     return { eventId, replayUrl }
   } catch {

@@ -1,5 +1,5 @@
 import { useRef, type JSX, type ReactNode } from 'react'
-import { useModalBehavior } from '../hooks/useModalBehavior'
+import { useModalAccessibility } from '../hooks/useModalAccessibility'
 import './Modal.css'
 
 export type ModalVariant = 'centered' | 'drawer-right'
@@ -24,7 +24,7 @@ export function Modal({
   children,
 }: ModalProps): JSX.Element {
   const panelRef = useRef<HTMLDivElement | null>(null)
-  useModalBehavior({ active: true, onClose, panelRef })
+  useModalAccessibility({ isActive: true, onClose, panelRef })
 
   return (
     <>

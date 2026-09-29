@@ -5,52 +5,52 @@ export type TooltipPlacement = 'bottom' | 'right'
 
 export function Tooltip({
   text,
-  anchor,
+  anchorRect,
   placement = 'bottom',
 }: {
   text: string
-  anchor: DOMRect
+  anchorRect: DOMRect
   placement?: TooltipPlacement
 }): JSX.Element {
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null)
 
-  const measure = useCallback(
-    (el: HTMLDivElement | null) => {
-      if (!el) return
-      const tip = el.getBoundingClientRect()
-      const pad = 8
+  const positionTooltipBesideAnchor = useCallback(
+    (tooltipElement: HTMLDivElement | null) => {
+      if (!tooltipElement) return
+      const tooltipRect = tooltipElement.getBoundingClientRect()
+      const viewportMarginPx = 8
       let top: number
       let left: number
 
       if (placement === 'right') {
-        left = anchor.right + 6
-        top = anchor.top + anchor.height / 2 - tip.height / 2
+        left = anchorRect.right + 6
+        top = anchorRect.top + anchorRect.height / 2 - tooltipRect.height / 2
 
-        if (left + tip.width + pad > window.innerWidth) {
-          left = anchor.left - tip.width - 6
+        if (left + tooltipRect.width + viewportMarginPx > window.innerWidth) {
+          left = anchorRect.left - tooltipRect.width - 6
         }
 
-        top = Math.max(pad, Math.min(top, window.innerHeight - tip.height - pad))
+        top = Math.max(viewportMarginPx, Math.min(top, window.innerHeight - tooltipRect.height - viewportMarginPx))
       } else {
-        top = anchor.bottom + 6
-        if (top + tip.height + pad > window.innerHeight) {
-          top = anchor.top - tip.height - 6
+        top = anchorRect.bottom + 6
+        if (top + tooltipRect.height + viewportMarginPx > window.innerHeight) {
+          top = anchorRect.top - tooltipRect.height - 6
         }
 
-        left = anchor.left + anchor.width / 2 - tip.width / 2
-        left = Math.max(pad, Math.min(left, window.innerWidth - tip.width - pad))
+        left = anchorRect.left + anchorRect.width / 2 - tooltipRect.width / 2
+        left = Math.max(viewportMarginPx, Math.min(left, window.innerWidth - tooltipRect.width - viewportMarginPx))
       }
 
-      setPos({ top, left })
+      setTooltipPosition({ top, left })
     },
-    [anchor, placement],
+    [anchorRect, placement],
   )
 
   return createPortal(
     <div
-      ref={measure}
+      ref={positionTooltipBesideAnchor}
       className="tooltip-portal"
-      style={pos ? { top: pos.top, left: pos.left } : { visibility: 'hidden' as const }}
+      style={tooltipPosition ? { top: tooltipPosition.top, left: tooltipPosition.left } : { visibility: 'hidden' as const }}
     >
       {text}
     </div>,
@@ -58,7 +58,7 @@ export function Tooltip({
   )
 }
 
-export function TooltipWrapper({
+export function HoverTooltip({
   text,
   children,
   placement,
@@ -67,15 +67,15 @@ export function TooltipWrapper({
   children: React.ReactNode
   placement?: TooltipPlacement
 }): JSX.Element {
-  const [anchor, setAnchor] = useState<DOMRect | null>(null)
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
 
   return (
     <span
-      onMouseEnter={(e) => setAnchor(e.currentTarget.getBoundingClientRect())}
-      onMouseLeave={() => setAnchor(null)}
+      onMouseEnter={(e) => setAnchorRect(e.currentTarget.getBoundingClientRect())}
+      onMouseLeave={() => setAnchorRect(null)}
     >
       {children}
-      {anchor && <Tooltip text={text} anchor={anchor} placement={placement} />}
+      {anchorRect && <Tooltip text={text} anchorRect={anchorRect} placement={placement} />}
     </span>
   )
 }

@@ -1,25 +1,22 @@
-export const REPO_URL = 'https://github.com/WestonChan/ddo-tools'
+import type { SentryEventReference } from './sentry'
 
-export interface SentryContext {
-  eventId?: string
-  replayUrl?: string
-}
+export const REPOSITORY_URL = 'https://github.com/WestonChan/ddo-tools'
 
 export interface IssueUrls {
   searchUrl: string
   newIssueUrl: string
 }
 
-export function sanitizeUrl(href: string): string {
+export function urlWithoutQueryOrFragment(url: string): string {
   try {
-    const url = new URL(href)
-    return url.origin + url.pathname
+    const parsedUrl = new URL(url)
+    return parsedUrl.origin + parsedUrl.pathname
   } catch {
-    return href.split(/[?#]/, 1)[0] ?? href
+    return url.split(/[?#]/, 1)[0] ?? url
   }
 }
 
-const USER_REPORT_TEMPLATE = `**Describe the bug**
+const USER_REPORT_BODY_TEMPLATE = `**Describe the bug**
 A clear and concise description of what the bug is.
 
 **To reproduce**
@@ -39,73 +36,73 @@ Anything else worth knowing.
 
 ---`
 
-export function buildIssueUrls(
+export function githubIssueUrls(
   error?: Error,
   labels?: string | string[],
-  contextTitle?: string,
-  sentryContext?: SentryContext,
+  preferredTitle?: string,
+  sentryEventReference?: SentryEventReference,
 ): IssueUrls {
-  const labelArray = normalizeLabels(labels)
-  const labelQuery = labelArray.length
-    ? `labels=${labelArray.map(encodeURIComponent).join(',')}&`
+  const issueLabels = toLabelList(labels)
+  const labelsQueryParameter = issueLabels.length
+    ? `labels=${issueLabels.map(encodeURIComponent).join(',')}&`
     : ''
-  const labelSearch = labelArray.length
-    ? '+' + labelArray.map((l) => encodeURIComponent(`label:${l}`)).join('+')
+  const labelSearchTerms = issueLabels.length
+    ? '+' + issueLabels.map((l) => encodeURIComponent(`label:${l}`)).join('+')
     : ''
-  const searchUrl = `${REPO_URL}/issues?q=is%3Aopen${labelSearch}`
+  const searchUrl = `${REPOSITORY_URL}/issues?q=is%3Aopen${labelSearchTerms}`
 
-  const title = pickTitle(error, contextTitle)
-  const body = buildBody(error, sentryContext)
+  const title = issueTitle(error, preferredTitle)
+  const body = issueBody(error, sentryEventReference)
 
   const newIssueUrl =
-    `${REPO_URL}/issues/new?${labelQuery}` +
+    `${REPOSITORY_URL}/issues/new?${labelsQueryParameter}` +
     `title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`
 
   return { searchUrl, newIssueUrl }
 }
 
-function normalizeLabels(labels: string | string[] | undefined): string[] {
+function toLabelList(labels: string | string[] | undefined): string[] {
   if (!labels) return []
   if (Array.isArray(labels)) return labels.filter(Boolean)
   return [labels]
 }
 
-function pickTitle(error: Error | undefined, contextTitle: string | undefined): string {
-  const trimmedContext = contextTitle?.trim()
-  if (trimmedContext) return trimmedContext
+function issueTitle(error: Error | undefined, preferredTitle: string | undefined): string {
+  const trimmedPreferredTitle = preferredTitle?.trim()
+  if (trimmedPreferredTitle) return trimmedPreferredTitle
   if (!error) return 'User report'
-  const msg = (error.message ?? '').trim()
-  if (!msg) return 'Untitled error'
-  const head = msg.split(/[—:]/, 1)[0]?.trim()
-  if (!head) return 'Untitled error'
-  return head
+  const trimmedMessage = (error.message ?? '').trim()
+  if (!trimmedMessage) return 'Untitled error'
+  const firstClause = trimmedMessage.split(/[—:]/, 1)[0]?.trim()
+  if (!firstClause) return 'Untitled error'
+  return firstClause
 }
 
-function buildBody(error: Error | undefined, sentryContext: SentryContext | undefined): string {
-  const parts: string[] = []
+function issueBody(error: Error | undefined, sentryEventReference: SentryEventReference | undefined): string {
+  const bodySections: string[] = []
 
   if (error) {
-    parts.push(`**Error:** ${error.message || 'Untitled error'}`)
+    bodySections.push(`**Error:** ${error.message || 'Untitled error'}`)
     if (error.stack) {
-      parts.push('**Stack trace:**\n```\n' + error.stack + '\n```')
+      bodySections.push('**Stack trace:**\n```\n' + error.stack + '\n```')
     }
   } else {
-    parts.push(USER_REPORT_TEMPLATE)
+    bodySections.push(USER_REPORT_BODY_TEMPLATE)
   }
 
   if (typeof window !== 'undefined') {
-    parts.push(`**URL:** ${sanitizeUrl(window.location.href)}`)
+    bodySections.push(`**URL:** ${urlWithoutQueryOrFragment(window.location.href)}`)
     if (typeof window.navigator !== 'undefined') {
-      parts.push(`**Browser:** ${window.navigator.userAgent}`)
+      bodySections.push(`**Browser:** ${window.navigator.userAgent}`)
     }
   }
 
-  if (sentryContext?.eventId) {
-    parts.push(`**Sentry event:** \`${sentryContext.eventId}\``)
+  if (sentryEventReference?.eventId) {
+    bodySections.push(`**Sentry event:** \`${sentryEventReference.eventId}\``)
   }
-  if (sentryContext?.replayUrl) {
-    parts.push(`**Replay:** ${sentryContext.replayUrl}`)
+  if (sentryEventReference?.replayUrl) {
+    bodySections.push(`**Replay:** ${sentryEventReference.replayUrl}`)
   }
 
-  return parts.join('\n\n')
+  return bodySections.join('\n\n')
 }

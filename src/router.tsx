@@ -10,7 +10,7 @@ import { LandingView } from './features/landing'
 import { SettingsView } from './features/settings'
 import {
   BuildPlanView,
-  DamageCalcView,
+  DamageCalculatorView,
   FarmChecklistView,
   GearView,
   NotFoundView,
@@ -23,7 +23,7 @@ const rootRoute = createRootRoute({
   notFoundComponent: NotFoundView,
 })
 
-const indexRoute = createRoute({
+const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: LandingView,
@@ -33,7 +33,7 @@ const buildPlanRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'build-plan',
   component: BuildPlanView,
-  staticData: { showStatsPanel: true },
+  staticData: { hasBuildSidePanel: true },
 })
 
 const charactersRoute = createRoute({
@@ -60,10 +60,10 @@ const gearRoute = createRoute({
   component: GearView,
 })
 
-const damageCalcRoute = createRoute({
+const damageCalculatorRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'damage-calc',
-  component: DamageCalcView,
+  component: DamageCalculatorView,
 })
 
 const farmChecklistRoute = createRoute({
@@ -78,30 +78,30 @@ const resourcesRoute = createRoute({
   component: ResourcesView,
 })
 
-const resourcesCategoryRoute = createRoute({
+const resourceCategoryRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'resources/$category',
   component: ResourcesView,
 })
 
-const resourcesItemRoute = createRoute({
+const resourceDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'resources/$category/$id',
   component: ResourcesView,
 })
 
 const routeTree = rootRoute.addChildren([
-  indexRoute,
+  landingRoute,
   buildPlanRoute,
   charactersRoute,
   settingsRoute,
   overviewRoute,
   gearRoute,
-  damageCalcRoute,
+  damageCalculatorRoute,
   farmChecklistRoute,
   resourcesRoute,
-  resourcesCategoryRoute,
-  resourcesItemRoute,
+  resourceCategoryRoute,
+  resourceDetailRoute,
 ])
 
 const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
@@ -119,6 +119,6 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
   interface StaticDataRouteOption {
-    showStatsPanel?: boolean
+    hasBuildSidePanel?: boolean
   }
 }
