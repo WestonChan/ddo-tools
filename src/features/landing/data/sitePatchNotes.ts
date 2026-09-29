@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-09-29',
+    changes: [
+      'The Stats filter menu sits flat on the page like the rest of the UI, without a drop shadow',
+    ],
+  },
+  {
     date: '2026-09-27',
     changes: [
       "Game data now comes from Maetrim's DDOBuilderV2 data files through a public API instead of a database downloaded into the browser, so the site loads without a multi-megabyte fetch and updates weekly",
