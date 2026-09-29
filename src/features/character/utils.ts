@@ -1,7 +1,7 @@
 import type { Character, EpicSphere, Life, PastLifeCounts } from './types'
 import { PAST_LIFE_DEFINITIONS } from './data/pastLifeDefinitions'
 
-export const PAST_LIFE_CATEGORIES = ['heroic', 'racial', 'iconic', 'epic'] as const
+const PAST_LIFE_CATEGORIES = ['heroic', 'racial', 'iconic', 'epic'] as const
 
 export const EPIC_SPHERES: { id: EpicSphere; label: string }[] = [
   { id: 'arcane', label: 'Arcane' },
@@ -32,7 +32,7 @@ export function capitalized(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-export function titleCased(kebabCaseId: string): string {
+function titleCased(kebabCaseId: string): string {
   return kebabCaseId
     .split('-')
     .map((w) => capitalized(w))

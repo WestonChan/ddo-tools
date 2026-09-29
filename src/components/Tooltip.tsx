@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 
 export type TooltipPlacement = 'bottom' | 'right'
 
-export function Tooltip({
+function Tooltip({
   text,
   anchorRect,
   placement = 'bottom',

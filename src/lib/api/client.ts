@@ -1,11 +1,11 @@
-export const PUBLIC_API_URL = 'https://ddo-data.fly.dev'
+const PUBLIC_API_URL = 'https://ddo-data.fly.dev'
 
 export const API_BASE_URL: string = (import.meta.env.VITE_API_URL || PUBLIC_API_URL).replace(
   /\/$/,
   '',
 )
 
-export const API_TIMEOUT_MS = 30_000
+const API_TIMEOUT_MS = 30_000
 
 export const API_HTTP_ERROR = 'api-http' as const
 export const API_NETWORK_ERROR = 'api-network' as const

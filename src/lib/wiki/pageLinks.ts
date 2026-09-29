@@ -1,6 +1,6 @@
-export const WIKI_ORIGIN = 'https://ddowiki.com'
+const WIKI_ORIGIN = 'https://ddowiki.com'
 
-export const WIKI_PAGE_BASE_URL = `${WIKI_ORIGIN}/page`
+const WIKI_PAGE_BASE_URL = `${WIKI_ORIGIN}/page`
 
 export const WIKI_COMPARE_WINDOW_NAME = 'ddowiki-compare'
 

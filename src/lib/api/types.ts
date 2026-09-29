@@ -1,14 +1,3 @@
-export interface ApiDatasetVersion {
-  upstream_sha: string
-  built_at: string
-}
-
-export interface ApiVersion {
-  schema_version: number
-  dataset: ApiDatasetVersion
-  counts: Record<string, number>
-}
-
 export interface ApiItemRow {
   id: number
   name: string

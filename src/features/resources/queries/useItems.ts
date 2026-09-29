@@ -16,7 +16,7 @@ import {
 
 const NEVER_STALE_QUERY_OPTIONS = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
 
-export const resourceQueryKeys = {
+const resourceQueryKeys = {
   itemSummaries: ['items', 'rows'] as const,
   item: (id: number) => ['items', 'detail', id] as const,
   adventurePackNames: ['items', 'packs'] as const,

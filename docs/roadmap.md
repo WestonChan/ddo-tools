@@ -891,6 +891,7 @@ src/features/
                 BuffSection, BuffToggle, StanceGroup
     hooks/ useAbilities, useBuffs
     types.ts
+  gear/                              -- Phase 8 (gear planner: items, augments, sets)
   stats/                             -- Phase 6 (extracted from character)
     components/ StatsPanel, StatsTab, FeatsTab,
                 StatRow, StatBreakdownPopover
@@ -902,7 +903,7 @@ src/stores/                          -- Phase 5 (Zustand, hydrated from user.db)
 ```
 
 Existing modules that later phases extend: `features/character/` (Characters view + past lives,
-Phase 5), `features/gear/` (Phase 8), `features/resources/` (Phase 4c-4g), `features/settings/`
+Phase 5), `features/resources/` (Phase 4c-4g), `features/settings/`
 (Phase 13). The Phase 4 Resources browser shipped as `features/resources/`, not the
 `features/debug/` originally planned here.
 
@@ -1490,6 +1491,9 @@ whenever a finding could have been caught by one.
 - CI's `npx tsc --noEmit` checked nothing (the root tsconfig only references others); it is `tsc -b`.
 - `ddo-data`: `unreachable_pub`, `disallowed_names`, `many_single_char_names` and `similar_names`
   via `[workspace.lints]` and `clippy.toml` (`f274ef8`).
+- knip (`npm run lint:dead-code`) fails on unused files, exports, barrel entries and dependencies. Its
+  first run removed the empty `features/gear/` placeholder, ten unused character types, the unused
+  `ApiVersion` types, stale barrel entries, and the unused `@tanstack/react-router-devtools`.
 - Test files are type-checked by `npm run lint:types` through `tsconfig.test.json`; that surfaced
   three stale fixtures, and the typed naming rule now covers tests and e2e too.
 
