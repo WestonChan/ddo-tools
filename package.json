@@ -12,13 +12,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "eslint . && npm run format:check",
+    "lint:fix": "eslint . --fix && npm run format",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "format": "prettier --write \"{src,e2e,eslint-rules}/**/*.{ts,tsx,js,css}\" \"*.{js,ts}\"",
+    "format:check": "prettier --check \"{src,e2e,eslint-rules}/**/*.{ts,tsx,js,css}\" \"*.{js,ts}\"",
     "test:e2e": "playwright test"
   },
   "dependencies": {
