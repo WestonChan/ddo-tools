@@ -92,10 +92,18 @@ If you genuinely need to run a command from a subdirectory, use `cd subdir && ..
 
 - **Keep code clean.** When working in a file, improve adjacent code that is messy, inconsistent, or overly complex. Don't leave a file worse than you found it.
 - **Refactor freely.** Extract shared logic, simplify conditionals, improve naming, remove dead code. If a refactor makes the code meaningfully better, do it — don't wait to be asked. Follow refactors wherever they lead; don't artificially limit scope.
-- **No comments, no docstrings.** Code carries its meaning in names, types, and tests, so a future agent reads it without any prose. Do not write inline comments, docblocks, JSDoc, Python docstrings, or per-parameter descriptions. If something seems to need a comment to be understood, that is the signal to rename, split, or restructure it until it doesn't. Reasoning that genuinely can't live in code (a decision, an external quirk, a rejected alternative) goes in `docs/` or the roadmap, not next to the code. Enforced by the local ESLint rule in `eslint-rules/no-comments.js`; `npm run lint:fix` strips offenders. Directive comments (`eslint-disable`, `@ts-expect-error`, `/// <reference>`) are the only survivors. Scope the name to the scope of the thing:
-  - **Specific things get purpose names.** A hook, component, or function that exists for one job is named for that job, not its mechanism: `useSlotCandidates`, `fetchItemIdsByPack`, `ApiGate` — not `useQueries2`, `getIds`, `Wrapper`.
-  - **Shared things get general names.** Code in `src/components/`, `src/hooks/`, `src/lib/` serves many callers, so its name describes the capability, not the first caller: `Modal`, `useLocalStorage`, `apiGet` — not `ItemDrawer`, `useThemePref`, `fetchItems`. If a shared name only makes sense from one feature's point of view, either the name is wrong or the code belongs in that feature.
-  - **Booleans read as predicates** (`isPending`, `slotTakesCandidateList`), **collections as plurals** (`rows`, `candidates`), **mappers as `toX`**, **fetchers as `fetchX`**, **hooks as `useX`**. A variable whose name needs a comment to explain it needs a better name instead.
+- **No comments, no docstrings.** Code carries its meaning in names, types, and tests, so a future agent reads it without any prose. Do not write inline comments, docblocks, JSDoc, Python docstrings, or per-parameter descriptions. If something seems to need a comment to be understood, that is the signal to rename, split, or restructure it until it doesn't. Reasoning that genuinely can't live in code (a decision, an external quirk, a rejected alternative) goes in `docs/` or the roadmap, not next to the code. Enforced by the local ESLint rule in `eslint-rules/no-comments.js`; `npm run lint:fix` strips offenders. Directive comments (`eslint-disable`, `@ts-expect-error`, `/// <reference>`) are the only survivors. Since names carry all the meaning, follow the naming rules below.
+
+### Naming
+
+Names replace comments, so each name must answer the question a reader would otherwise ask. **Before naming or renaming anything, read [`docs/naming.md`](docs/naming.md).** It covers how to choose a name, with examples and sources, and applies to both repos. Existing code predates it and is not a model to copy; rename what you touch. The rules in short:
+
+- **Choose, don't guess.** List the concepts the name must carry, pick one word per concept (the player's word, the same word the schema and API use), put them in English order (`maximumMessageLength`, `totalStrength`, `cooldownMs`), then read the call site on its own.
+- **Code that changes data** is an imperative verb phrase naming what it changes, or why: `equipItem`, `clampToStatCap`. Never `update`, `process` or `handle`. A name that needs "and" means the function should be split.
+- **Code that only reads, and every value,** is a noun phrase naming what it is or what it's for, often through the process that made it: `sortedItems`, `itemsToShow`. Reads have no side effects.
+- **Types are nouns**: the domain word if one exists (`Race`, `Augment`, `EquipmentSlot`), otherwise the role the thing plays. No `Manager`, `Helper`, `Info` or `Data`, and no type encoded in the name.
+- **A name means only one thing.** Qualify generic words (`slot`, `candidate`, `entry`, `option`, `source`) until only one reading is left. Add words that remove ambiguity and drop words that repeat the type or the owner.
+- **Name length follows scope**: short names only for values that live 10 lines or fewer. Shared code gets a capability name, not a name from its first caller's point of view. Spell words out and write acronyms as words (`loadHttpUrl`).
 
 ## Testing
 
@@ -136,5 +144,6 @@ Path-relevant docs (styling, testing) are surfaced by `.claude/rules/*.md` when 
 | Doc | Read when |
 |-----|-----------|
 | [`docs/ddowiki-api.md`](docs/ddowiki-api.md) | Looking up DDO game data from ddowiki.com via WebFetch, or building wiki links from the frontend. Also: what the AWS WAF blocks (relevant if the wiki parser is ever ported to `ddo-data`) |
+| [`docs/naming.md`](docs/naming.md) | Naming or renaming anything: functions, variables, types, components, files' exports. How to choose a name, word order, and the rules both repos follow |
 | [`docs/sentry.md`](docs/sentry.md) | Configuring Sentry, troubleshooting error capture, or working with `src/lib/sentry.ts` |
 | [`docs/stacking-rules.md`](docs/stacking-rules.md) | Designing or implementing anything that computes stats from bonuses — the Phase 6–8 stats/gear engine, bonus stacking, effect resolution, or the stacking-semantics tooltip. Documents DDO's rules as game facts (sourced from DDOBuilderV2's model; see the licensing note in roadmap Phase 6) |
