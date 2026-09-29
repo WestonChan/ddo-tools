@@ -932,6 +932,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
 | 4k | done | File-structure cleanup -- feature-layout consistency, dead icon removal |
 | 4n | done | Naming pass -- every identifier in `src/` and `e2e/` checked against `docs/naming.md` and renamed where it failed |
+| 4o | done | Lint enforcement -- written conventions (import direction, barrels, naming shape, case collisions, tokens, formatting) checked by `npm run lint` and `cargo lint` |
 | 4c | done | ETL template/entity normalization + rare loot (Python pipeline) |
 | 4m | superseded | ETL data-quality audits (Python) -- replaced by V2/V3, which source these fields from DDOBuilderV2 instead of the wiki |
 | 4l | superseded | DDOBuilderV2 cross-check utility -- inverted by V2: Maetrim's data is now the primary source and the old `ddo.db` is the fixture |
@@ -960,7 +961,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 14 | superseded | Build sharing via URL -- replaced by V8's server-side sharing; the URL codec is optional fallback |
 | 15 | planned | `.DDOBuild` import (DDOBuilderV2 desktop files) |
 
-Phases 4h–4k and 4n are general frontend/repo cleanup rather than Resources-browser work; they sit under
+Phases 4h–4k, 4n and 4o are general frontend/repo cleanup rather than Resources-browser work; they sit under
 Phase 4 only because they surfaced during it. Ordered first because all are small and self-contained.
 
 **Independence and ordering notes** (the table reads as strictly serial by default, so where that
@@ -1467,6 +1468,30 @@ predate this pass.
   Vitest. Three pre-existing ones remain (`spell_id` in an `ItemClickie` fixture, missing
   `aria-posinset`/`aria-setsize` in `ItemPickerRow.test.tsx`, a `null` rerender prop in
   `useDetailDrawerStack.test.ts`).
+
+#### Phase 4o — Lint enforcement (done)
+
+**Shipped 2026-09-29** on `lint-rules`. Conventions that lived only in `AGENTS.md`,
+`.claude/rules/frontend.md`, `docs/styling.md` and `docs/naming.md` are now failures in `npm run lint`
+(ESLint, then Stylelint, then Prettier's check) and `cargo lint`. Agents are told to propose a rule
+whenever a finding could have been caught by one.
+
+- ESLint: `no-restricted-imports` per directory for the dependency direction, `no-restricted-syntax`
+  so a barrel only re-exports its own directory, `object-shorthand` and `no-useless-rename`,
+  `no-console` (info/warn/error allowed), `@typescript-eslint/naming-convention` for the mechanical
+  parts of the naming rules, and `local/no-case-colliding-modules` for the Phase 4k collision.
+- The import rule caught the landing feature importing character; the character feature now
+  exposes `useActiveCharacterSummary` and `LandingRoute` in `app/` passes it to `LandingView`.
+- Stylelint (built-in rules only): color literals only in custom-property definitions, `box-shadow`
+  only as a `0 0 0 <spread>` ring. New tokens `--accent-hover` and `--scrim`; the stat multi-select
+  menu lost its drop shadow.
+- Prettier's check runs in lint and CI after a one-time formatting sweep (skipped in blame through
+  `.git-blame-ignore-revs`); `eslint-config-prettier` is wired in.
+- CI's `npx tsc --noEmit` checked nothing (the root tsconfig only references others); it is `tsc -b`.
+- `ddo-data`: `unreachable_pub`, `disallowed_names`, `many_single_char_names` and `similar_names`
+  via `[workspace.lints]` and `clippy.toml` (`f274ef8`).
+- Still open, as their own tasks: type-checking test files as part of lint, and a lint for unused
+  exports behind barrels.
 
 #### Phase 4l — DDOBuilderV2 data cross-check utility
 

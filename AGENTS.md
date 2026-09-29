@@ -10,8 +10,8 @@ This file is the instruction set for every coding agent working in the repo (Cla
 # Frontend
 npm run dev          # Dev server at http://localhost:5173/ (needs VITE_API_URL in .env, or the public API)
 npm run build        # Production build
-npm run lint         # ESLint (includes the no-comments rule)
-npm run lint:fix     # ESLint with autofix; strips comments and docblocks
+npm run lint         # ESLint (local rules, import direction, naming shape), Stylelint (tokens, no drop shadows), Prettier check
+npm run lint:fix     # Autofix all three; strips comments and docblocks, formats
 npm run format       # Prettier
 npx vitest run       # Unit and integration tests
 ```
