@@ -21,6 +21,11 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Naming drift, his side: Deck of Many Curses drops "the" from several curse names ("Curse of Anger's Heart"), Lost Purpose has "Devil's Infernal Dance" for the wiki's "Devils'", Dragontouched has "Skill: Strength" with a space.
 - 📋 Family scope: `SealedInFire`/`SealedInUndeath` (the "Sealed in Fire/Mist/Undeath/Gloom" socket augments) and `VecnaUnleashed` (the coloured book augments) are not produced by the Sealed Altar or Unholy Defiler pages; which system crafts them is still to be found.
 
+## Quests
+
+- 📋 `epic_level` — the wiki index gives an epic level for 22 quests where his `Quests.xml` has none (The Unquiet Graves 21, The Lost Thread 21, The Battle for Eveningstar 21, Impossible Demands 21, Don't Drink the Water 22, The House of Broken Chains 22, The House of Rusted Blades 22, The Portal Opens 22, In the Belly of the Beast 22, The House of Death Undone 22, Trial by Fury 23, Reclaiming the Rift 23, The Deal and the Demon 23, Caught in the Web 24, Precious Cargo 25, The Fall of Truth 25, A Study in Sable 26, Brothers of the Forge 28, The Haunted Halls of Eveningstar 28, and the three Devil Assault variants at 21), and 22 where he has 21 (Haywire Foundry, Jungle of Khyber). Source: https://ddowiki.com/page/Quests_by_level_and_XP.
+- 📋 Naming — his pack "Chill of Ravenloft" is the wiki's "The Chill of Ravenloft"; his "The Dragon's Hand" is the wiki's "The Dragons' Hand"; his patron "Keepers of the Feather" is the wiki's "Keepers of Barovia". Same source.
+
 ## Items
 
 - 📋 Legendary Powder-Packed Barrel — his drop text "Isle of Dread (wilderness), Rare Chests, and All Hail the King end chest" reads as one segment, so the rare marker attaches to nothing; see `crates/ddo-etl/src/map/drop_location.rs`.

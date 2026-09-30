@@ -1,0 +1,64 @@
+Status legend: ✅ verified against the wiki · 🟡 partially verified (what remains is listed) · ⬜ not checked against the wiki · ❌ no wiki source exists · 🔧 wiki fills a field Maetrim lacks
+
+What in `ddo.db` has been checked against ddowiki, how, and what is left. Maetrim's DDOBuilderV2 files are the source of every table; "verified" here means a row or field was compared with the wiki page that states the same fact. Disagreements go to [[Upstream Reports]] and his value stands. Dates are when the check was made; a check against a later DDOBuilderV2 commit than `31ef020` needs redoing for rows that changed. Counts are from the upstream build of 2026-09-29.
+
+## quests (570 quests + 33 challenges)
+
+Source of the check: the wiki's one index page, https://ddowiki.com/page/Quests_by_level_and_XP, read 2026-09-27; 548 of 570 quests matched a row by name (after dropping the wiki's " (R)" raid suffix and his " (Normal/Hard/Elite)" variants).
+
+- ✅ `favor` — 548 of 548 agree.
+- ✅ `level` — 494 of 496 heroic rows agree. The two disagreements are his Devil Assault (Hard) 12 and (Elite) 18 against the wiki's single row at 6; his variants are the difficulty-scaled entries and the wiki has one page, so this is a modelling difference, not an error.
+- 🟡 `epic_level` — 90 of 114 agree. 24 disagree: 22 where he has no epic level and the wiki does (e.g. The Unquiet Graves 21, Caught in the Web 24, Brothers of the Forge 28), and 2 where he says 21 and the wiki 22 (Haywire Foundry, Jungle of Khyber). Reported in [[Upstream Reports]]; not patched.
+- 🟡 `pack` — 529 of 548 agree. All 19 disagreements are two spellings: his "Chill of Ravenloft" vs the wiki's "The Chill of Ravenloft" (18) and his "The Dragon's Hand" vs "The Dragons' Hand" (1). Naming, not facts.
+- 🟡 `patron` — 535 of 548 agree. All 13 are his "Keepers of the Feather" vs the wiki's "Keepers of Barovia" (the Ravenloft quests). Naming.
+- ⬜ `is_raid`, `difficulties`, `epic_name` — not compared (the index carries raid as a suffix; a scriptable check is possible).
+- 🔧 `duration`, `is_free_to_play`, `legendary_level`, `quest_xp` (835 rows) — from the same index, for the 548 matched quests. The 22 unmatched quests have none of these: A Mad Tea Party, Age of Rage, Gateway to Khyber, Isle of Dread, Land of Lamordia, Memoirs of an Illusory Larcener, Ritual Table, Ruins of Myth Drannor, Saltmarsh, The Church and the Cult, The Cloven-jaw Scourge:Blockade, The Fane of the Six (2), The Feywild, The Giant Lieutenants, The Giants' Lair, The Keeper's Sanctuary, The Library of Threnal, The Missing Expedition, The Ruins of Thunderholme, The Shadow Crypt, To Find a Witness: Archbishop Dryden. Mostly wilderness areas and chains, which the index does not list; each has a wiki page of its own.
+- ⬜ `zone`, `bestowed_by`, `flagging` — columns exist, no rows filled; needs one page read per quest.
+- ❌ challenges (33) — his `Challenges.xml`; the wiki's Challenges page is not a quest table.
+
+## quest_loot (4,741 links)
+
+- 🟡 `is_rare` — his drop text marks 125 links (`(rare)` / `rare drop`, not `rare encounter`) across 36 quests; the wiki adds 13 more in 6 quests (`data/wiki/quest_loot.toml`). Verified by page read on 2026-09-27 for 50 quests: 9 with rares (Toil and Trouble, Sleeping with the Fishes, The Covered Culvert, The Wish, Death Hosts This Banquet, Going Rogue, The Final Draw, Book Burning, Portal to Below), 31 confirmed without, and 10 whose pages have no loot table so nothing could be read (The Bookbinder Rescue, Raid the Vulkoorim, Bargain of Blood, Rainbow in the Dark, Freshen the Air, The Depths of Doom, The Depths of Discord, The Black Loch, The Bounty Hunter, plus All Hail the King's one ambiguous cell). The other 520 quests are unverified; the 44 random ones in the sample found nothing his text lacked, so a full read was judged not worth its cost (roadmap V7 step 1). Re-open if a user reports a missing rare.
+- ⬜ `loot_type` (chest / raid / reward) — his drop text; not compared with the wiki's loot tables. The 50 pages read above had the table columns to do it; a pass over them would verify about 9% of links.
+- ⬜ which items link to which quest — his text; the same 50 pages could confirm.
+
+## items (8,487)
+
+- ⬜ stats, bonuses, effects, sockets, sets — his files only; no wiki comparison of any item's numbers has been done.
+- 🟡 `description` — 8,262 have his text; 225 are blank and on the work list (`cargo xtask wiki-batch` → `blank_descriptions.txt`), 0 filled so far.
+- ⬜ items the wiki has that he lacks — not enumerated; needs the wiki's item index, and finds go upstream, not into our data.
+
+## augments (2,246)
+
+- 🟡 `description` — 12 SunAndMoon gems end in the placeholder line "Drops in: ?"; 0 filled so far.
+- 🟡 crafting recipes that yield them — see crafting below; 1,091 distinct augments are yielded by at least one recorded recipe.
+
+## crafting_* (wiki-only tables)
+
+Source: one wiki page per system plus its recipe sub-pages, read 2026-09-29. "Verified" for a recipe means its augment names resolved against his families and its costs were read from the page's tables; rows the page states but his files cannot represent are recorded with notes.
+
+| System | Status | Recipes | Ingredients | Left |
+|---|---|---|---|---|
+| Slave Lords Crafting | ✅ | 74 | 16 | legendary Spell Focus Mastery value disagrees (his +4 stands) |
+| Green Steel items (heroic) | 🟡 | 388 | 85 | his heroic weapon augments are "NYI" placeholders, so all heroic weapon recipes link no augment |
+| Legendary Green Steel items | 🟡 | 314 | 54 | 40 Active clickies have no augment and no slot label; 6 value disagreements noted |
+| Thunder-Forged | ✅ | 50 | 6 | one bonus-type wording disagreement |
+| Alchemical Crafting | 🟡 | 109 | 29 | legendary Tier 0 Mithral row has no augment; station sub-pages disagree with the main page in places |
+| Dinosaur Bone crafting | ✅ | 108 | 6 | raid-drop augments have no recipe by nature |
+| Viktranium Experiment Crafting | ✅ | 292 | 13 | two wording disagreements |
+| Deck of Many Curses | ✅ | 95 | 6 | Curse of the Overloaded has no augment |
+| Nearly Complete | ✅ | 68 | 2 | six "+16 <Stat> (Catalyst Crafting)" augments belong to Catalyst Crafting |
+| Nearly Finished | 🟡 | 179 | 9 | no Maetrim family; every recipe is note-only |
+| Lost Purpose | ✅ | 22 | 2 | "The Fury's Rage" min_level 318 looks like his typo |
+| Incredible Potential | 🟡 | 36 | 2 | focus/gem/essence grades not on the page, so those costs are in notes |
+| Reaper Forge | ✅ | 15 | 1 | three generic augments are drop-only per the wiki |
+| Dragontouched Armor | ✅ | 85 | 4 | |
+| Sealed Altar | 🟡 | 9 | 10 | no family; `SealedInFire`/`SealedInUndeath` are crafted somewhere else, still to find |
+| Unholy Defiler of the Hidden Hand | 🟡 | 16 | 8 | no family; `VecnaUnleashed` is crafted somewhere else, still to find |
+| 22 upgrade and ingredient systems | ⬜ | | | reading in progress (roadmap V7 step 3, batch 4) |
+| Augment Slot, Sentient Weapon | ❌ | | | already his data (gems, filigrees) |
+| Essence (Cannith) Crafting | ⬜ | | | deliberately last (Crafting Systems note, D-CS10) |
+
+## Tables with no wiki check at all
+
+⬜ feats, spells, enhancement_trees / enhancements / selections, races, classes, set_bonuses / tiers / items / augments, filigrees, stances, guild_buffs, optional_buffs, sentient_gems, clickies, modifiers, bonuses, all lookup tables. These are his files as parsed; the ETL's tests cover the parsing, not the facts. A wiki pass over any of them is possible page by page and none is scheduled.

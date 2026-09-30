@@ -2031,7 +2031,9 @@ Steel (702 recipes, 139 ingredients). Reading order after that: Thunder-Forged, 
 Dinosaur Bone, Viktranium; then the nine smaller augment-backed systems; then the 22 upgrade and
 ingredient-only systems. Skipped on purpose: Augment Slot and Sentient Weapon (already his data),
 Essence/Cannith crafting (D-CS10, last), Challenges (not a crafting page). Wiki-vs-Maetrim
-disagreements found on the way are collected in [Upstream Reports](notes/Upstream%20Reports.md).
+disagreements found on the way are collected in [Upstream Reports](notes/Upstream%20Reports.md), and
+[Data Verification](notes/Data%20Verification.md) is the ledger of what has been checked against
+the wiki, per table, and what is left.
 
 **Step 4 — blank descriptions.** 225 items, 12 augments reading "Drops in: ?", 3 races, 4 feats,
 1 enhancement. One page read each.
