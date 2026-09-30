@@ -142,6 +142,22 @@ export interface ApiAugment {
   icon: string | null
   slots: string[]
   bonuses: ApiBonus[]
+  crafting: ApiCraftingRecipe[]
+}
+
+export type ApiCraftingTier = 'heroic' | 'epic' | 'legendary' | 'any'
+
+export interface ApiCraftingIngredientCost {
+  ingredient: string
+  tier: string
+  quantity: number
+}
+
+export interface ApiCraftingRecipe {
+  system: string
+  tier: ApiCraftingTier
+  option: string
+  cost: ApiCraftingIngredientCost[]
 }
 
 export interface ApiAugmentsPage {

@@ -118,6 +118,8 @@ must be able to tell what the item has from what it could have). Includes a styl
 detail view — the socket pills, candidate dropdowns, and future craftable sections need a
 coherent visual system rather than accreted one-off styles.
 
+- ✅ Candidate dropdowns show each augment's crafting recipes, one muted cost line per recipe (tier unless `any`, system, ingredient quantities), from `/v1/augments` `crafting` (shipped 2026-09-29, site 0.0.15).
+
 ## Suggested implementation order (each system = one scraper + one verified slice)
 
 1. **Slave Lords** — sockets already stored (slice 1b), pages are structured shard tables, and it

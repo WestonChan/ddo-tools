@@ -19,7 +19,7 @@ const MELANCHOLIC_SLOT = {
 }
 const AUGMENTS_BY_SLOT_LABEL = {
   [MELANCHOLIC_SLOT.label]: [
-    { id: 1, name: 'Melancholic Charisma', minimumLevel: 8, bonusNames: [] },
+    { id: 1, name: 'Melancholic Charisma', minimumLevel: 8, bonusNames: [], recipes: [] },
   ],
 }
 

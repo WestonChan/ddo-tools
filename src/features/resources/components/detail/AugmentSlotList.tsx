@@ -4,6 +4,7 @@ import { HoverTooltip } from '../../../../components'
 import {
   isCraftingSlotFamily,
   type AugmentSummary,
+  type CraftingRecipe,
   type ItemAugmentSlot,
 } from '../../queries/items'
 import { titleCasedSlotLabel } from './titleCasedSlotLabel'
@@ -74,6 +75,11 @@ export function AugmentSlotList({
                   {augment.bonusNames.join(' · ')}
                 </span>
               )}
+              {augment.recipes.map((recipe, recipeIndex) => (
+                <span key={recipeIndex} className="resources-augment-candidate-recipe">
+                  {recipeCostLine(recipe)}
+                </span>
+              ))}
             </li>
           ))}
         </ul>
@@ -138,6 +144,15 @@ export function AugmentSlotList({
       </button>
     )
   }
+}
+
+function recipeCostLine(recipe: CraftingRecipe): string {
+  const ingredientQuantities = recipe.ingredientCosts
+    .map((c) => `${c.quantity} ${c.ingredient}`)
+    .join(' · ')
+  const tierPrefix =
+    recipe.tier === 'any' ? '' : `${recipe.tier[0].toUpperCase()}${recipe.tier.slice(1)} `
+  return `${tierPrefix}${recipe.system}: ${ingredientQuantities}`
 }
 
 function augmentListboxId(slotSortOrder: number): string {

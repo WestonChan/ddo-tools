@@ -200,13 +200,49 @@ describe('mappers', () => {
           value2: null,
         },
       ],
+      crafting: [],
     }
     expect(toAugmentSummary(a)).toEqual({
       id: 2,
       name: 'Silverscale',
       minimumLevel: 31,
       bonusNames: ['Healing Amplification +56'],
+      recipes: [],
     })
+  })
+
+  it('toAugmentSummary keeps each crafting recipe with its system, tier and ingredient quantities', () => {
+    const a: ApiAugment = {
+      id: 3,
+      name: 'Melancholic Acid Spell Critical Damage (Legendary)',
+      family: 'Lamordia_Legendary',
+      description: null,
+      min_level: 31,
+      icon: null,
+      slots: ['lamordia: melancholic (accessory)'],
+      bonuses: [],
+      crafting: [
+        {
+          system: 'Viktranium Experiment Crafting',
+          tier: 'legendary',
+          option: 'Melancholic Acid Spell Crit Damage',
+          cost: [
+            { ingredient: 'Legendary Bleak Alternator', tier: 'legendary', quantity: 25 },
+            { ingredient: 'Legendary Bleak Conductor', tier: 'legendary', quantity: 25 },
+          ],
+        },
+      ],
+    }
+    expect(toAugmentSummary(a).recipes).toEqual([
+      {
+        system: 'Viktranium Experiment Crafting',
+        tier: 'legendary',
+        ingredientCosts: [
+          { ingredient: 'Legendary Bleak Alternator', quantity: 25 },
+          { ingredient: 'Legendary Bleak Conductor', quantity: 25 },
+        ],
+      },
+    ])
   })
 
   it('slot rules: families and Sun/Moon get candidate lists', () => {
@@ -264,6 +300,7 @@ describe('fetchers', () => {
       icon: null,
       slots: ['red'],
       bonuses: [],
+      crafting: [],
     })
     mockFetchResponse({
       total: 3,

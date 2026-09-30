@@ -34,8 +34,28 @@ const SAMPLE_AUGMENT_SLOTS = {
 
 const AUGMENTS_BY_SLOT_LABEL: Record<string, AugmentSummary[]> = {
   [SAMPLE_AUGMENT_SLOTS.melancholic.label]: [
-    { id: 1, name: 'Melancholic Charisma', minimumLevel: 8, bonusNames: ['Charisma +5'] },
-    { id: 2, name: 'Melancholic Acid Spell Crit', minimumLevel: 8, bonusNames: [] },
+    {
+      id: 1,
+      name: 'Melancholic Charisma',
+      minimumLevel: 8,
+      bonusNames: ['Charisma +5'],
+      recipes: [
+        {
+          system: 'Viktranium Experiment Crafting',
+          tier: 'legendary',
+          ingredientCosts: [
+            { ingredient: 'Broken Shackle', quantity: 50 },
+            { ingredient: 'Legendary Broken Shackle', quantity: 100 },
+          ],
+        },
+        {
+          system: 'Lamordian Workbench',
+          tier: 'any',
+          ingredientCosts: [{ ingredient: 'Bleak Resistor', quantity: 5 }],
+        },
+      ],
+    },
+    { id: 2, name: 'Melancholic Acid Spell Crit', minimumLevel: 8, bonusNames: [], recipes: [] },
   ],
   [SAMPLE_AUGMENT_SLOTS.sun.label]: [
     {
@@ -43,6 +63,7 @@ const AUGMENTS_BY_SLOT_LABEL: Record<string, AugmentSummary[]> = {
       name: 'Solar Gem of Abjuration (Heroic)',
       minimumLevel: 1,
       bonusNames: ['Abjuration Spell Focus +2'],
+      recipes: [],
     },
   ],
   [SAMPLE_AUGMENT_SLOTS.slavers.label]: [],
@@ -130,6 +151,31 @@ describe('AugmentSlotList', () => {
     expect(screen.getByText('Charisma +5')).toBeInTheDocument()
     expect(screen.getAllByText('ML 8')).toHaveLength(2)
     expect(screen.getByText('Melancholic Acid Spell Crit')).toBeInTheDocument()
+  })
+
+  it('shows one cost line per crafting recipe under a candidate, tier first unless any', async () => {
+    const user = userEvent.setup()
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
+
+    const craftableRow = screen.getByRole('option', { name: /Melancholic Charisma/ })
+    const recipeLines = [
+      ...craftableRow.querySelectorAll('.resources-augment-candidate-recipe'),
+    ].map((el) => el.textContent)
+    expect(recipeLines).toEqual([
+      'Legendary Viktranium Experiment Crafting: 50 Broken Shackle · 100 Legendary Broken Shackle',
+      'Lamordian Workbench: 5 Bleak Resistor',
+    ])
+    expect(
+      screen
+        .getByRole('option', { name: /Melancholic Acid Spell Crit/ })
+        .querySelector('.resources-augment-candidate-recipe'),
+    ).toBeNull()
   })
 
   it('selecting a candidate marks that row and nothing else', async () => {

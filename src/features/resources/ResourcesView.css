@@ -1083,6 +1083,11 @@
   color: var(--text-secondary);
 }
 
+.resources-augment-candidate-recipe {
+  flex-basis: 100%;
+  color: var(--text-muted);
+}
+
 .resources-detail-description {
   color: var(--text-secondary);
   font-size: var(--text-sm);

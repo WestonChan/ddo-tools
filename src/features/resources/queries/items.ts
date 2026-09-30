@@ -3,6 +3,8 @@ import type {
   ApiAdventurePack,
   ApiAugment,
   ApiAugmentsPage,
+  ApiCraftingRecipe,
+  ApiCraftingTier,
   ApiItemDetail,
   ApiItemRow,
   ApiItemsPage,
@@ -73,11 +75,23 @@ export interface ItemAugmentSlot {
   options: ItemAugmentSlotOption[]
 }
 
+export interface CraftingIngredientCost {
+  ingredient: string
+  quantity: number
+}
+
+export interface CraftingRecipe {
+  system: string
+  tier: ApiCraftingTier
+  ingredientCosts: CraftingIngredientCost[]
+}
+
 export interface AugmentSummary {
   id: number
   name: string
   minimumLevel: number | null
   bonusNames: string[]
+  recipes: CraftingRecipe[]
 }
 
 export interface ItemBonus {
@@ -228,6 +242,18 @@ export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
     name: apiAugment.name,
     minimumLevel: apiAugment.min_level,
     bonusNames: apiAugment.bonuses.map((b) => b.name),
+    recipes: apiAugment.crafting.map(toCraftingRecipe),
+  }
+}
+
+function toCraftingRecipe(apiRecipe: ApiCraftingRecipe): CraftingRecipe {
+  return {
+    system: apiRecipe.system,
+    tier: apiRecipe.tier,
+    ingredientCosts: apiRecipe.cost.map((c) => ({
+      ingredient: c.ingredient,
+      quantity: c.quantity,
+    })),
   }
 }
 
