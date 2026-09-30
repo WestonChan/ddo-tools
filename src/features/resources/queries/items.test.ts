@@ -118,6 +118,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
       loot_type: 'raid',
       is_free_to_play: false,
       difficulties: ['normal', 'hard', 'elite'],
+      chest: 'raid warded chest',
     },
   ],
 }
@@ -186,6 +187,7 @@ describe('mappers', () => {
       isRaid: true,
       isRareLoot: true,
       isFreeToPlay: false,
+      chest: 'raid warded chest',
     })
   })
 

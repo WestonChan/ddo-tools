@@ -65,7 +65,7 @@ export interface ApiItemClickie {
   icon: string | null
 }
 
-export interface ApiItemQuest {
+export interface ApiLootQuest {
   id: number
   name: string
   level: number | null
@@ -77,6 +77,7 @@ export interface ApiItemQuest {
   is_rare: boolean
   is_free_to_play: boolean
   difficulties: string[]
+  chest: string | null
 }
 
 export interface ApiWeaponStats {
@@ -133,7 +134,7 @@ export interface ApiItemDetail {
   augment_slots: ApiItemAugmentSlot[]
   clickies: ApiItemClickie[]
   set: { id: number; name: string; icon: string | null } | null
-  quests: ApiItemQuest[]
+  quests: ApiLootQuest[]
 }
 
 export interface ApiAugment {

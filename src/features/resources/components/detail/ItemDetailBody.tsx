@@ -9,10 +9,11 @@ import { DetailSection } from './DetailSection'
 import { StatList, type LabeledStat } from './StatList'
 import type { KeyValuePair } from './KeyValueGrid'
 import { numberWithPlusSign } from './numberWithPlusSign'
+import { sentenceCased } from './sentenceCased'
 import type {
   AugmentSummary,
   Item,
-  ItemDropQuest,
+  LootQuest,
   ItemWeaponStats,
   ItemArmorStats,
 } from '../../queries/items'
@@ -138,13 +139,16 @@ export function ItemDetailBody({
       {item.quests.length > 0 ? (
         <DetailSection heading="Drops from">
           <ul className="resources-quest-list">
-            {item.quests.map((quest: ItemDropQuest) => (
+            {item.quests.map((quest: LootQuest) => (
               <li key={quest.id} className="resources-quest-row">
                 <span className="resources-quest-name">
                   {quest.name}
                   <WikiLinkIcon pageName={quest.name} />
                   {quest.isRaid && <DropTagChip kind="raid" />}
                   {quest.isRareLoot && <DropTagChip kind="rare" />}
+                  {quest.chest && (
+                    <span className="resources-quest-chest">{sentenceCased(quest.chest)}</span>
+                  )}
                 </span>
                 <span className="resources-quest-meta">
                   {[

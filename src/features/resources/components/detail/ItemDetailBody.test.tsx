@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import { ItemDetailBody } from './ItemDetailBody'
-import type { Item, ItemDropQuest } from '../../queries/items'
+import type { Item, LootQuest } from '../../queries/items'
 
 afterEach(() => {
   cleanup()
@@ -33,7 +33,7 @@ const plainItem: Item = {
   quests: [],
 }
 
-function quest(overrides: Partial<ItemDropQuest> = {}): ItemDropQuest {
+function quest(overrides: Partial<LootQuest> = {}): LootQuest {
   return {
     id: 7,
     name: "Delera's Tomb",
@@ -44,6 +44,7 @@ function quest(overrides: Partial<ItemDropQuest> = {}): ItemDropQuest {
     isRareLoot: false,
     isFreeToPlay: false,
     lootType: 'quest',
+    chest: null,
     ...overrides,
   }
 }
@@ -105,6 +106,21 @@ describe('ItemDetailBody drop locations', () => {
     expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
       'Level 8 · End reward',
     )
+  })
+
+  it('names the chest after the quest name in sentence case', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      quests: [quest({ chest: "althea's chest" })],
+    })
+    expect(
+      container.querySelector('.resources-quest-name .resources-quest-chest'),
+    ).toHaveTextContent("Althea's chest")
+  })
+
+  it('shows no chest when the drop text names none', () => {
+    const { container } = renderItemDetailBody({ ...plainItem, quests: [quest()] })
+    expect(container.querySelector('.resources-quest-chest')).toBeNull()
   })
 
   it('falls back to the free-text drop location when no quests are linked', () => {

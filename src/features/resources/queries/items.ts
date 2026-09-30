@@ -8,6 +8,7 @@ import type {
   ApiItemDetail,
   ApiItemRow,
   ApiItemsPage,
+  ApiLootQuest,
   ApiStat,
   ItemSource,
 } from '../../../lib/api'
@@ -121,7 +122,7 @@ export interface ItemClickie {
   description: string | null
 }
 
-export interface ItemDropQuest {
+export interface LootQuest {
   id: number
   name: string
   level: number | null
@@ -131,6 +132,7 @@ export interface ItemDropQuest {
   isRaid: boolean
   isRareLoot: boolean
   isFreeToPlay: boolean
+  chest: string | null
 }
 
 export interface Item extends ItemAttributes {
@@ -140,7 +142,7 @@ export interface Item extends ItemAttributes {
   bonuses: ItemBonus[]
   effects: ItemEffect[]
   clickies: ItemClickie[]
-  quests: ItemDropQuest[]
+  quests: LootQuest[]
 }
 
 export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
@@ -225,17 +227,22 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
       sortOrder: i,
     })),
     clickies: apiItemDetail.clickies.map((c) => ({ name: c.name, description: c.description })),
-    quests: apiItemDetail.quests.map((q) => ({
-      id: q.id,
-      name: q.name,
-      level: q.level,
-      pack: q.pack,
-      patron: q.patron,
-      lootType: q.loot_type,
-      isRaid: q.is_raid,
-      isRareLoot: q.is_rare,
-      isFreeToPlay: q.is_free_to_play,
-    })),
+    quests: apiItemDetail.quests.map(toLootQuest),
+  }
+}
+
+function toLootQuest(apiLootQuest: ApiLootQuest): LootQuest {
+  return {
+    id: apiLootQuest.id,
+    name: apiLootQuest.name,
+    level: apiLootQuest.level,
+    pack: apiLootQuest.pack,
+    patron: apiLootQuest.patron,
+    lootType: apiLootQuest.loot_type,
+    isRaid: apiLootQuest.is_raid,
+    isRareLoot: apiLootQuest.is_rare,
+    isFreeToPlay: apiLootQuest.is_free_to_play,
+    chest: apiLootQuest.chest,
   }
 }
 

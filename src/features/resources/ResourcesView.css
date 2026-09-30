@@ -933,6 +933,11 @@
   color: var(--text);
 }
 
+.resources-quest-chest {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
 .resources-quest-meta {
   font-size: var(--text-xs);
   color: var(--text-secondary);
