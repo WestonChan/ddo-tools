@@ -5,6 +5,13 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-09-30',
+    changes: [
+      'Name the chest an item drops from next to each quest, such as End chest or Optional chest',
+      'Picking an augment in a crafting or Sun/Moon socket lists the first three quests it drops in, with the chest and a Rare chip',
+    ],
+  },
+  {
     date: '2026-09-29',
     changes: [
       'The Stats filter menu sits flat on the page like the rest of the UI, without a drop shadow',
