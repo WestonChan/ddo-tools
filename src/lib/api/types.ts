@@ -72,7 +72,6 @@ export interface ApiItemQuest {
   patron: string | null
   loot_type: string | null
   is_rare: boolean
-  duration: string | null
   is_free_to_play: boolean
   difficulties: string[]
 }

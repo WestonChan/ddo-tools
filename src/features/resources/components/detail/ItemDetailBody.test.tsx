@@ -41,7 +41,6 @@ function quest(overrides: Partial<ItemDropQuest> = {}): ItemDropQuest {
     level: 8,
     isRaid: false,
     isRareLoot: false,
-    duration: null,
     isFreeToPlay: false,
     lootType: 'quest',
     ...overrides,

@@ -114,7 +114,6 @@ const API_ITEM_DETAIL: ApiItemDetail = {
       pack: 'Web of Chaos',
       patron: 'The Twelve',
       loot_type: 'raid',
-      duration: 'Long',
       is_free_to_play: false,
       difficulties: ['normal', 'hard', 'elite'],
     },
@@ -174,7 +173,6 @@ describe('mappers', () => {
       lootType: 'raid',
       isRaid: true,
       isRareLoot: true,
-      duration: 'Long',
       isFreeToPlay: false,
     })
   })

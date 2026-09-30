@@ -127,7 +127,6 @@ export interface ItemDropQuest {
   lootType: string | null
   isRaid: boolean
   isRareLoot: boolean
-  duration: string | null
   isFreeToPlay: boolean
 }
 
@@ -230,7 +229,6 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
       lootType: q.loot_type,
       isRaid: q.is_raid,
       isRareLoot: q.is_rare,
-      duration: q.duration,
       isFreeToPlay: q.is_free_to_play,
     })),
   }
