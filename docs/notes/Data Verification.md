@@ -91,6 +91,12 @@ Totals on 2026-09-29: 37 systems, 2,846 recipes, 702 ingredients; 1,091 distinct
 - ❌ feats — the four blank "Pact Magic: …" feats have no wiki page; they stay blank.
 - ✅ enhancements — "Divine Disciple: Divine Smiting V" filled from the tree page's rank entry.
 
+## Reader model trial (2026-09-30)
+
+A Sonnet reader re-read 10 quest pages, 5 item pages and the Thunder-Forged crafting page blind, and the output was diffed against the Opus-committed files. Quest rarity: 10 of 10 quests identical. Crafting: 48 of 50 recipes identical, the other 2 differing only in the free-text label of note-only rows; ingredients identical. Items: every weapon number identical on all 5; 3 items identical in substance; on 2 items Sonnet kept three stat lines as effects instead of bonuses (Profane Lifeforce, Insightful Spell Lore II, and Insightful Shatter mapped to the `Shatter` stat rather than Sunder DC), put a set-bonus line in `effects` instead of `set`, guessed one quest link and one DR bypass. Decision: Sonnet (`wiki-reader-tables`) reads table-shaped pages; Opus (`wiki-reader`) reads item infoboxes; the mapping rules Sonnet missed are now written into both definitions.
+
+- ⬜ augments dropping as rare quest loot — quest loot tables mark Solar and Lunar Gems "(rare)" for several quests (seen on Toil and Trouble, The Wish, Going Rogue, Death Hosts This Banquet), but `quest_loot` links only items, so augment drop sources are not stored at all. His augments carry no quest source either. Open: an `augment_quest_loot` table fed the same way.
+
 ## Tables with no wiki check at all
 
 ⬜ feats, spells, enhancement_trees / enhancements / selections, races, classes, set_bonuses / tiers / items / augments, filigrees, stances, guild_buffs, optional_buffs, sentient_gems, clickies, modifiers, bonuses, all lookup tables. These are his files as parsed; the ETL's tests cover the parsing, not the facts. A wiki pass over any of them is possible page by page and none is scheduled.
