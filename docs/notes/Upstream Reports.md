@@ -27,6 +27,8 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Dampened Shatterbow drop location: his text says Claw of Vulkoor "Scorpions optional chest"; the wiki says end chests.
 - 📋 Catalyst Crafting: his six "+16 <Stat> (Catalyst Crafting)" augments in the NearlyComplete family appear on no wiki page and on no item.
 
+- 📋 Socket label spelling drift, found by `cargo xtask wiki-check`: "Upgradable Item" vs "Upgradeable Item"; "Upgradeable - Tier 2/3" vs "Upgradeable Tier 2/3"; "Zentarim Attuned" vs "Zhentarim Attuned"; one item's "Suppressed power" (lower-case p). The check prints these on every run until his files converge.
+
 ## Quests
 
 - 📋 `epic_level` — the wiki index gives an epic level for 22 quests where his `Quests.xml` has none (The Unquiet Graves 21, The Lost Thread 21, The Battle for Eveningstar 21, Impossible Demands 21, Don't Drink the Water 22, The House of Broken Chains 22, The House of Rusted Blades 22, The Portal Opens 22, In the Belly of the Beast 22, The House of Death Undone 22, Trial by Fury 23, Reclaiming the Rift 23, The Deal and the Demon 23, Caught in the Web 24, Precious Cargo 25, The Fall of Truth 25, A Study in Sable 26, Brothers of the Forge 28, The Haunted Halls of Eveningstar 28, and the three Devil Assault variants at 21), and 22 where he has 21 (Haywire Foundry, Jungle of Khyber). Source: https://ddowiki.com/page/Quests_by_level_and_XP.
