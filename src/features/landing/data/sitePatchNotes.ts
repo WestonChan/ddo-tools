@@ -9,6 +9,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     changes: [
       'The Stats filter menu sits flat on the page like the rest of the UI, without a drop shadow',
       'Show what each augment in a crafting or Sun/Moon socket costs to craft, one line per recipe with its tier, system and ingredients',
+      'Item detail marks items read from DDO Wiki because DDOBuilderV2 does not have them yet, with a Source row linking the wiki page',
     ],
   },
   {

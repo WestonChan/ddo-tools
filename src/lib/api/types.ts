@@ -1,3 +1,5 @@
+export type ItemSource = 'maetrim' | 'wiki'
+
 export interface ApiItemRow {
   id: number
   name: string
@@ -10,6 +12,7 @@ export interface ApiItemRow {
   pack: string | null
   is_raid: boolean
   is_rare: boolean
+  source: ItemSource
 }
 
 export interface ApiItemsPage {
@@ -122,6 +125,7 @@ export interface ApiItemDetail {
   accepts_sentience: boolean
   is_minor_artifact: boolean
   wiki_url: string | null
+  source: ItemSource
   weapon: ApiWeaponStats | null
   armor: ApiArmorStats | null
   bonuses: ApiBonus[]

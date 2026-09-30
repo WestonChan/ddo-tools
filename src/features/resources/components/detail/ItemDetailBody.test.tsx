@@ -23,6 +23,7 @@ const plainItem: Item = {
   canAcceptSentience: false,
   isMinorArtifact: false,
   wikiUrl: null,
+  source: 'maetrim',
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],
@@ -133,5 +134,27 @@ describe('ItemDetailBody header attributes', () => {
     })
     expect(screen.getByText('Clickies')).toBeInTheDocument()
     expect(screen.getByText('Haste (3 charges)')).toBeInTheDocument()
+  })
+})
+
+describe('ItemDetailBody data source', () => {
+  it('shows a Source row linking the wiki page for a wiki-sourced item', () => {
+    renderItemDetailBody({
+      ...plainItem,
+      source: 'wiki',
+      wikiUrl: 'https://ddowiki.com/page/Item:Voice_of_the_Master',
+    })
+    const sourceLink = screen.getByRole('link', { name: 'DDO Wiki (not yet in DDOBuilderV2)' })
+    expect(sourceLink).toHaveAttribute('href', 'https://ddowiki.com/page/Item:Voice_of_the_Master')
+    expect(screen.getByText('Source')).toBeInTheDocument()
+  })
+
+  it('shows no Source row for an item from DDOBuilderV2', () => {
+    renderItemDetailBody({
+      ...plainItem,
+      wikiUrl: 'https://ddowiki.com/page/Item:Voice_of_the_Master',
+    })
+    expect(screen.queryByText('Source')).toBeNull()
+    expect(screen.queryByText('DDO Wiki (not yet in DDOBuilderV2)')).toBeNull()
   })
 })

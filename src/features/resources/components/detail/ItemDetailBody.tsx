@@ -1,5 +1,6 @@
 import type { JSX } from 'react'
 import { WikiLinkIcon } from '../../../../components'
+import { WIKI_COMPARE_WINDOW_NAME, wikiPageUrlFor } from '../../../../lib/wiki/pageLinks'
 import { DropTagChip } from '../DropTagChip'
 import { AugmentSlotList } from './AugmentSlotList'
 import { DetailHeader } from './DetailHeader'
@@ -30,6 +31,20 @@ function toHeaderAttributes(
   if (item.material) attributes.push({ label: 'Material', value: item.material })
   if (item.requiredRace) attributes.push({ label: 'Race', value: item.requiredRace })
   if (item.setName) attributes.push({ label: 'Set', value: item.setName })
+  if (item.source === 'wiki') {
+    attributes.push({
+      label: 'Source',
+      value: (
+        <a
+          href={item.wikiUrl ?? wikiPageUrlFor(item.name)}
+          target={WIKI_COMPARE_WINDOW_NAME}
+          rel="nofollow"
+        >
+          DDO Wiki (not yet in DDOBuilderV2)
+        </a>
+      ),
+    })
+  }
   if (item.augmentSlots.length > 0) {
     attributes.push({
       label: 'Augment slots',

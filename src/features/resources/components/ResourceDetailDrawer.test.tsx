@@ -40,6 +40,7 @@ function itemDetailFor(id: number): Item {
     canAcceptSentience: false,
     isMinorArtifact: false,
     wikiUrl: 'https://ddowiki.com/page/Item:Test_Item',
+    source: 'maetrim',
     weaponStats: null,
     armorStats: null,
     augmentSlots: [MELANCHOLIC_SLOT],

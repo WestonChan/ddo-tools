@@ -11,6 +11,7 @@ const itemSummaries: ItemSummary[] = [
     pack: null,
     isRaidLoot: false,
     isRareLoot: false,
+    source: 'maetrim',
     minimumLevel: 12,
   },
   {
@@ -21,6 +22,7 @@ const itemSummaries: ItemSummary[] = [
     pack: null,
     isRaidLoot: false,
     isRareLoot: false,
+    source: 'maetrim',
     minimumLevel: 6,
   },
   {
@@ -31,6 +33,7 @@ const itemSummaries: ItemSummary[] = [
     pack: null,
     isRaidLoot: false,
     isRareLoot: false,
+    source: 'maetrim',
     minimumLevel: 8,
   },
   {
@@ -41,6 +44,7 @@ const itemSummaries: ItemSummary[] = [
     pack: null,
     isRaidLoot: false,
     isRareLoot: false,
+    source: 'maetrim',
     minimumLevel: 14,
   },
   {
@@ -51,6 +55,7 @@ const itemSummaries: ItemSummary[] = [
     pack: null,
     isRaidLoot: false,
     isRareLoot: false,
+    source: 'maetrim',
     minimumLevel: 29,
   },
 ]

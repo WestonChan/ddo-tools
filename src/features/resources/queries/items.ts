@@ -9,6 +9,7 @@ import type {
   ApiItemRow,
   ApiItemsPage,
   ApiStat,
+  ItemSource,
 } from '../../../lib/api'
 
 const WHOLE_LIST_LIMIT = 10_000
@@ -22,6 +23,7 @@ export interface ItemSummary {
   pack: string | null
   isRaidLoot: boolean
   isRareLoot: boolean
+  source: ItemSource
 }
 
 export interface ItemAttributes {
@@ -40,6 +42,7 @@ export interface ItemAttributes {
   canAcceptSentience: boolean
   isMinorArtifact: boolean
   wikiUrl: string | null
+  source: ItemSource
 }
 
 export interface ItemWeaponStats {
@@ -150,6 +153,7 @@ export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
     pack: apiItemRow.pack,
     isRaidLoot: apiItemRow.is_raid,
     isRareLoot: apiItemRow.is_rare,
+    source: apiItemRow.source,
   }
 }
 
@@ -170,6 +174,7 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
     canAcceptSentience: apiItemDetail.accepts_sentience,
     isMinorArtifact: apiItemDetail.is_minor_artifact,
     wikiUrl: apiItemDetail.wiki_url,
+    source: apiItemDetail.source,
     weaponStats: apiItemDetail.weapon
       ? {
           damage: apiItemDetail.weapon.damage,

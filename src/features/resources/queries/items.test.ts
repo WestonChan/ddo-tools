@@ -28,6 +28,7 @@ function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
     pack: 'Vault of Night',
     is_raid: true,
     is_rare: false,
+    source: 'maetrim',
     ...overrides,
   }
 }
@@ -49,6 +50,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   accepts_sentience: true,
   is_minor_artifact: false,
   wiki_url: 'https://ddowiki.com/page/Item:Sireth,_Spear_of_the_Sky',
+  source: 'maetrim',
   weapon: {
     weapon_type: 'Quarterstaff',
     proficiency: 'Simple',
@@ -131,7 +133,17 @@ describe('mappers', () => {
       pack: 'Vault of Night',
       isRaidLoot: true,
       isRareLoot: false,
+      source: 'maetrim',
     })
+  })
+
+  it('toItemSummary carries a wiki-sourced row as wiki', () => {
+    expect(toItemSummary(createApiItemRow({ source: 'wiki' })).source).toBe('wiki')
+  })
+
+  it('toItem carries the data source', () => {
+    expect(toItem(API_ITEM_DETAIL).source).toBe('maetrim')
+    expect(toItem({ ...API_ITEM_DETAIL, source: 'wiki' }).source).toBe('wiki')
   })
 
   it('toItemSummary carries the rare-loot flag', () => {
