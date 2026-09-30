@@ -10,6 +10,11 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Legendary Green Steel tier 2 — weapon stats: wiki +6, his +7. Positive equipment healing: wiki +8, his 16. Source: https://ddowiki.com/page/Legendary_Green_Steel_items/Tier_2.
 - 📋 Legendary Green Steel Active — 40 clickies (Nightshield, Haste, Displacement, …) have no augment in his files and no socket label for the equipment Active slot; recorded as recipes with notes and no slot.
 
+- 📋 Alchemical Crafting — his augment names "Lighting Strike" (typo), "Electric Blast" (wiki: Shocking Blast 6), "Cold Blast" (wiki: Icy Blast 6), and "Cold" where the wiki says Water; no Mithral material augment for the legendary Tier 0 Mithral row. Source: https://ddowiki.com/page/Alchemical_Crafting and its station sub-pages.
+- 📋 Dinosaur Bone crafting — Horn: Armor Piercing is +22% / +24% on the wiki but +21 / +23 in his augments; he spells Iridescent where the page has Iridiscent (the page is wrong there). Source: https://ddowiki.com/page/Dinosaur_Bone_crafting.
+- 📋 Viktranium Experiment Crafting — he names the heroic Dolorous Focus "Dolorous Arcana (Heroic)"; legendary Improved Destruction triggers every second on the wiki, every three seconds in his augment. Source: https://ddowiki.com/page/Viktranium_Experiment_crafting.
+- 📋 Thunder-Forged — Shadow Construct: wiki Profane Repair Amplification +10, his augment 10%. Source: https://ddowiki.com/page/Thunder-Forged.
+
 ## Items
 
 - 📋 Legendary Powder-Packed Barrel — his drop text "Isle of Dread (wilderness), Rare Chests, and All Hail the King end chest" reads as one segment, so the rare marker attaches to nothing; see `crates/ddo-etl/src/map/drop_location.rs`.
