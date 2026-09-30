@@ -50,6 +50,17 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 
 **Status.** Phases 1–4c and V1–V7 are done. V8 (build sharing on a Fly volume, `/v1/builds`) is next, then Phases 4d–4g and 5 onward. The roadmap's status table is authoritative.
 
+## Worktrees
+
+More than one agent or session often works in this repo at once, so any change goes in a git worktree, never in someone else's checkout:
+
+```bash
+git worktree add -b <branch> /tmp/ddo-tools-<branch> main
+ln -s "$(pwd)/node_modules" /tmp/ddo-tools-<branch>/node_modules   # run from the main checkout
+```
+
+The symlinked `node_modules` is enough for `npm run lint`, `npx vitest run`, `npm run build` and `npm run dev` (Vite picks the next free port when 5173 is taken). `.env` is not copied, so a worktree reads the public API; copy it in if you need a local one. When done: commit on the branch, fast-forward `main` from the main checkout (`git merge --ff-only <branch>`), push, then `git worktree remove /tmp/ddo-tools-<branch>` and delete the branch. Never run a bare `git stash`; the stash is shared across worktrees. `ddo-data` has the same rule with `DDO_UPSTREAM` in place of `node_modules`; see its `AGENTS.md`.
+
 ## Project Structure
 
 - **Stack** — React 19 + TypeScript + Vite + TanStack Query. The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
