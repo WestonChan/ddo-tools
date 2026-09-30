@@ -25,12 +25,12 @@ Source of the check: the wiki's one index page, https://ddowiki.com/page/Quests_
 ## items (8,487)
 
 - ⬜ stats, bonuses, effects, sockets, sets — his files only; no wiki comparison of any item's numbers has been done.
-- 🟡 `description` — 8,262 have his text; 225 are blank and on the work list (`cargo xtask wiki-batch` → `blank_descriptions.txt`), 0 filled so far.
+- ✅ `description` — 8,262 have his text; of the 225 blanks, 8 had flavour text on the wiki and are filled (`data/wiki/descriptions.toml`, read 2026-09-29); 211 have an empty Description on their wiki page and 5 have no page (+1 Ember Repeating Light Crossbow, Dhovras' Amulet, Epic Dhovras' Amulet, Legendary Mining Sights, Scientist's Specs; Mining Sights redirects to Mining Lenses). Nothing more to take from the wiki; the 217 stay blank.
 - ⬜ items the wiki has that he lacks — not enumerated; needs the wiki's item index, and finds go upstream, not into our data.
 
 ## augments (2,246)
 
-- 🟡 `description` — 12 SunAndMoon gems end in the placeholder line "Drops in: ?"; 0 filled so far.
+- ✅ `description` — all 12 SunAndMoon gems' placeholder "Drops in: ?" lines replaced with their wiki Locations, read 2026-09-29.
 - 🟡 crafting recipes that yield them — see crafting below; 1,091 distinct augments are yielded by at least one recorded recipe.
 
 ## crafting_* (wiki-only tables)
@@ -81,6 +81,12 @@ Source: one wiki page per system plus its recipe sub-pages, read 2026-09-29. "Ve
 | Essence (Cannith) Crafting | ⬜ | | | deliberately last (Crafting Systems note, D-CS10) |
 
 Totals on 2026-09-29: 37 systems, 2,846 recipes, 702 ingredients; 1,091 distinct augments are yielded by at least one recipe. Items the wiki crafts that his files lack (reported upstream, not stored): Cacophonic Verge and its Dampened and Epic forms, Legendary Sword of Shadow, Legendary Winter's Wrath.
+
+## races, feats, enhancements: descriptions
+
+- ✅ races — Dhampir, Dhampir Dark Bargainer, Tabaxi filled from their pages' lead paragraphs (2026-09-29).
+- ❌ feats — the four blank "Pact Magic: …" feats have no wiki page; they stay blank.
+- ✅ enhancements — "Divine Disciple: Divine Smiting V" filled from the tree page's rank entry.
 
 ## Tables with no wiki check at all
 

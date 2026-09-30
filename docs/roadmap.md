@@ -10,55 +10,49 @@ The DB has 78 tables, 7,249 items, 810 feats, 3,146 enhancements, 480 spells, 25
 
 ## Layout Architecture
 
-```
-+-------------------+---------------------+---+
-| [Weston: Pal 20 v]                      | S |
-|-------------------|                     | t |
-| [Build Overview]  |  Main Content       | a |
-| v BUILD PLAN      |  (single scrollable | t |
-|   [Classes/Feats] |   page for Build    | s |
-|   [Skills]        |   Plan; separate    |   |
-|   [Spells]        |   pages for Gear,   | P |
-|   [Enhancements]  |   Overview, Debug)  | a |
-|   [Reaper]        |                     | n |
-|   [Destinies]     |                     | e |
-| [Gear]            |                     |   |
-|                   |                     |   |
-| ---               |                     |   |
-| v TOOLS           |                     |   |
-| [Damage Calc]     |                     |   |
-| [Farm Checklist]  |                     |   |
-| v [Debug]         |                     |   |
-|   [Items]         |                     |   |
-|   [Spells]        |                     |   |
-|   [Enhancements]  |                     |   |
-|   [Feats]         |                     |   |
-|   [Augments]      |                     |   |
-|   [Sets]          |                     |   |
-|                   |                     |   |
-| [Settings]        |                     |   |
-+-------------------+---------------------+---+
-| [!] 3 warnings              (click to expand)|
-+-----------------------------------------------+
+Shipped in D1 (design-system adoption) from the Claude Design "App Flow Prototype"; the visual rules live in [styling.md](styling.md).
 
-Comparing active:
-+-------------------+
-| [Weston: Pal 20 v]
-| vs Wizard TR [sw][x]
-|-------------------|
-| [Build Overview]  |
-| v BUILD PLAN      |
-| [Gear]            |
-| v TOOLS           |
-|   ...             |
+```
++---------------------+-----------------------------+-----------+
+| DDO TOOLS           |                             | Pinned |  |
+| +-----------------+ |  Main content               | All | Buffs|
+| | Weston        v | |  (one scrollable page for   |-----------|
+| | Sorcerer 20·Elf | |   Build plan; separate      | Evo DC 58 |
+| | ---- VS ----    | |   pages for Overview, Gear, | SP    412 |
+| | Compare...    v | |   Characters, Resources)    | HP  1,204 |
+| | [swap]          | |                             | ...       |
+| +-----------------+ |                             |           |
+| ROSTER              |                             |           |
+| Characters & builds |                             |           |
+| BUILD               |                             |           |
+| Build overview      |                             |           |
+| Build plan          |                             |           |
+|   Levels            |  (sub-items only while on   |           |
+|   Skills            |   /build-plan; they are     |           |
+|   Spells            |   hash anchors, and the     |           |
+|   Enhancements      |   active one tracks scroll) |           |
+|   Destinies         |                             |           |
+|   Reaper            |                             |           |
+| Gear                |                             |           |
+| TOOLS               |                             |           |
+| Damage calc         |                             |           |
+| Farm checklist      |                             |           |
+| Resources           |                             |           |
+|                     |                             |           |
+| [!] Warnings      2 |  (popover lists them)       |           |
+| Collapse            |                             |           |
+| -----------------   |                             |           |
+| Settings            |                             |           |
+| Report a bug        |                             |           |
+| GitHub            ^ |                             |           |
++---------------------+-----------------------------+-----------+
 ```
 
 **Key design decisions:**
-- Nav bar is feature navigation: Build Overview, Build Plan (collapsible: classes/feats, skills, spells, enhancements, reaper, destinies), Gear, TOOLS (collapsible: Damage Calc, Farm Checklist, Debug), Settings
-- **Nav bar top**: `[Weston: Pal 20 v]` dropdown for Manage Characters/Builds and Manage Gear Sets. Comparison is entered from the Characters view (click a second build) -- no picker lives in the nav bar.
-- **Compare active**: Second line appears `vs Wizard TR [swap][x]`. `[swap]` flips primary/comparison. `[x]` deactivates.
-- **Bottom bar**: Build warning indicator. Collapsed: `[!] 3 warnings`. Expands to show details with clickable links to the relevant feature (e.g., "2 feat slots empty (L6, L12) [Levels]"). Zero warnings: hides or shows checkmark.
-- **No horizontal tab bar** -- nav bar IS the tab bar, giving full height to content.
+- The rail is the only navigation (no horizontal tab bar). Three eyebrow groups: **Roster** (Characters & builds), **Build** (Build overview, Build plan with its section anchors, Gear), **Tools** (Damage calc, Farm checklist, Resources). Settings, Report a bug and GitHub sit in a footer under a hairline. Collapsed (56px) the eyebrows become dividers and labels fade; the wordmark shrinks to `DT`.
+- **Character card at the top of the rail** is the build context: the active build's name and `Race · Class split`, a switcher dropdown grouped by character (lives, then planned builds), a `VS` divider, a Compare row whose picker offers every other build, and a Swap row that exchanges active and comparison. Clicking a character in the Characters view remains the other entry point for comparison (Phase 9).
+- **Warnings live in the rail**, above Collapse: `[!] Warnings N` with a popover listing each warning and where it points. There is no bottom bar.
+- **Stats panel** (300px) shows only on build views (`/build-plan`, `/overview`, `/gear`, via `staticData.showStatsPanel`) with Pinned / All stats / Buffs tabs.
 - Clean URL routing via `@tanstack/react-router`: `/ddo-tools/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/resources/$category/$id`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
 
 ### Tech Stack
@@ -556,9 +550,9 @@ The landing page for a build -- shows everything at a glance and lets you config
 
 ---
 
-## Stats Panel (right, 280px)
+## Stats Panel (right, 300px)
 
-2 tabs: **Stats | Feats**
+3 tabs: **Pinned | All stats | Buffs**. D1 shipped the shell (`StatsPanel` in `src/features/character/components/`): a segmented tab strip, ledger rows (pin icon, label, mono value, an overridden-bonus warn slot), group eyebrows on All stats, square toggles on Buffs, and expandable breakdown rows over placeholder data. Phase 6 wires the engine into it. Feats moved to Build Overview (Phase 12); the panel has no Feats tab.
 
 ### Stats Tab
 
@@ -679,16 +673,14 @@ baseStats(race, pointBuy, tomes, levelUps)
 ## Build Switching & Comparison
 
 ### Switching
-- **Nav bar top dropdown**: `[Weston: Pal 20 v]` -- dropdown shows:
-  - `Manage Characters / Builds` -- opens Characters view where you switch builds, manage characters, past lives, etc.
-  - `Manage Gear Sets` -- opens gear set management (same Gear view UI, no build context)
-- Build switching happens in the Characters view (click a build to make it active)
+- **Rail character card** (shipped in D1): clicking the card opens a switcher grouped by character — each character's lives (`(current)` on the current one), then the planned builds `(planned)`. Picking a row makes it the active build. Gear-set management opens from the Gear view's set tabs (Phase 8), not from this menu.
+- Build switching also happens in the Characters view (click a build to make it active)
 - **Unsaved build badge**: Red dot on the nav bar build label when the active build is not persisted (temporary "What if" copy or shared build opened from URL). Signals the user needs to save/import or the build will be lost. Clears when the build is saved ("Keep variant", "Save as new build", or "Import to My Builds").
 
 ### Comparison
-- **Entering comparison**: Activate a build in the Characters view, then click a second build to mark it as the comparison target (see [Characters View](#characters-view-characters) > Click to activate / compare). The Characters view is the only entry point -- there is no separate nav bar picker.
-- **Compare active**: Second line below the nav bar build label: `vs Wizard TR [swap][x]`.
-- **Swap button** `[swap]`: Flips which build is primary (editable) and which is comparison (read-only). Nav bar label updates, stats deltas flip sign.
+- **Entering comparison**: two entry points. The rail card's Compare row (shipped in D1) opens a picker of every other build, with "Stop comparing" at the top once active; the Characters view (Phase 9) lets you click a second build (see [Characters View](#characters-view-characters) > Click to activate / compare). Both write the same `comparisonBuildId` in the build selection.
+- **Compare active**: the card's second row shows the comparison build's name and `Race · Class split` under a `VS` divider; collapsed, its initial in arcane blue.
+- **Swap row** (shipped in D1, disabled until comparing): flips which build is primary (editable) and which is comparison (read-only). Card labels update; Phase 9 makes the stats deltas flip sign.
 - **"What if" copy**: A `[Try variant]` button creates a temporary copy of the current build. Enters comparison mode with the copy as editable primary and the original as comparison target. When done: "Keep variant" (replaces original), "Save as new build" (keeps both), or "Discard" (reverts to original).
 - **Compare past lives**: Comparing against a character's life inherits that character's past lives for stat calculation. Standalone planned builds default to zero past lives.
 - **Past life warning**: If comparison target has different past lives than current build's character, show a warning indicator.
@@ -943,8 +935,9 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V4 | done | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` (first deploy pending the Fly account) |
 | V5 | done | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, icons, validation gates, `flyctl deploy` (first run pending the Fly account) |
 | V6 | done | Frontend on the API -- TanStack Query, hand-written API types, sql.js + `DatabaseGate` removed, Vercel config (first deploy pending the Vercel account) |
-| **V7** | **→ NEXT** | Wiki gap-fill -- quest loot rarity, quests and crafting that DDOBuilderV2 does not carry, read by agents from ddowiki into ETL overrides; plus the unread parts of Maetrim's files |
-| V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
+| D1 | done | Design-system adoption -- tokens, fonts and lint rules from the Claude Design system; the rail with character switcher, compare picker and warnings; stats-panel shell; landing tiles; page scaffolds for the unbuilt views; resources and characters restyled |
+| V7 | done | Wiki gap-fill -- quest loot rarity, quest facts, all 37 crafting systems and blank descriptions read from ddowiki into ETL overrides; the unread parts of Maetrim's files; per-table ledger in `docs/notes/Data Verification.md` |
+| **V8** | **→ NEXT** | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
 | 4d | planned | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
@@ -979,6 +972,9 @@ isn't true it is said here):
   on V6.
 - **Phase 5 (`user.db`) is unchanged.** V8 adds server-side sharing on top of it; the browser copy
   stays the working copy.
+- **D1 is independent of the V-series and of 4d–4g.** It changed only the frontend's look and shell;
+  every later frontend phase inherits its tokens, rail, `StatsPanel`, `PageSection` and
+  `AnchoredMenu` rather than the layout this document's older sketches describe.
 
 ### Phase 1: Layout Restructuring (done)
 - Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
@@ -1239,6 +1235,7 @@ Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes ea
 - Add `bonus_alias` table mapping freeform aliases (typos, alternate spellings, common shorthand) to canonical bonus rows; powers fuzzy search in user-facing bonus selectors
 
 #### Phase 4f — Categories
+- **Crafting systems** becomes a Resources category (`/resources/crafting-systems`), not a top-level view: an info page per system (38 systems; where, materials, mechanics). Decided in the D1 navigation review — its interactive halves already live elsewhere (craftable options inline on item detail; materials summing in the Farm checklist), so what remains is reference content. Scope is large; plan it with the rest of this phase.
 - Wire feats, enhancements, a new bonuses category, and a new stats category into the picker. Each gets its own query layer + detail component. Bonuses category surfaces backlinks to items/augments/enhancements/sets that apply them. Once stats are a first-class category, swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushResource({ category: 'stats', id })` so the inspector navigates *inside* our app — keeps users in the same view, builds the same cross-link affordance bonuses already have between items/feats/etc.
 
 #### Phase 4g — Polish
@@ -1587,20 +1584,12 @@ Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnati
 - Enhancements (N-tree side-by-side, DDO layout)
 - Reaper enhancements
 - Destinies (destiny selector + twist bar)
-- Wire nav bar Build Plan sub-items to `scrollIntoView()` anchors for each section (Level Plan, Skills, Spells, Enhancements, Reaper, Destinies). Active sub-item tracks scroll position.
-- **Collapsible-section primitive — prior art.** The per-section collapse specced above needs a shared
-  component. One existed (`src/components/CollapsibleSection.tsx`) and was deleted in Phase 4k as dead
-  code; recover it with `git show 8f1f648:src/components/CollapsibleSection.tsx` (and `.css`). Worth
-  reusing: its `grid-template-rows: 0fr → 1fr` expand, which animates to true content height without a
-  hardcoded `max-height` — but add the `transition` property it never had, so it animates instead of
-  snapping. Worth rewriting: its state model. It was uncontrolled (`useState(defaultExpanded)`), where
-  this phase needs collapse state persisted in `user.db` — so controlled `expanded` / `onToggle` — plus
-  a `summary` slot in the header for the collapsed progress text ("Skills: 0/320 allocated"). Two other
-  chevron-expand idioms exist to reconcile against: `SitePatchNotes.tsx` rotates a chevron via an
-  `is-open` class, `PastLifeStacks.tsx` swaps `ChevronDown`/`ChevronRight`.
+- Section anchors shipped in D1: the rail sub-items are links to `/build-plan#<section>`, `BuildPlanView` scrolls the matching `PageSection` into view on hash change, and an `IntersectionObserver` scroll-spy rewrites the hash so the active sub-item tracks scroll. The section list is `BUILD_PLAN_SECTIONS` in `src/features/build/buildPlanSections.ts` (Levels, Skills, Spells, Enhancements, Destinies, Reaper); this phase fills each section's body.
+- **Collapsible-section primitive.** Grow it out of `PageSection` (`src/components/PageSection.tsx`, shipped in D1 as the titled, anchorable section header the scaffolds use): add controlled `expanded` / `onToggle` (collapse state persists in `user.db`) and a `summary` slot for the collapsed progress text ("Skills: 0/320 allocated"). Prior art for the expand animation: the deleted `src/components/CollapsibleSection.tsx` (`git show 8f1f648:src/components/CollapsibleSection.tsx`) used `grid-template-rows: 0fr → 1fr`, which animates to true content height without a hardcoded `max-height` — add the `transition` it never had. Two other chevron-expand idioms exist to reconcile against: `SitePatchNotes.tsx` rotates a chevron via an `is-open` class, `PastLifeStacks.tsx` swaps `ChevronDown`/`ChevronRight`.
 
 ### Phase 8: Gear
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets).
+- Layout decided in D1 (scaffold shipped in `src/features/gear/GearView.tsx`): gear-set tabs across the top (sets are shared across builds), Finder and Compare as **in-view modes** on `/gear` rather than routes (they share the set context, so separate routes would fork state), then the 14-slot paper-doll tile grid. Each tile carries two mono tags — `N/4` pinned stats the item covers and `+N` unique bonus types it adds — and the selected tile opens the slot's equipped-item panel beside a Compare panel that lists candidate items with signed stat deltas versus the equipped item and a `Swap in` / `Revert` action. A "Compare list" strip above holds items added from Resources ("Add to compare" on item detail); hovering a candidate highlights the stats it changes in the stats panel.
 - Full overview + side-by-side slot editor
 - Item search with stacking indicators
 - Augment/filigree/crafting/upgrade inline
@@ -1609,7 +1598,7 @@ Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets)
 
 ### Phase 9: Comparison Mode
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets).
-- Click-to-compare in Characters view (connector line from comparison -> active build) + nav bar `vs X [swap][x]` indicator
+- Click-to-compare in Characters view (connector line from comparison -> active build). The rail card's compare picker, `VS` row and Swap already ship as UI in D1 (`comparisonBuildId` on the build selection, `setComparisonBuild` / `swapComparison` on the character context); this phase gives them stat effects.
 - Comparison display for stats panel, build overview, and gear
 - Swap button + "What if" copy workflow
 - Unsaved build badge (red dot on nav bar build label for temp copies; reused by Phase 14 for shared builds)
@@ -1617,6 +1606,7 @@ Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets
 - Build warning calculation + bottom bar
 
 ### Phase 10: Farm Checklist
+Sections decided in D1 (scaffold in `src/app/routeComponents.tsx`): Wanted items (acquisition path per item), Materials summary (summed across crafting paths, grouped by system), Quest run list (where to go, what drops there). Item detail's "Add to farm list" button feeds the first.
 - Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
 - Acquisition path selector per item (farm / craft / purchase)
 - Materials summary (summed across all crafting paths, deducted when acquired)
@@ -1630,14 +1620,15 @@ Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets
 - Populate via `build_db` pipeline
 
 ### Phase 12: Build Overview
-- Feats (passive + active with sources)
-- Ability cards (min/max/avg, click -> damage calc)
-- Buffs (spell buffs, conditionals, stances, external, stacks)
+Sections decided in D1 (scaffold shipped in `src/features/build/BuildOverviewView.tsx`): Active abilities, Passive feats & abilities, Buffs & stances.
+- **Active abilities as hotbars.** Renameable bars of ten 40px slots; drag abilities from grouped pools below (Spells, SLAs & enhancements, Destiny, Feats, Item clickies) onto slots. A slot shows the ability's short code in its damage-type color; hover shows a stat-block tooltip (type, cooldown, save, damage, cost); click opens the Damage calc with that ability selected. An "Add item…" picker under Item clickies searches every item with an active ability (filters: slot, ability, ML, content you own) and adds it to the pool, flagged "swap to use" when it isn't equipped.
+- Passive feats & abilities: feats, enhancements and destiny passives grouped by source; rows link into Resources detail.
+- Buffs & stances: the same toggle set as the stats panel's Buffs tab (spell buffs, conditionals, stances, external, stacks); toggling recomputes the panel.
 
 ### Phase 13: Settings View Cleanup
 Currently a minimal placeholder (theme + accent picker). Belongs late because knowing what *needs* a setting depends on what features exist.
 
-- Restructure into sections: Display, Game Content, Data Management, About
+- Restructure into sections. D1 laid them out with eyebrow headings: Theme + Accent (live), Owned content (F2P / Premium / VIP preset + per-pack toggles; placeholder), Data (`user.db` export / import; placeholder). Add About / metadata as a fourth.
 - Wire to Zustand stores (replace direct localStorage access)
 - Owned content settings (adventure packs / expansions)
 - Data management (export/import `user.db`, reset, storage usage)
@@ -1974,7 +1965,7 @@ A single-machine deploy means a few seconds of downtime; accepted.
   rules, and its docs (`dat-format`, `binary-reverse-engineering`, `db-guidelines`,
   `etl-invariants`) were deleted the same day; `git log` before that date has them.
 
-#### V7 — Wiki gap-fill: quest loot and crafting
+#### V7 — Wiki gap-fill: quest loot and crafting (done 2026-09-29)
 
 **Principle.** DDOBuilderV2 is authoritative for every field it carries; the wiki fills only what it
 lacks. Decided 2026-09-28 after a column-by-column survey of the Maetrim-only build (every table
@@ -2035,8 +2026,14 @@ disagreements found on the way are collected in [Upstream Reports](notes/Upstrea
 [Data Verification](notes/Data%20Verification.md) is the ledger of what has been checked against
 the wiki, per table, and what is left.
 
-**Step 4 — blank descriptions.** 225 items, 12 augments reading "Drops in: ?", 3 races, 4 feats,
-1 enhancement. One page read each.
+**Step 4 — blank descriptions (done 2026-09-29).** 24 of 245 filled (8 items, 12 augments, 3 races,
+1 enhancement); the other 221 have no text on the wiki either (211 empty infoboxes, 5 items and
+4 feats with no page), so they stay blank by fact, not by omission.
+
+**Left open after V7, none blocking:** the 22 quests the wiki index does not list (wilderness
+areas and chains) have no duration or XP; `quests.zone`, `bestowed_by`, `flagging` are unread;
+Cannith (Essence) crafting waits on D-CS10; `quest_loot.loot_type` and quest-to-item links are his
+text and unverified against the wiki's loot tables. The ledger tracks all four.
 
 **Out of scope.** Items absent from Maetrim's files are reported upstream to DDOBuilderV2 rather
 than stored here, so the item set stays single-sourced.
@@ -2052,6 +2049,29 @@ Write routes are `no-store` and rate-limited; reads use `updated_at` as the ETag
 stays the working copy; Share posts a snapshot and stores `{id, edit_token}` beside the local build;
 a shared link opens read-only with "Import to my builds". Requires Phase 5's build structures; the
 versioned build JSON is also what Phase 15's `.DDOBuild` import targets.
+
+---
+
+## D-series: Design system
+
+Decided 2026-09-29. A design system for the site was drafted in Claude Design (project "ddo-tools",
+readme: "a ledger for min-maxers") together with two prototypes, a navigation proposal and an
+interactive app-flow prototype grounded in this roadmap and the view notes. D1 adopts them. The
+rules that outlive this phase are in [styling.md](styling.md); this section records what shipped
+and the decisions that changed earlier sketches in this document.
+
+#### D1 — Design-system adoption (done)
+
+- **Tokens.** `src/index.css` carries the design's stone/gold/arcane ramps, semantic aliases for dark and light, the Source Sans 3 / Cinzel / JetBrains Mono fonts (Google Fonts), the `--fs-*` type scale, radii 3/5/6/8, elevation tokens (borders carry depth; shadows only on popovers, dialogs and drags), and flat 80–260ms motion. `--accent` stays the one user-configurable primitive: the gold ramp derives from it in oklch so the Settings accent picker keeps re-tinting the whole UI. Stylelint enforces token-only colors, token-only shadows, token-only font families and no pill radii. Every compared number is mono (`.num`).
+- **Rail.** Rewritten to the prototype (see Layout Architecture): wordmark, character card, Roster / Build / Tools groups, Build plan sub-items as hash anchors, Warnings popover, Collapse, footer with Settings, Report a bug and GitHub. The bottom bar is gone; its bug-report button moved to the rail footer and keeps the Sentry correlation from Phase 3.
+- **Character card.** Switcher grouped by character (lives, then planned builds), Compare picker, Swap. `comparisonBuildId` joins the persisted build selection (migrated), with `comparisonBuild`, `setComparisonBuild` and `swapComparison` on the character context. No stat effect until Phase 9.
+- **Popovers.** One `AnchoredMenu` in `src/components/` (raised surface, strong border, popover shadow; outside-click and Escape close) serves the switcher, the compare picker and the warnings list.
+- **Stats panel.** `BuildSidePanel` became `StatsPanel`: 300px, Pinned / All stats / Buffs, ledger rows, placeholder data typed in `src/features/character/data/placeholderStats.ts`. Shown where `staticData.showStatsPanel` is set (`/build-plan`, `/overview`, `/gear`).
+- **Landing.** Wordmark, tagline, four entry tiles (the Characters tile carries the active-character summary), the two patch-notes cards, and a mono footer line.
+- **Scaffolds.** `PageSection` and `WireframePlaceholder` in `src/components/`; `src/features/build/` (`BuildPlanView` with hash-anchored sections and scroll-spy, `BuildOverviewView`, `buildPlanSections.ts`) and `src/features/gear/` (`GearView` with set tabs, Finder / Compare buttons and the 14-slot tile grid) hold the views their phases will fill. Damage calc and Farm checklist stay as small wireframes in `routeComponents.tsx`. Settings gained Owned content and Data placeholders.
+- **Resources and Characters** restyled to the design's components (underline tabs, filter chips, sunken search well, table header strip, ledger rows, cards with eyebrows) without behavior changes.
+- **Navigation decisions** folded into the phases they affect: Build plan stays one page with anchors (Phase 7); Gear Finder and Compare are in-view modes (Phase 8); crafting is a Resources category, not a tool (Phase 4f); the Resource Report editor stays an inline drawer state (Phase 5b); the stats panel shows only on build views.
+- **Deferred on purpose.** The warnings list is an empty constant until Phase 9's validation; the stats panel and gear tiles show placeholder data until Phases 6 and 8; accent presets other than Gold remain although the design names one gold; the `index.html` pre-paint script still duplicates the accent parsing (Phase 13).
 
 ---
 

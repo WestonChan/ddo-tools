@@ -29,6 +29,10 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 
 - 📋 Socket label spelling drift, found by `cargo xtask wiki-check`: "Upgradable Item" vs "Upgradeable Item"; "Upgradeable - Tier 2/3" vs "Upgradeable Tier 2/3"; "Zentarim Attuned" vs "Zhentarim Attuned"; one item's "Suppressed power" (lower-case p). The check prints these on every run until his files converge.
 
+- 📋 Mining Sights and Mining Lenses — his files carry both as separate items with identical stats and drop; the wiki redirects Mining Sights to Mining Lenses, so one looks like a duplicate or a renamed item.
+- 📋 Spelling — his "Unicorn's Rememberance" and "Epic Unicorn's Rememberance" (the wiki: Remembrance); his "Dark Power's Demands" (the wiki: Dark Powers' Demands).
+- 📋 Items with no wiki page at all: +1 Ember Repeating Light Crossbow, Dhovras' Amulet, Epic Dhovras' Amulet, Legendary Mining Sights, Scientist's Specs. Worth confirming they exist in game.
+
 ## Quests
 
 - 📋 `epic_level` — the wiki index gives an epic level for 22 quests where his `Quests.xml` has none (The Unquiet Graves 21, The Lost Thread 21, The Battle for Eveningstar 21, Impossible Demands 21, Don't Drink the Water 22, The House of Broken Chains 22, The House of Rusted Blades 22, The Portal Opens 22, In the Belly of the Beast 22, The House of Death Undone 22, Trial by Fury 23, Reclaiming the Rift 23, The Deal and the Demon 23, Caught in the Web 24, Precious Cargo 25, The Fall of Truth 25, A Study in Sable 26, Brothers of the Forge 28, The Haunted Halls of Eveningstar 28, and the three Devil Assault variants at 21), and 22 where he has 21 (Haywire Foundry, Jungle of Khyber). Source: https://ddowiki.com/page/Quests_by_level_and_XP.

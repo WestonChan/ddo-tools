@@ -1,197 +1,213 @@
 # Styling Guide
 
-CSS conventions, design tokens, layout architecture, and responsive breakpoints for the DDO Tools frontend.
+CSS conventions, design tokens, component recipes, layout architecture, and responsive breakpoints for the DDO Tools frontend. The visual language is the "DDO Tools" design system adopted in D1 (see `docs/roadmap.md`): a ledger for min-maxers, set like a well-typeset rulebook table rather than a fantasy poster.
 
 ## Design Principles
 
-- **Flat surfaces, no elevation.** No drop shadows — the UI is a single plane. The only `box-shadow` allowed is a zero-offset, zero-blur ring (`0 0 0 <spread>`), which draws an outline, not elevation. Surface separation comes from subtle bg tint steps and hairline borders, never drop shadows. Even modals and tooltips sit flush, relying on border + bg contrast against a dimmed scrim.
-- **Derive, don't duplicate.** The light theme only overrides 3 primitives: `--bg`, `--tint`, `--accent`. Everything else — `--text`, secondary/tertiary bgs, borders, semantic colors — is derived via `color-mix()` or `rgb(from ... / alpha)`. Adding a new theme means picking 3 colors, not redefining the whole palette.
-- **Tint, not text, is the shift direction.** Backgrounds and borders mix toward `--tint` (white in dark, black in light), not `--text`. Keeps intent clear: `--tint` is "the direction to shift for more contrast," `--text` is a content color. Adding colored text won't break surface derivations.
-- **Solid vs transparent tokens serve different roles.**
-  - **Solid `color-mix(tint N%, bg)`** (e.g. `--bg-secondary`, `--bg-tertiary`) — fixed colors, good for chrome surfaces where the element owns its entire visual box and doesn't need to respond to what's behind it.
-  - **Transparent `rgb(from tint r g b / N)`** (e.g. `--bg-subtle`) — context-responsive overlays that always appear N% brighter/darker than their parent. Use for hover highlights and inset elements that might appear on varying surface levels (e.g. a stack pip inside a hoverable row — a solid color would become invisible when the row's own hover background matches the pip fill).
-- **Accent derivatives use relative color syntax.** `rgb(from var(--accent) r g b / 0.1)` gives a true alpha variant of the accent. Avoids the `color-mix(accent N%, transparent)` pitfall where srgb mixing pulls color channels toward black (transparent is `rgba(0,0,0,0)` — mixing accent at 10% with it produces a near-black semi-transparent color, not a gold wash).
-- **`color-mix` convention: `modifier <50%, base`.** The base always dominates and goes second. This makes every mix read as "take the base and add a small amount of tint/accent/danger." For strong color states, find a different base rather than flipping percentages (e.g. `--border-danger` mixes danger into border, not the other way around).
-- **Active state = color + weight.** Nav items signal active via accent color + one weight-step bump (500 → 600). The character card adds an accent border + accent top divider. Active items get `cursor: default` and suppress hover background changes — clicking the already-active item is a no-op.
-- **Identity vs navigation.** The character card's active state uses border + color (emphasizing identity); nav buttons use left accent bar + weight + color (standard navigation). Different element types earn different active patterns.
+- **Warm slate, one accent.** Neutrals are the stone ramp (`--stone-*`, stone-touched, never blue-grey). One accent, aged gold, drives selection, the single primary action per region, and class-tree ink. Arcane blue is the secondary. Never more than one accent hue per screen region.
+- **Functional color is an encoding.** Damage types (`--dmg-*`), enhancement trees (`--tree-*`) and augment-socket colors mean the same thing in every chart, pip, dot and tag. There is no rarity-tier color: DDO has no rarity tiers, and "Legendary" in an item name is just part of the name.
+- **If it's a number, it's mono.** Anything a player compares — modifiers, DCs, dice, AP, ML, percentages, counts, versions — is JetBrains Mono with tabular figures (`.num` or `font-family: var(--font-mono)`), so columns line up and two builds can be read side by side.
+- **Fantasy enters through type, not texture.** Cinzel is the wordmark only. Headings are bold Source Sans 3. No parchment, no gradients, no imagery, no glows.
+- **Borders carry depth; shadow is for things that float.** Surfaces separate by a four-step ladder (`--bg-app` → `--bg-panel` → `--surface-card` → `--surface-raised`, with `--surface-sunken` for input wells) plus a hairline border. `--shadow-popover`, `--shadow-dialog` and `--shadow-drag` are reserved for menus, dialogs and drag ghosts. `--inset-top` puts a 5% highlight on raised chrome; `--inset-sunken` darkens wells.
+- **Hover is a wash, press is a nudge.** Hover = `--surface-hover` (a white/black alpha so it works on any surface; primary buttons brighten instead). Press = 1px downward `translateY`, never a scale. Focus = `--ring-focus`. Disabled = 42% opacity. Locked things are dimmed, never hidden.
+- **Motion is short and flat.** 80/120/180/260ms on `--ease-standard`; color, border and width transitions only. No bounce, spring, scale-in or entrance animation. `prefers-reduced-motion` zeroes every duration.
+- **No pill shapes.** 3px inside dense grids, 5px is the workhorse, 6px for panels, 8px only for the dialog. Tags, toggles, progress tracks and swatches are square-cornered. Stylelint rejects `999px` and `50%` radii.
+- **Active state = fill + mark + color + weight.** A rail row signals active with `--surface-selected`, a 2px `--accent-fill` left mark, `--text-accent` and one weight step (400 → 600). Selected list rows use the same fill with an `inset 2px 0 0 var(--accent-fill)` mark. Active items get `cursor: default` and no hover wash.
+- **Accent stays user-configurable.** `--accent` is the one primitive Settings can change (pre-paint script in `index.html`, `applyAccent` in `src/lib/accent.ts`). The gold ramp derives from it in oklch, so every preset re-tints selection, links and fills consistently.
+
+## Copy
+
+- Sentence case for everything readable: headings, buttons, labels, rail rows ("Build plan", "Damage calc"). UPPERCASE only for 11–12px eyebrows.
+- Second person for consequences; the app never says "we" or "let's".
+- Numbers are exact, mono, with the unit as a suffix (`62 / 80 AP`, `DC 58`). Deltas are signed and colored, never worded.
+- Middot separates facts (`Sorcerer 20 · Elf`); em dash marks an empty cell; en dash in ranges (`12–20`). No emoji.
 
 ## Icons
 
-Use `lucide-react` for all icons. Pass the `size` prop for sizing — never use CSS `width`/`height` on icon elements. Icons are single-color and inherit `currentColor`, so they track text color automatically. Don't pass `color` or `fill` directly; control icon color by setting `color` on a parent.
+Use `lucide-react` for all icons. Pass the `size` prop (16 in rail rows and buttons, 12–14 inline, 18–20 for tab bars and empty states) — never CSS `width`/`height`. Icons inherit `currentColor`; control their color on the parent. The only colored icons are encodings (a damage-type glyph in its `--dmg-*`, a tree glyph in its `--tree-*`).
 
 ## Conventions
 
-- **Plain CSS** with native nesting (no Sass/SCSS). All modern browsers support `&` nesting.
-- **BEM naming**: Block-Element-Modifier. `nav-bar-btn`, `nav-bar-btn--active`, `nav-bar-build-row`. Use `--` for modifiers, `-` for multi-word blocks/elements.
-- **CSS custom properties** for shared values: colors in `index.css` `:root`, component-scoped vars (e.g., `--icon-col`) at the component root.
-- **Enforced by Stylelint** (`stylelint.config.mjs`, run by `npm run lint`): a color literal (hex, `rgb()`/`hsl()` of raw channels, `white`/`black`) may appear only in a custom-property definition, and `box-shadow` may only be a `0 0 0 <spread>` ring. Relative color from a token (`rgb(from var(--tint) …)`) and `color-mix()` over tokens are fine.
-- **Nesting**: Use native CSS nesting for states (`&:hover`, `&.active`), pseudo-elements (`&::before`), child selectors (`& > svg`), and parent-context overrides (`.app-nav-bar:not(.expanded) &`). Note: `&-suffix` concatenation is NOT supported in native CSS (that's Sass only). Use separate selectors instead.
-- **Shared classes** for repeated patterns: e.g., `.nav-bar-collapsible` for all text that hides on collapse.
-- **No `!important`**. Fix specificity issues with nesting or more specific selectors.
-- **Co-locate CSS** with components: `AppNavBar.css` next to `AppNavBar.tsx`.
+- **Plain CSS** with native nesting (no Sass). `&-suffix` concatenation is not supported natively; write separate selectors.
+- **BEM naming**: `nav-bar-btn`, `nav-bar-btn--active`, `stats-panel-row`. `--` for modifiers, `-` for multi-word blocks and elements.
+- **Tokens only.** Colors, fonts, radii, shadows and durations come from `src/index.css`; component-scoped custom properties (`--icon-col`) live at the component root.
+- **Enforced by Stylelint** (`stylelint.config.mjs`, part of `npm run lint`): a raw color literal may appear only in a custom-property definition; `box-shadow` must be `none`, a `var(--shadow-*|--inset-*|--ring-*|--glow-*)` token, or a `0 0 0 <spread>` ring; `font-family` must be a `var(--font-*)` reference; `border-radius` may not be a pill (`999px`, `9999px`, `100vmax`, `50%`).
+- **No `!important`.** Fix specificity with nesting.
+- **Co-locate CSS** with components (`AppNavBar.css` next to `AppNavBar.tsx`).
 
 ## Design Tokens
 
-Defined in `src/index.css` on `:root` (dark) and `:root[data-theme='light']` (light). Only primitives differ between themes — derived tokens auto-resolve.
+Defined in `src/index.css`. Primitives are theme-independent; semantic aliases are declared once for dark on `:root` and overridden for light on `:root[data-theme='light']`.
 
-### Primitives (theme-specific)
+### Primitives
 
-| Token | Dark | Light | Role |
-|-------|------|-------|------|
-| `--bg` | `#18181b` | `#f4f4f5` | Page background |
-| `--tint` | `white` | `black` | Contrast direction — color to mix INTO `--bg` for stepped surfaces |
-| `--accent` | `#b8962e` | `#8b7335` | Gold by default; overridden at runtime by `theme.ts` when user picks a color |
-| `--danger` | `#ef4444` | `#ef4444` | Error/warning red (same in both themes) |
+| Ramp | Tokens | Role |
+|---|---|---|
+| Stone | `--stone-0` … `--stone-950` (0, 25, 50, 100, 200, 300, 400, 500, 600, 700, 750, 800, 850, 900, 950) | Warm-slate neutrals |
+| Gold | `--gold-100` … `--gold-700`, derived from `--accent` (`--gold-400` is `--accent` itself; lighter steps mix toward white, darker toward black, in oklch) | Accent |
+| Arcane | `--arcane-100` … `--arcane-700` | Secondary (comparison build, info) |
+| Moss / Amber / Rust / Violet | `--moss-400/500/600`, `--amber-400/500/600`, `--rust-400/500/600`, `--violet-400/500` | Semantic hues |
+| Damage | `--dmg-physical`, `-fire`, `-cold`, `-electric`, `-acid`, `-sonic`, `-force`, `-light`, `-negative`, `-poison` | Encodings |
+| Trees | `--tree-class` (gold), `--tree-racial` (moss), `--tree-universal` (arcane), `--tree-destiny` (violet) | Encodings |
 
-### Text (derived)
+### Semantic aliases
 
-| Token | Formula | Role |
-|-------|---------|------|
-| `--text` | `rgb(from tint r g b / 0.85)` | Primary text — derived so it tracks `--tint` (dark theme white-ish, light theme black-ish) without a per-theme override |
-| `--text-secondary` | `rgb(from text r g b / 0.65)` | Secondary/subtitle text |
-| `--text-muted` | `rgb(from text r g b / 0.45)` | Muted/placeholder text |
+| Group | Tokens |
+|---|---|
+| Surfaces | `--bg-app`, `--bg-panel`, `--surface-card`, `--surface-raised`, `--surface-sunken`, `--surface-hover`, `--surface-active`, `--surface-selected`, `--scrim` |
+| Text | `--text-heading`, `--text-body`, `--text-muted`, `--text-faint`, `--text-inverse`, `--text-accent`, `--text-link`, `--text-link-hover`, `--text-numeric` |
+| Borders | `--border-hairline` (10%), `--border-default` (16%), `--border-strong` (28%), `--border-accent`, `--border-focus` |
+| Accent | `--accent-fill`, `--accent-fill-hover`, `--accent-fill-active`, `--accent-on` (text on a gold fill), `--accent-quiet` (14% wash) |
+| Secondary | `--secondary-fill`, `--secondary-quiet` |
+| Status | `--status-ok`, `--status-warn`, `--status-error`, `--status-info`, each with a `-quiet` wash |
 
-### Backgrounds (derived)
+Rules of thumb: page background is `--bg-app`; the rail, stats panel and drawers are `--bg-panel`; cards are `--surface-card` with `--border-hairline`; controls on a card and popovers are `--surface-raised`; inputs and segmented-control tracks are `--surface-sunken`. Body copy is `--text-body`, secondary facts `--text-muted`, eyebrows and hints `--text-faint`, names and titles `--text-heading`.
 
-Solid tint-based surfaces for structural UI, plus transparent overlays for context-responsive states.
+### Fonts and type
 
-| Token | Formula | Role |
-|-------|---------|------|
-| `--bg-secondary` | `color-mix(tint 3%, bg)` | Chrome surfaces — nav bar, bottom bar, side panel |
-| `--bg-tertiary` | `color-mix(tint 6%, bg)` | Card surfaces, tooltips, modal body |
-| `--bg-subtle` | `rgb(from tint r g b / 0.10)` | **Transparent.** Dual-purpose overlay — hover highlight via the `.hoverable` utility AND neutral inset surfaces (checkbox fills, unfilled pips) that need to read distinct from any parent bg |
-| `--bg-accent` | `color-mix(accent 8%, bg)` | Accent-tinted surface (tracks theme color) — selected/active option backgrounds |
-| `--bg-accent-muted` | `rgb(from accent r g b / 0.35)` | **Transparent.** Dimmed-but-visible accent overlay — muted pip fills and other accent-tinted inset surfaces that must composite over varying parent backgrounds while still reading clearly |
-| `--accent-hover` | `color-mix(in oklch, accent 70%, white)` | Hover state of accent-colored links and primary buttons |
-| `--scrim` | `rgb(0 0 0 / 0.45)` | Dim layer behind modals and the fullscreen nav overlay |
-| `--bg-danger` | `rgb(from danger r g b / 0.1)` | Danger/warning state background |
+| Token | Value |
+|---|---|
+| `--font-wordmark` | Cinzel (the "DDO TOOLS" wordmark only) |
+| `--font-ui` | Source Sans 3 — all UI, prose and headings (`--font-display` aliases it) |
+| `--font-mono` | JetBrains Mono — every compared number |
 
-### Borders (derived)
+Fonts load from Google Fonts via the `<link>` in `index.html`.
 
-| Token | Formula | Role |
-|-------|---------|------|
-| `--border` | `color-mix(tint 17%, bg)` | Default borders |
-| `--border-emphasis` | `color-mix(tint 10%, border)` | Stronger neutral borders — mixes onto `--border` (not `--bg`) so it tracks `--border` if that ever changes |
-| `--border-accent` | `color-mix(accent 15%, border)` | Tonal accent-tinted borders |
-| `--border-danger` | `color-mix(danger 40%, border)` | Danger state borders |
+| Size token | px | Use |
+|---|---|---|
+| `--fs-micro` | 11 | Eyebrows, table headers, hints |
+| `--fs-label` | 12 | Captions, secondary facts, dense labels |
+| `--fs-body-sm` | 13 | Rail rows, list rows, chips, buttons |
+| `--fs-body` | 14 | Body copy |
+| `--fs-h3` | 16 | Section titles, card titles |
+| `--fs-h2` | 20 | View titles |
+| `--fs-h1` | 26 | Page headings |
+| `--fs-display` | 34 | Display |
+| `--fs-stat`, `--fs-stat-lg` | 18, 30 | Mono stat callouts |
 
-### Contrast scale
+Line heights `--lh-tight/heading/body/dense`, letter-spacing `--ls-wordmark/eyebrow/heading/body/numeric`, weights `--fw-regular/medium/semibold/bold`, and composed roles `--type-wordmark/display/h1/h2/h3/body/label/eyebrow/numeric/stat` (use as `font: var(--type-body)`).
 
-The `--bg-*` and `--border-*` tokens form a rough stepped scale from `--bg`:
+### Spacing
 
-| Step | Token | Typical use |
-|------|-------|-------------|
-| 0% | `--bg` | Page |
-| 3% | `--bg-secondary` | Chrome |
-| 6% | `--bg-tertiary` | Cards, panels |
-| 10% | `--bg-subtle` (transparent) | Hover highlights + inset surfaces (pips, fills) |
-| 17% | `--border` | Default border |
-| ~25% | `--border-emphasis` | Strong border (mixed onto `--border`, not `--bg`) |
+4px base. Used for `padding`, `margin` and `gap` only.
 
-### Type Scale
+| Token | px |
+|---|---|
+| `--space-px` | 1 |
+| `--space-0-5` | 2 |
+| `--space-1` | 4 |
+| `--space-1-5` | 6 |
+| `--space-2` | 8 |
+| `--space-2-5` | 10 |
+| `--space-3` | 12 |
+| `--space-3-5` | 14 |
+| `--space-4` | 16 |
+| `--space-5` | 20 |
+| `--space-6` | 24 |
+| `--space-7` | 28 |
+| `--space-8` | 32 |
 
-Tailwind's default scale. Defined in `:root` (theme-independent).
+Dense grids and tables use 6/8/10; page chrome uses 16/20/24. Never invent an in-between value.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--text-xs` | 0.75rem (12px) | Caption, microcopy, subtitles, dense labels |
-| `--text-sm` | 0.875rem (14px) | Body UI: rows, buttons, card text, nav labels |
-| `--text-base` | 1rem (16px) | Emphasized body: modal titles, section text |
-| `--text-lg` | 1.125rem (18px) | Nav brand, prominent labels |
-| `--text-xl` | 1.25rem (20px) | View titles, section headings |
-| `--text-2xl` | 1.5rem (24px) | Display, loading gate |
-| `--text-3xl` | 1.875rem (30px) | h1 |
+### Chrome sizes
 
-Font weights (400/500/600/700) and letter-spacing stay as raw numbers — only four distinct values, no drift, self-documenting.
+| Token | Value |
+|---|---|
+| `--sidebar-w` / `--sidebar-collapsed-w` | 236px / 56px |
+| `--inspector-w` | 300px (stats panel) |
+| `--content-max` | 1240px |
+| `--control-h-sm` / `--control-h` / `--control-h-lg` | 26px / 32px / 38px |
+| `--tap-target` | 44px |
 
-### Spacing Scale
+### Radius
 
-Tailwind's default scale (4px base). Defined in `:root` (theme-independent). Used for `padding`, `margin`, and `gap` only — not widths, heights, border-radius, or line-height.
+| Token | Value | Use |
+|---|---|---|
+| `--radius-xs` | 3px | Pips, chips, tags, toggles, swatches, inset row marks |
+| `--radius-sm` | 5px | The workhorse: buttons, inputs, cards, popovers, tiles |
+| `--radius-md` | 6px | Panels |
+| `--radius-lg` | 8px | Dialog only |
 
-| Token | Value | px |
-|-------|-------|----|
-| `--space-px` | 1px | 1 |
-| `--space-0-5` | 0.125rem | 2 |
-| `--space-1` | 0.25rem | 4 |
-| `--space-1-5` | 0.375rem | 6 |
-| `--space-2` | 0.5rem | 8 |
-| `--space-2-5` | 0.625rem | 10 |
-| `--space-3` | 0.75rem | 12 |
-| `--space-3-5` | 0.875rem | 14 |
-| `--space-4` | 1rem | 16 |
-| `--space-5` | 1.25rem | 20 |
-| `--space-6` | 1.5rem | 24 |
-| `--space-7` | 1.75rem | 28 |
-| `--space-8` | 2rem | 32 |
+### Elevation
 
-Half-step names use a `-5` suffix (`--space-1-5`, `--space-2-5`, `--space-3-5`) because CSS custom properties can't include `.`. For negative margins use `calc(-1 * var(--space-N))`.
+| Token | Use |
+|---|---|
+| `--shadow-hairline` | 1px hairline ring |
+| `--shadow-popover` | Menus, tooltips, popovers |
+| `--shadow-dialog` | Modal dialog |
+| `--shadow-drag` | Drag ghosts |
+| `--inset-top` | Raised chrome highlight (character card, table header strip) |
+| `--inset-sunken` | Input wells, segmented-control tracks |
+| `--glow-accent` | Accent ring + soft glow for the one element that must attract the eye |
+| `--ring-focus` | `:focus-visible` |
 
-### Border Radius
+### Motion
 
-Three-tier scale. Larger values (8px+) stay raw — too rare to warrant a token.
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--radius-sm` | 3px | Pips, small buttons, row-action buttons, inset chips |
-| `--radius-md` | 4px | Most controls — buttons, inputs, ghost/primary buttons, tooltips |
-| `--radius-lg` | 6px | Cards, panels, nav character card, swatch rows |
-
-### Transition Timing
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--transition-fast` | 0.15s | Hover color/background shifts, icon transforms |
-| `--transition-std` | 0.3s | Button transitions, tab animations, tooltip fade |
+| Token | Value |
+|---|---|
+| `--dur-instant` / `--dur-fast` / `--dur-base` / `--dur-slow` | 80 / 120 / 180 / 260ms |
+| `--ease-standard` / `--ease-out` / `--ease-in` | flat cubic-beziers |
+| `--transition-control` | background, border-color and color at `--dur-fast` |
 
 ### Stacking (z-index)
 
-Layers are numbered by role so siblings within the same layer can use small local offsets (`z-index: 1`) above their neighbors without colliding with the next layer up.
-
 | Token | Value | Usage |
-|-------|-------|-------|
-| `--z-local` | 1 | Positional offsets within a component (swap btn over divider, etc.) |
-| `--z-panel` | 10 | Side panels, stats panel — above main content |
-| `--z-nav` | 20 | Nav bar — above panels |
-| `--z-overlay` | 40 | Mobile fullscreen nav, modal backdrops (`.modal-backdrop` in Modal.css) |
-| `--z-modal` | 100 | Dialog/drawer panels (`.modal-panel` in Modal.css), tooltips — highest layer |
+|---|---|---|
+| `--z-local` | 1 | Positional offsets within a component |
+| `--z-panel` | 10 | Stats panel |
+| `--z-nav` | 20 | Rail |
+| `--z-overlay` | 40 | Mobile fullscreen rail, modal backdrops |
+| `--z-modal` | 100 | Dialogs, drawers, popovers, tooltips |
 
-Always use tokens, never hardcode colors. Use variables for repeated dimensions (`--icon-col`), timing, and spacing. If a value appears 3+ times, extract it.
+## Component recipes
+
+Shared classes in `src/index.css`; shared components in `src/components/`.
+
+- **Eyebrow** (`.section-label`): 11px, 600, `.08em`, uppercase, `--text-faint`. The one class for section labels, table headers and rail group headings.
+- **Card**: `--surface-card`, 1px `--border-hairline`, `--radius-sm`, padding 12–14px. Optional header strip: `--surface-raised` + `--inset-top` + eyebrow.
+- **Buttons**: `.btn-primary` (`--accent-fill` / `--accent-on`, 600, height 30, radius sm; hover brightens, press nudges 1px), `.btn-ghost` (`--surface-raised`, `--border-default`, `--text-body`). `-sm` variants are 26px.
+- **Popover** (`AnchoredMenu`): `--surface-raised`, `--border-strong`, `--shadow-popover`, radius sm, 4px padding, 1px row gap; rows 12.5px with `--surface-hover` on hover and `--surface-selected` + `--text-accent` when selected; closes on outside click and Escape.
+- **Underline tabs** (`.underline-tabs`): 32px, 13.5px, `--text-muted`; active = `--text-heading`, 600, 2px `--accent-fill` underline on a `--border-default` baseline.
+- **Segmented control**: `--surface-sunken` track with `--border-default` and 2px padding; active segment `--surface-raised` + `--text-heading`, others `--text-faint`.
+- **Filter chip**: 26px, radius xs, `--surface-card` + `--border-hairline`; selected = `--surface-selected`, `--border-accent`, `--text-accent`.
+- **Ledger row** (stats panel, enchantments): 24–26px, hairline bottom border, label `--text-muted`, value mono `--text-body`, bonus type 11px `--text-faint` right-aligned.
+- **Table header strip**: `--surface-raised`, `--inset-top`, eyebrow labels, `--border-default` bottom.
+- **Search well**: 30px, `--surface-sunken`, `--border-default`, `--inset-sunken`, `search` glyph, shortcut hint in mono.
+- **Page** (`.page`): 24px padding, `max-width: var(--content-max)`, centered. `PageSection` gives a titled, anchorable section; `WireframePlaceholder` is the dashed block used by views whose phase has not shipped.
 
 ## Layout Architecture
 
-The app uses a **3-column CSS Grid** inside a flex shell:
-
 ```
 .app-shell (flex column, 100vh)
-  .app (CSS grid: nav bar | content | stats)
-  .bottom-bar (flex-shrink: 0)
+  .app (CSS grid: rail | content | stats panel)
 ```
 
 Grid columns are controlled by JS-toggled classes on `.app`:
 
 | Class | Grid columns |
-|-------|-------------|
-| (default) | `220px 1fr 280px` |
-| `.app--nav-bar-collapsed` | `56px 1fr 280px` |
-| `.app--no-stats` | `220px 1fr` |
-| `.app--nav-bar-collapsed.app--no-stats` | `56px 1fr` |
+|---|---|
+| (default) | `var(--sidebar-w) 1fr var(--inspector-w)` |
+| `.app--nav-bar-collapsed` | `var(--sidebar-collapsed-w) 1fr var(--inspector-w)` |
+| `.app--no-stats` | `var(--sidebar-w) 1fr` |
+| `.app--nav-bar-collapsed.app--no-stats` | `var(--sidebar-collapsed-w) 1fr` |
 
-- **Nav bar**: 220px expanded, 56px collapsed. Icon column = `--icon-col: 54px`.
-- **Stats panel**: 280px, shown only on `build-plan` view. Plan to make collapsible later.
-- **Bottom bar**: In normal document flow below the grid, `flex-shrink: 0`.
+- **Rail** (`AppNavBar`): 236px expanded, 56px collapsed. Top to bottom: wordmark, character card (switcher, compare picker, swap), Roster / Build / Tools groups (Build plan sub-items appear only on `/build-plan`), spacer, Warnings row with popover, Collapse, hairline, Settings, Report a bug, GitHub. Eyebrows collapse to hairlines.
+- **Stats panel** (`StatsPanel`): 300px, shown on routes whose `staticData.showStatsPanel` is true (`/build-plan`, `/overview`, `/gear`). Pinned / All stats / Buffs tabs.
+- **There is no bottom bar.** Warnings and bug reporting live in the rail.
+- Only the content column scrolls; the rail and stats panel scroll independently.
 
 ## Responsive Breakpoints
 
-The nav bar is always in the grid flow (never fixed-position) except at `<600px` when expanded.
+The rail is always in the grid flow (never fixed-position) except at `<600px` when expanded.
 
-| Width | Nav bar default | Expanded behavior | Notes |
-|-------|----------------|-------------------|-------|
-| **>=900px** | Stored preference (localStorage) | Inline, pushes content (220px) | Desktop layout |
-| **600-899px** | Auto-collapsed (icons only, 56px) | Inline, pushes content (220px) | Re-expands when resizing back above 900px |
+| Width | Rail default | Expanded behavior | Notes |
+|---|---|---|---|
+| **>=900px** | Stored preference (localStorage) | Inline, pushes content (236px) | Desktop layout |
+| **600–899px** | Auto-collapsed (icons only, 56px) | Inline, pushes content (236px) | Re-expands when resizing back above 900px |
 | **<600px** | Auto-collapsed (icons only, 56px) | **Full-screen overlay** (`position: fixed; inset: 0`) | Behaves as a modal: closes on navigate or Escape, background goes `inert` |
 
 Key rules:
-- **No media queries in App.css** -- grid columns are controlled by JS-toggled classes (`app--nav-bar-collapsed`, `app--no-stats`).
-- **One media query in AppNavBar.css** -- `@media (max-width: 599px)` makes `.app-nav-bar.expanded` full-viewport via `position: fixed`. AppLayout mirrors the same query in JS (`useMediaQuery('(max-width: 599px)')`) to drive the overlay's modal behavior — the two must move together.
-- **One media query in Modal.css** -- `@media (max-width: 899px)` makes the `drawer-right` variant full-screen and hides its backdrop.
+- **No media queries in App.css** — grid columns are controlled by JS-toggled classes.
+- **One media query in AppNavBar.css** — `@media (max-width: 599px)` makes `.app-nav-bar.expanded` full-viewport. `AppLayout` mirrors the same query in JS (`useMediaQuery('(max-width: 599px)')`); the two must move together.
+- **One media query in Modal.css** — `@media (max-width: 899px)` makes the `drawer-right` variant full-screen and hides its backdrop.
 - Auto-collapse/restore is handled by a resize listener in `AppLayout.tsx` that tracks the 900px threshold crossing.

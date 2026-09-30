@@ -1,5 +1,11 @@
 Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see tag) · ❌ won't do · 🐛 bug
 
+📋 Phase 8 — Layout from the D1 app-flow prototype (scaffold shipped as `src/features/gear/GearView.tsx`; full spec in the roadmap's Phase 8 entry):
+- Gear-set tabs across the top; Finder and Compare are in-view modes, not routes
+- Paper-doll tile grid; each tile shows `N/4` pinned stats covered and `+N` unique bonus types, both mono
+- Selected tile opens the equipped-item panel beside a Compare panel of candidates with signed deltas and `Swap in` / `Revert`
+- "Compare list" strip fed by "Add to compare" on Resources item detail; hovering a candidate highlights the stats it changes in the stats panel
+
 📋 Phase 9 — Comparison view interactions:
 - Easy comparison view
 	- Swappable with Gearing View?
