@@ -2004,9 +2004,9 @@ cost; rarity is his text plus that file, extended only when a gap is reported. `
 `is_rare` and a `rare` filter; the frontend restores the Rare chip and "Rare only" filter.
 
 **Step 2 — quest facts (done 2026-09-27, one page).** The wiki's "Quests by level and XP" index is
-a single table, so `data/wiki/quests.toml` (548 of 570 quests) carries duration, per-difficulty XP
-for heroic, epic and legendary tiers, legendary level, and free-to-play, into `quests` and
-`quest_xp`, served by `/v1/quests`. Only 14 quests exist on the wiki and not in his files, all epic
+a single table, so `data/wiki/quests.toml` (548 of 570 quests) carries legendary level and
+free-to-play into `quests`, served by `/v1/quests`. Duration and per-difficulty XP were imported
+too and then removed on 2026-09-29: not wanted in the database. Only 14 quests exist on the wiki and not in his files, all epic
 versions or spelling variants, so nothing is created from the wiki. Still open, per-page reads:
 `zone`, `bestowed_by`, `flagging` (fields accepted, unread), and the pack-type marker for the
 "content you own" filter.
@@ -2031,7 +2031,7 @@ the wiki, per table, and what is left.
 4 feats with no page), so they stay blank by fact, not by omission.
 
 **Left open after V7, none blocking:** the 22 quests the wiki index does not list (wilderness
-areas and chains) have no duration or XP; `quests.zone`, `bestowed_by`, `flagging` are unread;
+areas and chains) have no free-to-play or legendary-level facts; `quests.zone`, `bestowed_by`, `flagging` are unread;
 Cannith (Essence) crafting waits on D-CS10; `quest_loot.loot_type` and quest-to-item links are his
 text and unverified against the wiki's loot tables. The ledger tracks all four.
 
