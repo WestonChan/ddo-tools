@@ -24,7 +24,7 @@ Source of the check: the wiki's one index page, https://ddowiki.com/page/Quests_
 - ⬜ `loot_type` (chest / raid / reward) — his drop text; not compared with the wiki's loot tables. The 50 pages read above had the table columns to do it; a pass over them would verify about 9% of links.
 - ⬜ which items link to which quest — his text; the same 50 pages could confirm.
 
-## items (8,745 of his after 4 removals, + 263 from the wiki)
+## items (8,746: 8,483 of his after 4 removals, 263 from the wiki)
 
 - ⬜ stats, bonuses, effects, sockets, sets — his files only; no wiki comparison of any item's numbers has been done.
 - 🩹 corrections applied to his items (2026-09-30): 9 upgrade sockets added, 10 socket labels merged to the wiki's spelling, Mining Sights and Legendary Mining Sights and both Unicorn's Rememberance rows removed as duplicates, Dark Powers' Demands renamed. Cormyrian Docent added from the wiki (263 wiki items); its enchantments are random per the page, so it carries none.
