@@ -2,7 +2,7 @@ Status legend: ✅ verified against the wiki · 🟡 partially verified (what re
 
 What in `ddo.db` has been checked against ddowiki, how, and what is left. Maetrim's DDOBuilderV2 files are the source of every table; "verified" here means a row or field was compared with the wiki page that states the same fact. Disagreements go to [[Upstream Reports]] and his value stands, unless the entry is marked 🩹, meaning a cited correction in `ddo-data/crates/ddo-etl/data/corrections/` overrides it until he changes the value. Dates are when the check was made; a check against a later DDOBuilderV2 commit than `31ef020` needs redoing for rows that changed. Counts are from the upstream build of 2026-09-29.
 
-## quests (570 quests + 33 challenges + 1 wiki quest)
+## quests (570 quests + 33 challenges + 1 wiki quest; `/v1/quests/{id}` serves a quest's items and augments since 2026-09-30)
 
 - 🔧 quests he lacks — "Terror of the Demon Lords" (the Vecna Unleashed raid) is created from its page (`quests_wiki_created.toml`, read 2026-09-30): level 37 stored as his legendary-only raids are (`level` = `legendary_level` = 37), favor 10, pack Terror of Demogorgon, patron Battlehammer Expedition, Normal/Hard/Elite/Reaper. Its loot table marks no rare drops. "Terror of Demogorgon" is the expansion, not a quest; his 19 items and the 80 Duergarcraft wiki items whose drop text names it mean "any end chest in the pack" and get no quest link. His items' drop text now links to wiki-created quests too (`drop_text_wiki_quest_link_count`, 0 today).
 
@@ -18,11 +18,21 @@ Source of the check: the wiki's one index page, https://ddowiki.com/page/Quests_
 - ⬜ `zone`, `bestowed_by`, `flagging` — columns exist, no rows filled; needs one page read per quest.
 - ❌ challenges (33) — his `Challenges.xml`; the wiki's Challenges page is not a quest table.
 
-## quest_loot (4,744 links)
+## quest_loot (4,818 links)
 
+- 🔧 `chest` (added 2026-09-30) — the chest phrase after the quest name in his drop text, lower-cased ("end chest", "althea's chest", "raid warded chest"); 5,173 of 5,245 loot rows across both loot tables carry one. Fixed the same day: quest names matched ignoring case and line wraps (54 links gained, 90 bogus "a break in the ice" chests gone), list connectors stripped from phrase ends (52 rows). Still odd: "ToEE: Water Node" and "Fire Node" are not quests in his files, so they stay inside chest phrases.
 - 🟡 `is_rare` — his drop text marks 125 links (`(rare)` / `rare drop`, not `rare encounter`) across 36 quests; the wiki adds 13 more in 6 quests (`data/wiki/quest_loot.toml`). Verified by page read on 2026-09-27 for 50 quests: 9 with rares (Toil and Trouble, Sleeping with the Fishes, The Covered Culvert, The Wish, Death Hosts This Banquet, Going Rogue, The Final Draw, Book Burning, Portal to Below), 31 confirmed without, and 10 whose pages have no loot table so nothing could be read (The Bookbinder Rescue, Raid the Vulkoorim, Bargain of Blood, Rainbow in the Dark, Freshen the Air, The Depths of Doom, The Depths of Discord, The Black Loch, The Bounty Hunter, plus All Hail the King's one ambiguous cell). The other 520 quests are unverified; the 44 random ones in the sample found nothing his text lacked, so a full read was judged not worth its cost (roadmap V7 step 1). Re-open if a user reports a missing rare.
 - ⬜ `loot_type` (chest / raid / reward) — his drop text; not compared with the wiki's loot tables. The 50 pages read above had the table columns to do it; a pass over them would verify about 9% of links.
 - ⬜ which items link to which quest — his text; the same 50 pages could confirm.
+
+## quest_augment_loot (537 links, new 2026-09-30)
+
+Quests to the augments they drop, same columns as `quest_loot` (declared once for both). Sources: the drop block in 267 of his augment descriptions (223 Solar and Lunar gems, 31 rubies, 8 sapphires, 5 named; 500 links), the 12 gems whose "Drops in: ?" the wiki descriptions filled (24 links), and `rare_augments` in `quest_loot.toml` (13 links added, 96 rare marks).
+
+- ✅ `is_rare` — 45 quest pages read 2026-09-30 (Sonnet table reader), every quest his augment text names: 38 carry a `quest_loot.toml` entry (96 rare augments, 126 rare items, 29 entries new); 4 have loot tables with nothing rare (Ghost of a Chance, Immortality Lessons, The Haunted Halls of Eveningstar, Witch Hunt); Oghma's Song and Isle of Dread have no loot table. Land of Lamordia and both ToEE pages list only rare-encounter chest loot, which is drop text, not a quest rare marker, so nothing recorded. Names resolved: the wiki's "Solar Gem of MRR Cap" is his "Magical Resistance Rating Cap"; "Solar Gem of Damage" on The Wish is his "Weapon Damage" (his own text marks it rare there).
+- 🐛 Book Burning's 2026-09-27 entry marks "Lunar Gem of Magical Protection (Heroic)" rare; the page today shows no rare augment there. Left as read; re-read to settle.
+- ⬜ unlinked drop lines: 7 name traders or barter boxes (not quests), 2 say "Any Feywild rare encounter chest", 1 names "The Thornwrite" (not in his files), and wiki-filled lines naming The Chill of Ravenloft, Terror of Demogorgon or The Darklake (packs or areas, not quests).
+- ⬜ the other 525 quests' pages are unread for augments; his text named none there.
 
 ## items (8,746: 8,483 of his after 4 removals, 263 from the wiki)
 

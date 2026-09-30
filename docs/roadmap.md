@@ -2041,6 +2041,15 @@ the wiki, per table, and what is left.
 1 enhancement); the other 221 have no text on the wiki either (211 empty infoboxes, 5 items and
 4 feats with no page), so they stay blank by fact, not by omission.
 
+**Augment loot and chests (decided 2026-09-30).** Quests map to the augments they drop the way
+they map to items: `quest_augment_loot` beside `quest_loot`, two tables sharing one loot-column
+declaration (a merged table with mutually exclusive ids was considered and rejected). Both carry a
+`chest` text column with the phrase from his drop text, since some loot drops from one specific
+chest; a chest entity table was rejected because no source lists chests. Fed by his augment
+descriptions' drop blocks, the wiki-filled descriptions, and `rare_augments` in the wiki loot
+files; `/v1/quests/{id}` serves a quest's items and augments, `/v1/augments/{id}` its quests, and
+the site shows the chest on quest rows and a "Drops in" list on picked socket augments.
+
 **Left open after V7, none blocking:** the 22 quests the wiki index does not list (wilderness
 areas and chains) have no free-to-play or legendary-level facts; `quests.zone`, `bestowed_by`, `flagging` are unread;
 Cannith (Essence) crafting waits on D-CS10; `quest_loot.loot_type` and quest-to-item links are his
