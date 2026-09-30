@@ -53,11 +53,34 @@ Source: one wiki page per system plus its recipe sub-pages, read 2026-09-29. "Ve
 | Incredible Potential | 🟡 | 36 | 2 | focus/gem/essence grades not on the page, so those costs are in notes |
 | Reaper Forge | ✅ | 15 | 1 | three generic augments are drop-only per the wiki |
 | Dragontouched Armor | ✅ | 85 | 4 | |
-| Sealed Altar | 🟡 | 9 | 10 | no family; `SealedInFire`/`SealedInUndeath` are crafted somewhere else, still to find |
-| Unholy Defiler of the Hidden Hand | 🟡 | 16 | 8 | no family; `VecnaUnleashed` is crafted somewhere else, still to find |
-| 22 upgrade and ingredient systems | ⬜ | | | reading in progress (roadmap V7 step 3, batch 4) |
+| Sealed Altar | 🟡 | 9 | 10 | no family; the Sealed sockets are crafted at the Ritual Table and Augmentation Altar (below) |
+| Unholy Defiler of the Hidden Hand | 🟡 | 16 | 8 | no family; `VecnaUnleashed` book augments are crafted on no wiki crafting page found so far |
+| Stone of Change | ✅ | 18 | 25 | no family by nature |
+| Trapmaking | ✅ | 15 | 11 | no family by nature |
+| Cauldron of Cadence | ✅ | 23 | 25 | family `Named` (all 21 set augments) |
+| Dampened | ✅ | 8 | 6 | |
+| Catalyst Crafting | 🟡 | 84 | 90 | the six "+16 <Stat> (Catalyst Crafting)" augments in his `NearlyComplete` family appear on no page and on no item |
+| Cauldron of Sora Katra | ✅ | 138 | 56 | table checked by hash; one wiki-internal typo noted |
+| Dragonscale Armor | ✅ | 9 | 18 | second commendation disagrees with the Mikrom Sum page |
+| Stormreaver Monument | 🟡 | 37 | 33 | Stormreaver's Napkin has no upgrade socket in his files |
+| Trace of Madness | ✅ | 10 | 5 | family `Other` (Xoriat Madness augments) |
+| Fountain of Necrotic Might | ✅ | 16 | 19 | |
+| Suppressed Power | 🟡 | 28 | 27 | Gloves of Titan's Grip and Regalia of the Phoenix have no socket in his files |
+| Epic Crafting | 🟡 | 223 | 13 | table checked by hash; Epic Winter's Wrath absent from the wiki list; Epic Cacophonic Verge absent from his files |
+| Legendary Crafting | 🟡 | 220 | 11 | table checked by hash; Legendary Sword of Shadow and Legendary Winter's Wrath absent from his files |
+| Nebula Fragment Crafting | ✅ | 15 | 12 | |
+| Zhentarim Attuned | 🟡 | 6 | 7 | his Magestar socket is spelled "Zentarim"; Lantern Ring and Libram of Silver Magic lack the socket |
+| Schism Shard Crafting | ✅ | 9 | 10 | |
+| Soulforge | 🟡 | 13 | 17 | family `Named`; Essence of The Masque and Essence of the Champion of the Twins have no augment |
+| Esoteric Table | 🟡 | 5 | 6 | family `PlanarSearing`; "Warp the Unholy" has no augment |
+| Ritual Table | ✅ | 29 | 28 | families `SealedInFire`, `SealedInUndeath` |
+| Augmentation Altar | ✅ | 7 | 3 | families `SealedInFire`, `SealedInUndeath` (the Mist and Gloom sockets) |
+| Mikrom Sum | ✅ | 73 | 27 | a vendor page, recorded for its Caught in the Web tiers and commendation upgrades; four set armors lack an upgrade socket in his files |
+| Minor Artifact | ❌ | | | an item category plus the sentient filigree system, not crafting |
 | Augment Slot, Sentient Weapon | ❌ | | | already his data (gems, filigrees) |
 | Essence (Cannith) Crafting | ⬜ | | | deliberately last (Crafting Systems note, D-CS10) |
+
+Totals on 2026-09-29: 37 systems, 2,846 recipes, 702 ingredients; 1,091 distinct augments are yielded by at least one recipe. Items the wiki crafts that his files lack (reported upstream, not stored): Cacophonic Verge and its Dampened and Epic forms, Legendary Sword of Shadow, Legendary Winter's Wrath.
 
 ## Tables with no wiki check at all
 
