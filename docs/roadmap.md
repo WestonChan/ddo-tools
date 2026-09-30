@@ -1972,7 +1972,11 @@ lacks. The one exception, added 2026-09-30, is `ddo-data/crates/ddo-etl/data/cor
 explicit list of his mistakes, each citing a source and recording his current value, applied after
 his writers and before the wiki merge. A correction expires the moment his value changes (the
 build then skips it and `cargo xtask wiki-check` warns to delete it), so a fix upstream always wins
-back. Applied corrections are stored in a `corrections` table and shown on the API's detail routes. Decided 2026-09-28 after a column-by-column survey of the Maetrim-only build (every table
+back. Applied corrections are stored in a `corrections` table and shown on the API's detail routes.
+Scope, decided 2026-09-30: the wiki is assumed right, so every recorded wiki-vs-Maetrim
+disagreement becomes a correction (values, spellings, missing bonuses, duplicate rows), not only
+obvious typos. The same "add it, he supersedes by name" pattern used for items applies to every
+entity kind he lacks, quests next. Decided 2026-09-28 after a column-by-column survey of the Maetrim-only build (every table
 populated; the only structural absences are per-drop rarity, quests without named loot, crafting
 materials, and a few blank descriptions). Named items only: random-loot generation tables are out of
 scope for good. The legacy `ddo.db` and the old `.wiki-cache` are not inputs; both are discarded.

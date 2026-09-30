@@ -1,4 +1,4 @@
-Status legend: ✅ reported upstream · 📋 to report · ❌ won't report · 🩹 also corrected locally in `ddo-data/crates/ddo-etl/data/corrections/` until he fixes it
+Status legend: ✅ reported upstream · 📋 to report · ❌ won't report · 🩹 also corrected locally in `ddo-data/crates/ddo-etl/data/corrections/` until he fixes it (from 2026-09-30 every disagreement here is meant to carry 🩹; the wiki is assumed right)
 
 Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while reading the wiki into the ETL override files (roadmap V7). The rule is that his value stands in our data and the disagreement is reported at https://github.com/Maetrim/DDOBuilderV2 rather than patched here; each entry names the wiki page and the override row that carries the note.
 
