@@ -2020,12 +2020,18 @@ versions or spelling variants, so nothing is created from the wiki. Still open, 
 `zone`, `bestowed_by`, `flagging` (fields accepted, unread), and the pack-type marker for the
 "content you own" filter.
 
-**Step 3 — crafting.** Maetrim carries each system's options as augment families and its sockets;
-the wiki contributes ingredients (name, tier, bind, source) and recipes (option, the augments it
-yields, ingredient quantities per tier). One `data/wiki/crafting.toml` shape for all 41 system
-pages listed on the wiki's Crafting page; layouts differ per page, so one reading agent per
-system. Tables per the model in [Crafting Systems](notes/Crafting%20Systems.md), with augments as
-the option pool (D-CS3).
+**Step 3 — crafting (in progress).** Maetrim carries each system's options as augment families
+and its sockets; the wiki contributes ingredients (name, tier, bind, source) and recipes (option,
+the augments it yields, ingredient quantities per tier, or the socket it grants). One
+`data/wiki/crafting*.toml` shape for the 41 system pages on the wiki's Crafting page; `families`
+is optional so upgrade and ingredient-only systems fit; tables per
+[Crafting Systems](notes/Crafting%20Systems.md) with augments as the option pool (D-CS3), served
+by `/v1/crafting-systems`. Done 2026-09-29: Slave Lords (74 recipes), heroic and legendary Green
+Steel (702 recipes, 139 ingredients). Reading order after that: Thunder-Forged, Alchemical,
+Dinosaur Bone, Viktranium; then the nine smaller augment-backed systems; then the 22 upgrade and
+ingredient-only systems. Skipped on purpose: Augment Slot and Sentient Weapon (already his data),
+Essence/Cannith crafting (D-CS10, last), Challenges (not a crafting page). Wiki-vs-Maetrim
+disagreements found on the way are collected in [Upstream Reports](notes/Upstream%20Reports.md).
 
 **Step 4 — blank descriptions.** 225 items, 12 augments reading "Drops in: ?", 3 races, 4 feats,
 1 enhancement. One page read each.
