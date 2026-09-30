@@ -7,6 +7,7 @@ import {
   type CraftingRecipe,
   type ItemAugmentSlot,
 } from '../../queries/items'
+import { AugmentLootQuestList } from './AugmentLootQuestList'
 import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 
 interface AugmentSlotListProps {
@@ -80,6 +81,7 @@ export function AugmentSlotList({
                   {recipeCostLine(recipe)}
                 </span>
               ))}
+              {pickedAugmentId === augment.id && <AugmentLootQuestList augmentId={augment.id} />}
             </li>
           ))}
         </ul>

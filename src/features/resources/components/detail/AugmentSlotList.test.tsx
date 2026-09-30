@@ -1,8 +1,40 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AugmentSlotList } from './AugmentSlotList'
-import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
+import type { AugmentSummary, ItemAugmentSlot, LootQuest } from '../../queries/items'
+
+function lootQuest(id: number, overrides: Partial<LootQuest> = {}): LootQuest {
+  return {
+    id,
+    name: `Quest ${id}`,
+    level: 13,
+    pack: null,
+    patron: null,
+    lootType: 'chest',
+    isRaid: false,
+    isRareLoot: false,
+    isFreeToPlay: false,
+    chest: null,
+    ...overrides,
+  }
+}
+
+const LOOT_QUESTS_BY_AUGMENT_ID: Record<number, LootQuest[]> = {
+  1: [
+    lootQuest(10, { name: 'Secrets of the Red Wizards', chest: 'end chest', isRareLoot: true }),
+    lootQuest(11, { name: 'The Covered Culvert', chest: 'optional chest' }),
+    lootQuest(12, { name: 'Zoo Creeper' }),
+    lootQuest(13),
+    lootQuest(14),
+  ],
+}
+
+vi.mock('../../queries/useItems', () => ({
+  useAugmentLootQuests: (augmentId: number | null) => ({
+    data: augmentId === null ? undefined : (LOOT_QUESTS_BY_AUGMENT_ID[augmentId] ?? []),
+  }),
+}))
 
 afterEach(() => {
   cleanup()
@@ -196,6 +228,47 @@ describe('AugmentSlotList', () => {
       'aria-selected',
       'false',
     )
+  })
+
+  it('lists where a picked augment drops, three quests then a count of the rest', async () => {
+    const user = userEvent.setup()
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
+    const row = screen.getByRole('option', { name: /Melancholic Charisma/ })
+    expect(row.querySelector('.resources-augment-loot-quests')).toBeNull()
+
+    await user.click(row)
+
+    const lootQuestRows = [...row.querySelectorAll('.resources-augment-loot-quest')]
+    expect(lootQuestRows.map((el) => el.textContent)).toEqual([
+      'Secrets of the Red WizardsRareEnd chest',
+      'The Covered CulvertOptional chest',
+      'Zoo Creeper',
+    ])
+    expect(lootQuestRows[0].querySelector('.resources-chip[data-kind="rare"]')).not.toBeNull()
+    expect(row).toHaveTextContent('Drops in')
+    expect(row).toHaveTextContent('+2 more')
+  })
+
+  it('shows no drop list for a picked augment that drops nowhere', async () => {
+    const user = userEvent.setup()
+    render(
+      <AugmentSlotList
+        augmentSlots={[augmentSlot(0, 'melancholic')]}
+        augmentsBySlotLabel={AUGMENTS_BY_SLOT_LABEL}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /Lamordia: Melancholic/ }))
+    const row = screen.getByRole('option', { name: /Melancholic Acid Spell Crit/ })
+
+    await user.click(row)
+
+    expect(row.querySelector('.resources-augment-loot-quests')).toBeNull()
   })
 
   it('moves between candidates with the arrow keys, one tab stop for the list', async () => {

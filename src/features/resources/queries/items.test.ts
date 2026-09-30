@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
 import {
+  fetchAugmentLootQuests,
   fetchAugmentsFittingSlot,
   fetchItemIdsWithStat,
   fetchItemSummaries,
@@ -327,5 +328,19 @@ describe('fetchers', () => {
     const fittingAugments = await fetchAugmentsFittingSlot('red')
     expect(fittingAugments.map((a) => a.name)).toEqual(['Bob', 'Zed', 'Abe'])
     expect(vi.mocked(fetch).mock.calls[0][0]).toContain('slot=red')
+  })
+
+  it('fetchAugmentLootQuests maps the quests on the augment detail, chest included', async () => {
+    mockFetchResponse({
+      id: 1902,
+      name: 'Solar Gem of Physical Resistance Rating (Heroic)',
+      quests: [API_ITEM_DETAIL.quests[0], { ...API_ITEM_DETAIL.quests[0], id: 12, chest: null }],
+    })
+    const lootQuests = await fetchAugmentLootQuests(1902)
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/v1/augments/1902')
+    expect(lootQuests.map((q) => [q.id, q.chest])).toEqual([
+      [11, 'raid warded chest'],
+      [12, null],
+    ])
   })
 })

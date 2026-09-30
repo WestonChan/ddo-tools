@@ -2,6 +2,7 @@ import { fetchApiJson } from '../../../lib/api'
 import type {
   ApiAdventurePack,
   ApiAugment,
+  ApiAugmentDetail,
   ApiAugmentsPage,
   ApiCraftingRecipe,
   ApiCraftingTier,
@@ -332,4 +333,9 @@ export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<Augme
     if (a.minimumLevel !== b.minimumLevel) return (a.minimumLevel ?? 0) - (b.minimumLevel ?? 0)
     return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
   })
+}
+
+export async function fetchAugmentLootQuests(augmentId: number): Promise<LootQuest[]> {
+  const augment = await fetchApiJson<ApiAugmentDetail>(`/v1/augments/${augmentId}`)
+  return augment.quests.map(toLootQuest)
 }

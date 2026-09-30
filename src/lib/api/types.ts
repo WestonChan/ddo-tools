@@ -149,6 +149,10 @@ export interface ApiAugment {
   crafting: ApiCraftingRecipe[]
 }
 
+export interface ApiAugmentDetail extends ApiAugment {
+  quests: ApiLootQuest[]
+}
+
 export type ApiCraftingTier = 'heroic' | 'epic' | 'legendary' | 'any'
 
 export interface ApiCraftingIngredientCost {

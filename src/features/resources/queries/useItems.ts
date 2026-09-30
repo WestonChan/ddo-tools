@@ -1,6 +1,7 @@
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query'
 import {
   fetchAdventurePackNames,
+  fetchAugmentLootQuests,
   fetchAugmentsFittingSlot,
   fetchItem,
   fetchItemIdsInPack,
@@ -11,6 +12,7 @@ import {
   type AugmentSummary,
   type ItemAugmentSlot,
   type Item,
+  type LootQuest,
   type ItemSummary,
 } from './items'
 
@@ -24,6 +26,7 @@ const resourceQueryKeys = {
   itemIdsWithStat: (statName: string) => ['items', 'by-stat', statName] as const,
   itemIdsInPack: (packName: string) => ['items', 'by-pack', packName] as const,
   augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
+  augmentLootQuests: (augmentId: number) => ['augments', 'loot-quests', augmentId] as const,
 }
 
 export function useItemSummaries(isFetchEnabled = true): UseQueryResult<ItemSummary[]> {
@@ -107,4 +110,13 @@ export function useFittingAugmentsBySlotLabel(
     if (fittingAugments) augmentsBySlotLabel[label] = fittingAugments
   })
   return augmentsBySlotLabel
+}
+
+export function useAugmentLootQuests(augmentId: number | null): UseQueryResult<LootQuest[]> {
+  return useQuery({
+    queryKey: resourceQueryKeys.augmentLootQuests(augmentId ?? -1),
+    queryFn: () => fetchAugmentLootQuests(augmentId as number),
+    enabled: augmentId !== null,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
 }
