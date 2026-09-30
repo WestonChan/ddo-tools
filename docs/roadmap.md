@@ -2035,8 +2035,14 @@ areas and chains) have no free-to-play or legendary-level facts; `quests.zone`, 
 Cannith (Essence) crafting waits on D-CS10; `quest_loot.loot_type` and quest-to-item links are his
 text and unverified against the wiki's loot tables. The ledger tracks all four.
 
-**Out of scope.** Items absent from Maetrim's files are reported upstream to DDOBuilderV2 rather
-than stored here, so the item set stays single-sourced.
+**Items absent from Maetrim's files (decided 2026-09-29).** They are reported upstream AND added
+from the wiki as `data/wiki/items*.toml` rows with `items.source = 'wiki'`, because the gaps are
+recent content he will catch up on. The merge skips a wiki item whenever his files carry the same
+name (his row wins), counts it as superseded, and `cargo xtask wiki-check` warns so the entry can be
+deleted; a normalised-name near-match is written but warned as a probable duplicate. Tiered items
+are recorded one entry per level as `<Name> (Level N)`, his convention. First batch: the "… of the
+Oozing Hunger" and "Duergarcraft …" weapon families, five tiered items, and about 17 singles found
+by the 2026-09-29 category walk (see [Data Verification](notes/Data%20Verification.md)).
 
 #### V8 — Build sharing with a server
 Two stores, two lifecycles: game data baked into the image (rebuilt every deploy), user data on a
