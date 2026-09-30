@@ -15,6 +15,12 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Viktranium Experiment Crafting — he names the heroic Dolorous Focus "Dolorous Arcana (Heroic)"; legendary Improved Destruction triggers every second on the wiki, every three seconds in his augment. Source: https://ddowiki.com/page/Viktranium_Experiment_crafting.
 - 📋 Thunder-Forged — Shadow Construct: wiki Profane Repair Amplification +10, his augment 10%. Source: https://ddowiki.com/page/Thunder-Forged.
 
+- 📋 Lost Purpose — his augment "The Fury's Rage" has `min_level` 318 where every sibling is 18; looks like a typo. Source: https://ddowiki.com/page/Lost_Purpose.
+- 📋 Nearly Complete — healing amplification rows: wiki says Competence bonus, his augments say Enhancement ("+24/+62 Enhancement Healing Amplification"). Source: https://ddowiki.com/page/Nearly_Complete.
+- 📋 Reaper Forge — the necklace bonus on the wiki includes +2 PRR/MRR; his augment is only "+2 Melee/Ranged and Spell Power". Source: https://ddowiki.com/page/Reaper_Forge.
+- 📋 Naming drift, his side: Deck of Many Curses drops "the" from several curse names ("Curse of Anger's Heart"), Lost Purpose has "Devil's Infernal Dance" for the wiki's "Devils'", Dragontouched has "Skill: Strength" with a space.
+- 📋 Family scope: `SealedInFire`/`SealedInUndeath` (the "Sealed in Fire/Mist/Undeath/Gloom" socket augments) and `VecnaUnleashed` (the coloured book augments) are not produced by the Sealed Altar or Unholy Defiler pages; which system crafts them is still to be found.
+
 ## Items
 
 - 📋 Legendary Powder-Packed Barrel — his drop text "Isle of Dread (wilderness), Rare Chests, and All Hail the King end chest" reads as one segment, so the rare marker attaches to nothing; see `crates/ddo-etl/src/map/drop_location.rs`.
