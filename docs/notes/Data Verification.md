@@ -1,6 +1,6 @@
 Status legend: ✅ verified against the wiki · 🟡 partially verified (what remains is listed) · ⬜ not checked against the wiki · ❌ no wiki source exists · 🔧 wiki fills a field Maetrim lacks
 
-What in `ddo.db` has been checked against ddowiki, how, and what is left. Maetrim's DDOBuilderV2 files are the source of every table; "verified" here means a row or field was compared with the wiki page that states the same fact. Disagreements go to [[Upstream Reports]] and his value stands. Dates are when the check was made; a check against a later DDOBuilderV2 commit than `31ef020` needs redoing for rows that changed. Counts are from the upstream build of 2026-09-29.
+What in `ddo.db` has been checked against ddowiki, how, and what is left. Maetrim's DDOBuilderV2 files are the source of every table; "verified" here means a row or field was compared with the wiki page that states the same fact. Disagreements go to [[Upstream Reports]] and his value stands, unless the entry is marked 🩹, meaning a cited correction in `ddo-data/crates/ddo-etl/data/corrections/` overrides it until he changes the value. Dates are when the check was made; a check against a later DDOBuilderV2 commit than `31ef020` needs redoing for rows that changed. Counts are from the upstream build of 2026-09-29.
 
 ## quests (570 quests + 33 challenges)
 

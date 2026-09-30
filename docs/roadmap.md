@@ -1968,7 +1968,11 @@ A single-machine deploy means a few seconds of downtime; accepted.
 #### V7 — Wiki gap-fill: quest loot and crafting (done 2026-09-29)
 
 **Principle.** DDOBuilderV2 is authoritative for every field it carries; the wiki fills only what it
-lacks. Decided 2026-09-28 after a column-by-column survey of the Maetrim-only build (every table
+lacks. The one exception, added 2026-09-30, is `ddo-data/crates/ddo-etl/data/corrections/`: an
+explicit list of his mistakes, each citing a source and recording his current value, applied after
+his writers and before the wiki merge. A correction expires the moment his value changes (the
+build then skips it and `cargo xtask wiki-check` warns to delete it), so a fix upstream always wins
+back. Applied corrections are stored in a `corrections` table and shown on the API's detail routes. Decided 2026-09-28 after a column-by-column survey of the Maetrim-only build (every table
 populated; the only structural absences are per-drop rarity, quests without named loot, crafting
 materials, and a few blank descriptions). Named items only: random-loot generation tables are out of
 scope for good. The legacy `ddo.db` and the old `.wiki-cache` are not inputs; both are discarded.

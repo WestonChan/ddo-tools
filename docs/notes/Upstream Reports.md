@@ -1,4 +1,4 @@
-Status legend: ✅ reported upstream · 📋 to report · ❌ won't report
+Status legend: ✅ reported upstream · 📋 to report · ❌ won't report · 🩹 also corrected locally in `ddo-data/crates/ddo-etl/data/corrections/` until he fixes it
 
 Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while reading the wiki into the ETL override files (roadmap V7). The rule is that his value stands in our data and the disagreement is reported at https://github.com/Maetrim/DDOBuilderV2 rather than patched here; each entry names the wiki page and the override row that carries the note.
 
@@ -15,7 +15,7 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Viktranium Experiment Crafting — he names the heroic Dolorous Focus "Dolorous Arcana (Heroic)"; legendary Improved Destruction triggers every second on the wiki, every three seconds in his augment. Source: https://ddowiki.com/page/Viktranium_Experiment_crafting.
 - 📋 Thunder-Forged — Shadow Construct: wiki Profane Repair Amplification +10, his augment 10%. Source: https://ddowiki.com/page/Thunder-Forged.
 
-- 📋 Lost Purpose — his augment "The Fury's Rage" has `min_level` 318 where every sibling is 18; looks like a typo. Source: https://ddowiki.com/page/Lost_Purpose.
+- 🩹 📋 Lost Purpose — his augment "The Fury's Rage" has `min_level` 318 where every sibling is 18; looks like a typo. Source: https://ddowiki.com/page/Lost_Purpose.
 - 📋 Nearly Complete — healing amplification rows: wiki says Competence bonus, his augments say Enhancement ("+24/+62 Enhancement Healing Amplification"). Source: https://ddowiki.com/page/Nearly_Complete.
 - 📋 Reaper Forge — the necklace bonus on the wiki includes +2 PRR/MRR; his augment is only "+2 Melee/Ranged and Spell Power". Source: https://ddowiki.com/page/Reaper_Forge.
 - 📋 Naming drift, his side: Deck of Many Curses drops "the" from several curse names ("Curse of Anger's Heart"), Lost Purpose has "Devil's Infernal Dance" for the wiki's "Devils'", Dragontouched has "Skill: Strength" with a space.
