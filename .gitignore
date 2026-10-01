@@ -5,7 +5,7 @@ node_modules/
 
 # Build
 dist/
-build/
+/build/
 
 # Environment
 .env
@@ -19,11 +19,10 @@ build/
 *.swo
 .DS_Store
 
-dist/
-build/
-
 # Claude Code
 .claude/
+.agents/
+.codex/
 .mcp.json
 test-results/
 playwright-report/
