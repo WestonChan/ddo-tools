@@ -8,7 +8,15 @@ updates:
     cooldown:
       default-days: 7
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
     groups:
+      vite-and-vitest:
+        patterns: [vite, '@vitejs/*', vitest, '@vitest/*', jsdom, '@testing-library/jest-dom']
+      eslint:
+        patterns:
+          [eslint, '@eslint/*', 'eslint-plugin-*', 'eslint-config-*', typescript-eslint, globals]
       npm-minor-and-patch:
         update-types: [minor, patch]
 
