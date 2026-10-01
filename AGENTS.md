@@ -48,7 +48,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 - `.claude/rules/` — path-scoped conventions (frontend layout, testing). Gitignored, so present only on the maintainer's machine.
 - `.claude/launch.json` — the `dev` (attach to a running server) and `dev-start` (launch `npm run dev`) preview configs.
 
-**Status.** Phases 1–4c and V1–V7 are done. V8 (build sharing on a Fly volume, `/v1/builds`) is next, then Phases 4d–4g and 5 onward. The roadmap's status table is authoritative.
+**Status.** Phases 1–4c, D1 (the design-system adoption) and V1–V7 are done. Phase 4d (filter UX overhaul) is next, then 4e–4g and 5 onward; V8 (build sharing on a Fly volume, `/v1/builds`) follows Phase 8, once builds and gear are real. The roadmap's status table is authoritative.
 
 ## Worktrees
 

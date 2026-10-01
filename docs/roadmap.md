@@ -937,8 +937,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V6 | done | Frontend on the API -- TanStack Query, hand-written API types, sql.js + `DatabaseGate` removed, Vercel config (first deploy pending the Vercel account) |
 | D1 | done | Design-system adoption -- tokens, fonts and lint rules from the Claude Design system; the rail with character switcher, compare picker and warnings; stats-panel shell; landing tiles; page scaffolds for the unbuilt views; resources and characters restyled |
 | V7 | done | Wiki gap-fill -- quest loot rarity, quest facts, all 37 crafting systems and blank descriptions read from ddowiki into ETL overrides; the unread parts of Maetrim's files; per-table ledger in `docs/notes/Data Verification.md` |
-| **V8** | **→ NEXT** | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button |
-| 4d | planned | Filter UX overhaul |
+| **4d** | **→ NEXT** | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
 | 4g | planned | Polish -- filter persistence, sortable picker table |
@@ -947,6 +946,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 6 | planned | Stats engine |
 | 7 | planned | Build Plan (single scrollable page) |
 | 8 | planned | Gear |
+| V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button. Moved after Phase 8 on 2026-10-01: ships once builds and gear are real |
 | 9 | planned | Comparison mode |
 | 10 | planned | Farm checklist |
 | 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
@@ -2058,6 +2058,8 @@ Oozing Hunger" and "Duergarcraft …" weapon families, five tiered items, and ab
 by the 2026-09-29 category walk (see [Data Verification](notes/Data%20Verification.md)).
 
 #### V8 — Build sharing with a server
+Moved after Phase 8 on 2026-10-01: sharing a build needs the build to exist first, so this waits for Phase 5 (`user.db` builds), 6 (stats), 7 (build plan) and 8 (gear); the server half could still be built earlier if the ddo-data side wants it.
+
 Two stores, two lifecycles: game data baked into the image (rebuilt every deploy), user data on a
 1 GB Fly volume (survives deploys). `builds` table: `id` (8–10 char URL-safe random), `edit_token`
 (random secret, returned once on create), `schema_version`, `dataset_version`, `body` JSON ≤ 64 KB,
