@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
-import { Check, Flag, Link as LinkIcon } from 'lucide-react'
+import { Check, Flag, Link as LinkIcon, Link2Off } from 'lucide-react'
 import { HoverTooltip, WikiLinkIcon } from '../../../../components'
 import { useDetailDrawerNavigation } from '../../contexts/DetailDrawerNavigationContext'
 import { DETAIL_DRAWER_TITLE_ID } from '../../resourceCategories'
@@ -50,28 +50,44 @@ export function DetailHeader({
         <h2 id={DETAIL_DRAWER_TITLE_ID} className="resources-entity-name">
           {name}
         </h2>
-        <HoverTooltip text={isLinkCopied ? 'Copied!' : 'Copy link to this item'}>
+        <div className="resources-entity-actions">
           <button
             type="button"
-            className="resources-entity-copy hoverable"
-            onClick={copyDeepLink}
-            disabled={!deepLinkUrl}
-            aria-label={isLinkCopied ? 'Link copied' : 'Copy link to this item'}
-          >
-            {isLinkCopied ? <Check size={14} /> : <LinkIcon size={14} />}
-          </button>
-        </HoverTooltip>
-        <WikiLinkIcon href={wikiUrl ?? undefined} pageName={wikiPageName ?? undefined} size={14} />
-        <HoverTooltip text="Report mismatch — coming soon">
-          <button
-            type="button"
-            className="resources-entity-copy"
+            className="resources-wiki-window-toggle"
+            aria-pressed={false}
             disabled
-            aria-label="Report a mismatch between our parsed data and the wiki"
+            title="Linked wiki window arrives with Phase 4g"
           >
-            <Flag size={14} />
+            <Link2Off size={13} aria-hidden />
+            Link wiki
           </button>
-        </HoverTooltip>
+          <HoverTooltip text={isLinkCopied ? 'Copied!' : 'Copy link to this item'}>
+            <button
+              type="button"
+              className="resources-icon-button"
+              onClick={copyDeepLink}
+              disabled={!deepLinkUrl}
+              aria-label={isLinkCopied ? 'Link copied' : 'Copy link to this item'}
+            >
+              {isLinkCopied ? <Check size={14} /> : <LinkIcon size={14} />}
+            </button>
+          </HoverTooltip>
+          <WikiLinkIcon
+            href={wikiUrl ?? undefined}
+            pageName={wikiPageName ?? undefined}
+            size={14}
+          />
+          <HoverTooltip text="Report mismatch — coming soon">
+            <button
+              type="button"
+              className="resources-icon-button"
+              disabled
+              aria-label="Report a mismatch between our parsed data and the wiki"
+            >
+              <Flag size={14} />
+            </button>
+          </HoverTooltip>
+        </div>
       </div>
       {attributes.length > 0 && <KeyValueGrid pairs={attributes} />}
     </header>

@@ -1,91 +1,92 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { SettingsView } from './SettingsView'
-import { ACCENT_PRESETS } from '../../lib/accent'
+import { ACCENT_PRESETS, accentPresetNamed, restoreAccent } from '../../lib/accent'
+import { resetThemeForTests } from '../../hooks/useTheme'
+import { installMatchMedia, restoreMatchMedia } from '../../test/matchMediaStub'
 
 beforeEach(() => {
   document.documentElement.removeAttribute('style')
+  document.documentElement.removeAttribute('data-theme')
   localStorage.clear()
+  resetThemeForTests()
+  installMatchMedia(false)
+})
+
+afterEach(() => {
+  restoreMatchMedia()
 })
 
 function accentSwatch(presetName: string): HTMLElement {
-  return screen.getByRole('button', { name: new RegExp(`^${presetName}$`) })
+  return screen.getByRole('button', { name: presetName })
 }
 
-function selectedSwatchNames(): string[] {
-  return ACCENT_PRESETS.filter((p) => accentSwatch(p.name).classList.contains('selected')).map(
-    (p) => p.name,
-  )
+function themeSegment(label: string): HTMLElement {
+  return screen.getByRole('button', { name: label })
 }
 
-function expectSelectionMatchesAppliedAccent(): void {
-  const applied = document.documentElement.style.getPropertyValue('--accent')
-  const selected = selectedSwatchNames()
-  expect(selected).toHaveLength(1)
-  expect(ACCENT_PRESETS.find((p) => p.name === selected[0])?.color).toBe(applied)
+function pressedSwatchNames(): string[] {
+  return ACCENT_PRESETS.filter(
+    (preset) => accentSwatch(preset.name).getAttribute('aria-pressed') === 'true',
+  ).map((preset) => preset.name)
 }
 
-describe('SettingsView accent swatches', () => {
-  it('marks the stored accent as selected across a reload', () => {
-    localStorage.setItem('accent', ACCENT_PRESETS[1].color)
+function appliedAccent(): string {
+  return document.documentElement.style.getPropertyValue('--accent')
+}
+
+describe('SettingsView appearance', () => {
+  it('offers the five accent presets and marks Gold pressed by default', () => {
+    restoreAccent()
     render(<SettingsView />)
-    expect(accentSwatch(ACCENT_PRESETS[1].name)).toHaveClass('selected')
-    expect(accentSwatch(ACCENT_PRESETS[0].name)).not.toHaveClass('selected')
+    expect(pressedSwatchNames()).toEqual(['Gold'])
+    expect(appliedAccent()).toBe('#c8a24a')
   })
 
-  it('marks the stored accent as selected when it is in the legacy JSON format', () => {
-    localStorage.setItem(
-      'accent',
-      JSON.stringify({ accent: ACCENT_PRESETS[2].color, hover: '#000000' }),
-    )
+  it('applies the picked preset ramp and marks only that swatch pressed', () => {
     render(<SettingsView />)
-    expect(accentSwatch(ACCENT_PRESETS[2].name)).toHaveClass('selected')
+
+    fireEvent.click(accentSwatch('Arcane'))
+
+    expect(appliedAccent()).toBe(accentPresetNamed('Arcane')?.ramp[400])
+    expect(document.documentElement.style.getPropertyValue('--gold-300')).toBe('#6f9bcb')
+    expect(pressedSwatchNames()).toEqual(['Arcane'])
   })
 
-  it('marks the default accent as selected when nothing is stored', () => {
-    render(<SettingsView />)
-    expect(accentSwatch(ACCENT_PRESETS[0].name)).toHaveClass('selected')
-  })
-
-  it('marks the default accent as selected when the stored entry is unusable', () => {
-    localStorage.setItem('accent', '{"accent": ')
-    render(<SettingsView />)
-    expect(accentSwatch(ACCENT_PRESETS[0].name)).toHaveClass('selected')
-  })
-
-  it('survives a reload of an accent written by the real click path', () => {
+  it('keeps the picked preset selected across a reload', () => {
     const { unmount } = render(<SettingsView />)
-    fireEvent.click(accentSwatch(ACCENT_PRESETS[3].name))
+    fireEvent.click(accentSwatch('Rust'))
     unmount()
 
     document.documentElement.removeAttribute('style')
+    restoreAccent()
     render(<SettingsView />)
-    expect(accentSwatch(ACCENT_PRESETS[3].name)).toHaveClass('selected')
-    expectSelectionMatchesAppliedAccent()
+
+    expect(pressedSwatchNames()).toEqual(['Rust'])
+    expect(appliedAccent()).toBe(accentPresetNamed('Rust')?.ramp[400])
   })
 
-  it('falls back to the default when the stored accent is not one of the presets', () => {
-    localStorage.setItem('accent', JSON.stringify({ accent: '#d4af37', hover: '#e5c158' }))
+  it('shows a legacy stored hex as Gold', () => {
+    localStorage.setItem('accent', '#ef4444')
     render(<SettingsView />)
-    expect(accentSwatch(ACCENT_PRESETS[0].name)).toHaveClass('selected')
-    expectSelectionMatchesAppliedAccent()
+    expect(pressedSwatchNames()).toEqual(['Gold'])
   })
 
-  it('always applies an accent that one swatch reports as selected', () => {
-    for (const storedText of [
-      null,
-      ACCENT_PRESETS[2].color,
-      '{"accent": ',
-      JSON.stringify({ hover: '#fedcba' }),
-      JSON.stringify({ accent: '#d4af37', hover: '#e5c158' }),
-      '#not-a-color',
-    ]) {
-      localStorage.clear()
-      if (storedText !== null) localStorage.setItem('accent', storedText)
-      document.documentElement.removeAttribute('style')
-      const { unmount } = render(<SettingsView />)
-      expectSelectionMatchesAppliedAccent()
-      unmount()
-    }
+  it('shows the OS sub-line only while System is the theme preference', () => {
+    localStorage.setItem('theme', 'dark')
+    render(<SettingsView />)
+    expect(themeSegment('Dark')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByText('Follows your OS setting')).not.toBeInTheDocument()
+
+    fireEvent.click(themeSegment('System'))
+
+    expect(themeSegment('System')).toHaveAttribute('aria-pressed', 'true')
+    expect(themeSegment('Dark')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByText('Follows your OS setting')).toBeInTheDocument()
+
+    fireEvent.click(themeSegment('Light'))
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+    expect(screen.queryByText('Follows your OS setting')).not.toBeInTheDocument()
   })
 })

@@ -1,27 +1,53 @@
 import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ErrorScreen } from '../components'
+import { ErrorScreen, WireframePlaceholder } from '../components'
+import { BuildOverviewView, BuildPlanView } from '../features/build'
 import { useActiveCharacterSummary } from '../features/character'
+import { GearView } from '../features/gear'
 import { LandingView } from '../features/landing'
 import { ResourcesView } from '../features/resources'
 import { urlWithoutQueryOrFragment, githubIssueUrls } from '../lib/githubIssue'
+import './routeComponents.css'
 
-function Placeholder({ message }: { message: string }): JSX.Element {
-  return <div className="section-placeholder">{message}</div>
+export function DamageCalculatorView(): JSX.Element {
+  return (
+    <div className="page route-scaffold">
+      <Link to="/overview" className="route-scaffold-back-link">
+        ← Back to Build overview
+      </Link>
+      <WireframePlaceholder label="Ability/spell selector" minHeightPx={60} />
+      <WireframePlaceholder
+        label="Formula breakdown — each multiplier row, mono numbers, source links"
+        minHeightPx={200}
+      />
+      <WireframePlaceholder
+        label="Result: damage range, crit profile, DPS estimate"
+        minHeightPx={80}
+      />
+    </div>
+  )
 }
 
-const createPlaceholderView = (message: string) => (): JSX.Element => (
-  <Placeholder message={message} />
-)
+export function FarmChecklistView(): JSX.Element {
+  return (
+    <div className="page route-scaffold">
+      <WireframePlaceholder
+        label="Wanted items list — acquisition path per item (Farm / Craft / Purchase)"
+        minHeightPx={140}
+      />
+      <WireframePlaceholder
+        label="Materials summary — summed across crafting paths, grouped by system"
+        minHeightPx={120}
+      />
+      <WireframePlaceholder
+        label="Quest run list — where to go, what drops there"
+        minHeightPx={120}
+      />
+    </div>
+  )
+}
 
-export const BuildPlanView = createPlaceholderView('Build Plan coming in Phase 5.')
-export const OverviewView = createPlaceholderView('Build Overview coming in Phase 10.')
-export const GearView = createPlaceholderView('Gear Planner coming in Phase 6.')
-export const DamageCalculatorView = createPlaceholderView(
-  'Damage Calculator coming in a future update.',
-)
-export const FarmChecklistView = createPlaceholderView('Farm Checklist coming in Phase 8.')
-export { ResourcesView }
+export { BuildOverviewView, BuildPlanView, GearView, ResourcesView }
 
 export function LandingRoute(): JSX.Element {
   return <LandingView activeCharacterSummary={useActiveCharacterSummary()} />

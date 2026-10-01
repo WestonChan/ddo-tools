@@ -4,9 +4,9 @@ import { RouterProvider, createMemoryHistory } from '@tanstack/react-router'
 import { CharacterProvider } from '../features/character'
 import { createAppRouter } from '../router'
 
-vi.mock('./BottomBar', () => ({
-  BottomBar: function ThrowingBottomBar(): never {
-    throw new Error('bottom-bar-crash-for-test')
+vi.mock('./NavBarCharacterCard', () => ({
+  NavBarCharacterCard: function ThrowingNavBarCharacterCard(): never {
+    throw new Error('character-card-crash-for-test')
   },
 }))
 
@@ -27,17 +27,21 @@ function renderApp(): void {
   )
 }
 
-describe('BottomBar chrome boundary', () => {
-  it('renders ErrorCard in place of the bottom bar when BottomBar throws', async () => {
+describe('NavBarCharacterCard chrome boundary', () => {
+  it('renders an ErrorCard with a report link in place of the character card', async () => {
     renderApp()
-    expect(await screen.findByText('bottom-bar-crash-for-test')).toBeInTheDocument()
+    expect(await screen.findByText('character-card-crash-for-test')).toBeInTheDocument()
     const reportLink = screen.getByRole('link', { name: 'Report' })
     expect(reportLink).toHaveAttribute('href', expect.stringContaining('ddo-tools'))
   })
 
-  it('keeps the rest of the shell rendered when BottomBar crashes', async () => {
+  it('keeps the rest of the rail rendered when the character card crashes', async () => {
     renderApp()
-    expect(await screen.findByText('bottom-bar-crash-for-test')).toBeInTheDocument()
-    expect(document.querySelector('.app-nav-bar')).not.toBeNull()
+    await screen.findByText('character-card-crash-for-test')
+    const rail = document.querySelector('.app-nav-bar')
+    expect(rail).not.toBeNull()
+    for (const label of ['Characters & builds', 'Build plan', 'Gear', 'Resources']) {
+      expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
+    }
   })
 })

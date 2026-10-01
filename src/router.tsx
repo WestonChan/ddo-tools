@@ -8,13 +8,13 @@ import AppLayout from './app/AppLayout'
 import { CharacterView } from './features/character'
 import { SettingsView } from './features/settings'
 import {
+  BuildOverviewView,
   BuildPlanView,
   DamageCalculatorView,
   FarmChecklistView,
   GearView,
   LandingRoute,
   NotFoundView,
-  OverviewView,
   ResourcesView,
 } from './app/routeComponents'
 
@@ -33,7 +33,7 @@ const buildPlanRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'build-plan',
   component: BuildPlanView,
-  staticData: { hasBuildSidePanel: true },
+  staticData: { shouldShowStatsPanel: true },
 })
 
 const charactersRoute = createRoute({
@@ -51,13 +51,15 @@ const settingsRoute = createRoute({
 const overviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'overview',
-  component: OverviewView,
+  component: BuildOverviewView,
+  staticData: { shouldShowStatsPanel: true },
 })
 
 const gearRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'gear',
   component: GearView,
+  staticData: { shouldShowStatsPanel: true },
 })
 
 const damageCalculatorRoute = createRoute({
@@ -119,6 +121,6 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
   interface StaticDataRouteOption {
-    hasBuildSidePanel?: boolean
+    shouldShowStatsPanel?: boolean
   }
 }

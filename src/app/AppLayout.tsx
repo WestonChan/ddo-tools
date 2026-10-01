@@ -2,16 +2,17 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { Outlet, useLocation, useMatches } from '@tanstack/react-router'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
-import { BottomBar, type BuildWarning } from './BottomBar'
-import { ErrorCard, ErrorScreen } from '../components'
+import type { BuildWarning } from './buildWarnings'
+import { ErrorScreen } from '../components'
 import {
   useIsAnyModalActive,
   useAccentColoredFavicon,
   useLocalStorage,
   useMediaQuery,
+  useTheme,
 } from '../hooks'
 import { captureBoundaryError } from '../lib/sentry'
-import { BuildSidePanel } from '../features/character'
+import { StatsPanel } from '../features/character'
 import './App.css'
 
 const buildWarnings: BuildWarning[] = []
@@ -29,12 +30,9 @@ const ViewCrashScreen = (props: FallbackProps): JSX.Element => (
   />
 )
 
-const BottomBarCrashCard = (props: FallbackProps): JSX.Element => (
-  <ErrorCard {...props} issueTitle="bottom-bar" issueLabels="runtime" />
-)
-
 function AppLayout(): JSX.Element {
   useAccentColoredFavicon()
+  useTheme()
   const [shouldExpandNavBar, setShouldExpandNavBar] = useLocalStorage('ddo-nav-bar-expanded', true)
   const [isNavBarExpanded, setIsNavBarExpanded] = useState(() => {
     const width = window.innerWidth
@@ -72,8 +70,10 @@ function AppLayout(): JSX.Element {
   const isMobileViewport = useMediaQuery('(max-width: 599px)')
   const isNavBarOverlayOpen = isNavBarExpanded && isMobileViewport
 
+  const isBelowStatsPanelWidth = useMediaQuery('(max-width: 899px)')
   const matches = useMatches()
-  const hasBuildSidePanel = matches.some((m) => m.staticData.hasBuildSidePanel)
+  const isStatsPanelRoute = matches.some((match) => match.staticData.shouldShowStatsPanel)
+  const shouldShowStatsPanel = isStatsPanelRoute && !isBelowStatsPanelWidth
   const { pathname } = useLocation()
 
   const isAnyModalOpen = useIsAnyModalActive()
@@ -83,12 +83,13 @@ function AppLayout(): JSX.Element {
   return (
     <div className="app-shell">
       <div
-        className={`app${isNavBarExpanded ? '' : ' app--nav-bar-collapsed'}${hasBuildSidePanel ? '' : ' app--no-stats'}`}
+        className={`app${isNavBarExpanded ? '' : ' app--nav-bar-collapsed'}${shouldShowStatsPanel ? '' : ' app--no-stats'}`}
       >
         <AppNavBar
           isExpanded={isNavBarExpanded}
           onToggleExpanded={toggleNavBar}
           onCollapse={collapseNavBar}
+          warnings={buildWarnings}
           isFullscreenOverlay={isNavBarOverlayOpen}
           inert={isInertBehindModal}
         />
@@ -103,15 +104,8 @@ function AppLayout(): JSX.Element {
           </ErrorBoundary>
         </div>
 
-        {hasBuildSidePanel && <BuildSidePanel inert={isInertBehindNavBarOverlay} />}
+        {shouldShowStatsPanel && <StatsPanel />}
       </div>
-
-      <ErrorBoundary FallbackComponent={BottomBarCrashCard} onError={captureBoundaryError}>
-        <BottomBar
-          warnings={buildWarnings}
-          inert={isInertBehindModal || isInertBehindNavBarOverlay}
-        />
-      </ErrorBoundary>
     </div>
   )
 }

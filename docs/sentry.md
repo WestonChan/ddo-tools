@@ -1,13 +1,13 @@
 # Sentry setup
 
-DDO Tools uses [Sentry](https://sentry.io) for automatic error capture in production. The integration is **fully optional** — the app builds and runs without any Sentry credentials configured. When unconfigured, automatic capture goes silent and the bottom-bar "Report a bug" button still opens a pre-filled GitHub issue.
+DDO Tools uses [Sentry](https://sentry.io) for automatic error capture in production. The integration is **fully optional** — the app builds and runs without any Sentry credentials configured. When unconfigured, automatic capture goes silent and the rail's "Report a bug" row still opens a pre-filled GitHub issue.
 
 ## What Sentry adds when configured
 
 - **Automatic exception capture** — every render error caught by a React error boundary, every async error from `setTimeout` / `Promise`, and the SW-registration `.catch()` get sent to your Sentry project.
 - **Session Replay** — Sentry records DOM mutations + console events around an error, so you can rewind and see what the user did. All text and inputs are masked by default ([src/lib/sentry.ts](../src/lib/sentry.ts)).
 - **Source-map symbolication** — uploaded by `@sentry/vite-plugin` during CI builds; production stacks resolve to the original TypeScript source.
-- **GitHub-issue correlation** — clicks on the bottom-bar "Report a bug" button include the most-recent Sentry event ID + replay ID in the issue body, so you can pivot from a user report into the Sentry dashboard.
+- **GitHub-issue correlation** — clicks on the rail's "Report a bug" row include the most-recent Sentry event ID + replay ID in the issue body, so you can pivot from a user report into the Sentry dashboard.
 
 ## One-time setup
 
@@ -27,7 +27,7 @@ SENTRY_DSN=https://<your-key>@<org>.ingest.sentry.io/<project-id>
 
 Restart `npm run dev` after editing `.env`. Sentry init logs `[sentry] no DSN configured; skipping init` when the DSN is missing — once configured, that line goes away and capture starts working.
 
-Optionally, set `SENTRY_ORG` to your org slug (the part before `.sentry.io` in your dashboard URL — e.g. `weston-00` for `https://weston-00.sentry.io/...`). When set, the bottom-bar "Report a bug" issue body includes a clickable Sentry replay URL so you can jump from a GitHub issue straight into the recorded session. Without it, only the replay ID lands in the body and you'd look it up manually.
+Optionally, set `SENTRY_ORG` to your org slug (the part before `.sentry.io` in your dashboard URL — e.g. `weston-00` for `https://weston-00.sentry.io/...`). When set, the rail's "Report a bug" issue body includes a clickable Sentry replay URL so you can jump from a GitHub issue straight into the recorded session. Without it, only the replay ID lands in the body and you'd look it up manually.
 
 `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` are needed for **CI source-map upload** (used by `@sentry/vite-plugin` during production builds). They're not needed for local dev.
 
@@ -40,7 +40,7 @@ The variable names are the ones [Vercel's Sentry integration](https://vercel.com
 For the GitHub Actions build check, add the same four as repo secrets (Settings → Secrets and variables → Actions):
 
 - `SENTRY_DSN` — same DSN as local. Inlined into the production JS bundle. DSNs are write-only ingestion keys, designed to be public, so shipping it in the bundle is safe.
-- `SENTRY_ORG` — your Sentry org slug. Inlined into the bundle so the bottom-bar "Report a bug" can build clickable replay URLs.
+- `SENTRY_ORG` — your Sentry org slug. Inlined into the bundle so the rail's "Report a bug" can build clickable replay URLs.
 - `SENTRY_PROJECT` — your Sentry project slug. Build-time only (source-map plugin).
 - `SENTRY_AUTH_TOKEN` — generate at [sentry.io/settings/account/api/auth-tokens/](https://sentry.io/settings/account/api/auth-tokens/) with `project:releases` scope. **Secret** — used only by the build-time plugin and never inlined into the bundle.
 

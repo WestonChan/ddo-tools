@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
+import { ACCENT_PRESETS } from '../lib/accent'
 import { ampersandMarkSvg } from '../lib/ampersandMarkSvg'
-
-const FALLBACK_ACCENT_COLOR = '#b8962e'
 
 export function useAccentColoredFavicon(): void {
   useEffect(() => {
@@ -14,7 +13,7 @@ export function useAccentColoredFavicon(): void {
 
     function redrawFavicon(): void {
       const faviconSvg = ampersandMarkSvg({
-        fillColor: readCssVariable('--accent', FALLBACK_ACCENT_COLOR),
+        fillColor: readCssVariable('--accent', ACCENT_PRESETS[0].ramp[400]),
         size: 64,
       })
       const faviconBlob = new Blob([faviconSvg], { type: 'image/svg+xml' })

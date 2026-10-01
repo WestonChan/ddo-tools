@@ -1,0 +1,17 @@
+export const GEAR_SLOTS = [
+  'Goggles',
+  'Helmet',
+  'Necklace',
+  'Trinket',
+  'Cloak',
+  'Belt',
+  'Ring 1',
+  'Armor',
+  'Gloves',
+  'Bracers',
+  'Boots',
+  'Ring 2',
+  'Quiver',
+  'Main hand',
+  'Off hand',
+] as const

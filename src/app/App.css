@@ -1,27 +1,26 @@
-/* Shell: vertical stack filling the viewport */
 .app-shell {
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
-/* App area: 3-column grid filling available space */
 .app {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 220px 1fr 280px;
+  grid-template-columns: var(--sidebar-w) 1fr var(--inspector-w);
+  transition: grid-template-columns var(--dur-base) var(--ease-standard);
 
   &.app--nav-bar-collapsed {
-    grid-template-columns: 56px 1fr 280px;
+    grid-template-columns: var(--sidebar-collapsed-w) 1fr var(--inspector-w);
   }
 
   &.app--no-stats {
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: var(--sidebar-w) 1fr;
   }
 
   &.app--nav-bar-collapsed.app--no-stats {
-    grid-template-columns: 56px 1fr;
+    grid-template-columns: var(--sidebar-collapsed-w) 1fr;
   }
 }
 
@@ -29,10 +28,4 @@
   overflow: auto;
   min-width: 0;
   min-height: 0;
-}
-
-.section-placeholder {
-  padding: var(--space-6);
-  color: var(--text-muted);
-  font-size: var(--text-sm);
 }

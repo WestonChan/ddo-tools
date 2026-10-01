@@ -39,16 +39,13 @@ describe('activeCharacterSummaryOf', () => {
         characters: [],
         selectedCharacter,
         viewedBuild: selectedCharacter.lives[0],
-        currentLifeNumber: 1,
-        plannedBuilds: [],
       }),
     ).toBeNull()
   })
 
-  it('summarizes the viewed build, past lives and planned builds', () => {
+  it('summarizes the character name, the viewed build and the past-life total', () => {
     const viewedBuild = createLife({ name: ' Holy Sword ' })
     const selectedCharacter = createCharacter({
-      server: 'Thrane',
       lives: [viewedBuild],
       untrackedLives: { heroic: { fighter: 2 }, racial: {}, iconic: {}, epic: { arcane: 1 } },
     })
@@ -57,33 +54,12 @@ describe('activeCharacterSummaryOf', () => {
         characters: [selectedCharacter],
         selectedCharacter,
         viewedBuild,
-        currentLifeNumber: 4,
-        plannedBuilds: [createLife({ id: 'plan-1' })],
       }),
     ).toEqual({
       characterName: 'Thordak',
-      buildName: 'Holy Sword',
-      buildSubtitle: 'Human · Life 4 · Thrane server',
       classLabel: '18 Paladin / 2 Rogue',
+      raceLabel: 'Human',
       pastLifeTotalCount: 3,
-      pastLifeCategoryCounts: [
-        { category: 'heroic', label: 'heroic', count: 2 },
-        { category: 'epic', label: 'epic', count: 1 },
-      ],
-      plannedBuildCount: 1,
     })
-  })
-
-  it('leaves out the server when the character has none', () => {
-    const selectedCharacter = createCharacter()
-    const summary = activeCharacterSummaryOf({
-      characters: [selectedCharacter],
-      selectedCharacter,
-      viewedBuild: selectedCharacter.lives[0],
-      currentLifeNumber: 1,
-      plannedBuilds: [],
-    })
-    expect(summary?.buildSubtitle).toBe('Human · Life 1')
-    expect(summary?.buildName).toBe('')
   })
 })

@@ -1,282 +1,330 @@
 .character-view {
-  padding: var(--space-4) var(--space-6);
-}
-
-/* --- Character list --- */
-.character-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  margin-bottom: var(--space-3);
+  gap: var(--space-5);
 }
 
-.character-row {
+.character-card-body {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+
+.character-view-actions {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-1-5) var(--space-2-5);
-  border: 1px solid transparent;
-  font-size: var(--text-sm);
-  user-select: none;
-}
-
-.character-row.active {
-  background: var(--bg-accent);
-  border-color: var(--border-emphasis);
-}
-
-.character-row .character-marker {
-  color: var(--accent);
-  font-weight: 700;
-  width: 1rem;
-  text-align: center;
-}
-
-.character-row .character-name {
-  color: var(--text);
-  font-weight: 600;
-  min-width: 7rem;
-}
-
-.character-row .character-server {
-  color: var(--text-muted);
-  min-width: 5.5rem;
-}
-
-.character-row .character-class-summary {
-  color: var(--text-secondary);
-  flex: 1;
-}
-
-.character-row .character-life-count {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-}
-
-.character-row-actions {
-  display: flex;
-  gap: var(--space-1);
-  align-self: stretch;
-  align-items: stretch;
-  margin: calc(-1 * var(--space-1-5)) calc(-1 * var(--space-2-5));
-  margin-left: 0;
-  padding-right: var(--space-2-5);
-}
-
-/* Shared action button style for row actions */
-.row-action-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  padding: var(--space-0-5) var(--space-1-5);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.row-action-btn:hover {
-  color: var(--text-secondary);
-  background: var(--bg-accent);
-}
-
-/* Override .row-action-btn's transparent bg for primary variant */
-.row-action-btn.btn-primary-sm {
-  background: var(--accent);
-  color: var(--bg);
-  font-weight: 600;
-}
-
-.row-action-btn.btn-primary-sm:hover {
-  background: var(--accent-hover);
-}
-
-.row-action-btn.delete:hover {
-  color: var(--danger);
-  background: var(--bg-danger);
-}
-
-.character-list-actions {
-  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
 }
 
-.character-list-actions .btn-ghost {
-  background: var(--bg-accent);
+.roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
 }
 
-.character-list-actions .import-ddo-btn {
-  border-style: dashed;
-}
-
-/* --- Past lives section --- */
-.past-lives-divider {
-  border: none;
-  border-top: 2px solid var(--border-emphasis);
-  margin: var(--space-2) 0 var(--space-4);
-}
-
-.past-lives-header {
+.roster-entry {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
+  gap: var(--space-2);
 }
 
-.past-lives-header h2 {
-  color: var(--text);
-  font-size: var(--text-base);
-  font-weight: 600;
-  letter-spacing: 0.02em;
+.roster-entry-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
-.past-lives-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-6);
+.roster-row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5) var(--space-3-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  color: var(--text-body);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-card-hover);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
 }
 
-/* --- Past life stacks --- */
+.roster-row--comparing {
+  background: var(--secondary-quiet);
+  border-color: var(--arcane-400);
+
+  &:hover {
+    background: var(--secondary-quiet);
+  }
+
+  & .roster-row-name,
+  & .roster-row-status {
+    color: var(--arcane-300);
+  }
+}
+
+.roster-row--active {
+  background: var(--surface-selected);
+  border-color: var(--border-accent);
+  cursor: default;
+
+  &:hover {
+    background: var(--surface-selected);
+  }
+
+  &:active {
+    transform: none;
+  }
+
+  & .roster-row-name {
+    color: var(--text-accent);
+  }
+}
+
+.roster-row-name {
+  flex-shrink: 0;
+  color: var(--text-heading);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+}
+
+.roster-row-facts {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+}
+
+.roster-row-fact {
+  white-space: nowrap;
+
+  & + &::before {
+    content: ' · ';
+    white-space: normal;
+  }
+}
+
+.roster-row-status {
+  flex-shrink: 0;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.roster-row-name-input {
+  color: var(--text-heading);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  background: var(--surface-sunken);
+  border-color: var(--border-accent);
+  box-shadow: var(--inset-sunken);
+  cursor: text;
+
+  &:hover {
+    background: var(--surface-sunken);
+  }
+}
+
+.roster-delete-btn:hover {
+  background: var(--status-error-quiet);
+  border-color: var(--status-error);
+  color: var(--status-error);
+}
+
+.add-planned-build-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-3-5);
+  background: none;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-accent);
+    color: var(--text-accent);
+  }
+}
+
+.row-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
+
+  &.btn-primary-sm {
+    background: var(--accent-fill);
+    color: var(--accent-on);
+    font-weight: var(--fw-semibold);
+
+    &:hover {
+      background: var(--accent-fill-hover);
+      color: var(--accent-on);
+    }
+  }
+
+  &.delete:hover {
+    background: var(--status-error-quiet);
+    color: var(--status-error);
+  }
+}
+
+.character-card-body > .section-label,
+.character-card-body > div > .section-label {
+  padding: 0 var(--space-1-5);
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-1-5);
+}
+
+.character-card-body > .section-label:first-child {
+  margin-top: var(--space-1);
+}
+
 .stack-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-1-5);
-  font-size: var(--text-xs);
+  min-height: 24px;
+  padding: 0 var(--space-1-5);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-label);
   user-select: none;
-}
 
-.stack-row.empty .stack-name {
-  color: var(--text-muted);
+  &.empty .stack-name {
+    color: var(--text-faint);
+  }
 }
 
 .stack-name {
-  color: var(--text);
-  width: 12rem;
   flex-shrink: 0;
+  width: 12rem;
+  color: var(--text-body);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .stack-bar {
   display: flex;
   gap: var(--space-0-5);
+
+  & > span:not(.stack-pip) {
+    display: inline-flex;
+  }
 }
 
 .stack-pip {
+  position: relative;
   width: 1rem;
   height: 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--bg-subtle);
-  position: relative;
-}
+  background: var(--surface-active);
+  border-radius: var(--radius-xs);
 
-.stack-pip.filled {
-  background: var(--accent);
-}
+  &.filled {
+    background: var(--accent-fill);
+  }
 
-/* Current life has from history — muted hatch (visible when viewing a different life) */
-.stack-pip.current-has:not(.locked):not(.filled) {
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--bg-accent-muted),
-    var(--bg-accent-muted) 3px,
-    transparent 3px,
-    transparent 6px
-  );
-}
+  &.current-has:not(.locked):not(.filled),
+  &.pip-has-locked {
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--accent-quiet),
+      var(--accent-quiet) 3px,
+      transparent 3px,
+      transparent 6px
+    );
+  }
 
-/* Current life has from overrides — muted filled (visible when viewing a different life) */
-.stack-pip.current-has-filled:not(.filled) {
-  background: var(--bg-accent-muted);
-}
+  &.current-has-filled:not(.filled),
+  &.pip-has-filled {
+    background: var(--accent-quiet);
+  }
 
-.stack-pip.locked {
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--accent),
-    var(--accent) 3px,
-    transparent 3px,
-    transparent 6px
-  );
-}
+  &.locked {
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--accent-fill),
+      var(--accent-fill) 3px,
+      transparent 3px,
+      transparent 6px
+    );
+  }
 
-/* --- Overlay pip states (planned build view) --- */
-
-/* Character has from history, build doesn't need: muted hatch (mirrors locked style) */
-.stack-pip.pip-has-locked {
-  background: repeating-linear-gradient(
-    -45deg,
-    var(--bg-accent-muted),
-    var(--bg-accent-muted) 3px,
-    transparent 3px,
-    transparent 6px
-  );
-}
-
-/* Character has from overrides, build doesn't need: muted solid (mirrors filled style) */
-.stack-pip.pip-has-filled {
-  background: var(--bg-accent-muted);
-}
-
-/* Build needs this but character doesn't have it yet: red border */
-.stack-pip.pip-missing {
-  border: 2px solid var(--border-danger);
-}
-
-.stack-bar > span:not(.stack-pip) {
-  display: inline-flex;
+  &.pip-missing {
+    border: 2px solid var(--status-error);
+  }
 }
 
 .stack-count {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  min-width: 1.5rem;
+  min-width: 1.75rem;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
   text-align: center;
 }
 
 .stack-bonus {
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
+  flex: 1;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-label);
 }
 
 .bonus-earned {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .bonus-remaining {
-  color: var(--text-muted);
   margin-left: var(--space-1-5);
+  color: var(--text-faint);
 }
 
 .stacks-hint {
   display: none;
-  color: var(--text-muted);
-  font-size: var(--text-xs);
   padding: var(--space-1) var(--space-1-5);
-  opacity: 0.7;
-}
-
-@media (max-width: 768px) {
-  .stacks-hint {
-    display: block;
-  }
+  color: var(--text-faint);
+  font-size: var(--fs-label);
 }
 
 .total-past-lives {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
   margin-top: var(--space-2);
-  padding: var(--space-0-5) var(--space-1-5);
+  padding: var(--space-1) var(--space-1-5);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
 }
 
-/* --- Bonus summary --- */
 .bonus-summary {
   margin-top: var(--space-1);
-  border-top: 1px solid var(--border);
   padding-top: var(--space-1);
+  border-top: 1px solid var(--border-hairline);
 }
 
 .bonus-summary-header {
@@ -288,148 +336,155 @@
 }
 
 .bonus-toggle {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+  display: inline-flex;
+  color: var(--text-faint);
 }
 
 .bonus-rows {
   display: grid;
   grid-template-rows: 0fr;
+
+  &.expanded {
+    grid-template-rows: 1fr;
+  }
 }
 
 .bonus-rows-inner {
   overflow: hidden;
 }
 
-.bonus-rows.expanded {
-  grid-template-rows: 1fr;
-}
-
 .bonus-row {
   padding: var(--space-0-5) var(--space-1-5);
-  font-size: var(--text-xs);
+  font-size: var(--fs-label);
 }
 
 .bonus-value {
-  color: var(--text-secondary);
-}
-
-/* --- Life history --- */
-.life-history-title {
-  color: var(--text);
-  font-size: var(--text-base);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  margin-bottom: var(--space-2);
+  color: var(--text-muted);
 }
 
 .life-entry {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-1-5);
-  font-size: var(--text-xs);
+  min-height: 30px;
+  padding: 0 var(--space-1-5);
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: var(--fs-label);
+
+  &.selected {
+    background: var(--surface-selected);
+    box-shadow: var(--inset-mark-accent);
+  }
+
+  & .life-marker {
+    display: inline-flex;
+    width: 0.875rem;
+    color: var(--text-accent);
+  }
+
+  & .life-number {
+    min-width: 3rem;
+    color: var(--text-faint);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+  }
+
+  & .life-name {
+    max-width: 8rem;
+    color: var(--text-muted);
+    font-weight: var(--fw-medium);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  & .life-summary {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-body);
+  }
 }
 
-.life-entry .life-marker {
-  color: var(--accent);
-  font-weight: 700;
-  width: 0.75rem;
-}
-
-.life-entry .life-number {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  white-space: nowrap;
-  min-width: 3rem;
-}
-
-.life-entry .life-name {
-  color: var(--text-secondary);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 8rem;
-}
-
-.life-entry .life-summary {
-  color: var(--text);
-  flex: 1;
+.life-entry-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: stretch;
   min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: inherit;
+}
+
+.life-entry-select--whole-row {
+  flex: 1;
 }
 
 .life-actions {
-  display: flex;
-  gap: var(--space-0-5);
   flex-shrink: 0;
-  align-self: stretch;
-  align-items: stretch;
-  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1-5));
-  margin-left: 0;
-  padding-right: var(--space-1-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
 }
 
-.life-entry.viewing {
-  background: var(--bg-accent);
-}
-
-/* --- Reincarnate panel --- */
 .reincarnate-panel {
-  background: var(--bg-accent);
-  border: 1px solid var(--border-emphasis);
-  border-radius: var(--radius-lg);
-  padding: var(--space-3);
   margin: var(--space-1-5) 0 var(--space-2) var(--space-5);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--inset-top);
+
+  & .section-label {
+    display: block;
+    margin-bottom: var(--space-1);
+  }
 }
 
 .reincarnate-panel-header {
-  color: var(--text);
-  font-size: var(--text-sm);
-  font-weight: 600;
   margin-bottom: var(--space-2-5);
+  color: var(--text-heading);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
 }
 
 .reincarnate-panel-field {
   margin-bottom: var(--space-2);
 }
 
-.reincarnate-panel-field label {
-  display: block;
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-1);
-}
-
 .reincarnate-type-options {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
 }
 
 .reincarnate-type-btn {
-  background: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xs);
   color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-1) var(--space-2-5);
-  font-size: var(--text-xs);
-  font-weight: 500;
+  font-size: var(--fs-label);
   cursor: pointer;
-}
+  transition: var(--transition-control);
 
-.reincarnate-type-btn:hover {
-  color: var(--text);
-  border-color: var(--text-muted);
-}
+  &:hover {
+    background-color: var(--surface-card-hover);
+    color: var(--text-body);
+  }
 
-.reincarnate-type-btn.active {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--bg-tertiary);
+  &.active {
+    background-color: var(--surface-selected);
+    border-color: var(--border-accent);
+    color: var(--text-accent);
+  }
 }
 
 .epic-feat-select {
@@ -438,94 +493,37 @@
   gap: var(--space-1-5);
 }
 
-.epic-feat-group-label {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.epic-feat-group .reincarnate-type-options {
-  flex-wrap: wrap;
-}
-
 .reincarnate-panel-actions {
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-2-5);
 }
 
-.add-planned-life-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  width: 100%;
-  background: none;
-  border: 1px dashed var(--border);
-  color: var(--text-muted);
-  border-radius: var(--radius-md);
-  padding: var(--space-1) var(--space-2-5);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  margin-bottom: var(--space-1-5);
-}
-
-.add-planned-life-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--bg-subtle);
-}
-
-/* --- Responsive --- */
 @media (max-width: 768px) {
-  .character-view {
-    padding: var(--space-3) var(--space-4);
+  .roster-entry {
+    flex-wrap: wrap;
   }
 
-  .character-row {
+  .roster-row {
     flex-wrap: wrap;
+    flex-basis: 100%;
     gap: var(--space-1) var(--space-2);
   }
 
-  .character-row .character-marker {
-    width: auto;
-  }
-
-  .character-row .character-name {
-    min-width: auto;
-  }
-
-  .character-row .character-server {
-    min-width: auto;
-  }
-
-  .character-row .character-class-summary {
-    flex-basis: 100%;
+  .roster-row-facts {
     order: 10;
-    padding-left: var(--space-7);
+    flex-basis: 100%;
   }
 
-  .past-lives-content {
-    grid-template-columns: 1fr;
-    gap: 0;
+  .roster-row-status {
+    margin-left: auto;
   }
 
-  .past-lives-content > *:nth-child(2) {
-    border-top: 1px solid var(--border);
-    margin-top: var(--space-4);
-    padding-top: var(--space-4);
-  }
-
-  .past-lives-divider {
-    margin: var(--space-4) 0 var(--space-5);
+  .stacks-hint {
+    display: block;
   }
 
   .stack-row .stack-bonus {
     display: none;
-  }
-
-  .character-list-actions {
-    flex-wrap: wrap;
   }
 }

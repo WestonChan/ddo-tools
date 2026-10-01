@@ -6,48 +6,31 @@ test.beforeEach(async ({ page }) => {
 })
 
 test.describe('landing view structure', () => {
-  test('renders hero, character card, patch notes, and DDO link', async ({ page }) => {
+  test('renders the wordmark, entry tiles, patch notes, and DDO link', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('.landing-hero')).toBeVisible()
-    await expect(page.locator('.landing-active-character')).toBeVisible()
+    await expect(page.locator('.landing-wordmark')).toHaveText(/DDO Tools/i)
+    await expect(page.locator('.landing-tagline')).toContainText('Dungeons')
+    await expect(page.locator('.landing-tile')).toHaveCount(4)
     await expect(page.locator('.landing-patch-notes')).toBeVisible()
     await expect(page.locator('.landing-ddo-patch-notes')).toBeVisible()
   })
-
-  test('hero shows the wordmark and tagline', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('.landing-hero-title')).toContainText('DDO Tools')
-    await expect(page.locator('.landing-hero-tagline')).toContainText('Dungeons')
-  })
 })
 
-test.describe('active character card', () => {
-  test('shows the selected character name and server', async ({ page }) => {
+test.describe('entry tiles', () => {
+  test('Characters tile summarizes the selected character', async ({ page }) => {
     await page.goto('/')
 
-    const card = page.locator('.landing-active-character')
-    await expect(card).toContainText('Thordak')
-    await expect(card).toContainText(/Thrane server/)
+    const charactersTile = page.locator('.landing-tile', { hasText: 'Characters & builds' })
+    await expect(charactersTile).toContainText('Thordak')
+    await expect(charactersTile).toContainText(/Eladrin Chaosmancer · \d+ past lives/)
   })
 
-  test('shows past-life category breakdown when stacks exist', async ({ page }) => {
+  test('Build plan tile navigates to /build-plan', async ({ page }) => {
     await page.goto('/')
 
-    const card = page.locator('.landing-active-character')
-    const statLabels = card.locator('.landing-stat-label')
-    await expect(statLabels).not.toHaveCount(0)
-    const statLabelTexts = await statLabels.allTextContents()
-    expect(statLabelTexts.some((t) => /heroic/i.test(t))).toBe(true)
-    expect(statLabelTexts.every((t) => !/iconic/i.test(t))).toBe(true)
-  })
-
-  test('"Open build plan" CTA navigates to /build-plan', async ({ page }) => {
-    await page.goto('/')
-
-    await page.locator('.landing-active-character .landing-cta').click()
-    await expect(page).toHaveURL(/\/build-plan$/)
+    await page.locator('.landing-tile', { hasText: 'Build plan' }).click()
+    await expect(page).toHaveURL(/\/build-plan(#levels)?$/)
   })
 })
 
@@ -111,16 +94,16 @@ test.describe('nav brand integration', () => {
 
   test('navigating away clears the brand active state', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: 'Gear' }).click()
+    await page.getByRole('link', { name: 'Gear', exact: true }).click()
     await expect(page.locator('.nav-bar-brand')).not.toHaveClass(/active/)
   })
 
   test('clicking the nav brand returns to landing', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: 'Gear' }).click()
+    await page.getByRole('link', { name: 'Gear', exact: true }).click()
     await expect(page).toHaveURL(/\/gear$/)
 
     await page.locator('.nav-bar-brand').click()
-    await expect(page.locator('.landing-hero')).toBeVisible()
+    await expect(page.locator('.landing-wordmark')).toBeVisible()
   })
 })

@@ -5,26 +5,28 @@ import { STUB_CHARACTERS } from './data/stubCharacters'
 export interface BuildSelection {
   characterId: string
   buildId: string
+  comparisonBuildId: string | null
 }
 
 const defaultStubCharacter = STUB_CHARACTERS[0]
 export const defaultBuildSelection: BuildSelection = {
   characterId: defaultStubCharacter.id,
   buildId: defaultStubCharacter.lives[defaultStubCharacter.currentLifeIndex]?.id ?? '',
+  comparisonBuildId: null,
 }
 
 export function migrateBuildSelection(storedSelection: unknown): BuildSelection {
   const storedFields = storedSelection as Record<string, unknown>
-  if ('buildId' in storedFields && typeof storedFields.buildId === 'string')
-    return storedFields as unknown as BuildSelection
+  const characterId = (storedFields.characterId as string) ?? defaultBuildSelection.characterId
+  const comparisonBuildId =
+    typeof storedFields.comparisonBuildId === 'string' ? storedFields.comparisonBuildId : null
+  if (typeof storedFields.buildId === 'string')
+    return { characterId, buildId: storedFields.buildId, comparisonBuildId }
   const buildId =
     (storedFields.plannedBuildId as string) ??
     (storedFields.lifeId as string) ??
     defaultBuildSelection.buildId
-  return {
-    characterId: (storedFields.characterId as string) ?? defaultBuildSelection.characterId,
-    buildId,
-  }
+  return { characterId, buildId, comparisonBuildId }
 }
 
 export function migrateCharacters(storedCharacters: unknown): Character[] {

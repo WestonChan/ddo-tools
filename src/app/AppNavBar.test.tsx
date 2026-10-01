@@ -1,106 +1,195 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import AppNavBar from './AppNavBar'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { CharacterProvider } from '../features/character'
 import { renderWithRouter } from '../test/renderWithRouter'
-
-vi.mock('../features/character', () => ({
-  useCharacters: () => ({
-    selectedCharacter: { id: '1', name: 'Thordak', server: 'Thrane' },
-    viewedBuild: {
-      id: 'b1',
-      name: '',
-      race: 'human',
-      classes: [
-        { classId: 'paladin', levels: 18 },
-        { classId: 'rogue', levels: 2 },
-      ],
-    },
-    lifeNumbersByLifeId: new Map([['b1', 3]]),
-  }),
-  classSplitLabel: () => '18 Paladin / 2 Rogue',
-  raceLabelOf: () => 'Human',
-}))
+import AppNavBar from './AppNavBar'
+import type { BuildWarning } from './buildWarnings'
 
 const onToggleExpandedMock = vi.fn()
 const onCollapseMock = vi.fn()
 
-function renderNavBar(
+function renderNavBar({
   isExpanded = true,
-  {
-    initialPath = '/build-plan',
-    isFullscreenOverlay,
-  }: { initialPath?: string; isFullscreenOverlay?: boolean } = {},
-): ReturnType<typeof renderWithRouter> {
+  initialPath = '/build-plan',
+  isFullscreenOverlay,
+  warnings = [],
+}: {
+  isExpanded?: boolean
+  initialPath?: string
+  isFullscreenOverlay?: boolean
+  warnings?: BuildWarning[]
+} = {}): ReturnType<typeof renderWithRouter> {
   return renderWithRouter(
-    <AppNavBar
-      isExpanded={isExpanded}
-      onToggleExpanded={onToggleExpandedMock}
-      onCollapse={onCollapseMock}
-      isFullscreenOverlay={isFullscreenOverlay}
-    />,
+    <CharacterProvider>
+      <AppNavBar
+        isExpanded={isExpanded}
+        onToggleExpanded={onToggleExpandedMock}
+        onCollapse={onCollapseMock}
+        isFullscreenOverlay={isFullscreenOverlay}
+        warnings={warnings}
+      />
+    </CharacterProvider>,
     initialPath,
   )
 }
 
+const BUILD_PLAN_SECTION_LABELS = [
+  'Levels',
+  'Skills',
+  'Spells',
+  'Enhancements',
+  'Destinies',
+  'Reaper',
+]
+
 beforeEach(() => {
+  localStorage.clear()
   onToggleExpandedMock.mockClear()
   onCollapseMock.mockClear()
 })
 
 describe('AppNavBar', () => {
-  it('renders top-level nav items', async () => {
-    renderNavBar()
-    expect(await screen.findByText('Gear')).toBeInTheDocument()
-    expect(screen.getByText('Build Overview')).toBeInTheDocument()
+  it('links the wordmark to the landing page, shortened to DT when collapsed', async () => {
+    const { renderResult } = renderNavBar()
+    expect(await screen.findByRole('link', { name: 'DDO TOOLS' })).toHaveAttribute('href', '/')
+    renderResult.unmount()
+
+    renderNavBar({ isExpanded: false })
+    expect(await screen.findByRole('link', { name: 'DT' })).toHaveAttribute('href', '/')
   })
 
-  it('renders group labels', async () => {
-    renderNavBar()
-    await waitFor(() => expect(screen.getAllByText('Build Plan').length).toBeGreaterThanOrEqual(1))
-    expect(screen.getByText('Tools')).toBeInTheDocument()
+  it('groups the destinations under Roster, Build and Tools', async () => {
+    renderNavBar({ initialPath: '/gear' })
+    const expectedHrefsByLabel = {
+      'Characters & builds': '/characters',
+      'Build overview': '/overview',
+      'Build plan': '/build-plan',
+      Gear: '/gear',
+      'Damage calc': '/damage-calc',
+      'Farm checklist': '/farm-checklist',
+      Resources: '/resources',
+      Settings: '/settings',
+    }
+    await screen.findByRole('link', { name: 'Gear' })
+    for (const [label, href] of Object.entries(expectedHrefsByLabel)) {
+      expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', href)
+    }
+    for (const groupLabel of ['Roster', 'Build', 'Tools']) {
+      expect(screen.getByText(groupLabel)).toBeInTheDocument()
+    }
   })
 
-  it('shows all group items', async () => {
-    renderNavBar()
-    expect(await screen.findByText('Level Plan')).toBeInTheDocument()
-    expect(screen.getByText('Skills')).toBeInTheDocument()
-    expect(screen.getByText('Spells')).toBeInTheDocument()
-    expect(screen.getByText('Enhancements')).toBeInTheDocument()
-    expect(screen.getByText('Reaper')).toBeInTheDocument()
-    expect(screen.getByText('Destinies')).toBeInTheDocument()
-    expect(screen.getByText('Damage Calc')).toBeInTheDocument()
-    expect(screen.getByText('Farm Checklist')).toBeInTheDocument()
-    expect(screen.getByText('Resources')).toBeInTheDocument()
+  it('shows the Build plan sections only on /build-plan with the rail expanded', async () => {
+    const { renderResult } = renderNavBar({ initialPath: '/gear' })
+    await screen.findByRole('link', { name: 'Gear' })
+    for (const label of BUILD_PLAN_SECTION_LABELS) {
+      expect(screen.queryByRole('link', { name: label })).not.toBeInTheDocument()
+    }
+    renderResult.unmount()
+
+    const { renderResult: buildPlanRender } = renderNavBar({ initialPath: '/build-plan' })
+    await screen.findByRole('link', { name: 'Gear' })
+    for (const label of BUILD_PLAN_SECTION_LABELS) {
+      expect(screen.getByRole('link', { name: label })).toHaveAttribute(
+        'href',
+        `/build-plan#${label.toLowerCase()}`,
+      )
+    }
+    buildPlanRender.unmount()
+
+    renderNavBar({ initialPath: '/build-plan', isExpanded: false })
+    await screen.findByRole('link', { name: 'Gear' })
+    for (const label of BUILD_PLAN_SECTION_LABELS) {
+      expect(screen.queryByRole('link', { name: label })).not.toBeInTheDocument()
+    }
   })
 
-  it('renders character name', async () => {
-    renderNavBar()
-    expect(await screen.findByText('Thordak')).toBeInTheDocument()
-  })
-
-  it('renders settings', async () => {
-    renderNavBar()
-    expect(await screen.findByText('Settings')).toBeInTheDocument()
-  })
-
-  it('navigates when a nav item is clicked', async () => {
+  it('navigates to a Build plan section and marks only that section current', async () => {
     const user = userEvent.setup()
-    const { router } = renderNavBar()
-    await user.click(await screen.findByText('Gear'))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/gear'))
+    const { router } = renderNavBar({ initialPath: '/build-plan' })
+
+    await user.click(await screen.findByRole('link', { name: 'Skills' }))
+
+    await waitFor(() => expect(router.state.location.hash).toBe('skills'))
+    expect(router.state.location.pathname).toBe('/build-plan')
+    expect(screen.getByRole('link', { name: 'Skills' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Levels' })).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('link', { name: 'Build plan' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('navigates to characters when character name is clicked', async () => {
+  it('opens the warnings popover with the empty-state sentence when there are no warnings', async () => {
     const user = userEvent.setup()
-    const { router } = renderNavBar()
-    await user.click(await screen.findByText('Thordak'))
-    await waitFor(() => expect(router.state.location.pathname).toBe('/characters'))
+    renderNavBar()
+
+    await user.click(await screen.findByRole('button', { name: /^Warnings/ }))
+
+    const warningsPopover = screen.getByRole('group', { name: 'Build warnings' })
+    expect(warningsPopover).toHaveTextContent(
+      'No warnings yet — build validation arrives with the stats engine.',
+    )
+  })
+
+  it('lists each warning and navigates to where it points', async () => {
+    const user = userEvent.setup()
+    const { router } = renderNavBar({
+      initialPath: '/gear',
+      warnings: [{ message: '2 unspent feats', locationLabel: 'Levels 18, 20', to: '/build-plan' }],
+    })
+
+    const warningsRow = await screen.findByRole('button', { name: /^Warnings/ })
+    expect(warningsRow).toHaveTextContent('1')
+    await user.click(warningsRow)
+    const warningsPopover = screen.getByRole('group', { name: 'Build warnings' })
+    await user.click(within(warningsPopover).getByRole('button', { name: /2 unspent feats/ }))
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/build-plan'))
+    expect(screen.queryByRole('group', { name: 'Build warnings' })).not.toBeInTheDocument()
+  })
+
+  it('toggles the rail from the Collapse row', async () => {
+    const user = userEvent.setup()
+    renderNavBar()
+    await user.click(await screen.findByRole('button', { name: 'Collapse' }))
+    expect(onToggleExpandedMock).toHaveBeenCalledTimes(1)
+  })
+
+  describe('footer', () => {
+    let windowOpenSpy: ReturnType<typeof vi.spyOn>
+    beforeEach(() => {
+      windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    })
+    afterEach(() => {
+      windowOpenSpy.mockRestore()
+    })
+
+    it('opens a pre-filled GitHub issue from Report a bug', async () => {
+      const user = userEvent.setup()
+      renderNavBar()
+
+      await user.click(await screen.findByRole('button', { name: 'Report a bug' }))
+
+      expect(windowOpenSpy).toHaveBeenCalledOnce()
+      const [url, target, features] = windowOpenSpy.mock.calls[0]
+      expect(url).toContain('github.com/WestonChan/ddo-tools/issues/new')
+      expect(url).toContain('title=User%20report')
+      expect(target).toBe('_blank')
+      expect(features).toBe('noopener,noreferrer')
+    })
+
+    it('links GitHub to the repository in a new tab', async () => {
+      renderNavBar()
+      const gitHubLink = await screen.findByRole('link', { name: 'GitHub' })
+      expect(gitHubLink).toHaveAttribute('href', 'https://github.com/WestonChan/ddo-tools')
+      expect(gitHubLink).toHaveAttribute('target', '_blank')
+      expect(gitHubLink).toHaveAttribute('rel', expect.stringContaining('noopener'))
+    })
   })
 
   it('collapses on navigate while it is the fullscreen overlay', async () => {
     const user = userEvent.setup()
-    const { router } = renderNavBar(true, { isFullscreenOverlay: true })
-    await user.click(await screen.findByText('Gear'))
+    const { router } = renderNavBar({ isFullscreenOverlay: true })
+    await user.click(await screen.findByRole('link', { name: 'Gear' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/gear'))
     expect(onCollapseMock).toHaveBeenCalled()
@@ -108,16 +197,16 @@ describe('AppNavBar', () => {
 
   it('stays open on navigate when it is inline chrome', async () => {
     const user = userEvent.setup()
-    const { router } = renderNavBar(true)
-    await user.click(await screen.findByText('Gear'))
+    const { router } = renderNavBar()
+    await user.click(await screen.findByRole('link', { name: 'Gear' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/gear'))
     expect(onCollapseMock).not.toHaveBeenCalled()
   })
 
   it('dismisses the fullscreen overlay on Escape', async () => {
-    renderNavBar(true, { isFullscreenOverlay: true })
-    await screen.findByText('Gear')
+    renderNavBar({ isFullscreenOverlay: true })
+    await screen.findByRole('link', { name: 'Gear' })
     expect(document.querySelector('.app-nav-bar')).toHaveAttribute('tabindex', '-1')
 
     await userEvent.keyboard('{Escape}')
@@ -126,8 +215,8 @@ describe('AppNavBar', () => {
   })
 
   it('ignores Escape when the nav bar is inline chrome', async () => {
-    renderNavBar(true)
-    await screen.findByText('Gear')
+    renderNavBar()
+    await screen.findByRole('link', { name: 'Gear' })
     await userEvent.keyboard('{Escape}')
     expect(onCollapseMock).not.toHaveBeenCalled()
   })

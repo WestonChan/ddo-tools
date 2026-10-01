@@ -1,86 +1,90 @@
-import { useRef, type JSX } from 'react'
-import { Link, useMatchRoute } from '@tanstack/react-router'
+import { useCallback, useId, useRef, useState, type JSX, type ReactNode } from 'react'
+import { Link, useMatchRoute, useNavigate } from '@tanstack/react-router'
+import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import {
-  Swords,
-  ShieldHalf,
-  Settings,
-  TableProperties,
-  Sparkles,
-  GitBranch,
-  Skull,
-  Orbit,
+  Bug,
   Calculator,
-  ListOrdered,
-  ListTodo,
+  ExternalLink,
   Library,
+  ListTodo,
   PanelLeftClose,
   PanelLeftOpen,
-  NotepadText,
+  ScrollText,
+  Settings,
+  Shirt,
+  Swords,
+  TriangleAlert,
+  Users,
+  type LucideIcon,
 } from 'lucide-react'
-import { NavBarCharacterCard } from './NavBarCharacterCard'
-import { AmpersandMark } from '../components'
+import { AnchoredMenu, ErrorCard, GitHubMark } from '../components'
 import { useModalAccessibility } from '../hooks'
+import { githubIssueUrls, REPOSITORY_URL } from '../lib/githubIssue'
+import { captureBoundaryError, lastSentryEventReference } from '../lib/sentry'
+import { BUILD_PLAN_SECTIONS } from '../features/build'
+import type { BuildWarning } from './buildWarnings'
+import { NavBarCharacterCard } from './NavBarCharacterCard'
 import './AppNavBar.css'
 
-interface NavBarLink {
-  sectionId?: string
+interface NavBarDestination {
   to: string
   label: string
-  Icon: React.FC<{ size?: number }>
+  Icon: LucideIcon
 }
 
-interface NavBarGroup {
-  id: string
-  label: string
-  to?: string
-  Icon?: React.FC<{ size?: number }>
-  links: NavBarLink[]
-}
-
-function SkillsIcon(props: { size?: number }): JSX.Element {
-  return <TableProperties {...props} style={{ transform: 'scaleX(-1)' }} />
-}
-
-const NAV_BAR_GROUPS: NavBarGroup[] = [
-  {
-    id: 'build-plan',
-    label: 'Build Plan',
-    to: '/build-plan',
-    Icon: NotepadText,
-    links: [
-      { sectionId: 'levels', to: '/build-plan', label: 'Level Plan', Icon: ListOrdered },
-      { sectionId: 'skills', to: '/build-plan', label: 'Skills', Icon: SkillsIcon },
-      { sectionId: 'spells', to: '/build-plan', label: 'Spells', Icon: Sparkles },
-      { sectionId: 'enhancements', to: '/build-plan', label: 'Enhancements', Icon: GitBranch },
-      { sectionId: 'reaper', to: '/build-plan', label: 'Reaper', Icon: Skull },
-      { sectionId: 'destinies', to: '/build-plan', label: 'Destinies', Icon: Orbit },
-      { to: '/gear', label: 'Gear', Icon: ShieldHalf },
-      { to: '/overview', label: 'Build Overview', Icon: Swords },
-    ],
-  },
-  {
-    id: 'tools',
-    label: 'Tools',
-    links: [
-      { to: '/damage-calc', label: 'Damage Calc', Icon: Calculator },
-      { to: '/farm-checklist', label: 'Farm Checklist', Icon: ListTodo },
-      { to: '/resources', label: 'Resources', Icon: Library },
-    ],
-  },
+const ROSTER_DESTINATIONS: NavBarDestination[] = [
+  { to: '/characters', label: 'Characters & builds', Icon: Users },
 ]
+
+const BUILD_OVERVIEW_DESTINATION: NavBarDestination = {
+  to: '/overview',
+  label: 'Build overview',
+  Icon: Swords,
+}
+const BUILD_PLAN_DESTINATION: NavBarDestination = {
+  to: '/build-plan',
+  label: 'Build plan',
+  Icon: ScrollText,
+}
+const GEAR_DESTINATION: NavBarDestination = { to: '/gear', label: 'Gear', Icon: Shirt }
+
+const TOOL_DESTINATIONS: NavBarDestination[] = [
+  { to: '/damage-calc', label: 'Damage calc', Icon: Calculator },
+  { to: '/farm-checklist', label: 'Farm checklist', Icon: ListTodo },
+  { to: '/resources', label: 'Resources', Icon: Library },
+]
+
+const SETTINGS_DESTINATION: NavBarDestination = {
+  to: '/settings',
+  label: 'Settings',
+  Icon: Settings,
+}
+
+const WARNINGS_POPOVER_WIDTH_PX = 300
+
+const CharacterCardCrashCard = (props: FallbackProps): JSX.Element => (
+  <ErrorCard {...props} issueTitle="character-card" issueLabels="runtime" />
+)
 
 interface AppNavBarProps {
   isExpanded: boolean
   onToggleExpanded: () => void
   onCollapse: () => void
+  warnings: BuildWarning[]
   isFullscreenOverlay?: boolean
   inert?: boolean
+}
+
+function openBugReportIssue(): void {
+  const { newIssueUrl } = githubIssueUrls(undefined, [], 'User report', lastSentryEventReference())
+  window.open(newIssueUrl, '_blank', 'noopener,noreferrer')
 }
 
 function AppNavBar({
   isExpanded,
   onToggleExpanded,
   onCollapse,
+  warnings,
   isFullscreenOverlay,
   inert,
 }: AppNavBarProps): JSX.Element {
@@ -94,12 +98,21 @@ function AppNavBar({
   })
 
   const matchRoute = useMatchRoute()
-  const isSettingsRouteActive = !!matchRoute({ to: '/settings' })
+  const shouldShowBuildPlanSections = isExpanded && !!matchRoute({ to: '/build-plan' })
 
   function collapseIfFullscreenOverlay(): void {
-    if (isFullscreenOverlay) {
-      onCollapse()
-    }
+    if (isFullscreenOverlay) onCollapse()
+  }
+
+  function destinationRow(destination: NavBarDestination): JSX.Element {
+    return (
+      <NavBarLinkRow
+        key={destination.to}
+        destination={destination}
+        isExpanded={isExpanded}
+        onNavigate={collapseIfFullscreenOverlay}
+      />
+    )
   }
 
   return (
@@ -109,121 +122,192 @@ function AppNavBar({
       className={`app-nav-bar${isExpanded ? ' expanded' : ''}`}
       inert={inert}
     >
-      <div className="nav-bar-scroll">
-        <Link
-          to="/"
-          className="nav-bar-brand hoverable"
-          activeOptions={{ exact: true }}
-          activeProps={{ className: 'nav-bar-brand hoverable active' }}
-          onClick={collapseIfFullscreenOverlay}
-        >
-          <AmpersandMark className="nav-bar-brand-mark" size={26} />
-          <span className="nav-bar-brand-text nav-bar-collapsible">
-            DDO
-            <br />
-            Tools
-          </span>
-        </Link>
+      <Link
+        to="/"
+        className="nav-bar-brand"
+        activeOptions={{ exact: true }}
+        onClick={collapseIfFullscreenOverlay}
+      >
+        {isExpanded ? 'DDO TOOLS' : 'DT'}
+      </Link>
 
-        <NavBarCharacterCard onNavigate={collapseIfFullscreenOverlay} />
+      <ErrorBoundary FallbackComponent={CharacterCardCrashCard} onError={captureBoundaryError}>
+        <NavBarCharacterCard isExpanded={isExpanded} />
+      </ErrorBoundary>
 
-        <nav className="nav-bar-items">
-          {NAV_BAR_GROUPS.map((group) => (
-            <NavBarGroupSection
-              key={group.id}
-              group={group}
-              onNavigate={collapseIfFullscreenOverlay}
-            />
-          ))}
-        </nav>
+      <nav className="nav-bar-groups" aria-label="Main">
+        <NavBarGroup label="Roster">{ROSTER_DESTINATIONS.map(destinationRow)}</NavBarGroup>
+        <NavBarGroup label="Build">
+          {destinationRow(BUILD_OVERVIEW_DESTINATION)}
+          {destinationRow(BUILD_PLAN_DESTINATION)}
+          {shouldShowBuildPlanSections && (
+            <div className="nav-bar-sections">
+              {BUILD_PLAN_SECTIONS.map((section) => (
+                <NavBarLinkRow
+                  key={section.id}
+                  destination={{ to: '/build-plan', label: section.label, Icon: section.Icon }}
+                  hash={section.id}
+                  isExpanded={isExpanded}
+                  onNavigate={collapseIfFullscreenOverlay}
+                />
+              ))}
+            </div>
+          )}
+          {destinationRow(GEAR_DESTINATION)}
+        </NavBarGroup>
+        <NavBarGroup label="Tools">{TOOL_DESTINATIONS.map(destinationRow)}</NavBarGroup>
+      </nav>
 
-        <div className="nav-bar-bottom">
-          <NavBarLinkButton
-            link={{ to: '/settings', label: 'Settings', Icon: Settings }}
-            isActive={isSettingsRouteActive}
-            onNavigate={collapseIfFullscreenOverlay}
-          />
-        </div>
-      </div>
+      <div className="nav-bar-spacer" />
 
-      <button className="nav-bar-collapse-btn hoverable" onClick={onToggleExpanded}>
-        {isExpanded ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
-        <span className="nav-bar-label nav-bar-collapsible">{isExpanded ? 'Collapse' : ''}</span>
+      <NavBarWarnings
+        warnings={warnings}
+        isExpanded={isExpanded}
+        onNavigate={collapseIfFullscreenOverlay}
+      />
+
+      <button
+        type="button"
+        className="nav-bar-row nav-bar-row--faint nav-bar-collapse-btn"
+        title={isExpanded ? undefined : 'Expand'}
+        onClick={onToggleExpanded}
+      >
+        {isExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+        <span className="nav-bar-label">{isExpanded ? 'Collapse' : 'Expand'}</span>
       </button>
+
+      <div className="nav-bar-hairline" />
+
+      {destinationRow(SETTINGS_DESTINATION)}
+      <button
+        type="button"
+        className="nav-bar-row"
+        title={isExpanded ? undefined : 'Report a bug'}
+        onClick={openBugReportIssue}
+      >
+        <Bug size={16} />
+        <span className="nav-bar-label">Report a bug</span>
+      </button>
+      <a
+        className="nav-bar-row nav-bar-row--faint"
+        href={REPOSITORY_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Source on GitHub · WestonChan/ddo-tools"
+      >
+        <GitHubMark size={16} />
+        <span className="nav-bar-label">GitHub</span>
+        {isExpanded && <ExternalLink size={12} className="nav-bar-external-glyph" />}
+      </a>
     </aside>
   )
 }
 
-function NavBarGroupSection({
-  group,
-  onNavigate,
-}: {
-  group: NavBarGroup
-  onNavigate: () => void
-}): JSX.Element {
-  const matchRoute = useMatchRoute()
-  const isPathActive = (to: string): boolean => !!matchRoute({ to, fuzzy: true })
-  const hasActiveLink = group.links.some((item) => isPathActive(item.to))
-
-  const firstLinkIndexByPath = new Map<string, number>()
-  group.links.forEach((it, i) => {
-    if (!firstLinkIndexByPath.has(it.to)) firstLinkIndexByPath.set(it.to, i)
-  })
-
+function NavBarGroup({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <div className="nav-bar-group">
-      <span className={`nav-bar-group-label${hasActiveLink ? ' has-active' : ''}`}>
-        <span className="nav-bar-group-label-text nav-bar-collapsible">{group.label}</span>
-      </span>
-      {group.to && group.Icon && (
-        <NavBarLinkButton
-          link={{ to: group.to, label: group.label, Icon: group.Icon }}
-          isActive={group.links.some((item) => item.sectionId && isPathActive(item.to))}
-          onNavigate={onNavigate}
-          isGroupHeader
-        />
-      )}
-      {group.links.map((item, i) => (
-        <NavBarLinkButton
-          key={item.sectionId || `${item.to}-${i}`}
-          link={item}
-          isActive={isPathActive(item.to) && firstLinkIndexByPath.get(item.to) === i}
-          onNavigate={onNavigate}
-          isCompact={!!item.sectionId}
-        />
-      ))}
+      <div className="nav-bar-group-label section-label">
+        <span className="nav-bar-group-label-text">{label}</span>
+      </div>
+      {children}
     </div>
   )
 }
 
-function NavBarLinkButton({
-  link,
-  isActive,
+function NavBarLinkRow({
+  destination,
+  hash,
+  isExpanded,
   onNavigate,
-  isCompact,
-  isGroupHeader,
 }: {
-  link: NavBarLink
-  isActive: boolean
+  destination: NavBarDestination
+  hash?: string
+  isExpanded: boolean
   onNavigate: () => void
-  isCompact?: boolean
-  isGroupHeader?: boolean
 }): JSX.Element {
-  const linkClassName = [
-    'nav-bar-btn',
-    'hoverable',
-    isActive && 'active',
-    isCompact && 'nav-bar-btn--compact',
-    isGroupHeader && 'nav-bar-btn--header',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  const { to, label, Icon } = destination
+  return (
+    <Link
+      to={to}
+      hash={hash}
+      activeOptions={hash ? { includeHash: true } : undefined}
+      className={`nav-bar-row${hash ? ' nav-bar-row--section' : ''}`}
+      title={isExpanded ? undefined : label}
+      onClick={onNavigate}
+    >
+      <Icon size={16} />
+      <span className="nav-bar-label">{label}</span>
+    </Link>
+  )
+}
+
+function NavBarWarnings({
+  warnings,
+  isExpanded,
+  onNavigate,
+}: {
+  warnings: BuildWarning[]
+  isExpanded: boolean
+  onNavigate: () => void
+}): JSX.Element {
+  const navigate = useNavigate()
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const popoverId = useId()
+  const warningsRowRef = useRef<HTMLButtonElement | null>(null)
+  const closePopover = useCallback((): void => setIsPopoverOpen(false), [])
+
+  function goToWarning(warning: BuildWarning): void {
+    closePopover()
+    onNavigate()
+    navigate({ to: warning.to })
+  }
 
   return (
-    <Link to={link.to} className={linkClassName} onClick={onNavigate} activeProps={{}}>
-      <link.Icon size={isCompact ? 16 : 18} />
-      <span className="nav-bar-label nav-bar-collapsible">{link.label}</span>
-    </Link>
+    <>
+      <button
+        ref={warningsRowRef}
+        type="button"
+        className={`nav-bar-row nav-bar-warnings-row${warnings.length === 0 ? ' nav-bar-warnings-row--empty' : ''}`}
+        aria-expanded={isPopoverOpen}
+        aria-controls={isPopoverOpen ? popoverId : undefined}
+        title={isExpanded ? undefined : `Warnings: ${warnings.length}`}
+        onClick={() => setIsPopoverOpen((wasOpen) => !wasOpen)}
+      >
+        <TriangleAlert size={16} />
+        <span className="nav-bar-label">Warnings</span>
+        <span className="nav-bar-warnings-count num">{warnings.length}</span>
+      </button>
+      {isPopoverOpen && (
+        <AnchoredMenu
+          id={popoverId}
+          anchorRef={warningsRowRef}
+          placement="above"
+          widthPx={WARNINGS_POPOVER_WIDTH_PX}
+          label="Build warnings"
+          onClose={closePopover}
+        >
+          <div className="anchored-menu-eyebrow section-label">Build warnings</div>
+          {warnings.length === 0 ? (
+            <p className="nav-bar-warnings-empty">
+              No warnings yet — build validation arrives with the stats engine.
+            </p>
+          ) : (
+            warnings.map((warning) => (
+              <button
+                key={`${warning.to}-${warning.message}`}
+                type="button"
+                className="anchored-menu-row nav-bar-warning"
+                onClick={() => goToWarning(warning)}
+              >
+                <TriangleAlert size={14} className="nav-bar-warning-icon" />
+                <span className="nav-bar-warning-message">{warning.message}</span>
+                <span className="nav-bar-warning-location">{warning.locationLabel}</span>
+              </button>
+            ))
+          )}
+        </AnchoredMenu>
+      )}
+    </>
   )
 }
 

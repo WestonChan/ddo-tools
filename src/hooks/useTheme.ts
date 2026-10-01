@@ -1,66 +1,110 @@
 import { useSyncExternalStore } from 'react'
 
 export type Theme = 'dark' | 'light'
+export type ThemePreference = Theme | 'system'
 
-interface ThemeControls {
+interface ThemeState {
   theme: Theme
-  toggleTheme: () => void
+  themePreference: ThemePreference
 }
 
-function storedOrSystemTheme(): Theme {
-  const storedTheme = localStorage.getItem('theme')
-  if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+interface ThemeControls extends ThemeState {
+  setThemePreference: (nextPreference: ThemePreference) => void
 }
 
-let currentTheme: Theme | null = null
+const THEME_STORAGE_KEY = 'theme'
+const PREFERS_LIGHT_QUERY = '(prefers-color-scheme: light)'
+
+function isThemePreference(storedText: string | null): storedText is ThemePreference {
+  return storedText === 'light' || storedText === 'dark' || storedText === 'system'
+}
+
+function storedThemePreference(): ThemePreference {
+  try {
+    const storedText = localStorage.getItem(THEME_STORAGE_KEY)
+    return isThemePreference(storedText) ? storedText : 'system'
+  } catch {
+    return 'system'
+  }
+}
+
+function saveThemePreference(themePreference: ThemePreference): void {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, themePreference)
+  } catch {
+    return
+  }
+}
+
+function operatingSystemTheme(): Theme {
+  return window.matchMedia(PREFERS_LIGHT_QUERY).matches ? 'light' : 'dark'
+}
+
+function resolvedTheme(themePreference: ThemePreference): Theme {
+  return themePreference === 'system' ? operatingSystemTheme() : themePreference
+}
+
+let currentThemeState: ThemeState | null = null
 const themeListeners = new Set<() => void>()
+let subscribedOperatingSystemQuery: MediaQueryList | null = null
 
 function notifyThemeListeners(): void {
-  themeListeners.forEach((fn) => fn())
+  themeListeners.forEach((listener) => listener())
+}
+
+function applyThemePreference(themePreference: ThemePreference): ThemeState {
+  const nextThemeState = { theme: resolvedTheme(themePreference), themePreference }
+  currentThemeState = nextThemeState
+  document.documentElement.setAttribute('data-theme', nextThemeState.theme)
+  return nextThemeState
+}
+
+function ensureThemeInitialized(): ThemeState {
+  return currentThemeState ?? applyThemePreference(storedThemePreference())
+}
+
+function followOperatingSystemChange(): void {
+  const themeState = ensureThemeInitialized()
+  if (themeState.themePreference !== 'system') return
+  if (resolvedTheme('system') === themeState.theme) return
+  applyThemePreference('system')
+  notifyThemeListeners()
 }
 
 function subscribeToTheme(listener: () => void): () => void {
   themeListeners.add(listener)
+  if (!subscribedOperatingSystemQuery) {
+    subscribedOperatingSystemQuery = window.matchMedia(PREFERS_LIGHT_QUERY)
+    subscribedOperatingSystemQuery.addEventListener('change', followOperatingSystemChange)
+    followOperatingSystemChange()
+  }
   return () => {
     themeListeners.delete(listener)
+    if (themeListeners.size === 0) stopFollowingOperatingSystem()
   }
 }
 
-function applyTheme(nextTheme: Theme): void {
-  currentTheme = nextTheme
-  document.documentElement.setAttribute('data-theme', nextTheme)
+function stopFollowingOperatingSystem(): void {
+  subscribedOperatingSystemQuery?.removeEventListener('change', followOperatingSystemChange)
+  subscribedOperatingSystemQuery = null
 }
 
-function ensureThemeInitialized(): Theme {
-  const current = currentTheme
-  if (current !== null) return current
-  const initial = storedOrSystemTheme()
-  applyTheme(initial)
-  return initial
-}
-
-function themeSnapshot(): Theme {
-  return ensureThemeInitialized()
-}
-
-function setTheme(nextTheme: Theme): void {
-  applyTheme(nextTheme)
-  localStorage.setItem('theme', nextTheme)
+function setThemePreference(nextPreference: ThemePreference): void {
+  applyThemePreference(nextPreference)
+  saveThemePreference(nextPreference)
   notifyThemeListeners()
 }
 
-function toggleTheme(): void {
-  setTheme(ensureThemeInitialized() === 'dark' ? 'light' : 'dark')
-}
-
 export function useTheme(): ThemeControls {
-  ensureThemeInitialized()
-  const theme = useSyncExternalStore(subscribeToTheme, themeSnapshot, themeSnapshot)
-  return { theme, toggleTheme }
+  const themeState = useSyncExternalStore(
+    subscribeToTheme,
+    ensureThemeInitialized,
+    ensureThemeInitialized,
+  )
+  return { ...themeState, setThemePreference }
 }
 
 export function resetThemeForTests(): void {
-  currentTheme = null
+  currentThemeState = null
   notifyThemeListeners()
 }

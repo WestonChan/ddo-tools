@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { WireframePlaceholder } from '../../../components'
 
 export type StatusPlaceholderReason =
   | 'no-selection'
@@ -7,6 +8,8 @@ export type StatusPlaceholderReason =
   | 'not-found'
   | 'loading'
   | 'error'
+
+const STATUS_PLACEHOLDER_MIN_HEIGHT_PX = 140
 
 interface StatusPlaceholderProps {
   reason: StatusPlaceholderReason
@@ -52,9 +55,12 @@ function placeholderMessage({
 export function StatusPlaceholder(props: StatusPlaceholderProps): JSX.Element {
   const { title, hint } = placeholderMessage(props)
   return (
-    <div className="resources-detail-empty section-placeholder" role="status">
-      <p>{title}</p>
-      {hint && <p className="resources-detail-empty-hint">{hint}</p>}
+    <div className="resources-status" role="status">
+      <WireframePlaceholder
+        label={title}
+        hint={hint}
+        minHeightPx={STATUS_PLACEHOLDER_MIN_HEIGHT_PX}
+      />
     </div>
   )
 }

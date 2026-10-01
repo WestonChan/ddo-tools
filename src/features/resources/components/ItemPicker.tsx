@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { List } from 'react-window'
-import { ChevronDown, X } from 'lucide-react'
+import { ChevronDown, Circle, CircleCheck, Search, X } from 'lucide-react'
 import type { ResourceCategory } from '../resourceCategories'
 import type { ItemSummary } from '../queries/items'
 import {
@@ -51,7 +51,7 @@ const EMPTY_FILTERS: ItemFilters = {
   highestMinimumLevel: '',
 }
 
-const ITEM_ROW_HEIGHT_PX = 44
+const ITEM_ROW_HEIGHT_PX = 32
 const SEARCH_DEBOUNCE_MS = 120
 
 function SelectWithChevron({ children }: { children: ReactNode }): JSX.Element {
@@ -291,23 +291,30 @@ export function ItemPicker({
   return (
     <div className="resources-picker-inner">
       <div className="resources-search">
-        <input
-          ref={searchInputRef}
-          type="search"
-          placeholder="Search… (press / to focus)"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          aria-label={`Search ${category}`}
-          aria-describedby={resultCountId}
-          className="resources-search-input"
-        />
-        <span id={resultCountId} className="resources-search-count" aria-live="polite">
+        <label className="search-well resources-search-well">
+          <Search size={14} aria-hidden />
+          <input
+            ref={searchInputRef}
+            type="search"
+            placeholder="Search…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label={`Search ${category}`}
+            aria-describedby={resultCountId}
+            aria-keyshortcuts="/"
+            className="search-well-input"
+          />
+          <kbd className="resources-search-shortcut" aria-hidden>
+            /
+          </kbd>
+        </label>
+        <span id={resultCountId} className="resources-search-count num" aria-live="polite">
           {itemsToShow.length} {itemsToShow.length === 1 ? 'result' : 'results'}
         </span>
       </div>
       <div className="resources-filters">
         <label className="resources-filter">
-          <span className="resources-filter-label" id={slotFilterLabelId}>
+          <span className="section-label resources-filter-label" id={slotFilterLabelId}>
             Slot
           </span>
           <SelectWithChevron>
@@ -327,7 +334,7 @@ export function ItemPicker({
           </SelectWithChevron>
         </label>
         <label className="resources-filter">
-          <span className="resources-filter-label" id={packFilterLabelId}>
+          <span className="section-label resources-filter-label" id={packFilterLabelId}>
             Pack
           </span>
           <SelectWithChevron>
@@ -348,22 +355,32 @@ export function ItemPicker({
         </label>
         <button
           type="button"
-          className={`resources-filter-toggle${filters.isRareOnly ? ' active' : ''}`}
+          className={`filter-chip${filters.isRareOnly ? ' filter-chip--selected' : ''}`}
           aria-pressed={filters.isRareOnly}
           onClick={() => setItemFilter('isRareOnly', !filters.isRareOnly)}
         >
           Rare only
+          {filters.isRareOnly ? (
+            <CircleCheck size={12} aria-hidden />
+          ) : (
+            <Circle size={12} aria-hidden />
+          )}
         </button>
         <button
           type="button"
-          className={`resources-filter-toggle${filters.isRaidOnly ? ' active' : ''}`}
+          className={`filter-chip${filters.isRaidOnly ? ' filter-chip--selected' : ''}`}
           aria-pressed={filters.isRaidOnly}
           onClick={() => setItemFilter('isRaidOnly', !filters.isRaidOnly)}
         >
           Raid only
+          {filters.isRaidOnly ? (
+            <CircleCheck size={12} aria-hidden />
+          ) : (
+            <Circle size={12} aria-hidden />
+          )}
         </button>
         <div className="resources-filter">
-          <span className="resources-filter-label">Stats</span>
+          <span className="section-label resources-filter-label">Stats</span>
           <StatMultiSelect
             options={availableStats}
             selected={filters.stats}
@@ -371,28 +388,28 @@ export function ItemPicker({
           />
         </div>
         <label className="resources-filter">
-          <span className="resources-filter-label">Min ML</span>
+          <span className="section-label resources-filter-label">Min ML</span>
           <input
             type="number"
             inputMode="numeric"
             min={1}
             max={40}
             placeholder="—"
-            className="resources-filter-input"
+            className="resources-filter-input num"
             value={filters.lowestMinimumLevel}
             onChange={(e) => setItemFilter('lowestMinimumLevel', e.target.value)}
             aria-label="Minimum character level (lower bound)"
           />
         </label>
         <label className="resources-filter">
-          <span className="resources-filter-label">Max ML</span>
+          <span className="section-label resources-filter-label">Max ML</span>
           <input
             type="number"
             inputMode="numeric"
             min={1}
             max={40}
             placeholder="—"
-            className="resources-filter-input"
+            className="resources-filter-input num"
             value={filters.highestMinimumLevel}
             onChange={(e) => setItemFilter('highestMinimumLevel', e.target.value)}
             aria-label="Minimum character level (upper bound)"
@@ -414,7 +431,7 @@ export function ItemPicker({
             <button
               key={chip.key}
               type="button"
-              className="resources-filter-chip"
+              className="filter-chip filter-chip--selected"
               onClick={chip.clearFilter}
               aria-label={`Remove filter: ${chip.label}`}
             >
@@ -429,15 +446,24 @@ export function ItemPicker({
       ) : itemsToShow.length === 0 ? (
         <StatusPlaceholder reason="no-results" searchQuery={debouncedSearchQuery} />
       ) : (
-        <div className="resources-list-wrap">
-          <List
-            rowComponent={ItemPickerRow}
-            rowCount={itemsToShow.length}
-            rowHeight={ITEM_ROW_HEIGHT_PX}
-            rowProps={{ items: itemsToShow, selectedItemId, onSelect: openItemDetail }}
-            className="resources-list"
-            aria-label={`${category} list`}
-          />
+        <div className="resources-list-ledger">
+          <div className="section-label resources-list-header" aria-hidden>
+            <span className="resources-list-column resources-list-column--name">Name</span>
+            <span className="resources-list-column resources-list-column--level">ML</span>
+            <span className="resources-list-column resources-list-column--slot">Slot</span>
+            <span className="resources-list-column resources-list-column--pack">Pack</span>
+          </div>
+          <div className="resources-list-wrap">
+            <List
+              rowComponent={ItemPickerRow}
+              rowCount={itemsToShow.length}
+              rowHeight={ITEM_ROW_HEIGHT_PX}
+              rowProps={{ items: itemsToShow, selectedItemId, onSelect: openItemDetail }}
+              className="resources-list"
+              style={{ height: '100%' }}
+              aria-label={`${category} list`}
+            />
+          </div>
         </div>
       )}
     </div>

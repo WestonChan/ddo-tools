@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ItemPickerRow } from './ItemPickerRow'
 import type { ItemSummary } from '../queries/items'
@@ -137,9 +137,16 @@ describe('ItemPickerRow', () => {
     ).toBeNull()
   })
 
-  it('omits meta segments that have no data', () => {
+  it('shows the bare minimum level under the ML column', () => {
+    renderItemPickerRow([itemRow({ minimumLevel: 12 })], null)
+    const button = screen.getByRole('button', { name: /Bloodstone/ })
+    expect(button).toHaveTextContent('12')
+    expect(button).not.toHaveTextContent('ML')
+  })
+
+  it('shows an em dash in the ML and Pack cells of an item without them', () => {
     renderItemPickerRow([itemRow({ minimumLevel: null, pack: null })], null)
     const button = screen.getByRole('button', { name: /Bloodstone/ })
-    expect(button).not.toHaveTextContent('ML')
+    expect(within(button).getAllByText('—')).toHaveLength(2)
   })
 })

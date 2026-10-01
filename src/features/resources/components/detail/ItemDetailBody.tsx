@@ -6,7 +6,7 @@ import { AugmentSlotList } from './AugmentSlotList'
 import { DetailHeader } from './DetailHeader'
 import { EnchantmentList } from './EnchantmentList'
 import { DetailSection } from './DetailSection'
-import { StatList, type LabeledStat } from './StatList'
+import { StatList } from './StatList'
 import type { KeyValuePair } from './KeyValueGrid'
 import { numberWithPlusSign } from './numberWithPlusSign'
 import { sentenceCased } from './sentenceCased'
@@ -25,9 +25,14 @@ function toHeaderAttributes(
   const attributes: KeyValuePair[] = []
   attributes.push({ label: 'Slot', value: item.equipmentSlot })
   attributes.push({ label: 'Type', value: item.type ?? item.category })
-  if (item.minimumLevel !== null) attributes.push({ label: 'Min level', value: item.minimumLevel })
+  if (item.minimumLevel !== null)
+    attributes.push({ label: 'Min level', value: item.minimumLevel, isNumeric: true })
   if (item.enhancementBonus !== null) {
-    attributes.push({ label: 'Enhancement', value: numberWithPlusSign(item.enhancementBonus) })
+    attributes.push({
+      label: 'Enhancement',
+      value: numberWithPlusSign(item.enhancementBonus),
+      isNumeric: true,
+    })
   }
   if (item.material) attributes.push({ label: 'Material', value: item.material })
   if (item.requiredRace) attributes.push({ label: 'Race', value: item.requiredRace })
@@ -60,10 +65,16 @@ function toHeaderAttributes(
   return attributes
 }
 
-function toLabeledWeaponStats(weaponStats: ItemWeaponStats): LabeledStat[] {
-  const labeledStats: LabeledStat[] = []
-  if (weaponStats.damage) labeledStats.push({ label: 'Damage', value: weaponStats.damage })
-  if (weaponStats.critical) labeledStats.push({ label: 'Critical', value: weaponStats.critical })
+function toLabeledWeaponStats(weaponStats: ItemWeaponStats): KeyValuePair[] {
+  const labeledStats: KeyValuePair[] = []
+  if (weaponStats.damage)
+    labeledStats.push({ label: 'Damage', value: weaponStats.damage, isNumeric: true })
+  if (weaponStats.critical)
+    labeledStats.push({
+      label: 'Critical',
+      value: weaponStats.critical,
+      isNumeric: true,
+    })
   labeledStats.push({ label: 'Type', value: weaponStats.weaponType })
   if (weaponStats.proficiency)
     labeledStats.push({ label: 'Proficiency', value: weaponStats.proficiency })
@@ -72,24 +83,45 @@ function toLabeledWeaponStats(weaponStats: ItemWeaponStats): LabeledStat[] {
   return labeledStats
 }
 
-function toLabeledArmorStats(armorStats: ItemArmorStats): LabeledStat[] {
-  const labeledStats: LabeledStat[] = []
+function toLabeledArmorStats(armorStats: ItemArmorStats): KeyValuePair[] {
+  const labeledStats: KeyValuePair[] = []
   labeledStats.push({ label: 'Type', value: armorStats.armorType })
   if (armorStats.armorBonus !== null)
-    labeledStats.push({ label: 'Armor bonus', value: armorStats.armorBonus })
+    labeledStats.push({
+      label: 'Armor bonus',
+      value: armorStats.armorBonus,
+      isNumeric: true,
+    })
   if (armorStats.shieldBonus !== null)
-    labeledStats.push({ label: 'Shield bonus', value: armorStats.shieldBonus })
+    labeledStats.push({
+      label: 'Shield bonus',
+      value: armorStats.shieldBonus,
+      isNumeric: true,
+    })
   if (armorStats.maximumDexterityBonus !== null)
-    labeledStats.push({ label: 'Max Dex bonus', value: armorStats.maximumDexterityBonus })
+    labeledStats.push({
+      label: 'Max Dex bonus',
+      value: armorStats.maximumDexterityBonus,
+      isNumeric: true,
+    })
   if (armorStats.arcaneSpellFailurePercent !== null)
     labeledStats.push({
       label: 'Arcane spell failure',
       value: `${armorStats.arcaneSpellFailurePercent}%`,
+      isNumeric: true,
     })
   if (armorStats.armorCheckPenalty !== null)
-    labeledStats.push({ label: 'Armor check penalty', value: armorStats.armorCheckPenalty })
+    labeledStats.push({
+      label: 'Armor check penalty',
+      value: armorStats.armorCheckPenalty,
+      isNumeric: true,
+    })
   if (armorStats.damageReduction !== null)
-    labeledStats.push({ label: 'Damage reduction', value: armorStats.damageReduction })
+    labeledStats.push({
+      label: 'Damage reduction',
+      value: armorStats.damageReduction,
+      isNumeric: true,
+    })
   return labeledStats
 }
 
@@ -126,10 +158,10 @@ export function ItemDetailBody({
       <EnchantmentList bonuses={item.bonuses} effects={item.effects} />
       {item.clickies.length > 0 && (
         <DetailSection heading="Clickies">
-          <ul className="resources-flat-list">
+          <ul className="resources-clicky-list">
             {item.clickies.map((c) => (
-              <li key={c.name}>
-                {c.name}
+              <li key={c.name} className="resources-clicky-row">
+                <span className="resources-clicky-name">{c.name}</span>
                 {c.description && <p className="resources-bonus-description">{c.description}</p>}
               </li>
             ))}
@@ -142,13 +174,13 @@ export function ItemDetailBody({
             {item.quests.map((quest: LootQuest) => (
               <li key={quest.id} className="resources-quest-row">
                 <span className="resources-quest-name">
-                  {quest.name}
-                  <WikiLinkIcon pageName={quest.name} />
+                  <span className="resources-quest-title">{quest.name}</span>
                   {quest.isRaid && <DropTagChip kind="raid" />}
                   {quest.isRareLoot && <DropTagChip kind="rare" />}
                   {quest.chest && (
                     <span className="resources-quest-chest">{sentenceCased(quest.chest)}</span>
                   )}
+                  <WikiLinkIcon pageName={quest.name} />
                 </span>
                 <span className="resources-quest-meta">
                   {[
@@ -171,6 +203,37 @@ export function ItemDetailBody({
           </DetailSection>
         )
       )}
+      <footer className="resources-detail-actions">
+        <div className="resources-detail-action-buttons">
+          <button
+            type="button"
+            className="btn-primary"
+            disabled
+            title="Compare list arrives with Phase 8"
+          >
+            Add to compare
+          </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled
+            title="Gear comparison arrives with Phase 8"
+          >
+            Compare in Gear
+          </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            disabled
+            title="Farm checklist arrives with Phase 10"
+          >
+            Add to farm list
+          </button>
+        </div>
+        <p className="resources-detail-actions-note">
+          Actions arrive with the Gear and Farm checklist phases.
+        </p>
+      </footer>
     </article>
   )
 }

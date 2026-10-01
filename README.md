@@ -63,6 +63,7 @@ step — merging to `main` is the release. Game-data deployments are scheduled s
 ## Credits
 
 - [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOBuilder) -- the source of the game data (items, augments, sets, feats, enhancements, spells), used with permission via the `ddo-data` pipeline
+- [GitHub Octicons](https://github.com/primer/octicons) -- the `mark-github` path behind the GitHub mark in the rail footer, MIT licensed. The GitHub mark is a trademark of GitHub, Inc., used under GitHub's logo guidelines
 - [DDO Wiki](https://ddowiki.com/) -- the per-entity wiki links in the app, and the data source of the retired Python pipeline; wiki content is available under CC BY-SA
 
 ## License

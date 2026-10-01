@@ -7,13 +7,13 @@ CSS conventions, design tokens, component recipes, layout architecture, and resp
 - **Warm slate, one accent.** Neutrals are the stone ramp (`--stone-*`, stone-touched, never blue-grey). One accent, aged gold, drives selection, the single primary action per region, and class-tree ink. Arcane blue is the secondary. Never more than one accent hue per screen region.
 - **Functional color is an encoding.** Damage types (`--dmg-*`), enhancement trees (`--tree-*`) and augment-socket colors mean the same thing in every chart, pip, dot and tag. There is no rarity-tier color: DDO has no rarity tiers, and "Legendary" in an item name is just part of the name.
 - **If it's a number, it's mono.** Anything a player compares — modifiers, DCs, dice, AP, ML, percentages, counts, versions — is JetBrains Mono with tabular figures (`.num` or `font-family: var(--font-mono)`), so columns line up and two builds can be read side by side.
-- **Fantasy enters through type, not texture.** Cinzel is the wordmark only. Headings are bold Source Sans 3. No parchment, no gradients, no imagery, no glows.
+- **Fantasy enters through type, not texture.** IM Fell DW Pica SC (one 400 weight, never faux-bold) is the wordmark only. Headings are bold Source Sans 3. No parchment, no gradients, no imagery, no glows.
 - **Borders carry depth; shadow is for things that float.** Surfaces separate by a four-step ladder (`--bg-app` → `--bg-panel` → `--surface-card` → `--surface-raised`, with `--surface-sunken` for input wells) plus a hairline border. `--shadow-popover`, `--shadow-dialog` and `--shadow-drag` are reserved for menus, dialogs and drag ghosts. `--inset-top` puts a 5% highlight on raised chrome; `--inset-sunken` darkens wells.
-- **Hover is a wash, press is a nudge.** Hover = `--surface-hover` (a white/black alpha so it works on any surface; primary buttons brighten instead). Press = 1px downward `translateY`, never a scale. Focus = `--ring-focus`. Disabled = 42% opacity. Locked things are dimmed, never hidden.
-- **Motion is short and flat.** 80/120/180/260ms on `--ease-standard`; color, border and width transitions only. No bounce, spring, scale-in or entrance animation. `prefers-reduced-motion` zeroes every duration.
+- **Hover is a wash, press is a nudge.** Hover = `--surface-hover` (a white/black alpha so it works on any surface); elements that already carry a fill use `--surface-card-hover` / `--surface-raised-hover`, and primary buttons brighten instead. Press = 1px downward `translateY`, never a scale. Focus = a 2px `--border-focus` outline inset by 2px (`outline`, not `box-shadow`, so a row's own inset mark never erases it and clipping containers never hide it; `--ring-focus` stays available for elements that are not clipped). Disabled = 42% opacity. Locked things are dimmed, never hidden.
+- **Motion is short and flat.** 80/120/180/260ms on `--ease-standard`; color, border and width transitions, plus the two state motions the prototype defines: a toggle knob sliding and a disclosure chevron rotating 90°. No bounce, spring, scale-in or entrance animation. `prefers-reduced-motion` zeroes every duration.
 - **No pill shapes.** 3px inside dense grids, 5px is the workhorse, 6px for panels, 8px only for the dialog. Tags, toggles, progress tracks and swatches are square-cornered. Stylelint rejects `999px` and `50%` radii.
 - **Active state = fill + mark + color + weight.** A rail row signals active with `--surface-selected`, a 2px `--accent-fill` left mark, `--text-accent` and one weight step (400 → 600). Selected list rows use the same fill with an `inset 2px 0 0 var(--accent-fill)` mark. Active items get `cursor: default` and no hover wash.
-- **Accent stays user-configurable.** `--accent` is the one primitive Settings can change (pre-paint script in `index.html`, `applyAccent` in `src/lib/accent.ts`). The gold ramp derives from it in oklch, so every preset re-tints selection, links and fills consistently.
+- **Accent is a named preset.** Settings offers Gold, Arcane, Moss, Rust and Violet, each an explicit 200–700 ramp from the design (`ACCENT_PRESETS`); `applyAccent` writes the six `--gold-*` steps plus `--accent`, and the `index.html` pre-paint script carries the same table so the first paint is right (a Vitest guard keeps the two in sync). Selection washes, links and fills follow the preset; `--tree-class` stays fixed gold and the damage, tree and augment encodings never change.
 
 ## Copy
 
@@ -31,7 +31,7 @@ Use `lucide-react` for all icons. Pass the `size` prop (16 in rail rows and butt
 - **Plain CSS** with native nesting (no Sass). `&-suffix` concatenation is not supported natively; write separate selectors.
 - **BEM naming**: `nav-bar-btn`, `nav-bar-btn--active`, `stats-panel-row`. `--` for modifiers, `-` for multi-word blocks and elements.
 - **Tokens only.** Colors, fonts, radii, shadows and durations come from `src/index.css`; component-scoped custom properties (`--icon-col`) live at the component root.
-- **Enforced by Stylelint** (`stylelint.config.mjs`, part of `npm run lint`): a raw color literal may appear only in a custom-property definition; `box-shadow` must be `none`, a `var(--shadow-*|--inset-*|--ring-*|--glow-*)` token, or a `0 0 0 <spread>` ring; `font-family` must be a `var(--font-*)` reference; `border-radius` may not be a pill (`999px`, `9999px`, `100vmax`, `50%`).
+- **Enforced by Stylelint** (`stylelint.config.mjs`, part of `npm run lint`): a raw color literal may appear only in a custom-property definition; `box-shadow` must be `none`, a `var(--shadow-*|--inset-*|--ring-*|--glow-*)` token, or a `0 0 0 <spread>` ring; `font-family` must be a `var(--font-*)` reference; `border-radius` may not be a pill (`999px`, `9999px`, `100vmax`, `50%`); no comments (`comment-pattern`, directives excepted); no `!important`; no `outline: none` / `outline: 0` / `outline-width: 0` (the allowed suppression is `outline-color: transparent`, in two places only: a non-interactive programmatic focus target such as the modal panel, and an `<input>` inside a well whose wrapper paints the ring on `:focus-within`, because forced-colors mode still paints it); `padding`/`margin`/`gap` take `var(--space-*)`, `0`, `auto` or a `calc()` of those; `letter-spacing` takes `var(--ls-*)`, `0` or `normal`; `font-size` takes `var(--fs-*)`, `inherit` or an `em` value; `border-radius` takes `var(--radius-*)`, `0` or `inherit`; `opacity` takes `0`, `0.42` (disabled and drag sources), `1`, `inherit` or a token. `npm run lint:ignored` fails when a `.gitignore` pattern would swallow a source file.
 - **No `!important`.** Fix specificity with nesting.
 - **Co-locate CSS** with components (`AppNavBar.css` next to `AppNavBar.tsx`).
 
@@ -44,7 +44,7 @@ Defined in `src/index.css`. Primitives are theme-independent; semantic aliases a
 | Ramp | Tokens | Role |
 |---|---|---|
 | Stone | `--stone-0` … `--stone-950` (0, 25, 50, 100, 200, 300, 400, 500, 600, 700, 750, 800, 850, 900, 950) | Warm-slate neutrals |
-| Gold | `--gold-100` … `--gold-700`, derived from `--accent` (`--gold-400` is `--accent` itself; lighter steps mix toward white, darker toward black, in oklch) | Accent |
+| Gold | `--gold-200` … `--gold-700`: the ramp of the chosen accent preset (Gold by default). `applyAccent` and the pre-paint script write all six steps and `--accent` (= the 400 step) from `ACCENT_PRESETS` in `src/lib/accent.ts` | Accent |
 | Arcane | `--arcane-100` … `--arcane-700` | Secondary (comparison build, info) |
 | Moss / Amber / Rust / Violet | `--moss-400/500/600`, `--amber-400/500/600`, `--rust-400/500/600`, `--violet-400/500` | Semantic hues |
 | Damage | `--dmg-physical`, `-fire`, `-cold`, `-electric`, `-acid`, `-sonic`, `-force`, `-light`, `-negative`, `-poison` | Encodings |
@@ -67,7 +67,7 @@ Rules of thumb: page background is `--bg-app`; the rail, stats panel and drawers
 
 | Token | Value |
 |---|---|
-| `--font-wordmark` | Cinzel (the "DDO TOOLS" wordmark only) |
+| `--font-wordmark` | IM Fell DW Pica SC (the "DDO TOOLS" wordmark only, weight 400) |
 | `--font-ui` | Source Sans 3 — all UI, prose and headings (`--font-display` aliases it) |
 | `--font-mono` | JetBrains Mono — every compared number |
 
@@ -139,7 +139,7 @@ Dense grids and tables use 6/8/10; page chrome uses 16/20/24. Never invent an in
 | `--inset-top` | Raised chrome highlight (character card, table header strip) |
 | `--inset-sunken` | Input wells, segmented-control tracks |
 | `--glow-accent` | Accent ring + soft glow for the one element that must attract the eye |
-| `--ring-focus` | `:focus-visible` |
+| `--ring-focus` | Opt-in box-shadow ring for elements no container clips; the default focus style is the 2px inset `outline` |
 
 ### Motion
 
@@ -163,17 +163,35 @@ Dense grids and tables use 6/8/10; page chrome uses 16/20/24. Never invent an in
 
 Shared classes in `src/index.css`; shared components in `src/components/`.
 
-- **Eyebrow** (`.section-label`): 11px, 600, `.08em`, uppercase, `--text-faint`. The one class for section labels, table headers and rail group headings.
-- **Card**: `--surface-card`, 1px `--border-hairline`, `--radius-sm`, padding 12–14px. Optional header strip: `--surface-raised` + `--inset-top` + eyebrow.
-- **Buttons**: `.btn-primary` (`--accent-fill` / `--accent-on`, 600, height 30, radius sm; hover brightens, press nudges 1px), `.btn-ghost` (`--surface-raised`, `--border-default`, `--text-body`). `-sm` variants are 26px.
+- **Eyebrow** (`.section-label`): `--fs-micro`, 600, `--ls-eyebrow`, uppercase, `--text-faint`, no margins of its own. The one class for section labels, card headers, table headers, menu group labels and rail group headings; consumers add spacing, never a second eyebrow style.
+- **Card** (`.card` / `.card-header`): `--surface-card`, 1px `--border-hairline`, `--radius-sm`. The optional header strip is `--surface-raised` + `--inset-top` + an eyebrow over a `--border-default` bottom edge. The landing patch-notes cards, the Characters cards and the Resources list card compose these classes.
+- **Buttons**: `.btn-primary` (`--accent-fill` / `--accent-on`, 600, height `--control-h`, radius sm; hover brightens, press nudges 1px), `.btn-ghost` (`--surface-raised`, `--border-default`, `--text-body`; hover `--surface-raised-hover`). `-sm` variants are `--control-h-sm`.
 - **Popover** (`AnchoredMenu`): `--surface-raised`, `--border-strong`, `--shadow-popover`, radius sm, 4px padding, 1px row gap; rows 12.5px with `--surface-hover` on hover and `--surface-selected` + `--text-accent` when selected; closes on outside click and Escape.
-- **Underline tabs** (`.underline-tabs`): 32px, 13.5px, `--text-muted`; active = `--text-heading`, 600, 2px `--accent-fill` underline on a `--border-default` baseline.
-- **Segmented control**: `--surface-sunken` track with `--border-default` and 2px padding; active segment `--surface-raised` + `--text-heading`, others `--text-faint`.
-- **Filter chip**: 26px, radius xs, `--surface-card` + `--border-hairline`; selected = `--surface-selected`, `--border-accent`, `--text-accent`.
+- **Underline tabs** (`.underline-tabs`): 32px, `--fs-body-sm`, `--text-muted`; active = `--text-heading`, 600, 2px `--accent-fill` underline on a `--border-default` baseline.
+- **Segmented control** (`.segmented-control` / `.segmented-control-segment` / `--active`): `--surface-sunken` track with `--border-default`, `--inset-sunken` and 2px padding; active segment `--surface-raised` + `--text-heading`, others `--text-faint`. Used by the stats-panel tabs. The `--joined` modifier (no track padding, hairline between `--control-h-sm` segments, no inset shadow) is the Settings theme control.
+- **Brand mark**: `GitHubMark` is the one inline SVG in `src/components/`, because lucide ships no brand icons. It fills with `currentColor` and takes `size` like a lucide icon.
+- **Filter chip** (`.filter-chip` / `--selected`): 26px, radius xs, `--surface-card` + `--border-hairline`; selected = `--surface-selected`, `--border-accent`, `--text-accent`. Used by the Resources filters and the clicky-item picker.
 - **Ledger row** (stats panel, enchantments): 24–26px, hairline bottom border, label `--text-muted`, value mono `--text-body`, bonus type 11px `--text-faint` right-aligned.
-- **Table header strip**: `--surface-raised`, `--inset-top`, eyebrow labels, `--border-default` bottom.
-- **Search well**: 30px, `--surface-sunken`, `--border-default`, `--inset-sunken`, `search` glyph, shortcut hint in mono.
+- **Table header strip**: `--surface-raised`, `--inset-top`, eyebrow labels, `--border-default` bottom (the clicky-item picker).
+- **Ledger list** (the Resources picker): no card; a `--border-strong` rule above and below, a 30px header row of eyebrows closed by a `3px double var(--border-strong)` rule, rows 32px with `1px dotted var(--border-default)` dividers, selected row `--surface-selected` + `--inset-mark-accent`.
+- **Drag and drop** (`@dnd-kit`): grip handle `GripVertical` 12px `--text-faint` with `cursor: grab` on a real button; drop target `--border-accent` or the `--inset-drop-line` mark above the hovered row; the source dims to 42% while dragging; the `DragOverlay` ghost carries `--shadow-drag`. Pointer and keyboard sensors both work; pin buttons remain the non-drag path. Every container that can receive a drop is a droppable (group, tray, section), so only a release over the opposite half unpins a stat or clears a slot, and that outcome is announced.
+- **Search well** (`.search-well`): `--control-h`, `--surface-sunken`, `--border-default`, `--inset-sunken`, `search` glyph, shortcut hint in mono; the wrapper paints the focus ring on `:focus-within` and the input's own outline is transparent.
 - **Page** (`.page`): 24px padding, `max-width: var(--content-max)`, centered. `PageSection` gives a titled, anchorable section; `WireframePlaceholder` is the dashed block used by views whose phase has not shipped.
+
+## Recorded decisions
+
+Reasoning that used to live in CSS comments (the repo bans comments; Stylelint's `comment-pattern` rule enforces it in CSS). Each entry names the rule it explains.
+
+- **Modal panel is `position: fixed`** (`Modal.css`): positions against the viewport so size and placement are independent of the rail state and container width, escapes `.app-content`'s `overflow: auto` clipping, and stacks in the root context so `--z-modal` reliably beats the rail's `--z-nav`. Every rule in `Modal.css` is a single flat class so a consumer stylesheet loaded after it can override at equal specificity through the `className` prop. Width is deliberately unset; consumers size themselves. The backdrop is a real `<button>` so assistive tech can activate dismissal, while Tab stays trapped inside the panel.
+- **Drawer width `clamp(560px, 55vw, 900px)`**: the floor keeps a single detail column readable; the cap stops the drawer sprawling on ultra-wide monitors.
+- **`ErrorCard` has a `min-height`**: it replaces a variable-height entry whose height is unknown, so the floor prevents layout shift.
+- **`ConfirmModal` message uses `white-space: pre-line`**: callers compose multi-paragraph messages with `\n` (the Characters apply-build warning list); collapsed whitespace ran them into one wall of text.
+- **`WikiLinkIcon` rests low-key** and picks up the accent on hover, so a list of rows isn't dominated by repeated link affordances.
+- **Resources key-value rows are one grid** with subgrid rows so values left-align under a consistent column edge; a flex `space-between` floated them to the container's right edge and read as a ragged column.
+- **Augment gems are sized in `em`** (0.7em side, about 1em corner-to-corner after the 45° rotation) so the gem matches the cap height of the label beside it. **Sun and Moon** are Isle of Dread's day/night sockets: Sun is a warmer, paler gold than the yellow socket so the two never read as the same gem; Moon is the silver-blue of the in-game icon. Crafting-family sockets and Sun/Moon draw from a short pool of augments, so they render as a control that expands to that pool rather than as a bare gem.
+- **Selected picker row is color plus a tinted surface**, keyed off `.active`, the same class that opts the row out of `.hoverable`'s hover wash, so one hook drives both halves of the state. Keyboard focus is the global inset outline, which the react-window shell's fixed bounds cannot clip. That shell carries only the `position`/`top`/`left`/`height`/`width` react-window injects; the button inside owns every visual.
+- **Wiki access is the compare-window icon in the entity header**: the embedded preview died with ddowiki's bot protection (see `docs/ddowiki-api.md`).
+- **Past-life pip states** (`CharacterView.css`): current life has the stack from history → muted hatch (visible when viewing a different life); current life has it from overrides → muted filled; character has it from history but the build doesn't need it → muted hatch (mirrors the locked style); character has it from overrides but the build doesn't need it → muted solid; build needs it but the character doesn't have it yet → red border.
 
 ## Layout Architecture
 
@@ -192,9 +210,10 @@ Grid columns are controlled by JS-toggled classes on `.app`:
 | `.app--nav-bar-collapsed.app--no-stats` | `var(--sidebar-collapsed-w) 1fr` |
 
 - **Rail** (`AppNavBar`): 236px expanded, 56px collapsed. Top to bottom: wordmark, character card (switcher, compare picker, swap), Roster / Build / Tools groups (Build plan sub-items appear only on `/build-plan`), spacer, Warnings row with popover, Collapse, hairline, Settings, Report a bug, GitHub. Eyebrows collapse to hairlines.
-- **Stats panel** (`StatsPanel`): 300px, shown on routes whose `staticData.showStatsPanel` is true (`/build-plan`, `/overview`, `/gear`). Pinned / All stats / Buffs tabs.
+- **Stats panel** (`StatsPanel`): 300px, shown on routes whose `staticData.shouldShowStatsPanel` is true (`/build-plan`, `/overview`, `/gear`). Stats / Buffs tabs; Stats holds drag-and-drop pinned groups over a divider, then All stats.
 - **There is no bottom bar.** Warnings and bug reporting live in the rail.
 - Only the content column scrolls; the rail and stats panel scroll independently.
+- Below 900px the stats panel is not rendered at all (`AppLayout` applies `app--no-stats` from `useMediaQuery('(max-width: 899px)')`); Phase 6 adds a collapsed toggle strip in its place.
 
 ## Responsive Breakpoints
 

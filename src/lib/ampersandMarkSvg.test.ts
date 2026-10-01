@@ -18,8 +18,10 @@ describe('ampersandMarkSvg', () => {
     expect(ampersandMarkSvg()).toContain('&amp;')
   })
 
-  it('uses Vollkorn as the primary font with serif fallbacks', () => {
-    expect(ampersandMarkSvg()).toMatch(/font-family="'Vollkorn','Georgia','Times New Roman',serif"/)
+  it('uses the wordmark face at its single regular weight with serif fallbacks', () => {
+    const svg = ampersandMarkSvg()
+    expect(svg).toContain('font-family="IM Fell DW Pica SC, Georgia, serif"')
+    expect(svg).toContain('font-weight="400"')
   })
 
   it('centers the glyph at the box center using dy="0.35em"', () => {
@@ -48,8 +50,8 @@ describe('ampersandMarkSvg', () => {
   })
 
   it('uses the provided fill color (e.g. resolved accent for favicons)', () => {
-    const svg = ampersandMarkSvg({ fillColor: '#b8962e' })
-    expect(svg).toContain('fill="#b8962e"')
+    const svg = ampersandMarkSvg({ fillColor: '#c8a24a' })
+    expect(svg).toContain('fill="#c8a24a"')
     expect(svg).not.toContain('fill="currentColor"')
   })
 })

@@ -1,0 +1,113 @@
+.ability-pools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ability-pool-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+.ability-pool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+}
+
+.ability-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2-5) var(--space-1) var(--space-1-5);
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xs);
+  color: inherit;
+  text-align: left;
+  cursor: grab;
+  touch-action: none;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-card-hover);
+    border-color: var(--border-default);
+  }
+}
+
+.ability-chip--drag-source {
+  opacity: 0.42;
+}
+
+.ability-chip-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+
+  & .ability-code {
+    font-size: var(--fs-micro);
+  }
+}
+
+.ability-chip-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ability-chip-name {
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-dense);
+}
+
+.ability-chip-name--unequipped {
+  color: var(--text-muted);
+}
+
+.ability-chip-kind {
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-dense);
+}
+
+.ability-chip-kind--unequipped {
+  color: var(--status-warn);
+}
+
+.ability-chip-add {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  padding: var(--space-1) var(--space-2-5);
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
+}
+
+.ability-chip-add--open {
+  background: var(--surface-selected);
+  border-color: var(--border-accent);
+  color: var(--text-accent);
+
+  &:hover {
+    background: var(--surface-selected);
+    color: var(--text-accent);
+  }
+}

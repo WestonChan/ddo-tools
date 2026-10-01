@@ -53,9 +53,9 @@ export function EnchantmentList({ bonuses, effects }: EnchantmentListProps): JSX
         {lines.map((line) => (
           <li key={line.key} className="resources-bonus-row">
             <div className="resources-bonus-head">
-              <span className="resources-bonus-type">{line.tag ?? ''}</span>
               <span className="resources-bonus-name">{line.name}</span>
-              <span className="resources-bonus-value">{line.signedValue ?? ''}</span>
+              <span className="resources-bonus-value num">{line.signedValue ?? ''}</span>
+              <span className="resources-bonus-type">{line.tag ?? ''}</span>
             </div>
             {line.description && <p className="resources-bonus-description">{line.description}</p>}
           </li>

@@ -149,3 +149,19 @@ export function stackCountsEarnedBy(lives: Life[]): Record<string, number> {
   }
   return stackCounts
 }
+
+export function owningCharacterOf(characters: Character[], buildId: string): Character | undefined {
+  return characters.find((character) => character.lives.some((life) => life.id === buildId))
+}
+
+export function lifeLabelOf(life: Life, lifeNumbersByLifeId: Map<string, number>): string {
+  return life.name.trim() || `Life ${lifeNumbersByLifeId.get(life.id) ?? '?'}`
+}
+
+export function plannedBuildLabelOf(plannedBuild: Life): string {
+  return plannedBuild.name.trim() || 'Unnamed build'
+}
+
+export function raceAndClassLabelOf(build: Life): string {
+  return `${raceLabelOf(build.race)} · ${classSplitLabel(build)}`
+}

@@ -1,0 +1,11 @@
+.route-scaffold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.route-scaffold-back-link {
+  align-self: flex-start;
+  font-size: var(--fs-body-sm);
+  color: var(--text-link);
+}

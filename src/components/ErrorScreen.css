@@ -4,36 +4,28 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-4);
-  /* Fills the parent's height (whichever it is). Root-level usage relies
-     on `#root { min-height: 100vh }` in index.css; nested usage inside
-     `.app-content` fills that grid cell. Using 100vh here would overflow
-     past the BottomBar in the nested case. */
   min-height: 100%;
   padding: var(--space-8);
-  background: var(--bg);
-  color: var(--text);
+  background: var(--bg-app);
+  color: var(--text-body);
   text-align: center;
 }
 
 .error-screen h1 {
-  /* h1 base size from index.css uses --text-3xl, which qualifies as
-     "large text" for WCAG (3:1 ratio threshold). --text-danger is aliased
-     to --danger in dark mode; light theme overrides with a darker red so
-     normal-size danger text passes AA when reused below. */
-  color: var(--text-danger);
+  color: var(--status-error);
 }
 
 .error-screen--info h1 {
-  color: var(--text);
+  color: var(--text-heading);
 }
 
 .error-screen-detail {
-  font-family: monospace;
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  color: var(--text-muted);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-4);
   max-width: 500px;
   word-break: break-word;
@@ -42,8 +34,8 @@
 }
 
 .error-screen-hint {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
+  font-size: var(--fs-label);
+  color: var(--text-faint);
   max-width: 400px;
 }
 
@@ -56,6 +48,6 @@
 }
 
 .error-screen-report {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
+  font-size: var(--fs-label);
+  color: var(--text-faint);
 }

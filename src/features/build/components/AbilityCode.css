@@ -1,0 +1,25 @@
+.ability-code {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+
+.ability-code--fire {
+  color: var(--dmg-fire);
+}
+
+.ability-code--cold {
+  color: var(--dmg-cold);
+}
+
+.ability-code--electric {
+  color: var(--dmg-electric);
+}
+
+.ability-code--force {
+  color: var(--dmg-force);
+}
+
+.ability-code--none {
+  color: var(--text-faint);
+}

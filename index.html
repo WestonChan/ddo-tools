@@ -5,7 +5,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Vollkorn:wght@600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica+SC&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,17 +14,36 @@
   <body>
     <script>
       ;(function () {
-        var t = localStorage.getItem('theme')
-        if (t !== 'light' && t !== 'dark')
-          t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-        document.documentElement.setAttribute('data-theme', t)
+        var root = document.documentElement
         try {
-          var a = localStorage.getItem('accent')
-          if (a) {
-            // Handle both old format ({accent, hover}) and new format (plain string)
-            var c = a.startsWith('{') ? JSON.parse(a).accent : a
-            if (c) document.documentElement.style.setProperty('--accent', c)
+          var theme = localStorage.getItem('theme')
+          if (theme !== 'light' && theme !== 'dark')
+            theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+          root.setAttribute('data-theme', theme)
+          var ramps = {
+            Gold: ['#e8d29c', '#d9b967', '#c8a24a', '#a8863a', '#836828', '#5f4b1d'],
+            Arcane: ['#a9c4e2', '#6f9bcb', '#4c7db8', '#3a6396', '#2a4a72', '#1f3654'],
+            Moss: ['#b9d7bb', '#86bb8c', '#5b9a63', '#4e8b5a', '#37653f', '#284a2e'],
+            Rust: ['#eab3ab', '#d9837a', '#c05348', '#a8423a', '#7c2e28', '#5a211d'],
+            Violet: ['#cdbde3', '#a98fcf', '#8b6cb5', '#73549c', '#574079', '#3f2e58'],
           }
+          var stored = localStorage.getItem('accent') || 'Gold'
+          var name = 'Gold'
+          if (Object.prototype.hasOwnProperty.call(ramps, stored)) name = stored
+          else {
+            var hex = stored
+            if (stored.charAt(0) === '{')
+              try {
+                hex = JSON.parse(stored).accent
+              } catch (e) {}
+            hex = typeof hex === 'string' ? hex.toLowerCase() : ''
+            for (var candidate in ramps) if (ramps[candidate][2] === hex) name = candidate
+          }
+          var ramp = ramps[name]
+          ;[200, 300, 400, 500, 600, 700].forEach(function (step, index) {
+            root.style.setProperty('--gold-' + step, ramp[index])
+          })
+          root.style.setProperty('--accent', ramp[2])
         } catch (e) {}
       })()
     </script>

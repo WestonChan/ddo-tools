@@ -91,10 +91,8 @@ describe('ResourceDetailDrawer', () => {
   })
 
   it('renders the no-selection empty state when resourceInUrl is null', () => {
-    const { container } = render(
-      <ResourceDetailDrawer resourceInUrl={null} pickerCategory="items" />,
-    )
-    expect(container.querySelector('.section-placeholder')).toHaveTextContent(/select an item/i)
+    render(<ResourceDetailDrawer resourceInUrl={null} pickerCategory="items" />)
+    expect(screen.getByRole('status')).toHaveTextContent(/select an item/i)
   })
 
   it('renders not-found for an id the API does not know', () => {

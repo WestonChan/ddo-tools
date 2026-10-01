@@ -14,7 +14,7 @@ interface CategoryTabsProps {
 
 export function CategoryTabs({ activeCategory, onSelect }: CategoryTabsProps): JSX.Element {
   return (
-    <div role="tablist" aria-label="Resource categories" className="resources-tabs">
+    <div role="tablist" aria-label="Resource categories" className="underline-tabs resources-tabs">
       {RESOURCE_CATEGORIES.map((category) => {
         const isEnabled = ENABLED_RESOURCE_CATEGORIES.has(category)
         const label = LABEL_BY_RESOURCE_CATEGORY[category]
@@ -27,7 +27,7 @@ export function CategoryTabs({ activeCategory, onSelect }: CategoryTabsProps): J
             aria-disabled={!isEnabled || undefined}
             disabled={!isEnabled}
             onClick={isEnabled ? () => onSelect(category) : undefined}
-            className={`resources-tab hoverable${activeCategory === category ? ' active' : ''}${!isEnabled ? ' disabled' : ''}`}
+            className={`underline-tab${activeCategory === category ? ' underline-tab--active' : ''}${isEnabled ? '' : ' resources-tab--disabled'}`}
           >
             {label}
           </button>

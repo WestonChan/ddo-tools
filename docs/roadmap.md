@@ -52,7 +52,7 @@ Shipped in D1 (design-system adoption) from the Claude Design "App Flow Prototyp
 - The rail is the only navigation (no horizontal tab bar). Three eyebrow groups: **Roster** (Characters & builds), **Build** (Build overview, Build plan with its section anchors, Gear), **Tools** (Damage calc, Farm checklist, Resources). Settings, Report a bug and GitHub sit in a footer under a hairline. Collapsed (56px) the eyebrows become dividers and labels fade; the wordmark shrinks to `DT`.
 - **Character card at the top of the rail** is the build context: the active build's name and `Race · Class split`, a switcher dropdown grouped by character (lives, then planned builds), a `VS` divider, a Compare row whose picker offers every other build, and a Swap row that exchanges active and comparison. Clicking a character in the Characters view remains the other entry point for comparison (Phase 9).
 - **Warnings live in the rail**, above Collapse: `[!] Warnings N` with a popover listing each warning and where it points. There is no bottom bar.
-- **Stats panel** (300px) shows only on build views (`/build-plan`, `/overview`, `/gear`, via `staticData.showStatsPanel`) with Pinned / All stats / Buffs tabs.
+- **Stats panel** (300px) shows only on build views (`/build-plan`, `/overview`, `/gear`, via `staticData.shouldShowStatsPanel`) with Stats / Buffs tabs.
 - Clean URL routing via `@tanstack/react-router`: `/ddo-tools/characters`, `/overview`, `/build-plan`, `/gear`, `/damage-calc`, `/farm-checklist`, `/resources/$category/$id`, `/settings`. GitHub Pages SPA support via `404.html` redirect.
 
 ### Tech Stack
@@ -98,7 +98,7 @@ Shipped in D1 (design-system adoption) from the Claude Design "App Flow Prototyp
 - **No past lives**: Show the past life grid with all stacks at 0, not an empty state.
 
 ### Responsive Behavior
-- **Stats panel**: Auto-collapses to a thin toggle strip below 1200px viewport width. User can re-expand.
+- **Stats panel**: Hidden below 900px viewport width since D1 (the 300px panel would leave phones a 19px content column). Phase 6 replaces the hard hide with a thin toggle strip the user can re-expand.
 - **Enhancement trees**: Below 900px content width, switch to single-tree view with tab switching (instead of 7 trees side-by-side).
 - **Skills grid**: Horizontal scroll with frozen first column (level numbers) and frozen header row (skill names).
 - **Nav bar**: Already has collapsed mode (56px icons only). No further changes needed.
@@ -591,7 +591,7 @@ The landing page for a build -- shows everything at a glance and lets you config
 ```
 
 - **Search field**: Filters visible stats as you type
-- **Pinned section**: User-pinned stats at top. `:::` drag handle per row to reorder. Pin/unpin via icon.
+- **Pinned section** (UI shipped in D1 with `@dnd-kit`): user-pinned stats at the top in groups the player names, reorders and deletes; a grip handle per row, drag into a group, onto a "New group" gap, or out to unpin; pin/unpin icons as the keyboard path. The panel's `pinnedStatGroups.ts` holds the pure group logic; Phase 6 persists the groups in `user.db`.
 - **Grouped sections** (collapsible): Ability Scores, Defenses, Saves, Combat, Spellcasting, Skills
 - **Bonus type badges**: Small colored pills (E=Enhancement, I=Insightful, A=Artifact, D=Deflection, S=Shield, Q=Quality, etc.) on each row. Missing types visible by absence.
 - **Compare mode**: +/- deltas shown inline (green better, red worse)
@@ -1561,7 +1561,7 @@ Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnati
 - Zustand stores (`characterStore`, `buildStore`, `gearStore`, `uiStore`) hydrated from `user.db`. Move nav bar expanded state + resize logic from `App.tsx` into `uiStore` so both App (grid columns) and AppNavBar (CSS class) read from the same source.
 
 **Features:**
-- Character/build management, switching
+- Character/build management, switching. The layout shipped in D1 (`CharacterView.tsx`, `RosterRow.tsx`): action row (New character, Import JSON, Import DDO Builder), a Characters section of click-to-activate rows with `active` / `comparing` states, a Planned lives section with Apply / rename / delete beside each row, then Past lives & tomes and Reincarnation sections. This phase puts the data in `user.db`, makes Export / Delete / Import real, and adds tomes.
 - Past lives (stacking, placeholders, reincarnation)
 - Tomes, import/export (export = download raw `user.db` file)
 - Gear set management section
@@ -1584,12 +1584,12 @@ Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnati
 - Enhancements (N-tree side-by-side, DDO layout)
 - Reaper enhancements
 - Destinies (destiny selector + twist bar)
-- Section anchors shipped in D1: the rail sub-items are links to `/build-plan#<section>`, `BuildPlanView` scrolls the matching `PageSection` into view on hash change, and an `IntersectionObserver` scroll-spy rewrites the hash so the active sub-item tracks scroll. The section list is `BUILD_PLAN_SECTIONS` in `src/features/build/buildPlanSections.ts` (Levels, Skills, Spells, Enhancements, Destinies, Reaper); this phase fills each section's body.
+- Section anchors shipped in D1: the rail sub-items are links to `/build-plan#<section>`, TanStack Router's built-in `hashScrollIntoView` scrolls the matching `PageSection` header (its `id`) into view on arrival and on every hash change, and `useSectionScrollSpy` in `features/build/` rewrites the hash (replace, no scroll) to the section under the reading line so the active sub-item tracks scroll, holding the picked section at the end of the page where later headers can never reach the top. The section list is `BUILD_PLAN_SECTIONS` in `src/features/build/buildPlanSections.ts` (Levels, Skills, Spells, Enhancements, Destinies, Reaper); this phase fills each section's body.
 - **Collapsible-section primitive.** Grow it out of `PageSection` (`src/components/PageSection.tsx`, shipped in D1 as the titled, anchorable section header the scaffolds use): add controlled `expanded` / `onToggle` (collapse state persists in `user.db`) and a `summary` slot for the collapsed progress text ("Skills: 0/320 allocated"). Prior art for the expand animation: the deleted `src/components/CollapsibleSection.tsx` (`git show 8f1f648:src/components/CollapsibleSection.tsx`) used `grid-template-rows: 0fr → 1fr`, which animates to true content height without a hardcoded `max-height` — add the `transition` it never had. Two other chevron-expand idioms exist to reconcile against: `SitePatchNotes.tsx` rotates a chevron via an `is-open` class, `PastLifeStacks.tsx` swaps `ChevronDown`/`ChevronRight`.
 
 ### Phase 8: Gear
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets).
-- Layout decided in D1 (scaffold shipped in `src/features/gear/GearView.tsx`): gear-set tabs across the top (sets are shared across builds), Finder and Compare as **in-view modes** on `/gear` rather than routes (they share the set context, so separate routes would fork state), then the 14-slot paper-doll tile grid. Each tile carries two mono tags — `N/4` pinned stats the item covers and `+N` unique bonus types it adds — and the selected tile opens the slot's equipped-item panel beside a Compare panel that lists candidate items with signed stat deltas versus the equipped item and a `Swap in` / `Revert` action. A "Compare list" strip above holds items added from Resources ("Add to compare" on item detail); hovering a candidate highlights the stats it changes in the stats panel.
+- Layout decided in D1 (scaffold shipped in `src/features/gear/GearView.tsx`): gear-set tabs across the top (sets are shared across builds), Finder and Compare as **in-view modes** on `/gear` rather than routes (they share the set context, so separate routes would fork state), then the 15-slot paper-doll tile grid (Quiver included). Each tile carries two mono tags — `N/4` pinned stats the item covers and `+N` unique bonus types it adds — and the selected tile opens the slot's equipped-item panel beside a Compare panel that lists candidate items with signed stat deltas versus the equipped item and a `Swap in` / `Revert` action. A "Compare list" strip above holds items added from Resources ("Add to compare" on item detail); hovering a candidate highlights the stats it changes in the stats panel.
 - Full overview + side-by-side slot editor
 - Item search with stacking indicators
 - Augment/filigree/crafting/upgrade inline
@@ -1598,7 +1598,7 @@ Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets)
 
 ### Phase 9: Comparison Mode
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets).
-- Click-to-compare in Characters view (connector line from comparison -> active build). The rail card's compare picker, `VS` row and Swap already ship as UI in D1 (`comparisonBuildId` on the build selection, `setComparisonBuild` / `swapComparison` on the character context); this phase gives them stat effects.
+- Click-to-compare in Characters view (connector line from comparison -> active build). The rail card's compare picker, `VS` row and Swap already ship as UI in D1 (`comparisonBuildId` on the build selection, `setComparisonBuildId` / `swapViewedAndComparedBuilds` on the character context); this phase gives them stat effects.
 - Comparison display for stats panel, build overview, and gear
 - Swap button + "What if" copy workflow
 - Unsaved build badge (red dot on nav bar build label for temp copies; reused by Phase 14 for shared builds)
@@ -1621,7 +1621,7 @@ Sections decided in D1 (scaffold in `src/app/routeComponents.tsx`): Wanted items
 
 ### Phase 12: Build Overview
 Sections decided in D1 (scaffold shipped in `src/features/build/BuildOverviewView.tsx`): Active abilities, Passive feats & abilities, Buffs & stances.
-- **Active abilities as hotbars.** Renameable bars of ten 40px slots; drag abilities from grouped pools below (Spells, SLAs & enhancements, Destiny, Feats, Item clickies) onto slots. A slot shows the ability's short code in its damage-type color; hover shows a stat-block tooltip (type, cooldown, save, damage, cost); click opens the Damage calc with that ability selected. An "Add item…" picker under Item clickies searches every item with an active ability (filters: slot, ability, ML, content you own) and adds it to the pool, flagged "swap to use" when it isn't equipped.
+- **Active abilities as hotbars** (UI shipped in D1 on placeholder data: `src/features/build/components/Hotbars.tsx`, pure state in `hotbars.ts`, `@dnd-kit` drag between pools and slots with keyboard support, the stat-block popover, and the clicky-item picker with a working search and "Content you own" filter; this phase wires real abilities, persists bars, and makes the picker's Slot / Ability / ML filters live). Renameable bars of ten 40px slots; drag abilities from grouped pools below (Spells, SLAs & enhancements, Destiny, Feats, Item clickies) onto slots. A slot shows the ability's short code in its damage-type color; hover shows a stat-block tooltip (type, cooldown, save, damage, cost); click opens the Damage calc with that ability selected. An "Add item…" picker under Item clickies searches every item with an active ability (filters: slot, ability, ML, content you own) and adds it to the pool, flagged "swap to use" when it isn't equipped.
 - Passive feats & abilities: feats, enhancements and destiny passives grouped by source; rows link into Resources detail.
 - Buffs & stances: the same toggle set as the stats panel's Buffs tab (spell buffs, conditionals, stances, external, stacks); toggling recomputes the panel.
 
@@ -1629,21 +1629,14 @@ Sections decided in D1 (scaffold shipped in `src/features/build/BuildOverviewVie
 Currently a minimal placeholder (theme + accent picker). Belongs late because knowing what *needs* a setting depends on what features exist.
 
 - Restructure into sections. D1 laid them out with eyebrow headings: Theme + Accent (live), Owned content (F2P / Premium / VIP preset + per-pack toggles; placeholder), Data (`user.db` export / import; placeholder). Add About / metadata as a fourth.
+- **Text on the accent fill for every preset.** `--accent-on` is fixed per theme (`--stone-900` dark, `--stone-25` light). The D1 update replaced the nine loose presets with the design's five ramps (Gold, Arcane, Moss, Rust, Violet), which removed the pale fills, and the D1 review measured the rest: in dark every preset passes (4.1–7.9:1 at rest); in light the 500 step at rest gives Gold 3.2:1 and Moss 3.8:1 (the other three 5.6–5.8:1), and the 400 hover step gives Gold 2.3:1 and Moss 3.2:1. So the default preset's light-theme primary button fails AA at rest and falls under 3:1 on hover. Fix options: give each `ACCENT_PRESETS` entry an on-color (`--accent-on: var(--stone-900)` for Gold and Moss in light) applied by `applyAccent` and the pre-paint script, or hover toward the 600 step in light.
 - Wire to Zustand stores (replace direct localStorage access)
 - Owned content settings (adventure packs / expansions)
 - Data management (export/import `user.db`, reset, storage usage)
 - About / metadata (version, build commit, GitHub links)
 - Responsive layout (current `max-width: 400px` is too narrow)
 - Audit against design-system tokens (post-css-refactor merge)
-- **Dedupe accent parsing between `index.html` and `src/lib/accent.ts`.** The pre-paint inline script
-  (`index.html` lines 15-30) re-implements both the legacy-`{accent, hover}`-JSON and plain-string
-  branches so the accent applies before first paint. Phase 4k gave `accent.ts` test coverage pinning
-  that behavior; the inline copy is now the untested twin, and nothing catches it drifting. Any fix has
-  to keep the pre-paint guarantee — inlining a built module, or accepting a flash of the default accent.
-  The same script also duplicates `useTheme`'s light/dark resolution, so both halves are in scope.
-  The rule it has to match is now explicit: absent or unusable resolves to `ACCENT_PRESETS[0]`, same as
-  `resolveActiveAccent`. The inline copy instead leaves `:root` standing, which is invisible only
-  because `:root` is Gold — the exact coincidence that hid this phase's swatch bug.
+- **Dedupe the pre-paint script in `index.html` against `src/lib/accent.ts` and `src/hooks/useTheme.ts`.** The inline script re-implements theme resolution (`dark` / `light` / `system` via `prefers-color-scheme`), the legacy accent parsing (old hex values and the `{accent}` JSON map to a preset name) and the five-ramp table itself, so the first paint is right. D1 added `src/test/runPrePaintScript.ts` and drift guards in `accent.test.ts` and `useTheme.test.ts` that execute the real script and compare it with the modules, so the twin can no longer drift silently. The remaining debt is the duplication: any fix has to keep the pre-paint guarantee (inlining a built module, or accepting a flash of the default accent).
 
 ### Phase 14: Build Sharing
 
@@ -2088,14 +2081,15 @@ and the decisions that changed earlier sketches in this document.
 
 #### D1 — Design-system adoption (done)
 
-- **Tokens.** `src/index.css` carries the design's stone/gold/arcane ramps, semantic aliases for dark and light, the Source Sans 3 / Cinzel / JetBrains Mono fonts (Google Fonts), the `--fs-*` type scale, radii 3/5/6/8, elevation tokens (borders carry depth; shadows only on popovers, dialogs and drags), and flat 80–260ms motion. `--accent` stays the one user-configurable primitive: the gold ramp derives from it in oklch so the Settings accent picker keeps re-tinting the whole UI. Stylelint enforces token-only colors, token-only shadows, token-only font families and no pill radii. Every compared number is mono (`.num`).
+- **Tokens.** `src/index.css` carries the design's stone/gold/arcane ramps, semantic aliases for dark and light, the Source Sans 3 / IM Fell DW Pica SC / JetBrains Mono fonts (Google Fonts), the `--fs-*` type scale, radii 3/5/6/8, elevation tokens (borders carry depth; shadows only on popovers, dialogs and drags), and flat 80–260ms motion. The accent is a named preset (Gold, Arcane, Moss, Rust, Violet) with an explicit 200–700 ramp from the design; `applyAccent` and the pre-paint script write the six `--gold-*` steps plus `--accent`, and `--tree-class` stays fixed gold. Stylelint enforces token-only colors, token-only shadows, token-only font families, no pill radii, no comments, no `!important`, no hidden outlines, and allow-lists for spacing, letter-spacing and font-size. Every compared number is mono (`.num`).
 - **Rail.** Rewritten to the prototype (see Layout Architecture): wordmark, character card, Roster / Build / Tools groups, Build plan sub-items as hash anchors, Warnings popover, Collapse, footer with Settings, Report a bug and GitHub. The bottom bar is gone; its bug-report button moved to the rail footer and keeps the Sentry correlation from Phase 3.
-- **Character card.** Switcher grouped by character (lives, then planned builds), Compare picker, Swap. `comparisonBuildId` joins the persisted build selection (migrated), with `comparisonBuild`, `setComparisonBuild` and `swapComparison` on the character context. No stat effect until Phase 9.
+- **Character card.** One `BuildPickerMenu` serves both the switcher and the compare picker (an eyebrow per character with its lives, `(current)` marked, then a "Planned builds" eyebrow); the compare variant omits the viewed build and leads with "Stop comparing". Swap exchanges the two. `comparisonBuildId` joins the persisted build selection (migrated), with `comparisonBuild`, `setComparisonBuildId` and `swapViewedAndComparedBuilds` on the character context. No stat effect until Phase 9.
 - **Popovers.** One `AnchoredMenu` in `src/components/` (raised surface, strong border, popover shadow; outside-click and Escape close) serves the switcher, the compare picker and the warnings list.
-- **Stats panel.** `BuildSidePanel` became `StatsPanel`: 300px, Pinned / All stats / Buffs, ledger rows, placeholder data typed in `src/features/character/data/placeholderStats.ts`. Shown where `staticData.showStatsPanel` is set (`/build-plan`, `/overview`, `/gear`).
-- **Landing.** Wordmark, tagline, four entry tiles (the Characters tile carries the active-character summary), the two patch-notes cards, and a mono footer line.
-- **Scaffolds.** `PageSection` and `WireframePlaceholder` in `src/components/`; `src/features/build/` (`BuildPlanView` with hash-anchored sections and scroll-spy, `BuildOverviewView`, `buildPlanSections.ts`) and `src/features/gear/` (`GearView` with set tabs, Finder / Compare buttons and the 14-slot tile grid) hold the views their phases will fill. Damage calc and Farm checklist stay as small wireframes in `routeComponents.tsx`. Settings gained Owned content and Data placeholders.
-- **Resources and Characters** restyled to the design's components (underline tabs, filter chips, sunken search well, table header strip, ledger rows, cards with eyebrows) without behavior changes.
+- **Stats panel.** `BuildSidePanel` became `StatsPanel`: 300px, Stats / Buffs tabs; Stats shows drag-and-drop pinned groups (`@dnd-kit/core` + `sortable`, pure logic in `pinnedStatGroups.ts`) over a divider and All stats below; ledger rows; placeholder data typed in `src/features/character/data/placeholderStats.ts`. Shown where `staticData.shouldShowStatsPanel` is set (`/build-plan`, `/overview`, `/gear`).
+- **Landing.** Wordmark, tagline, four entry tiles (the Characters tile carries the active-character summary), the two patch-notes cards in a 2:1 row (site updates wide, the short DDO wiki card sized to its content), and a mono footer line.
+- **Design update of 2026-09-30.** Wordmark in IM Fell DW Pica SC; the GitHub mark in the rail; Settings "Appearance" with Dark / Light / System and five accent ramps; the stats panel's drag-and-drop pinned groups (`@dnd-kit`); the Resources ledger list and the detail action row; the Characters layout (Phase 5 entry); the Build overview hotbars with the clicky picker (Phase 12 entry). `@dnd-kit/core`, `@dnd-kit/sortable` and `@dnd-kit/utilities` entered `package.json` here.
+- **Scaffolds.** `PageSection` and `WireframePlaceholder` in `src/components/`; `src/features/build/` (`BuildPlanView` with hash-anchored sections and scroll-spy, `BuildOverviewView`, `buildPlanSections.ts`) and `src/features/gear/` (`GearView` with set tabs, Finder / Compare buttons and the 15-slot tile grid) hold the views their phases will fill. Damage calc and Farm checklist stay as small wireframes in `routeComponents.tsx`. Settings gained Owned content and Data placeholders.
+- **Resources and Characters** restyled to the design's components (underline tabs, filter chips, sunken search well, the ledger list with its double-rule header, ledger rows, cards with eyebrows) without behavior changes. Item detail shows the "Link wiki" chip and the Add to compare / Compare in Gear / Add to farm list actions as disabled controls whose titles name Phases 4g, 8 and 10.
 - **Navigation decisions** folded into the phases they affect: Build plan stays one page with anchors (Phase 7); Gear Finder and Compare are in-view modes (Phase 8); crafting is a Resources category, not a tool (Phase 4f); the Resource Report editor stays an inline drawer state (Phase 5b); the stats panel shows only on build views.
 - **Deferred on purpose.** The warnings list is an empty constant until Phase 9's validation; the stats panel and gear tiles show placeholder data until Phases 6 and 8; accent presets other than Gold remain although the design names one gold; the `index.html` pre-paint script still duplicates the accent parsing (Phase 13).
 

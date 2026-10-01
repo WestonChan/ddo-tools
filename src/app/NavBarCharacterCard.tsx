@@ -1,90 +1,201 @@
-import type { JSX } from 'react'
-import { useLocation, useNavigate } from '@tanstack/react-router'
-import { User, UserPen, ArrowUpDown, GitCompareArrows } from 'lucide-react'
-import { useCharacters, classSplitLabel, raceLabelOf } from '../features/character'
+import { useCallback, useId, useRef, useState, type JSX } from 'react'
+import { ArrowUpDown, ChevronDown } from 'lucide-react'
+import {
+  lifeLabelOf,
+  lifeNumbersOf,
+  owningCharacterOf,
+  plannedBuildLabelOf,
+  raceAndClassLabelOf,
+  useCharacters,
+  type Character,
+  type Life,
+} from '../features/character'
+import { BuildPickerMenu } from './BuildPickerMenu'
 import './NavBarCharacterCard.css'
 
-interface NavBarCharacterCardProps {
-  onNavigate?: () => void
+interface BuildIdentity {
+  name: string
+  detail: string
 }
 
-function NavBarBuildSummary({
-  Icon,
-  name,
-  raceAndClassLabels,
-}: {
-  Icon: React.FC<{ size?: number }>
-  name: string
-  raceAndClassLabels?: string[]
-}): JSX.Element {
+type CharacterCardMenu = 'switcher' | 'comparePicker'
+
+function buildIdentityOf(build: Life, characters: Character[]): BuildIdentity {
+  const raceAndClassSplit = raceAndClassLabelOf(build)
+  const owningCharacter = owningCharacterOf(characters, build.id)
+  if (!owningCharacter) {
+    return { name: plannedBuildLabelOf(build), detail: `${raceAndClassSplit} · planned` }
+  }
+  const isCurrentLife = owningCharacter.lives[owningCharacter.currentLifeIndex]?.id === build.id
+  return {
+    name: owningCharacter.name,
+    detail: isCurrentLife
+      ? raceAndClassSplit
+      : `${raceAndClassSplit} · ${lifeLabelOf(build, lifeNumbersOf(owningCharacter))}`,
+  }
+}
+
+function initialOf(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || '?'
+}
+
+function BuildIdentityText({ identity }: { identity: BuildIdentity }): JSX.Element {
   return (
-    <div className="nav-bar-character-slot">
-      <Icon size={18} />
-      <div className="nav-bar-character-info nav-bar-collapsible">
-        <span className="nav-bar-character-name">{name}</span>
-        {raceAndClassLabels ? (
-          raceAndClassLabels.map((d, i) => (
-            <span key={i} className="nav-bar-character-build">
-              {d}
-            </span>
-          ))
-        ) : (
-          <>
-            <span className="nav-bar-character-build-placeholder" />
-            <span className="nav-bar-character-build-placeholder" />
-          </>
-        )}
-      </div>
-    </div>
+    <span className="nav-bar-build-button-text">
+      <span className="nav-bar-build-button-name">{identity.name}</span>
+      <span className="nav-bar-build-button-detail">{identity.detail}</span>
+    </span>
   )
 }
 
-export function NavBarCharacterCard({ onNavigate }: NavBarCharacterCardProps): JSX.Element {
-  const { selectedCharacter, viewedBuild, lifeNumbersByLifeId } = useCharacters()
-  const { pathname } = useLocation()
-  const navigate = useNavigate()
-  const raceLabel = viewedBuild ? raceLabelOf(viewedBuild.race) : ''
-  const classLabel = viewedBuild ? classSplitLabel(viewedBuild) : ''
-  const buildLabel =
-    viewedBuild?.name ||
-    (viewedBuild ? `Life ${lifeNumbersByLifeId.get(viewedBuild.id) ?? '?'}` : 'No build')
+export function NavBarCharacterCard({ isExpanded }: { isExpanded: boolean }): JSX.Element {
+  const {
+    characters,
+    viewedBuild,
+    comparisonBuild,
+    viewBuild,
+    setComparisonBuildId,
+    swapViewedAndComparedBuilds,
+  } = useCharacters()
+  const [openCardMenu, setOpenCardMenu] = useState<CharacterCardMenu | null>(null)
+  const switcherId = useId()
+  const comparePickerId = useId()
+  const viewedBuildButtonRef = useRef<HTMLButtonElement | null>(null)
+  const comparisonButtonRef = useRef<HTMLButtonElement | null>(null)
 
-  const isCharactersRouteActive = pathname === '/characters'
-  const raceAndClassLabels = [raceLabel, classLabel].filter(Boolean)
+  const closeCardMenu = useCallback((): void => setOpenCardMenu(null), [])
+
+  function toggleCardMenu(menu: CharacterCardMenu): void {
+    setOpenCardMenu((openMenu) => (openMenu === menu ? null : menu))
+  }
+
+  function viewPickedBuild(owningCharacterId: string | null, buildId: string): void {
+    viewBuild(owningCharacterId, buildId)
+    closeCardMenu()
+  }
+
+  function compareWith(buildId: string | null): void {
+    setComparisonBuildId(buildId)
+    closeCardMenu()
+  }
+
+  const viewedIdentity = buildIdentityOf(viewedBuild, characters)
+  const comparisonIdentity = comparisonBuild ? buildIdentityOf(comparisonBuild, characters) : null
+
+  const cardClassName = [
+    'nav-bar-character-card',
+    !isExpanded && 'nav-bar-character-card--collapsed',
+    comparisonIdentity && 'nav-bar-character-card--comparing',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <div
-      className={`nav-bar-character-card${isCharactersRouteActive ? ' active' : ''}`}
-      onClick={() => {
-        navigate({ to: '/characters' })
-        onNavigate?.()
-      }}
-    >
-      <div className="nav-bar-character-strip">
-        <User size={18} />
-        <span className="nav-bar-character-strip-name nav-bar-collapsible">
-          {selectedCharacter.name}
-        </span>
-      </div>
-      <div className="nav-bar-divider" />
-
-      <NavBarBuildSummary
-        Icon={UserPen}
-        name={buildLabel}
-        raceAndClassLabels={raceAndClassLabels.length > 0 ? raceAndClassLabels : undefined}
-      />
-
-      <div className="nav-bar-divider nav-bar-divider--swap">
+    <>
+      <div className={cardClassName} role="group" aria-label="Build selection">
         <button
-          className="nav-bar-character-swap-btn"
-          title="Swap active and comparison build"
-          onClick={(e) => e.stopPropagation()}
+          ref={viewedBuildButtonRef}
+          type="button"
+          className="nav-bar-build-button"
+          aria-label={`Viewed build: ${viewedIdentity.name} · ${viewedIdentity.detail}`}
+          aria-expanded={openCardMenu === 'switcher'}
+          aria-controls={openCardMenu === 'switcher' ? switcherId : undefined}
+          title={isExpanded ? undefined : viewedIdentity.name}
+          onClick={() => toggleCardMenu('switcher')}
         >
-          <ArrowUpDown size={14} />
+          {isExpanded ? (
+            <>
+              <BuildIdentityText identity={viewedIdentity} />
+              <ChevronDown size={16} className="nav-bar-character-chevron" />
+            </>
+          ) : (
+            <span className="nav-bar-build-button-initial">{initialOf(viewedIdentity.name)}</span>
+          )}
+        </button>
+
+        <div className="nav-bar-character-vs" aria-hidden="true">
+          VS
+        </div>
+
+        <button
+          ref={comparisonButtonRef}
+          type="button"
+          className="nav-bar-build-button nav-bar-build-button--comparison"
+          aria-label={
+            comparisonIdentity
+              ? `Compared build: ${comparisonIdentity.name} · ${comparisonIdentity.detail}`
+              : 'Compare…'
+          }
+          aria-expanded={openCardMenu === 'comparePicker'}
+          aria-controls={openCardMenu === 'comparePicker' ? comparePickerId : undefined}
+          title={isExpanded ? undefined : (comparisonIdentity?.name ?? 'Compare…')}
+          onClick={() => toggleCardMenu('comparePicker')}
+        >
+          {isExpanded ? (
+            <>
+              {comparisonIdentity ? (
+                <BuildIdentityText identity={comparisonIdentity} />
+              ) : (
+                <span className="nav-bar-character-compare-prompt">Compare…</span>
+              )}
+              <ChevronDown size={16} className="nav-bar-character-chevron" />
+            </>
+          ) : (
+            <span className="nav-bar-build-button-initial">
+              {comparisonIdentity ? initialOf(comparisonIdentity.name) : '—'}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className="nav-bar-character-swap"
+          aria-label="Swap"
+          title="Swap the viewed and compared builds"
+          disabled={!comparisonBuild}
+          onClick={swapViewedAndComparedBuilds}
+        >
+          <ArrowUpDown size={12} />
+          {isExpanded && <span>Swap</span>}
         </button>
       </div>
 
-      <NavBarBuildSummary Icon={GitCompareArrows} name="Compare" />
-    </div>
+      {openCardMenu === 'switcher' && (
+        <BuildPickerMenu
+          id={switcherId}
+          anchorRef={viewedBuildButtonRef}
+          label="Switch build"
+          selectedBuildId={viewedBuild.id}
+          onPick={viewPickedBuild}
+          onClose={closeCardMenu}
+        />
+      )}
+
+      {openCardMenu === 'comparePicker' && (
+        <BuildPickerMenu
+          id={comparePickerId}
+          anchorRef={comparisonButtonRef}
+          label="Compare against"
+          selectedBuildId={comparisonBuild?.id ?? null}
+          excludedBuildId={viewedBuild.id}
+          leadingRows={
+            comparisonBuild && (
+              <>
+                <button
+                  type="button"
+                  className="anchored-menu-row"
+                  onClick={() => compareWith(null)}
+                >
+                  Stop comparing
+                </button>
+                <div className="anchored-menu-divider" />
+              </>
+            )
+          }
+          onPick={(_owningCharacterId, buildId) => compareWith(buildId)}
+          onClose={closeCardMenu}
+        />
+      )}
+    </>
   )
 }

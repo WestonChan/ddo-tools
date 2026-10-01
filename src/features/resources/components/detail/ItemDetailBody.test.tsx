@@ -174,3 +174,20 @@ describe('ItemDetailBody data source', () => {
     expect(screen.queryByText('DDO Wiki (not yet in DDOBuilderV2)')).toBeNull()
   })
 })
+
+describe('ItemDetailBody action row', () => {
+  it.each(['Add to compare', 'Compare in Gear', 'Add to farm list'])(
+    'renders %s disabled',
+    (label) => {
+      renderItemDetailBody(plainItem)
+      expect(screen.getByRole('button', { name: label })).toBeDisabled()
+    },
+  )
+
+  it('explains when the actions arrive', () => {
+    renderItemDetailBody(plainItem)
+    expect(
+      screen.getByText('Actions arrive with the Gear and Farm checklist phases.'),
+    ).toBeInTheDocument()
+  })
+})

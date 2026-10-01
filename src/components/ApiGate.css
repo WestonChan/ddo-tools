@@ -1,15 +1,15 @@
 .api-gate-skeleton {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.5rem;
+  gap: var(--space-3);
+  padding: var(--space-6);
   max-width: 32rem;
 }
 
 .api-gate-bar {
   height: 1rem;
-  border-radius: 0.5rem;
-  background: var(--tint);
+  border-radius: var(--radius-xs);
+  background: var(--surface-active);
   animation: api-gate-pulse 1.2s ease-in-out infinite;
 
   &.api-gate-bar--short {
@@ -20,7 +20,7 @@
 @keyframes api-gate-pulse {
   0%,
   100% {
-    opacity: 0.5;
+    opacity: 0.42;
   }
   50% {
     opacity: 1;

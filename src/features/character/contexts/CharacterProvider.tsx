@@ -5,8 +5,10 @@ import {
   lifeNumbersOf,
   currentLifeNumberOf,
   EMPTY_PAST_LIFE_COUNTS,
+  owningCharacterOf,
   withStackCount,
 } from '../utils'
+import { buildSelectionViewing, buildSelectionWithoutPlannedBuild } from '../buildSelection'
 import { useLocalStorage } from '../../../hooks'
 import { defaultBuildSelection, migrateCharacters, migrateBuildSelection } from '../migrations'
 import type { BuildSelection } from '../migrations'
@@ -39,17 +41,36 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
     const viewedLife = selectedCharacter.lives.find((l) => l.id === buildSelection.buildId)
     const viewedBuild = viewedPlannedBuild ?? viewedLife ?? currentLife
 
-    function selectCharacter(characterId: string): void {
-      const chosenCharacter = characters.find((c) => c.id === characterId)
-      if (!chosenCharacter) return
+    const comparedBuildId = buildSelection.comparisonBuildId
+    const comparisonBuild =
+      comparedBuildId && comparedBuildId !== viewedBuild.id
+        ? (plannedBuilds.find((b) => b.id === comparedBuildId) ??
+          characters.flatMap((c) => c.lives).find((l) => l.id === comparedBuildId) ??
+          null)
+        : null
+
+    function viewBuild(characterId: string | null, buildId: string): void {
+      setBuildSelection((prev) => buildSelectionViewing(prev, characterId, buildId))
+    }
+
+    function setComparisonBuildId(buildId: string | null): void {
+      setBuildSelection((prev) => ({ ...prev, comparisonBuildId: buildId }))
+    }
+
+    function swapViewedAndComparedBuilds(): void {
+      if (!comparisonBuild) return
       setBuildSelection({
-        characterId,
-        buildId: chosenCharacter.lives[chosenCharacter.currentLifeIndex]?.id ?? '',
+        characterId: owningCharacterOf(characters, comparisonBuild.id)?.id ?? selectedCharacter.id,
+        buildId: comparisonBuild.id,
+        comparisonBuildId: viewedBuild.id,
       })
     }
 
-    function selectBuild(buildId: string): void {
-      setBuildSelection((prev) => ({ ...prev, buildId }))
+    function deletePlannedBuild(buildId: string): void {
+      setPlannedBuilds((prev) => prev.filter((b) => b.id !== buildId))
+      setBuildSelection((prev) =>
+        buildSelectionWithoutPlannedBuild(prev, buildId, currentLife?.id ?? ''),
+      )
     }
 
     function setUntrackedStackCount(
@@ -103,12 +124,14 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
       currentLifeNumber,
       viewedBuild,
       buildSelection,
-      setBuildSelection,
       plannedBuilds,
       setPlannedBuilds,
       viewedPlannedBuild,
-      selectCharacter,
-      selectBuild,
+      comparisonBuild,
+      viewBuild,
+      setComparisonBuildId,
+      swapViewedAndComparedBuilds,
+      deletePlannedBuild,
       setUntrackedStackCount,
       setDesiredStackCount,
     }

@@ -1,0 +1,185 @@
+.clicky-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding: var(--space-2-5);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+}
+
+.clicky-picker-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.clicky-picker-filter-chip-icon {
+  display: inline-flex;
+}
+
+.clicky-picker-filter-divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 var(--space-1);
+  background: var(--border-hairline);
+}
+
+.clicky-picker-count {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.clicky-picker-search-hint {
+  flex-shrink: 0;
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+}
+
+.clicky-picker-table-frame {
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.clicky-picker-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  & th,
+  & td {
+    padding: 0 var(--space-1-5);
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & th:first-child,
+  & td:first-child {
+    padding-left: var(--space-3);
+  }
+
+  & th:last-child,
+  & td:last-child {
+    padding-right: var(--space-2-5);
+  }
+
+  & th {
+    height: 30px;
+    background: var(--surface-raised);
+    border-bottom: 1px solid var(--border-default);
+    box-shadow: var(--inset-top);
+  }
+
+  & .clicky-picker-cell--ability {
+    width: 26%;
+  }
+
+  & .clicky-picker-cell--uses {
+    width: 64px;
+  }
+
+  & td.clicky-picker-cell--uses {
+    color: var(--text-muted);
+    font-size: var(--fs-label);
+  }
+
+  & .clicky-picker-cell--level {
+    width: 48px;
+    text-align: right;
+  }
+
+  & .clicky-picker-cell--slot {
+    width: 84px;
+  }
+
+  & td.clicky-picker-cell--slot {
+    color: var(--text-muted);
+  }
+
+  & .clicky-picker-cell--action {
+    width: 86px;
+    text-align: right;
+  }
+}
+
+.clicky-picker-row {
+  height: 32px;
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+  border-bottom: 1px solid var(--border-hairline);
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.clicky-picker-row--selected {
+  background: var(--surface-selected);
+
+  &:hover {
+    background: var(--surface-selected);
+  }
+
+  & td:first-child {
+    box-shadow: var(--inset-mark-accent);
+  }
+}
+
+.clicky-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  min-width: 0;
+}
+
+.clicky-picker-item-name {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-weight: var(--fw-medium);
+  text-overflow: ellipsis;
+}
+
+.clicky-picker-item-name--owned {
+  color: var(--text-heading);
+}
+
+.clicky-picker-item-name--selected {
+  color: var(--text-accent);
+  font-weight: var(--fw-semibold);
+}
+
+.clicky-picker-added-mark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--arcane-300);
+}
+
+.clicky-picker-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.clicky-picker-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.clicky-picker-footer-note {
+  flex: 1;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}

@@ -7,9 +7,12 @@ import { ErrorScreen } from './components'
 import { CharacterProvider } from './features/character'
 import { router } from './router'
 import { captureBoundaryError, initializeSentry } from './lib/sentry'
+import { persistNormalizedAccent, restoreAccent } from './lib/accent'
 import './index.css'
 
 initializeSentry()
+restoreAccent()
+persistNormalizedAccent()
 
 const queryClient = new QueryClient({
   defaultOptions: {

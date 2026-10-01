@@ -5,33 +5,32 @@
 }
 
 .editable-text-display {
-  border-bottom: 1px dotted var(--border);
+  border-bottom: 1px dotted var(--border-default);
   padding: 0 var(--space-0-5);
   min-width: 3rem;
 }
 
 .editable-text:hover .editable-text-display {
-  border-color: var(--accent);
+  border-color: var(--border-accent);
 }
 
 .editable-text-placeholder {
-  color: var(--text-muted);
+  color: var(--text-faint);
   font-style: italic;
 }
 
 .editable-text-input {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  box-shadow: var(--inset-sunken);
+  color: var(--text-body);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
   padding: var(--space-0-5) var(--space-1-5);
   font-size: inherit;
-  font-family: inherit;
   min-width: 5rem;
   max-width: 14rem;
 }
 
 .editable-text-input:focus {
-  outline: none;
-  border-color: var(--accent);
+  border-color: var(--border-accent);
 }

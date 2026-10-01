@@ -1,0 +1,25 @@
+.wireframe-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--surface-card);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.wireframe-placeholder-label {
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-muted);
+}
+
+.wireframe-placeholder-hint {
+  max-width: 420px;
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body);
+  color: var(--text-faint);
+}

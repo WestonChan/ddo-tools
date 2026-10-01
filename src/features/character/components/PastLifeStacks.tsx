@@ -1,7 +1,7 @@
 import { useCallback, useState, type JSX } from 'react'
 import type { Character, Life, PastLifeCounts } from '../types'
 import { PAST_LIFE_DEFINITIONS, type PastLifeDefinition } from '../data/pastLifeDefinitions'
-import { stackCountsEarnedBy, EPIC_SPHERES, summedBonusText } from '../utils'
+import { stackCountsEarnedBy, EPIC_SPHERES, plannedBuildLabelOf, summedBonusText } from '../utils'
 import { HoverTooltip } from '../../../components'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useAddRemoveGestures } from '../../../hooks'
@@ -155,7 +155,7 @@ function PastLifeStackRow({
           stackCountAtCurrentLife={stackCountAtCurrentLife}
         />
       )}
-      <span className="stack-count">
+      <span className="stack-count num">
         {stackCount}/{pastLife.maximumStackCount}
       </span>
       <span className="stack-bonus">
@@ -269,7 +269,9 @@ function ActiveBonusSummary({ bonuses }: { bonuses: ActivePastLifeBonus[] }): JS
         <span className="bonus-toggle">
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </span>
-        <span className="section-label">Active Bonuses ({bonuses.length})</span>
+        <span className="section-label">
+          Active bonuses (<span className="num">{bonuses.length}</span>)
+        </span>
       </div>
       <div className={`bonus-rows ${isExpanded ? 'expanded' : ''}`}>
         <div className="bonus-rows-inner">
@@ -365,36 +367,47 @@ export function PastLifeStacks({
   }
 
   return (
-    <div className="past-life-stacks">
-      {PAST_LIFE_SECTIONS.map(({ category, label, includesPastLife }) => {
-        const sectionPastLives = PAST_LIFE_DEFINITIONS.filter(
-          (d) => d.category === category && (!includesPastLife || includesPastLife(d)),
-        )
-        return (
-          <PastLifeStackSection
-            key={label}
-            label={label}
-            pastLives={sectionPastLives}
-            untrackedStackCounts={untrackedLives[category]}
-            historyStackCounts={historyStackCounts}
-            historyStackCountsAtCurrentLife={historyStackCountsAtCurrentLife}
-            onSetStackCount={(id, v) => setStackCount(category, id, v)}
-            desiredStackCounts={
-              isViewingPlannedBuild ? (desiredPastLives?.[category] ?? {}) : undefined
-            }
-            ownedUntrackedStackCounts={isViewingPlannedBuild ? untrackedLives[category] : undefined}
-          />
-        )
-      })}
-      <div className="stacks-hint">
-        {isViewingPlannedBuild
-          ? 'Tap to add desired · long-press to remove'
-          : 'Tap to add · long-press to remove'}
+    <section className="card">
+      <div className="card-header section-label">
+        {viewedPlannedBuild
+          ? `Past life stacks · ${plannedBuildLabelOf(viewedPlannedBuild)} × ${character.name}`
+          : `Past life stacks · ${character.name}`}
       </div>
-      {!isViewingPlannedBuild && (
-        <div className="total-past-lives">Total Past Lives: {completedLifeCount}</div>
-      )}
-      {activeBonuses.length > 0 && <ActiveBonusSummary bonuses={activeBonuses} />}
-    </div>
+      <div className="character-card-body">
+        {PAST_LIFE_SECTIONS.map(({ category, label, includesPastLife }) => {
+          const sectionPastLives = PAST_LIFE_DEFINITIONS.filter(
+            (d) => d.category === category && (!includesPastLife || includesPastLife(d)),
+          )
+          return (
+            <PastLifeStackSection
+              key={label}
+              label={label}
+              pastLives={sectionPastLives}
+              untrackedStackCounts={untrackedLives[category]}
+              historyStackCounts={historyStackCounts}
+              historyStackCountsAtCurrentLife={historyStackCountsAtCurrentLife}
+              onSetStackCount={(id, v) => setStackCount(category, id, v)}
+              desiredStackCounts={
+                isViewingPlannedBuild ? (desiredPastLives?.[category] ?? {}) : undefined
+              }
+              ownedUntrackedStackCounts={
+                isViewingPlannedBuild ? untrackedLives[category] : undefined
+              }
+            />
+          )
+        })}
+        <div className="stacks-hint">
+          {isViewingPlannedBuild
+            ? 'Tap to add desired · long-press to remove'
+            : 'Tap to add · long-press to remove'}
+        </div>
+        {!isViewingPlannedBuild && (
+          <div className="total-past-lives">
+            Total past lives: <span className="num">{completedLifeCount}</span>
+          </div>
+        )}
+        {activeBonuses.length > 0 && <ActiveBonusSummary bonuses={activeBonuses} />}
+      </div>
+    </section>
   )
 }

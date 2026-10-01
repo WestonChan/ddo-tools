@@ -1,103 +1,205 @@
 :root {
-  /* Primitives */
-  --bg: #18181b;
-  --tint: white;
-  --text: rgb(from var(--tint) r g b / 0.85);
-  --accent: #b8962e;
-  --danger: #ef4444;
-  --font-body: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  --font-nav: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  --font-site-title: 'Vollkorn', Georgia, 'Times New Roman', serif;
+  --stone-0: #ffffff;
+  --stone-25: #faf8f4;
+  --stone-50: #f2eee6;
+  --stone-100: #e6e0d4;
+  --stone-200: #cfc7b7;
+  --stone-300: #a9a091;
+  --stone-400: #7e766a;
+  --stone-500: #5c554c;
+  --stone-600: #413b34;
+  --stone-700: #2e2a25;
+  --stone-750: #26221e;
+  --stone-800: #1d1a17;
+  --stone-850: #171512;
+  --stone-900: #12100e;
+  --stone-950: #0b0a09;
 
-  /* Text (derived) */
-  --text-secondary: rgb(from var(--text) r g b / 0.65);
-  --text-muted: rgb(from var(--text) r g b / 0.45);
+  --gold-200: #e8d29c;
+  --gold-300: #d9b967;
+  --gold-400: #c8a24a;
+  --gold-500: #a8863a;
+  --gold-600: #836828;
+  --gold-700: #5f4b1d;
+  --accent: var(--gold-400);
 
-  /* Backgrounds — neutral (tint-based) */
-  --bg-secondary: color-mix(in srgb, var(--tint) 3%, var(--bg));
-  --bg-tertiary: color-mix(in srgb, var(--tint) 6%, var(--bg));
+  --arcane-100: #dbe7f5;
+  --arcane-200: #a9c4e2;
+  --arcane-300: #6f9bcb;
+  --arcane-400: #4c7db8;
+  --arcane-500: #3a6396;
+  --arcane-600: #2a4a72;
+  --arcane-700: #1b3450;
+  --moss-400: #5b9a63;
+  --moss-500: #4e8b5a;
+  --moss-600: #37653f;
+  --amber-400: #d19a33;
+  --amber-500: #b8842a;
+  --amber-600: #8a6119;
+  --rust-400: #c05348;
+  --rust-500: #a8423a;
+  --rust-600: #7c2e28;
+  --violet-400: #8b6cb5;
+  --violet-500: #73549c;
 
-  /* Backgrounds — transparent overlay (context-responsive) */
-  --bg-subtle: rgb(from var(--tint) r g b / 0.1);
+  --dmg-physical: #a9a091;
+  --dmg-fire: #c4562f;
+  --dmg-cold: #5f97c4;
+  --dmg-electric: #c9a83a;
+  --dmg-acid: #7d9a3f;
+  --dmg-sonic: #8f7fb8;
+  --dmg-force: #b06fa8;
+  --dmg-light: #e0cf9a;
+  --dmg-negative: #5d5670;
+  --dmg-poison: #4e8b5a;
+  --tree-class: #c8a24a;
+  --tree-racial: var(--moss-400);
+  --tree-universal: var(--arcane-400);
+  --tree-destiny: var(--violet-400);
 
-  /* Backgrounds — accent-tinted */
-  --bg-accent: color-mix(in srgb, var(--accent) 8%, var(--bg));
-  --bg-accent-muted: rgb(from var(--accent) r g b / 0.35);
-  --accent-hover: color-mix(in oklch, var(--accent) 70%, white);
-  --scrim: rgb(0 0 0 / 0.45);
+  --bg-app: var(--stone-900);
+  --bg-panel: var(--stone-850);
+  --surface-card: var(--stone-800);
+  --surface-raised: var(--stone-750);
+  --surface-sunken: var(--stone-950);
+  --surface-card-hover: color-mix(in oklch, var(--surface-card) 95%, var(--stone-0));
+  --surface-raised-hover: color-mix(in oklch, var(--surface-raised) 95%, var(--stone-0));
+  --surface-hover: rgb(255 255 255 / 0.045);
+  --surface-active: rgb(255 255 255 / 0.08);
+  --surface-selected: rgb(from var(--accent) r g b / 0.12);
+  --scrim: rgb(11 10 9 / 0.72);
 
-  /* Backgrounds — semantic */
-  --bg-danger: rgb(from var(--danger) r g b / 0.1);
+  --text-heading: var(--stone-25);
+  --text-body: var(--stone-100);
+  --text-muted: var(--stone-300);
+  --text-faint: var(--stone-400);
+  --text-inverse: var(--stone-900);
+  --text-accent: var(--gold-300);
+  --text-link: var(--gold-300);
+  --text-link-hover: var(--gold-200);
+  --text-numeric: var(--stone-25);
 
-  /* Borders — neutral */
-  --border: color-mix(in srgb, var(--tint) 17%, var(--bg));
-  --border-emphasis: color-mix(in srgb, var(--tint) 10%, var(--border));
+  --border-hairline: rgb(230 224 212 / 0.1);
+  --border-default: rgb(230 224 212 / 0.16);
+  --border-strong: rgb(230 224 212 / 0.28);
+  --border-accent: var(--gold-500);
+  --border-focus: var(--gold-300);
 
-  /* Borders — accent */
-  --border-accent: color-mix(in srgb, var(--accent) 15%, var(--border));
+  --accent-fill: var(--gold-400);
+  --accent-fill-hover: var(--gold-300);
+  --accent-fill-active: var(--gold-500);
+  --accent-on: var(--stone-900);
+  --accent-quiet: rgb(from var(--accent) r g b / 0.14);
+  --secondary-fill: var(--arcane-400);
+  --secondary-quiet: rgb(76 125 184 / 0.16);
 
-  /* Borders — semantic */
-  --border-danger: color-mix(in srgb, var(--danger) 40%, var(--border));
+  --status-ok: var(--moss-400);
+  --status-ok-quiet: rgb(91 154 99 / 0.16);
+  --status-warn: var(--amber-400);
+  --status-warn-quiet: rgb(209 154 51 / 0.16);
+  --status-error: var(--rust-400);
+  --status-error-quiet: rgb(192 83 72 / 0.16);
+  --status-info: var(--arcane-300);
+  --status-info-quiet: rgb(111 155 203 / 0.16);
 
-  /* Text — semantic. Aliased to --danger in dark mode (AA-compliant on
-     dark --bg). Light theme overrides with a darker red so danger text at
-     normal sizes meets WCAG AA on the lighter background. */
-  --text-danger: var(--danger);
+  --font-wordmark: 'IM Fell DW Pica SC', Georgia, serif;
+  --font-ui: 'Source Sans 3', 'Helvetica Neue', Helvetica, sans-serif;
+  --font-display: var(--font-ui);
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  /* Interaction timing */
-  --transition-fast: 0.15s;
-  --transition-std: 0.3s;
+  --fs-display: 34px;
+  --fs-h1: 26px;
+  --fs-h2: 20px;
+  --fs-h3: 16px;
+  --fs-body: 14px;
+  --fs-body-sm: 13px;
+  --fs-label: 12px;
+  --fs-micro: 11px;
+  --fs-stat-lg: 30px;
+  --fs-stat: 18px;
+  --lh-tight: 1.15;
+  --lh-heading: 1.25;
+  --lh-body: 1.5;
+  --lh-dense: 1.35;
+  --ls-wordmark: 0.06em;
+  --ls-eyebrow: 0.08em;
+  --ls-heading: -0.005em;
+  --ls-body: 0;
+  --ls-numeric: 0.01em;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --type-wordmark: var(--fw-regular) var(--fs-h1) / var(--lh-tight) var(--font-wordmark);
+  --type-display: var(--fw-bold) var(--fs-display) / var(--lh-tight) var(--font-display);
+  --type-h1: var(--fw-bold) var(--fs-h1) / var(--lh-heading) var(--font-display);
+  --type-h2: var(--fw-semibold) var(--fs-h2) / var(--lh-heading) var(--font-display);
+  --type-h3: var(--fw-semibold) var(--fs-h3) / var(--lh-dense) var(--font-ui);
+  --type-body: var(--fw-regular) var(--fs-body) / var(--lh-body) var(--font-ui);
+  --type-label: var(--fw-semibold) var(--fs-label) / var(--lh-dense) var(--font-ui);
+  --type-eyebrow: var(--fw-semibold) var(--fs-micro) / var(--lh-dense) var(--font-ui);
+  --type-numeric: var(--fw-medium) var(--fs-body) / var(--lh-dense) var(--font-mono);
+  --type-stat: var(--fw-bold) var(--fs-stat-lg) / 1 var(--font-mono);
 
-  /* Border radius scale — sm for pips/small buttons, md for most controls,
-     lg for cards/panels/modals. Larger values (8px+) stay raw: too rare to
-     warrant a token. */
-  --radius-sm: 3px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-
-  /* Stacking layers. Number them by role so siblings within the same layer
-     can still use small local offsets (e.g. z-index: 1) above their neighbors
-     without colliding with the next layer up. */
-  --z-local: 1; /* positional offsets within a component (swap btn, etc.) */
-  --z-panel: 10; /* side panels, stats panel — above main content */
-  --z-nav: 20; /* nav bar — above panels */
-  --z-overlay: 40; /* mobile fullscreen nav, slide-in drawers */
-  --z-modal: 100; /* confirm modals, tooltips — highest layer */
-
-  /* Type scale — values from Tailwind's default scale. Weight and
-     letter-spacing kept as raw numbers (self-documenting, low drift). */
-  --text-xs: 0.75rem; /* 12px — caption, microcopy, subtitles, dense labels */
-  --text-sm: 0.875rem; /* 14px — body UI: rows, buttons, card text, nav labels */
-  --text-base: 1rem; /* 16px — emphasized body: modal titles, section text */
-  --text-lg: 1.125rem; /* 18px — nav brand, prominent labels */
-  --text-xl: 1.25rem; /* 20px — view titles, section headings */
-  --text-2xl: 1.5rem; /* 24px — display, loading gate */
-  --text-3xl: 1.875rem; /* 30px — h1 */
-
-  /* Spacing scale — Tailwind defaults (4px base, 1rem = 16px). Used for
-     padding, margin, and gap. Half-step names (-5 suffix) follow Tailwind's
-     space-1.5, space-2.5 etc. with . rewritten as - for CSS-var compatibility. */
   --space-px: 1px;
-  --space-0-5: 0.125rem; /* 2px  — TW 0.5 */
-  --space-1: 0.25rem; /* 4px  — TW 1 */
-  --space-1-5: 0.375rem; /* 6px  — TW 1.5 */
-  --space-2: 0.5rem; /* 8px  — TW 2 */
-  --space-2-5: 0.625rem; /* 10px — TW 2.5 */
-  --space-3: 0.75rem; /* 12px — TW 3 */
-  --space-3-5: 0.875rem; /* 14px — TW 3.5 */
-  --space-4: 1rem; /* 16px — TW 4 */
-  --space-5: 1.25rem; /* 20px — TW 5 */
-  --space-6: 1.5rem; /* 24px — TW 6 */
-  --space-7: 1.75rem; /* 28px — TW 7 */
-  --space-8: 2rem; /* 32px — TW 8 */
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-2-5: 0.625rem;
+  --space-3: 0.75rem;
+  --space-3-5: 0.875rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+
+  --sidebar-w: 236px;
+  --sidebar-collapsed-w: 56px;
+  --inspector-w: 300px;
+  --content-max: 1240px;
+  --control-h-sm: 26px;
+  --control-h: 32px;
+  --control-h-lg: 38px;
+  --tap-target: 44px;
+
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --shadow-hairline: 0 0 0 1px var(--border-hairline);
+  --shadow-popover: 0 6px 20px -4px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.35);
+  --shadow-dialog: 0 24px 60px -12px rgb(0 0 0 / 0.7), 0 4px 12px rgb(0 0 0 / 0.4);
+  --shadow-drag: 0 10px 24px -6px rgb(0 0 0 / 0.6);
+  --inset-top: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --inset-sunken: inset 0 1px 2px rgb(0 0 0 / 0.35);
+  --glow-accent: 0 0 0 1px var(--gold-500), 0 0 12px -2px rgb(from var(--accent) r g b / 0.35);
+  --ring-focus: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--border-focus);
+  --inset-mark-accent: inset 2px 0 0 var(--accent-fill);
+  --inset-mark-secondary: inset 2px 0 0 var(--arcane-400);
+  --inset-drop-line: inset 0 2px 0 var(--accent-fill);
+
+  --dur-instant: 80ms;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.3, 1);
+  --ease-out: cubic-bezier(0, 0.7, 0.3, 1);
+  --ease-in: cubic-bezier(0.5, 0, 1, 0.5);
+  --transition-control:
+    background var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+
+  --z-local: 1;
+  --z-panel: 10;
+  --z-nav: 20;
+  --z-overlay: 40;
+  --z-modal: 100;
 
   color-scheme: dark;
-
-  font-family: var(--font-body);
-  line-height: 1.5;
-  font-weight: 400;
-  color: var(--text);
-  background: var(--bg);
+  background: var(--bg-app);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -105,216 +207,449 @@
 }
 
 :root[data-theme='light'] {
-  /* Primitives */
-  --bg: #f4f4f5;
-  --tint: black;
-  --accent: #8b7335;
+  --bg-app: var(--stone-25);
+  --bg-panel: var(--stone-50);
+  --surface-card: var(--stone-0);
+  --surface-raised: var(--stone-0);
+  --surface-sunken: var(--stone-50);
+  --surface-card-hover: color-mix(in oklch, var(--surface-card) 96%, var(--stone-900));
+  --surface-raised-hover: color-mix(in oklch, var(--surface-raised) 96%, var(--stone-900));
+  --surface-hover: rgb(46 42 37 / 0.05);
+  --surface-active: rgb(46 42 37 / 0.09);
+  --surface-selected: rgb(from var(--gold-500) r g b / 0.14);
+  --scrim: rgb(46 42 37 / 0.42);
 
-  /* Darker red for normal-size danger text on light bg (~5.5:1 contrast) */
-  --text-danger: #b91c1c;
+  --text-heading: var(--stone-800);
+  --text-body: var(--stone-700);
+  --text-muted: var(--stone-500);
+  --text-faint: var(--stone-400);
+  --text-inverse: var(--stone-25);
+  --text-accent: var(--gold-600);
+  --text-link: var(--gold-600);
+  --text-link-hover: var(--gold-700);
+  --text-numeric: var(--stone-800);
+
+  --border-hairline: rgb(46 42 37 / 0.1);
+  --border-default: rgb(46 42 37 / 0.18);
+  --border-strong: rgb(46 42 37 / 0.34);
+  --border-accent: var(--gold-500);
+  --border-focus: var(--gold-600);
+
+  --accent-fill: var(--gold-500);
+  --accent-fill-hover: var(--gold-400);
+  --accent-fill-active: var(--gold-600);
+  --accent-on: var(--stone-25);
+  --accent-quiet: rgb(from var(--gold-500) r g b / 0.14);
+  --secondary-fill: var(--arcane-500);
+  --secondary-quiet: rgb(58 99 150 / 0.12);
+
+  --status-ok: var(--moss-600);
+  --status-ok-quiet: rgb(78 139 90 / 0.14);
+  --status-warn: var(--amber-600);
+  --status-warn-quiet: rgb(184 132 42 / 0.16);
+  --status-error: var(--rust-600);
+  --status-error-quiet: rgb(168 66 58 / 0.12);
+  --status-info: var(--arcane-500);
+  --status-info-quiet: rgb(58 99 150 / 0.12);
+
+  --shadow-popover: 0 6px 18px -6px rgb(46 42 37 / 0.22), 0 2px 4px rgb(46 42 37 / 0.1);
+  --shadow-dialog: 0 24px 56px -16px rgb(46 42 37 / 0.3), 0 4px 10px rgb(46 42 37 / 0.12);
+  --shadow-drag: 0 10px 20px -8px rgb(46 42 37 / 0.28);
+  --inset-top: inset 0 1px 0 rgb(255 255 255 / 0.9);
+  --inset-sunken: inset 0 1px 2px rgb(46 42 37 / 0.1);
 
   color-scheme: light;
-  background: var(--bg);
 }
 
-* {
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}
+
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Ensure the React root fills the viewport so percentage-height children
-   (e.g. ErrorScreen's `min-height: 100%` for the root-boundary fallback)
-   resolve against a real height. AppLayout's own `.app-shell` uses
-   `height: 100vh` directly, so this only matters when ErrorScreen
-   replaces the entire app at the root boundary. */
 #root {
   min-height: 100vh;
 }
 
-a {
-  font-weight: 500;
-  color: var(--accent);
-  text-decoration: inherit;
+body {
+  background: var(--bg-app);
+  color: var(--text-body);
+  font: var(--type-body);
+  letter-spacing: var(--ls-body);
+  text-wrap: pretty;
 }
 
-a:hover {
-  color: var(--accent-hover);
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
 }
 
 h1 {
-  font-size: var(--text-3xl);
-  line-height: 1.1;
-  margin-bottom: var(--space-2);
+  font: var(--type-h1);
+  color: var(--text-heading);
 }
 
-/* --- Tooltip (portal-based, used by shared/Tooltip.tsx) --- */
+h2 {
+  font: var(--type-h2);
+  color: var(--text-heading);
+}
+
+h3 {
+  font: var(--type-h3);
+  color: var(--text-heading);
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: var(--transition-control);
+
+  &:hover {
+    color: var(--text-link-hover);
+  }
+}
+
+a:not([class]) {
+  border-bottom: 1px solid rgb(from var(--text-link) r g b / 0.35);
+
+  &:hover {
+    border-bottom-color: currentColor;
+  }
+}
+
+code,
+kbd,
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+::selection {
+  background: var(--accent-quiet);
+  color: var(--text-heading);
+}
+
 .tooltip-portal {
   position: fixed;
-  background: var(--bg-tertiary);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-body);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-popover);
   padding: var(--space-1-5) var(--space-2);
-  font-size: var(--text-xs);
+  font-size: var(--fs-label);
   max-width: 250px;
   text-align: center;
   pointer-events: none;
   z-index: var(--z-modal);
 }
 
-/* --- Shared UI primitives --- */
+.page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6);
+}
 
-/* Accent-colored uppercase section label */
 .section-label {
-  color: var(--accent);
-  font-size: var(--text-xs);
-  font-weight: 600;
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-dense);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: var(--space-2);
-  margin-bottom: var(--space-1-5);
+  letter-spacing: var(--ls-eyebrow);
 }
 
-.section-label:first-child {
-  margin-top: 0;
-}
-
-/* Ghost button — border outline, accent on hover */
-.btn-ghost {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-accent);
-  color: var(--text-secondary);
-  border-radius: var(--radius-md);
-  padding: var(--space-1-5) var(--space-3);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color var(--transition-std),
-    border-color var(--transition-std),
-    background var(--transition-std),
-    transform var(--transition-fast);
-}
-
-.btn-ghost:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--bg-tertiary);
-  transform: translateY(-1px);
-}
-
-.btn-ghost:active {
-  transform: translateY(0);
-}
-
-/* Small ghost button variant */
-.btn-ghost-sm {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-accent);
-  color: var(--text-secondary);
+.card {
+  min-width: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
   border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    color var(--transition-std),
-    border-color var(--transition-std),
-    background var(--transition-std),
-    transform var(--transition-fast);
+  overflow: hidden;
 }
 
-.btn-ghost-sm:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--bg-tertiary);
-  transform: translateY(-1px);
+.card-header {
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-default);
+  box-shadow: var(--inset-top);
 }
 
-.btn-ghost-sm:active {
-  transform: translateY(0);
-}
-
-/* Primary button — solid accent fill */
-.btn-primary {
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-1-5) var(--space-3-5);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background var(--transition-std),
-    transform var(--transition-fast);
-}
-
-.btn-primary:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.btn-primary:active {
-  transform: translateY(0);
-}
-
-.btn-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Small primary button variant */
-.btn-primary-sm {
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
+.segmented-control {
+  display: flex;
+  gap: var(--space-0-5);
+  padding: var(--space-0-5);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--text-xs);
-  font-weight: 600;
+  box-shadow: var(--inset-sunken);
+}
+
+.segmented-control-segment {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition:
-    background var(--transition-std),
-    transform var(--transition-fast);
+  transition: var(--transition-control);
+
+  &:not(.segmented-control-segment--active):hover {
+    background: var(--surface-hover);
+    color: var(--text-muted);
+  }
 }
 
-.btn-primary-sm:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-.btn-primary-sm:active {
-  transform: translateY(0);
-}
-
-/* Shared hover highlight utility. Applied to rows, cards, and buttons that
-   want the default "lift to --bg-subtle on hover" treatment. Active/selected
-   instances suppress their own hover feedback — an already-active nav item
-   or already-selected option is a no-op, so it shouldn't flash on hover. */
-.hoverable {
-  cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.hoverable:not(.active):not(.selected):hover {
-  background: var(--bg-subtle);
-  color: var(--text);
-}
-
-.hoverable.active,
-.hoverable.selected {
+.segmented-control-segment--active {
+  background: var(--surface-raised);
+  color: var(--text-heading);
   cursor: default;
 }
 
-/* Global focus-visible for keyboard navigation */
-button:focus-visible,
-select:focus-visible,
-input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.segmented-control--joined {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: none;
+
+  & > .segmented-control-segment {
+    flex: 0 0 auto;
+    gap: var(--space-1-5);
+    height: var(--control-h-sm);
+    padding: 0 var(--space-3);
+    border-radius: 0;
+    font-size: var(--fs-body-sm);
+    font-weight: var(--fw-regular);
+  }
+
+  & > .segmented-control-segment + .segmented-control-segment {
+    border-left: 1px solid var(--border-hairline);
+  }
+
+  & > .segmented-control-segment:not(.segmented-control-segment--active) {
+    color: var(--text-muted);
+  }
+
+  & > .segmented-control-segment--active {
+    font-weight: var(--fw-semibold);
+  }
+}
+
+.underline-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-0-5);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.underline-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  height: var(--control-h);
+  padding: 0 var(--space-3);
+  margin-bottom: calc(-1 * var(--space-px));
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-regular);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:not(.underline-tab--active):hover {
+    color: var(--text-body);
+  }
+}
+
+.underline-tab--active {
+  color: var(--text-heading);
+  font-weight: var(--fw-semibold);
+  border-bottom-color: var(--accent-fill);
+  cursor: default;
+}
+
+.btn-primary,
+.btn-primary-sm,
+.btn-ghost,
+.btn-ghost-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1-5);
+  height: var(--control-h);
+  padding: 0 var(--space-3-5);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary,
+.btn-primary-sm {
+  background: var(--accent-fill);
+  color: var(--accent-on);
+  border: none;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-fill-hover);
+    color: var(--accent-on);
+  }
+}
+
+.btn-ghost,
+.btn-ghost-sm {
+  background-color: var(--surface-raised);
+  color: var(--text-body);
+  border: 1px solid var(--border-default);
+
+  &:hover:not(:disabled) {
+    background-color: var(--surface-raised-hover);
+    color: var(--text-heading);
+  }
+}
+
+.btn-primary-sm,
+.btn-ghost-sm {
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2-5);
+  font-size: var(--fs-label);
+}
+
+.search-well {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-h);
+  padding: 0 var(--space-2-5);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--inset-sunken);
+  color: var(--text-faint);
+  cursor: text;
+  transition: var(--transition-control);
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  &:focus-within {
+    border-color: var(--border-focus);
+    outline: 2px solid var(--border-focus);
+    outline-offset: -2px;
+  }
+}
+
+.search-well-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+
+  &::placeholder {
+    color: var(--text-faint);
+  }
+
+  &:focus-visible {
+    outline-color: transparent;
+  }
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  & svg {
+    flex-shrink: 0;
+    color: var(--text-faint);
+  }
+
+  &:hover {
+    background-color: var(--surface-card-hover);
+    color: var(--text-body);
+  }
+
+  &[aria-disabled='true'] {
+    cursor: default;
+  }
+}
+
+.filter-chip--selected {
+  background-color: var(--surface-selected);
+  border-color: var(--border-accent);
+  color: var(--text-accent);
+
+  &:hover {
+    background-color: var(--surface-selected);
+    color: var(--text-accent);
+  }
+}
+
+.hoverable {
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+
+  &:not(.active):not(.selected):hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
+
+  &.active,
+  &.selected {
+    cursor: default;
+  }
 }

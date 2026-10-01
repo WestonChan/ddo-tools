@@ -1,5 +1,5 @@
 import { useRef, useState, type JSX, type KeyboardEvent } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Hammer } from 'lucide-react'
 import { HoverTooltip } from '../../../../components'
 import {
   isCraftingSlotFamily,
@@ -69,7 +69,9 @@ export function AugmentSlotList({
             >
               <span className="resources-augment-candidate-name">{augment.name}</span>
               {augment.minimumLevel !== null && (
-                <span className="resources-augment-candidate-level">ML {augment.minimumLevel}</span>
+                <span className="resources-augment-candidate-level num">
+                  ML {augment.minimumLevel}
+                </span>
               )}
               {augment.bonusNames.length > 0 && (
                 <span className="resources-augment-candidate-bonuses">
@@ -78,6 +80,7 @@ export function AugmentSlotList({
               )}
               {augment.recipes.map((recipe, recipeIndex) => (
                 <span key={recipeIndex} className="resources-augment-candidate-recipe">
+                  <Hammer size={12} aria-hidden />
                   {recipeCostLine(recipe)}
                 </span>
               ))}

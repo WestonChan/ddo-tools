@@ -11,12 +11,14 @@ export interface CharacterContextValue {
   currentLifeNumber: number
   viewedBuild: Life
   buildSelection: BuildSelection
-  setBuildSelection: Dispatch<SetStateAction<BuildSelection>>
   plannedBuilds: Life[]
   setPlannedBuilds: Dispatch<SetStateAction<Life[]>>
   viewedPlannedBuild: Life | undefined
-  selectCharacter: (characterId: string) => void
-  selectBuild: (buildId: string) => void
+  comparisonBuild: Life | null
+  viewBuild: (characterId: string | null, buildId: string) => void
+  setComparisonBuildId: (buildId: string | null) => void
+  swapViewedAndComparedBuilds: () => void
+  deletePlannedBuild: (buildId: string) => void
   setUntrackedStackCount: (
     category: keyof PastLifeCounts,
     pastLifeId: string,

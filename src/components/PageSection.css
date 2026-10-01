@@ -1,0 +1,26 @@
+.page-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.page-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2-5);
+  padding-bottom: var(--space-1-5);
+  border-bottom: 1px solid var(--border-default);
+  scroll-margin-top: var(--space-4);
+}
+
+.page-section-title {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-dense);
+  color: var(--text-heading);
+}
+
+.page-section-subtitle {
+  font-size: var(--fs-label);
+  color: var(--text-faint);
+}

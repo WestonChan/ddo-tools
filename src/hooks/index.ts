@@ -1,7 +1,7 @@
 export { useLocalStorage } from './useLocalStorage'
 export { useMediaQuery } from './useMediaQuery'
 export { useAddRemoveGestures } from './useAddRemoveGestures'
-export { useTheme } from './useTheme'
+export { useTheme, type ThemePreference } from './useTheme'
 export { useDebouncedValue } from './useDebouncedValue'
 export { useAccentColoredFavicon } from './useAccentColoredFavicon'
 export { useIsAnyModalActive } from './useRegisterActiveModal'

@@ -1,0 +1,105 @@
+.hotbars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3-5);
+}
+
+.hotbars-bars {
+  --hotbar-label-w: 84px;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+}
+
+.hotbar-row {
+  display: grid;
+  grid-template-columns: var(--hotbar-label-w) minmax(0, max-content) auto;
+  align-items: center;
+  justify-content: start;
+  column-gap: var(--space-2-5);
+}
+
+.hotbar-row--add > .hotbars-add-bar {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.hotbar-label {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-0-5) 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--border-default);
+  color: var(--text-muted);
+  text-align: right;
+  transition: var(--transition-control);
+
+  &:hover {
+    border-bottom-color: var(--border-strong);
+  }
+
+  &:focus-visible {
+    border-bottom-color: var(--border-focus);
+  }
+}
+
+.hotbar-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--inset-sunken);
+  list-style: none;
+}
+
+.hotbar-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-1);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
+}
+
+.hotbars-add-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2-5);
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.hotbars-drag-overlay {
+  cursor: grabbing;
+}

@@ -1,12 +1,5 @@
 import type { Character, PastLifeCategory } from './types'
 
-export const ORDERED_PAST_LIFE_CATEGORIES: { category: PastLifeCategory; label: string }[] = [
-  { category: 'heroic', label: 'heroic' },
-  { category: 'epic', label: 'epic' },
-  { category: 'racial', label: 'racial' },
-  { category: 'iconic', label: 'iconic' },
-]
-
 export interface PastLifeTotals {
   totalCount: number
   countByCategory: Record<PastLifeCategory, number>
@@ -24,7 +17,7 @@ export function pastLifeTotalsOf(character: Character): PastLifeTotals {
       countByCategory[life.reincarnation.type]++
     }
   }
-  for (const { category } of ORDERED_PAST_LIFE_CATEGORIES) {
+  for (const category of Object.keys(countByCategory) as PastLifeCategory[]) {
     for (const untrackedLifeCount of Object.values(character.untrackedLives[category])) {
       countByCategory[category] += untrackedLifeCount
     }

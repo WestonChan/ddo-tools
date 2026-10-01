@@ -148,8 +148,8 @@ describe('ResourcesView keyboard shortcuts', () => {
 
   it('does not focus the search input on "/" while the drawer is open', async () => {
     mockRouteParams = { category: 'items', id: '42' }
-    const { container } = render(<ResourcesView />)
-    const input = container.querySelector('.resources-search-input')
+    render(<ResourcesView />)
+    const input = screen.getByRole('searchbox', { name: 'Search items', hidden: true })
     await userEvent.keyboard('/')
     expect(input).not.toHaveFocus()
   })

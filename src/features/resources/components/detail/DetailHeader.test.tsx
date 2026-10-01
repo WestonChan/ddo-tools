@@ -31,3 +31,18 @@ describe('DetailHeader wiki link', () => {
     expect(screen.queryByRole('link')).toBeNull()
   })
 })
+
+describe('DetailHeader linked wiki window chip', () => {
+  it('renders the Link wiki toggle disabled and unpressed', () => {
+    render(
+      <DetailHeader
+        name="Voice of the Master"
+        attributes={[]}
+        wikiPageName="Voice of the Master"
+      />,
+    )
+    const chip = screen.getByRole('button', { name: 'Link wiki' })
+    expect(chip).toBeDisabled()
+    expect(chip).toHaveAttribute('aria-pressed', 'false')
+  })
+})

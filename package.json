@@ -1,7 +1,7 @@
 {
   "name": "ddo-tools",
   "private": true,
-  "version": "0.0.22",
+  "version": "0.0.23",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,8 +12,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint . && stylelint \"src/**/*.css\" && npm run lint:types && npm run lint:dead-code && npm run format:check",
+    "lint": "eslint . && stylelint \"src/**/*.css\" && npm run lint:types && npm run lint:dead-code && npm run lint:ignored && npm run format:check",
     "lint:dead-code": "knip --no-progress",
+    "lint:ignored": "! { git ls-files --cached --ignored --exclude-standard; git ls-files --others --ignored --exclude-standard -- src e2e eslint-rules; } | grep -v '/\\.DS_Store$' | grep . || (echo 'The files above match a .gitignore pattern; anchor the pattern to the repo root (for example /build/).' && exit 1)",
     "lint:types": "tsc -p tsconfig.test.json --noEmit",
     "lint:fix": "eslint . --fix && stylelint \"src/**/*.css\" --fix && npm run format",
     "preview": "vite preview",
@@ -24,6 +25,9 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@sentry/react": "^10.50.0",
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/react-router": "^1.168.23",

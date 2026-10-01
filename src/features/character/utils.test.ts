@@ -11,6 +11,9 @@ import {
   desiredPastLifeCountOf,
   totalStackCountOf,
   withStackCount,
+  owningCharacterOf,
+  lifeLabelOf,
+  raceAndClassLabelOf,
 } from './utils'
 import type { Character, Life, PastLifeCounts } from './types'
 
@@ -317,5 +320,53 @@ describe('withStackCount', () => {
     const original = { fighter: 1 }
     withStackCount(original, 'fighter', 0)
     expect(original).toEqual({ fighter: 1 })
+  })
+})
+
+describe('owningCharacterOf', () => {
+  const firstLife = createTestLife({ id: 'life-a' })
+  const secondLife = createTestLife({ id: 'life-b' })
+  const characters = [
+    createTestCharacter({ id: 'first', lives: [firstLife] }),
+    createTestCharacter({ id: 'second', lives: [secondLife] }),
+  ]
+
+  it('finds the character whose lives include the build', () => {
+    expect(owningCharacterOf(characters, 'life-b')?.id).toBe('second')
+  })
+
+  it('returns undefined for a planned build no character owns', () => {
+    expect(owningCharacterOf(characters, 'planned-1')).toBeUndefined()
+  })
+})
+
+describe('lifeLabelOf', () => {
+  const lifeNumbersByLifeId = new Map([['life-1', 7]])
+
+  it('uses the life name when it has one', () => {
+    expect(lifeLabelOf(createTestLife({ name: '  Sorc run ' }), lifeNumbersByLifeId)).toBe(
+      'Sorc run',
+    )
+  })
+
+  it('falls back to the life number', () => {
+    expect(lifeLabelOf(createTestLife({ name: ' ' }), lifeNumbersByLifeId)).toBe('Life 7')
+  })
+
+  it('shows a question mark for a life missing from the numbering', () => {
+    expect(lifeLabelOf(createTestLife({ id: 'other' }), lifeNumbersByLifeId)).toBe('Life ?')
+  })
+})
+
+describe('raceAndClassLabelOf', () => {
+  it('joins the race and the class split with a middot', () => {
+    const build = createTestLife({
+      race: 'half-elf',
+      classes: [
+        { classId: 'paladin', levels: 18 },
+        { classId: 'rogue', levels: 2 },
+      ],
+    })
+    expect(raceAndClassLabelOf(build)).toBe('Half Elf · 18 Paladin / 2 Rogue')
   })
 })

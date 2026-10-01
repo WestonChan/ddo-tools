@@ -5,6 +5,24 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-01',
+    changes: [
+      'New look: warm-slate surfaces, one gold accent, Source Sans 3 for text and JetBrains Mono for every number; light and dark themes both follow it',
+      'The rail is the only navigation: Roster, Build and Tools groups, with the Build plan sections listed underneath while you are on that page',
+      'Switch the active build from the character card at the top of the rail, pick a build to compare against from the same menu, and swap the two',
+      'Warnings and Report a bug moved from the bottom bar into the rail; the bottom bar is gone',
+      'The stats panel has Stats and Buffs tabs: pin stats by dragging them into groups you can name, reorder and delete, with per-stat bonus breakdowns (placeholder values until the stats engine ships); it hides below 900px',
+      'Settings gained an Appearance section: Dark, Light or System theme, and five accent presets (Gold, Arcane, Moss, Rust, Violet) with full color ramps',
+      'The site name is set in IM Fell DW Pica SC, and the GitHub row in the rail shows the GitHub mark',
+      'Build overview has working hotbars: drag spells, SLAs, feats and item clickies from the pools onto slots, rename or add bars, hover a slot for its stat block, and add items with active abilities from the picker (sample data until the build engine ships)',
+      'The Characters view lists characters and planned lives as click-to-activate rows that show which build is active and which is being compared',
+      'The Resources list is a ledger with a double-rule header; item detail shows the Add to compare, Compare in Gear and Add to farm list actions ahead of their phases',
+      'The landing page leads with four entry tiles; the Characters tile shows your active build',
+      'Build plan, Build overview, Gear, Damage calc, Farm checklist and Settings show their planned layout as wireframe sections',
+      'Keyboard focus shows a gold outline on every control, including the character and life rows, which are now real buttons',
+    ],
+  },
+  {
     date: '2026-09-30',
     changes: [
       'Name the chest an item drops from next to each quest, such as End chest or Optional chest',

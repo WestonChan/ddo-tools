@@ -8,7 +8,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 import { noComments } from './eslint-rules/no-comments.js'
 import { noCaseCollidingModules } from './eslint-rules/no-case-colliding-modules.js'
 
-const FEATURE_NAMES = ['character', 'gear', 'landing', 'resources', 'settings']
+const FEATURE_NAMES = ['build', 'character', 'gear', 'landing', 'resources', 'settings']
 
 function restrictedImportRegexes(restrictions) {
   return ['error', { patterns: restrictions.map(({ regex, message }) => ({ regex, message })) }]
@@ -49,6 +49,35 @@ const barrelReExportRestriction = {
         selector:
           'ExportNamedDeclaration[source.value=/^\\.\\.\\//], ExportAllDeclaration[source.value=/^\\.\\.\\//]',
         message: "A barrel re-exports its own directory's modules, never a sibling directory's.",
+      },
+    ],
+  },
+}
+
+const exactRoleNameRestriction = {
+  files: ['e2e/**'],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector:
+          "CallExpression[callee.property.name='getByRole'] > ObjectExpression:has(> Property[key.name='name'][value.value=type(string)]):not(:has(> Property[key.name='exact']))",
+        message:
+          'getByRole with a string name needs exact: true — a second link or button containing the same text breaks the lookup.',
+      },
+    ],
+  },
+}
+
+const popupRoleClaimRestriction = {
+  files: ['src/**/*.tsx'],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: "JSXAttribute[name.name='aria-haspopup'][value.value=/^(true|menu)$/]",
+        message:
+          'aria-haspopup="true" claims a role="menu" popup. AnchoredMenu is a group; keep aria-expanded + aria-controls instead.',
       },
     ],
   },
@@ -155,6 +184,8 @@ export default defineConfig([
   sharedCodeImportRestriction,
   ...featureImportRestrictions,
   barrelReExportRestriction,
+  exactRoleNameRestriction,
+  popupRoleClaimRestriction,
   typeNamingRules,
   booleanNamingRules,
   eslintConfigPrettier,

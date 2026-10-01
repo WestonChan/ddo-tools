@@ -3,14 +3,17 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import { CategoryTabs } from './components/CategoryTabs'
 import { ItemPicker } from './components/ItemPicker'
 import { ResourceDetailDrawer } from './components/ResourceDetailDrawer'
-import { ApiGate, Modal } from '../../components'
+import { ApiGate, Modal, WireframePlaceholder } from '../../components'
 import { useItemSummaries } from './queries/useItems'
 import {
   DETAIL_DRAWER_TITLE_ID,
+  LABEL_BY_RESOURCE_CATEGORY,
   isResourceCategory,
   type ResourceCategory,
 } from './resourceCategories'
 import './ResourcesView.css'
+
+const COMING_SOON_PLACEHOLDER_MIN_HEIGHT_PX = 420
 
 function useResourceRouteParams(): {
   category: ResourceCategory
@@ -84,7 +87,12 @@ function ResourcesView(): JSX.Element {
               />
             </ApiGate>
           ) : (
-            <p className="section-placeholder">{category} coming soon.</p>
+            <div className="resources-picker-inner">
+              <WireframePlaceholder
+                label={`${LABEL_BY_RESOURCE_CATEGORY[category]} coming soon`}
+                minHeightPx={COMING_SOON_PLACEHOLDER_MIN_HEIGHT_PX}
+              />
+            </div>
           )}
         </aside>
         {selectedResourceId !== null && (

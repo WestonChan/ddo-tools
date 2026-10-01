@@ -1,11 +1,3 @@
-/* Resources browser — picker list with a right-edge detail drawer. The
-   drawer shell is <Modal variant="drawer-right"> (src/components/Modal.css
-   owns its positioning, width, and the <900px full-screen switch); this file
-   styles the picker and the drawer's contents. Wiki access is the
-   compare-window icon in the entity header (the embedded preview died with
-   ddowiki's bot protection — see lib/wiki/pageLinks.ts).
-*/
-
 .resources-view {
   display: flex;
   flex-direction: column;
@@ -14,58 +6,23 @@
 }
 
 .resources-header {
-  border-bottom: 1px solid var(--border);
-  padding: var(--space-3) var(--space-4) 0;
   flex-shrink: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4) 0;
 }
 
 .resources-tabs {
-  display: flex;
-  gap: var(--space-1);
   flex-wrap: wrap;
 }
 
-.resources-tab {
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  padding: var(--space-2) var(--space-3);
-  cursor: pointer;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
-  transition:
-    color var(--transition-std),
-    border-color var(--transition-std),
-    background var(--transition-std);
-}
-
-.resources-tab:hover:not(.disabled) {
-  color: var(--text);
-  background: var(--bg-subtle);
-}
-
-.resources-tab.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
-
-.resources-tab.disabled {
-  color: var(--text-muted);
+.underline-tab.resources-tab--disabled {
+  opacity: 0.42;
   cursor: not-allowed;
-  opacity: 0.6;
+
+  &:hover {
+    color: var(--text-muted);
+  }
 }
 
-/* Body layout. The picker fills the body in both modes — when an item is
-   selected, the drawer is positioned absolutely on top of it (revealing
-   only a sliver on the left). In browse mode the picker has the entire
-   body to lay out filters, search, and the result list. */
 .resources-body {
   flex: 1;
   min-height: 0;
@@ -76,257 +33,96 @@
 
 .resources-picker {
   grid-area: picker;
-  border-right: 1px solid var(--border);
   overflow: auto;
   min-height: 0;
 }
 
-.resources-detail {
-  overflow: auto;
-  min-height: 0;
-}
-
-/* The drawer itself is <Modal variant="drawer-right"> — backdrop, fixed
-   positioning, width clamp, and the <900px full-screen behavior live in
-   src/components/Modal.css. The `-bar` / `-body` rules below are the drawer's
-   contents, owned by ResourceDetailDrawer. */
-.resources-drawer-bar {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-1-5) var(--space-3);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
-}
-
-.resources-drawer-body {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.resources-back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  padding: var(--space-1) var(--space-2);
-  cursor: pointer;
-}
-
-.resources-back-btn:hover {
-  color: var(--accent);
-}
-
-/* DetailBreadcrumbBar — populates the drawer-bar slot with the breadcrumb nav:
-   optional back arrow + "Back to <category>" crumb + one crumb per stack
-   level. Per-entity actions (copy-link, wiki, report) live in DetailHeader. */
-.resources-detail-bar {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.resources-detail-bar-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  flex: 1;
-}
-
-.resources-detail-bar-back {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast);
-}
-
-.resources-detail-bar-back:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-.resources-detail-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-sm);
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.resources-detail-breadcrumb-link-wrap,
-.resources-detail-breadcrumb-current {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.resources-detail-breadcrumb-sep {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.resources-detail-breadcrumb-link {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: inherit;
-  font-family: inherit;
-  padding: var(--space-0-5) var(--space-1);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 14em;
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.resources-detail-breadcrumb-link:hover {
-  color: var(--accent);
-  background: var(--bg-subtle);
-}
-
-/* Leading "Back to <category>" crumb. Carries an arrow glyph + label and
-   doubles as the close-all action (clicks fire closeDrawer). The arrow
-   sits inline with the text so the whole crumb reads as one nav target.
-   Override `overflow: hidden` from the parent rule so the flex children
-   render without clipping; max-width: none lets the label fit naturally. */
-.resources-detail-breadcrumb-back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  max-width: none;
-  overflow: visible;
-}
-
-.resources-detail-breadcrumb-back svg {
-  flex-shrink: 0;
-}
-
-.resources-detail-breadcrumb-current {
-  color: var(--text);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Picker chrome (search input + result count) */
 .resources-picker-inner {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2-5);
   height: 100%;
   min-height: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 .resources-search {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-2-5);
 }
 
-.resources-search-input {
+.resources-search-well {
   flex: 1;
   min-width: 0;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  color: var(--text);
-  padding: var(--space-1-5) var(--space-2);
-  font-size: var(--text-sm);
-  font-family: inherit;
 }
 
-.resources-search-input:focus {
-  outline: none;
-  border-color: var(--accent);
+.resources-search-shortcut {
+  flex-shrink: 0;
+  min-width: 18px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  line-height: 16px;
+  text-align: center;
 }
 
 .resources-search-count {
-  color: var(--text-muted);
-  font-size: var(--text-xs);
   flex-shrink: 0;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
 }
 
-/* Filter row — sits between the search input and the virtualized list.
-   Each filter is a vertical label/control pair so a wide picker row reads
-   as a tidy form, and narrow widths wrap gracefully via flex-wrap. */
 .resources-filters {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--border);
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
 }
 
 .resources-filter {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
+  align-items: center;
+  gap: var(--space-1-5);
   min-width: 0;
 }
 
 .resources-filter-label {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.resources-filter-select,
+.resources-filter-input,
+.resources-multiselect-trigger {
+  height: var(--control-h-sm);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--inset-sunken);
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+  transition: var(--transition-control);
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  &:focus-visible {
+    border-color: var(--border-focus);
+  }
 }
 
 .resources-filter-input {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-md);
-  width: 5em;
-  transition: border-color var(--transition-fast);
+  width: 4.5em;
+  padding: 0 var(--space-2);
+
+  &::placeholder {
+    color: var(--text-faint);
+  }
 }
 
-.resources-filter-input:hover {
-  border-color: var(--border-emphasis);
-}
-
-.resources-filter-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-/* Custom-themed select. Uses `appearance: none` to drop the OS chrome,
-   then a `<SelectWithChevron>` wrapper layers a ChevronDown icon on the right
-   so the closed state matches the rest of the site. */
 .resources-select-shell {
   position: relative;
   display: inline-flex;
@@ -336,27 +132,9 @@
 
 .resources-filter-select {
   appearance: none;
-  -webkit-appearance: none;
   width: 100%;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  padding: var(--space-1) var(--space-2);
-  padding-right: var(--space-6);
-  border-radius: var(--radius-md);
+  padding: 0 var(--space-6) 0 var(--space-2);
   cursor: pointer;
-  transition: border-color var(--transition-fast);
-}
-
-.resources-filter-select:hover {
-  border-color: var(--border-emphasis);
-}
-
-.resources-filter-select:focus {
-  outline: none;
-  border-color: var(--accent);
 }
 
 .resources-select-chevron {
@@ -364,56 +142,41 @@
   right: var(--space-2);
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted);
+  color: var(--text-faint);
   pointer-events: none;
-  transition: color var(--transition-fast);
+  transition: color var(--dur-fast) var(--ease-standard);
 }
 
 .resources-select-shell:hover .resources-select-chevron,
 .resources-filter-select:focus + .resources-select-chevron {
-  color: var(--text);
+  color: var(--text-body);
 }
 
-/* Multi-select popover (built on <details>). Trigger looks like the other
-   selects so the row reads as one cohesive form; the popover menu drops
-   down with a checkbox per option and a Clear shortcut. */
 .resources-multiselect {
   position: relative;
   min-width: 8em;
-}
 
-.resources-multiselect[open] .resources-select-chevron {
-  transform: translateY(-50%) rotate(180deg);
+  &[open] .resources-select-chevron {
+    transform: translateY(-50%) rotate(180deg);
+  }
+
+  &[open] .resources-multiselect-trigger {
+    border-color: var(--border-accent);
+  }
 }
 
 .resources-multiselect-trigger {
-  /* Strip the native disclosure marker so we own the chevron. */
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 var(--space-6) 0 var(--space-2);
   list-style: none;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  position: relative;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-size: var(--text-sm);
-  padding: var(--space-1) var(--space-6) var(--space-1) var(--space-2);
-  border-radius: var(--radius-md);
-  transition: border-color var(--transition-fast);
-}
 
-.resources-multiselect-trigger::-webkit-details-marker {
-  display: none;
-}
-
-.resources-multiselect-trigger:hover {
-  border-color: var(--border-emphasis);
-}
-
-.resources-multiselect[open] .resources-multiselect-trigger {
-  border-color: var(--accent);
+  &::-webkit-details-marker {
+    display: none;
+  }
 }
 
 .resources-multiselect-label {
@@ -426,147 +189,142 @@
   position: absolute;
   top: calc(100% + var(--space-1));
   left: 0;
-  right: 0;
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-5);
+  gap: var(--space-px);
+  min-width: 14em;
   max-height: 280px;
   overflow-y: auto;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-emphasis);
-  border-radius: var(--radius-md);
   padding: var(--space-1);
-  min-width: 12em;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-popover);
 }
 
 .resources-multiselect-item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  color: var(--text);
+  min-height: 26px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
   cursor: pointer;
-}
+  transition: var(--transition-control);
 
-.resources-multiselect-item:hover {
-  background: var(--bg-subtle);
-}
+  &:hover {
+    background: var(--surface-hover);
+  }
 
-.resources-multiselect-item input[type='checkbox'] {
-  accent-color: var(--accent);
-  cursor: pointer;
+  & input[type='checkbox'] {
+    accent-color: var(--accent-fill);
+    cursor: pointer;
+  }
+
+  &:has(input:checked) {
+    color: var(--text-accent);
+  }
 }
 
 .resources-multiselect-empty {
   padding: var(--space-2);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+  color: var(--text-faint);
+  font-size: var(--fs-label);
 }
 
 .resources-multiselect-clear {
-  margin-top: var(--space-1);
-  background: transparent;
-  border: 1px solid var(--border-accent);
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--text-xs);
-  font-family: inherit;
+  align-self: flex-start;
+  margin: var(--space-1) var(--space-1) var(--space-0-5);
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-link);
+  font-size: var(--fs-label);
   cursor: pointer;
-}
 
-.resources-multiselect-clear:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  &:hover {
+    color: var(--text-link-hover);
+  }
 }
 
 .resources-filter-clear {
-  align-self: flex-end;
-  background: transparent;
-  border: 1px solid var(--border-accent);
-  color: var(--text-secondary);
-  border-radius: var(--radius-md);
-  padding: var(--space-1) var(--space-2-5);
-  font-size: var(--text-xs);
-  font-family: inherit;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-link);
+  font-size: var(--fs-label);
   cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast);
+  transition: var(--transition-control);
+
+  &:hover {
+    color: var(--text-link-hover);
+  }
 }
 
-.resources-filter-clear:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-/* Boolean filter toggle (Rare / Raid). aria-pressed drives the active state
-   so screen readers know whether the filter is on. */
-.resources-filter-toggle {
-  align-self: flex-end;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  padding: var(--space-1) var(--space-2-5);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.resources-filter-toggle:hover {
-  border-color: var(--border-emphasis);
-}
-
-.resources-filter-toggle.active {
-  background: var(--bg-accent);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* Active-filter chip strip — sits below the filter controls, one chip per
-   active filter dimension. Click a chip to remove that one filter. */
 .resources-active-filters {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1-5);
-  padding: var(--space-1-5) var(--space-3);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
 }
 
-.resources-filter-chip {
-  display: inline-flex;
+.resources-list-ledger {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  container-type: inline-size;
+}
+
+.resources-list-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2-5);
+  height: 30px;
+  padding: 0 var(--space-2-5) var(--space-1-5) var(--space-3);
+  border-bottom: 3px double var(--border-strong);
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+.resources-list-column {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resources-list-column--name {
+  flex: 2 1 140px;
+  display: flex;
   align-items: center;
-  gap: var(--space-1);
-  background: var(--bg);
-  border: 1px solid var(--border-accent);
-  color: var(--text);
-  font-size: var(--text-xs);
-  font-family: inherit;
-  padding: var(--space-0-5) var(--space-1-5);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    background var(--transition-fast);
+  gap: var(--space-1-5);
 }
 
-.resources-filter-chip:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: var(--bg-tertiary);
+.resources-list-column--level {
+  flex: 0 0 48px;
+  text-align: right;
 }
 
-/* Wrap that gives react-window's <List> a height to fill */
+.resources-list-column--slot {
+  flex: 1 1 70px;
+}
+
+.resources-list-column--pack {
+  flex: 1 1 110px;
+}
+
+@container (max-width: 480px) {
+  .resources-list-column--pack {
+    display: none;
+  }
+}
+
 .resources-list-wrap {
   flex: 1;
   min-height: 0;
@@ -574,196 +332,313 @@
 }
 
 .resources-list {
-  height: 100% !important;
+  scrollbar-gutter: stable;
 }
 
-/* react-window injects `position: absolute; top/left/height/width` via the
-   style prop onto this shell. It carries no visuals of its own — the button
-   inside fills it and owns every appearance and interaction concern. */
 .resources-row-shell {
   display: flex;
 }
 
 .resources-row {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--space-0-5);
-  padding: var(--space-1) var(--space-3);
-  cursor: pointer;
-  font-size: var(--text-sm);
-  /* Fill the react-window shell. justify-content: center keeps the name+meta
-     block vertically centered in the fixed row height, so hover/active
-     backgrounds stay balanced instead of hugging the top. */
+  align-items: center;
+  gap: var(--space-2-5);
   width: 100%;
   height: 100%;
-  box-sizing: border-box;
-  /* Button reset — the row is a real <button> for keyboard access, so strip
-     the UA chrome and inherit typography from the list. */
-  border: none;
+  padding: 0 var(--space-2-5) 0 var(--space-3);
   background: none;
-  color: inherit;
+  border: none;
+  border-bottom: 1px dotted var(--border-default);
+  color: var(--text-muted);
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--fs-body-sm);
   text-align: left;
-  align-items: stretch;
-}
+  cursor: pointer;
 
-.resources-row:hover {
-  background: var(--bg-subtle);
-}
+  &.active {
+    background: var(--surface-selected);
+    box-shadow: var(--inset-mark-accent);
 
-/* Keyboard focus needs its own affordance — hover background alone leaves
-   focus invisible when tabbing through the list. Inset so the ring isn't
-   clipped by the shell's fixed bounds. */
-.resources-row:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
+    & .resources-row-name {
+      color: var(--text-accent);
+      font-weight: var(--fw-semibold);
+    }
+  }
 
-.resources-row.active {
-  background: var(--bg-accent);
-  border-left: 2px solid var(--accent);
-}
-
-/* Top line of the picker row: name on the left, raid/rare chips on the
-   right. Flex layout lets the chips hug the right edge while the name
-   truncates with ellipsis if it overflows. */
-.resources-row-title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
+  & .resources-list-column--level {
+    color: var(--text-body);
+    font-size: var(--fs-label);
+  }
 }
 
 .resources-row-name {
-  color: var(--text);
-  font-weight: 500;
-  flex: 1;
   min-width: 0;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-heading);
+  font-weight: var(--fw-medium);
 }
 
-.resources-row-chips {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  flex-shrink: 0;
-}
-
-/* Small status chip (Raid / Rare), rendered by the shared `DropTagChip`
-   component in both the picker rows and the detail drawer's drop-location
-   rows. Tinted via data-kind so themes/accent swaps don't hardcode hue —
-   raid derives from --accent, rare is neutral, so both stay legible in
-   light/dark. */
 .resources-chip {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 0 var(--space-1);
-  border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-  text-transform: uppercase;
-  line-height: 1.4;
-  /* Never squeeze the chip when it shares a flex line with a long,
-     truncating name. */
   flex-shrink: 0;
+  padding: var(--space-px) var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-dense);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
 }
 
 .resources-chip[data-kind='raid'] {
-  color: var(--accent);
-  border-color: color-mix(in oklch, var(--accent) 40%, transparent);
-  background: color-mix(in oklch, var(--accent) 10%, transparent);
+  color: var(--text-accent);
+  background: var(--surface-selected);
+  border-color: var(--border-accent);
 }
 
 .resources-chip[data-kind='rare'] {
-  color: var(--text-secondary);
-  border-color: var(--border);
-  background: var(--bg-subtle);
+  color: var(--arcane-300);
+  background: var(--secondary-quiet);
+  border-color: var(--arcane-400);
 }
 
-.resources-row-meta {
+.resources-status {
   display: flex;
+  flex-direction: column;
+}
+
+.resources-drawer-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
-  color: var(--text-muted);
-  font-size: var(--text-xs);
+  min-height: 40px;
+  padding: var(--space-1-5) var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.resources-drawer-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.resources-detail {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+
+  & > .resources-status {
+    padding: var(--space-4);
+  }
+}
+
+.resources-detail-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
 
-.resources-row-meta > span {
+.resources-detail-bar-nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.resources-detail-bar-back,
+.resources-icon-button,
+.resources-entity-actions .wiki-link-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
+
+  &:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+}
+
+.resources-detail-bar-back {
+  border-color: var(--border-default);
+}
+
+.resources-detail-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: var(--fs-body-sm);
+}
+
+.resources-detail-breadcrumb-link-wrap,
+.resources-detail-breadcrumb-current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.resources-detail-breadcrumb-sep {
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+.resources-detail-breadcrumb-link {
+  max-width: 14em;
+  padding: var(--space-0-5) var(--space-1);
+  background: none;
+  border: none;
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: inherit;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
+  cursor: pointer;
+  transition: var(--transition-control);
+
+  &:hover {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
 }
 
-/* Detail body — built from DetailHeader + DetailSection + StatList + KeyValueGrid. */
+.resources-detail-breadcrumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  max-width: none;
+  overflow: visible;
+
+  & svg {
+    flex-shrink: 0;
+  }
+}
+
+.resources-detail-breadcrumb-current {
+  color: var(--text-heading);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .resources-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3-5);
+  min-width: 0;
   padding: var(--space-4);
 }
 
-/* DetailHeader — name + copy-link/wiki/report icons + KV grid. The
-   "Back to <category>" link lives at the column root (ResourceDetailDrawer).
-   The wiki icon opens the shared compare window (see lib/wiki/pageLinks.ts —
-   ddowiki's bot protection killed the old embedded preview pane). */
 .resources-entity-header {
-  margin-bottom: var(--space-3);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
 }
 
 .resources-entity-title-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
-  flex-wrap: wrap;
-  margin: 0 0 var(--space-1);
 }
 
 .resources-entity-name {
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
+  flex: 1;
+  min-width: 0;
+  color: var(--text-heading);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  overflow-wrap: anywhere;
 }
 
-/* Inline icon button next to the item name. Tracks the title's font size
-   so the link icon scales with the heading. */
-.resources-entity-copy {
+.resources-entity-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.resources-wiki-window-toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
+  gap: var(--space-1-5);
+  height: var(--control-h-sm);
+  padding: 0 var(--space-2);
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  white-space: nowrap;
   cursor: pointer;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast);
+  transition: var(--transition-control);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+    color: var(--text-body);
+  }
+
+  &[aria-pressed='true'] {
+    background: var(--surface-selected);
+    border-color: var(--border-accent);
+    color: var(--text-accent);
+  }
+
+  &:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
 }
 
-.resources-entity-copy:hover:not(:disabled) {
-  color: var(--accent);
-  border-color: var(--accent);
+.resources-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-0-5);
 }
 
-.resources-entity-copy:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.resources-detail-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-/* KeyValueGrid — 2-col compact grid */
+.resources-detail-actions-note {
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
 .resources-kv-grid {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: var(--space-1) var(--space-3);
-  font-size: var(--text-sm);
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--space-1-5) var(--space-3);
   margin: 0;
+  font-size: var(--fs-body-sm);
 }
 
 .resources-kv-row {
@@ -771,189 +646,170 @@
 }
 
 .resources-kv-label {
-  color: var(--text-secondary);
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
 }
 
 .resources-kv-value {
-  color: var(--text);
+  min-width: 0;
   margin: 0;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
 }
 
-/* DetailSection — accent label + content slot */
+.resources-detail-description {
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
+
 .resources-section {
-  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  & > .section-label {
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--border-hairline);
+  }
 }
 
 .resources-section-body {
-  font-size: var(--text-sm);
+  min-width: 0;
+  font-size: var(--fs-body-sm);
 }
 
-/* StatList — vertical label/value rows */
-.resources-stat-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.resources-stat-list,
+.resources-bonus-list,
+.resources-clicky-list,
+.resources-quest-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-/* Label/value rows render as a 2-column grid so values left-align under
-   a consistent column edge across the section. Earlier flex
-   `justify-content: space-between` floated values to the container's right
-   edge, which made them read as a ragged-right column rather than a clean
-   left-aligned data table. */
+.resources-stat-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--space-4);
+}
+
 .resources-stat-row {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: var(--space-3);
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+  min-height: 26px;
+  border-bottom: 1px solid var(--border-hairline);
 }
 
 .resources-stat-label {
-  color: var(--text-secondary);
-}
-
-.resources-stat-value {
-  color: var(--text);
-}
-
-/* Plain bulleted list for effects/spells/upgrades */
-.resources-flat-list {
-  list-style: disc inside;
-  margin: 0;
-  padding: 0;
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
-}
-
-/* The bonus list is the actual grid container — declaring the 3 columns
-   here (type, name, value) and having each row's head/desc adopt those
-   columns via `subgrid` is what makes column widths span across rows.
-   With the grid declared per-row, each row would size its columns
-   independently from its own cells; subgrid lets the widest cell in any
-   row set the column width for every row.
-   The name column is `minmax(0, max-content)` so it prefers max-content
-   when the container has room (no wrap, single-line rows), but can
-   shrink below min-content when the container is narrow — long names
-   then wrap inside the cell instead of forcing horizontal scroll on the
-   parent. Type + value stay `max-content` (short, fixed strings that
-   look broken if they wrap). */
-.resources-bonus-list {
-  display: grid;
-  grid-template-columns: max-content minmax(0, max-content) max-content;
-  row-gap: var(--space-2);
-  column-gap: var(--space-2);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: var(--text-sm);
-}
-
-/* Each row is a subgrid spanning all 4 parent columns. Inside the row,
-   the head and (optional) description stack as separate grid rows with a
-   tight internal row-gap. The parent's row-gap (`space-2`) separates one
-   bonus row from the next. */
-.resources-bonus-row {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-  row-gap: var(--space-0-5);
-}
-
-/* Head is another subgrid using the same 4 columns. Cells (type, name,
-   value, icon) place into the parent's column tracks, so a column's
-   width is the widest cell across the entire list — that's the vertical
-   alignment the user is after. Rows without a stat leave the 4th cell
-   empty; the icon column still claims its track width across the list. */
-.resources-bonus-head {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-  align-items: center;
-  column-gap: var(--space-2);
-}
-
-.resources-bonus-name {
-  color: var(--text);
-}
-
-.resources-bonus-value {
-  color: var(--text);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Type renders as plain body text in its column rather than a chip — keeps
-   the row visually similar to the wiki's enchantment listings, which read
-   as "Enhancement Charisma +5" inline. Grid still column-aligns chips
-   vertically across rows for scanability. Muted color gives a small
-   secondary-vs-primary hierarchy (type is metadata, name+value is the
-   value the user reads first). */
-.resources-bonus-type {
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.resources-bonus-description {
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  line-height: 1.5;
-  margin: 0;
-}
-
-/* Quest sources — each row stacks the quest name + a muted meta line
-   ("Level X · Pack · Patron · Zone") so users can spot the where-to-go
-   info at a glance without table-grid alignment. */
-.resources-quest-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.resources-quest-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
-}
-
-/* Name, wiki-link icon, and any Raid / Rare chips share one
-   line. Wraps rather than overflowing on narrow viewports, where a long
-   quest name has already used up the drawer's width. */
-.resources-quest-name {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  font-size: var(--text-sm);
-  color: var(--text);
-}
-
-.resources-quest-chest {
-  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
-.resources-quest-meta {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+.resources-stat-value {
+  min-width: 0;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
 }
 
-/* Augment slot — small filled gem (rotated square) + text label.
-   Mirrors the DDO in-game representation: a colored socket gem, with the
-   color name written next to it for clarity. */
+.resources-bonus-row,
+.resources-clicky-row,
+.resources-quest-row {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-0-5);
+  min-width: 0;
+  min-height: 26px;
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.resources-bonus-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.resources-bonus-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.resources-bonus-value {
+  flex: 0 0 44px;
+  color: var(--text-body);
+  font-size: var(--fs-label);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.resources-bonus-type {
+  flex: 0 0 96px;
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.resources-bonus-description {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
+
+.resources-clicky-name {
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.resources-quest-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  min-width: 0;
+  color: var(--text-body);
+}
+
+.resources-quest-title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.resources-quest-chest {
+  font-size: var(--fs-label);
+  color: var(--text-faint);
+}
+
+.resources-quest-meta {
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+}
+
+.resources-augment-slots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
 .resources-augment-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
   align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .resources-augment-slot {
@@ -962,94 +818,85 @@
 }
 
 .resources-augment-gem {
+  --gem-shine-color: color-mix(in srgb, white 35%, transparent);
+
   display: inline-block;
-  /* Sized in `em` so the gem scales with the surrounding label/value font.
-     0.7em side → ~1em corner-to-corner span after 45° rotation, which
-     matches the cap height of the label text next to it. */
   width: 0.7em;
   height: 0.7em;
   transform: rotate(45deg);
-  border-radius: 2px;
-  --gem-shine-color: color-mix(in srgb, white 35%, transparent);
-  background: var(--gem-color, var(--text-muted));
+  border-radius: var(--radius-xs);
+  background: var(--gem-color, var(--text-faint));
   box-shadow:
     inset 0 0 0 1px var(--gem-shine-color),
-    0 0 0 1px color-mix(in srgb, var(--gem-color, var(--text-muted)) 60%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--gem-color, var(--text-faint)) 60%, transparent);
 }
 
 .resources-augment-slot[data-color='yellow'] {
   --gem-color: #d4a017;
 }
+
 .resources-augment-slot[data-color='blue'] {
   --gem-color: #3b82f6;
 }
+
 .resources-augment-slot[data-color='red'] {
   --gem-color: #ef4444;
 }
+
 .resources-augment-slot[data-color='purple'] {
   --gem-color: #a855f7;
 }
+
 .resources-augment-slot[data-color='green'] {
   --gem-color: #22c55e;
 }
+
 .resources-augment-slot[data-color='orange'] {
   --gem-color: #f97316;
 }
+
 .resources-augment-slot[data-color='colorless'] {
-  --gem-color: var(--text-muted);
+  --gem-color: var(--text-faint);
 }
-/* Sun and Moon are Isle of Dread's day/night sockets. Sun is a warmer, paler
-   gold than the yellow socket so the two never read as the same gem; moon is
-   the silver-blue the in-game icon uses. 34 rows shipped unstyled (falling
-   back to muted grey) until these landed. */
+
 .resources-augment-slot[data-color='sun'] {
   --gem-color: #f0b429;
 }
+
 .resources-augment-slot[data-color='moon'] {
   --gem-color: #8fa6c0;
 }
 
-/* Crafting-family sockets and Sun/Moon draw from a short, purpose-made pool of
-   augments, so they render as a control that expands to that pool rather than
-   as a bare gem. */
-.resources-augment-slots {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1-5);
-}
-
-/* The socket chip itself. Worn by both the expandable control and the inert
-   Slaver's label, which differ only in whether anything happens on click. */
 .resources-augment-pill {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-0-5) var(--space-1-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  height: 22px;
+  padding: 0 var(--space-1-5);
   background: none;
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  font-family: inherit;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
 }
 
 .resources-augment-control[aria-expanded='true'] {
   border-color: var(--border-accent);
-  color: var(--text);
+  color: var(--text-accent);
 }
 
 .resources-augment-candidates {
-  list-style: none;
-  margin: 0;
-  padding: var(--space-1);
   display: flex;
   flex-direction: column;
   gap: var(--space-px);
   max-height: 14rem;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-tertiary);
+  margin: 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
 }
 
 .resources-augment-candidate {
@@ -1058,39 +905,43 @@
   align-items: baseline;
   gap: var(--space-1) var(--space-2);
   padding: var(--space-1) var(--space-1-5);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-label);
 
-  /* Colour plus a tinted surface, so the pick stays legible next to the
-     neighbouring row's hover highlight. Keyed off `.selected` — the same class
-     that opts the row out of `.hoverable`'s hover background, so one hook
-     drives both halves of the state. */
   &.selected {
-    background: var(--bg-accent);
+    background: var(--surface-selected);
+    box-shadow: var(--inset-mark-accent);
 
     & .resources-augment-candidate-name {
-      color: var(--accent);
-      font-weight: 500;
+      color: var(--text-accent);
+      font-weight: var(--fw-semibold);
     }
   }
 }
 
 .resources-augment-candidate-name {
-  color: var(--text);
+  color: var(--text-body);
 }
 
 .resources-augment-candidate-level {
-  color: var(--text-muted);
+  color: var(--text-faint);
 }
 
 .resources-augment-candidate-bonuses {
   flex-basis: 100%;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .resources-augment-candidate-recipe {
   flex-basis: 100%;
-  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  color: var(--text-faint);
+
+  & svg {
+    flex-shrink: 0;
+  }
 }
 
 .resources-augment-loot-quests {
@@ -1098,11 +949,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-0-5);
-  color: var(--text-secondary);
+  color: var(--text-faint);
 }
 
 .resources-augment-loot-quests-heading {
-  color: var(--text-muted);
+  color: var(--text-faint);
 }
 
 .resources-augment-loot-quest-list {
@@ -1119,46 +970,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
-  color: var(--text);
+  color: var(--text-body);
 }
 
 .resources-augment-loot-quests-more {
-  color: var(--text-muted);
-}
-
-.resources-detail-description {
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  margin-bottom: var(--space-2);
-}
-
-/* Game tooltip text — secondary to description, italicized to signal it's
-   the in-game hover string rather than the wiki blurb. */
-.resources-detail-tooltip {
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  font-style: italic;
-  margin-bottom: var(--space-2);
-}
-
-.resources-detail-empty {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-6);
-}
-
-.resources-detail-empty-hint {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
-
-/* Narrow viewports — the drawer goes full-screen (see Modal.css), so the
-   picker's right divider has nothing to divide. */
-@media (max-width: 899px) {
-  .resources-picker {
-    border-right: none;
-  }
+  color: var(--text-faint);
 }

@@ -3,19 +3,36 @@ import { migrateBuildSelection, migrateCharacters } from './migrations'
 import { EMPTY_PAST_LIFE_COUNTS } from './utils'
 
 describe('migrateBuildSelection', () => {
-  it('passes through a new-shape selection unchanged', () => {
-    const currentSelection = { characterId: 'c1', buildId: 'b1' }
+  it('passes through a current-shape selection unchanged', () => {
+    const currentSelection = { characterId: 'c1', buildId: 'b1', comparisonBuildId: 'b2' }
     expect(migrateBuildSelection(currentSelection)).toEqual(currentSelection)
+  })
+
+  it('adds a null comparison to a stored selection saved before comparisons existed', () => {
+    const selectionWithoutComparison = { characterId: 'c1', buildId: 'b1' }
+    expect(migrateBuildSelection(selectionWithoutComparison)).toEqual({
+      characterId: 'c1',
+      buildId: 'b1',
+      comparisonBuildId: null,
+    })
   })
 
   it('migrates old shape with lifeId only', () => {
     const legacySelection = { characterId: 'c1', lifeId: 'life-1', plannedBuildId: null }
-    expect(migrateBuildSelection(legacySelection)).toEqual({ characterId: 'c1', buildId: 'life-1' })
+    expect(migrateBuildSelection(legacySelection)).toEqual({
+      characterId: 'c1',
+      buildId: 'life-1',
+      comparisonBuildId: null,
+    })
   })
 
   it('migrates old shape with plannedBuildId (takes precedence over lifeId)', () => {
     const legacySelection = { characterId: 'c1', lifeId: '', plannedBuildId: 'plan-1' }
-    expect(migrateBuildSelection(legacySelection)).toEqual({ characterId: 'c1', buildId: 'plan-1' })
+    expect(migrateBuildSelection(legacySelection)).toEqual({
+      characterId: 'c1',
+      buildId: 'plan-1',
+      comparisonBuildId: null,
+    })
   })
 
   it('falls back to default buildId when both lifeId and plannedBuildId are null', () => {
