@@ -25,7 +25,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 | What | React SPA: the site users see | Rust workspace: ETL + the game-data API |
 | GitHub | `WestonChan/ddo-tools` | `WestonChan/ddo-data` |
 | Live | https://ddo-tools.com | https://ddo-data.fly.dev (`/docs` is the OpenAPI UI) |
-| Deploy | Vercel GitHub integration on every push to `main` | GitHub Action `deploy.yml`: weekly schedule or manual dispatch; builds the DB from Maetrim's DDOBuilderV2 checkout, then `flyctl deploy`. Never `fly deploy` by hand |
+| Deploy | Vercel GitHub integration on every push to `main` | GitHub Action `deploy.yml`: every push to `main` that changes more than Markdown, a weekly schedule, or manual dispatch; builds the DB from Maetrim's DDOBuilderV2 checkout, then `flyctl deploy`. Never `fly deploy` by hand |
 | Instructions | this file | `ddo-data/AGENTS.md` |
 
 **Data flow.** DDOBuilderV2 XML → `ddo-etl` → SQLite (`ddo.db`, ~14 MB) → `ddo-api` (axum, read-only, immutable per deployment) → this app via `src/lib/api/` + TanStack Query. The frontend holds no game data and has no pipeline; the old Python `scripts/` package and `public/data/ddo.db` were removed in September 2026. `VITE_API_URL` picks the API origin; unset means the public Fly deployment.
