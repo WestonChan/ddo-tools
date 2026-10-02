@@ -526,7 +526,7 @@ describe('fetchers', () => {
       items: [createApiItemRow({ id: 5 }), createApiItemRow({ id: 6 })],
     })
     await expect(fetchItemIdsWithStat('Strength')).resolves.toEqual(new Set([5, 6]))
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('stat=Strength')
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('enchantment=Strength')
   })
 
   it('fetchAugmentsFittingSlot orders by level then name', async () => {

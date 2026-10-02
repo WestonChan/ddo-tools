@@ -425,7 +425,7 @@ export async function fetchStatNames(): Promise<string[]> {
 
 export async function fetchItemIdsWithStat(statName: string): Promise<Set<number>> {
   const page = await fetchApiJson<ApiItemsPage>('/v1/items', {
-    stat: statName,
+    enchantment: statName,
     limit: WHOLE_LIST_LIMIT,
   })
   return new Set(page.items.map((r) => r.id))

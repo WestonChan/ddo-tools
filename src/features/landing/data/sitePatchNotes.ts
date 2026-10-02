@@ -13,6 +13,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
       'Legacy items show a Legacy chip next to their name in item detail',
       'Item detail lists pack-wide drops such as any end chest in an adventure pack, and quest chain and saga wiki links open their own pages',
       'Item detail no longer shows a data-source row',
+      'The Bonuses filter works again: it asks the API by enchantment name, the parameter the API now expects',
     ],
   },
   {
