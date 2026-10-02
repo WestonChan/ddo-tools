@@ -13,10 +13,26 @@ import { sentenceCased } from './sentenceCased'
 import type {
   AugmentSummary,
   Item,
+  ItemSource,
+  ItemSourceKind,
   LootQuest,
   ItemWeaponStats,
   ItemArmorStats,
 } from '../../queries/items'
+
+const ITEM_SOURCE_LABELS: Record<ItemSourceKind, string | null> = {
+  craftingSystem: 'Crafted at',
+  challengePack: 'Challenge rewards',
+  vendor: 'Sold by',
+  event: 'Event reward',
+  starter: null,
+}
+
+function itemSourceMetaLine(itemSource: ItemSource): string {
+  return [ITEM_SOURCE_LABELS[itemSource.kind], itemSource.vendorLocation, itemSource.cost]
+    .filter(Boolean)
+    .join(' · ')
+}
 
 function toHeaderAttributes(
   item: Item,
@@ -135,8 +151,11 @@ export function ItemDetailBody({
   const headerAttributes = toHeaderAttributes(item, augmentsBySlotLabel)
   const labeledWeaponStats = item.weaponStats ? toLabeledWeaponStats(item.weaponStats) : []
   const labeledArmorStats = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
-  const hasLinkedDropSource =
-    item.quests.length > 0 || item.questChains.length > 0 || item.sagas.length > 0
+  const hasLinkedSource =
+    item.quests.length > 0 ||
+    item.questChains.length > 0 ||
+    item.sagas.length > 0 ||
+    item.sourcesBeyondQuests.length > 0
 
   return (
     <article className="resources-detail-body">
@@ -170,8 +189,8 @@ export function ItemDetailBody({
           </ul>
         </DetailSection>
       )}
-      {hasLinkedDropSource ? (
-        <DetailSection heading="Drops from">
+      {hasLinkedSource ? (
+        <DetailSection heading="Obtained from">
           <ul className="resources-quest-list">
             {item.quests.map((quest: LootQuest) => (
               <li key={quest.id} className="resources-quest-row">
@@ -222,11 +241,26 @@ export function ItemDetailBody({
                 </span>
               </li>
             ))}
+            {item.sourcesBeyondQuests.map((itemSource) => {
+              const metaLine = itemSourceMetaLine(itemSource)
+              return (
+                <li key={itemSource.key} className="resources-quest-row">
+                  <span className="resources-quest-name">
+                    <span className="resources-quest-title">{itemSource.name}</span>
+                    {itemSource.isRareLoot && <DropTagChip kind="rare" />}
+                    {itemSource.wikiUrl && (
+                      <WikiLinkIcon href={itemSource.wikiUrl} pageName={itemSource.name} />
+                    )}
+                  </span>
+                  {metaLine && <span className="resources-quest-meta">{metaLine}</span>}
+                </li>
+              )
+            })}
           </ul>
         </DetailSection>
       ) : (
         item.dropLocation && (
-          <DetailSection heading="Drops from">
+          <DetailSection heading="Obtained from">
             <p className="resources-detail-description">{item.dropLocation}</p>
           </DetailSection>
         )

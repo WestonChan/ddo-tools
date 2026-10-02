@@ -50,6 +50,7 @@ function itemDetailFor(id: number): Item {
     quests: [],
     questChains: [],
     sagas: [],
+    sourcesBeyondQuests: [],
   }
 }
 

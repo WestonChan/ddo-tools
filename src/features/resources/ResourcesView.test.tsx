@@ -52,6 +52,7 @@ const BLOODSTONE_ITEM: Item = {
   quests: [],
   questChains: [],
   sagas: [],
+  sourcesBeyondQuests: [],
 }
 
 let itemSummariesQueryState: {

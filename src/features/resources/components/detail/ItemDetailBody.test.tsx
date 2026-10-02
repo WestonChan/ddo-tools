@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import { ItemDetailBody } from './ItemDetailBody'
-import type { Item, LootQuest } from '../../queries/items'
+import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
 afterEach(() => {
   cleanup()
@@ -33,6 +33,7 @@ const plainItem: Item = {
   quests: [],
   questChains: [],
   sagas: [],
+  sourcesBeyondQuests: [],
 }
 
 function quest(overrides: Partial<LootQuest> = {}): LootQuest {
@@ -51,12 +52,26 @@ function quest(overrides: Partial<LootQuest> = {}): LootQuest {
   }
 }
 
+function itemSource(overrides: Partial<ItemSource> = {}): ItemSource {
+  return {
+    kind: 'craftingSystem',
+    key: 'craftingSystem-32',
+    name: 'Thunder-Forged',
+    vendorLocation: null,
+    cost: null,
+    characterLevel: null,
+    isRareLoot: false,
+    wikiUrl: 'https://ddowiki.com/page/Thunder-Forged',
+    ...overrides,
+  }
+}
+
 function renderItemDetailBody(item: Item): RenderResult {
   return render(<ItemDetailBody item={item} augmentsBySlotLabel={{}} />)
 }
 
 describe('ItemDetailBody drop locations', () => {
-  it('renders a wiki link icon next to each quest in Drops from', () => {
+  it('renders a wiki link icon next to each quest in Obtained from', () => {
     renderItemDetailBody({ ...plainItem, quests: [quest()] })
     const link = screen.getByRole('link', { name: "Open Delera's Tomb on DDO Wiki" })
     expect(link).toHaveAttribute('href', "https://ddowiki.com/page/Delera's_Tomb")
@@ -159,7 +174,7 @@ describe('ItemDetailBody drop locations', () => {
         { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true },
       ],
     })
-    expect(screen.getByText('Drops from')).toBeInTheDocument()
+    expect(screen.getByText('Obtained from')).toBeInTheDocument()
     const rows = container.querySelectorAll('.resources-quest-row')
     expect(
       Array.from(rows).map((r) => r.querySelector('.resources-quest-meta')?.textContent),
@@ -186,13 +201,128 @@ describe('ItemDetailBody drop locations', () => {
 
   it('falls back to the free-text drop location when no quests are linked', () => {
     renderItemDetailBody({ ...plainItem, dropLocation: 'Vendor: House Kundarak' })
-    expect(screen.getByText('Drops from')).toBeInTheDocument()
+    expect(screen.getByText('Obtained from')).toBeInTheDocument()
     expect(screen.getByText('Vendor: House Kundarak')).toBeInTheDocument()
   })
 
-  it('renders no Drops from section when the item has no source at all', () => {
+  it('renders no Obtained from section when the item has no source at all', () => {
     renderItemDetailBody(plainItem)
+    expect(screen.queryByText('Obtained from')).toBeNull()
     expect(screen.queryByText('Drops from')).toBeNull()
+  })
+})
+
+describe('ItemDetailBody sources beyond quests', () => {
+  function rowMeta(container: HTMLElement): string[] {
+    return Array.from(container.querySelectorAll('.resources-quest-row')).map(
+      (r) => r.querySelector('.resources-quest-meta')?.textContent ?? '',
+    )
+  }
+
+  it('lists a crafting system as Crafted at with a wiki link to its page', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sourcesBeyondQuests: [itemSource()],
+    })
+    expect(screen.getByText('Obtained from')).toBeInTheDocument()
+    expect(container.querySelector('.resources-quest-title')).toHaveTextContent('Thunder-Forged')
+    expect(rowMeta(container)).toEqual(['Crafted at'])
+    expect(screen.getByRole('link', { name: 'Open Thunder-Forged on DDO Wiki' })).toHaveAttribute(
+      'href',
+      'https://ddowiki.com/page/Thunder-Forged',
+    )
+  })
+
+  it('lists a challenge pack as Challenge rewards with its Rare chip', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sourcesBeyondQuests: [
+        itemSource({
+          kind: 'challengePack',
+          key: 'challengePack-62',
+          name: 'Secrets of the Artificers',
+          isRareLoot: true,
+          wikiUrl: 'https://ddowiki.com/page/Secrets_of_the_Artificers',
+        }),
+      ],
+    })
+    expect(rowMeta(container)).toEqual(['Challenge rewards'])
+    expect(container.querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+  })
+
+  it('lists a vendor as Sold by with its location and cost', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sourcesBeyondQuests: [
+        itemSource({
+          kind: 'vendor',
+          key: 'vendor-1',
+          name: 'Morten Edgewright',
+          vendorLocation: 'The Harbor',
+          cost: '50 Tokens',
+        }),
+      ],
+    })
+    expect(rowMeta(container)).toEqual(['Sold by · The Harbor · 50 Tokens'])
+  })
+
+  it('lists a vendor with no location or cost as Sold by alone', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sourcesBeyondQuests: [itemSource({ kind: 'vendor', key: 'vendor-1', name: 'Morten' })],
+    })
+    expect(rowMeta(container)).toEqual(['Sold by'])
+  })
+
+  it('lists an event as Event reward', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sourcesBeyondQuests: [
+        itemSource({ kind: 'event', key: 'event-4', name: 'The Night Revels' }),
+      ],
+    })
+    expect(rowMeta(container)).toEqual(['Event reward'])
+  })
+
+  it('names starter gear by its level and shows no wiki link when the API gives no page', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sourcesBeyondQuests: [
+        itemSource({
+          kind: 'starter',
+          key: 'starter-15',
+          name: 'Starter gear at level 15',
+          characterLevel: 15,
+          wikiUrl: null,
+        }),
+      ],
+    })
+    expect(container.querySelector('.resources-quest-title')).toHaveTextContent(
+      'Starter gear at level 15',
+    )
+    expect(container.querySelector('.resources-quest-row .wiki-link-icon')).toBeNull()
+  })
+
+  it('lists sources beyond quests after the quest, chain and saga rows', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      quests: [quest()],
+      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: false }],
+      sagas: [{ id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false }],
+      sourcesBeyondQuests: [itemSource()],
+    })
+    expect(
+      Array.from(container.querySelectorAll('.resources-quest-title')).map((t) => t.textContent),
+    ).toEqual(["Delera's Tomb", 'The Lost Seekers', 'Masterminds of Sharn', 'Thunder-Forged'])
+  })
+
+  it('shows the linked sources instead of the free-text drop location', () => {
+    renderItemDetailBody({
+      ...plainItem,
+      dropLocation: 'Thunder-Forged, Crafted from various ingredients',
+      sourcesBeyondQuests: [itemSource()],
+    })
+    expect(screen.queryByText('Thunder-Forged, Crafted from various ingredients')).toBeNull()
   })
 })
 

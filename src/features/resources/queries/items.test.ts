@@ -128,6 +128,12 @@ const API_ITEM_DETAIL: ApiItemDetail = {
     { id: 1, name: 'Masterminds of Sharn', tier: 'epic', is_rare: false },
     { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', is_rare: true },
   ],
+  crafting_systems: [],
+  challenge_packs: [],
+  vendors: [],
+  events: [],
+  starter_rewards: [],
+  sources: [],
 }
 
 describe('mappers', () => {
@@ -205,6 +211,103 @@ describe('mappers', () => {
       { id: 1, name: 'Masterminds of Sharn', tier: 'epic', isRareLoot: false },
       { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true },
     ])
+  })
+
+  it('toItem lists crafting systems, challenge packs, vendors, events and starter gear as sources beyond quests', () => {
+    const item = toItem({
+      ...API_ITEM_DETAIL,
+      crafting_systems: [
+        {
+          id: 32,
+          name: 'Thunder-Forged',
+          is_rare: false,
+          wiki_url: 'https://ddowiki.com/page/Thunder-Forged',
+        },
+      ],
+      challenge_packs: [
+        {
+          id: 62,
+          name: 'Secrets of the Artificers',
+          is_rare: true,
+          wiki_url: 'https://ddowiki.com/page/Secrets_of_the_Artificers',
+        },
+      ],
+      vendors: [
+        {
+          id: 1,
+          name: 'Morten Edgewright',
+          location: 'The Harbor',
+          cost: '50 Tokens',
+          is_rare: false,
+          wiki_url: null,
+        },
+      ],
+      events: [
+        {
+          id: 4,
+          name: 'The Night Revels',
+          is_rare: false,
+          wiki_url: 'https://ddowiki.com/page/The_Night_Revels',
+        },
+      ],
+      starter_rewards: [{ character_level: 15 }],
+    })
+    expect(item.sourcesBeyondQuests).toEqual([
+      {
+        kind: 'craftingSystem',
+        key: 'craftingSystem-32',
+        name: 'Thunder-Forged',
+        vendorLocation: null,
+        cost: null,
+        characterLevel: null,
+        isRareLoot: false,
+        wikiUrl: 'https://ddowiki.com/page/Thunder-Forged',
+      },
+      {
+        kind: 'challengePack',
+        key: 'challengePack-62',
+        name: 'Secrets of the Artificers',
+        vendorLocation: null,
+        cost: null,
+        characterLevel: null,
+        isRareLoot: true,
+        wikiUrl: 'https://ddowiki.com/page/Secrets_of_the_Artificers',
+      },
+      {
+        kind: 'vendor',
+        key: 'vendor-1',
+        name: 'Morten Edgewright',
+        vendorLocation: 'The Harbor',
+        cost: '50 Tokens',
+        characterLevel: null,
+        isRareLoot: false,
+        wikiUrl: null,
+      },
+      {
+        kind: 'event',
+        key: 'event-4',
+        name: 'The Night Revels',
+        vendorLocation: null,
+        cost: null,
+        characterLevel: null,
+        isRareLoot: false,
+        wikiUrl: 'https://ddowiki.com/page/The_Night_Revels',
+      },
+      {
+        kind: 'starter',
+        key: 'starter-15',
+        name: 'Starter gear at level 15',
+        vendorLocation: null,
+        cost: null,
+        characterLevel: 15,
+        isRareLoot: false,
+        wikiUrl: null,
+      },
+    ])
+  })
+
+  it('toItem gives an item with only quest sources no sources beyond quests', () => {
+    expect(toItem(API_ITEM_DETAIL).sourcesBeyondQuests).toEqual([])
   })
 
   it('toItem groups the loot rows of one quest into one quest with every source', () => {

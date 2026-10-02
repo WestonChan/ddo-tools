@@ -94,6 +94,64 @@ export interface ApiItemSaga {
   is_rare: boolean
 }
 
+export interface ApiItemCraftingSystem {
+  id: number
+  name: string
+  is_rare: boolean
+  wiki_url: string | null
+}
+
+export interface ApiItemChallengePack {
+  id: number
+  name: string
+  is_rare: boolean
+  wiki_url: string | null
+}
+
+export interface ApiItemVendor {
+  id: number
+  name: string
+  location: string | null
+  cost: string | null
+  is_rare: boolean
+  wiki_url: string | null
+}
+
+export interface ApiItemEvent {
+  id: number
+  name: string
+  is_rare: boolean
+  wiki_url: string | null
+}
+
+export interface ApiItemStarterReward {
+  character_level: number
+}
+
+export type ApiItemSourceKind =
+  | 'quest'
+  | 'quest_chain'
+  | 'saga'
+  | 'adventure_pack'
+  | 'challenge'
+  | 'crafting_system'
+  | 'vendor'
+  | 'event'
+  | 'starter'
+
+export interface ApiItemSource {
+  kind: ApiItemSourceKind
+  id: number | null
+  name: string
+  loot_type: string | null
+  chest: string | null
+  is_rare: boolean
+  tier: string | null
+  character_level: number | null
+  cost: string | null
+  wiki_url: string | null
+}
+
 export interface ApiWeaponStats {
   weapon_type: string
   proficiency: string | null
@@ -151,6 +209,12 @@ export interface ApiItemDetail {
   quests: ApiLootQuest[]
   quest_chains: ApiItemQuestChain[]
   sagas: ApiItemSaga[]
+  crafting_systems: ApiItemCraftingSystem[]
+  challenge_packs: ApiItemChallengePack[]
+  vendors: ApiItemVendor[]
+  events: ApiItemEvent[]
+  starter_rewards: ApiItemStarterReward[]
+  sources: ApiItemSource[]
 }
 
 export interface ApiAugment {

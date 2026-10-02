@@ -6,7 +6,11 @@ import type {
   ApiAugmentsPage,
   ApiCraftingRecipe,
   ApiCraftingTier,
+  ApiItemChallengePack,
+  ApiItemCraftingSystem,
   ApiItemDetail,
+  ApiItemEvent,
+  ApiItemVendor,
   ApiItemRow,
   ApiItemsPage,
   ApiLootQuest,
@@ -149,6 +153,19 @@ export interface RewardingSaga {
   isRareLoot: boolean
 }
 
+export type ItemSourceKind = 'craftingSystem' | 'challengePack' | 'vendor' | 'event' | 'starter'
+
+export interface ItemSource {
+  kind: ItemSourceKind
+  key: string
+  name: string
+  vendorLocation: string | null
+  cost: string | null
+  characterLevel: number | null
+  isRareLoot: boolean
+  wikiUrl: string | null
+}
+
 export interface Item extends ItemAttributes {
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
@@ -159,6 +176,7 @@ export interface Item extends ItemAttributes {
   quests: LootQuest[]
   questChains: RewardingQuestChain[]
   sagas: RewardingSaga[]
+  sourcesBeyondQuests: ItemSource[]
 }
 
 export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
@@ -255,7 +273,44 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
       tier: s.tier,
       isRareLoot: s.is_rare,
     })),
+    sourcesBeyondQuests: toSourcesBeyondQuests(apiItemDetail),
   }
+}
+
+function toSourcesBeyondQuests(apiItemDetail: ApiItemDetail): ItemSource[] {
+  const namedSource = (
+    kind: ItemSourceKind,
+    apiSource: ApiItemCraftingSystem | ApiItemChallengePack | ApiItemVendor | ApiItemEvent,
+  ): ItemSource => ({
+    kind,
+    key: `${kind}-${apiSource.id}`,
+    name: apiSource.name,
+    vendorLocation: null,
+    cost: null,
+    characterLevel: null,
+    isRareLoot: apiSource.is_rare,
+    wikiUrl: apiSource.wiki_url,
+  })
+  return [
+    ...apiItemDetail.crafting_systems.map((c) => namedSource('craftingSystem', c)),
+    ...apiItemDetail.challenge_packs.map((c) => namedSource('challengePack', c)),
+    ...apiItemDetail.vendors.map((v) => ({
+      ...namedSource('vendor', v),
+      vendorLocation: v.location,
+      cost: v.cost,
+    })),
+    ...apiItemDetail.events.map((e) => namedSource('event', e)),
+    ...apiItemDetail.starter_rewards.map((s) => ({
+      kind: 'starter' as const,
+      key: `starter-${s.character_level}`,
+      name: `Starter gear at level ${s.character_level}`,
+      vendorLocation: null,
+      cost: null,
+      characterLevel: s.character_level,
+      isRareLoot: false,
+      wikiUrl: null,
+    })),
+  ]
 }
 
 function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
