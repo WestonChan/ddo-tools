@@ -2060,7 +2060,16 @@ sagas) and his drop text links to them where it names a chain or saga rather tha
 end reward; the site groups the rows and lists chain and saga rewards under "Drops from". The four
 Free to Play page-vs-index quests were set free (the page wins).
 
-**Left open after V7, none blocking:** Cannith (Essence) crafting waits on D-CS10; wiki-created rows still to write (Cacophonic Verge and forms, Legendary
+**One drops table (decided 2026-10-02).** With quests, chains, sagas and packs all feeding loot
+links and the API flattening them, the per-kind tables were consolidated into `drops` (exactly one
+source id and one of item/augment, enforced by CHECKs; rebuilt every deploy so no migration). Item
+and augment detail carry a `drops` array beside the per-kind arrays; `/v1/adventure-packs/{id}`
+lists pack-wide loot. `/v1/items` filters now cover the Resources page without client matching:
+`q` over name, slot, category and pack with exact-then-prefix ranking; `stat` repeatable with
+any-match; `include_set_bonuses`; `quest`, `quest_chain`, `saga`; set tiers carry derived bonuses.
+
+**Left open after V7, none blocking:** the two retired ToEE quests his drop text names (keep as
+wiki rows or alias onto the area quests); Cannith (Essence) crafting waits on D-CS10; wiki-created rows still to write (Cacophonic Verge and forms, Legendary
 Sword of Shadow, Legendary Winter's Wrath, two Soulforge essences, Warp the Unholy, the Mithral
 augment); 171 crafting notes `wiki-check` flags as correction candidates. The ledger tracks each.
 
