@@ -2116,7 +2116,10 @@ correction when a wiki page says an item no longer drops); `/v1/items` hides leg
 `include_legacy=true`.
 
 **Shipped 2026-10-02.** `sources` (kind quest / quest_chain / saga / adventure_pack / challenge /
-crafting_system / vendor / event / starter) with `provenance` as the maetrim-or-wiki column everywhere;
+crafting_system / vendor / event / starter) with `provenance` as the maetrim-or-wiki column everywhere
+(internal only since 2026-10-02, like corrections: the ETL, `wiki-check` and `check-db` read it, the API
+returns no per-row origin, only the `/v1/version` wiki counts; the site's "Source: DDO Wiki" row is gone;
+`/v1/dump.sqlite` still carries the column and the `corrections` table, by design);
 `/v1/vendors`, `/v1/events`, `/v1/adventure-packs/{id}`; item detail shows every kind under
 "Obtained from" and a Legacy chip; `source_aliases.toml` maps his turn-in wording to vendors, stations
 and challenge packs (the Altar of Fecundity splits Green Steel by minimum level). Wiki reads: 13
