@@ -2051,9 +2051,16 @@ corrections can add a bonus or effect to his item, renames go stale instead of f
 a name upstream, Shatter and Vertigo buffs map to Sunder DC and Trip DC, and `augments*.toml`
 creates augments his files lack (none written yet).
 
-**Left open after V7, none blocking:** Cannith (Essence) crafting waits on D-CS10; four quests the
-page calls Free to Play and the index did not; chain-reward loot the pages list as both chest and
-reward holds one `loot_type`; wiki-created rows still to write (Cacophonic Verge and forms, Legendary
+**Quest chains and sagas (done 2026-10-02).** Different in-game things, so two entities, not one
+with a kind: `quest_chains` (the wiki's story arcs, chain end rewards) and `sagas` (the saga NPCs'
+tiered rewards), each with quests and rewards, declared once; `/v1/quest-chains`, `/v1/sagas`, and
+`quest_chains`/`sagas` arrays on item and quest detail. All rows come from the wiki (42 chains, 17
+sagas) and his drop text links to them where it names a chain or saga rather than a quest (219 and
+51 items). `quest_loot` is keyed by loot type too, so an item can be both a chest drop and a quest's
+end reward; the site groups the rows and lists chain and saga rewards under "Drops from". The four
+Free to Play page-vs-index quests were set free (the page wins).
+
+**Left open after V7, none blocking:** Cannith (Essence) crafting waits on D-CS10; wiki-created rows still to write (Cacophonic Verge and forms, Legendary
 Sword of Shadow, Legendary Winter's Wrath, two Soulforge essences, Warp the Unholy, the Mithral
 augment); 171 crafting notes `wiki-check` flags as correction candidates. The ledger tracks each.
 

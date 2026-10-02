@@ -58,6 +58,9 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Chain end rewards his text calls `reward` where the page also lists a chest: Fell Shiv, First Blood, Magistrate's Scepter, Nether Orb, Iron Beads, Wall of Wood, Forester's Brush Hook, Cannoneer's Goggles, St. Mu'ray's Fire, Planar Focus of Erudition and Prowess, Drow Piwafwi, Drow Smoke Goggles, Slaver's Hand Crossbow, Beholder Plate Armor and Docent; the Chronoscope's eight end rewards are `raid`.
 - 📋 Free to Play per the page, not per the index: Astral Ambush, Horde of the Illithid Controller, Pilgrims' Peril, Stolen Power.
 
+- 🩹 📋 Seven more quest names that differ from the wiki page title, found by the chain pages (2026-10-02): "Yarkuch's War Plans" (War-plans), "The Deadly Package: Agent of Darguul" (of the Darguul), "Doom of the Witchdoctor: The Way to Zulkash" and "Doom Of The Witch Doctor: Zulkash, Herald Of Woe" (Witch-doctor), "The Cloven-jaw Scourge:Blockade" (space after the colon), "The Halls of Shan-To-Kor" (no "The"), "Jungle of Khyber" ("The Jungle of Khyber").
+- 📋 Items the chain and saga pages list that his files lack: Bonepicker, Viktranium Pick, Glamered Weapon Aura, Corrosion Eternal Wand of Acid Splash, Brimstone Verge, Roderic's Wand, Battered Phiarlan Shield (angular) and (round) (he has one "Battered Phiarlan Shield"). Quests: A Legend Revisited, Old Tomb, New Tenants, Return to Cabal for One, Return to Gianthold Tor, Return to Madstone Crater, Return to Prison of the Planes.
+
 ## Not yet a correction
 
 - 📋 About 150 crafting-file notes record naming differences not listed above ("Spell Crit Damage" vs "Spell Critical Damage", "Curse of Minor Reflex" vs "Reflexes"); each is a rename candidate under the wiki-is-right rule. A `wiki-check` warning for notes saying "his value stands" or "Maetrim spells it" would list them.
