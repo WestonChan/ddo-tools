@@ -32,7 +32,6 @@ function itemRow(overrides: Partial<ItemSummary> = {}): ItemSummary {
     isRaidLoot: false,
     isRareLoot: false,
     isLegacy: false,
-    provenance: 'maetrim',
     ...overrides,
   }
 }

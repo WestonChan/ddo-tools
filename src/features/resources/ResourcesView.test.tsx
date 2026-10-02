@@ -23,7 +23,6 @@ const ITEM_SUMMARIES: ItemSummary[] = [
     isRaidLoot: true,
     isRareLoot: false,
     isLegacy: false,
-    provenance: 'maetrim',
   },
 ]
 
@@ -44,7 +43,6 @@ const BLOODSTONE_ITEM: Item = {
   isMinorArtifact: false,
   wikiUrl: null,
   isLegacy: false,
-  provenance: 'maetrim',
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],

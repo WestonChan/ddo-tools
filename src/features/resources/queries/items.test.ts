@@ -30,7 +30,6 @@ function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
     is_raid: true,
     is_rare: false,
     is_legacy: false,
-    provenance: 'maetrim',
     ...overrides,
   }
 }
@@ -53,7 +52,6 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   is_minor_artifact: false,
   wiki_url: 'https://ddowiki.com/page/Item:Sireth,_Spear_of_the_Sky',
   is_legacy: false,
-  provenance: 'maetrim',
   weapon: {
     weapon_type: 'Quarterstaff',
     proficiency: 'Simple',
@@ -122,7 +120,6 @@ const API_ITEM_DETAIL: ApiItemDetail = {
       is_free_to_play: false,
       difficulties: ['normal', 'hard', 'elite'],
       chest: 'raid warded chest',
-      provenance: 'maetrim',
     },
   ],
   quest_chains: [
@@ -164,17 +161,7 @@ describe('mappers', () => {
       isRaidLoot: true,
       isRareLoot: false,
       isLegacy: false,
-      provenance: 'maetrim',
     })
-  })
-
-  it('toItemSummary carries a wiki-sourced row as wiki', () => {
-    expect(toItemSummary(createApiItemRow({ provenance: 'wiki' })).provenance).toBe('wiki')
-  })
-
-  it('toItem carries the provenance', () => {
-    expect(toItem(API_ITEM_DETAIL).provenance).toBe('maetrim')
-    expect(toItem({ ...API_ITEM_DETAIL, provenance: 'wiki' }).provenance).toBe('wiki')
   })
 
   it('toItemSummary and toItem carry the legacy flag', () => {
@@ -453,7 +440,6 @@ describe('mappers', () => {
         },
       ],
       crafting: [],
-      provenance: 'maetrim',
     }
     expect(toAugmentSummary(a)).toEqual({
       id: 2,
@@ -485,7 +471,6 @@ describe('mappers', () => {
           ],
         },
       ],
-      provenance: 'maetrim',
     }
     expect(toAugmentSummary(a).recipes).toEqual([
       {
@@ -555,7 +540,6 @@ describe('fetchers', () => {
       slots: ['red'],
       bonuses: [],
       crafting: [],
-      provenance: 'maetrim',
     })
     mockFetchResponse({
       total: 3,

@@ -24,7 +24,6 @@ const plainItem: Item = {
   isMinorArtifact: false,
   wikiUrl: null,
   isLegacy: false,
-  provenance: 'maetrim',
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],
@@ -448,22 +447,11 @@ describe('ItemDetailBody header attributes', () => {
   })
 })
 
-describe('ItemDetailBody provenance', () => {
-  it('shows a Source row linking the wiki page for a wiki-sourced item', () => {
+describe('ItemDetailBody data source', () => {
+  it('shows no Source row for an item the wiki supplied', () => {
     renderItemDetailBody({
       ...plainItem,
-      provenance: 'wiki',
-      wikiUrl: 'https://ddowiki.com/page/Item:Voice_of_the_Master',
-    })
-    const sourceLink = screen.getByRole('link', { name: 'DDO Wiki (not yet in DDOBuilderV2)' })
-    expect(sourceLink).toHaveAttribute('href', 'https://ddowiki.com/page/Item:Voice_of_the_Master')
-    expect(screen.getByText('Source')).toBeInTheDocument()
-  })
-
-  it('shows no Source row for an item from DDOBuilderV2', () => {
-    renderItemDetailBody({
-      ...plainItem,
-      wikiUrl: 'https://ddowiki.com/page/Item:Voice_of_the_Master',
+      wikiUrl: 'https://ddowiki.com/page/Item:Garbage_Can_Lid',
     })
     expect(screen.queryByText('Source')).toBeNull()
     expect(screen.queryByText('DDO Wiki (not yet in DDOBuilderV2)')).toBeNull()

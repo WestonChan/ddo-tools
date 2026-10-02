@@ -12,7 +12,6 @@ const itemSummaries: ItemSummary[] = [
     isRaidLoot: false,
     isRareLoot: false,
     isLegacy: false,
-    provenance: 'maetrim',
     minimumLevel: 12,
   },
   {
@@ -24,7 +23,6 @@ const itemSummaries: ItemSummary[] = [
     isRaidLoot: false,
     isRareLoot: false,
     isLegacy: false,
-    provenance: 'maetrim',
     minimumLevel: 6,
   },
   {
@@ -36,7 +34,6 @@ const itemSummaries: ItemSummary[] = [
     isRaidLoot: false,
     isRareLoot: false,
     isLegacy: false,
-    provenance: 'maetrim',
     minimumLevel: 8,
   },
   {
@@ -48,7 +45,6 @@ const itemSummaries: ItemSummary[] = [
     isRaidLoot: false,
     isRareLoot: false,
     isLegacy: false,
-    provenance: 'maetrim',
     minimumLevel: 14,
   },
   {
@@ -60,7 +56,6 @@ const itemSummaries: ItemSummary[] = [
     isRaidLoot: false,
     isRareLoot: false,
     isLegacy: false,
-    provenance: 'maetrim',
     minimumLevel: 29,
   },
 ]

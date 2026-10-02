@@ -41,7 +41,6 @@ function itemDetailFor(id: number): Item {
     isMinorArtifact: false,
     wikiUrl: 'https://ddowiki.com/page/Item:Test_Item',
     isLegacy: false,
-    provenance: 'maetrim',
     weaponStats: null,
     armorStats: null,
     augmentSlots: [MELANCHOLIC_SLOT],
