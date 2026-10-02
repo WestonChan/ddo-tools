@@ -125,11 +125,25 @@ const API_ITEM_DETAIL: ApiItemDetail = {
       provenance: 'maetrim',
     },
   ],
-  quest_chains: [{ id: 3, name: 'The Lost Seekers', is_rare: true }],
-  sagas: [
-    { id: 1, name: 'Masterminds of Sharn', tier: 'epic', is_rare: false },
-    { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', is_rare: true },
+  quest_chains: [
+    {
+      id: 3,
+      name: 'The Lost Seekers',
+      is_rare: true,
+      wiki_url: 'https://ddowiki.com/page/The_Lost_Seekers',
+    },
   ],
+  sagas: [
+    {
+      id: 1,
+      name: 'Masterminds of Sharn',
+      tier: 'epic',
+      is_rare: false,
+      wiki_url: 'https://ddowiki.com/page/Masterminds_of_Sharn_(saga)',
+    },
+    { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', is_rare: true, wiki_url: null },
+  ],
+  adventure_packs: [],
   crafting_systems: [],
   challenge_packs: [],
   vendors: [],
@@ -215,11 +229,73 @@ describe('mappers', () => {
 
   it('toItem carries the quest chains and sagas whose end reward offers the item', () => {
     const item = toItem(API_ITEM_DETAIL)
-    expect(item.questChains).toEqual([{ id: 3, name: 'The Lost Seekers', isRareLoot: true }])
-    expect(item.sagas).toEqual([
-      { id: 1, name: 'Masterminds of Sharn', tier: 'epic', isRareLoot: false },
-      { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true },
+    expect(item.questChains).toEqual([
+      {
+        id: 3,
+        name: 'The Lost Seekers',
+        isRareLoot: true,
+        wikiUrl: 'https://ddowiki.com/page/The_Lost_Seekers',
+      },
     ])
+    expect(item.sagas).toEqual([
+      {
+        id: 1,
+        name: 'Masterminds of Sharn',
+        tier: 'epic',
+        isRareLoot: false,
+        wikiUrl: 'https://ddowiki.com/page/Masterminds_of_Sharn_(saga)',
+      },
+      { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true, wikiUrl: null },
+    ])
+  })
+
+  it('toItem carries the adventure packs that drop the item anywhere in the pack', () => {
+    const item = toItem({
+      ...API_ITEM_DETAIL,
+      adventure_packs: [
+        {
+          id: 25,
+          name: 'The Isle of Dread',
+          loot_type: 'chest',
+          chest: 'any legendary chest',
+          is_rare: true,
+          wiki_url: 'https://ddowiki.com/page/The_Isle_of_Dread',
+        },
+        {
+          id: 40,
+          name: 'Magic of Myth Drannor',
+          loot_type: 'chest',
+          chest: null,
+          is_rare: false,
+          wiki_url: null,
+        },
+      ],
+    })
+    expect(item.adventurePackDrops).toEqual([
+      {
+        kind: 'adventurePack',
+        key: 'adventurePack-25',
+        name: 'The Isle of Dread',
+        vendorLocation: null,
+        cost: null,
+        chest: 'any legendary chest',
+        characterLevel: null,
+        isRareLoot: true,
+        wikiUrl: 'https://ddowiki.com/page/The_Isle_of_Dread',
+      },
+      {
+        kind: 'adventurePack',
+        key: 'adventurePack-40',
+        name: 'Magic of Myth Drannor',
+        vendorLocation: null,
+        cost: null,
+        chest: null,
+        characterLevel: null,
+        isRareLoot: false,
+        wikiUrl: null,
+      },
+    ])
+    expect(item.sourcesBeyondQuests).toEqual([])
   })
 
   it('toItem lists crafting systems, challenge packs, vendors, events and starter gear as sources beyond quests', () => {
@@ -268,6 +344,7 @@ describe('mappers', () => {
         name: 'Thunder-Forged',
         vendorLocation: null,
         cost: null,
+        chest: null,
         characterLevel: null,
         isRareLoot: false,
         wikiUrl: 'https://ddowiki.com/page/Thunder-Forged',
@@ -278,6 +355,7 @@ describe('mappers', () => {
         name: 'Secrets of the Artificers',
         vendorLocation: null,
         cost: null,
+        chest: null,
         characterLevel: null,
         isRareLoot: true,
         wikiUrl: 'https://ddowiki.com/page/Secrets_of_the_Artificers',
@@ -288,6 +366,7 @@ describe('mappers', () => {
         name: 'Morten Edgewright',
         vendorLocation: 'The Harbor',
         cost: '50 Tokens',
+        chest: null,
         characterLevel: null,
         isRareLoot: false,
         wikiUrl: null,
@@ -298,6 +377,7 @@ describe('mappers', () => {
         name: 'The Night Revels',
         vendorLocation: null,
         cost: null,
+        chest: null,
         characterLevel: null,
         isRareLoot: false,
         wikiUrl: 'https://ddowiki.com/page/The_Night_Revels',
@@ -308,6 +388,7 @@ describe('mappers', () => {
         name: 'Starter gear at level 15',
         vendorLocation: null,
         cost: null,
+        chest: null,
         characterLevel: 15,
         isRareLoot: false,
         wikiUrl: null,

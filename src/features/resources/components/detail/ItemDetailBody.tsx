@@ -21,6 +21,7 @@ import type {
 } from '../../queries/items'
 
 const ITEM_SOURCE_LABELS: Record<ItemSourceKind, string | null> = {
+  adventurePack: 'Anywhere in the pack',
   craftingSystem: 'Crafted at',
   challengePack: 'Challenge rewards',
   vendor: 'Sold by',
@@ -29,9 +30,37 @@ const ITEM_SOURCE_LABELS: Record<ItemSourceKind, string | null> = {
 }
 
 function itemSourceMetaLine(itemSource: ItemSource): string {
-  return [ITEM_SOURCE_LABELS[itemSource.kind], itemSource.vendorLocation, itemSource.cost]
+  return [
+    ITEM_SOURCE_LABELS[itemSource.kind],
+    itemSource.vendorLocation,
+    itemSource.cost,
+    itemSource.chest ? sentenceCased(itemSource.chest) : null,
+  ]
     .filter(Boolean)
     .join(' · ')
+}
+
+const SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE: ReadonlySet<ItemSourceKind> = new Set([
+  'adventurePack',
+])
+
+function ItemSourceRow({ itemSource }: { itemSource: ItemSource }): JSX.Element {
+  const metaLine = itemSourceMetaLine(itemSource)
+  const hasWikiPage =
+    itemSource.wikiUrl !== null ||
+    SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE.has(itemSource.kind)
+  return (
+    <li className="resources-quest-row">
+      <span className="resources-quest-name">
+        <span className="resources-quest-title">{itemSource.name}</span>
+        {itemSource.isRareLoot && <DropTagChip kind="rare" />}
+        {hasWikiPage && (
+          <WikiLinkIcon href={itemSource.wikiUrl ?? undefined} pageName={itemSource.name} />
+        )}
+      </span>
+      {metaLine && <span className="resources-quest-meta">{metaLine}</span>}
+    </li>
+  )
 }
 
 function toHeaderAttributes(
@@ -155,6 +184,7 @@ export function ItemDetailBody({
     item.quests.length > 0 ||
     item.questChains.length > 0 ||
     item.sagas.length > 0 ||
+    item.adventurePackDrops.length > 0 ||
     item.sourcesBeyondQuests.length > 0
 
   return (
@@ -218,12 +248,15 @@ export function ItemDetailBody({
                 </span>
               </li>
             ))}
+            {item.adventurePackDrops.map((packDrop) => (
+              <ItemSourceRow key={packDrop.key} itemSource={packDrop} />
+            ))}
             {item.questChains.map((questChain) => (
               <li key={`chain-${questChain.id}`} className="resources-quest-row">
                 <span className="resources-quest-name">
                   <span className="resources-quest-title">{questChain.name}</span>
                   {questChain.isRareLoot && <DropTagChip kind="rare" />}
-                  <WikiLinkIcon pageName={questChain.name} />
+                  <WikiLinkIcon href={questChain.wikiUrl ?? undefined} pageName={questChain.name} />
                 </span>
                 <span className="resources-quest-meta">Chain end reward</span>
               </li>
@@ -233,7 +266,7 @@ export function ItemDetailBody({
                 <span className="resources-quest-name">
                   <span className="resources-quest-title">{saga.name}</span>
                   {saga.isRareLoot && <DropTagChip kind="rare" />}
-                  <WikiLinkIcon pageName={saga.name} />
+                  <WikiLinkIcon href={saga.wikiUrl ?? undefined} pageName={saga.name} />
                 </span>
                 <span className="resources-quest-meta">
                   {['Saga reward', saga.tier ? sentenceCased(saga.tier) : null]
@@ -242,21 +275,9 @@ export function ItemDetailBody({
                 </span>
               </li>
             ))}
-            {item.sourcesBeyondQuests.map((itemSource) => {
-              const metaLine = itemSourceMetaLine(itemSource)
-              return (
-                <li key={itemSource.key} className="resources-quest-row">
-                  <span className="resources-quest-name">
-                    <span className="resources-quest-title">{itemSource.name}</span>
-                    {itemSource.isRareLoot && <DropTagChip kind="rare" />}
-                    {itemSource.wikiUrl && (
-                      <WikiLinkIcon href={itemSource.wikiUrl} pageName={itemSource.name} />
-                    )}
-                  </span>
-                  {metaLine && <span className="resources-quest-meta">{metaLine}</span>}
-                </li>
-              )
-            })}
+            {item.sourcesBeyondQuests.map((itemSource) => (
+              <ItemSourceRow key={itemSource.key} itemSource={itemSource} />
+            ))}
           </ul>
         </DetailSection>
       ) : (

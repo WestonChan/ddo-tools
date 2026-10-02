@@ -11,6 +11,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
       'Item detail lists the quest chains and sagas whose end reward offers the item, with the saga reward tier and a Rare chip',
       'Item detail lists crafting stations, challenge packs, vendors, events and iconic starter gear under a section renamed Obtained from, with a Rare chip and a wiki link where one exists',
       'Legacy items show a Legacy chip next to their name in item detail',
+      'Item detail lists pack-wide drops such as any end chest in an adventure pack, and quest chain and saga wiki links open their own pages',
     ],
   },
   {

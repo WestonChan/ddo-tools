@@ -86,6 +86,7 @@ export interface ApiItemQuestChain {
   id: number
   name: string
   is_rare: boolean
+  wiki_url: string | null
 }
 
 export interface ApiItemSaga {
@@ -93,6 +94,16 @@ export interface ApiItemSaga {
   name: string
   tier: string | null
   is_rare: boolean
+  wiki_url: string | null
+}
+
+export interface ApiItemAdventurePack {
+  id: number
+  name: string
+  loot_type: string | null
+  chest: string | null
+  is_rare: boolean
+  wiki_url?: string | null
 }
 
 export interface ApiItemCraftingSystem {
@@ -211,6 +222,7 @@ export interface ApiItemDetail {
   quests: ApiLootQuest[]
   quest_chains: ApiItemQuestChain[]
   sagas: ApiItemSaga[]
+  adventure_packs: ApiItemAdventurePack[]
   crafting_systems: ApiItemCraftingSystem[]
   challenge_packs: ApiItemChallengePack[]
   vendors: ApiItemVendor[]

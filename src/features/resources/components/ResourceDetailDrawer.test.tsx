@@ -51,6 +51,7 @@ function itemDetailFor(id: number): Item {
     quests: [],
     questChains: [],
     sagas: [],
+    adventurePackDrops: [],
     sourcesBeyondQuests: [],
   }
 }

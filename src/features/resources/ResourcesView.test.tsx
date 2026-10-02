@@ -54,6 +54,7 @@ const BLOODSTONE_ITEM: Item = {
   quests: [],
   questChains: [],
   sagas: [],
+  adventurePackDrops: [],
   sourcesBeyondQuests: [],
 }
 

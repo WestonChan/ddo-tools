@@ -34,6 +34,7 @@ const plainItem: Item = {
   quests: [],
   questChains: [],
   sagas: [],
+  adventurePackDrops: [],
   sourcesBeyondQuests: [],
 }
 
@@ -60,11 +61,23 @@ function itemSource(overrides: Partial<ItemSource> = {}): ItemSource {
     name: 'Thunder-Forged',
     vendorLocation: null,
     cost: null,
+    chest: null,
     characterLevel: null,
     isRareLoot: false,
     wikiUrl: 'https://ddowiki.com/page/Thunder-Forged',
     ...overrides,
   }
+}
+
+function packDrop(overrides: Partial<ItemSource> = {}): ItemSource {
+  return itemSource({
+    kind: 'adventurePack',
+    key: 'adventurePack-25',
+    name: 'The Isle of Dread',
+    chest: 'any legendary chest',
+    wikiUrl: 'https://ddowiki.com/page/The_Isle_of_Dread',
+    ...overrides,
+  })
 }
 
 function renderItemDetailBody(item: Item): RenderResult {
@@ -155,7 +168,7 @@ describe('ItemDetailBody drop locations', () => {
     const { container } = renderItemDetailBody({
       ...plainItem,
       quests: [quest()],
-      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: true }],
+      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: true, wikiUrl: null }],
     })
     const rows = container.querySelectorAll('.resources-quest-row')
     expect(rows).toHaveLength(2)
@@ -171,8 +184,14 @@ describe('ItemDetailBody drop locations', () => {
     const { container } = renderItemDetailBody({
       ...plainItem,
       sagas: [
-        { id: 1, name: 'Masterminds of Sharn', tier: 'epic', isRareLoot: false },
-        { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true },
+        {
+          id: 1,
+          name: 'Masterminds of Sharn',
+          tier: 'epic',
+          isRareLoot: false,
+          wikiUrl: null,
+        },
+        { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true, wikiUrl: null },
       ],
     })
     expect(screen.getByText('Obtained from')).toBeInTheDocument()
@@ -190,9 +209,84 @@ describe('ItemDetailBody drop locations', () => {
   it('lists a saga reward with no tier as Saga reward alone', () => {
     const { container } = renderItemDetailBody({
       ...plainItem,
-      sagas: [{ id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false }],
+      sagas: [
+        { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
+      ],
     })
     expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(/^Saga reward$/)
+  })
+
+  it('lists an adventure pack drop as Anywhere in the pack with the chest, Rare chip and wiki link', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      adventurePackDrops: [packDrop({ isRareLoot: true })],
+    })
+    expect(screen.getByText('Obtained from')).toBeInTheDocument()
+    expect(container.querySelector('.resources-quest-title')).toHaveTextContent('The Isle of Dread')
+    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
+      /^Anywhere in the pack · Any legendary chest$/,
+    )
+    expect(container.querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+    expect(
+      screen.getByRole('link', { name: 'Open The Isle of Dread on DDO Wiki' }),
+    ).toHaveAttribute('href', 'https://ddowiki.com/page/The_Isle_of_Dread')
+  })
+
+  it('lists an adventure pack drop with no chest as Anywhere in the pack alone', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      adventurePackDrops: [packDrop({ chest: null })],
+    })
+    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
+      /^Anywhere in the pack$/,
+    )
+  })
+
+  it('links quest chain and saga rows to their wiki_url when the API gives one', () => {
+    renderItemDetailBody({
+      ...plainItem,
+      questChains: [
+        {
+          id: 3,
+          name: 'The Lost Seekers',
+          isRareLoot: false,
+          wikiUrl: 'https://ddowiki.com/page/The_Lost_Seekers_(chain)',
+        },
+      ],
+      sagas: [
+        {
+          id: 1,
+          name: 'Masterminds of Sharn',
+          tier: 'epic',
+          isRareLoot: false,
+          wikiUrl: 'https://ddowiki.com/page/Masterminds_of_Sharn_(saga)',
+        },
+      ],
+    })
+    expect(screen.getByRole('link', { name: 'Open The Lost Seekers on DDO Wiki' })).toHaveAttribute(
+      'href',
+      'https://ddowiki.com/page/The_Lost_Seekers_(chain)',
+    )
+    expect(
+      screen.getByRole('link', { name: 'Open Masterminds of Sharn on DDO Wiki' }),
+    ).toHaveAttribute('href', 'https://ddowiki.com/page/Masterminds_of_Sharn_(saga)')
+  })
+
+  it('builds the quest chain and saga wiki links from the name when the API gives no wiki_url', () => {
+    renderItemDetailBody({
+      ...plainItem,
+      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: false, wikiUrl: null }],
+      sagas: [
+        { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
+      ],
+    })
+    expect(screen.getByRole('link', { name: 'Open The Lost Seekers on DDO Wiki' })).toHaveAttribute(
+      'href',
+      'https://ddowiki.com/page/The_Lost_Seekers',
+    )
+    expect(
+      screen.getByRole('link', { name: 'Open Masterminds of Sharn on DDO Wiki' }),
+    ).toHaveAttribute('href', 'https://ddowiki.com/page/Masterminds_of_Sharn')
   })
 
   it('shows no chest when the drop text names none', () => {
@@ -304,17 +398,26 @@ describe('ItemDetailBody sources beyond quests', () => {
     expect(container.querySelector('.resources-quest-row .wiki-link-icon')).toBeNull()
   })
 
-  it('lists sources beyond quests after the quest, chain and saga rows', () => {
+  it('lists adventure pack drops after the quests and sources beyond quests after the chain and saga rows', () => {
     const { container } = renderItemDetailBody({
       ...plainItem,
       quests: [quest()],
-      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: false }],
-      sagas: [{ id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false }],
+      adventurePackDrops: [packDrop()],
+      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: false, wikiUrl: null }],
+      sagas: [
+        { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
+      ],
       sourcesBeyondQuests: [itemSource()],
     })
     expect(
       Array.from(container.querySelectorAll('.resources-quest-title')).map((t) => t.textContent),
-    ).toEqual(["Delera's Tomb", 'The Lost Seekers', 'Masterminds of Sharn', 'Thunder-Forged'])
+    ).toEqual([
+      "Delera's Tomb",
+      'The Isle of Dread',
+      'The Lost Seekers',
+      'Masterminds of Sharn',
+      'Thunder-Forged',
+    ])
   })
 
   it('shows the linked sources instead of the free-text drop location', () => {
