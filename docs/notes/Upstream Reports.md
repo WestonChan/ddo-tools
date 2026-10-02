@@ -47,6 +47,17 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 
 - 📋 Legendary Powder-Packed Barrel — his drop text "Isle of Dread (wilderness), Rare Chests, and All Hail the King end chest" reads as one segment, so the rare marker attaches to nothing; see `crates/ddo-etl/src/map/drop_location.rs`.
 
+## Found by the 2026-10-01 quest-page read
+
+- 🩹 📋 Quest names that disagree with his own items' drop text and the wiki: "Temple of Elemental Evil: Fire Node" and "Water Node" (his items and the wiki say "ToEE: Fire Node"), "Setting the Wards: The Patriarch's Crypt" (Patriarchs'), "A Mad Tea Party" (Mad Tea Party), "The Kobold's New Ringleader" (Kobolds'), "To Find a Witness: Archbishop Dryden" (the wiki's "Seek Dryden's Counsel"). Until renamed, none of their loot linked.
+- 🩹 📋 Duplicate items: Rahkat's Spangle and Trifle (copies of Rakhat's), Gilk's Bangle (copy of Glik's), Dhovras' Amulet and Epic Dhovras' Amulet (copies of the Armlets; the Epic Amulet had Spell Focus Mastery 3 vs 4). Sources: Durk's Got a Secret, Item:Glik's Bangle, Toil and Trouble pages.
+- 🩹 📋 "Necronimicannon" is the wiki's "Necronomicannon", and his row lacks its Book Shot and Mythic Weapon Boost lines. Source: https://ddowiki.com/page/Item:Necronomicannon.
+- 📋 Drop text that names a story arc rather than a quest, so nothing links: "The Lost Seekers, End reward" on the 22 Venn's Fate rewards, "Delera's Tomb, End reward" on Voice of the Master, "Devil Assault (quest)" on Animus, an empty quest name on Socket Chain. Linked locally through `quest_loot.toml` `items`.
+- 📋 Argonnessen Eye Band: his text says The Final Draw; the wiki lists it under Burning Down the House. Both links kept.
+- 📋 Empty drop text on Shards of the Deep and Dark Star of the Deep (A Blood Pact per the wiki).
+- 📋 Chain end rewards his text calls `reward` where the page also lists a chest: Fell Shiv, First Blood, Magistrate's Scepter, Nether Orb, Iron Beads, Wall of Wood, Forester's Brush Hook, Cannoneer's Goggles, St. Mu'ray's Fire, Planar Focus of Erudition and Prowess, Drow Piwafwi, Drow Smoke Goggles, Slaver's Hand Crossbow, Beholder Plate Armor and Docent; the Chronoscope's eight end rewards are `raid`.
+- 📋 Free to Play per the page, not per the index: Astral Ambush, Horde of the Illithid Controller, Pilgrims' Peril, Stolen Power.
+
 ## Not yet a correction
 
 - 📋 About 150 crafting-file notes record naming differences not listed above ("Spell Crit Damage" vs "Spell Critical Damage", "Curse of Minor Reflex" vs "Reflexes"); each is a rename candidate under the wiki-is-right rule. A `wiki-check` warning for notes saying "his value stands" or "Maetrim spells it" would list them.

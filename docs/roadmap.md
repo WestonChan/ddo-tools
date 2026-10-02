@@ -2043,10 +2043,19 @@ descriptions' drop blocks, the wiki-filled descriptions, and `rare_augments` in 
 files; `/v1/quests/{id}` serves a quest's items and augments, `/v1/augments/{id}` its quests, and
 the site shows the chest on quest rows and a "Drops in" list on picked socket augments.
 
-**Left open after V7, none blocking:** the 22 quests the wiki index does not list (wilderness
-areas and chains) have no free-to-play or legendary-level facts; `quests.zone`, `bestowed_by`, `flagging` are unread;
-Cannith (Essence) crafting waits on D-CS10; `quest_loot.loot_type` and quest-to-item links are his
-text and unverified against the wiki's loot tables. The ledger tracks all four.
+**Quest pages (done 2026-10-01).** Every quest's own page read: `zone` and `bestowed_by` for all 570,
+13 flagging sentences, the 22 index-less quests added, every loot table compared with his links
+(72 links and 170 rare marks added through `items`, `rare` and `rare_augments` in the wiki loot
+file), six quest-name and nine duplicate-item corrections found on the way. Also 2026-10-01:
+corrections can add a bonus or effect to his item, renames go stale instead of failing when he fixes
+a name upstream, Shatter and Vertigo buffs map to Sunder DC and Trip DC, and `augments*.toml`
+creates augments his files lack (none written yet).
+
+**Left open after V7, none blocking:** Cannith (Essence) crafting waits on D-CS10; four quests the
+page calls Free to Play and the index did not; chain-reward loot the pages list as both chest and
+reward holds one `loot_type`; wiki-created rows still to write (Cacophonic Verge and forms, Legendary
+Sword of Shadow, Legendary Winter's Wrath, two Soulforge essences, Warp the Unholy, the Mithral
+augment); 171 crafting notes `wiki-check` flags as correction candidates. The ledger tracks each.
 
 **Items absent from Maetrim's files (decided 2026-09-29).** They are reported upstream AND added
 from the wiki as `data/wiki/items*.toml` rows with `items.source = 'wiki'`, because the gaps are
