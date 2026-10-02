@@ -937,6 +937,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V6 | done | Frontend on the API -- TanStack Query, hand-written API types, sql.js + `DatabaseGate` removed, Vercel config (first deploy pending the Vercel account) |
 | D1 | done | Design-system adoption -- tokens, fonts and lint rules from the Claude Design system; the rail with character switcher, compare picker and warnings; stats-panel shell; landing tiles; page scaffolds for the unbuilt views; resources and characters restyled |
 | V7 | done | Wiki gap-fill -- quest loot rarity, quest facts, all 37 crafting systems and blank descriptions read from ddowiki into ETL overrides; the unread parts of Maetrim's files; per-table ledger in `docs/notes/Data Verification.md` |
+| V7b | planned | Item sources -- every item has a structured source: vendors, events, crafting outputs, challenges and starter gear join quests, chains, sagas and packs; `drops` becomes `sources` and provenance becomes `provenance`; the "every item has a source" integrity check turns hard |
 | **4d** | **→ NEXT** | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
@@ -2081,6 +2082,37 @@ deleted; a normalised-name near-match is written but warned as a probable duplic
 are recorded one entry per level as `<Name> (Level N)`, his convention. First batch: the "… of the
 Oozing Hunger" and "Duergarcraft …" weapon families, five tiered items, and about 17 singles found
 by the 2026-09-29 category walk (see [Data Verification](notes/Data%20Verification.md)).
+
+#### V7b — Item sources (planned, decided 2026-10-02)
+
+**Why.** 3,627 of 8,740 items have no structured source: their drop text names things the
+`drops` table has no kind for. Events (Treasure of Crystal Cove 245, The Night Revels 125,
+Anniversary Party 115, Timeline Fragment Exchange 108), vendors (Morten Edgewright 181, Blue Water
+Inn 160, Captain Xendros 80), crafting stations (Cauldron of Sora Katra 130, Unholy Defiler 114,
+Altar of Fecundity 93, Sealed Altar 90, Catalyst 84, Viktranium 82), challenges (Vaults of the
+Artificers 140) and iconic starter gear ("Advance to level 15", 174). Until these exist, "no source"
+cannot mean legacy, so `items.is_legacy` is a stored flag set by three rules (the "(legacy)" and
+"(historic)" names, a drop text naming only a retired source in `legacy_drop_sources.toml`, and a
+correction when a wiki page says an item no longer drops); `/v1/items` hides legacy items unless
+`include_legacy=true`.
+
+**Plan.**
+1. Rename: the loot table and the item/augment detail array become `sources`, since vendors and
+   crafting are not drops; the provenance column `source` (maetrim | wiki) on items, quests,
+   augments, chains and sagas becomes `provenance`, so each word means one thing. One schema change,
+   frontend types updated in the same cycle.
+2. New source kinds in `sources`: `vendor` (a `vendors` table: NPC, location, pack; wiki-read),
+   `event` (an `events` table: the festival or event; wiki-read), `crafting_system` (the existing
+   wiki crafting systems: an item a station crafts or upgrades), `challenge` (his challenge quests,
+   already rows in `quests`), `starter` (iconic starter gear; his "Advance to level N" text). Each
+   kind follows the existing pattern: his drop text links where it names the source, wiki files add
+   what his text lacks, counts in the report and `/v1/version`, served on item detail and a detail
+   route per new entity.
+3. Readers: wiki vendor and event pages for the names his text uses (the `unlinked_drop_segments`
+   list from `cargo xtask wiki-batch` is the work list, largest heads first).
+4. Integrity: `cargo xtask check-db`'s `items_without_a_source` turns from WARN to HARD once the
+   heads are covered; `is_legacy` can then be recomputed as "no obtainable source" for items that
+   are not old versions by name.
 
 #### V8 — Build sharing with a server
 Moved after Phase 8 on 2026-10-01: sharing a build needs the build to exist first, so this waits for Phase 5 (`user.db` builds), 6 (stats), 7 (build plan) and 8 (gear); the server half could still be built earlier if the ddo-data side wants it.
