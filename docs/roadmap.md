@@ -2066,11 +2066,29 @@ links and the API flattening them, the per-kind tables were consolidated into `d
 source id and one of item/augment, enforced by CHECKs; rebuilt every deploy so no migration). Item
 and augment detail carry a `drops` array beside the per-kind arrays; `/v1/adventure-packs/{id}`
 lists pack-wide loot. `/v1/items` filters now cover the Resources page without client matching:
-`q` over name, slot, category and pack with exact-then-prefix ranking; `stat` repeatable with
-any-match; `include_set_bonuses`; `quest`, `quest_chain`, `saga`; set tiers carry derived bonuses.
+`q` over name, slot, category and pack with exact-then-prefix ranking; `enchantment` (replacing
+`stat`, decided 2026-10-02: one repeatable any-match parameter whose values are stat names or
+named-effect names, with `/v1/enchantments` as the picker's vocabulary); `include_set_bonuses`;
+`quest`, `quest_chain`, `saga`; set tiers carry derived bonuses.
 
-**Left open after V7, none blocking:** the two retired ToEE quests his drop text names (keep as
-wiki rows or alias onto the area quests); Cannith (Essence) crafting waits on D-CS10; wiki-created rows still to write (Cacophonic Verge and forms, Legendary
+**Legacy items (decided 2026-10-02).** Items that no longer drop stay in the database, flagged
+`is_legacy` and hidden from `/v1/items` unless `include_legacy=true` (656 today: 100 "(legacy)" and
+"(historic)" names, 553 ToEE items whose drop text names only the quests Update 56 retired, listed in
+`legacy_drop_sources.toml`, and 3 Tempest's Spine armours the wiki says were replaced, by
+correction). The wiki has no discontinued category; "legacy" is its word and Maetrim's. The flag is
+stored, not computed, until V7b gives every obtainable item a source.
+
+**Integrity checks (2026-10-02).** `cargo xtask check-db` runs 16 hard invariants and 14 warnings on
+the built database, in CI against the fixture build and in the deploy before `flyctl deploy`; a hard
+failure stops the deploy. Warnings are the work list (items without a source, items without an
+enchantment, unreferenced stats, member-less sets, socket types nothing fits).
+
+**Buffs that are stats (2026-10-02).** Shatter, Vertigo and 15 other item buff types named after a
+stat (Sneak Attack, Command, Melee Power, Spell Lore, ...) are bonuses now instead of named effects,
+and an untyped buff takes the bonus type its definition fixes; untyped item bonuses fell from 123
+to 6.
+
+**Left open after V7, none blocking:** Cannith (Essence) crafting waits on D-CS10; wiki-created rows still to write (Cacophonic Verge and forms, Legendary
 Sword of Shadow, Legendary Winter's Wrath, two Soulforge essences, Warp the Unholy, the Mithral
 augment); 171 crafting notes `wiki-check` flags as correction candidates. The ledger tracks each.
 
