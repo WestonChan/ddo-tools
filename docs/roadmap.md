@@ -2078,8 +2078,9 @@ named-effect names, with `/v1/enchantments` as the picker's vocabulary); `includ
 correction). The wiki has no discontinued category; "legacy" is its word and Maetrim's. The flag is
 stored, not computed, until V7b gives every obtainable item a source.
 
-**Integrity checks (2026-10-02).** `cargo xtask check-db` runs 16 hard invariants and 14 warnings on
-the built database, in CI against the fixture build and in the deploy before `flyctl deploy`; a hard
+**Integrity checks (2026-10-02).** Single-table rules are schema constraints (non-blank names, wiki
+URL shape, quests have packs, reward rows have no chest, every bonus has a type, foreign keys on
+during the build); cross-table rules are `cargo xtask check-db` hard invariants (8) and warnings (14), in CI against the fixture build and in the deploy before `flyctl deploy`; a hard
 failure stops the deploy. Warnings are the work list (items without a source, items without an
 enchantment, unreferenced stats, member-less sets, socket types nothing fits).
 
