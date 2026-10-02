@@ -9,6 +9,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     changes: [
       'An item that both drops from a quest chest and is its end reward shows one row for that quest naming the chest and End reward',
       'Item detail lists the quest chains and sagas whose end reward offers the item, with the saga reward tier and a Rare chip',
+      'Item detail lists crafting stations, challenge packs, vendors, events and iconic starter gear under a section renamed Obtained from, with a Rare chip and a wiki link where one exists',
+      'Legacy items show a Legacy chip next to their name in item detail',
     ],
   },
   {
