@@ -937,7 +937,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V6 | done | Frontend on the API -- TanStack Query, hand-written API types, sql.js + `DatabaseGate` removed, Vercel config (first deploy pending the Vercel account) |
 | D1 | done | Design-system adoption -- tokens, fonts and lint rules from the Claude Design system; the rail with character switcher, compare picker and warnings; stats-panel shell; landing tiles; page scaffolds for the unbuilt views; resources and characters restyled |
 | V7 | done | Wiki gap-fill -- quest loot rarity, quest facts, all 37 crafting systems and blank descriptions read from ddowiki into ETL overrides; the unread parts of Maetrim's files; per-table ledger in `docs/notes/Data Verification.md` |
-| V7b | planned | Item sources -- every item has a structured source: vendors, events, crafting outputs, challenges and starter gear join quests, chains, sagas and packs; `drops` becomes `sources` and provenance becomes `provenance`; the "every item has a source" integrity check turns hard |
+| V7b | done | Item sources -- every item has a structured source: vendors, events, crafting outputs, challenges and starter gear join quests, chains, sagas and packs; `drops` becomes `sources` and provenance becomes `provenance`; the "every item has a source" integrity check turns hard |
 | **4d** | **→ NEXT** | Filter UX overhaul |
 | 4e | planned | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
@@ -2101,7 +2101,7 @@ are recorded one entry per level as `<Name> (Level N)`, his convention. First ba
 Oozing Hunger" and "Duergarcraft …" weapon families, five tiered items, and about 17 singles found
 by the 2026-09-29 category walk (see [Data Verification](notes/Data%20Verification.md)).
 
-#### V7b — Item sources (planned, decided 2026-10-02)
+#### V7b — Item sources (done 2026-10-02; readers still filling the tail)
 
 **Why.** 3,627 of 8,740 items have no structured source: their drop text names things the
 `drops` table has no kind for. Events (Treasure of Crystal Cove 245, The Night Revels 125,
@@ -2114,7 +2114,19 @@ cannot mean legacy, so `items.is_legacy` is a stored flag set by three rules (th
 correction when a wiki page says an item no longer drops); `/v1/items` hides legacy items unless
 `include_legacy=true`.
 
-**Plan.**
+**Shipped 2026-10-02.** `sources` (kind quest / quest_chain / saga / adventure_pack / challenge /
+crafting_system / vendor / event / starter) with `provenance` as the maetrim-or-wiki column everywhere;
+`/v1/vendors`, `/v1/events`, `/v1/adventure-packs/{id}`; item detail shows every kind under
+"Obtained from" and a Legacy chip; `source_aliases.toml` maps his turn-in wording to vendors, stations
+and challenge packs (the Altar of Fecundity splits Green Steel by minimum level). Wiki reads: 13
+vendors (286 listed items, 580 drop-text links), 9 events (524 listed, 647 links). Items without a
+structured source went from 3,627 to 899; the heads left are five unread crafting series (Syranian
+Forged Weaponry, Dragoncraft/Elfcraft/Giantcraft Armor, Tome of Untold Legends, Shield of Legend),
+quests his files lack (the Return to Gianthold four, The Darklake, The Borderlands, Sands of
+Menechtarun, The Voyage; a reader is creating them), the DDO Store and "Random" text, and 56 items
+with no drop text at all. `items_without_a_source` stays a warning until those are in.
+
+**Plan as decided.**
 1. Rename: the loot table and the item/augment detail array become `sources`, since vendors and
    crafting are not drops; the provenance column `source` (maetrim | wiki) on items, quests,
    augments, chains and sagas becomes `provenance`, so each word means one thing. One schema change,
