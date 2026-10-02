@@ -23,6 +23,7 @@ const plainItem: Item = {
   canAcceptSentience: false,
   isMinorArtifact: false,
   wikiUrl: null,
+  isLegacy: false,
   provenance: 'maetrim',
   weaponStats: null,
   armorStats: null,
@@ -363,6 +364,22 @@ describe('ItemDetailBody provenance', () => {
     })
     expect(screen.queryByText('Source')).toBeNull()
     expect(screen.queryByText('DDO Wiki (not yet in DDOBuilderV2)')).toBeNull()
+  })
+})
+
+describe('ItemDetailBody legacy chip', () => {
+  it('shows a Legacy chip next to the name of a legacy item', () => {
+    const { container } = renderItemDetailBody({ ...plainItem, isLegacy: true })
+    const chip = container.querySelector(
+      '.resources-entity-header .resources-chip[data-kind="legacy"]',
+    )
+    expect(chip).toHaveTextContent('Legacy')
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/^Voice of the Master$/)
+  })
+
+  it('shows no Legacy chip on a current item', () => {
+    const { container } = renderItemDetailBody(plainItem)
+    expect(container.querySelector('.resources-chip[data-kind="legacy"]')).toBeNull()
   })
 })
 

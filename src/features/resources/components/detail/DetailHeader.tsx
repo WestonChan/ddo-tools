@@ -10,6 +10,7 @@ interface DetailHeaderProps {
   attributes: KeyValuePair[]
   wikiUrl?: string | null
   wikiPageName?: string | null
+  isLegacy?: boolean
 }
 
 const COPY_FEEDBACK_MS = 1500
@@ -19,6 +20,7 @@ export function DetailHeader({
   attributes,
   wikiUrl,
   wikiPageName,
+  isLegacy = false,
 }: DetailHeaderProps): JSX.Element {
   const { deepLinkUrl } = useDetailDrawerNavigation()
   const [isLinkCopied, setIsLinkCopied] = useState(false)
@@ -47,9 +49,16 @@ export function DetailHeader({
   return (
     <header className="resources-entity-header">
       <div className="resources-entity-title-row">
-        <h2 id={DETAIL_DRAWER_TITLE_ID} className="resources-entity-name">
-          {name}
-        </h2>
+        <div className="resources-entity-name-row">
+          <h2 id={DETAIL_DRAWER_TITLE_ID} className="resources-entity-name">
+            {name}
+          </h2>
+          {isLegacy && (
+            <span className="resources-chip" data-kind="legacy">
+              Legacy
+            </span>
+          )}
+        </div>
         <div className="resources-entity-actions">
           <button
             type="button"

@@ -22,6 +22,7 @@ const ITEM_SUMMARIES: ItemSummary[] = [
     pack: 'Vault of Night',
     isRaidLoot: true,
     isRareLoot: false,
+    isLegacy: false,
     provenance: 'maetrim',
   },
 ]
@@ -42,6 +43,7 @@ const BLOODSTONE_ITEM: Item = {
   canAcceptSentience: false,
   isMinorArtifact: false,
   wikiUrl: null,
+  isLegacy: false,
   provenance: 'maetrim',
   weaponStats: null,
   armorStats: null,

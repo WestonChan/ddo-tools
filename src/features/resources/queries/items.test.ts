@@ -29,6 +29,7 @@ function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
     pack: 'Vault of Night',
     is_raid: true,
     is_rare: false,
+    is_legacy: false,
     provenance: 'maetrim',
     ...overrides,
   }
@@ -51,6 +52,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   accepts_sentience: true,
   is_minor_artifact: false,
   wiki_url: 'https://ddowiki.com/page/Item:Sireth,_Spear_of_the_Sky',
+  is_legacy: false,
   provenance: 'maetrim',
   weapon: {
     weapon_type: 'Quarterstaff',
@@ -147,6 +149,7 @@ describe('mappers', () => {
       pack: 'Vault of Night',
       isRaidLoot: true,
       isRareLoot: false,
+      isLegacy: false,
       provenance: 'maetrim',
     })
   })
@@ -158,6 +161,12 @@ describe('mappers', () => {
   it('toItem carries the provenance', () => {
     expect(toItem(API_ITEM_DETAIL).provenance).toBe('maetrim')
     expect(toItem({ ...API_ITEM_DETAIL, provenance: 'wiki' }).provenance).toBe('wiki')
+  })
+
+  it('toItemSummary and toItem carry the legacy flag', () => {
+    expect(toItemSummary(createApiItemRow({ is_legacy: true })).isLegacy).toBe(true)
+    expect(toItem({ ...API_ITEM_DETAIL, is_legacy: true }).isLegacy).toBe(true)
+    expect(toItem(API_ITEM_DETAIL).isLegacy).toBe(false)
   })
 
   it('toItemSummary carries the rare-loot flag', () => {

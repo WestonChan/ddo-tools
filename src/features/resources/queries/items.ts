@@ -29,6 +29,7 @@ export interface ItemSummary {
   pack: string | null
   isRaidLoot: boolean
   isRareLoot: boolean
+  isLegacy: boolean
   provenance: Provenance
 }
 
@@ -48,6 +49,7 @@ export interface ItemAttributes {
   canAcceptSentience: boolean
   isMinorArtifact: boolean
   wikiUrl: string | null
+  isLegacy: boolean
   provenance: Provenance
 }
 
@@ -189,6 +191,7 @@ export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
     pack: apiItemRow.pack,
     isRaidLoot: apiItemRow.is_raid,
     isRareLoot: apiItemRow.is_rare,
+    isLegacy: apiItemRow.is_legacy,
     provenance: apiItemRow.provenance,
   }
 }
@@ -210,6 +213,7 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
     canAcceptSentience: apiItemDetail.accepts_sentience,
     isMinorArtifact: apiItemDetail.is_minor_artifact,
     wikiUrl: apiItemDetail.wiki_url,
+    isLegacy: apiItemDetail.is_legacy,
     provenance: apiItemDetail.provenance,
     weaponStats: apiItemDetail.weapon
       ? {

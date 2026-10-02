@@ -40,6 +40,7 @@ function itemDetailFor(id: number): Item {
     canAcceptSentience: false,
     isMinorArtifact: false,
     wikiUrl: 'https://ddowiki.com/page/Item:Test_Item',
+    isLegacy: false,
     provenance: 'maetrim',
     weaponStats: null,
     armorStats: null,

@@ -164,6 +164,7 @@ export function ItemDetailBody({
         attributes={headerAttributes}
         wikiUrl={item.wikiUrl}
         wikiPageName={item.name}
+        isLegacy={item.isLegacy}
       />
       {item.description && <p className="resources-detail-description">{item.description}</p>}
       {labeledWeaponStats.length > 0 && (

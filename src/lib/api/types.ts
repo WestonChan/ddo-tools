@@ -12,6 +12,7 @@ export interface ApiItemRow {
   pack: string | null
   is_raid: boolean
   is_rare: boolean
+  is_legacy: boolean
   provenance: Provenance
 }
 
@@ -198,6 +199,7 @@ export interface ApiItemDetail {
   accepts_sentience: boolean
   is_minor_artifact: boolean
   wiki_url: string | null
+  is_legacy: boolean
   provenance: Provenance
   weapon: ApiWeaponStats | null
   armor: ApiArmorStats | null

@@ -403,6 +403,12 @@
   border-color: var(--arcane-400);
 }
 
+.resources-chip[data-kind='legacy'] {
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border-color: var(--border);
+}
+
 .resources-status {
   display: flex;
   flex-direction: column;
@@ -564,8 +570,16 @@
   gap: var(--space-2);
 }
 
-.resources-entity-name {
+.resources-entity-name-row {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.resources-entity-name {
   min-width: 0;
   color: var(--text-heading);
   font-size: var(--fs-h2);
