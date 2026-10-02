@@ -14,7 +14,7 @@ function itemRow(overrides: Partial<ItemSummary> = {}): ItemSummary {
     pack: 'Vault of Night',
     isRaidLoot: false,
     isRareLoot: false,
-    source: 'maetrim',
+    provenance: 'maetrim',
     ...overrides,
   }
 }

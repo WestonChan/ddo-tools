@@ -37,7 +37,7 @@ function toHeaderAttributes(
   if (item.material) attributes.push({ label: 'Material', value: item.material })
   if (item.requiredRace) attributes.push({ label: 'Race', value: item.requiredRace })
   if (item.setName) attributes.push({ label: 'Set', value: item.setName })
-  if (item.source === 'wiki') {
+  if (item.provenance === 'wiki') {
     attributes.push({
       label: 'Source',
       value: (

@@ -11,7 +11,7 @@ import type {
   ApiItemsPage,
   ApiLootQuest,
   ApiStat,
-  ItemSource,
+  Provenance,
 } from '../../../lib/api'
 
 const WHOLE_LIST_LIMIT = 10_000
@@ -25,7 +25,7 @@ export interface ItemSummary {
   pack: string | null
   isRaidLoot: boolean
   isRareLoot: boolean
-  source: ItemSource
+  provenance: Provenance
 }
 
 export interface ItemAttributes {
@@ -44,7 +44,7 @@ export interface ItemAttributes {
   canAcceptSentience: boolean
   isMinorArtifact: boolean
   wikiUrl: string | null
-  source: ItemSource
+  provenance: Provenance
 }
 
 export interface ItemWeaponStats {
@@ -171,7 +171,7 @@ export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
     pack: apiItemRow.pack,
     isRaidLoot: apiItemRow.is_raid,
     isRareLoot: apiItemRow.is_rare,
-    source: apiItemRow.source,
+    provenance: apiItemRow.provenance,
   }
 }
 
@@ -192,7 +192,7 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
     canAcceptSentience: apiItemDetail.accepts_sentience,
     isMinorArtifact: apiItemDetail.is_minor_artifact,
     wikiUrl: apiItemDetail.wiki_url,
-    source: apiItemDetail.source,
+    provenance: apiItemDetail.provenance,
     weaponStats: apiItemDetail.weapon
       ? {
           damage: apiItemDetail.weapon.damage,

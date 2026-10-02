@@ -1,4 +1,4 @@
-export type ItemSource = 'maetrim' | 'wiki'
+export type Provenance = 'maetrim' | 'wiki'
 
 export interface ApiItemRow {
   id: number
@@ -12,7 +12,7 @@ export interface ApiItemRow {
   pack: string | null
   is_raid: boolean
   is_rare: boolean
-  source: ItemSource
+  provenance: Provenance
 }
 
 export interface ApiItemsPage {
@@ -78,6 +78,7 @@ export interface ApiLootQuest {
   is_free_to_play: boolean
   difficulties: string[]
   chest: string | null
+  provenance: Provenance
 }
 
 export interface ApiItemQuestChain {
@@ -139,7 +140,7 @@ export interface ApiItemDetail {
   accepts_sentience: boolean
   is_minor_artifact: boolean
   wiki_url: string | null
-  source: ItemSource
+  provenance: Provenance
   weapon: ApiWeaponStats | null
   armor: ApiArmorStats | null
   bonuses: ApiBonus[]
@@ -162,6 +163,7 @@ export interface ApiAugment {
   slots: string[]
   bonuses: ApiBonus[]
   crafting: ApiCraftingRecipe[]
+  provenance: Provenance
 }
 
 export interface ApiAugmentDetail extends ApiAugment {

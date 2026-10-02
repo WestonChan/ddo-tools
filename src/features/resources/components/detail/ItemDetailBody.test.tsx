@@ -23,7 +23,7 @@ const plainItem: Item = {
   canAcceptSentience: false,
   isMinorArtifact: false,
   wikiUrl: null,
-  source: 'maetrim',
+  provenance: 'maetrim',
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],
@@ -214,11 +214,11 @@ describe('ItemDetailBody header attributes', () => {
   })
 })
 
-describe('ItemDetailBody data source', () => {
+describe('ItemDetailBody provenance', () => {
   it('shows a Source row linking the wiki page for a wiki-sourced item', () => {
     renderItemDetailBody({
       ...plainItem,
-      source: 'wiki',
+      provenance: 'wiki',
       wikiUrl: 'https://ddowiki.com/page/Item:Voice_of_the_Master',
     })
     const sourceLink = screen.getByRole('link', { name: 'DDO Wiki (not yet in DDOBuilderV2)' })
