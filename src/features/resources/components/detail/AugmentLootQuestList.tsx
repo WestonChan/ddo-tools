@@ -18,9 +18,11 @@ export function AugmentLootQuestList({ augmentId }: { augmentId: number }): JSX.
           <li key={quest.id} className="resources-augment-loot-quest">
             {quest.name}
             {quest.isRareLoot && <DropTagChip kind="rare" />}
-            {quest.chest && (
-              <span className="resources-quest-chest">{sentenceCased(quest.chest)}</span>
-            )}
+            {quest.chests.map((chest) => (
+              <span key={chest} className="resources-quest-chest">
+                {sentenceCased(chest)}
+              </span>
+            ))}
           </li>
         ))}
       </ul>

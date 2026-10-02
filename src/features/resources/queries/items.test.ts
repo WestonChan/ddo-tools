@@ -184,11 +184,42 @@ describe('mappers', () => {
       level: 20,
       pack: 'Web of Chaos',
       patron: 'The Twelve',
-      lootType: 'raid',
+      isEndReward: false,
       isRaid: true,
       isRareLoot: true,
       isFreeToPlay: false,
-      chest: 'raid warded chest',
+      chests: ['raid warded chest'],
+    })
+  })
+
+  it('toItem groups the loot rows of one quest into one quest with every source', () => {
+    const chestDrop = {
+      ...API_ITEM_DETAIL.quests[0],
+      is_raid: false,
+      is_rare: false,
+      loot_type: 'chest',
+      chest: 'end chest',
+    }
+    const endReward = { ...chestDrop, loot_type: 'reward', is_rare: true, chest: null }
+    const item = toItem({ ...API_ITEM_DETAIL, quests: [chestDrop, endReward] })
+    expect(item.quests).toHaveLength(1)
+    expect(item.quests[0]).toMatchObject({
+      id: 11,
+      chests: ['end chest'],
+      isEndReward: true,
+      isRareLoot: true,
+      isRaid: false,
+    })
+  })
+
+  it('toItem marks a grouped quest raid when any of its loot rows is a raid drop', () => {
+    const raidDrop = { ...API_ITEM_DETAIL.quests[0], is_rare: false }
+    const endReward = { ...raidDrop, is_raid: false, loot_type: 'reward', chest: null }
+    expect(toItem({ ...API_ITEM_DETAIL, quests: [endReward, raidDrop] }).quests[0]).toMatchObject({
+      isRaid: true,
+      isRareLoot: false,
+      isEndReward: true,
+      chests: ['raid warded chest'],
     })
   })
 
@@ -338,9 +369,9 @@ describe('fetchers', () => {
     })
     const lootQuests = await fetchAugmentLootQuests(1902)
     expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/v1/augments/1902')
-    expect(lootQuests.map((q) => [q.id, q.chest])).toEqual([
-      [11, 'raid warded chest'],
-      [12, null],
+    expect(lootQuests.map((q) => [q.id, q.chests])).toEqual([
+      [11, ['raid warded chest']],
+      [12, []],
     ])
   })
 })

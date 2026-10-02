@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-02',
+    changes: [
+      'An item that both drops from a quest chest and is its end reward shows one row for that quest naming the chest and End reward',
+    ],
+  },
+  {
     date: '2026-10-01',
     changes: [
       'New look: warm-slate surfaces, one gold accent, Source Sans 3 for text and JetBrains Mono for every number; light and dark themes both follow it',

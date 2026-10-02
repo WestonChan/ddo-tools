@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import { ItemDetailBody } from './ItemDetailBody'
 import type { Item, LootQuest } from '../../queries/items'
@@ -43,8 +43,8 @@ function quest(overrides: Partial<LootQuest> = {}): LootQuest {
     isRaid: false,
     isRareLoot: false,
     isFreeToPlay: false,
-    lootType: 'quest',
-    chest: null,
+    isEndReward: false,
+    chests: [],
     ...overrides,
   }
 }
@@ -100,7 +100,7 @@ describe('ItemDetailBody drop locations', () => {
   it('labels end rewards in the meta line', () => {
     const { container } = renderItemDetailBody({
       ...plainItem,
-      quests: [quest({ lootType: 'reward' })],
+      quests: [quest({ isEndReward: true })],
     })
     expect(container.querySelector('.resources-chip')).toBeNull()
     expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
@@ -111,11 +111,26 @@ describe('ItemDetailBody drop locations', () => {
   it('names the chest after the quest name in sentence case', () => {
     const { container } = renderItemDetailBody({
       ...plainItem,
-      quests: [quest({ chest: "althea's chest" })],
+      quests: [quest({ chests: ["althea's chest"] })],
     })
     expect(
       container.querySelector('.resources-quest-name .resources-quest-chest'),
     ).toHaveTextContent("Althea's chest")
+  })
+
+  it('renders one row for a quest that is both a chest drop and the end reward', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      quests: [quest({ chests: ['end chest'], isEndReward: true, isRareLoot: true })],
+    })
+    const rows = container.querySelectorAll('.resources-quest-row')
+    expect(rows).toHaveLength(1)
+    expect(rows[0].querySelector('.resources-quest-chest')).toHaveTextContent('End chest')
+    expect(rows[0].querySelector('.resources-quest-meta')).toHaveTextContent('Level 8 · End reward')
+    expect(rows[0].querySelectorAll('.resources-chip[data-kind="rare"]')).toHaveLength(1)
+    expect(consoleError).not.toHaveBeenCalled()
+    consoleError.mockRestore()
   })
 
   it('shows no chest when the drop text names none', () => {

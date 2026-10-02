@@ -11,19 +11,19 @@ function lootQuest(id: number, overrides: Partial<LootQuest> = {}): LootQuest {
     level: 13,
     pack: null,
     patron: null,
-    lootType: 'chest',
+    isEndReward: false,
     isRaid: false,
     isRareLoot: false,
     isFreeToPlay: false,
-    chest: null,
+    chests: [],
     ...overrides,
   }
 }
 
 const LOOT_QUESTS_BY_AUGMENT_ID: Record<number, LootQuest[]> = {
   1: [
-    lootQuest(10, { name: 'Secrets of the Red Wizards', chest: 'end chest', isRareLoot: true }),
-    lootQuest(11, { name: 'The Covered Culvert', chest: 'optional chest' }),
+    lootQuest(10, { name: 'Secrets of the Red Wizards', chests: ['end chest'], isRareLoot: true }),
+    lootQuest(11, { name: 'The Covered Culvert', chests: ['optional chest'] }),
     lootQuest(12, { name: 'Zoo Creeper' }),
     lootQuest(13),
     lootQuest(14),

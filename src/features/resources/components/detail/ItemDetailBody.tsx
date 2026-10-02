@@ -177,9 +177,11 @@ export function ItemDetailBody({
                   <span className="resources-quest-title">{quest.name}</span>
                   {quest.isRaid && <DropTagChip kind="raid" />}
                   {quest.isRareLoot && <DropTagChip kind="rare" />}
-                  {quest.chest && (
-                    <span className="resources-quest-chest">{sentenceCased(quest.chest)}</span>
-                  )}
+                  {quest.chests.map((chest) => (
+                    <span key={chest} className="resources-quest-chest">
+                      {sentenceCased(chest)}
+                    </span>
+                  ))}
                   <WikiLinkIcon pageName={quest.name} />
                 </span>
                 <span className="resources-quest-meta">
@@ -187,7 +189,7 @@ export function ItemDetailBody({
                     quest.patron,
                     quest.pack,
                     quest.level !== null ? `Level ${quest.level}` : null,
-                    quest.lootType === 'reward' ? 'End reward' : null,
+                    quest.isEndReward ? 'End reward' : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}

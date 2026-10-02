@@ -129,11 +129,11 @@ export interface LootQuest {
   level: number | null
   pack: string | null
   patron: string | null
-  lootType: string | null
+  isEndReward: boolean
   isRaid: boolean
   isRareLoot: boolean
   isFreeToPlay: boolean
-  chest: string | null
+  chests: string[]
 }
 
 export interface Item extends ItemAttributes {
@@ -228,23 +228,33 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
       sortOrder: i,
     })),
     clickies: apiItemDetail.clickies.map((c) => ({ name: c.name, description: c.description })),
-    quests: apiItemDetail.quests.map(toLootQuest),
+    quests: toLootQuests(apiItemDetail.quests),
   }
 }
 
-function toLootQuest(apiLootQuest: ApiLootQuest): LootQuest {
-  return {
-    id: apiLootQuest.id,
-    name: apiLootQuest.name,
-    level: apiLootQuest.level,
-    pack: apiLootQuest.pack,
-    patron: apiLootQuest.patron,
-    lootType: apiLootQuest.loot_type,
-    isRaid: apiLootQuest.is_raid,
-    isRareLoot: apiLootQuest.is_rare,
-    isFreeToPlay: apiLootQuest.is_free_to_play,
-    chest: apiLootQuest.chest,
+function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
+  const lootQuestsById = new Map<number, LootQuest>()
+  for (const apiLootQuest of apiLootQuests) {
+    const lootQuest = lootQuestsById.get(apiLootQuest.id) ?? {
+      id: apiLootQuest.id,
+      name: apiLootQuest.name,
+      level: apiLootQuest.level,
+      pack: apiLootQuest.pack,
+      patron: apiLootQuest.patron,
+      isEndReward: false,
+      isRaid: false,
+      isRareLoot: false,
+      isFreeToPlay: apiLootQuest.is_free_to_play,
+      chests: [],
+    }
+    lootQuest.isEndReward ||= apiLootQuest.loot_type === 'reward'
+    lootQuest.isRaid ||= apiLootQuest.is_raid
+    lootQuest.isRareLoot ||= apiLootQuest.is_rare
+    if (apiLootQuest.chest && !lootQuest.chests.includes(apiLootQuest.chest))
+      lootQuest.chests.push(apiLootQuest.chest)
+    lootQuestsById.set(apiLootQuest.id, lootQuest)
   }
+  return [...lootQuestsById.values()]
 }
 
 export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
@@ -337,5 +347,5 @@ export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<Augme
 
 export async function fetchAugmentLootQuests(augmentId: number): Promise<LootQuest[]> {
   const augment = await fetchApiJson<ApiAugmentDetail>(`/v1/augments/${augmentId}`)
-  return augment.quests.map(toLootQuest)
+  return toLootQuests(augment.quests)
 }
