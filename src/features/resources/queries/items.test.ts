@@ -122,6 +122,11 @@ const API_ITEM_DETAIL: ApiItemDetail = {
       chest: 'raid warded chest',
     },
   ],
+  quest_chains: [{ id: 3, name: 'The Lost Seekers', is_rare: true }],
+  sagas: [
+    { id: 1, name: 'Masterminds of Sharn', tier: 'epic', is_rare: false },
+    { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', is_rare: true },
+  ],
 }
 
 describe('mappers', () => {
@@ -190,6 +195,15 @@ describe('mappers', () => {
       isFreeToPlay: false,
       chests: ['raid warded chest'],
     })
+  })
+
+  it('toItem carries the quest chains and sagas whose end reward offers the item', () => {
+    const item = toItem(API_ITEM_DETAIL)
+    expect(item.questChains).toEqual([{ id: 3, name: 'The Lost Seekers', isRareLoot: true }])
+    expect(item.sagas).toEqual([
+      { id: 1, name: 'Masterminds of Sharn', tier: 'epic', isRareLoot: false },
+      { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true },
+    ])
   })
 
   it('toItem groups the loot rows of one quest into one quest with every source', () => {

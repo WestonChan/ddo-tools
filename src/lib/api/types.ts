@@ -80,6 +80,19 @@ export interface ApiLootQuest {
   chest: string | null
 }
 
+export interface ApiItemQuestChain {
+  id: number
+  name: string
+  is_rare: boolean
+}
+
+export interface ApiItemSaga {
+  id: number
+  name: string
+  tier: string | null
+  is_rare: boolean
+}
+
 export interface ApiWeaponStats {
   weapon_type: string
   proficiency: string | null
@@ -135,6 +148,8 @@ export interface ApiItemDetail {
   clickies: ApiItemClickie[]
   set: { id: number; name: string; icon: string | null } | null
   quests: ApiLootQuest[]
+  quest_chains: ApiItemQuestChain[]
+  sagas: ApiItemSaga[]
 }
 
 export interface ApiAugment {

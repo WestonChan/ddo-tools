@@ -50,6 +50,8 @@ const BLOODSTONE_ITEM: Item = {
   effects: [],
   clickies: [],
   quests: [],
+  questChains: [],
+  sagas: [],
 }
 
 let itemSummariesQueryState: {

@@ -48,6 +48,8 @@ function itemDetailFor(id: number): Item {
     effects: [],
     clickies: [],
     quests: [],
+    questChains: [],
+    sagas: [],
   }
 }
 

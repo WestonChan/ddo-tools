@@ -31,6 +31,8 @@ const plainItem: Item = {
   effects: [],
   clickies: [],
   quests: [],
+  questChains: [],
+  sagas: [],
 }
 
 function quest(overrides: Partial<LootQuest> = {}): LootQuest {
@@ -131,6 +133,50 @@ describe('ItemDetailBody drop locations', () => {
     expect(rows[0].querySelectorAll('.resources-chip[data-kind="rare"]')).toHaveLength(1)
     expect(consoleError).not.toHaveBeenCalled()
     consoleError.mockRestore()
+  })
+
+  it('lists a quest chain end reward after the quest rows with a Rare chip and wiki link', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      quests: [quest()],
+      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: true }],
+    })
+    const rows = container.querySelectorAll('.resources-quest-row')
+    expect(rows).toHaveLength(2)
+    expect(rows[1].querySelector('.resources-quest-title')).toHaveTextContent('The Lost Seekers')
+    expect(rows[1].querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+    expect(rows[1].querySelector('.resources-quest-meta')).toHaveTextContent('Chain end reward')
+    expect(
+      screen.getByRole('link', { name: 'Open The Lost Seekers on DDO Wiki' }),
+    ).toBeInTheDocument()
+  })
+
+  it('lists a saga reward per tier with the tier in sentence case', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sagas: [
+        { id: 1, name: 'Masterminds of Sharn', tier: 'epic', isRareLoot: false },
+        { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true },
+      ],
+    })
+    expect(screen.getByText('Drops from')).toBeInTheDocument()
+    const rows = container.querySelectorAll('.resources-quest-row')
+    expect(
+      Array.from(rows).map((r) => r.querySelector('.resources-quest-meta')?.textContent),
+    ).toEqual(['Saga reward · Epic', 'Saga reward · Legendary'])
+    expect(rows[0].querySelector('.resources-chip')).toBeNull()
+    expect(rows[1].querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+    expect(
+      screen.getAllByRole('link', { name: 'Open Masterminds of Sharn on DDO Wiki' }),
+    ).toHaveLength(2)
+  })
+
+  it('lists a saga reward with no tier as Saga reward alone', () => {
+    const { container } = renderItemDetailBody({
+      ...plainItem,
+      sagas: [{ id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false }],
+    })
+    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(/^Saga reward$/)
   })
 
   it('shows no chest when the drop text names none', () => {

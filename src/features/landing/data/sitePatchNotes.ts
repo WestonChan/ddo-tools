@@ -8,6 +8,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     date: '2026-10-02',
     changes: [
       'An item that both drops from a quest chest and is its end reward shows one row for that quest naming the chest and End reward',
+      'Item detail lists the quest chains and sagas whose end reward offers the item, with the saga reward tier and a Rare chip',
     ],
   },
   {

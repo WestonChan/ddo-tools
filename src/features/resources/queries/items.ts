@@ -136,6 +136,19 @@ export interface LootQuest {
   chests: string[]
 }
 
+export interface RewardingQuestChain {
+  id: number
+  name: string
+  isRareLoot: boolean
+}
+
+export interface RewardingSaga {
+  id: number
+  name: string
+  tier: string | null
+  isRareLoot: boolean
+}
+
 export interface Item extends ItemAttributes {
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
@@ -144,6 +157,8 @@ export interface Item extends ItemAttributes {
   effects: ItemEffect[]
   clickies: ItemClickie[]
   quests: LootQuest[]
+  questChains: RewardingQuestChain[]
+  sagas: RewardingSaga[]
 }
 
 export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
@@ -229,6 +244,17 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
     })),
     clickies: apiItemDetail.clickies.map((c) => ({ name: c.name, description: c.description })),
     quests: toLootQuests(apiItemDetail.quests),
+    questChains: apiItemDetail.quest_chains.map((c) => ({
+      id: c.id,
+      name: c.name,
+      isRareLoot: c.is_rare,
+    })),
+    sagas: apiItemDetail.sagas.map((s) => ({
+      id: s.id,
+      name: s.name,
+      tier: s.tier,
+      isRareLoot: s.is_rare,
+    })),
   }
 }
 

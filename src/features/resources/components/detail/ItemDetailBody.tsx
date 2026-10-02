@@ -135,6 +135,8 @@ export function ItemDetailBody({
   const headerAttributes = toHeaderAttributes(item, augmentsBySlotLabel)
   const labeledWeaponStats = item.weaponStats ? toLabeledWeaponStats(item.weaponStats) : []
   const labeledArmorStats = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
+  const hasLinkedDropSource =
+    item.quests.length > 0 || item.questChains.length > 0 || item.sagas.length > 0
 
   return (
     <article className="resources-detail-body">
@@ -168,7 +170,7 @@ export function ItemDetailBody({
           </ul>
         </DetailSection>
       )}
-      {item.quests.length > 0 ? (
+      {hasLinkedDropSource ? (
         <DetailSection heading="Drops from">
           <ul className="resources-quest-list">
             {item.quests.map((quest: LootQuest) => (
@@ -191,6 +193,30 @@ export function ItemDetailBody({
                     quest.level !== null ? `Level ${quest.level}` : null,
                     quest.isEndReward ? 'End reward' : null,
                   ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              </li>
+            ))}
+            {item.questChains.map((questChain) => (
+              <li key={`chain-${questChain.id}`} className="resources-quest-row">
+                <span className="resources-quest-name">
+                  <span className="resources-quest-title">{questChain.name}</span>
+                  {questChain.isRareLoot && <DropTagChip kind="rare" />}
+                  <WikiLinkIcon pageName={questChain.name} />
+                </span>
+                <span className="resources-quest-meta">Chain end reward</span>
+              </li>
+            ))}
+            {item.sagas.map((saga) => (
+              <li key={`saga-${saga.id}-${saga.tier}`} className="resources-quest-row">
+                <span className="resources-quest-name">
+                  <span className="resources-quest-title">{saga.name}</span>
+                  {saga.isRareLoot && <DropTagChip kind="rare" />}
+                  <WikiLinkIcon pageName={saga.name} />
+                </span>
+                <span className="resources-quest-meta">
+                  {['Saga reward', saga.tier ? sentenceCased(saga.tier) : null]
                     .filter(Boolean)
                     .join(' · ')}
                 </span>
