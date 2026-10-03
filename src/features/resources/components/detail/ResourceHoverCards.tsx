@@ -77,7 +77,8 @@ export function AugmentHoverContent({ augmentId }: { augmentId: number }): JSX.E
               key={bonus.id}
               label={bonus.statName}
               value={value}
-              tag={bonus.bonusType}
+              type={bonus.bonusType}
+              typePresentation="tag"
               className="hover-card-row"
             />
           )

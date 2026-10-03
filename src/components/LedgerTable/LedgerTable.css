@@ -122,7 +122,8 @@
   box-shadow: var(--inset-mark-accent);
 }
 
-.ledger-row--heading {
+.ledger-row--heading,
+.ledger-row--subheading {
   color: var(--text-heading);
   font-weight: var(--fw-semibold);
   cursor: default;

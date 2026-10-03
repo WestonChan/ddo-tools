@@ -21,6 +21,8 @@ export interface LedgerSort {
   direction: 'asc' | 'desc'
 }
 
+export type LedgerRowKind = 'row' | 'heading' | 'subheading'
+
 const textCollator = new Intl.Collator(undefined, { sensitivity: 'base' })
 
 export function nextLedgerSort<Row>(
@@ -42,7 +44,7 @@ export function sortedLedgerRows<Row>(
   rows: Row[],
   columns: LedgerColumn<Row>[],
   sort: LedgerSort | null,
-  rowKind?: (row: Row) => 'row' | 'heading',
+  rowKind?: (row: Row) => LedgerRowKind,
 ): Row[] {
   const column = columns.find((candidate) => candidate.key === sort?.key)
   if (!column || !sort) return rows
@@ -61,7 +63,7 @@ export function sortedLedgerRows<Row>(
   const sortedRows: Row[] = []
   let segment: Row[] = []
   for (const row of rows) {
-    if (rowKind(row) === 'heading') {
+    if (rowKind(row) !== 'row') {
       sortedRows.push(...segment.sort(compare), row)
       segment = []
     } else segment.push(row)

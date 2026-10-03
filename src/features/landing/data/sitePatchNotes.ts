@@ -21,6 +21,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
       "Filter pickers, sets and socket augment lists read the API's new paged responses in full, so no list is cut off at the first 100 rows",
       'Hover cards stay open while the pointer is on their row or link, even when you click; they close when you move away, and pinned cards still close with Escape',
       'Clicking inside a hover card closes the cards opened from it and keeps that card and the ones above it',
+      "An item's set bonuses sit on a band under the enchantment table: the set name as a link, a row per tier, and the bonuses beneath, with no set description; bonus types read as plain text",
     ],
   },
   {

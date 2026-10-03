@@ -1,38 +1,43 @@
 import { expect, test } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/item487.json' with { type: 'json' }
 import capturedArmor from '../src/features/resources/queries/fixtures/item831.json' with { type: 'json' }
+import capturedSet from '../src/features/resources/queries/fixtures/set93.json' with { type: 'json' }
 
-test('opening an augment socket leaves every fact in its original position', async ({ page }) => {
+test('set band heights and opening an augment socket preserve the item detail layout', async ({
+  page,
+}) => {
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
       path === '/v1/items/487'
         ? capturedRing
-        : path === '/v1/items'
-          ? {
-              total: 1,
-              limit: 200,
-              offset: 0,
-              items: [
-                {
-                  id: capturedRing.id,
-                  name: capturedRing.name,
-                  slot: capturedRing.slot,
-                  category: capturedRing.category,
-                  item_type: capturedRing.item_type,
-                  minimum_level: capturedRing.minimum_level,
-                  enhancement_bonus: capturedRing.enhancement_bonus,
-                  icon: capturedRing.icon,
-                  pack: null,
-                  is_raid: false,
-                  is_rare: false,
-                  is_legacy: capturedRing.is_legacy,
-                },
-              ],
-            }
-          : path === '/v1/augments'
-            ? { total: 0, limit: 200, offset: 0, augments: [] }
-            : []
+        : path === '/v1/sets/93'
+          ? capturedSet
+          : path === '/v1/items'
+            ? {
+                total: 1,
+                limit: 200,
+                offset: 0,
+                items: [
+                  {
+                    id: capturedRing.id,
+                    name: capturedRing.name,
+                    slot: capturedRing.slot,
+                    category: capturedRing.category,
+                    item_type: capturedRing.item_type,
+                    minimum_level: capturedRing.minimum_level,
+                    enhancement_bonus: capturedRing.enhancement_bonus,
+                    icon: capturedRing.icon,
+                    pack: null,
+                    is_raid: false,
+                    is_rare: false,
+                    is_legacy: capturedRing.is_legacy,
+                  },
+                ],
+              }
+            : path === '/v1/augments'
+              ? { total: 0, limit: 200, offset: 0, augments: [] }
+              : []
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -42,6 +47,12 @@ test('opening an augment socket leaves every fact in its original position', asy
 
   await page.goto('/resources/items/487')
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
+  const setHeading = detailPane.locator('.resources-enchantment-ledger .ledger-row--heading')
+  const tierEyebrow = detailPane.locator('.resources-enchantment-ledger .ledger-row--subheading')
+  await expect(tierEyebrow).toHaveText('5 pieces')
+  await page.evaluate(() => document.fonts.ready)
+  expect((await setHeading.boundingBox())?.height).toBe(34)
+  expect((await tierEyebrow.boundingBox())?.height).toBe(24)
   const header = detailPane.locator('.detail-card__header')
   const facts = header.locator('.detail-card__facts')
   const socket = facts.getByRole('button', { name: 'Yellow', exact: true })

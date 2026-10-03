@@ -389,34 +389,98 @@
 }
 
 .resources-enchantment-ledger .ledger-row--heading {
-  background: var(--surface-raised);
+  align-items: baseline;
+  min-height: 34px;
+  gap: var(--space-2);
+  padding: var(--space-2-5) var(--space-2) calc(var(--space-1) + var(--space-px));
+  margin-top: var(--space-2-5);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-panel);
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+}
+
+.resources-enchantment-ledger .ledger-row--subheading {
+  align-items: flex-end;
+  min-height: 24px;
+  padding: calc(var(--space-1) + var(--space-px)) var(--space-1-5)
+    calc(var(--space-0-5) + var(--space-px));
+  border-bottom: 1px solid var(--border-hairline);
+  background: var(--bg-panel);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-dense);
+}
+
+.resources-enchantment-ledger .ledger-row--heading ~ :where(.ledger-row) {
+  background: var(--bg-panel);
+}
+
+.resources-enchantment-ledger
+  .ledger-row--heading
+  ~ .ledger-row:not(.ledger-row--subheading, .ledger-row--highlighted):hover {
+  background: var(--surface-hover);
+}
+
+.resources-enchantment-ledger .ledger-heading-cell {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
 }
 
 .resources-set-heading {
   display: flex;
-  justify-content: space-between;
+  align-items: baseline;
   gap: var(--space-2);
   width: 100%;
-  color: var(--text-link);
+  min-width: 0;
 }
 
-.resources-set-heading > span {
+.resources-set-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-link);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-heading);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resources-enchantment-ledger .ledger-row--heading:hover .resources-set-name {
+  color: var(--text-link-hover);
+}
+
+.resources-set-eyebrow {
+  margin-left: auto;
   color: var(--text-faint);
   font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
   text-transform: uppercase;
 }
 
 .resources-set-tier-heading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
-  color: var(--text-heading);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
 }
 
-.resources-set-tier-heading > span {
+.resources-enchantment-ledger .resources-bonus-name {
+  color: var(--text-heading);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+}
+
+.resources-bonus-type {
   color: var(--text-muted);
   font-size: var(--fs-label);
-  font-weight: var(--fw-regular);
+}
+
+.resources-enchantment-ledger .resources-bonus-value {
+  color: var(--text-numeric);
+  font-size: var(--fs-body);
+  font-family: var(--font-mono);
 }
 
 .resources-enchantment-legend {
@@ -437,13 +501,6 @@
 .resources-enchantment-ledger .ledger-row--highlighted {
   box-shadow: var(--inset-mark-accent);
   background: var(--surface-selected);
-}
-
-.resources-enchantment-via,
-.resources-bonus-description {
-  display: block;
-  color: var(--text-faint);
-  font-size: var(--fs-micro);
 }
 
 .resources-hover-title {

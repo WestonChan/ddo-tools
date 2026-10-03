@@ -109,6 +109,14 @@
   color: var(--text-muted);
 }
 
+.detail-value-row__type {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .detail-value-row__value {
   color: var(--text-accent);
   font-weight: var(--fw-semibold);
@@ -133,6 +141,15 @@
   grid-column: 1;
   padding: 0 var(--space-1-5);
   color: var(--text-body);
+}
+
+.detail-value-row[data-layout='ledger'] .detail-value-row__type {
+  grid-column: 2;
+  padding: 0 var(--space-1-5);
+}
+
+.detail-value-row[data-layout='ledger']:has(.detail-value-row__type) .detail-value-row__value {
+  grid-column: 3;
 }
 
 .detail-value-row[data-layout='ledger'] .detail-value-row__value {

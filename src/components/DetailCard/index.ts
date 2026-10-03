@@ -6,4 +6,4 @@ export {
   DetailCardSection,
   DetailMore,
 } from './DetailCard'
-export { DetailTypeTag, DetailValueRow } from './DetailValueRow'
+export { DetailValueRow } from './DetailValueRow'

@@ -23,6 +23,7 @@ import {
   sortedLedgerRows,
   visibleLedgerColumns,
   type LedgerColumn,
+  type LedgerRowKind,
   type LedgerSort,
 } from './ledgerModel'
 import './LedgerTable.css'
@@ -44,7 +45,7 @@ interface LedgerTableProps<Row> {
   isVirtualized?: boolean
   isDense?: boolean
   viewportWidth?: number
-  rowKind?: (row: Row) => 'row' | 'heading'
+  rowKind?: (row: Row) => LedgerRowKind
   emptyState?: ReactNode
   label?: string
   hoverCard?: (row: Row) => HoverCardOptions | null
@@ -63,7 +64,7 @@ interface LedgerRowProps<Row> {
   onFocusedIndexChange: (index: number) => void
   focusedIndex: number
   selectedRowKey: string | number | null
-  rowKind?: (row: Row) => 'row' | 'heading'
+  rowKind?: (row: Row) => LedgerRowKind
   hoverCard?: (row: Row) => HoverCardOptions | null
   isHighlighted?: (row: Row) => boolean
 }
@@ -101,7 +102,8 @@ function LedgerRow<Row>({
   const hoverOptions = row ? hoverCard?.(row) : null
   const hoverAnchor = useHoverCard(hoverOptions ?? { kind: '', delayMs: 0, render: () => null })
   if (!row) return null
-  const isHeading = rowKind?.(row) === 'heading'
+  const kind = rowKind?.(row) ?? 'row'
+  const isHeading = kind !== 'row'
   const isSelected = rowKey(row) === selectedRowKey
   return (
     <div
@@ -112,7 +114,7 @@ function LedgerRow<Row>({
         'ledger-row' +
         (isSelected ? ' ledger-row--selected' : '') +
         (isHighlighted?.(row) ? ' ledger-row--highlighted' : '') +
-        (isHeading ? ' ledger-row--heading' : '')
+        (isHeading ? ` ledger-row--${kind}` : '')
       }
       style={style}
       tabIndex={isHeading ? -1 : index === focusedIndex ? 0 : -1}

@@ -2,7 +2,6 @@ import type { JSX } from 'react'
 import {
   DetailCardSection,
   DetailMore,
-  DetailTypeTag,
   DetailValueRow,
   LedgerTable,
   useHoverCard,
@@ -80,7 +79,7 @@ function setRows(setDetail: SetDetail, matchingNames: ReadonlySet<string>): Ench
       type: null,
       value: '',
       hoverValue: '',
-      description: tier.description,
+      description: null,
       headingKind: 'tier',
       isMatch: false,
     })
@@ -111,21 +110,13 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
     render: (row) =>
       row.headingKind === 'set' ? (
         <span className="resources-set-heading">
-          {row.name}
-          <span>Set</span>
+          <span className="resources-set-name">{row.name}</span>
+          <span className="resources-set-eyebrow">Set</span>
         </span>
       ) : row.headingKind === 'tier' ? (
-        <span className="resources-set-tier-heading">
-          {row.name}
-          {row.description && <span>{row.description}</span>}
-        </span>
+        <span className="resources-set-tier-heading">{row.name}</span>
       ) : (
-        <div>
-          <span className="resources-bonus-name">{row.name}</span>
-          {row.description && (
-            <span className="resources-bonus-description">{row.description}</span>
-          )}
-        </div>
+        <span className="resources-bonus-name">{row.name}</span>
       ),
   },
   {
@@ -134,7 +125,7 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
     width: 120,
     minWidth: 120,
     sortValue: (row) => row.type ?? '',
-    render: (row) => (row.type ? <DetailTypeTag type={row.type} /> : null),
+    render: (row) => (row.type ? <span className="resources-bonus-type">{row.type}</span> : null),
   },
   {
     key: 'value',
@@ -206,7 +197,13 @@ export function EnchantmentList({
           rowCount={rows.length}
           rowAt={(index) => rows[index]}
           rowKey={(row) => row.key}
-          rowKind={(row) => (row.headingKind ? 'heading' : 'row')}
+          rowKind={(row) =>
+            row.headingKind === 'set'
+              ? 'heading'
+              : row.headingKind === 'tier'
+                ? 'subheading'
+                : 'row'
+          }
           onRowActivate={() => {}}
           isVirtualized={false}
           isDense
@@ -271,7 +268,7 @@ function EnchantmentHoverContent({
         <DetailValueRow
           label={`From ${itemName}`}
           value={row.hoverValue}
-          tag={row.type}
+          type={row.type}
           className="hover-card-row"
         />
       )}
@@ -312,7 +309,7 @@ function EnchantmentHoverRow({
         <DetailValueRow
           label={row.name}
           value={row.hoverValue}
-          tag={row.type}
+          type={row.type}
           className="hover-card-row"
         />
       ) : (

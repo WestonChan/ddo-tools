@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import './DetailCard.css'
 
-export function DetailTypeTag({ type }: { type: string }): JSX.Element {
+function DetailTypeTag({ type }: { type: string }): JSX.Element {
   return (
     <span className="detail-type-tag" data-type={type.toLowerCase()}>
       {type}
@@ -12,7 +12,8 @@ export function DetailTypeTag({ type }: { type: string }): JSX.Element {
 export function DetailValueRow({
   label,
   value,
-  tag,
+  type,
+  typePresentation = 'plain',
   tone = 'accent',
   layout = 'inline',
   isNumeric = true,
@@ -20,7 +21,8 @@ export function DetailValueRow({
 }: {
   label: string
   value: string | number
-  tag?: string | null
+  type?: string | null
+  typePresentation?: 'plain' | 'tag'
   tone?: 'accent' | 'damage'
   layout?: 'inline' | 'ledger'
   isNumeric?: boolean
@@ -33,8 +35,11 @@ export function DetailValueRow({
       data-layout={layout}
     >
       <span className="detail-value-row__label">{label}</span>
+      {type && typePresentation === 'plain' && (
+        <span className="detail-value-row__type">{type}</span>
+      )}
       <span className={`detail-value-row__value${isNumeric ? ' num' : ''}`}>{value}</span>
-      {tag && <DetailTypeTag type={tag} />}
+      {type && typePresentation === 'tag' && <DetailTypeTag type={type} />}
     </div>
   )
 }

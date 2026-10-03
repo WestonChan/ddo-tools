@@ -8,7 +8,6 @@ export {
   DetailFact,
   DetailCardSection,
   DetailMore,
-  DetailTypeTag,
   DetailValueRow,
 } from './DetailCard'
 export { WikiLinkIcon } from './WikiLinkIcon'

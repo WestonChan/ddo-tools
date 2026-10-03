@@ -94,11 +94,11 @@ vi.mock('../../queries/useItems', () => ({
   }),
 }))
 
-it('keeps item facts and shows its captured bonus as a coloured value row', () => {
+it('keeps item facts and shows its captured bonus with a plain type', () => {
   render(<ItemHoverContent itemId={7631} />)
   expect(screen.getByText('Stolen Necklace (Level 25)')).toBeInTheDocument()
   expect(screen.getByText('+8')).toHaveClass('detail-value-row__value')
-  expect(screen.getByText('Enhancement')).toHaveClass('detail-type-tag')
+  expect(screen.getByText('Enhancement')).toHaveClass('detail-value-row__type')
 })
 
 it('shows a damage row when an item detail carries a captured dice modifier', () => {
@@ -110,6 +110,7 @@ it('shows a damage row when an item detail carries a captured dice modifier', ()
 it('shows the captured augment bonuses and dice as separate rows', () => {
   render(<AugmentHoverContent augmentId={77} />)
   expect(screen.getByText(/Martial: Shocking Burst/)).toBeInTheDocument()
+  expect(screen.getByText('Insight')).toHaveClass('detail-type-tag')
   expect(screen.getByText('1d6 Electric')).toHaveClass('detail-value-row__value')
   expect(screen.queryByText('1d10 Electric')).toBeNull()
   expect(screen.getByText(/crafting: alchemical tier 1/)).toBeInTheDocument()

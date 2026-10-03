@@ -51,6 +51,25 @@ describe('ledger model', () => {
     expect(nextLedgerSort(first, columns[0])).toEqual({ key: 'name', direction: 'asc' })
   })
 
+  it('keeps headings and subheadings in place while sorting rows inside each group', () => {
+    const groupedRows = [
+      { name: 'Set', ml: null, kind: 'heading' },
+      { name: '2 pieces', ml: null, kind: 'subheading' },
+      { name: 'Low', ml: 4, kind: 'row' },
+      { name: 'High', ml: 20, kind: 'row' },
+      { name: '5 pieces', ml: null, kind: 'subheading' },
+      { name: 'Last', ml: 12, kind: 'row' },
+    ] as const
+    expect(
+      sortedLedgerRows(
+        [...groupedRows],
+        columns,
+        { key: 'ml', direction: 'desc' },
+        (row) => row.kind,
+      ).map((row) => row.name),
+    ).toEqual(['Set', '2 pieces', 'High', 'Low', '5 pieces', 'Last'])
+  })
+
   it('moves headers and clamps widths without dropping responsive columns permanently', () => {
     expect(reorderedColumnKeys(['name', 'ml', 'pack'], 'pack', 'ml')).toEqual([
       'name',

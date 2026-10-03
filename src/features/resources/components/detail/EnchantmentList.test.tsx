@@ -1,11 +1,17 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, act, fireEvent, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HoverCardProvider } from '../../../../components'
 import capturedItem from '../../queries/fixtures/item7631.json'
 import capturedDualValueItem from '../../queries/fixtures/item483.json'
 import capturedAugment from '../../queries/fixtures/augment77.json'
+import capturedRing from '../../queries/fixtures/item487.json'
+import capturedRuneArm from '../../queries/fixtures/item924.json'
+import capturedSet from '../../queries/fixtures/set93.json'
 import type { ApiItemDetail } from '../../../../lib/api'
+import { renderWithRouter } from '../../../../test/renderWithRouter'
 import { toItem } from '../../queries/items'
+import { toSetDetail } from '../../queries/sets'
 import { EnchantmentList } from './EnchantmentList'
 import type { ItemBonus, ItemEffect } from '../../queries/items'
 
@@ -38,6 +44,7 @@ function effect(overrides: Partial<ItemEffect> = {}): ItemEffect {
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+  vi.unstubAllGlobals()
 })
 
 it('shows the captured item bonus value and type in its enchantment card', () => {
@@ -66,7 +73,8 @@ it('shows the captured item bonus value and type in its enchantment card', () =>
   expect(row).toHaveAttribute('data-hover-card-pinned')
   expect(card).toHaveTextContent('From Stolen Necklace (Level 25)')
   expect(within(card).getByText('+8')).toHaveClass('detail-value-row__value')
-  expect(within(card).getByText('Enhancement')).toHaveClass('detail-type-tag')
+  expect(within(card).getByText('Enhancement')).toHaveClass('detail-value-row__type')
+  expect(card.querySelector('.detail-type-tag')).toBeNull()
   expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
   fireEvent.keyDown(document, { key: 'Escape' })
   expect(row).not.toHaveAttribute('data-hover-card-pinned')
@@ -102,6 +110,8 @@ it('shows hover variant enchantment rows without a section heading', () => {
     </HoverCardProvider>,
   )
   expect(screen.getByText('Charisma')).toBeInTheDocument()
+  expect(screen.getByText('Enhancement')).toHaveClass('detail-value-row__type')
+  expect(screen.getByText('Enhancement')).not.toHaveClass('detail-type-tag')
   expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
 })
 
@@ -137,18 +147,62 @@ describe('EnchantmentList', () => {
     expect(screen.getByText('Matches your Enchantments filter')).toBeInTheDocument()
     expect(screen.queryByText(/via /)).toBeNull()
     expect(screen.getByText('+77').closest('[role="row"]')).toHaveClass('ledger-row--highlighted')
-    expect(screen.getByText('Storm Set')).toBeInTheDocument()
-    expect(screen.getByText('2 pieces').closest('[role="row"]')).toHaveTextContent(
-      'Storm tier unlock',
+    const setHeading = screen.getByText('Storm Set').closest('[role="row"]')
+    expect(setHeading).toHaveClass('ledger-row--heading')
+    expect(setHeading).toHaveTextContent('Set')
+    expect(screen.getByText('2 pieces').closest('[role="row"]')).toHaveClass(
+      'ledger-row--subheading',
     )
-    expect(screen.getByText('2 pieces').closest('[role="row"]')).toHaveClass('ledger-row--heading')
+    expect(
+      screen
+        .getAllByText('Fire Spell Power', { selector: '.resources-bonus-name' })[1]
+        .closest('[role="row"]'),
+    ).toHaveTextContent('Artifact+20')
+    expect(screen.queryByText('Storm tier unlock')).toBeNull()
+    expect(screen.queryByText('Fire damage boost')).toBeNull()
     expect(screen.getByRole('table', { name: 'Enchantments' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Enchantment' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
   })
+
+  it.each([capturedRing, capturedRuneArm])(
+    'bands the captured set after the enchantments on item $id',
+    (capturedItem) => {
+      const item = toItem(capturedItem as ApiItemDetail)
+      const set = toSetDetail(capturedSet)
+      render(<EnchantmentList bonuses={item.bonuses} effects={item.effects} setDetail={set} />)
+      const rows = screen.getAllByRole('row').slice(1)
+      const headingIndex = rows.findIndex((row) => row.textContent?.includes(set.name))
+      expect(headingIndex).toBe(item.bonuses.length + item.effects.length)
+      expect(rows[headingIndex]).toHaveClass('ledger-row--heading')
+      expect(rows[headingIndex]).toHaveTextContent('Set')
+      expect(rows[headingIndex + 1]).toHaveClass('ledger-row--subheading')
+      expect(rows[headingIndex + 1]).toHaveTextContent('5 pieces')
+      expect(rows[headingIndex + 2]).toHaveTextContent('Physical Resistance RatingProfane+5')
+      expect(screen.queryByText(set.tiers[0].description!)).toBeNull()
+      expect(rows.slice(headingIndex + 2)).toHaveLength(set.tiers[0].bonuses.length)
+    },
+  )
   it('renders nothing when there are no bonuses or effects', () => {
     const { container } = render(<EnchantmentList bonuses={[]} effects={[]} />)
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('shows no set band without a set and omits the band from the item hover variant', () => {
+    const item = toItem(capturedRing as ApiItemDetail)
+    const set = toSetDetail(capturedSet)
+    const view = render(<EnchantmentList bonuses={item.bonuses} effects={item.effects} />)
+    expect(view.container.querySelector('.ledger-row--heading')).toBeNull()
+    view.rerender(
+      <EnchantmentList
+        bonuses={item.bonuses}
+        effects={item.effects}
+        setDetail={set}
+        variant="hover"
+      />,
+    )
+    expect(screen.queryByText(set.name)).toBeNull()
+    expect(view.container.querySelector('.resources-set-heading')).toBeNull()
   })
 
   it('opens in the item order and sorts values descending within each tier on a header click', () => {
@@ -221,6 +275,51 @@ describe('EnchantmentList', () => {
       expect.stringContaining('5 pieces'),
       expect.stringContaining('Universal Spell Power'),
     ])
+    fireEvent.click(screen.getByRole('button', { name: 'Sort Enchantment' }))
+    expect(rowTexts()).toEqual([
+      expect.stringContaining('Dexterity'),
+      expect.stringContaining('Strength'),
+      expect.stringContaining('Storm Set'),
+      expect.stringContaining('2 pieces'),
+      expect.stringContaining('Healing Amplification'),
+      expect.stringContaining('Melee Power'),
+      expect.stringContaining('5 pieces'),
+      expect.stringContaining('Universal Spell Power'),
+    ])
+  })
+
+  it('opens the captured set card from the heading and its enchantment card from a tier row', async () => {
+    const item = toItem(capturedRing as ApiItemDetail)
+    const set = toSetDetail(capturedSet)
+    const queryClient = new QueryClient()
+    const fetchSet = vi.fn(async () => Response.json(capturedSet, { status: 200 }))
+    vi.stubGlobal('fetch', fetchSet)
+    renderWithRouter(
+      <QueryClientProvider client={queryClient}>
+        <HoverCardProvider>
+          <EnchantmentList
+            itemName={item.name}
+            bonuses={item.bonuses}
+            effects={item.effects}
+            setDetail={set}
+          />
+        </HoverCardProvider>
+      </QueryClientProvider>,
+      '/resources/items/487',
+    )
+    const heading = (await screen.findByText(set.name)).closest('[role="row"]')!
+    fireEvent.mouseEnter(heading)
+    expect(
+      await within(await screen.findByRole('dialog')).findByText(set.tiers[0].description!),
+    ).toBeInTheDocument()
+    expect(fetchSet).toHaveBeenCalledWith(expect.stringContaining('/v1/sets/93'), expect.anything())
+    fireEvent.mouseLeave(heading)
+    fireEvent.mouseEnter(
+      screen.getByRole('row', { name: /Physical Resistance Rating Profane \+5/ }),
+    )
+    expect(
+      within(await screen.findByRole('dialog')).getByText('Physical Resistance Rating'),
+    ).toBeInTheDocument()
   })
 
   it('prefixes positive stat bonus values with +', () => {
@@ -254,7 +353,7 @@ describe('EnchantmentList', () => {
     expect(screen.queryByText('Curse +-3')).toBeNull()
   })
 
-  it('renders bonuses before effects, each with its type chip', () => {
+  it('renders bonuses before effects with muted type text', () => {
     render(
       <EnchantmentList
         bonuses={[bonus({ bonusType: 'Insight' })]}
@@ -263,45 +362,37 @@ describe('EnchantmentList', () => {
     )
     expect(screen.getByText('Insight')).toBeInTheDocument()
     expect(screen.getByText('Evil Outsider')).toBeInTheDocument()
+    expect(screen.getByText('Insight')).toHaveClass('resources-bonus-type')
   })
 
-  it('omits an empty type tag for an effect without a target', () => {
+  it('omits an empty type for an effect without a target', () => {
     const { container } = render(
       <EnchantmentList bonuses={[]} effects={[effect({ target: null })]} />,
     )
-    expect(container.querySelector('.detail-type-tag')).toBeNull()
+    expect(container.querySelector('.resources-bonus-type')).toBeNull()
   })
 
-  it('renders an expanded description as its own sub-line', () => {
+  it('keeps a bonus description in its hover card and out of the ledger', () => {
+    vi.useFakeTimers()
     render(
-      <EnchantmentList
-        bonuses={[
-          bonus({
-            name: 'Fire Resistance +30',
-            statName: 'Fire Resistance',
-            description: '+30 Enhancement bonus to Fire Resistance',
-          }),
-        ]}
-        effects={[]}
-      />,
+      <HoverCardProvider>
+        <EnchantmentList
+          bonuses={[
+            bonus({
+              name: 'Fire Resistance +30',
+              statName: 'Fire Resistance',
+              description: '+30 Enhancement bonus to Fire Resistance',
+            }),
+          ]}
+          effects={[]}
+        />
+      </HoverCardProvider>,
     )
-    expect(screen.getByText('+30 Enhancement bonus to Fire Resistance')).toBeInTheDocument()
-  })
-
-  it('omits the sub-line when there is no description', () => {
-    const { container } = render(
-      <EnchantmentList bonuses={[bonus({ description: null })]} effects={[]} />,
-    )
-    expect(container.querySelector('.resources-bonus-description')).toBeNull()
-  })
-
-  it('omits the sub-line when the description just repeats the name', () => {
-    const { container } = render(
-      <EnchantmentList
-        bonuses={[bonus({ name: 'Charisma +5', description: 'Charisma +5' })]}
-        effects={[]}
-      />,
-    )
-    expect(container.querySelector('.resources-bonus-description')).toBeNull()
+    expect(screen.queryByText('+30 Enhancement bonus to Fire Resistance')).toBeNull()
+    fireEvent.mouseEnter(screen.getByRole('row', { name: /Fire Resistance/ }))
+    act(() => vi.advanceTimersByTime(120))
+    expect(
+      within(screen.getByRole('dialog')).getByText('+30 Enhancement bonus to Fire Resistance'),
+    ).toBeInTheDocument()
   })
 })
