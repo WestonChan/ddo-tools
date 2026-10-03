@@ -151,7 +151,7 @@ describe('EnchantmentList', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('sorts values descending within each tier while keeping tier headings adjacent', () => {
+  it('opens in the item order and sorts values descending within each tier on a header click', () => {
     render(
       <EnchantmentList
         bonuses={[
@@ -195,8 +195,23 @@ describe('EnchantmentList', () => {
         }}
       />,
     )
-    const rows = screen.getAllByRole('row').map((row) => row.textContent)
-    expect(rows.slice(1)).toEqual([
+    const rowTexts = (): (string | null)[] =>
+      screen
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.textContent)
+    expect(rowTexts()).toEqual([
+      expect.stringContaining('Strength'),
+      expect.stringContaining('Dexterity'),
+      expect.stringContaining('Storm Set'),
+      expect.stringContaining('2 pieces'),
+      expect.stringContaining('Melee Power'),
+      expect.stringContaining('Healing Amplification'),
+      expect.stringContaining('5 pieces'),
+      expect.stringContaining('Universal Spell Power'),
+    ])
+    fireEvent.click(screen.getByRole('button', { name: 'Sort Value' }))
+    expect(rowTexts()).toEqual([
       expect.stringContaining('Dexterity'),
       expect.stringContaining('Strength'),
       expect.stringContaining('Storm Set'),

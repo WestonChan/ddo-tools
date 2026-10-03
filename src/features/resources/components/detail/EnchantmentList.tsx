@@ -139,6 +139,7 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
   {
     key: 'value',
     label: 'Value',
+    defaultSortDirection: 'desc',
     width: 64,
     minWidth: 64,
     align: 'right',
@@ -209,7 +210,6 @@ export function EnchantmentList({
           onRowActivate={() => {}}
           isVirtualized={false}
           isDense
-          initialSort={{ key: 'value', direction: 'desc' }}
           label="Enchantments"
           isHighlighted={(row) => row.isMatch}
           hoverCard={(row) =>
