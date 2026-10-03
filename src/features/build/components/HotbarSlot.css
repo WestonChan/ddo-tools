@@ -69,33 +69,9 @@
 }
 
 .hotbar-stat-block {
-  --stat-block-w: 240px;
-
-  position: absolute;
-  left: clamp(
-    var(--room-to-bars-left),
-    calc(-1 * var(--space-2)),
-    calc(var(--room-to-bars-right) - var(--stat-block-w))
-  );
-  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  width: var(--stat-block-w);
-  padding: var(--space-2-5) var(--space-3);
-  background: var(--surface-raised);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-popover);
-  pointer-events: none;
-}
-
-.hotbar-stat-block--above {
-  bottom: calc(100% + var(--space-1-5));
-}
-
-.hotbar-stat-block--below {
-  top: calc(100% + var(--space-1-5));
 }
 
 .hotbar-stat-block-name {

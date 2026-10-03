@@ -1,6 +1,6 @@
 import { useRef, useState, type JSX, type KeyboardEvent } from 'react'
 import { ChevronDown, ChevronRight, Hammer } from 'lucide-react'
-import { HoverTooltip } from '../../../../components'
+import { HintAnchor } from '../../../../components'
 import {
   isCraftingSlotFamily,
   type AugmentSummary,
@@ -123,7 +123,7 @@ export function AugmentSlotList({
     const slotAugments = augmentsBySlotLabel[slot.label] ?? []
 
     if (slotAugments.length === 0 && !isFamily) {
-      return <HoverTooltip text={`${displayedSlotLabel} augment slot`}>{gemIcon}</HoverTooltip>
+      return <HintAnchor text={`${displayedSlotLabel} augment slot`}>{gemIcon}</HintAnchor>
     }
 
     if (slotAugments.length === 0) {

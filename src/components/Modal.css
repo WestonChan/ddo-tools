@@ -30,26 +30,3 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-dialog);
 }
-
-.modal-panel--drawer-right {
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: clamp(560px, 55vw, 900px);
-  background: var(--bg-panel);
-  border-left: 1px solid var(--border-default);
-  display: flex;
-  flex-direction: column;
-}
-
-@media (max-width: 899px) {
-  .modal-panel--drawer-right {
-    inset: 0;
-    width: auto;
-    border-left: none;
-  }
-
-  .modal-backdrop--drawer-right {
-    display: none;
-  }
-}

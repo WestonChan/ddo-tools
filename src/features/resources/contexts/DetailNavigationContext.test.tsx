@@ -1,26 +1,26 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import {
-  DetailDrawerNavigationProvider,
-  useDetailDrawerNavigation,
-  type DetailDrawerNavigation,
-} from './DetailDrawerNavigationContext'
+  DetailNavigationProvider,
+  useDetailNavigation,
+  type DetailNavigation,
+} from './DetailNavigationContext'
 
-function DetailDrawerNavigationReader({
+function DetailNavigationReader({
   onRead,
 }: {
-  onRead: (navigation: DetailDrawerNavigation) => void
+  onRead: (navigation: DetailNavigation) => void
 }): null {
-  const navigation = useDetailDrawerNavigation()
+  const navigation = useDetailNavigation()
   onRead(navigation)
   return null
 }
 
-describe('DetailDrawerNavigationContext', () => {
+describe('DetailNavigationContext', () => {
   it('returns a no-op API when no provider is mounted', () => {
-    let capturedNavigation: DetailDrawerNavigation | null = null
+    let capturedNavigation: DetailNavigation | null = null
     render(
-      <DetailDrawerNavigationReader
+      <DetailNavigationReader
         onRead={(navigation) => {
           capturedNavigation = navigation
         }}
@@ -30,33 +30,33 @@ describe('DetailDrawerNavigationContext', () => {
     expect(capturedNavigation!.deepLinkUrl).toBeNull()
     expect(capturedNavigation!.pickerCategory).toBe('items')
     expect(() => capturedNavigation!.pushResource({ category: 'items', id: 42 })).not.toThrow()
-    expect(() => capturedNavigation!.closeDrawer()).not.toThrow()
+    expect(() => capturedNavigation!.closeDetail()).not.toThrow()
   })
 
   it('forwards the provided API through the provider', () => {
     const pushResource = vi.fn()
-    const closeDrawer = vi.fn()
-    let capturedNavigation: DetailDrawerNavigation | null = null
+    const closeDetail = vi.fn()
+    let capturedNavigation: DetailNavigation | null = null
     render(
-      <DetailDrawerNavigationProvider
+      <DetailNavigationProvider
         navigation={{
           pushResource,
-          closeDrawer,
+          closeDetail,
           deepLinkUrl: 'https://example.test/x',
           pickerCategory: 'items',
         }}
       >
-        <DetailDrawerNavigationReader
+        <DetailNavigationReader
           onRead={(navigation) => {
             capturedNavigation = navigation
           }}
         />
-      </DetailDrawerNavigationProvider>,
+      </DetailNavigationProvider>,
     )
     capturedNavigation!.pushResource({ category: 'items', id: 7 })
     expect(pushResource).toHaveBeenCalledWith({ category: 'items', id: 7 })
-    capturedNavigation!.closeDrawer()
-    expect(closeDrawer).toHaveBeenCalled()
+    capturedNavigation!.closeDetail()
+    expect(closeDetail).toHaveBeenCalled()
     expect(capturedNavigation!.deepLinkUrl).toBe('https://example.test/x')
   })
 })

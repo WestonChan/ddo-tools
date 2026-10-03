@@ -1,17 +1,16 @@
-import { useCallback, useEffect, useRef, type JSX } from 'react'
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { CategoryTabs } from './components/CategoryTabs'
 import { ItemPicker } from './components/ItemPicker'
-import { ResourceDetailDrawer } from './components/ResourceDetailDrawer'
-import { ApiGate, Modal, WireframePlaceholder } from '../../components'
-import { useItemSummaries } from './queries/useItems'
+import { ResourceDetailPane } from './components/ResourceDetailPane'
+import { WireframePlaceholder } from '../../components'
 import {
-  DETAIL_DRAWER_TITLE_ID,
   LABEL_BY_RESOURCE_CATEGORY,
   isResourceCategory,
   type ResourceCategory,
 } from './resourceCategories'
 import './ResourcesView.css'
+import { EMPTY_ITEM_FILTERS, type ItemListFilters } from './queries/items'
 
 const COMING_SOON_PLACEHOLDER_MIN_HEIGHT_PX = 420
 
@@ -31,14 +30,36 @@ function ResourcesView(): JSX.Element {
   const { category, selectedResourceId } = useResourceRouteParams()
   const navigate = useNavigate()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
-
-  const itemSummariesQuery = useItemSummaries(category === 'items')
+  const detailPaneRef = useRef<HTMLElement | null>(null)
+  const lastSelectedItemId = useRef<number | null>(null)
+  const [filters, setFilters] = useState<ItemListFilters>(EMPTY_ITEM_FILTERS)
+  const [itemToFocus, setItemToFocus] = useState<number | null>(null)
 
   function navigateToCategory(nextCategory: ResourceCategory): void {
     navigate({ to: `/resources/${nextCategory}` })
   }
 
-  const closeDrawer = useCallback((): void => {
+  useEffect(() => {
+    if (selectedResourceId !== null) {
+      lastSelectedItemId.current = selectedResourceId
+      return
+    }
+    const previousItemId = lastSelectedItemId.current
+    if (previousItemId !== null) {
+      document.querySelector<HTMLElement>(`[data-row-key="${previousItemId}"]`)?.focus()
+      lastSelectedItemId.current = null
+    }
+  }, [selectedResourceId])
+
+  const scrollRenderedDetailIntoView = useCallback((): void => {
+    const pane = detailPaneRef.current
+    const picker = pane?.previousElementSibling as HTMLElement | null
+    if (pane && picker && pane.offsetTop > picker.offsetTop) {
+      pane.scrollIntoView({ block: 'start' })
+    }
+  }, [])
+
+  const closeDetail = useCallback((): void => {
     navigate({ to: `/resources/${category}`, replace: true })
   }, [navigate, category])
 
@@ -58,34 +79,40 @@ function ResourcesView(): JSX.Element {
     }
   }, [selectedResourceId])
 
+  useEffect(() => {
+    if (selectedResourceId === null) return
+    function closeDetailOnEscape(event: KeyboardEvent): void {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      closeDetail()
+    }
+    document.addEventListener('keydown', closeDetailOnEscape)
+    return () => document.removeEventListener('keydown', closeDetailOnEscape)
+  }, [selectedResourceId, closeDetail])
+
   const resourceInUrl = selectedResourceId !== null ? { category, id: selectedResourceId } : null
+
+  function openItemFromHover(id: number): void {
+    setItemToFocus(id)
+    navigate({ to: `/resources/items/${id}` })
+  }
 
   return (
     <div className="resources-view">
       <header className="resources-header">
         <CategoryTabs activeCategory={category} onSelect={navigateToCategory} />
       </header>
-      <div
-        className={`resources-body${selectedResourceId !== null ? ' resources-body--inspect' : ''}`}
-      >
-        <aside
-          className="resources-picker"
-          aria-hidden={selectedResourceId !== null || undefined}
-          inert={selectedResourceId !== null || undefined}
-        >
+      <div className="resources-body">
+        <aside className="resources-picker">
           {category === 'items' ? (
-            <ApiGate
-              isPending={itemSummariesQuery.isPending}
-              error={itemSummariesQuery.error}
-              onRetry={() => void itemSummariesQuery.refetch()}
-            >
-              <ItemPicker
-                category={category}
-                items={itemSummariesQuery.data ?? []}
-                selectedItemId={selectedResourceId}
-                searchInputRef={searchInputRef}
-              />
-            </ApiGate>
+            <ItemPicker
+              category={category}
+              selectedItemId={selectedResourceId}
+              searchInputRef={searchInputRef}
+              filters={filters}
+              onFiltersChange={setFilters}
+              onOpenItemFromHover={openItemFromHover}
+            />
           ) : (
             <div className="resources-picker-inner">
               <WireframePlaceholder
@@ -95,16 +122,21 @@ function ResourcesView(): JSX.Element {
             </div>
           )}
         </aside>
-        {selectedResourceId !== null && (
-          <Modal
-            variant="drawer-right"
-            onClose={closeDrawer}
-            labelledBy={DETAIL_DRAWER_TITLE_ID}
-            label="Item details"
-            backdropLabel="Close item details"
+        {category === 'items' && (
+          <section
+            className={`resources-detail-pane${selectedResourceId === null ? ' resources-detail-pane--empty' : ''}`}
+            ref={detailPaneRef}
+            aria-label="Item details"
           >
-            <ResourceDetailDrawer resourceInUrl={resourceInUrl} pickerCategory={category} />
-          </Modal>
+            <ResourceDetailPane
+              resourceInUrl={resourceInUrl}
+              pickerCategory={category}
+              matchingEnchantments={filters.enchantments}
+              focusItemId={itemToFocus}
+              onFocusItem={() => setItemToFocus(null)}
+              onDetailRendered={scrollRenderedDetailIntoView}
+            />
+          </section>
         )}
       </div>
     </div>

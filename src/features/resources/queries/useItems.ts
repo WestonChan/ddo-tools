@@ -1,39 +1,83 @@
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query'
 import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQueries,
+  useQuery,
+  type InfiniteData,
+  type UseInfiniteQueryResult,
+  type UseQueryResult,
+} from '@tanstack/react-query'
+import { API_HTTP_ERROR, isApiError } from '../../../lib/api'
+import {
+  canListFittingAugments,
   fetchAdventurePackNames,
   fetchAugmentLootQuests,
   fetchAugmentsFittingSlot,
+  fetchEnchantmentNames,
+  fetchEquipmentSlotNames,
   fetchItem,
-  fetchItemIdsInPack,
-  fetchItemIdsWithStat,
-  fetchItemSummaries,
-  fetchStatNames,
-  canListFittingAugments,
+  fetchItemPage,
+  itemListParameters,
+  fetchRaidQuests,
   type AugmentSummary,
-  type ItemAugmentSlot,
   type Item,
+  type ItemAugmentSlot,
+  type ItemListFilters,
+  type ItemListSort,
+  type ItemPage,
   type LootQuest,
-  type ItemSummary,
+  ITEM_PAGE_SIZE,
 } from './items'
+import { fetchSet, type SetDetail } from './sets'
+import { fetchQuest, type QuestDetail } from './quests'
 
 const NEVER_STALE_QUERY_OPTIONS = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
 
 const resourceQueryKeys = {
-  itemSummaries: ['items', 'rows'] as const,
+  itemPage: (
+    filters: ItemListFilters,
+    searchQuery: string,
+    includesSetBonuses: boolean,
+    sort: ItemListSort | null,
+  ) =>
+    [
+      'items',
+      'page',
+      itemListParameters(filters, searchQuery, includesSetBonuses, 0, sort),
+    ] as const,
   item: (id: number) => ['items', 'detail', id] as const,
   adventurePackNames: ['items', 'packs'] as const,
-  statNames: ['items', 'stats'] as const,
-  itemIdsWithStat: (statName: string) => ['items', 'by-stat', statName] as const,
-  itemIdsInPack: (packName: string) => ['items', 'by-pack', packName] as const,
+  equipmentSlotNames: ['items', 'slots'] as const,
+  enchantmentNames: ['items', 'enchantments'] as const,
   augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
   augmentLootQuests: (augmentId: number) => ['augments', 'loot-quests', augmentId] as const,
+  raidQuests: ['quests', 'raids'] as const,
+  set: (id: number) => ['sets', 'detail', id] as const,
+  quest: (id: number) => ['quests', 'detail', id] as const,
 }
 
-export function useItemSummaries(isFetchEnabled = true): UseQueryResult<ItemSummary[]> {
-  return useQuery({
-    queryKey: resourceQueryKeys.itemSummaries,
-    queryFn: fetchItemSummaries,
-    enabled: isFetchEnabled,
+export function useItemPage(
+  filters: ItemListFilters,
+  searchQuery: string,
+  includesSetBonuses: boolean,
+  sort: ItemListSort | null = null,
+): UseInfiniteQueryResult<InfiniteData<ItemPage, number>> {
+  return useInfiniteQuery({
+    queryKey: resourceQueryKeys.itemPage(filters, searchQuery, includesSetBonuses, sort),
+    queryFn: ({ pageParam }) =>
+      fetchItemPage(filters, searchQuery, includesSetBonuses, pageParam, sort),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => {
+      const loadedCount = pages.reduce((count, page) => count + page.items.length, 0)
+      return lastPage.items.length > 0 && loadedCount < lastPage.total
+        ? pages.length * ITEM_PAGE_SIZE
+        : undefined
+    },
+    placeholderData: keepPreviousData,
+    retry: (failureCount, error) =>
+      failureCount < 2 &&
+      isApiError(error) &&
+      (error.kind !== API_HTTP_ERROR || error.httpStatus === 429 || error.httpStatus >= 500),
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 }
@@ -48,45 +92,62 @@ export function useItem(id: number | null): UseQueryResult<Item> {
   })
 }
 
-export function useAdventurePackNames(): UseQueryResult<string[]> {
+export function useSet(id: number | null): UseQueryResult<SetDetail> {
+  return useQuery({
+    queryKey: resourceQueryKeys.set(id ?? -1),
+    queryFn: () => fetchSet(id as number),
+    enabled: id !== null,
+    retry: false,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
+}
+
+export function useQuest(id: number | null): UseQueryResult<QuestDetail> {
+  return useQuery({
+    queryKey: resourceQueryKeys.quest(id ?? -1),
+    queryFn: () => fetchQuest(id as number),
+    enabled: id !== null,
+    retry: false,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
+}
+
+export function useAdventurePackNames(isEnabled = true): UseQueryResult<string[]> {
   return useQuery({
     queryKey: resourceQueryKeys.adventurePackNames,
     queryFn: fetchAdventurePackNames,
+    enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 }
 
-export function useStatNames(): UseQueryResult<string[]> {
+export function useEquipmentSlotNames(isEnabled = true): UseQueryResult<string[]> {
   return useQuery({
-    queryKey: resourceQueryKeys.statNames,
-    queryFn: fetchStatNames,
+    queryKey: resourceQueryKeys.equipmentSlotNames,
+    queryFn: fetchEquipmentSlotNames,
+    enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 }
 
-export function useItemIdsWithAnyStat(statNames: readonly string[]): Set<number> | null {
-  const itemIdQueries = useQueries({
-    queries: statNames.map((stat) => ({
-      queryKey: resourceQueryKeys.itemIdsWithStat(stat),
-      queryFn: () => fetchItemIdsWithStat(stat),
-      ...NEVER_STALE_QUERY_OPTIONS,
-    })),
-  })
-  if (statNames.length === 0) return null
-  if (itemIdQueries.some((r) => r.data === undefined)) return null
-  const union = new Set<number>()
-  for (const r of itemIdQueries) for (const id of r.data as Set<number>) union.add(id)
-  return union
-}
-
-export function useItemIdsInPack(packName: string): Set<number> | null {
-  const { data: itemIdsInPack } = useQuery({
-    queryKey: resourceQueryKeys.itemIdsInPack(packName),
-    queryFn: () => fetchItemIdsInPack(packName),
-    enabled: packName !== '',
+export function useEnchantmentNames(isEnabled = true): UseQueryResult<string[]> {
+  return useQuery({
+    queryKey: resourceQueryKeys.enchantmentNames,
+    queryFn: fetchEnchantmentNames,
+    enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
-  return packName === '' ? null : (itemIdsInPack ?? null)
+}
+
+export function useRaidQuests(
+  isEnabled = true,
+): UseQueryResult<Awaited<ReturnType<typeof fetchRaidQuests>>> {
+  return useQuery({
+    queryKey: resourceQueryKeys.raidQuests,
+    queryFn: fetchRaidQuests,
+    enabled: isEnabled,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
 }
 
 export function useFittingAugmentsBySlotLabel(

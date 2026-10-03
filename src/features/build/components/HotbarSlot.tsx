@@ -1,17 +1,10 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type CSSProperties,
-  type JSX,
-  type KeyboardEvent,
-} from 'react'
+import { useEffect, useId, useRef, type JSX, type KeyboardEvent } from 'react'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { useNavigate } from '@tanstack/react-router'
 import type { PlaceholderAbility } from '../data/placeholderAbilities'
 import type { HotbarSlotAddress } from '../hotbars'
 import { AbilityCode } from './AbilityCode'
+import { useHoverCard } from '../../../components'
 import {
   hotbarSlotDragId,
   type HotbarDragPayload,
@@ -19,23 +12,11 @@ import {
 } from './hotbarDragPayloads'
 import './HotbarSlot.css'
 
-type StatBlockPlacement = 'above' | 'below'
-
-interface StatBlockPosition {
-  placement: StatBlockPlacement
-  roomToBarsLeftPx: number
-  roomToBarsRightPx: number
-}
-
-const ROOM_ABOVE_FOR_STAT_BLOCK_PX = 180
-
 interface AbilityStatBlockProps {
-  id: string
   ability: PlaceholderAbility
-  position: StatBlockPosition
 }
 
-function AbilityStatBlock({ id, ability, position }: AbilityStatBlockProps): JSX.Element {
+function AbilityStatBlock({ ability }: AbilityStatBlockProps): JSX.Element {
   const rows: readonly [string, string][] = [
     ['Type', ability.kind],
     ['Cooldown', ability.cooldown],
@@ -44,17 +25,7 @@ function AbilityStatBlock({ id, ability, position }: AbilityStatBlockProps): JSX
     ['Cost', ability.cost],
   ]
   return (
-    <div
-      id={id}
-      role="tooltip"
-      className={`hotbar-stat-block hotbar-stat-block--${position.placement}`}
-      style={
-        {
-          '--room-to-bars-left': `${position.roomToBarsLeftPx}px`,
-          '--room-to-bars-right': `${position.roomToBarsRightPx}px`,
-        } as CSSProperties
-      }
-    >
+    <div className="hotbar-stat-block">
       <div className="hotbar-stat-block-name">{ability.name}</div>
       <dl className="hotbar-stat-block-rows">
         {rows.map(([rowLabel, rowValue]) => (
@@ -67,16 +38,6 @@ function AbilityStatBlock({ id, ability, position }: AbilityStatBlockProps): JSX
       <p className="hotbar-stat-block-footer">Click → full breakdown in Damage calc</p>
     </div>
   )
-}
-
-function statBlockPositionBeside(slotElement: HTMLElement): StatBlockPosition {
-  const slotRect = slotElement.getBoundingClientRect()
-  const barsRect = (slotElement.closest('.hotbars-bars') ?? slotElement).getBoundingClientRect()
-  return {
-    placement: slotRect.top < ROOM_ABOVE_FOR_STAT_BLOCK_PX ? 'below' : 'above',
-    roomToBarsLeftPx: barsRect.left - slotRect.left,
-    roomToBarsRightPx: barsRect.right - slotRect.left,
-  }
 }
 
 interface SlotFocusRequest {
@@ -108,19 +69,13 @@ function FilledHotbarSlot({
   const buttonRef = useRef<HTMLButtonElement | null>(null)
   const navigate = useNavigate()
   const statBlockId = useId()
-  const [statBlockPosition, setStatBlockPosition] = useState<StatBlockPosition | null>(null)
+  const hoverAnchor = useHoverCard({
+    kind: 'ability',
+    delayMs: 260,
+    render: () => <AbilityStatBlock ability={ability} />,
+  })
   const lastPointerTypeRef = useRef<string | null>(null)
-  const isStatBlockShown = statBlockPosition !== null && active === null
   const slotNumber = slot.slotIndex + 1
-
-  useEffect(() => {
-    if (!isStatBlockShown) return
-    function hideStatBlockOnEscape(event: globalThis.KeyboardEvent): void {
-      if (event.key === 'Escape') setStatBlockPosition(null)
-    }
-    document.addEventListener('keydown', hideStatBlockOnEscape)
-    return () => document.removeEventListener('keydown', hideStatBlockOnEscape)
-  }, [isStatBlockShown])
 
   useEffect(() => {
     if (!shouldTakeFocus) return
@@ -151,12 +106,11 @@ function FilledHotbarSlot({
         {...attributes}
         {...listeners}
         aria-label={`Slot ${slotNumber}: ${ability.name}`}
-        aria-describedby={
-          isStatBlockShown
-            ? `${statBlockId} ${attributes['aria-describedby']}`
-            : attributes['aria-describedby']
-        }
-        onKeyDown={clearOnDeleteKey}
+        aria-describedby={`${attributes['aria-describedby'] ?? ''} ${statBlockId}`}
+        onKeyDown={(event) => {
+          hoverAnchor.onKeyDown(event)
+          clearOnDeleteKey(event)
+        }}
         onKeyUp={(event) => {
           if (event.key === ' ') event.preventDefault()
         }}
@@ -164,10 +118,12 @@ function FilledHotbarSlot({
           lastPointerTypeRef.current = event.pointerType
           listeners?.onPointerDown?.(event)
         }}
-        onMouseEnter={(event) => setStatBlockPosition(statBlockPositionBeside(event.currentTarget))}
-        onMouseLeave={() => setStatBlockPosition(null)}
-        onFocus={(event) => setStatBlockPosition(statBlockPositionBeside(event.currentTarget))}
-        onBlur={() => setStatBlockPosition(null)}
+        onMouseEnter={(event) => {
+          if (active === null) hoverAnchor.onMouseEnter(event)
+        }}
+        onMouseLeave={hoverAnchor.onMouseLeave}
+        onFocus={hoverAnchor.onFocus}
+        onBlur={hoverAnchor.onBlur}
         onClick={() => void navigate({ to: '/damage-calc' })}
         onContextMenu={(event) => {
           event.preventDefault()
@@ -177,9 +133,9 @@ function FilledHotbarSlot({
         <AbilityCode ability={ability} />
         <span className="hotbar-slot-number num">{slotNumber}</span>
       </button>
-      {isStatBlockShown && (
-        <AbilityStatBlock id={statBlockId} ability={ability} position={statBlockPosition} />
-      )}
+      <div id={statBlockId} className="sr-only">
+        <AbilityStatBlock ability={ability} />
+      </div>
     </>
   )
 }

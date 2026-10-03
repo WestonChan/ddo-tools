@@ -1,31 +1,32 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { Check, Flag, Link as LinkIcon, Link2Off } from 'lucide-react'
-import { HoverTooltip, WikiLinkIcon } from '../../../../components'
-import { useDetailDrawerNavigation } from '../../contexts/DetailDrawerNavigationContext'
-import { DETAIL_DRAWER_TITLE_ID } from '../../resourceCategories'
-import { KeyValueGrid, type KeyValuePair } from './KeyValueGrid'
-
-interface DetailHeaderProps {
-  name: string
-  attributes: KeyValuePair[]
-  wikiUrl?: string | null
-  wikiPageName?: string | null
-  isLegacy?: boolean
-}
+import { DetailCardHeader, HintAnchor, WikiLinkIcon } from '../../../../components'
+import { githubIssueUrls } from '../../../../lib/githubIssue'
+import { useDetailNavigation } from '../../contexts/DetailNavigationContext'
+import { DETAIL_TITLE_ID } from '../../resourceCategories'
 
 const COPY_FEEDBACK_MS = 1500
 
 export function DetailHeader({
   name,
-  attributes,
+  kicker = '',
   wikiUrl,
   wikiPageName,
   isLegacy = false,
-}: DetailHeaderProps): JSX.Element {
-  const { deepLinkUrl } = useDetailDrawerNavigation()
+  isCraftable = false,
+  variant = 'drawer',
+}: {
+  name: string
+  kicker?: string
+  wikiUrl?: string | null
+  wikiPageName?: string | null
+  isLegacy?: boolean
+  isCraftable?: boolean
+  variant?: 'drawer' | 'hover'
+}): JSX.Element {
+  const { deepLinkUrl } = useDetailNavigation()
   const [isLinkCopied, setIsLinkCopied] = useState(false)
   const copiedResetTimeoutRef = useRef<number | null>(null)
-
   useEffect(
     () => () => {
       if (copiedResetTimeoutRef.current !== null) clearTimeout(copiedResetTimeoutRef.current)
@@ -39,66 +40,73 @@ export function DetailHeader({
       await navigator.clipboard.writeText(deepLinkUrl)
       setIsLinkCopied(true)
       if (copiedResetTimeoutRef.current !== null) clearTimeout(copiedResetTimeoutRef.current)
-      copiedResetTimeoutRef.current = window.setTimeout(() => {
-        setIsLinkCopied(false)
-        copiedResetTimeoutRef.current = null
-      }, COPY_FEEDBACK_MS)
+      copiedResetTimeoutRef.current = window.setTimeout(
+        () => setIsLinkCopied(false),
+        COPY_FEEDBACK_MS,
+      )
     } catch {}
   }
 
   return (
-    <header className="resources-entity-header">
-      <div className="resources-entity-title-row">
-        <div className="resources-entity-name-row">
-          <h2 id={DETAIL_DRAWER_TITLE_ID} className="resources-entity-name">
-            {name}
-          </h2>
+    <DetailCardHeader
+      kicker={kicker}
+      name={name}
+      titleId={variant === 'drawer' ? DETAIL_TITLE_ID : undefined}
+      badges={
+        <>
           {isLegacy && (
             <span className="resources-chip" data-kind="legacy">
               Legacy
             </span>
           )}
-        </div>
-        <div className="resources-entity-actions">
-          <button
-            type="button"
-            className="resources-wiki-window-toggle"
-            aria-pressed={false}
-            disabled
-            title="Linked wiki window arrives with Phase 4g"
-          >
-            <Link2Off size={13} aria-hidden />
-            Link wiki
-          </button>
-          <HoverTooltip text={isLinkCopied ? 'Copied!' : 'Copy link to this item'}>
-            <button
-              type="button"
-              className="resources-icon-button"
-              onClick={copyDeepLink}
-              disabled={!deepLinkUrl}
-              aria-label={isLinkCopied ? 'Link copied' : 'Copy link to this item'}
-            >
-              {isLinkCopied ? <Check size={14} /> : <LinkIcon size={14} />}
-            </button>
-          </HoverTooltip>
-          <WikiLinkIcon
-            href={wikiUrl ?? undefined}
-            pageName={wikiPageName ?? undefined}
-            size={14}
-          />
-          <HoverTooltip text="Report mismatch — coming soon">
-            <button
-              type="button"
-              className="resources-icon-button"
-              disabled
-              aria-label="Report a mismatch between our parsed data and the wiki"
-            >
-              <Flag size={14} />
-            </button>
-          </HoverTooltip>
-        </div>
-      </div>
-      {attributes.length > 0 && <KeyValueGrid pairs={attributes} />}
-    </header>
+          {isCraftable && (
+            <span className="resources-chip" data-kind="craftable">
+              Craftable
+            </span>
+          )}
+        </>
+      }
+      actions={
+        variant === 'drawer' && (
+          <>
+            <HintAnchor text="Linked wiki window arrives with Phase 4g">
+              <button type="button" className="resources-wiki-chip" aria-pressed={false} disabled>
+                <Link2Off size={13} aria-hidden />
+                Link wiki
+              </button>
+            </HintAnchor>
+            <HintAnchor text={isLinkCopied ? 'Copied!' : 'Copy link to this item'}>
+              <button
+                type="button"
+                className="resources-icon-button"
+                onClick={copyDeepLink}
+                disabled={!deepLinkUrl}
+                aria-label={isLinkCopied ? 'Link copied' : 'Copy link to this item'}
+              >
+                {isLinkCopied ? <Check size={14} /> : <LinkIcon size={14} />}
+              </button>
+            </HintAnchor>
+            <WikiLinkIcon
+              href={wikiUrl ?? undefined}
+              pageName={wikiPageName ?? undefined}
+              icon="external"
+              className="resources-wiki-external"
+              size={14}
+            />
+            <HintAnchor text="Report a mismatch">
+              <a
+                className="resources-icon-button"
+                href={githubIssueUrls(undefined, [], `Item data mismatch: ${name}`).newIssueUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Report a mismatch between our parsed data and the wiki"
+              >
+                <Flag size={14} />
+              </a>
+            </HintAnchor>
+          </>
+        )
+      }
+    />
   )
 }

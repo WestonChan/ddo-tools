@@ -3,10 +3,10 @@ import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DetailBreadcrumbBar } from './DetailBreadcrumbBar'
 import {
-  DetailDrawerNavigationProvider,
-  type DetailDrawerNavigation,
-} from '../contexts/DetailDrawerNavigationContext'
-import type { ResourceReference } from '../hooks/useDetailDrawerStack'
+  DetailNavigationProvider,
+  type DetailNavigation,
+} from '../contexts/DetailNavigationContext'
+import type { ResourceReference } from '../hooks/useDetailStack'
 
 const alphaEntry: ResourceReference = { category: 'items', id: 1, name: 'Alpha' }
 const betaEntry: ResourceReference = { category: 'items', id: 2, name: 'Beta' }
@@ -14,34 +14,34 @@ const gammaEntry: ResourceReference = { category: 'items', id: 3, name: 'Gamma' 
 
 interface BreadcrumbBarRenderOptions {
   stack: ResourceReference[]
-  api?: Partial<DetailDrawerNavigation>
+  api?: Partial<DetailNavigation>
 }
 
 function renderBreadcrumbBar(options: BreadcrumbBarRenderOptions): {
   onBackOneLevel: ReturnType<typeof vi.fn>
   onJumpToCrumb: ReturnType<typeof vi.fn>
-  closeDrawer: ReturnType<typeof vi.fn>
+  closeDetail: ReturnType<typeof vi.fn>
 } {
   const onBackOneLevel = vi.fn()
   const onJumpToCrumb = vi.fn()
-  const closeDrawer = vi.fn()
-  const api: DetailDrawerNavigation = {
+  const closeDetail = vi.fn()
+  const api: DetailNavigation = {
     pushResource: vi.fn(),
     deepLinkUrl: null,
-    closeDrawer,
+    closeDetail,
     pickerCategory: 'items',
     ...options.api,
   }
   render(
-    <DetailDrawerNavigationProvider navigation={api}>
+    <DetailNavigationProvider navigation={api}>
       <DetailBreadcrumbBar
         detailStack={options.stack}
         onBackOneLevel={onBackOneLevel}
         onJumpToCrumb={onJumpToCrumb}
       />
-    </DetailDrawerNavigationProvider>,
+    </DetailNavigationProvider>,
   )
-  return { onBackOneLevel, onJumpToCrumb, closeDrawer }
+  return { onBackOneLevel, onJumpToCrumb, closeDetail }
 }
 
 afterEach(() => {
@@ -56,7 +56,10 @@ describe('DetailBreadcrumbBar', () => {
 
   it('shows the one-step back arrow at depth 2+', () => {
     renderBreadcrumbBar({ stack: [alphaEntry, betaEntry] })
-    expect(screen.getByRole('button', { name: /back one level/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /back one level/i }).parentElement).toHaveAttribute(
+      'data-tip',
+      'Back one level',
+    )
   })
 
   it('back-arrow click fires onBackOneLevel', async () => {
@@ -74,11 +77,11 @@ describe('DetailBreadcrumbBar', () => {
     expect(screen.getByRole('button', { name: /back to items/i })).toBeInTheDocument()
   })
 
-  it('back crumb click fires closeDrawer (close all)', async () => {
+  it('back crumb click fires closeDetail (close all)', async () => {
     const user = userEvent.setup()
-    const { closeDrawer } = renderBreadcrumbBar({ stack: [alphaEntry, betaEntry] })
+    const { closeDetail } = renderBreadcrumbBar({ stack: [alphaEntry, betaEntry] })
     await user.click(screen.getByRole('button', { name: /back to items/i }))
-    expect(closeDrawer).toHaveBeenCalledTimes(1)
+    expect(closeDetail).toHaveBeenCalledTimes(1)
   })
 
   it('back crumb label tracks the active pickerCategory', () => {

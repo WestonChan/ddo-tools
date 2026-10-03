@@ -28,4 +28,4 @@ export function isResourceCategory(categorySlug: string): categorySlug is Resour
   return (RESOURCE_CATEGORIES as readonly string[]).includes(categorySlug)
 }
 
-export const DETAIL_DRAWER_TITLE_ID = 'resources-detail-title'
+export const DETAIL_TITLE_ID = 'resources-detail-title'

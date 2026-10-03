@@ -123,6 +123,7 @@ describe('AugmentSlotList', () => {
         el.getAttribute('data-color'),
       ),
     ).toEqual(['red', 'colorless'])
+    expect(container.querySelector('[data-tip="Red augment slot"]')).toBeInTheDocument()
     expect(screen.queryByRole('button')).toBeNull()
   })
 

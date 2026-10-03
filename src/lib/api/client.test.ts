@@ -23,6 +23,11 @@ describe('apiUrl', () => {
     expect(apiUrl('/v1/version')).toBe(`${API_BASE_URL}/v1/version`)
   })
 
+  it('repeats a query key for multiple exact names, including names containing commas', () => {
+    const url = new URL(apiUrl('/v1/items', { enchantment: ['Strength', 'Keen, Vorpal'] }))
+    expect(url.searchParams.getAll('enchantment')).toEqual(['Strength', 'Keen, Vorpal'])
+  })
+
   it('always has an origin, so an unset VITE_API_URL still reaches the public API', () => {
     expect(API_BASE_URL).toMatch(/^https?:\/\//)
     expect(API_BASE_URL.endsWith('/')).toBe(false)

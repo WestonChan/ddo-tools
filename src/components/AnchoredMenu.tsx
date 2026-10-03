@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, type JSX, type ReactNode, type RefO
 import './AnchoredMenu.css'
 
 export type AnchoredMenuPlacement = 'below' | 'above'
+export type AnchoredMenuCloseReason = 'escape' | 'outside' | 'focus-leaving'
 
 interface AnchoredMenuProps {
   id: string
@@ -9,13 +10,15 @@ interface AnchoredMenuProps {
   placement: AnchoredMenuPlacement
   widthPx: number
   label: string
-  onClose: () => void
+  className?: string
+  onClose: (reason: AnchoredMenuCloseReason) => void
   children: ReactNode
 }
 
 const ANCHOR_GAP_PX = 4
 const MINIMUM_ROOM_BEFORE_FLIPPING_PX = 160
-const FOCUSABLE_ROW_SELECTOR = 'button:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
+const FOCUSABLE_ROW_SELECTOR =
+  'input:not(:disabled), button:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])'
 
 function placeMenuAgainstAnchor(
   menu: HTMLElement,
@@ -32,7 +35,8 @@ function placeMenuAgainstAnchor(
     requestedRoomPx < MINIMUM_ROOM_BEFORE_FLIPPING_PX && otherRoomPx > requestedRoomPx
   const isBelow = (requestedPlacement === 'below') !== shouldFlip
 
-  const rightmostLeftPx = window.innerWidth - widthPx - ANCHOR_GAP_PX
+  const rightmostLeftPx =
+    window.innerWidth - Math.min(widthPx, window.innerWidth - ANCHOR_GAP_PX * 2) - ANCHOR_GAP_PX
   menu.style.left = `${Math.max(ANCHOR_GAP_PX, Math.min(anchorRect.left, rightmostLeftPx))}px`
   const roomOnChosenSidePx = isBelow ? roomBelowPx : roomAbovePx
   menu.style.maxHeight = `${Math.max(0, roomOnChosenSidePx - ANCHOR_GAP_PX)}px`
@@ -58,6 +62,7 @@ export function AnchoredMenu({
   placement,
   widthPx,
   label,
+  className,
   onClose,
   children,
 }: AnchoredMenuProps): JSX.Element {
@@ -94,15 +99,16 @@ export function AnchoredMenu({
       return !!menu?.contains(node) || !!anchor?.contains(node)
     }
     function closeOnOutsideMousedown(e: MouseEvent): void {
-      if (e.target instanceof Node && !isInsideMenuOrAnchor(e.target)) onClose()
+      if (e.target instanceof Node && !isInsideMenuOrAnchor(e.target)) onClose('outside')
     }
     function closeOnEscape(e: KeyboardEvent): void {
       if (e.key !== 'Escape' || e.isComposing) return
       e.stopPropagation()
-      onClose()
+      onClose('escape')
     }
     function closeOnFocusLeaving(e: FocusEvent): void {
-      if (e.relatedTarget instanceof Node && !isInsideMenuOrAnchor(e.relatedTarget)) onClose()
+      if (e.relatedTarget instanceof Node && !isInsideMenuOrAnchor(e.relatedTarget))
+        onClose('focus-leaving')
     }
     document.addEventListener('mousedown', closeOnOutsideMousedown)
     document.addEventListener('keydown', closeOnEscape, true)
@@ -122,8 +128,8 @@ export function AnchoredMenu({
       id={id}
       role="group"
       aria-label={label}
-      className="anchored-menu"
-      style={{ width: widthPx }}
+      className={`anchored-menu${className ? ` ${className}` : ''}`}
+      style={{ width: `min(${widthPx}px, calc(100vw - ${ANCHOR_GAP_PX * 2}px))` }}
     >
       {children}
     </div>

@@ -1,222 +1,290 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { ItemPicker } from './ItemPicker'
-import type { ItemSummary } from '../queries/items'
+import { EMPTY_ITEM_FILTERS, type ItemListFilters, type ItemSummary } from '../queries/items'
 
 const navigateMock = vi.fn()
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => navigateMock,
-}))
-
-const useItemIdsWithAnyStatMock = vi.fn((stats: readonly string[]) =>
-  stats.length === 0 ? null : new Set<number>([1]),
-)
-const useItemIdsInPackMock = vi.fn((pack: string) => (pack === '' ? null : new Set<number>([2])))
-
-vi.mock('../queries/useItems', () => ({
-  useStatNames: () => ({ data: ['Charisma', 'Strength'] }),
-  useAdventurePackNames: () => ({ data: ['Vault of Night', 'Shadowfell'] }),
-  useItemIdsWithAnyStat: (stats: readonly string[]) => useItemIdsWithAnyStatMock(stats),
-  useItemIdsInPack: (pack: string) => useItemIdsInPackMock(pack),
-}))
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 
 function itemRow(overrides: Partial<ItemSummary> = {}): ItemSummary {
   return {
     id: 1,
     name: 'Bloodstone',
     equipmentSlot: 'Trinket',
-    category: 'Trinket',
+    category: 'Jewelry',
     minimumLevel: 12,
     pack: 'Vault of Night',
-    isRaidLoot: false,
+    isRaidLoot: true,
     isRareLoot: false,
     isLegacy: false,
     ...overrides,
   }
 }
 
-const SAMPLE_ITEMS: ItemSummary[] = [
-  itemRow({ id: 1, name: 'Bloodstone', isRaidLoot: true, minimumLevel: 12 }),
-  itemRow({ id: 2, name: 'Cloak of Night', equipmentSlot: 'Back', minimumLevel: 20 }),
-  itemRow({
-    id: 3,
-    name: 'Ring of Spell Storing',
-    equipmentSlot: 'Ring',
-    minimumLevel: 4,
-    isRareLoot: true,
-  }),
+const SAMPLE_ITEMS = [
+  itemRow(),
+  itemRow({ id: 2, name: 'Cloak of Night', equipmentSlot: 'Back', pack: 'Shadowfell' }),
+  itemRow({ id: 3, name: 'Ring of Spell Storing', equipmentSlot: 'Ring', isRareLoot: true }),
 ]
+let pageState: {
+  data: { total: number; items: ItemSummary[] } | undefined
+  isPending: boolean
+  isFetching: boolean
+  isPlaceholderData?: boolean
+  fetchStatus?: 'idle' | 'fetching' | 'paused'
+  error: Error | null
+  isFetchNextPageError?: boolean
+  isFetchingNextPage?: boolean
+} = { data: { total: 93, items: SAMPLE_ITEMS }, isPending: false, isFetching: false, error: null }
+const useItemPageMock = vi.fn((...request: [ItemListFilters, string, boolean, unknown]) => {
+  void request
+  return pageState
+})
+const fetchNextPageMock = vi.fn()
 
-function renderItemPicker(items: ItemSummary[] = SAMPLE_ITEMS): RenderResult {
-  return render(<ItemPicker category="items" items={items} selectedItemId={null} />)
-}
-
-function shownItemNames(): string[] {
-  return screen
-    .getAllByRole('button')
-    .map((b) => b.textContent ?? '')
-    .filter((t) => SAMPLE_ITEMS.some((r) => t.includes(r.name)))
-}
+vi.mock('../queries/useItems', () => ({
+  useItemPage: (
+    filters: ItemListFilters,
+    query: string,
+    includesSetBonuses: boolean,
+    sort: unknown,
+  ) => {
+    const state = useItemPageMock(filters, query, includesSetBonuses, sort)
+    return {
+      ...state,
+      data: state.data ? { pages: [state.data], pageParams: [0] } : undefined,
+      fetchNextPage: fetchNextPageMock,
+    }
+  },
+  useEquipmentSlotNames: () => ({ data: ['Back', 'Ring', 'Trinket'] }),
+  useEnchantmentNames: () => ({ data: ['Charisma', 'Strength', 'Vorpal'] }),
+  useAdventurePackNames: () => ({ data: ['Shadowfell', 'Vault of Night'] }),
+  useRaidQuests: () => ({
+    data: [
+      { id: 7, name: 'The Raid', pack: 'Vault of Night' },
+      { id: 8, name: 'Empty Raid', pack: null },
+    ],
+  }),
+}))
 
 beforeEach(() => {
   vi.clearAllMocks()
+  useItemPageMock.mockImplementation((...request) => {
+    void request
+    return pageState
+  })
+  fetchNextPageMock.mockClear()
+  pageState = {
+    data: { total: 93, items: SAMPLE_ITEMS },
+    isPending: false,
+    isFetching: false,
+    error: null,
+  }
 })
+afterEach(cleanup)
 
-afterEach(() => {
-  cleanup()
-})
+function renderItemPicker(): void {
+  render(<ItemPickerHarness />)
+}
 
-describe('ItemPicker filters', () => {
-  it('shows every row and a result count with no filters applied', () => {
+function ItemPickerHarness(): React.JSX.Element {
+  const [filters, setFilters] = useState<ItemListFilters>(EMPTY_ITEM_FILTERS)
+  return (
+    <ItemPicker
+      category="items"
+      selectedItemId={null}
+      filters={filters}
+      onFiltersChange={setFilters}
+    />
+  )
+}
+
+function latestFilters(): ItemListFilters {
+  return useItemPageMock.mock.lastCall![0]
+}
+
+describe('ItemPicker server-backed filters', () => {
+  it('shows chips and the response total', () => {
     renderItemPicker()
-    expect(screen.getByText('3 results')).toBeInTheDocument()
+    const chipRow = document.querySelector('.filter-chip-row') as HTMLElement
+    expect(
+      within(chipRow)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['ML', 'Slot', 'Enchantments', 'Pack', 'Raid', 'Rare only', 'Raid only'])
+    expect(screen.getByText('93 results')).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'items list' })).toBeInTheDocument()
   })
 
-  it('uses the singular noun for a single result', () => {
-    renderItemPicker([SAMPLE_ITEMS[0]])
-    expect(screen.getByText('1 result')).toBeInTheDocument()
+  it('renders Raid and Rare as static headers while other columns remain sortable', () => {
+    renderItemPicker()
+    for (const label of ['Raid', 'Rare']) {
+      const header = screen.getByRole('columnheader', { name: new RegExp(label) })
+      expect(header).not.toHaveAttribute('aria-sort')
+      expect(within(header).queryByRole('button')).toBeNull()
+    }
+    expect(screen.getByRole('button', { name: 'Sort Name' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sort ML' })).toBeInTheDocument()
   })
 
-  it('filters to raid items', async () => {
-    renderItemPicker()
-    await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
-
-    expect(screen.getByText('1 result')).toBeInTheDocument()
-    expect(shownItemNames().some((n) => n.includes('Bloodstone'))).toBe(true)
-  })
-
-  it('filters to rare items', async () => {
-    renderItemPicker()
-    const toggle = screen.getByRole('button', { name: 'Rare only' })
-    await userEvent.click(toggle)
-
-    expect(toggle).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByText('1 result')).toBeInTheDocument()
-    expect(shownItemNames().some((n) => n.includes('Ring of Spell Storing'))).toBe(true)
-  })
-
-  it('combines the rare and raid toggles with AND semantics', async () => {
-    renderItemPicker()
+  it('does not label previous rows as results while a filtered retry is paused', async () => {
+    const view = render(<ItemPickerHarness />)
     await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
-    expect(screen.getByText(/no matches/i)).toBeInTheDocument()
+    pageState = {
+      data: { total: 93, items: SAMPLE_ITEMS },
+      isPending: false,
+      isFetching: false,
+      isPlaceholderData: true,
+      fetchStatus: 'paused',
+      error: null,
+    }
+    view.rerender(<ItemPickerHarness />)
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+    expect(screen.queryByText('93 results')).toBeNull()
   })
 
-  it('filters by equipment slot', async () => {
+  it('passes slot, two enchantments, set bonuses, raid, range, rare and search to one page hook', async () => {
+    const user = userEvent.setup()
     renderItemPicker()
-    await userEvent.selectOptions(screen.getByLabelText('Slot'), 'Back')
-    expect(screen.getByText('1 result')).toBeInTheDocument()
-    expect(shownItemNames().some((n) => n.includes('Cloak of Night'))).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Slot' }))
+    await user.click(screen.getByRole('option', { name: 'Back' }))
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('option', { name: 'Strength' }))
+    await user.click(screen.getByRole('option', { name: /Vorpal/ }))
+    await user.click(screen.getByRole('checkbox', { name: 'Include set bonuses' }))
+    await user.click(screen.getByRole('button', { name: 'Enchantments · 2' }))
+    await user.click(screen.getByRole('button', { name: 'Raid' }))
+    await user.click(screen.getByRole('option', { name: /The Raid/ }))
+    await user.click(screen.getByRole('button', { name: 'ML' }))
+    await user.type(screen.getByRole('spinbutton', { name: 'Min ML' }), '20')
+    await user.type(screen.getByRole('spinbutton', { name: 'Max ML' }), '32{Enter}')
+    await user.click(screen.getByRole('button', { name: 'Rare only' }))
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search items' }), {
+      target: { value: 'torc' },
+    })
+    await waitFor(() => expect(useItemPageMock.mock.lastCall?.[1]).toBe('torc'))
+    expect(latestFilters()).toEqual({
+      ml: { min: '20', max: '32' },
+      slot: 'Back',
+      enchantments: ['Strength', 'Vorpal'],
+      pack: '',
+      raid: '7',
+      isRareOnly: true,
+      isRaidOnly: false,
+    })
+    expect(useItemPageMock.mock.lastCall?.[2]).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Show applied · 7' }))
+    await user.click(screen.getByRole('button', { name: 'Remove Slot: Back' }))
+    expect(latestFilters().slot).toBe('')
   })
 
-  it('filters by a minimum-level lower bound', async () => {
+  it('keeps API order during search and sends header sorting to the page hook', async () => {
+    pageState = {
+      data: {
+        total: 2,
+        items: [
+          itemRow({ id: 2, name: 'Torc of Prince Raiyum-de II' }),
+          itemRow({ id: 1, name: '+3 Combustion Scorched Bastard Sword' }),
+        ],
+      },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
     renderItemPicker()
-    await userEvent.type(screen.getByLabelText(/lower bound/i), '13')
-    expect(screen.getByText('1 result')).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search items' }), {
+      target: { value: 'torc' },
+    })
+    await waitFor(() => expect(useItemPageMock.mock.lastCall?.[1]).toBe('torc'))
+    expect(screen.getAllByRole('row')[1]).toHaveTextContent('Torc of Prince')
+    await userEvent.click(screen.getByRole('button', { name: 'Sort Name' }))
+    expect(useItemPageMock.mock.lastCall?.[3]).toEqual({ key: 'name', direction: 'asc' })
+    expect(screen.getAllByRole('row')[1]).toHaveTextContent('Torc of Prince')
   })
 
-  it('filters by a minimum-level upper bound', async () => {
-    renderItemPicker()
-    await userEvent.type(screen.getByLabelText(/upper bound/i), '12')
-    expect(screen.getByText('2 results')).toBeInTheDocument()
+  it('debounces rapid typing for at least 200ms before changing the page query', () => {
+    vi.useFakeTimers()
+    try {
+      renderItemPicker()
+      const search = screen.getByRole('searchbox', { name: 'Search items' })
+      for (const query of ['r', 'ri', 'rin', 'ring']) {
+        fireEvent.change(search, { target: { value: query } })
+      }
+      act(() => vi.advanceTimersByTime(199))
+      expect(useItemPageMock.mock.lastCall?.[1]).toBe('')
+      act(() => vi.advanceTimersByTime(51))
+      expect(useItemPageMock.mock.lastCall?.[1]).toBe('ring')
+      expect(new Set(useItemPageMock.mock.calls.map((request) => request[1]))).toEqual(
+        new Set(['', 'ring']),
+      )
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
-  it('asks for the stat item-id set only once a stat is picked', async () => {
-    const { container } = renderItemPicker()
-    expect(useItemIdsWithAnyStatMock).not.toHaveBeenCalledWith(expect.arrayContaining(['Charisma']))
-
-    const trigger = container.querySelector('.resources-multiselect-trigger')
-    await userEvent.click(trigger as Element)
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Charisma' }))
-
-    expect(useItemIdsWithAnyStatMock).toHaveBeenCalledWith(['Charisma'])
-    expect(screen.getByText('1 result')).toBeInTheDocument()
+  it('keeps prior rows visible while a new request loads', () => {
+    const { rerender } = render(<ItemPickerHarness />)
+    pageState = {
+      data: { total: 93, items: SAMPLE_ITEMS },
+      isPending: false,
+      isFetching: true,
+      error: null,
+    }
+    rerender(<ItemPickerHarness />)
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toBeInTheDocument()
   })
 
-  it('asks for the pack item-id set only once a pack is picked', async () => {
-    renderItemPicker()
-    expect(useItemIdsInPackMock).not.toHaveBeenCalledWith('Shadowfell')
-
-    await userEvent.selectOptions(screen.getByLabelText('Pack'), 'Shadowfell')
-
-    expect(useItemIdsInPackMock).toHaveBeenCalledWith('Shadowfell')
-    expect(shownItemNames().some((n) => n.includes('Cloak of Night'))).toBe(true)
+  it('keeps loaded rows and offers an inline retry when the next page fails', async () => {
+    const view = render(<ItemPickerHarness />)
+    pageState = {
+      data: { total: 201, items: SAMPLE_ITEMS },
+      isPending: false,
+      isFetching: false,
+      error: new Error('Page unavailable'),
+      isFetchNextPageError: true,
+    }
+    view.rerender(<ItemPickerHarness />)
+    expect(screen.getByText('201 results')).toBeInTheDocument()
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(fetchNextPageMock).toHaveBeenCalledOnce()
   })
 
-  it('combines filters with AND semantics', async () => {
-    renderItemPicker()
-    await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
-    await userEvent.selectOptions(screen.getByLabelText('Slot'), 'Back')
-    expect(screen.getByText(/no matches/i)).toBeInTheDocument()
-  })
-})
-
-describe('ItemPicker active-filter chips', () => {
-  it('renders a chip per active filter and clears just that one', async () => {
-    renderItemPicker()
-    await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
-    await userEvent.selectOptions(screen.getByLabelText('Slot'), 'Back')
-
-    const remove = screen.getByRole('button', { name: 'Remove filter: Raid' })
-    await userEvent.click(remove)
-
-    expect(screen.queryByRole('button', { name: 'Remove filter: Raid' })).toBeNull()
-    expect(screen.getByRole('button', { name: /Remove filter: .*Back/ })).toBeInTheDocument()
+  it('keeps the response total visible while another page loads', () => {
+    const view = render(<ItemPickerHarness />)
+    pageState = {
+      data: { total: 201, items: SAMPLE_ITEMS },
+      isPending: false,
+      isFetching: true,
+      isFetchingNextPage: true,
+      error: null,
+    }
+    view.rerender(<ItemPickerHarness />)
+    expect(screen.getByText('201 results')).toBeInTheDocument()
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toBeInTheDocument()
   })
 
-  it('renders a Rare chip that clears the rare toggle', async () => {
-    renderItemPicker()
-    await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Remove filter: Rare' }))
-
-    expect(screen.getByRole('button', { name: 'Rare only' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
+  it('shows an empty raid as a normal empty result', async () => {
+    useItemPageMock.mockImplementation((filters) =>
+      filters.raid === '8'
+        ? { data: { total: 0, items: [] }, isPending: false, isFetching: false, error: null }
+        : pageState,
     )
-    expect(screen.getByText('3 results')).toBeInTheDocument()
-  })
-
-  it('renders the min/max level range as a single chip', async () => {
     renderItemPicker()
-    await userEvent.type(screen.getByLabelText(/lower bound/i), '5')
-    await userEvent.type(screen.getByLabelText(/upper bound/i), '15')
-    expect(screen.getByRole('button', { name: /Remove filter: ML 5–15/ })).toBeInTheDocument()
+    expect(screen.getByText('93 results')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Raid' }))
+    await userEvent.click(screen.getByRole('option', { name: /Empty Raid/ }))
+    expect(latestFilters().raid).toBe('8')
+    expect(screen.getByText('0 results')).toBeInTheDocument()
+    expect(screen.getByText('No items match your filters.')).toBeInTheDocument()
   })
 
-  it('renders a one-sided range chip with a comparison sign', async () => {
+  it('opens the detail route from a ledger row', async () => {
     renderItemPicker()
-    await userEvent.type(screen.getByLabelText(/lower bound/i), '5')
-    expect(screen.getByRole('button', { name: /Remove filter: ML ≥ 5/ })).toBeInTheDocument()
-  })
-
-  it('drops every filter via Clear filters', async () => {
-    renderItemPicker()
-    await userEvent.click(screen.getByRole('button', { name: 'Raid only' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
-
-    expect(screen.getByText('3 results')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /Remove filter/ })).toBeNull()
-  })
-})
-
-describe('ItemPicker empty states', () => {
-  it('reports an empty table when there are no rows at all', () => {
-    renderItemPicker([])
-    expect(screen.getByText(/no items in database/i)).toBeInTheDocument()
-  })
-
-  it('reports no matches when filters exclude everything', async () => {
-    renderItemPicker()
-    await userEvent.type(screen.getByLabelText(/lower bound/i), '99')
-    expect(screen.getByText(/no matches/i)).toBeInTheDocument()
-  })
-})
-
-describe('ItemPicker navigation', () => {
-  it('navigates to the item route when a row is chosen', async () => {
-    renderItemPicker([SAMPLE_ITEMS[0]])
-    await userEvent.click(screen.getByRole('button', { name: /Bloodstone/ }))
+    await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
     expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/1' })
   })
 })

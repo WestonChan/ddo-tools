@@ -1,0 +1,162 @@
+.ledger-table {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+  overflow-x: auto;
+}
+
+.ledger-head {
+  flex: 0 0 auto;
+}
+
+.ledger-header-row,
+.ledger-row {
+  display: flex;
+  width: 100%;
+  min-width: 100%;
+}
+
+.ledger-header-row {
+  height: 30px;
+  border-bottom: 3px double var(--border-strong);
+}
+
+.ledger-header-cell {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+  padding: 0 var(--space-1-5) var(--space-1);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.ledger-header-cell--dragging {
+  opacity: 0.42;
+}
+
+.ledger-header-cell--over {
+  box-shadow: var(--inset-mark-accent);
+}
+
+.ledger-sort-button,
+.ledger-header-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ledger-sort-button {
+  cursor: pointer;
+}
+
+.ledger-header-cell[aria-sort='ascending'] .ledger-sort-button,
+.ledger-header-cell[aria-sort='descending'] .ledger-sort-button {
+  color: var(--text-accent);
+}
+
+.ledger-resize-grip {
+  position: absolute;
+  z-index: 1;
+  top: var(--space-1);
+  bottom: var(--space-1);
+  left: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 9px;
+  border-radius: var(--radius-xs);
+  cursor: col-resize;
+
+  &:hover {
+    background: var(--surface-active);
+  }
+
+  & span {
+    width: 1px;
+    height: 14px;
+    background: var(--border-strong);
+  }
+}
+
+.ledger-body-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.ledger-body {
+  scrollbar-gutter: stable;
+}
+
+.ledger-row {
+  align-items: center;
+  height: 32px;
+  border-bottom: 1px dotted var(--border-default);
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.ledger-row--selected {
+  background: var(--surface-selected);
+  box-shadow: var(--inset-mark-accent);
+}
+
+.ledger-row--heading {
+  color: var(--text-heading);
+  font-weight: var(--fw-semibold);
+  cursor: default;
+}
+
+.ledger-cell {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 var(--space-1-5);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-heading-cell {
+  padding: 0 var(--space-1-5);
+}
+
+.ledger-table--dense .ledger-row {
+  height: 30px;
+}
+
+.ledger-table--dense .ledger-header-row {
+  height: 26px;
+}
+
+.ledger-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 200px;
+  padding: var(--space-6);
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+}

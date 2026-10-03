@@ -8,6 +8,8 @@ export type StatusPlaceholderReason =
   | 'not-found'
   | 'loading'
   | 'error'
+  | 'filter-error'
+  | 'sort-error'
 
 const STATUS_PLACEHOLDER_MIN_HEIGHT_PX = 140
 
@@ -26,7 +28,7 @@ function placeholderMessage({
 }: StatusPlaceholderProps): { title: string; hint?: string } {
   switch (reason) {
     case 'no-selection':
-      return { title: 'Select an item to view details.' }
+      return { title: 'Select an item' }
     case 'no-results':
       return {
         title: searchQuery ? `No matches for "${searchQuery}".` : 'No matches.',
@@ -49,6 +51,10 @@ function placeholderMessage({
         title: 'Could not load this item.',
         hint: 'Check your connection and pick the row again.',
       }
+    case 'filter-error':
+      return { title: 'Could not load filters.', hint: 'Check your connection, then try again.' }
+    case 'sort-error':
+      return { title: 'Could not load sorted items.', hint: 'Reset the sort or try again.' }
   }
 }
 

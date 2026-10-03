@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { DETAIL_DRAWER_TITLE_ID, isResourceCategory } from './resourceCategories'
+import { DETAIL_TITLE_ID, isResourceCategory } from './resourceCategories'
 
 describe('isResourceCategory', () => {
   it('rejects unknown strings (including case mismatches)', () => {
@@ -13,8 +13,8 @@ describe('isResourceCategory', () => {
   })
 })
 
-describe('DETAIL_DRAWER_TITLE_ID', () => {
-  it('is a non-empty id shared by the drawer and its heading', () => {
-    expect(DETAIL_DRAWER_TITLE_ID).toBeTruthy()
+describe('DETAIL_TITLE_ID', () => {
+  it('is a non-empty id shared by the detail pane and its heading', () => {
+    expect(DETAIL_TITLE_ID).toBeTruthy()
   })
 })

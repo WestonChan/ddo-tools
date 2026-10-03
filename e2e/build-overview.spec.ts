@@ -18,6 +18,14 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole('region', { name: 'Hotbars', exact: true }).waitFor()
 })
 
+test('a filled slot shows its code without spilling the full ability name', async ({ page }) => {
+  const polarRay = page.getByRole('button', { name: 'Slot 4: Polar Ray', exact: true })
+  const statBlock = polarRay.locator('xpath=following-sibling::*[1]')
+  await expect(polarRay).toContainText('PR')
+  await expect(statBlock).toHaveCSS('width', '1px')
+  await expect(statBlock).toHaveCSS('clip-path', 'inset(50%)')
+})
+
 test('dragging a pool ability onto an empty slot places it there and keeps the page', async ({
   page,
 }) => {

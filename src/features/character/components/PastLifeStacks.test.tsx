@@ -45,4 +45,28 @@ describe('PastLifeStacks', () => {
     expect(screen.getAllByText('Ancient Blessings')).toHaveLength(1)
     expect(screen.getAllByText('Ancient Knowledge')).toHaveLength(1)
   })
+
+  it('uses a shared hint for a desired stack already owned by the character', () => {
+    const character = createCharacter()
+    character.untrackedLives.epic['ancient-blessings'] = 1
+    const plannedBuild = createLife({
+      desiredPastLives: {
+        heroic: {},
+        racial: {},
+        iconic: {},
+        epic: { 'ancient-blessings': 1 },
+      },
+    })
+    const { container } = render(
+      <PastLifeStacks
+        character={character}
+        viewedLifeId="life-1"
+        viewedPlannedBuild={plannedBuild}
+        onSetUntrackedStackCount={() => {}}
+      />,
+    )
+    expect(
+      container.querySelector('[data-tip="Character has this — build needs it"]'),
+    ).toBeInTheDocument()
+  })
 })

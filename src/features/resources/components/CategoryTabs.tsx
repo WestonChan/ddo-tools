@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { HoverTooltip } from '../../../components'
+import { HintAnchor } from '../../../components'
 import {
   RESOURCE_CATEGORIES,
   LABEL_BY_RESOURCE_CATEGORY,
@@ -35,9 +35,9 @@ export function CategoryTabs({ activeCategory, onSelect }: CategoryTabsProps): J
         return isEnabled ? (
           tabButton
         ) : (
-          <HoverTooltip key={category} text="Coming soon">
+          <HintAnchor key={category} text="Coming soon">
             {tabButton}
-          </HoverTooltip>
+          </HintAnchor>
         )
       })}
     </div>

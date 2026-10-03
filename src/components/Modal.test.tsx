@@ -57,29 +57,24 @@ describe('Modal', () => {
 
     cleanup()
 
-    const renderedDrawer = render(
-      <Modal variant="drawer-right" onClose={vi.fn()} label="Drawer" className="extra-class">
+    const renderedWithClass = render(
+      <Modal variant="centered" onClose={vi.fn()} label="Dialog" className="extra-class">
         <p>Body copy</p>
       </Modal>,
     )
     expect(screen.getByRole('dialog')).toHaveClass(
       'modal-panel',
-      'modal-panel--drawer-right',
+      'modal-panel--centered',
       'extra-class',
     )
-    expect(renderedDrawer.container.querySelector('.modal-backdrop')).toHaveClass(
-      'modal-backdrop--drawer-right',
+    expect(renderedWithClass.container.querySelector('.modal-backdrop')).toHaveClass(
+      'modal-backdrop--centered',
     )
   })
 
   it('names the dialog from labelledBy when it resolves, falling back to label', () => {
     render(
-      <Modal
-        variant="drawer-right"
-        onClose={vi.fn()}
-        labelledBy="detail-title"
-        label="Item details"
-      >
+      <Modal variant="centered" onClose={vi.fn()} labelledBy="detail-title" label="Item details">
         <h2 id="detail-title">Bloodstone</h2>
       </Modal>,
     )
@@ -88,12 +83,7 @@ describe('Modal', () => {
     cleanup()
 
     render(
-      <Modal
-        variant="drawer-right"
-        onClose={vi.fn()}
-        labelledBy="detail-title"
-        label="Item details"
-      >
+      <Modal variant="centered" onClose={vi.fn()} labelledBy="detail-title" label="Item details">
         <p>Unknown item.</p>
       </Modal>,
     )
@@ -171,7 +161,7 @@ describe('Modal', () => {
   it('moves focus to the panel on mount when focus is outside it', () => {
     opener.focus()
     render(
-      <Modal variant="drawer-right" onClose={vi.fn()} label="Dialog">
+      <Modal variant="centered" onClose={vi.fn()} label="Dialog">
         <button>Inside</button>
       </Modal>,
     )

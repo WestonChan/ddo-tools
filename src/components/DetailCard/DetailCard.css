@@ -1,0 +1,121 @@
+.detail-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+}
+
+.detail-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-default);
+  box-shadow: var(--inset-top);
+}
+
+.detail-card__title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-card__name-row,
+.detail-card__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+}
+
+.detail-card__name {
+  color: var(--text-heading);
+  font-size: var(--fs-stat);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  overflow-wrap: anywhere;
+}
+
+.detail-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2-5) var(--space-6);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.detail-card__fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+  color: var(--text-heading);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.detail-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3-5);
+  min-width: 0;
+  padding: var(--space-3);
+}
+
+.detail-card__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.detail-card__section > .section-label {
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.detail-card__more {
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.detail-card__footer {
+  padding-top: var(--space-1-5);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.detail-card--hover {
+  border: 0;
+  background: transparent;
+}
+
+.detail-card--hover .detail-card__header,
+.detail-card--hover .detail-card__facts,
+.detail-card--hover .detail-card__body {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.detail-card--hover .detail-card__name {
+  font-size: var(--fs-h3);
+}
+
+.detail-card--hover .detail-card__facts {
+  gap: var(--space-1-5) var(--space-3);
+}
+
+.detail-card--hover .detail-card__fact {
+  font-size: var(--fs-label);
+}
+
+@media (max-width: 599px) {
+  .detail-card__header {
+    flex-wrap: wrap;
+  }
+}

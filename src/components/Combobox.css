@@ -1,0 +1,108 @@
+.anchored-menu.combobox-menu {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--border-default);
+}
+
+.combobox-search-wrap {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.combobox-search {
+  gap: var(--space-1-5);
+  height: 28px;
+  padding: 0 var(--space-2);
+}
+
+.combobox-options {
+  max-height: 236px;
+  overflow-y: auto;
+  padding: var(--space-1) 0;
+}
+
+.combobox-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  padding: 0 var(--space-3);
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+  cursor: pointer;
+}
+
+.combobox-option--active {
+  background: var(--surface-active);
+  box-shadow: var(--inset-mark-accent);
+}
+
+.combobox-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 14px;
+  height: 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+}
+
+.combobox-check--selected {
+  background: var(--accent-fill);
+  border-color: var(--border-accent);
+  color: var(--text-inverse);
+}
+
+.combobox-option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combobox-option-caption {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combobox-empty {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-faint);
+  font-size: var(--fs-body-sm);
+}
+
+.combobox-extra,
+.combobox-footer {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--space-2-5);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+}
+
+.combobox-footer {
+  justify-content: space-between;
+  color: var(--text-faint);
+
+  & .num {
+    font-size: var(--fs-micro);
+  }
+
+  & button {
+    padding: 0;
+    background: none;
+    border: 0;
+    color: var(--text-link);
+    font: inherit;
+    cursor: pointer;
+  }
+}

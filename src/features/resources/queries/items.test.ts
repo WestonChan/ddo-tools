@@ -3,8 +3,9 @@ import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
 import {
   fetchAugmentLootQuests,
   fetchAugmentsFittingSlot,
-  fetchItemIdsWithStat,
-  fetchItemSummaries,
+  fetchEnchantmentNames,
+  fetchItemPage,
+  EMPTY_ITEM_FILTERS,
   isCraftingSlotFamily,
   canListFittingAugments,
   toAugmentSummary,
@@ -174,7 +175,7 @@ describe('mappers', () => {
     expect(toItemSummary(createApiItemRow({ is_rare: true })).isRareLoot).toBe(true)
   })
 
-  it('toItem nests every satellite the drawer renders', () => {
+  it('toItem nests every satellite the detail pane renders', () => {
     const item = toItem(API_ITEM_DETAIL)
     expect(item.equipmentSlot).toBe('Main Hand')
     expect(item.enhancementBonus).toBe(7)
@@ -500,33 +501,110 @@ describe('fetchers', () => {
     )
   }
 
-  it('fetchItemSummaries asks for the whole list and sorts by level desc, slot, name; unleveled last', async () => {
-    mockFetchResponse({
-      total: 4,
-      limit: 10000,
-      offset: 0,
-      items: [
-        createApiItemRow({ id: 1, name: 'b', minimum_level: 8, slot: 'Ring' }),
-        createApiItemRow({ id: 2, name: 'a', minimum_level: null }),
-        createApiItemRow({ id: 3, name: 'c', minimum_level: 29, slot: 'Back' }),
-        createApiItemRow({ id: 4, name: 'A', minimum_level: 8, slot: 'Ring' }),
-      ],
-    })
-    const rows = await fetchItemSummaries()
-    expect(rows.map((r) => r.id)).toEqual([3, 4, 1, 2])
-    const url = vi.mocked(fetch).mock.calls[0][0] as string
-    expect(url).toContain('/v1/items?limit=10000')
+  it.each([
+    ['name', 'asc', 'name'],
+    ['ml', 'desc', '-minimum_level'],
+    ['slot', 'asc', 'slot'],
+    ['pack', 'asc', 'pack'],
+  ] as const)(
+    'sends the %s column sort as %s through the API',
+    async (column, direction, apiField) => {
+      mockFetchResponse({ total: 0, limit: 200, offset: 200, items: [] })
+      await fetchItemPage(EMPTY_ITEM_FILTERS, '', false, 200, { key: column, direction })
+      const parameters = new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams
+      expect(parameters.get('limit')).toBe('200')
+      expect(parameters.get('offset')).toBe('200')
+      expect(parameters.getAll('sort')).toEqual([apiField])
+      expect(parameters.has('order')).toBe(false)
+    },
+  )
+
+  it('never sends a separate order parameter for a sorted request', async () => {
+    mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
+    await fetchItemPage(EMPTY_ITEM_FILTERS, '', false, 0, { key: 'ml', direction: 'desc' })
+    const parameters = new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams
+    expect(parameters.getAll('sort')).toEqual(['-minimum_level'])
+    expect(parameters.has('order')).toBe(false)
   })
 
-  it('fetchItemIdsWithStat returns a set of ids from the filtered list', async () => {
+  it('sends every active list filter in one items request and preserves the response total and order', async () => {
     mockFetchResponse({
-      total: 2,
+      total: 207,
       limit: 10000,
       offset: 0,
-      items: [createApiItemRow({ id: 5 }), createApiItemRow({ id: 6 })],
+      items: [createApiItemRow({ id: 7, name: 'Torc' }), createApiItemRow({ id: 8 })],
     })
-    await expect(fetchItemIdsWithStat('Strength')).resolves.toEqual(new Set([5, 6]))
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('enchantment=Strength')
+    const page = await fetchItemPage(
+      {
+        ml: { min: '20', max: '32' },
+        slot: 'Back',
+        enchantments: ['Strength', 'Vorpal'],
+        pack: '',
+        raid: '7',
+        isRareOnly: true,
+        isRaidOnly: false,
+      },
+      'torc',
+      true,
+    )
+    const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
+    expect(
+      Object.fromEntries([...url.searchParams].filter(([key]) => key !== 'enchantment')),
+    ).toEqual({
+      q: 'torc',
+      slot: 'Back',
+      min_level: '20',
+      max_level: '32',
+      quest: '7',
+      include_set_bonuses: 'true',
+      rare: 'true',
+      limit: '200',
+      offset: '0',
+    })
+    expect(url.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
+    expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
+    expect(page.total).toBe(207)
+    expect(page.items.map((item) => item.name)).toEqual(['Torc', 'Bloodstone'])
+  })
+
+  it('maps unique stat and effect names from the API vocabulary', async () => {
+    mockFetchResponse([
+      { name: 'Strength', kind: 'stat', item_count: 202 },
+      { name: 'Vorpal', kind: 'effect', item_count: 84 },
+      { name: 'Strength', kind: 'effect', item_count: 2 },
+    ])
+    await expect(fetchEnchantmentNames()).resolves.toEqual(['Strength', 'Vorpal'])
+    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/v1/enchantments')
+  })
+
+  it('removes cleared filters from the request', async () => {
+    mockFetchResponse({
+      total: 1,
+      limit: 10000,
+      offset: 0,
+      items: [createApiItemRow({ id: 5 })],
+    })
+    const page = await fetchItemPage(
+      {
+        ml: { min: '', max: '' },
+        slot: '',
+        enchantments: [],
+        pack: 'Reign of Madness',
+        raid: '',
+        isRareOnly: false,
+        isRaidOnly: true,
+      },
+      '  ',
+      true,
+    )
+    const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      pack: 'Reign of Madness',
+      raid: 'true',
+      limit: '200',
+      offset: '0',
+    })
+    expect(page.items[0].pack).toBe('Vault of Night')
   })
 
   it('fetchAugmentsFittingSlot orders by level then name', async () => {

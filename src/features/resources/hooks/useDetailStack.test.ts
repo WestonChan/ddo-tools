@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useDetailDrawerStack, type ResourceReference } from './useDetailDrawerStack'
+import { useDetailStack, type ResourceReference } from './useDetailStack'
 
 const navigateMock = vi.fn()
 vi.mock('@tanstack/react-router', () => ({
@@ -15,28 +15,41 @@ const itemA: ResourceReference = { category: 'items', id: 1, name: 'A' }
 const itemB: ResourceReference = { category: 'items', id: 2, name: 'B' }
 const itemC: ResourceReference = { category: 'items', id: 3, name: 'C' }
 
-describe('useDetailDrawerStack — initial state', () => {
+describe('useDetailStack — initial state', () => {
   it('starts empty when resourceInUrl is null', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: null, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: null, pickerCategory: 'items' }),
     )
     expect(result.current.stack).toEqual([])
-    expect(result.current.isDrawerOpen).toBe(false)
+    expect(result.current.isDetailOpen).toBe(false)
   })
 
   it('seeds the stack from resourceInUrl on initial mount (deep-link entry)', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     expect(result.current.stack).toEqual([itemA])
-    expect(result.current.isDrawerOpen).toBe(true)
+    expect(result.current.isDetailOpen).toBe(true)
   })
 })
 
-describe('useDetailDrawerStack — pushResource', () => {
+describe('useDetailStack — pushResource', () => {
+  it('keeps the first item name when a second item is pushed', () => {
+    const { result } = renderHook(() =>
+      useDetailStack({ resourceInUrl: { category: 'items', id: 1 }, pickerCategory: 'items' }),
+    )
+    act(() => {
+      result.current.nameResource({ category: 'items', id: 1, name: 'Blight Inferno' })
+      result.current.pushResource({ category: 'items', id: 2, name: 'Adversion' })
+    })
+    expect(result.current.stack).toEqual([
+      { category: 'items', id: 1, name: 'Blight Inferno' },
+      { category: 'items', id: 2, name: 'Adversion' },
+    ])
+  })
   it('depth-1 push navigates and waits for URL sync', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: null, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: null, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemA)
@@ -47,7 +60,7 @@ describe('useDetailDrawerStack — pushResource', () => {
 
   it('depth-2+ push is in-memory only, URL unchanged', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)
@@ -58,7 +71,7 @@ describe('useDetailDrawerStack — pushResource', () => {
 
   it('depth-3 push appends without navigation', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)
@@ -72,7 +85,7 @@ describe('useDetailDrawerStack — pushResource', () => {
 
   it('ignores a push of the entry already on top', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)
@@ -85,7 +98,7 @@ describe('useDetailDrawerStack — pushResource', () => {
 
   it('still allows revisiting an entry deeper in the stack', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)
@@ -97,10 +110,10 @@ describe('useDetailDrawerStack — pushResource', () => {
   })
 })
 
-describe('useDetailDrawerStack — popResource', () => {
-  it('depth-1 pop closes the drawer (replace nav)', () => {
+describe('useDetailStack — popResource', () => {
+  it('depth-1 pop closes the detail pane (replace nav)', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.popResource()
@@ -114,7 +127,7 @@ describe('useDetailDrawerStack — popResource', () => {
 
   it('depth-2 pop returns to depth-1, URL unchanged', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)
@@ -127,10 +140,10 @@ describe('useDetailDrawerStack — popResource', () => {
   })
 })
 
-describe('useDetailDrawerStack — jumpToBreadcrumb', () => {
+describe('useDetailStack — jumpToBreadcrumb', () => {
   it('truncates the stack to the chosen index', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)
@@ -146,9 +159,9 @@ describe('useDetailDrawerStack — jumpToBreadcrumb', () => {
     expect(navigateMock).not.toHaveBeenCalled()
   })
 
-  it('jumpToBreadcrumb(-1) closes the drawer', () => {
+  it('jumpToBreadcrumb(-1) closes the detail pane', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.jumpToBreadcrumb(-1)
@@ -161,16 +174,16 @@ describe('useDetailDrawerStack — jumpToBreadcrumb', () => {
   })
 })
 
-describe('useDetailDrawerStack — closeDrawer', () => {
+describe('useDetailStack — closeDetail', () => {
   it('clears stack and navigates with replace to the picker', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)
     })
     act(() => {
-      result.current.closeDrawer()
+      result.current.closeDetail()
     })
     expect(navigateMock).toHaveBeenCalledWith({
       to: '/resources/items',
@@ -180,11 +193,11 @@ describe('useDetailDrawerStack — closeDrawer', () => {
   })
 })
 
-describe('useDetailDrawerStack — URL → stack sync', () => {
+describe('useDetailStack — URL → stack sync', () => {
   it('clears the stack when resourceInUrl becomes null (browser back)', () => {
     const { result, rerender } = renderHook(
       ({ resourceInUrl }: { resourceInUrl: ResourceReference | null }) =>
-        useDetailDrawerStack({ resourceInUrl, pickerCategory: 'items' }),
+        useDetailStack({ resourceInUrl, pickerCategory: 'items' }),
       { initialProps: { resourceInUrl: itemA as ResourceReference | null } },
     )
     expect(result.current.stack).toEqual([itemA])
@@ -195,7 +208,7 @@ describe('useDetailDrawerStack — URL → stack sync', () => {
   it('seeds the stack when resourceInUrl changes from null to an entry', () => {
     const { result, rerender } = renderHook(
       ({ resourceInUrl }: { resourceInUrl: ResourceReference | null }) =>
-        useDetailDrawerStack({ resourceInUrl, pickerCategory: 'items' }),
+        useDetailStack({ resourceInUrl, pickerCategory: 'items' }),
       { initialProps: { resourceInUrl: null as ResourceReference | null } },
     )
     rerender({ resourceInUrl: itemA })
@@ -205,7 +218,7 @@ describe('useDetailDrawerStack — URL → stack sync', () => {
   it('resets the stack to a single entry when the URL changes externally', () => {
     const { result, rerender } = renderHook(
       ({ resourceInUrl }: { resourceInUrl: ResourceReference | null }) =>
-        useDetailDrawerStack({ resourceInUrl, pickerCategory: 'items' }),
+        useDetailStack({ resourceInUrl, pickerCategory: 'items' }),
       { initialProps: { resourceInUrl: itemA } },
     )
     act(() => {
@@ -219,7 +232,7 @@ describe('useDetailDrawerStack — URL → stack sync', () => {
   it('keeps the in-memory deeper stack when resourceInUrl equals the current depth-1', () => {
     const { result, rerender } = renderHook(
       ({ resourceInUrl }: { resourceInUrl: ResourceReference | null }) =>
-        useDetailDrawerStack({ resourceInUrl, pickerCategory: 'items' }),
+        useDetailStack({ resourceInUrl, pickerCategory: 'items' }),
       { initialProps: { resourceInUrl: itemA } },
     )
     act(() => {
@@ -230,17 +243,17 @@ describe('useDetailDrawerStack — URL → stack sync', () => {
   })
 })
 
-describe('useDetailDrawerStack — deepLinkUrl', () => {
+describe('useDetailStack — deepLinkUrl', () => {
   it('is null when stack is empty', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: null, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: null, pickerCategory: 'items' }),
     )
     expect(result.current.deepLinkUrl).toBeNull()
   })
 
   it('points at the current TOP, not the depth-1 entry', () => {
     const { result } = renderHook(() =>
-      useDetailDrawerStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
+      useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
     act(() => {
       result.current.pushResource(itemB)

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ResourceDetailDrawer } from './ResourceDetailDrawer'
+import { ResourceDetailPane } from './ResourceDetailPane'
 import { ApiError, API_HTTP_ERROR } from '../../../lib/api'
 import type { Item } from '../queries/items'
 
@@ -37,6 +37,7 @@ function itemDetailFor(id: number): Item {
     description: 'A test item.',
     dropLocation: null,
     setName: null,
+    setId: null,
     canAcceptSentience: false,
     isMinorArtifact: false,
     wikiUrl: 'https://ddowiki.com/page/Item:Test_Item',
@@ -66,18 +67,18 @@ vi.mock('../queries/useItems', () => ({
     }
     return { data: itemDetailFor(id), isPending: false, error: null }
   },
-  useItemSummaries: () => ({ data: [{ id: 42, name: 'Test Item' }] }),
   useFittingAugmentsBySlotLabel: () => AUGMENTS_BY_SLOT_LABEL,
+  useSet: () => ({ data: undefined, isPending: false, error: null }),
 }))
 
 afterEach(() => {
   cleanup()
 })
 
-describe('ResourceDetailDrawer', () => {
+describe('ResourceDetailPane', () => {
   it('renders the parsed item body when the URL points at an item', () => {
     render(
-      <ResourceDetailDrawer
+      <ResourceDetailPane
         resourceInUrl={{ category: 'items', id: 42, name: 'Test Item' }}
         pickerCategory="items"
       />,
@@ -86,42 +87,50 @@ describe('ResourceDetailDrawer', () => {
     expect(screen.getByText('A test item.')).toBeInTheDocument()
   })
 
-  it('resolves a nameless URL entry to its name from the cached row list', () => {
+  it('focuses the heading when a hover card opens the item', () => {
+    const onFocusItem = vi.fn()
     render(
-      <ResourceDetailDrawer resourceInUrl={{ category: 'items', id: 42 }} pickerCategory="items" />,
+      <ResourceDetailPane
+        resourceInUrl={{ category: 'items', id: 42 }}
+        pickerCategory="items"
+        focusItemId={42}
+        onFocusItem={onFocusItem}
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Test Item' })).toHaveFocus()
+    expect(onFocusItem).toHaveBeenCalledOnce()
+  })
+
+  it('resolves a nameless URL entry from its item detail', () => {
+    render(
+      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 42 }} pickerCategory="items" />,
     )
     expect(screen.getByRole('heading', { level: 2, name: 'Test Item' })).toBeInTheDocument()
     expect(screen.getAllByText('Test Item').length).toBeGreaterThan(1)
   })
 
   it('renders the no-selection empty state when resourceInUrl is null', () => {
-    render(<ResourceDetailDrawer resourceInUrl={null} pickerCategory="items" />)
+    render(<ResourceDetailPane resourceInUrl={null} pickerCategory="items" />)
     expect(screen.getByRole('status')).toHaveTextContent(/select an item/i)
   })
 
   it('renders not-found for an id the API does not know', () => {
     render(
-      <ResourceDetailDrawer
-        resourceInUrl={{ category: 'items', id: 404 }}
-        pickerCategory="items"
-      />,
+      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 404 }} pickerCategory="items" />,
     )
     expect(screen.getByRole('status')).toHaveTextContent('No item with id 404.')
   })
 
   it('renders an error state for a transport failure', () => {
     render(
-      <ResourceDetailDrawer
-        resourceInUrl={{ category: 'items', id: 500 }}
-        pickerCategory="items"
-      />,
+      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 500 }} pickerCategory="items" />,
     )
     expect(screen.getByRole('status')).toHaveTextContent(/could not load this item/i)
   })
 
   it('renders the DetailBreadcrumbBar with breadcrumb at depth 1 (no back arrow)', () => {
     render(
-      <ResourceDetailDrawer
+      <ResourceDetailPane
         resourceInUrl={{ category: 'items', id: 42, name: 'Test Item' }}
         pickerCategory="items"
       />,
@@ -133,7 +142,7 @@ describe('ResourceDetailDrawer', () => {
   it('does not carry an expanded augment slot over to the next item', async () => {
     const user = userEvent.setup()
     const { rerender } = render(
-      <ResourceDetailDrawer
+      <ResourceDetailPane
         resourceInUrl={{ category: 'items', id: 42, name: 'Test Item' }}
         pickerCategory="items"
       />,
@@ -142,7 +151,7 @@ describe('ResourceDetailDrawer', () => {
     expect(screen.getByText('Melancholic Charisma')).toBeInTheDocument()
 
     rerender(
-      <ResourceDetailDrawer
+      <ResourceDetailPane
         resourceInUrl={{ category: 'items', id: 43, name: 'Other Item' }}
         pickerCategory="items"
       />,

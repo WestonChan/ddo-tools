@@ -1,291 +1,218 @@
 import {
+  useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
-  useId,
   type JSX,
-  type Ref,
-  type ReactNode,
+  type RefObject,
 } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { List } from 'react-window'
-import { ChevronDown, Circle, CircleCheck, Search, X } from 'lucide-react'
+import { Search } from 'lucide-react'
+import { ApiGate, LedgerTable, type LedgerColumn, type LedgerSort } from '../../../components'
+import { useDebouncedValue } from '../../../hooks'
+import { FilterChipRow } from '../filters/FilterChipRow'
 import type { ResourceCategory } from '../resourceCategories'
-import type { ItemSummary } from '../queries/items'
+import {
+  EMPTY_ITEM_FILTERS,
+  type ItemListFilters,
+  type ItemSummary,
+  type RaidQuest,
+} from '../queries/items'
 import {
   useAdventurePackNames,
-  useItemIdsInPack,
-  useItemIdsWithAnyStat,
-  useStatNames,
+  useEnchantmentNames,
+  useEquipmentSlotNames,
+  useItemPage,
+  useRaidQuests,
 } from '../queries/useItems'
-import { useDebouncedValue } from '../../../hooks'
-import { createItemSearchIndex, itemsMatchingQuery } from '../itemSearch'
-import { ItemPickerRow } from './ItemPickerRow'
+import { DropTagChip } from './DropTagChip'
+import { itemFilterDefinitions } from './itemFilterDefinitions'
 import { StatusPlaceholder } from './StatusPlaceholder'
+import { ItemHoverContent } from './detail/ResourceHoverCards'
 
 interface ItemPickerProps {
   category: ResourceCategory
-  items: ItemSummary[]
   selectedItemId: number | null
-  searchInputRef?: Ref<HTMLInputElement>
+  searchInputRef?: RefObject<HTMLInputElement | null>
+  filters: ItemListFilters
+  onFiltersChange: (filters: ItemListFilters) => void
+  onOpenItemFromHover?: (id: number, name: string) => void
 }
+const EMPTY_NAMES: string[] = []
+const EMPTY_RAID_QUESTS: RaidQuest[] = []
+const EMPTY_ITEMS: ItemSummary[] = []
+const ITEM_INITIAL_SORT: LedgerSort = { key: 'name', direction: 'asc' }
 
-interface ItemFilters {
-  equipmentSlot: string
-  adventurePack: string
-  isRareOnly: boolean
-  isRaidOnly: boolean
-  stats: string[]
-  lowestMinimumLevel: string
-  highestMinimumLevel: string
-}
-
-const EMPTY_FILTERS: ItemFilters = {
-  equipmentSlot: '',
-  adventurePack: '',
-  isRareOnly: false,
-  isRaidOnly: false,
-  stats: [],
-  lowestMinimumLevel: '',
-  highestMinimumLevel: '',
-}
-
-const ITEM_ROW_HEIGHT_PX = 32
-const SEARCH_DEBOUNCE_MS = 120
-
-function SelectWithChevron({ children }: { children: ReactNode }): JSX.Element {
-  return (
-    <span className="resources-select-shell">
-      {children}
-      <ChevronDown size={14} className="resources-select-chevron" aria-hidden />
-    </span>
-  )
-}
-
-function StatMultiSelect({
-  options: availableStats,
-  selected: selectedStats,
-  onChange,
-}: {
-  options: string[]
-  selected: string[]
-  onChange: (nextSelectedStats: string[]) => void
-}): JSX.Element {
-  const dropdownRef = useRef<HTMLDetailsElement>(null)
-
-  useEffect(() => {
-    function closeOnOutsideClick(e: MouseEvent): void {
-      const dropdown = dropdownRef.current
-      if (!dropdown?.open) return
-      if (!dropdown.contains(e.target as Node)) dropdown.open = false
-    }
-    function closeOnEscape(e: KeyboardEvent): void {
-      const dropdown = dropdownRef.current
-      if (!dropdown?.open) return
-      if (e.key === 'Escape') {
-        dropdown.open = false
-        e.stopPropagation()
-      }
-    }
-    document.addEventListener('mousedown', closeOnOutsideClick)
-    document.addEventListener('keydown', closeOnEscape, true)
-    return () => {
-      document.removeEventListener('mousedown', closeOnOutsideClick)
-      document.removeEventListener('keydown', closeOnEscape, true)
-    }
-  }, [])
-
-  function setStatSelected(stat: string, isChecked: boolean): void {
-    if (isChecked) onChange([...selectedStats, stat])
-    else onChange(selectedStats.filter((s) => s !== stat))
-  }
-
-  const selectionSummary =
-    selectedStats.length === 0
-      ? 'Any'
-      : selectedStats.length === 1
-        ? selectedStats[0]
-        : `${selectedStats.length} stats`
-
-  return (
-    <details className="resources-multiselect" ref={dropdownRef}>
-      <summary className="resources-multiselect-trigger">
-        <span className="resources-multiselect-label">{selectionSummary}</span>
-        <ChevronDown size={14} className="resources-select-chevron" aria-hidden />
-      </summary>
-      <div className="resources-multiselect-menu" role="group" aria-label="Stats">
-        {availableStats.length === 0 ? (
-          <p className="resources-multiselect-empty">No stats available.</p>
-        ) : (
-          availableStats.map((stat) => (
-            <label key={stat} className="resources-multiselect-item">
-              <input
-                type="checkbox"
-                checked={selectedStats.includes(stat)}
-                onChange={(e) => setStatSelected(stat, e.target.checked)}
-              />
-              <span>{stat}</span>
-            </label>
-          ))
-        )}
-        {selectedStats.length > 0 && (
-          <button
-            type="button"
-            className="resources-multiselect-clear"
-            onClick={() => onChange([])}
-          >
-            Clear
-          </button>
-        )}
-      </div>
-    </details>
-  )
-}
-
-function itemsMatchingRowFilters(items: ItemSummary[], filters: ItemFilters): ItemSummary[] {
-  const lowestMinimumLevel = filters.lowestMinimumLevel ? Number(filters.lowestMinimumLevel) : null
-  const highestMinimumLevel = filters.highestMinimumLevel
-    ? Number(filters.highestMinimumLevel)
-    : null
-  return items.filter((r) => {
-    if (filters.equipmentSlot && r.equipmentSlot !== filters.equipmentSlot) return false
-    if (filters.isRareOnly && !r.isRareLoot) return false
-    if (filters.isRaidOnly && !r.isRaidLoot) return false
-    if (
-      lowestMinimumLevel !== null &&
-      (r.minimumLevel === null || r.minimumLevel < lowestMinimumLevel)
-    )
-      return false
-    if (
-      highestMinimumLevel !== null &&
-      (r.minimumLevel === null || r.minimumLevel > highestMinimumLevel)
-    )
-      return false
-    return true
-  })
-}
-
-function sortedDistinctValues(items: ItemSummary[], toValue: (r: ItemSummary) => string): string[] {
-  const distinctValues = new Set<string>()
-  for (const r of items) {
-    const v = toValue(r)
-    if (v) distinctValues.add(v)
-  }
-  return Array.from(distinctValues).sort()
-}
+const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
+  {
+    key: 'name',
+    label: 'Name',
+    isFlexible: true,
+    minWidth: 120,
+    sortValue: (item) => item.name,
+    render: (item) => (
+      <span className="resources-ledger-name">
+        <span>{item.name}</span>
+        {item.isRaidLoot && <DropTagChip kind="raid" />}
+        {item.isRareLoot && <DropTagChip kind="rare" />}
+      </span>
+    ),
+  },
+  {
+    key: 'ml',
+    label: 'ML',
+    width: 44,
+    minWidth: 40,
+    isMonospaced: true,
+    align: 'right',
+    defaultSortDirection: 'desc',
+    sortValue: (item) => item.minimumLevel,
+    render: (item) => item.minimumLevel ?? '—',
+  },
+  {
+    key: 'slot',
+    label: 'Slot',
+    width: 92,
+    minWidth: 72,
+    sortValue: (item) => item.equipmentSlot,
+    render: (item) => item.equipmentSlot,
+  },
+  {
+    key: 'pack',
+    label: 'Pack',
+    width: 168,
+    minWidth: 90,
+    hiddenBelowPx: 600,
+    sortValue: (item) => item.pack,
+    render: (item) => item.pack || '—',
+  },
+  {
+    key: 'raid',
+    label: 'Raid',
+    width: 52,
+    minWidth: 48,
+    hiddenBelowPx: 600,
+    isSortable: false,
+    sortValue: (item) => (item.isRaidLoot ? 0 : 1),
+    render: (item) => (item.isRaidLoot ? 'Yes' : '—'),
+  },
+  {
+    key: 'rare',
+    label: 'Rare',
+    width: 52,
+    minWidth: 48,
+    hiddenBelowPx: 600,
+    isSortable: false,
+    sortValue: (item) => (item.isRareLoot ? 0 : 1),
+    render: (item) => (item.isRareLoot ? 'Yes' : '—'),
+  },
+]
 
 export function ItemPicker({
   category,
-  items,
   selectedItemId,
   searchInputRef,
+  filters,
+  onFiltersChange,
+  onOpenItemFromHover,
 }: ItemPickerProps): JSX.Element {
   const navigate = useNavigate()
+  const ownSearchInputRef = useRef<HTMLInputElement>(null)
+  const effectiveSearchInputRef = searchInputRef ?? ownSearchInputRef
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState<ItemFilters>(EMPTY_FILTERS)
-  const debouncedSearchQuery = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS)
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 250)
+  const activeSearchQuery = searchQuery ? debouncedSearchQuery : ''
+  const [selectedSort, setSelectedSort] = useState<LedgerSort | null>(null)
+  const [openedPickers, setOpenedPickers] = useState<ReadonlySet<string>>(() => new Set())
+  const [includesSetBonuses, setIncludesSetBonuses] = useState(false)
+  const [hasResolvedFirstPage, setHasResolvedFirstPage] = useState(false)
+  const lastRequestedPage = useRef<{ query: string; loadedCount: number } | null>(null)
   const resultCountId = useId()
-  const slotFilterLabelId = useId()
-  const packFilterLabelId = useId()
-
-  const availableStats = useStatNames().data ?? []
-  const availableAdventurePacks = useAdventurePackNames().data ?? []
-
-  const itemIdsWithSelectedStats = useItemIdsWithAnyStat(filters.stats)
-  const itemIdsInSelectedPack = useItemIdsInPack(filters.adventurePack)
-
-  const filteredItems = useMemo(() => {
-    let matchingItems = itemsMatchingRowFilters(items, filters)
-    if (itemIdsWithSelectedStats) {
-      matchingItems = matchingItems.filter((r) => itemIdsWithSelectedStats.has(r.id))
-    }
-    if (itemIdsInSelectedPack) {
-      matchingItems = matchingItems.filter((r) => itemIdsInSelectedPack.has(r.id))
-    }
-    return matchingItems
-  }, [items, filters, itemIdsWithSelectedStats, itemIdsInSelectedPack])
-
-  const itemSearchIndex = useMemo(() => createItemSearchIndex(filteredItems), [filteredItems])
+  const itemPageQuery = useItemPage(filters, activeSearchQuery, includesSetBonuses, selectedSort)
+  useEffect(() => {
+    if (
+      hasResolvedFirstPage ||
+      (!itemPageQuery.data && !itemPageQuery.error) ||
+      itemPageQuery.isPlaceholderData
+    )
+      return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasResolvedFirstPage(true)
+  }, [
+    hasResolvedFirstPage,
+    itemPageQuery.data,
+    itemPageQuery.error,
+    itemPageQuery.isPlaceholderData,
+  ])
   const itemsToShow = useMemo(
-    () => itemsMatchingQuery(itemSearchIndex, filteredItems, debouncedSearchQuery),
-    [itemSearchIndex, filteredItems, debouncedSearchQuery],
+    () => itemPageQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_ITEMS,
+    [itemPageQuery.data],
+  )
+  const equipmentSlotQuery = useEquipmentSlotNames(openedPickers.has('slot'))
+  const enchantmentQuery = useEnchantmentNames(openedPickers.has('enchantments'))
+  const packQuery = useAdventurePackNames(openedPickers.has('pack'))
+  const raidQuery = useRaidQuests(openedPickers.has('raid'))
+  const equipmentSlots = equipmentSlotQuery.data ?? EMPTY_NAMES
+  const enchantmentNames = enchantmentQuery.data ?? EMPTY_NAMES
+  const packNames = packQuery.data ?? EMPTY_NAMES
+  const raidQuests = raidQuery.data ?? EMPTY_RAID_QUESTS
+  const loadingPickers = new Set<string>()
+  if (equipmentSlotQuery.isPending) loadingPickers.add('slot')
+  if (enchantmentQuery.isPending) loadingPickers.add('enchantments')
+  if (packQuery.isPending) loadingPickers.add('pack')
+  if (raidQuery.isPending) loadingPickers.add('raid')
+  const definitions = useMemo(
+    () => itemFilterDefinitions(equipmentSlots, enchantmentNames, packNames, raidQuests),
+    [equipmentSlots, enchantmentNames, packNames, raidQuests],
+  )
+  const rowAt = useCallback((index: number) => itemsToShow[index], [itemsToShow])
+  const rowKey = useCallback((item: ItemSummary) => item.id, [])
+  const pageQueryKey = JSON.stringify([
+    filters,
+    activeSearchQuery,
+    includesSetBonuses,
+    selectedSort,
+  ])
+  const fetchNextPageNearEnd = useCallback(() => {
+    if (
+      itemPageQuery.hasNextPage &&
+      !itemPageQuery.isFetchingNextPage &&
+      !itemPageQuery.isPlaceholderData &&
+      !itemPageQuery.isFetchNextPageError
+    ) {
+      if (
+        lastRequestedPage.current?.query === pageQueryKey &&
+        lastRequestedPage.current.loadedCount === itemsToShow.length
+      )
+        return
+      lastRequestedPage.current = { query: pageQueryKey, loadedCount: itemsToShow.length }
+      void itemPageQuery.fetchNextPage()
+    }
+  }, [itemPageQuery, pageQueryKey, itemsToShow.length])
+  const openItemDetail = useCallback(
+    (item: ItemSummary) => navigate({ to: '/resources/' + category + '/' + item.id }),
+    [navigate, category],
   )
 
-  const equipmentSlots = useMemo(() => sortedDistinctValues(items, (r) => r.equipmentSlot), [items])
-
-  const hasActiveFilters =
-    !!filters.equipmentSlot ||
-    !!filters.adventurePack ||
-    filters.isRareOnly ||
-    filters.isRaidOnly ||
-    filters.stats.length > 0 ||
-    !!filters.lowestMinimumLevel ||
-    !!filters.highestMinimumLevel
-
-  function openItemDetail(item: ItemSummary): void {
-    navigate({ to: `/resources/${category}/${item.id}` })
+  function clearAll(): void {
+    onFiltersChange(EMPTY_ITEM_FILTERS)
+    setSearchQuery('')
+    setIncludesSetBonuses(false)
+    queueMicrotask(() => effectiveSearchInputRef.current?.focus())
   }
 
-  function setItemFilter<K extends keyof ItemFilters>(
-    filterName: K,
-    filterValue: ItemFilters[K],
-  ): void {
-    setFilters((prev) => ({ ...prev, [filterName]: filterValue }))
-  }
-
-  interface ActiveFilterChip {
-    key: string
-    label: string
-    clearFilter: () => void
-  }
-  const activeFilterChips: ActiveFilterChip[] = []
-  if (filters.equipmentSlot) {
-    activeFilterChips.push({
-      key: 'slot',
-      label: filters.equipmentSlot,
-      clearFilter: () => setItemFilter('equipmentSlot', ''),
-    })
-  }
-  if (filters.isRareOnly) {
-    activeFilterChips.push({
-      key: 'rare',
-      label: 'Rare',
-      clearFilter: () => setItemFilter('isRareOnly', false),
-    })
-  }
-  if (filters.isRaidOnly) {
-    activeFilterChips.push({
-      key: 'raid',
-      label: 'Raid',
-      clearFilter: () => setItemFilter('isRaidOnly', false),
-    })
-  }
-  for (const stat of filters.stats) {
-    activeFilterChips.push({
-      key: `stat-${stat}`,
-      label: stat,
-      clearFilter: () =>
-        setItemFilter(
-          'stats',
-          filters.stats.filter((s) => s !== stat),
-        ),
-    })
-  }
-  if (filters.lowestMinimumLevel || filters.highestMinimumLevel) {
-    const lowestMinimumLevel = filters.lowestMinimumLevel
-    const highestMinimumLevel = filters.highestMinimumLevel
-    let levelRangeLabel = 'ML '
-    if (lowestMinimumLevel && highestMinimumLevel)
-      levelRangeLabel += `${lowestMinimumLevel}–${highestMinimumLevel}`
-    else if (lowestMinimumLevel) levelRangeLabel += `≥ ${lowestMinimumLevel}`
-    else levelRangeLabel += `≤ ${highestMinimumLevel}`
-    activeFilterChips.push({
-      key: 'ml',
-      label: levelRangeLabel,
-      clearFilter: () =>
-        setFilters((prev) => ({ ...prev, lowestMinimumLevel: '', highestMinimumLevel: '' })),
-    })
+  if (!hasResolvedFirstPage && !itemPageQuery.data && !itemPageQuery.error) {
+    return (
+      <ApiGate
+        isPending={itemPageQuery.isPending}
+        error={itemPageQuery.error}
+        onRetry={() => void itemPageQuery.refetch()}
+      >
+        <StatusPlaceholder reason="loading" />
+      </ApiGate>
+    )
   }
 
   return (
@@ -294,12 +221,18 @@ export function ItemPicker({
         <label className="search-well resources-search-well">
           <Search size={14} aria-hidden />
           <input
-            ref={searchInputRef}
+            ref={effectiveSearchInputRef}
             type="search"
             placeholder="Search…"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label={`Search ${category}`}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') return
+              event.preventDefault()
+              event.stopPropagation()
+              if (searchQuery) setSearchQuery('')
+            }}
+            aria-label={'Search ' + category}
             aria-describedby={resultCountId}
             aria-keyshortcuts="/"
             className="search-well-input"
@@ -308,162 +241,90 @@ export function ItemPicker({
             /
           </kbd>
         </label>
-        <span id={resultCountId} className="resources-search-count num" aria-live="polite">
-          {itemsToShow.length} {itemsToShow.length === 1 ? 'result' : 'results'}
-        </span>
       </div>
-      <div className="resources-filters">
-        <label className="resources-filter">
-          <span className="section-label resources-filter-label" id={slotFilterLabelId}>
-            Slot
-          </span>
-          <SelectWithChevron>
-            <select
-              className="resources-filter-select"
-              value={filters.equipmentSlot}
-              onChange={(e) => setItemFilter('equipmentSlot', e.target.value)}
-              aria-labelledby={slotFilterLabelId}
-            >
-              <option value="">Any</option>
-              {equipmentSlots.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </SelectWithChevron>
-        </label>
-        <label className="resources-filter">
-          <span className="section-label resources-filter-label" id={packFilterLabelId}>
-            Pack
-          </span>
-          <SelectWithChevron>
-            <select
-              className="resources-filter-select"
-              value={filters.adventurePack}
-              onChange={(e) => setItemFilter('adventurePack', e.target.value)}
-              aria-labelledby={packFilterLabelId}
-            >
-              <option value="">Any</option>
-              {availableAdventurePacks.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </SelectWithChevron>
-        </label>
-        <button
-          type="button"
-          className={`filter-chip${filters.isRareOnly ? ' filter-chip--selected' : ''}`}
-          aria-pressed={filters.isRareOnly}
-          onClick={() => setItemFilter('isRareOnly', !filters.isRareOnly)}
-        >
-          Rare only
-          {filters.isRareOnly ? (
-            <CircleCheck size={12} aria-hidden />
+      <FilterChipRow
+        definitions={definitions}
+        values={filters}
+        onChange={onFiltersChange}
+        onClearAll={clearAll}
+        hasSearchTerm={!!searchQuery}
+        focusFallbackRef={effectiveSearchInputRef}
+        onPickerOpen={(key) => setOpenedPickers((previous) => new Set(previous).add(String(key)))}
+        loadingPickers={loadingPickers}
+        extraControls={{
+          enchantments: (
+            <label className="resources-include-sets">
+              <input
+                type="checkbox"
+                checked={includesSetBonuses}
+                onChange={(event) => setIncludesSetBonuses(event.target.checked)}
+              />
+              Include set bonuses
+            </label>
+          ),
+        }}
+      />
+      <div className="resources-result-count" id={resultCountId} aria-live="polite">
+        {itemPageQuery.error && !itemPageQuery.isFetchNextPageError
+          ? null
+          : (itemPageQuery.isFetching && !itemPageQuery.isFetchingNextPage) ||
+              itemPageQuery.isPlaceholderData ||
+              (itemPageQuery.fetchStatus === 'paused' && !itemPageQuery.isFetchingNextPage)
+            ? 'Loading…'
+            : `${itemPageQuery.data?.pages[0]?.total ?? 0}${itemPageQuery.data?.pages[0]?.total === 1 ? ' result' : ' results'}`}
+      </div>
+      <LedgerTable
+        columns={ITEM_COLUMNS}
+        rowCount={
+          itemPageQuery.error && !itemPageQuery.isFetchNextPageError ? 0 : itemsToShow.length
+        }
+        rowAt={rowAt}
+        rowKey={rowKey}
+        onRowActivate={openItemDetail}
+        hoverCard={(item) => ({
+          kind: 'item',
+          delayMs: 260,
+          render: () => <ItemHoverContent itemId={item.id} onOpenItem={onOpenItemFromHover} />,
+        })}
+        selectedRowKey={selectedItemId}
+        isSortedExternally
+        onNearEnd={fetchNextPageNearEnd}
+        sort={selectedSort ?? (activeSearchQuery ? null : ITEM_INITIAL_SORT)}
+        onSortChange={setSelectedSort}
+        label={category + ' list'}
+        emptyState={
+          itemPageQuery.error && !itemPageQuery.isFetchNextPageError ? (
+            <div className="resources-list-error">
+              <StatusPlaceholder reason={selectedSort ? 'sort-error' : 'filter-error'} />
+              <div className="resources-list-error-actions">
+                <button type="button" onClick={() => void itemPageQuery.refetch()}>
+                  Retry
+                </button>
+                {selectedSort && (
+                  <button type="button" onClick={() => setSelectedSort(null)}>
+                    Reset sort
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : itemPageQuery.isPending ? (
+            <StatusPlaceholder reason="loading" />
           ) : (
-            <Circle size={12} aria-hidden />
-          )}
-        </button>
-        <button
-          type="button"
-          className={`filter-chip${filters.isRaidOnly ? ' filter-chip--selected' : ''}`}
-          aria-pressed={filters.isRaidOnly}
-          onClick={() => setItemFilter('isRaidOnly', !filters.isRaidOnly)}
-        >
-          Raid only
-          {filters.isRaidOnly ? (
-            <CircleCheck size={12} aria-hidden />
-          ) : (
-            <Circle size={12} aria-hidden />
-          )}
-        </button>
-        <div className="resources-filter">
-          <span className="section-label resources-filter-label">Stats</span>
-          <StatMultiSelect
-            options={availableStats}
-            selected={filters.stats}
-            onChange={(next) => setItemFilter('stats', next)}
-          />
-        </div>
-        <label className="resources-filter">
-          <span className="section-label resources-filter-label">Min ML</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={40}
-            placeholder="—"
-            className="resources-filter-input num"
-            value={filters.lowestMinimumLevel}
-            onChange={(e) => setItemFilter('lowestMinimumLevel', e.target.value)}
-            aria-label="Minimum character level (lower bound)"
-          />
-        </label>
-        <label className="resources-filter">
-          <span className="section-label resources-filter-label">Max ML</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={40}
-            placeholder="—"
-            className="resources-filter-input num"
-            value={filters.highestMinimumLevel}
-            onChange={(e) => setItemFilter('highestMinimumLevel', e.target.value)}
-            aria-label="Minimum character level (upper bound)"
-          />
-        </label>
-        {hasActiveFilters && (
-          <button
-            type="button"
-            className="resources-filter-clear"
-            onClick={() => setFilters(EMPTY_FILTERS)}
-          >
-            Clear filters
+            <>
+              <span>No items match your filters.</span>
+              <button type="button" className="resources-empty-clear" onClick={clearAll}>
+                Clear filters
+              </button>
+            </>
+          )
+        }
+      />
+      {itemPageQuery.isFetchNextPageError && (
+        <div className="resources-page-error" role="alert">
+          Could not load more items.
+          <button type="button" onClick={() => void itemPageQuery.fetchNextPage()}>
+            Retry
           </button>
-        )}
-      </div>
-      {activeFilterChips.length > 0 && (
-        <div className="resources-active-filters" role="region" aria-label="Active filters">
-          {activeFilterChips.map((chip) => (
-            <button
-              key={chip.key}
-              type="button"
-              className="filter-chip filter-chip--selected"
-              onClick={chip.clearFilter}
-              aria-label={`Remove filter: ${chip.label}`}
-            >
-              <span>{chip.label}</span>
-              <X size={12} aria-hidden />
-            </button>
-          ))}
-        </div>
-      )}
-      {items.length === 0 ? (
-        <StatusPlaceholder reason="empty-table" category={category} />
-      ) : itemsToShow.length === 0 ? (
-        <StatusPlaceholder reason="no-results" searchQuery={debouncedSearchQuery} />
-      ) : (
-        <div className="resources-list-ledger">
-          <div className="section-label resources-list-header" aria-hidden>
-            <span className="resources-list-column resources-list-column--name">Name</span>
-            <span className="resources-list-column resources-list-column--level">ML</span>
-            <span className="resources-list-column resources-list-column--slot">Slot</span>
-            <span className="resources-list-column resources-list-column--pack">Pack</span>
-          </div>
-          <div className="resources-list-wrap">
-            <List
-              rowComponent={ItemPickerRow}
-              rowCount={itemsToShow.length}
-              rowHeight={ITEM_ROW_HEIGHT_PX}
-              rowProps={{ items: itemsToShow, selectedItemId, onSelect: openItemDetail }}
-              className="resources-list"
-              style={{ height: '100%' }}
-              aria-label={`${category} list`}
-            />
-          </div>
         </div>
       )}
     </div>

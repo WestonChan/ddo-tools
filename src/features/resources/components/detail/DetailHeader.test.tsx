@@ -11,7 +11,6 @@ describe('DetailHeader wiki link', () => {
     render(
       <DetailHeader
         name="Voice of the Master"
-        attributes={[]}
         wikiUrl="https://ddowiki.com/page/Item:Voice_of_the_Master"
         wikiPageName="Voice of the Master"
       />,
@@ -21,28 +20,32 @@ describe('DetailHeader wiki link', () => {
   })
 
   it('derives the wiki URL from wikiPageName when no wikiUrl is stored', () => {
-    render(<DetailHeader name="Favor" attributes={[]} wikiPageName="Favor" />)
+    render(<DetailHeader name="Favor" wikiPageName="Favor" />)
     const link = screen.getByRole('link', { name: 'Open Favor on DDO Wiki' })
     expect(link).toHaveAttribute('href', 'https://ddowiki.com/page/Favor')
   })
 
   it('renders no wiki link when neither wikiUrl nor wikiPageName is provided', () => {
-    render(<DetailHeader name="Mystery Item" attributes={[]} />)
-    expect(screen.queryByRole('link')).toBeNull()
+    render(<DetailHeader name="Mystery Item" />)
+    expect(screen.queryByRole('link', { name: /DDO Wiki/ })).toBeNull()
   })
 })
 
 describe('DetailHeader linked wiki window chip', () => {
-  it('renders the Link wiki toggle disabled and unpressed', () => {
-    render(
-      <DetailHeader
-        name="Voice of the Master"
-        attributes={[]}
-        wikiPageName="Voice of the Master"
-      />,
-    )
+  it('keeps the Link wiki chip disabled until Phase 4g', () => {
+    render(<DetailHeader name="Voice of the Master" wikiPageName="Voice of the Master" />)
     const chip = screen.getByRole('button', { name: 'Link wiki' })
     expect(chip).toBeDisabled()
-    expect(chip).toHaveAttribute('aria-pressed', 'false')
+    expect(chip.parentElement).toHaveAttribute(
+      'data-tip',
+      'Linked wiki window arrives with Phase 4g',
+    )
+    expect(
+      screen.getByRole('link', { name: 'Open Voice of the Master on DDO Wiki' }).parentElement,
+    ).toHaveAttribute('data-tip', 'Open in DDO Wiki (compare window)')
+    expect(screen.getByRole('link', { name: /Report a mismatch/ }).parentElement).toHaveAttribute(
+      'data-tip',
+      'Report a mismatch',
+    )
   })
 })

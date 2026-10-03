@@ -2,7 +2,7 @@ import { useCallback, useState, type JSX } from 'react'
 import type { Character, Life, PastLifeCounts } from '../types'
 import { PAST_LIFE_DEFINITIONS, type PastLifeDefinition } from '../data/pastLifeDefinitions'
 import { stackCountsEarnedBy, EPIC_SPHERES, plannedBuildLabelOf, summedBonusText } from '../utils'
-import { HoverTooltip } from '../../../components'
+import { HintAnchor } from '../../../components'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useAddRemoveGestures } from '../../../hooks'
 
@@ -33,12 +33,12 @@ function OwnedStackBar({
           />
         )
         return isLocked ? (
-          <HoverTooltip
+          <HintAnchor
             key={i}
             text="Earned from a completed reincarnation — cannot be removed manually"
           >
             {pip}
-          </HoverTooltip>
+          </HintAnchor>
         ) : (
           pip
         )
@@ -86,9 +86,9 @@ function DesiredStackBar({
         const pip = <span key={i} className={pipClassName} />
 
         return tooltipText ? (
-          <HoverTooltip key={i} text={tooltipText}>
+          <HintAnchor key={i} text={tooltipText}>
             {pip}
-          </HoverTooltip>
+          </HintAnchor>
         ) : (
           pip
         )

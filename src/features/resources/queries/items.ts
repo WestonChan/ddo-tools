@@ -14,11 +14,20 @@ import type {
   ApiItemVendor,
   ApiItemRow,
   ApiItemsPage,
+  ApiEnchantment,
+  ApiEquipmentSlot,
   ApiLootQuest,
-  ApiStat,
+  ApiQuestSummary,
 } from '../../../lib/api'
 
-const WHOLE_LIST_LIMIT = 10_000
+const AUGMENT_PAGE_LIMIT = 10_000
+export const ITEM_PAGE_SIZE = 200
+const ITEM_SORT_FIELD_BY_COLUMN: Record<string, string> = {
+  name: 'name',
+  ml: 'minimum_level',
+  slot: 'slot',
+  pack: 'pack',
+}
 
 export interface ItemSummary {
   id: number
@@ -30,6 +39,36 @@ export interface ItemSummary {
   isRaidLoot: boolean
   isRareLoot: boolean
   isLegacy: boolean
+}
+
+export interface ItemListFilters {
+  ml: { min: string; max: string }
+  slot: string
+  enchantments: string[]
+  pack: string
+  raid: string
+  isRareOnly: boolean
+  isRaidOnly: boolean
+}
+
+export interface ItemListSort {
+  key: string
+  direction: 'asc' | 'desc'
+}
+
+export const EMPTY_ITEM_FILTERS: ItemListFilters = {
+  ml: { min: '', max: '' },
+  slot: '',
+  enchantments: [],
+  pack: '',
+  raid: '',
+  isRareOnly: false,
+  isRaidOnly: false,
+}
+
+export interface ItemPage {
+  total: number
+  items: ItemSummary[]
 }
 
 export interface ItemAttributes {
@@ -45,6 +84,7 @@ export interface ItemAttributes {
   description: string | null
   dropLocation: string | null
   setName: string | null
+  setId: number | null
   canAcceptSentience: boolean
   isMinorArtifact: boolean
   wikiUrl: string | null
@@ -175,6 +215,12 @@ export interface ItemSource {
   wikiUrl: string | null
 }
 
+export interface RaidQuest {
+  id: number
+  name: string
+  pack: string | null
+}
+
 export interface Item extends ItemAttributes {
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
@@ -217,6 +263,7 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
     description: apiItemDetail.description,
     dropLocation: apiItemDetail.drop_location,
     setName: apiItemDetail.set?.name ?? apiItemDetail.set_name,
+    setId: apiItemDetail.set?.id ?? null,
     canAcceptSentience: apiItemDetail.accepts_sentience,
     isMinorArtifact: apiItemDetail.is_minor_artifact,
     wikiUrl: apiItemDetail.wiki_url,
@@ -393,18 +440,43 @@ export function canListFittingAugments(slotFamily: string, slotLabel: string): b
   return isCraftingSlotFamily(slotFamily) || slotLabel === 'sun' || slotLabel === 'moon'
 }
 
-export async function fetchItemSummaries(): Promise<ItemSummary[]> {
-  const page = await fetchApiJson<ApiItemsPage>('/v1/items', { limit: WHOLE_LIST_LIMIT })
-  return page.items.map(toItemSummary).sort(compareHighestLevelFirst)
+export function itemListParameters(
+  filters: ItemListFilters,
+  searchQuery: string,
+  includesSetBonuses: boolean,
+  offset = 0,
+  sort: ItemListSort | null = null,
+): Record<string, string | number | boolean | readonly string[] | undefined> {
+  const sortField = sort ? ITEM_SORT_FIELD_BY_COLUMN[sort.key] : undefined
+  return {
+    q: searchQuery.trim() || undefined,
+    slot: filters.slot || undefined,
+    min_level: filters.ml.min || undefined,
+    max_level: filters.ml.max || undefined,
+    pack: filters.pack || undefined,
+    quest: filters.raid || undefined,
+    enchantment: filters.enchantments.length ? filters.enchantments : undefined,
+    include_set_bonuses: filters.enchantments.length > 0 && includesSetBonuses,
+    rare: filters.isRareOnly,
+    raid: filters.isRaidOnly,
+    sort: sortField ? `${sort?.direction === 'desc' ? '-' : ''}${sortField}` : undefined,
+    limit: ITEM_PAGE_SIZE,
+    offset,
+  }
 }
 
-function compareHighestLevelFirst(a: ItemSummary, b: ItemSummary): number {
-  if (a.minimumLevel === null && b.minimumLevel !== null) return 1
-  if (b.minimumLevel === null && a.minimumLevel !== null) return -1
-  if (a.minimumLevel !== b.minimumLevel) return (b.minimumLevel ?? 0) - (a.minimumLevel ?? 0)
-  const slotComparison = a.equipmentSlot.localeCompare(b.equipmentSlot)
-  if (slotComparison !== 0) return slotComparison
-  return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+export async function fetchItemPage(
+  filters: ItemListFilters,
+  searchQuery: string,
+  includesSetBonuses: boolean,
+  offset = 0,
+  sort: ItemListSort | null = null,
+): Promise<ItemPage> {
+  const page = await fetchApiJson<ApiItemsPage>(
+    '/v1/items',
+    itemListParameters(filters, searchQuery, includesSetBonuses, offset, sort),
+  )
+  return { total: page.total, items: page.items.map(toItemSummary) }
 }
 
 export async function fetchItem(id: number): Promise<Item> {
@@ -416,33 +488,20 @@ export async function fetchAdventurePackNames(): Promise<string[]> {
   return packs.map((p) => p.name)
 }
 
-export async function fetchStatNames(): Promise<string[]> {
-  const stats = await fetchApiJson<ApiStat[]>('/v1/stats')
-  return stats
-    .map((s) => s.name)
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+export async function fetchEquipmentSlotNames(): Promise<string[]> {
+  const slots = await fetchApiJson<ApiEquipmentSlot[]>('/v1/equipment-slots')
+  return slots.map((slot) => slot.name)
 }
 
-export async function fetchItemIdsWithStat(statName: string): Promise<Set<number>> {
-  const page = await fetchApiJson<ApiItemsPage>('/v1/items', {
-    enchantment: statName,
-    limit: WHOLE_LIST_LIMIT,
-  })
-  return new Set(page.items.map((r) => r.id))
-}
-
-export async function fetchItemIdsInPack(packName: string): Promise<Set<number>> {
-  const page = await fetchApiJson<ApiItemsPage>('/v1/items', {
-    pack: packName,
-    limit: WHOLE_LIST_LIMIT,
-  })
-  return new Set(page.items.map((r) => r.id))
+export async function fetchEnchantmentNames(): Promise<string[]> {
+  const enchantments = await fetchApiJson<ApiEnchantment[]>('/v1/enchantments')
+  return [...new Set(enchantments.map(({ name }) => name))]
 }
 
 export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<AugmentSummary[]> {
   const page = await fetchApiJson<ApiAugmentsPage>('/v1/augments', {
     slot: slotLabel,
-    limit: WHOLE_LIST_LIMIT,
+    limit: AUGMENT_PAGE_LIMIT,
   })
   return page.augments.map(toAugmentSummary).sort((a, b) => {
     if (a.minimumLevel === null && b.minimumLevel !== null) return 1
@@ -455,4 +514,11 @@ export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<Augme
 export async function fetchAugmentLootQuests(augmentId: number): Promise<LootQuest[]> {
   const augment = await fetchApiJson<ApiAugmentDetail>(`/v1/augments/${augmentId}`)
   return toLootQuests(augment.quests)
+}
+
+export async function fetchRaidQuests(): Promise<RaidQuest[]> {
+  const quests = await fetchApiJson<ApiQuestSummary[]>('/v1/quests')
+  return quests
+    .filter((quest) => quest.is_raid)
+    .map((quest) => ({ id: quest.id, name: quest.name, pack: quest.pack }))
 }

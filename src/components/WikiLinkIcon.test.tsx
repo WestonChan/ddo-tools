@@ -20,6 +20,7 @@ describe('WikiLinkIcon', () => {
     const link = screen.getByRole('link', { name: 'Open Foo on DDO Wiki' })
     expect(link).toHaveAttribute('href', 'https://ddowiki.com/page/Item:Foo')
     expect(link).toHaveAttribute('target', WIKI_COMPARE_WINDOW_NAME)
+    expect(link.parentElement).toHaveAttribute('data-tip', 'Open in DDO Wiki (compare window)')
   })
 
   it('derives the URL from pageName when no href is given', () => {

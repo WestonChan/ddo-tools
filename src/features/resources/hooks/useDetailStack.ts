@@ -8,18 +8,19 @@ export interface ResourceReference {
   name?: string
 }
 
-export interface UseDetailDrawerStackOptions {
+export interface UseDetailStackOptions {
   resourceInUrl: ResourceReference | null
   pickerCategory: ResourceCategory
 }
 
-export interface DetailDrawerStack {
+export interface DetailStack {
   stack: ResourceReference[]
-  isDrawerOpen: boolean
+  isDetailOpen: boolean
   pushResource: (resource: ResourceReference) => void
+  nameResource: (resource: ResourceReference) => void
   popResource: () => void
   jumpToBreadcrumb: (breadcrumbIndex: number) => void
-  closeDrawer: () => void
+  closeDetail: () => void
   deepLinkUrl: string | null
 }
 
@@ -27,10 +28,10 @@ function isSameResource(a: ResourceReference, b: ResourceReference): boolean {
   return a.category === b.category && a.id === b.id
 }
 
-export function useDetailDrawerStack({
+export function useDetailStack({
   resourceInUrl,
   pickerCategory,
-}: UseDetailDrawerStackOptions): DetailDrawerStack {
+}: UseDetailStackOptions): DetailStack {
   const navigate = useNavigate()
   const [stack, setStack] = useState<ResourceReference[]>(() =>
     resourceInUrl ? [resourceInUrl] : [],
@@ -63,28 +64,41 @@ export function useDetailDrawerStack({
     [stack.length, navigate],
   )
 
-  const closeDrawer = useCallback(() => {
+  const nameResource = useCallback((resource: ResourceReference) => {
+    if (!resource.name) return
+    setStack((previousStack) => {
+      const hasUnnamedEntry = previousStack.some(
+        (entry) => isSameResource(entry, resource) && entry.name !== resource.name,
+      )
+      if (!hasUnnamedEntry) return previousStack
+      return previousStack.map((entry) =>
+        isSameResource(entry, resource) ? { ...entry, name: resource.name } : entry,
+      )
+    })
+  }, [])
+
+  const closeDetail = useCallback(() => {
     setStack([])
     navigate({ to: `/resources/${pickerCategory}`, replace: true })
   }, [navigate, pickerCategory])
 
   const popResource = useCallback(() => {
     if (stack.length <= 1) {
-      closeDrawer()
+      closeDetail()
       return
     }
     setStack((previousStack) => previousStack.slice(0, -1))
-  }, [stack.length, closeDrawer])
+  }, [stack.length, closeDetail])
 
   const jumpToBreadcrumb = useCallback(
     (breadcrumbIndex: number) => {
       if (breadcrumbIndex < 0) {
-        closeDrawer()
+        closeDetail()
         return
       }
       setStack((previousStack) => previousStack.slice(0, breadcrumbIndex + 1))
     },
-    [closeDrawer],
+    [closeDetail],
   )
 
   const top = stack[stack.length - 1] ?? null
@@ -94,11 +108,12 @@ export function useDetailDrawerStack({
 
   return {
     stack,
-    isDrawerOpen: stack.length > 0,
+    isDetailOpen: stack.length > 0,
     pushResource,
+    nameResource,
     popResource,
     jumpToBreadcrumb,
-    closeDrawer,
+    closeDetail,
     deepLinkUrl,
   }
 }

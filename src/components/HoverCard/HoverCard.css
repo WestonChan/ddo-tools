@@ -1,0 +1,41 @@
+.hover-card {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: min(300px, calc(100vw - 16px));
+  max-height: 70vh;
+  overflow: auto;
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-popover);
+  pointer-events: none;
+}
+
+.hover-card--pinned {
+  border-color: var(--border-accent);
+  pointer-events: auto;
+}
+
+.hover-card--hint {
+  width: max-content;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: var(--space-1-5) var(--space-2);
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+}
+
+.hover-card__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+}
+
+.hover-card--pinned .hover-card__status > span:last-child {
+  color: var(--text-accent);
+}

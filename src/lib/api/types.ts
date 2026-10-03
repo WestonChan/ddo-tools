@@ -264,14 +264,67 @@ export interface ApiAugmentsPage {
   augments: ApiAugment[]
 }
 
-export interface ApiStat {
-  id: number
-  name: string
-  category: string
-}
-
 export interface ApiAdventurePack {
   id: number
   name: string
   is_free_to_play: boolean
+}
+
+export interface ApiEquipmentSlot {
+  id: number
+  name: string
+  sort_order: number
+  category: string
+}
+
+export interface ApiEnchantment {
+  name: string
+  kind: 'stat' | 'effect'
+  item_count: number
+}
+
+export interface ApiQuestSummary {
+  id: number
+  name: string
+  pack: string | null
+  is_raid: boolean
+}
+
+export interface ApiSetModifier {
+  effect_type: string
+  extra_types?: string[] | null
+  display_name: string | null
+  bonus: string | null
+  bonus_type: string | null
+  amounts: number[]
+  targets: string[] | null
+  value: number | null
+}
+
+export interface ApiSetDetail {
+  id: number
+  name: string
+  tiers: Array<{
+    equipped_count: number
+    description: string | null
+    bonuses?: ApiBonus[]
+    modifiers: ApiSetModifier[]
+  }>
+  items: Array<{ id: number; name: string; slot: string; minimum_level: number | null }>
+}
+
+export interface ApiQuestDetail {
+  id: number
+  name: string
+  pack: string | null
+  is_raid: boolean
+  items: Array<{
+    id: number
+    name: string
+    slot: string
+    minimum_level: number | null
+    loot_type: string
+    is_rare: boolean
+    chest: string | null
+  }>
 }

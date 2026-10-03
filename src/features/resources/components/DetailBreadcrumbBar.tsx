@@ -1,9 +1,9 @@
 import type { JSX } from 'react'
 import { ArrowLeft, ChevronRight } from 'lucide-react'
-import { HoverTooltip } from '../../../components'
-import { useDetailDrawerNavigation } from '../contexts/DetailDrawerNavigationContext'
+import { HintAnchor } from '../../../components'
+import { useDetailNavigation } from '../contexts/DetailNavigationContext'
 import { LABEL_BY_RESOURCE_CATEGORY } from '../resourceCategories'
-import type { ResourceReference } from '../hooks/useDetailDrawerStack'
+import type { ResourceReference } from '../hooks/useDetailStack'
 
 interface DetailBreadcrumbBarProps {
   detailStack: ResourceReference[]
@@ -20,7 +20,7 @@ export function DetailBreadcrumbBar({
   onBackOneLevel,
   onJumpToCrumb,
 }: DetailBreadcrumbBarProps): JSX.Element {
-  const { closeDrawer, pickerCategory } = useDetailDrawerNavigation()
+  const { closeDetail, pickerCategory } = useDetailNavigation()
   const stackDepth = detailStack.length
   const canGoBackOneLevel = stackDepth > 1
   const lastEntryIndex = stackDepth - 1
@@ -30,7 +30,7 @@ export function DetailBreadcrumbBar({
     <div className="resources-detail-bar">
       <div className="resources-detail-bar-nav">
         {canGoBackOneLevel && (
-          <HoverTooltip text="Back one level">
+          <HintAnchor text="Back one level">
             <button
               type="button"
               className="resources-detail-bar-back hoverable"
@@ -39,14 +39,14 @@ export function DetailBreadcrumbBar({
             >
               <ArrowLeft size={14} />
             </button>
-          </HoverTooltip>
+          </HintAnchor>
         )}
         <nav className="resources-detail-breadcrumb" aria-label="Detail breadcrumb">
           <span className="resources-detail-breadcrumb-link-wrap">
             <button
               type="button"
               className="resources-detail-breadcrumb-link resources-detail-breadcrumb-back"
-              onClick={closeDrawer}
+              onClick={closeDetail}
               aria-label={backToCategoryLabel}
             >
               <ArrowLeft size={12} aria-hidden />

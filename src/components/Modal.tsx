@@ -2,7 +2,7 @@ import { useRef, type JSX, type ReactNode } from 'react'
 import { useModalAccessibility } from '../hooks/useModalAccessibility'
 import './Modal.css'
 
-export type ModalVariant = 'centered' | 'drawer-right'
+export type ModalVariant = 'centered'
 
 export interface ModalProps {
   variant: ModalVariant

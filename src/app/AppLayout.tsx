@@ -3,7 +3,7 @@ import { Outlet, useLocation, useMatches } from '@tanstack/react-router'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
 import type { BuildWarning } from './buildWarnings'
-import { ErrorScreen } from '../components'
+import { ErrorScreen, HoverCardProvider } from '../components'
 import {
   useIsAnyModalActive,
   useAccentColoredFavicon,
@@ -81,32 +81,34 @@ function AppLayout(): JSX.Element {
   const isInertBehindNavBarOverlay = isNavBarOverlayOpen || undefined
 
   return (
-    <div className="app-shell">
-      <div
-        className={`app${isNavBarExpanded ? '' : ' app--nav-bar-collapsed'}${shouldShowStatsPanel ? '' : ' app--no-stats'}`}
-      >
-        <AppNavBar
-          isExpanded={isNavBarExpanded}
-          onToggleExpanded={toggleNavBar}
-          onCollapse={collapseNavBar}
-          warnings={buildWarnings}
-          isFullscreenOverlay={isNavBarOverlayOpen}
-          inert={isInertBehindModal}
-        />
+    <HoverCardProvider>
+      <div className="app-shell">
+        <div
+          className={`app${isNavBarExpanded ? '' : ' app--nav-bar-collapsed'}${shouldShowStatsPanel ? '' : ' app--no-stats'}`}
+        >
+          <AppNavBar
+            isExpanded={isNavBarExpanded}
+            onToggleExpanded={toggleNavBar}
+            onCollapse={collapseNavBar}
+            warnings={buildWarnings}
+            isFullscreenOverlay={isNavBarOverlayOpen}
+            inert={isInertBehindModal}
+          />
 
-        <div className="app-content" inert={isInertBehindNavBarOverlay}>
-          <ErrorBoundary
-            FallbackComponent={ViewCrashScreen}
-            onError={captureBoundaryError}
-            resetKeys={[pathname]}
-          >
-            <Outlet />
-          </ErrorBoundary>
+          <div className="app-content" inert={isInertBehindNavBarOverlay}>
+            <ErrorBoundary
+              FallbackComponent={ViewCrashScreen}
+              onError={captureBoundaryError}
+              resetKeys={[pathname]}
+            >
+              <Outlet />
+            </ErrorBoundary>
+          </div>
+
+          {shouldShowStatsPanel && <StatsPanel />}
         </div>
-
-        {shouldShowStatsPanel && <StatsPanel />}
       </div>
-    </div>
+    </HoverCardProvider>
   )
 }
 

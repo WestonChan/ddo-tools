@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
-import { ItemDetailBody } from './ItemDetailBody'
+import { ItemDetailCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
 afterEach(() => {
@@ -20,6 +20,7 @@ const plainItem: Item = {
   description: null,
   dropLocation: null,
   setName: null,
+  setId: null,
   canAcceptSentience: false,
   isMinorArtifact: false,
   wikiUrl: null,
@@ -79,19 +80,45 @@ function packDrop(overrides: Partial<ItemSource> = {}): ItemSource {
   })
 }
 
-function renderItemDetailBody(item: Item): RenderResult {
-  return render(<ItemDetailBody item={item} augmentsBySlotLabel={{}} />)
+function renderItemDetailCard(item: Item): RenderResult {
+  return render(<ItemDetailCard item={item} augmentsBySlotLabel={{}} />)
 }
 
-describe('ItemDetailBody drop locations', () => {
+describe('ItemDetailCard drop locations', () => {
+  it('trims the same detail card to facts, enchantments, and drops for hover', () => {
+    render(
+      <ItemDetailCard
+        item={{
+          ...plainItem,
+          weaponStats: {
+            damage: '1d6',
+            critical: '20/x2',
+            weaponType: 'Sword',
+            proficiency: null,
+            handedness: null,
+            damageReductionBypasses: [],
+          },
+          quests: [quest()],
+        }}
+        augmentsBySlotLabel={{}}
+        variant="hover"
+      />,
+    )
+    expect(screen.getByRole('heading', { name: 'Voice of the Master' })).toBeInTheDocument()
+    expect(screen.getByText('ML')).toBeInTheDocument()
+    expect(
+      screen.getByText("Delera's Tomb", { selector: '.resources-hover-anchor' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Weapon')).toBeNull()
+  })
   it('renders a wiki link icon next to each quest in Obtained from', () => {
-    renderItemDetailBody({ ...plainItem, quests: [quest()] })
+    renderItemDetailCard({ ...plainItem, quests: [quest()] })
     const link = screen.getByRole('link', { name: "Open Delera's Tomb on DDO Wiki" })
     expect(link).toHaveAttribute('href', "https://ddowiki.com/page/Delera's_Tomb")
   })
 
   it('marks a raid drop location with a chip on the quest name, not in the meta line', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ patron: 'The Free Agents', isRaid: true })],
     })
@@ -103,7 +130,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('marks a rare drop location with a chip on the quest name after the raid chip', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ isRaid: true, isRareLoot: true })],
     })
@@ -115,7 +142,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('shows the Rare chip only on the quests where the item is rare', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [
         quest({ id: 1, name: 'Tempest Spine', isRareLoot: true }),
@@ -128,7 +155,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('labels end rewards in the meta line', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ isEndReward: true })],
     })
@@ -139,7 +166,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('names the chest after the quest name in sentence case', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ chests: ["althea's chest"] })],
     })
@@ -150,7 +177,7 @@ describe('ItemDetailBody drop locations', () => {
 
   it('renders one row for a quest that is both a chest drop and the end reward', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ chests: ['end chest'], isEndReward: true, isRareLoot: true })],
     })
@@ -164,7 +191,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('lists a quest chain end reward after the quest rows with a Rare chip and wiki link', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest()],
       questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: true, wikiUrl: null }],
@@ -180,7 +207,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('lists a saga reward per tier with the tier in sentence case', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sagas: [
         {
@@ -206,7 +233,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('lists a saga reward with no tier as Saga reward alone', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sagas: [
         { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
@@ -216,7 +243,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('lists an adventure pack drop as Anywhere in the pack with the chest, Rare chip and wiki link', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       adventurePackDrops: [packDrop({ isRareLoot: true })],
     })
@@ -232,7 +259,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('lists an adventure pack drop with no chest as Anywhere in the pack alone', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       adventurePackDrops: [packDrop({ chest: null })],
     })
@@ -242,7 +269,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('links quest chain and saga rows to their wiki_url when the API gives one', () => {
-    renderItemDetailBody({
+    renderItemDetailCard({
       ...plainItem,
       questChains: [
         {
@@ -272,7 +299,7 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('builds the quest chain and saga wiki links from the name when the API gives no wiki_url', () => {
-    renderItemDetailBody({
+    renderItemDetailCard({
       ...plainItem,
       questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: false, wikiUrl: null }],
       sagas: [
@@ -289,24 +316,24 @@ describe('ItemDetailBody drop locations', () => {
   })
 
   it('shows no chest when the drop text names none', () => {
-    const { container } = renderItemDetailBody({ ...plainItem, quests: [quest()] })
+    const { container } = renderItemDetailCard({ ...plainItem, quests: [quest()] })
     expect(container.querySelector('.resources-quest-chest')).toBeNull()
   })
 
   it('falls back to the free-text drop location when no quests are linked', () => {
-    renderItemDetailBody({ ...plainItem, dropLocation: 'Vendor: House Kundarak' })
+    renderItemDetailCard({ ...plainItem, dropLocation: 'Vendor: House Kundarak' })
     expect(screen.getByText('Obtained from')).toBeInTheDocument()
     expect(screen.getByText('Vendor: House Kundarak')).toBeInTheDocument()
   })
 
   it('renders no Obtained from section when the item has no source at all', () => {
-    renderItemDetailBody(plainItem)
+    renderItemDetailCard(plainItem)
     expect(screen.queryByText('Obtained from')).toBeNull()
     expect(screen.queryByText('Drops from')).toBeNull()
   })
 })
 
-describe('ItemDetailBody sources beyond quests', () => {
+describe('ItemDetailCard sources beyond quests', () => {
   function rowMeta(container: HTMLElement): string[] {
     return Array.from(container.querySelectorAll('.resources-quest-row')).map(
       (r) => r.querySelector('.resources-quest-meta')?.textContent ?? '',
@@ -314,7 +341,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   }
 
   it('lists a crafting system as Crafted at with a wiki link to its page', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [itemSource()],
     })
@@ -328,7 +355,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 
   it('lists a challenge pack as Challenge rewards with its Rare chip', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [
         itemSource({
@@ -345,7 +372,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 
   it('lists a vendor as Sold by with its location and cost', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [
         itemSource({
@@ -361,7 +388,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 
   it('lists a vendor with no location or cost as Sold by alone', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [itemSource({ kind: 'vendor', key: 'vendor-1', name: 'Morten' })],
     })
@@ -369,7 +396,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 
   it('lists an event as Event reward', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [
         itemSource({ kind: 'event', key: 'event-4', name: 'The Night Revels' }),
@@ -379,7 +406,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 
   it('names starter gear by its level and shows no wiki link when the API gives no page', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [
         itemSource({
@@ -398,7 +425,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 
   it('lists adventure pack drops after the quests and sources beyond quests after the chain and saga rows', () => {
-    const { container } = renderItemDetailBody({
+    const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest()],
       adventurePackDrops: [packDrop()],
@@ -420,7 +447,7 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 
   it('shows the linked sources instead of the free-text drop location', () => {
-    renderItemDetailBody({
+    renderItemDetailCard({
       ...plainItem,
       dropLocation: 'Thunder-Forged, Crafted from various ingredients',
       sourcesBeyondQuests: [itemSource()],
@@ -429,16 +456,16 @@ describe('ItemDetailBody sources beyond quests', () => {
   })
 })
 
-describe('ItemDetailBody header attributes', () => {
+describe('ItemDetailCard header attributes', () => {
   it('shows the enhancement bonus signed and the set name when present', () => {
-    renderItemDetailBody({ ...plainItem, enhancementBonus: 5, setName: 'Adherent of the Mists' })
+    renderItemDetailCard({ ...plainItem, enhancementBonus: 5, setName: 'Adherent of the Mists' })
     expect(screen.getByText('Enhancement')).toBeInTheDocument()
     expect(screen.getByText('+5')).toBeInTheDocument()
     expect(screen.getByText('Adherent of the Mists')).toBeInTheDocument()
   })
 
   it('lists clickies with their description', () => {
-    renderItemDetailBody({
+    renderItemDetailCard({
       ...plainItem,
       clickies: [{ name: 'Haste', description: 'Haste (3 charges)' }],
     })
@@ -447,9 +474,9 @@ describe('ItemDetailBody header attributes', () => {
   })
 })
 
-describe('ItemDetailBody data source', () => {
+describe('ItemDetailCard data source', () => {
   it('shows no Source row for an item the wiki supplied', () => {
-    renderItemDetailBody({
+    renderItemDetailCard({
       ...plainItem,
       wikiUrl: 'https://ddowiki.com/page/Item:Garbage_Can_Lid',
     })
@@ -458,33 +485,31 @@ describe('ItemDetailBody data source', () => {
   })
 })
 
-describe('ItemDetailBody legacy chip', () => {
+describe('ItemDetailCard legacy chip', () => {
   it('shows a Legacy chip next to the name of a legacy item', () => {
-    const { container } = renderItemDetailBody({ ...plainItem, isLegacy: true })
-    const chip = container.querySelector(
-      '.resources-entity-header .resources-chip[data-kind="legacy"]',
-    )
+    const { container } = renderItemDetailCard({ ...plainItem, isLegacy: true })
+    const chip = container.querySelector('.detail-card__header .resources-chip[data-kind="legacy"]')
     expect(chip).toHaveTextContent('Legacy')
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(/^Voice of the Master$/)
   })
 
   it('shows no Legacy chip on a current item', () => {
-    const { container } = renderItemDetailBody(plainItem)
+    const { container } = renderItemDetailCard(plainItem)
     expect(container.querySelector('.resources-chip[data-kind="legacy"]')).toBeNull()
   })
 })
 
-describe('ItemDetailBody action row', () => {
+describe('ItemDetailCard action row', () => {
   it.each(['Add to compare', 'Compare in Gear', 'Add to farm list'])(
     'renders %s disabled',
     (label) => {
-      renderItemDetailBody(plainItem)
+      renderItemDetailCard(plainItem)
       expect(screen.getByRole('button', { name: label })).toBeDisabled()
     },
   )
 
   it('explains when the actions arrive', () => {
-    renderItemDetailBody(plainItem)
+    renderItemDetailCard(plainItem)
     expect(
       screen.getByText('Actions arrive with the Gear and Farm checklist phases.'),
     ).toBeInTheDocument()

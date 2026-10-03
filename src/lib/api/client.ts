@@ -33,12 +33,16 @@ export function isApiError(error: unknown): error is ApiError {
 
 export function apiUrl(
   path: string,
-  queryParameters?: Record<string, string | number | boolean | undefined>,
+  queryParameters?: Record<string, string | number | boolean | readonly string[] | undefined>,
 ): string {
   const url = `${API_BASE_URL}${path}`
   if (!queryParameters) return url
   const searchParameters = new URLSearchParams()
   for (const [key, value] of Object.entries(queryParameters)) {
+    if (Array.isArray(value)) {
+      for (const name of value) if (name) searchParameters.append(key, name)
+      continue
+    }
     if (value === undefined || value === '' || value === false) continue
     searchParameters.set(key, String(value))
   }
@@ -48,7 +52,7 @@ export function apiUrl(
 
 export async function fetchApiJson<T>(
   path: string,
-  queryParameters?: Record<string, string | number | boolean | undefined>,
+  queryParameters?: Record<string, string | number | boolean | readonly string[] | undefined>,
 ): Promise<T> {
   const abortController = new AbortController()
   const abortTimer = setTimeout(() => abortController.abort(), API_TIMEOUT_MS)

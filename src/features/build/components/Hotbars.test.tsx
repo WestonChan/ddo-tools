@@ -5,6 +5,7 @@ import { renderWithRouter } from '../../../test/renderWithRouter'
 import { HOTBAR_SLOT_COUNT } from '../hotbars'
 import { PLACEHOLDER_ABILITIES } from '../data/placeholderAbilities'
 import { Hotbars } from './Hotbars'
+import { HoverCardProvider } from '../../../components'
 
 const ABILITY_NAMES_BY_ID = new Map(
   PLACEHOLDER_ABILITIES.map((ability) => [ability.id, ability.name]),
@@ -16,7 +17,12 @@ function abilityNames(abilityIds: readonly string[]): string[] {
 }
 
 async function renderHotbars(): Promise<ReturnType<typeof renderWithRouter>> {
-  const rendered = renderWithRouter(<Hotbars />, '/overview')
+  const rendered = renderWithRouter(
+    <HoverCardProvider>
+      <Hotbars />
+    </HoverCardProvider>,
+    '/overview',
+  )
   await screen.findByRole('region', { name: 'Hotbars' })
   return rendered
 }
@@ -265,11 +271,12 @@ describe('Hotbars', () => {
   it('shows the ability’s stat block while a filled slot is hovered or focused, and opens Damage calc on click', async () => {
     const { router } = await renderHotbars()
     const polarRay = slotButton('Nukes', 4)
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     await userEvent.hover(polarRay)
-    const statBlock = screen.getByRole('tooltip')
-    expect(polarRay).toHaveAccessibleDescription(/Polar Ray/)
+    const statBlock = await screen.findByRole('dialog')
+    expect(polarRay).toHaveAccessibleDescription(/Polar Ray Type Spell Cooldown 2s/)
+    expect(polarRay).toHaveAccessibleDescription(/Cost 45 SP/)
     expect(within(statBlock).getByText('Polar Ray')).toBeInTheDocument()
     for (const [rowLabel, rowValue] of [
       ['Type', 'Spell'],
@@ -283,10 +290,12 @@ describe('Hotbars', () => {
     expect(statBlock).toHaveTextContent('Click → full breakdown in Damage calc')
 
     await userEvent.unhover(polarRay)
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     act(() => slotButton('Nukes', 1).focus())
-    expect(within(screen.getByRole('tooltip')).getByText('Delayed Blast Fireball')).toBeVisible()
+    expect(
+      within(await screen.findByRole('dialog')).getByText('Delayed Blast Fireball'),
+    ).toBeVisible()
 
     await userEvent.click(polarRay)
     expect(router.state.location.pathname).toBe('/damage-calc')
@@ -295,11 +304,11 @@ describe('Hotbars', () => {
   it('dismisses the stat block with Escape while it is shown', async () => {
     await renderHotbars()
     await userEvent.hover(slotButton('Nukes', 4))
-    expect(screen.getByRole('tooltip')).toBeInTheDocument()
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
     await userEvent.keyboard('{Escape}')
 
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('keeps a filled slot when a touch long-press opens the context menu', async () => {
