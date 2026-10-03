@@ -1242,22 +1242,27 @@ at a value", so the value lives on the owner link, as `item_effects` already sto
   note. A prose line ("permanent Haste") is a family with `amount_count` 0. Text and description are
   rendered from the template and the link's values at read time, never stored per instance.
 - `enchantment_stats`: the stats a family affects, zero or more rows: `enchantment_id`, `stat_id`,
-  `bonus_type_id`, `amount_from` (1 or 2 = that value on the link; 0 = the row's `constant`), nullable
-  `tier`. "Profane bonus to all Ability Scores" is six rows all reading value 1; "Hallowed" has none;
+  `bonus_type_id`, `amount_from` (1 or 2 = that value on the link; 0 = the row's `constant`). "Profane bonus to all Ability Scores" is six rows all reading value 1; "Hallowed" has none;
   "Power of the Dark Restoration" has three.
 - Owner links `item_enchantments`, `augment_enchantments`, `set_bonus_tier_enchantments`: owner id,
   `enchantment_id`, `value`, `value2`, `sort_order`. They replace `item_bonuses`, `item_effects`,
   `augment_bonuses` and `set_bonus_tier_bonuses`; `set_bonus_tiers.description` goes away.
 - An owner's bonuses are the join of its links with the family's stat rows, amount = the named value or
   the constant; nothing stores a second copy.
-- Tiers: a numeric ladder ("Wisdom +6 / +8 / +14") is one family and the value is the tier. A named or
-  numbered ladder whose stats change per step (Deception / Improved Deception / Greater Deception, which
-  share one wiki page; "Insightful Spell Lore II") is one family with `value` = the tier number, stat rows
-  keyed by `tier` (the join takes rows where `tier IS NULL OR tier = value`), and an `enchantment_tiers`
-  table (`enchantment_id`, `tier`, `name`) that gives each step its displayed name ("Improved Deception",
-  "Spell Lore II"); the template's name slot renders from it. The family is the link between the steps:
-  the filter matches "Deception" at any tier and a tooltip can show the ladder. Crafting upgrade ladders
-  (Green Steel, Thunder-Forged) stay in the crafting tables.
+- Ladders (revised 2026-10-03 during chunk 2, after Deception showed a step needs its own amounts and prose):
+  a numeric ladder ("Wisdom +6 / +8 / +14") is one family and the value is the amount. A named or numbered
+  ladder whose steps differ in stats, amounts or prose (Deception / Improved Deception / Greater Deception,
+  "Spell Lore II") is a grouping of plain families: each step is its own `enchantments` row with its own
+  templates, `amount_count` and stat rows, `enchantment_ladders` (`id`, `name`) names the ladder and each
+  step carries `ladder_id` and `ladder_rank` (unique per ladder, at least two members). The ladders are data
+  in `enchantment_map.toml` (ladder name → ordered step names), so a wrong grouping is a data fix. The
+  `enchantment` filter matches a ladder name as any of its steps and `/v1/enchantments/{id}` shows the ladder
+  and its ordered steps. Crafting upgrade ladders (Green Steel, Thunder-Forged) stay in the crafting tables.
+- Families and bonus types: where Maetrim's definition text has a `%b1` slot the type varies per item, so
+  the family identity includes the resolved type and is named the wiki's way ("Constitution" for
+  Enhancement, "Insightful Constitution", "Quality Constitution", "Exceptional Constitution", "Profane
+  Constitution", "Constitution Penalty"); where the text names the type outright, the definition's type
+  wins over the item's placeholder field.
 - Constraints: in the schema, `amount_count BETWEEN 0 AND 2`, `amount_from BETWEEN 0 AND 2`, `constant`
   NOT NULL exactly when `amount_from = 0`, and `(value IS NULL) <= (value2 IS NULL)` on every link; across
   tables, as HARD `check-db` rules and ETL build failures: a link's count of non-null values equals its
