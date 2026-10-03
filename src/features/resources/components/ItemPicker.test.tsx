@@ -373,4 +373,121 @@ describe('ItemPicker server-backed filters', () => {
     await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
     expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/1' })
   })
+
+  it('highlights search results with arrows, Home, and End while search keeps focus', async () => {
+    renderItemPicker()
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    search.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    await userEvent.keyboard('{End}')
+    expect(screen.getByRole('row', { name: /Ring of Spell Storing/ })).toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    await userEvent.keyboard('{ArrowDown}{ArrowUp}')
+    expect(screen.getByRole('row', { name: /Cloak of Night/ })).toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    await userEvent.keyboard('{Home}')
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    await userEvent.keyboard('{Escape}{ArrowUp}')
+    expect(screen.getByRole('row', { name: /Ring of Spell Storing/ })).toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    expect(search).toHaveFocus()
+  })
+
+  it('opens the highlighted result on Enter and moves focus out of search', async () => {
+    renderItemPicker()
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    search.focus()
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/2' })
+    expect(search).not.toHaveFocus()
+    expect(screen.getByRole('row', { name: /Cloak of Night/ })).toHaveFocus()
+    await userEvent.keyboard('x')
+    expect(search).toHaveValue('')
+  })
+
+  it('ignores row arrows away from search and clears the highlight on Escape', async () => {
+    renderItemPicker()
+    const table = screen.getByRole('table', { name: 'items list' })
+    const scrollBody = table.querySelector<HTMLElement>('.ledger-body')!
+    expect(table).not.toHaveAttribute('tabindex')
+    expect(scrollBody).toHaveAttribute('tabindex', '0')
+    expect(
+      screen
+        .getAllByRole('row')
+        .filter((row) => row.classList.contains('ledger-row'))
+        .every((row) => row.tabIndex === -1),
+    ).toBe(true)
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    search.focus()
+    await userEvent.keyboard('{ArrowDown}{Escape}')
+    expect(document.querySelector('.ledger-row--keyboard-highlighted')).toBeNull()
+    const row = screen.getByRole('row', { name: /Bloodstone/ })
+    row.focus()
+    expect(fireEvent.keyDown(row, { key: 'ArrowDown' })).toBe(true)
+    await userEvent.keyboard('{Enter}')
+    expect(document.activeElement).toBe(row)
+    expect(navigateMock).not.toHaveBeenCalled()
+  })
+
+  it('clears the search highlight when results disappear and does not open an absent row', async () => {
+    const view = render(<ItemPickerHarness />)
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    search.focus()
+    await userEvent.keyboard('{End}')
+    expect(screen.getByRole('row', { name: /Ring of Spell Storing/ })).toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    pageState = {
+      data: { total: 0, items: [] },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    view.rerender(<ItemPickerHarness />)
+    await userEvent.keyboard('{Enter}{ArrowDown}')
+    expect(search).toHaveFocus()
+    expect(navigateMock).not.toHaveBeenCalled()
+    expect(document.querySelector('.ledger-row--keyboard-highlighted')).toBeNull()
+    expect(search).not.toHaveAttribute('aria-controls')
+    expect(search).not.toHaveAttribute('aria-activedescendant')
+    await userEvent.type(search, 'missing')
+    await userEvent.keyboard('{Escape}')
+    expect(search).toHaveValue('')
+  })
+
+  it('clears search text and highlight with Escape', async () => {
+    renderItemPicker()
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    await userEvent.type(search, 'ring')
+    await userEvent.keyboard('{ArrowDown}{Escape}')
+    expect(search).toHaveValue('ring')
+    expect(search).toHaveFocus()
+    expect(document.querySelector('.ledger-row--keyboard-highlighted')).toBeNull()
+    await userEvent.keyboard('{Escape}')
+    expect(search).toHaveValue('')
+  })
+
+  it('names the scroll body and active row from search', async () => {
+    renderItemPicker()
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    const scrollBody = document.querySelector<HTMLElement>('.ledger-body')!
+    expect(scrollBody).toHaveAttribute('role', 'rowgroup')
+    expect(search).toHaveAttribute('aria-controls', scrollBody.id)
+    expect(search).not.toHaveAttribute('aria-activedescendant')
+    search.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    const highlightedRow = screen.getByRole('row', { name: /Bloodstone/ })
+    expect(search).toHaveAttribute('aria-activedescendant', highlightedRow.id)
+    expect(scrollBody.contains(highlightedRow)).toBe(true)
+    await userEvent.keyboard('{Escape}')
+    expect(search).not.toHaveAttribute('aria-activedescendant')
+  })
 })

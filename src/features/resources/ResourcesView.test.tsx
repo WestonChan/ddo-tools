@@ -169,25 +169,96 @@ describe('ResourcesView keyboard shortcuts', () => {
     expect(navigateMock).not.toHaveBeenCalled()
   })
 
-  it('does not focus the search input on "/" while a detail is selected', async () => {
+  it('focuses the visible search input on "/" while a detail is selected', async () => {
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: 'Search items' })
     await userEvent.keyboard('/')
-    expect(input).not.toHaveFocus()
+    expect(input).toHaveFocus()
+    expect(input).toHaveValue('')
   })
 
-  it('uses Escape to clear search text without closing the selected detail', async () => {
+  it('leaves "/" alone while a narrow detail covers the list', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
+    try {
+      mockRouteParams = { category: 'items', id: '42' }
+      render(<ResourcesView />)
+      expect(screen.queryByRole('searchbox')).toBeNull()
+      const event = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true })
+      document.dispatchEvent(event)
+      expect(event.defaultPrevented).toBe(false)
+      expect(document.body).toHaveFocus()
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('leaves "/" typed into another text field alone', async () => {
+    render(<ResourcesView />)
+    const textField = document.createElement('textarea')
+    document.body.append(textField)
+    try {
+      await userEvent.click(textField)
+      await userEvent.keyboard('a/b')
+      expect(textField).toHaveValue('a/b')
+      expect(screen.getByRole('searchbox', { name: 'Search items' })).not.toHaveFocus()
+    } finally {
+      textField.remove()
+    }
+  })
+
+  it('focuses the opened detail after Enter from search in the narrow layout', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
+    try {
+      const view = render(<ResourcesView />)
+      const search = screen.getByRole('searchbox', { name: 'Search items' })
+      search.focus()
+      await userEvent.keyboard('{ArrowDown}{Enter}')
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+      expect(search).not.toHaveFocus()
+
+      mockRouteParams = { category: 'items', id: '42' }
+      view.rerender(<ResourcesView />)
+      expect(screen.queryByRole('searchbox')).toBeNull()
+      expect(screen.getByRole('heading', { name: 'Bloodstone' })).toHaveFocus()
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('keeps focus on the opened row after Enter from search beside the detail', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    try {
+      const view = render(<ResourcesView />)
+      const search = screen.getByRole('searchbox', { name: 'Search items' })
+      search.focus()
+      await userEvent.keyboard('{ArrowDown}{Enter}')
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+
+      mockRouteParams = { category: 'items', id: '42' }
+      view.rerender(<ResourcesView />)
+      expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+      expect(screen.getByRole('heading', { name: 'Bloodstone' })).not.toHaveFocus()
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('clears the highlight before search text without closing the selected detail', async () => {
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: 'Search items' })
     await userEvent.click(input)
     await userEvent.type(input, 'torc')
-    await userEvent.keyboard('{Escape}')
-    expect(input).toHaveValue('')
+    await userEvent.keyboard('{ArrowDown}{Escape}')
+    expect(input).toHaveValue('torc')
     expect(input).toHaveFocus()
     expect(navigateMock).not.toHaveBeenCalled()
     await userEvent.keyboard('{Escape}')
+    expect(input).toHaveValue('')
     expect(input).toHaveFocus()
     expect(navigateMock).not.toHaveBeenCalled()
   })

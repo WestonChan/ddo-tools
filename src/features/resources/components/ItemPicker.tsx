@@ -40,7 +40,7 @@ interface ItemPickerProps {
   filters: ItemListFilters
   onFiltersChange: (filters: ItemListFilters) => void
   onOpenItemFromHover?: (id: number, name: string) => void
-  onOpenItem?: (id: number) => void
+  onOpenItem?: (id: number, activationSource: 'pointer' | 'keyboard') => void
   rowToFocusId?: number | null
   onRowFocused?: () => void
   session?: ItemPickerSession
@@ -232,8 +232,8 @@ export function ItemPicker({
     }
   }, [itemPageQuery, pageQueryKey, itemsToShow.length])
   const openItemDetail = useCallback(
-    (item: ItemSummary) => {
-      if (onOpenItem) onOpenItem(item.id)
+    (item: ItemSummary, activationSource: 'pointer' | 'keyboard') => {
+      if (onOpenItem) onOpenItem(item.id, activationSource)
       else void navigate({ to: '/resources/' + category + '/' + item.id })
     },
     [navigate, category, onOpenItem],
@@ -290,8 +290,9 @@ export function ItemPicker({
             onChange={(event) => setSearchQuery(event.target.value)}
             onKeyDown={(event) => {
               if (event.key !== 'Escape') return
-              event.preventDefault()
               event.stopPropagation()
+              if (event.defaultPrevented) return
+              event.preventDefault()
               if (searchQuery) setSearchQuery('')
             }}
             aria-label={'Search ' + category}
@@ -366,6 +367,7 @@ export function ItemPicker({
         rowAt={rowAt}
         rowKey={rowKey}
         onRowActivate={openItemDetail}
+        navigationInputRef={effectiveSearchInputRef}
         hoverCard={(item) => ({
           kind: 'item',
           delayMs: 260,

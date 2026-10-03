@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useRef } from 'react'
 import { LedgerTable } from './LedgerTable'
 import type { LedgerColumn } from './ledgerModel'
+
+const ledgerStyles = readFileSync('src/components/LedgerTable/LedgerTable.css', 'utf8')
 
 const rows = [
   { id: 1, name: 'Belt', ml: 4 },
@@ -42,6 +46,50 @@ const columns: LedgerColumn<(typeof rows)[number]>[] = [
 afterEach(cleanup)
 
 describe('LedgerTable', () => {
+  it('uses the picker highlight treatment separately from selected rows', () => {
+    const selectedStyle = ledgerStyles.match(/\.ledger-row--selected\s*\{([^}]+)\}/)?.[1]
+    const highlightedStyle = ledgerStyles.match(
+      /\.ledger-row--keyboard-highlighted\s*\{([^}]+)\}/,
+    )?.[1]
+    expect(selectedStyle).toContain('background: var(--surface-selected)')
+    expect(highlightedStyle).toContain('background: var(--surface-active)')
+    expect(highlightedStyle).toContain('box-shadow: var(--inset-mark-picker)')
+  })
+
+  it('skips heading rows when navigating from an external input', async () => {
+    const groupedRows = [{ id: 0, name: 'Items', ml: 0 }, ...rows]
+    const onRowActivate = vi.fn()
+    function SearchableLedger(): React.JSX.Element {
+      const navigationInputRef = useRef<HTMLInputElement>(null)
+      return (
+        <>
+          <input ref={navigationInputRef} aria-label="Search rows" />
+          <LedgerTable
+            columns={columns}
+            rowCount={groupedRows.length}
+            rowAt={(index) => groupedRows[index]}
+            rowKey={(row) => row.id}
+            rowKind={(row) => (row.id === 0 ? 'heading' : 'row')}
+            onRowActivate={onRowActivate}
+            navigationInputRef={navigationInputRef}
+            isVirtualized={false}
+          />
+        </>
+      )
+    }
+    render(<SearchableLedger />)
+    screen.getByRole('textbox', { name: 'Search rows' }).focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('row', { name: /Belt/ })).toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    expect(screen.getByRole('row', { name: /Items/ })).not.toHaveClass(
+      'ledger-row--keyboard-highlighted',
+    )
+    await userEvent.keyboard('{End}{Enter}')
+    expect(onRowActivate).toHaveBeenCalledWith(rows[2], 'keyboard')
+  })
+
   it('sorts from headers and navigates with one tab stop', async () => {
     const onRowActivate = vi.fn()
     render(
@@ -66,7 +114,7 @@ describe('LedgerTable', () => {
     firstRow.focus()
     await userEvent.keyboard('{ArrowDown}{End}{Home}{Enter}')
     expect(screen.getAllByRole('row')[1]).toHaveFocus()
-    expect(onRowActivate).toHaveBeenCalledWith(rows[1])
+    expect(onRowActivate).toHaveBeenCalledWith(rows[1], 'keyboard')
     expect(screen.getAllByRole('row').filter((row) => row.tabIndex === 0)).toHaveLength(1)
   })
 

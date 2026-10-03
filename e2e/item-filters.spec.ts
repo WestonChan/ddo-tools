@@ -199,9 +199,9 @@ for (const theme of ['dark', 'light']) {
       .toBe('descending')
     const rows = page.getByRole('table', { name: 'items list', exact: true }).getByRole('row')
     await expect(rows.nth(1)).toContainText('Cloak of Night')
-    await rows.nth(1).focus()
+    await page.getByRole('searchbox', { name: 'Search items', exact: true }).focus()
     await page.keyboard.press('End')
-    await expect(rows.nth(3)).toBeFocused()
+    await expect(rows.nth(3)).toHaveClass(/ledger-row--keyboard-highlighted/)
     await page.keyboard.press('Enter')
     await expect(page).toHaveURL(/\/resources\/items\/3$/)
 

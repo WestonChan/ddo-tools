@@ -9,6 +9,12 @@
   overflow-x: auto;
 }
 
+.ledger-body:focus-visible,
+.ledger-plain-body:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
 .ledger-head {
   flex: 0 0 auto;
 }
@@ -154,6 +160,11 @@
 .ledger-row--selected {
   background: var(--surface-selected);
   box-shadow: var(--inset-mark-accent);
+}
+
+.ledger-row--keyboard-highlighted {
+  background: var(--surface-active);
+  box-shadow: var(--inset-mark-picker);
 }
 
 .ledger-row--heading,

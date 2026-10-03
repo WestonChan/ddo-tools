@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-03',
     changes: [
+      'Press / to jump to the item search even with an item open; arrow keys, Home, End and Enter walk the results only while the search box has focus, and Enter opens the row and leaves the search',
       "An item's ML, gear slot, Raid, Rare and augment sockets sit in the title bar again; an open socket lists its augments right below the title bar",
       "The filter row follows the design: chips keep their width and show a count badge, the pickers and the ML range popover share one look, applied filters group under short labels, and the result count sits at the table's edge",
       'Gear slot, Pack and Raid take several values each, and the Enchantments picker has an Any / All switch for matching every chosen enchantment; both wait on the API deploy that accepts them',

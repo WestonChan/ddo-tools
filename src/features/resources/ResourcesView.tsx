@@ -119,16 +119,17 @@ function ResourcesView(): JSX.Element {
       const target = e.target as HTMLElement | null
       const isTypingInTextField =
         target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
-      if (e.key === '/' && !isTypingInTextField && selectedResourceId === null) {
+      const isListVisible = selectedResourceId === null || !isSingleColumn
+      if (e.key === '/' && !isTypingInTextField && isListVisible && searchInputRef.current) {
         e.preventDefault()
-        searchInputRef.current?.focus()
+        searchInputRef.current.focus()
       }
     }
     document.addEventListener('keydown', focusSearchOnSlash)
     return () => {
       document.removeEventListener('keydown', focusSearchOnSlash)
     }
-  }, [selectedResourceId])
+  }, [selectedResourceId, isSingleColumn])
 
   useEffect(() => {
     if (selectedResourceId === null) return
@@ -149,8 +150,9 @@ function ResourcesView(): JSX.Element {
     navigate({ to: `/resources/items/${id}` })
   }
 
-  function openItemFromList(id: number): void {
+  function openItemFromList(id: number, activationSource: 'pointer' | 'keyboard'): void {
     wasOpenedFromList.current = true
+    if (activationSource === 'keyboard' && isSingleColumn) setItemToFocus(id)
     navigate({ to: `/resources/items/${id}` })
   }
 

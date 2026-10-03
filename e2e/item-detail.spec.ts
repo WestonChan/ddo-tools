@@ -3,6 +3,70 @@ import capturedRing from '../src/features/resources/queries/fixtures/item487.jso
 import capturedArmor from '../src/features/resources/queries/fixtures/item831.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/set93.json' with { type: 'json' }
 
+test('search keyboard navigation scrolls a virtualized result into view and opens its detail', async ({
+  page,
+}) => {
+  const listItems = Array.from({ length: 120 }, (_, index) => ({
+    id: 9000 + index,
+    name: `Armor ${String(index + 1).padStart(3, '0')}`,
+    slot: capturedArmor.slot,
+    category: capturedArmor.category,
+    item_type: capturedArmor.item_type,
+    minimum_level: capturedArmor.minimum_level,
+    enhancement_bonus: capturedArmor.enhancement_bonus,
+    icon: capturedArmor.icon,
+    pack: null,
+    is_raid: false,
+    is_rare: false,
+    is_legacy: capturedArmor.is_legacy,
+  }))
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response =
+      path === '/v1/items'
+        ? { total: listItems.length, limit: 200, offset: 0, items: listItems }
+        : path === '/v1/items/9119'
+          ? { ...capturedArmor, id: 9119, name: 'Armor 120' }
+          : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.goto('/resources/items')
+  const search = page.getByRole('searchbox', { name: 'Search items', exact: true })
+  const scrollBody = page.locator('.ledger-body')
+  await expect(search).toBeVisible()
+  await expect(scrollBody).toHaveAttribute('tabindex', '0')
+  await scrollBody.focus()
+  await page.keyboard.press('PageDown')
+  await expect.poll(() => scrollBody.evaluate((body) => body.scrollTop)).toBeGreaterThan(0)
+  await page.keyboard.press('/')
+  await expect(search).toBeFocused()
+  await page.keyboard.press('End')
+  const lastRow = page.getByRole('row', { name: /Armor 120/ })
+  await expect(lastRow).toHaveClass(/ledger-row--keyboard-highlighted/)
+  await expect(lastRow).toBeInViewport()
+  await expect(search).toBeFocused()
+  await expect(search).toHaveAttribute('aria-controls', (await scrollBody.getAttribute('id')) ?? '')
+  await expect(search).toHaveAttribute(
+    'aria-activedescendant',
+    (await lastRow.getAttribute('id')) ?? '',
+  )
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/resources\/items\/9119$/)
+  await expect(lastRow).toBeFocused()
+  await expect(page.getByRole('heading', { name: 'Armor 120', exact: true })).not.toBeFocused()
+  await expect(search).not.toBeFocused()
+  await page.keyboard.press('/')
+  await expect(search).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.ledger-row--keyboard-highlighted')).toHaveCount(0)
+})
+
 test('set band heights and opening an augment socket preserve the item detail layout', async ({
   page,
 }) => {
