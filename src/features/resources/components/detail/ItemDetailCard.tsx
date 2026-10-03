@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react'
+import { useId, useState, type JSX } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   DetailCard,
@@ -10,11 +10,9 @@ import {
   WikiLinkIcon,
 } from '../../../../components'
 import { DropTagChip } from '../DropTagChip'
-import { AugmentSlotList } from './AugmentSlotList'
+import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import { DetailHeader } from './DetailHeader'
 import { EnchantmentList } from './EnchantmentList'
-import { StatList } from './StatList'
-import { KeyValueGrid, type KeyValuePair } from './KeyValueGrid'
 import { numberWithPlusSign } from './numberWithPlusSign'
 import type { SetDetail } from '../../queries/sets'
 import { sentenceCased } from './sentenceCased'
@@ -91,8 +89,24 @@ function ItemSourceRow({
   )
 }
 
-function toHeaderAttributes(item: Item): KeyValuePair[] {
-  const attributes: KeyValuePair[] = []
+interface ItemDetailRow {
+  label: string
+  value: string | number
+  isNumeric: boolean
+}
+
+type ItemDetailKind = 'shield' | 'weapon' | 'armor' | 'other'
+
+function itemDetailKind(item: Item): ItemDetailKind {
+  if (item.armorStats && (item.category === 'Shield' || item.armorStats.shieldBonus !== null))
+    return 'shield'
+  if (item.weaponStats) return 'weapon'
+  if (item.armorStats) return 'armor'
+  return 'other'
+}
+
+function toHeaderAttributes(item: Item): ItemDetailRow[] {
+  const attributes: ItemDetailRow[] = []
   if (item.enhancementBonus !== null) {
     attributes.push({
       label: 'Enhancement',
@@ -100,22 +114,17 @@ function toHeaderAttributes(item: Item): KeyValuePair[] {
       isNumeric: true,
     })
   }
-  if (item.material) attributes.push({ label: 'Material', value: item.material })
-  if (item.requiredRace) attributes.push({ label: 'Race', value: item.requiredRace })
+  if (item.material) attributes.push({ label: 'Material', value: item.material, isNumeric: false })
+  if (item.requiredRace)
+    attributes.push({ label: 'Race', value: item.requiredRace, isNumeric: false })
   return attributes
-}
-
-interface WeaponStatRow {
-  label: string
-  value: string
-  isNumeric: boolean
 }
 
 function primaryWeaponRows(
   weaponStats: ItemWeaponStats,
   enhancementBonus: number | null,
-): WeaponStatRow[] {
-  const rows: WeaponStatRow[] = []
+): ItemDetailRow[] {
+  const rows: ItemDetailRow[] = []
   const { baseDiceCount, baseDiceSides, baseDiceBonus, damageMultiplier } = weaponStats
   if (
     baseDiceCount !== null &&
@@ -161,8 +170,8 @@ function primaryWeaponRows(
   return rows
 }
 
-function extraWeaponRows(weaponStats: ItemWeaponStats): WeaponStatRow[] {
-  const rows: WeaponStatRow[] = []
+function extraWeaponRows(weaponStats: ItemWeaponStats): ItemDetailRow[] {
+  const rows: ItemDetailRow[] = []
   const details = [
     ['Type', weaponStats.weaponType],
     ['Proficiency', weaponStats.proficiency],
@@ -180,44 +189,70 @@ function extraWeaponRows(weaponStats: ItemWeaponStats): WeaponStatRow[] {
   return rows
 }
 
-function WeaponStats({
-  weaponStats,
-  enhancementBonus,
+function ItemDetailRows({
+  item,
+  kind,
   variant,
 }: {
-  weaponStats: ItemWeaponStats
-  enhancementBonus: number | null
+  item: Item
+  kind: ItemDetailKind
   variant: 'pane' | 'hover'
 }): JSX.Element | null {
   const [isExpanded, setIsExpanded] = useState(false)
-  const primaryRows = primaryWeaponRows(weaponStats, enhancementBonus)
-  const extraRows = extraWeaponRows(weaponStats)
-  if (primaryRows.length === 0 && extraRows.length === 0) return null
-  const visibleRows =
-    primaryRows.length === 0
-      ? extraRows
-      : [...primaryRows, ...(variant === 'pane' && isExpanded ? extraRows : [])]
+  const attributes = toHeaderAttributes(item)
+  const enhancementRows = attributes.filter((row) => row.label === 'Enhancement')
+  const materialRows = attributes.filter((row) => row.label === 'Material')
+  const armorRows = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
+  const isShield = kind === 'shield'
+  let primaryRows: ItemDetailRow[] = []
+  let extraRows: ItemDetailRow[] = attributes
+  let moreLabel = 'More details'
+  if (kind === 'armor' || kind === 'shield') {
+    const primaryLabels = isShield
+      ? ['Shield bonus', 'Max Dex bonus']
+      : ['Armor bonus', 'Max Dex bonus']
+    const extraLabels = ['Arcane spell failure', 'Armor check penalty', 'Damage reduction']
+    primaryRows = primaryLabels.flatMap((label) => armorRows.filter((row) => row.label === label))
+    extraRows = [
+      ...enhancementRows,
+      ...extraLabels.flatMap((label) => armorRows.filter((row) => row.label === label)),
+      ...materialRows,
+    ]
+    moreLabel = isShield ? 'More shield details' : 'More armor details'
+  } else if (kind === 'weapon' && item.weaponStats) {
+    const weaponExtras = extraWeaponRows(item.weaponStats)
+    primaryRows = primaryWeaponRows(item.weaponStats, item.enhancementBonus)
+    extraRows = [
+      ...enhancementRows,
+      ...weaponExtras.filter((row) => row.label !== 'Damage reduction bypasses'),
+      ...materialRows,
+      ...weaponExtras.filter((row) => row.label === 'Damage reduction bypasses'),
+    ]
+    moreLabel = 'More weapon details'
+  }
+  if (primaryRows.length === 0 && (variant === 'hover' || extraRows.length === 0)) return null
 
   return (
-    <div className="resources-weapon-stats">
-      {visibleRows.map((row) => (
+    <div className="resources-item-details">
+      {primaryRows.map((row) => (
         <DetailValueRow
           key={row.label}
           label={row.label}
           value={row.value}
           isNumeric={row.isNumeric}
           layout="ledger"
+          className={variant === 'hover' ? 'hover-card-row' : undefined}
         />
       ))}
-      {variant === 'pane' && primaryRows.length > 0 && extraRows.length > 0 && (
-        <div className="resources-weapon-stats__toggle-row">
+      {variant === 'pane' && extraRows.length > 0 && (
+        <div className="resources-item-details__toggle-row">
           <button
             type="button"
-            className="resources-weapon-stats__toggle"
+            className="resources-item-details__toggle"
             aria-expanded={isExpanded}
             onClick={() => setIsExpanded((wasExpanded) => !wasExpanded)}
           >
-            {isExpanded ? 'Less' : 'More weapon details'}
+            {isExpanded ? 'Less' : moreLabel}
             {isExpanded ? (
               <ChevronUp size={12} aria-hidden="true" />
             ) : (
@@ -226,13 +261,23 @@ function WeaponStats({
           </button>
         </div>
       )}
+      {variant === 'pane' &&
+        isExpanded &&
+        extraRows.map((row, index) => (
+          <DetailValueRow
+            key={`${row.label}-${index}`}
+            label={row.label}
+            value={row.value}
+            isNumeric={row.isNumeric}
+            layout="ledger"
+          />
+        ))}
     </div>
   )
 }
 
-function toLabeledArmorStats(armorStats: ItemArmorStats): KeyValuePair[] {
-  const labeledStats: KeyValuePair[] = []
-  labeledStats.push({ label: 'Type', value: armorStats.armorType })
+function toLabeledArmorStats(armorStats: ItemArmorStats): ItemDetailRow[] {
+  const labeledStats: ItemDetailRow[] = []
   if (armorStats.armorBonus !== null)
     labeledStats.push({
       label: 'Armor bonus',
@@ -337,7 +382,7 @@ function HoverSourceSummary({
   return (
     <div className="resources-hover-rows">
       {sources.slice(0, 3).map((source) => (
-        <div className="resources-hover-row" key={source.key}>
+        <div className="resources-hover-row hover-card-row" key={source.key}>
           <span>
             {source.questId !== null ? (
               <QuestHoverAnchor questId={source.questId} onOpenItem={onOpenItem}>
@@ -378,8 +423,10 @@ export function ItemDetailCard({
   setDetail?: SetDetail | null
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element {
-  const headerAttributes = toHeaderAttributes(item)
-  const labeledArmorStats = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
+  const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
+  const augmentLedgerId = useId()
+  const expandedSlot = item.augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
+  const detailKind = itemDetailKind(item)
   const hasLinkedSource =
     item.quests.length > 0 ||
     item.questChains.length > 0 ||
@@ -389,14 +436,14 @@ export function ItemDetailCard({
 
   return (
     <div
-      className={`resources-detail-body${item.weaponStats ? ' resources-detail-body--weapon' : ''}`}
+      className={`resources-detail-body${detailKind === 'weapon' ? ' resources-detail-body--weapon' : ''}`}
     >
       <DetailCard
         variant={variant}
         header={
           <DetailHeader
             name={item.name}
-            kicker={`${item.equipmentSlot} · ${item.type ?? item.category}`}
+            kicker={item.type ? `${item.equipmentSlot} · ${item.type}` : item.category}
             wikiUrl={item.wikiUrl}
             wikiPageName={item.name}
             isLegacy={item.isLegacy}
@@ -414,7 +461,17 @@ export function ItemDetailCard({
             <DetailFact label="Gear slot">{item.equipmentSlot}</DetailFact>
             <DetailFact label="Augments">
               {item.augmentSlots.length ? (
-                <AugmentSlotList augmentSlots={item.augmentSlots} />
+                <AugmentSlotList
+                  augmentSlots={item.augmentSlots}
+                  expandedSlotSortOrder={expandedSlotSortOrder}
+                  ledgerId={augmentLedgerId}
+                  onToggleSlot={(sortOrder) =>
+                    setExpandedSlotSortOrder((current) =>
+                      current === sortOrder ? null : sortOrder,
+                    )
+                  }
+                  onClose={() => setExpandedSlotSortOrder(null)}
+                />
               ) : (
                 '—'
               )}
@@ -442,31 +499,35 @@ export function ItemDetailCard({
             )}
           </>
         }
+        afterFacts={
+          expandedSlot ? (
+            <AugmentCandidateLedger
+              slot={expandedSlot}
+              ledgerId={augmentLedgerId}
+              onClose={() => setExpandedSlotSortOrder(null)}
+            />
+          ) : null
+        }
       >
-        {headerAttributes.length > 0 && variant === 'pane' && (
-          <KeyValueGrid pairs={headerAttributes} />
+        {variant === 'pane' && item.description && (
+          <p className="resources-detail-description">{item.description}</p>
         )}
-        {item.weaponStats && (
-          <WeaponStats
-            key={item.id}
-            weaponStats={item.weaponStats}
-            enhancementBonus={item.enhancementBonus}
-            variant={variant}
-          />
-        )}
-        {item.description && <p className="resources-detail-description">{item.description}</p>}
+        <ItemDetailRows key={item.id} item={item} kind={detailKind} variant={variant} />
         {variant === 'hover' &&
           item.modifiers.flatMap((modifier) => {
             const damage = damageExpression(modifier)
             return damage
-              ? [<DetailValueRow key={modifier.id} label="Damage" value={damage} tone="damage" />]
+              ? [
+                  <DetailValueRow
+                    key={modifier.id}
+                    label="Damage"
+                    value={damage}
+                    tone="damage"
+                    className="hover-card-row"
+                  />,
+                ]
               : []
           })}
-        {variant === 'pane' && labeledArmorStats.length > 0 && (
-          <DetailCardSection heading="Armor">
-            <StatList stats={labeledArmorStats} />
-          </DetailCardSection>
-        )}
         <EnchantmentList
           itemName={item.name}
           bonuses={item.bonuses}

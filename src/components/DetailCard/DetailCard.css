@@ -132,11 +132,11 @@
 }
 
 .detail-value-row[data-layout='ledger'] .detail-value-row__value {
-  grid-column: 3;
+  grid-column: 2 / 4;
   min-width: 0;
   padding: 0 var(--space-1-5);
   color: var(--text-numeric);
-  font-size: var(--fs-label);
+  font-size: var(--fs-detail-numeric);
   font-weight: var(--fw-regular);
   text-align: right;
   white-space: nowrap;
@@ -145,6 +145,7 @@
 .detail-value-row[data-layout='ledger'] .detail-value-row__value:not(.num) {
   grid-column: 2 / 4;
   color: var(--text-body);
+  font-size: var(--fs-body-sm);
   overflow-wrap: anywhere;
   white-space: normal;
 }
@@ -194,8 +195,37 @@
 }
 
 .detail-card--hover {
+  gap: var(--space-2-5);
   border: 0;
   background: transparent;
+}
+
+.detail-card--hover .detail-card__title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+}
+
+.detail-card--hover .detail-card__body {
+  gap: var(--space-2-5);
+}
+
+.hover-card .detail-card__section {
+  gap: 0;
+}
+
+.hover-card .detail-card__more {
+  display: block;
+  padding-top: var(--space-1);
+}
+
+.hover-card .detail-value-row.hover-card-row[data-layout='ledger'] {
+  grid-template-columns: minmax(0, 1fr) 64px 108px;
+}
+
+.hover-card .detail-value-row.hover-card-row[data-layout='ledger'] .detail-value-row__label,
+.hover-card .detail-value-row.hover-card-row[data-layout='ledger'] .detail-value-row__value {
+  padding: 0;
 }
 
 .detail-card--pane {
@@ -214,7 +244,8 @@
 }
 
 .detail-card--hover .detail-card__name {
-  font-size: var(--fs-h3);
+  font-size: var(--fs-hover-title);
+  line-height: var(--lh-heading);
 }
 
 .detail-card--hover .detail-card__facts {
@@ -222,7 +253,9 @@
 }
 
 .detail-card--hover .detail-card__fact {
-  font-size: var(--fs-label);
+  color: var(--text-muted);
+  font-size: var(--fs-hover-copy);
+  font-weight: var(--fw-regular);
 }
 
 @media (max-width: 599px) {

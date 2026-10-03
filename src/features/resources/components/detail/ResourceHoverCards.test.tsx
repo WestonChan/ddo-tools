@@ -144,6 +144,7 @@ it.each([
   expect(card).toHaveAttribute('data-kind', kind)
   expect(card).toHaveTextContent(name)
   expect(card).toHaveTextContent(yieldName)
+  expect(card.querySelector('.resources-hover-row')).toHaveClass('hover-card-row')
 })
 
 it('opens an item yielded by a pack', () => {
@@ -211,6 +212,7 @@ it('shows a quest’s pack, raid flag, and unique loot item, then opens that ite
   expect(card).toHaveTextContent('The Storm')
   expect(card).toHaveTextContent('Storm Pack · Raid')
   expect(within(card).getAllByText('Storm Blade')).toHaveLength(1)
+  expect(card.querySelector('.resources-hover-row')).toHaveClass('hover-card-row')
   fireEvent.click(within(card).getByRole('button', { name: /Storm Blade/ }))
   expect(openItem).toHaveBeenCalledWith(11, 'Storm Blade')
   expect(screen.queryByRole('dialog')).toBeNull()
@@ -231,6 +233,7 @@ it('shows set pieces and tier bonuses', () => {
   expect(card).toHaveTextContent('2 pieces')
   expect(card).toHaveTextContent('Fire Spell Power')
   expect(card).toHaveTextContent('Storm tier unlock')
+  expect(card.querySelector('.resources-set-tier')).toHaveClass('hover-card-row')
   fireEvent.click(within(card).getByRole('button', { name: /Storm Blade/ }))
   expect(openItem).toHaveBeenCalledWith(11, 'Storm Blade')
   expect(screen.queryByRole('dialog')).toBeNull()

@@ -366,17 +366,8 @@
   padding: var(--space-3);
 }
 
-.resources-detail-body .detail-card__body > .resources-kv-grid {
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--border-hairline);
-}
-
 .resources-detail-body:has(.detail-card--hover) {
   padding: 0;
-}
-
-.resources-detail-body .detail-card--hover .resources-quest-row {
-  font-size: var(--fs-label);
 }
 
 .resources-enchantment-ledger .ledger-table {
@@ -457,8 +448,9 @@
 
 .resources-hover-title {
   color: var(--text-heading);
-  font-size: var(--fs-h3);
+  font-size: var(--fs-hover-title);
   font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
 }
 
 .resources-wiki-chip {
@@ -508,12 +500,25 @@
   max-width: calc(100% - 84px);
 }
 
-.resources-hover-fact,
-.resources-hover-definition {
+.resources-hover-fact {
   color: var(--text-muted);
-  font-size: var(--fs-label);
+  font-size: var(--fs-hover-copy);
   overflow-wrap: anywhere;
   white-space: pre-line;
+}
+
+.resources-hover-definition {
+  color: var(--text-body);
+  font-size: var(--fs-hover-copy);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.hover-card .resources-detail-description {
+  color: var(--text-body);
+  font-size: var(--fs-hover-copy);
+  line-height: 1.45;
 }
 
 .resources-source-hint {
@@ -529,13 +534,9 @@
 
 .resources-hover-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-2);
-  min-height: 26px;
-  padding: var(--space-1);
-  border-bottom: 1px solid var(--border-hairline);
   color: var(--text-link);
-  font-size: var(--fs-label);
 }
 
 .resources-hover-row > span:last-child {
@@ -569,10 +570,8 @@ button.resources-hover-row:hover {
 .resources-set-tier {
   display: flex;
   flex-direction: column;
-  gap: var(--space-0-5);
-  padding: var(--space-1);
+  gap: var(--space-1);
   color: var(--text-muted);
-  font-size: var(--fs-label);
 }
 
 .resources-entity-header {
@@ -663,31 +662,6 @@ button.resources-hover-row:hover {
   font-size: var(--fs-label);
 }
 
-.resources-kv-grid {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--space-1-5) var(--space-3);
-  margin: 0;
-  font-size: var(--fs-body-sm);
-}
-
-.resources-kv-row {
-  display: contents;
-}
-
-.resources-kv-label {
-  color: var(--text-faint);
-  font-size: var(--fs-micro);
-}
-
-.resources-kv-value {
-  min-width: 0;
-  margin: 0;
-  color: var(--text-body);
-  overflow-wrap: anywhere;
-}
-
 .resources-detail-description {
   color: var(--text-muted);
   font-size: var(--fs-body-sm);
@@ -695,7 +669,12 @@ button.resources-hover-row:hover {
   overflow-wrap: anywhere;
 }
 
-.resources-weapon-stats {
+.detail-card__body > .resources-detail-description {
+  padding: 0 var(--space-1-5);
+  text-wrap: pretty;
+}
+
+.resources-item-details {
   display: flex;
   flex-direction: column;
 }
@@ -705,11 +684,11 @@ button.resources-hover-row:hover {
   padding: var(--space-3-5);
 }
 
-.resources-weapon-stats__toggle-row {
+.resources-item-details__toggle-row {
   padding: var(--space-1) var(--space-3) 0;
 }
 
-.resources-weapon-stats__toggle {
+.resources-item-details__toggle {
   display: inline-flex;
   align-items: center;
   gap: var(--space-0-5);
@@ -721,7 +700,6 @@ button.resources-hover-row:hover {
   cursor: pointer;
 }
 
-.resources-stat-list,
 .resources-bonus-list,
 .resources-clicky-list,
 .resources-quest-list {
@@ -730,31 +708,6 @@ button.resources-hover-row:hover {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.resources-stat-list {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  column-gap: var(--space-4);
-}
-
-.resources-stat-row {
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-column: 1 / -1;
-  align-items: center;
-  min-height: 26px;
-  border-bottom: 1px solid var(--border-hairline);
-}
-
-.resources-stat-label {
-  color: var(--text-muted);
-}
-
-.resources-stat-value {
-  min-width: 0;
-  color: var(--text-body);
-  overflow-wrap: anywhere;
 }
 
 .resources-bonus-row,
@@ -845,6 +798,10 @@ button.resources-hover-row:hover {
   list-style: none;
 }
 
+.detail-card--hover .resources-augment-list {
+  gap: calc(var(--space-1) + var(--space-px));
+}
+
 .resources-augment-slot {
   display: inline-flex;
   align-items: center;
@@ -922,10 +879,22 @@ button.resources-hover-row:hover {
 }
 
 .resources-augment-candidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
   max-height: 14rem;
   overflow-y: auto;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-hairline);
 }
 
-.resources-weapon-stats .detail-value-row[data-layout='ledger'] .detail-value-row__value.num {
-  grid-column: 2 / 4;
+.detail-card--hover .resources-augment-candidates {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.resources-augment-candidates__heading {
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-hairline);
 }

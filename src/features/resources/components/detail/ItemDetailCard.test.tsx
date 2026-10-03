@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event'
 import type { ApiItemDetail, ApiWeaponStats } from '../../../../lib/api'
 import capturedWeapon from '../../queries/fixtures/item3479.json'
 import capturedRuneArm from '../../queries/fixtures/item924.json'
+import capturedArmor from '../../queries/fixtures/item831.json'
+import capturedShield from '../../queries/fixtures/item8203.json'
+import capturedRing from '../../queries/fixtures/item487.json'
+import capturedNecklace from '../../queries/fixtures/item7631.json'
 import { toItem } from '../../queries/items'
 import { ItemDetailCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
@@ -106,61 +110,104 @@ function weaponItem(weaponOverrides: Partial<ApiWeaponStats> = {}): Item {
   })
 }
 
-describe('ItemDetailCard weapon stats', () => {
-  it('shows damage and both critical parts between the facts and enchantments without a Weapon section', () => {
+function detailRowText(container: HTMLElement): Array<string | null> {
+  return Array.from(container.querySelectorAll('.resources-item-details .detail-value-row')).map(
+    (row) => row.textContent,
+  )
+}
+
+describe('ItemDetailCard details', () => {
+  it('keeps a weapon’s primary rows above one toggle and reveals its attributes and extras', async () => {
     const { container } = renderItemDetailCard(weaponItem())
-    const rows = Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row'))
-    expect(rows.map((row) => row.textContent)).toEqual([
+    expect(detailRowText(container)).toEqual([
       'Damage1.6[2d6]+5',
       'Crit range19–20',
       'Crit multiplier×2',
     ])
-    expect(container.querySelector('.resources-weapon-stats .resources-stat-list')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Weapon' })).toBeNull()
-    expect(screen.getByText('Material').closest('.resources-kv-row')).toHaveTextContent(
-      'MaterialSteel',
-    )
-    expect(container.querySelector('.resources-kv-grid')?.nextElementSibling).toHaveClass(
-      'resources-weapon-stats',
-    )
+    expect(container.querySelector('.resources-kv-grid')).toBeNull()
+    expect(screen.queryByText('Material')).toBeNull()
+    const button = screen.getByRole('button', { name: 'More weapon details' })
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    expect(button.parentElement?.previousElementSibling).toHaveTextContent('Crit multiplier×2')
     expect(
       container
-        .querySelector('.resources-weapon-stats')!
+        .querySelector('.resources-detail-description')!
+        .compareDocumentPosition(container.querySelector('.resources-item-details')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      container
+        .querySelector('.resources-item-details')!
         .compareDocumentPosition(container.querySelector('.resources-enchantment-ledger')!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
-  })
-
-  it('opens and closes the extra rows without duplicating material', async () => {
-    const { container } = renderItemDetailCard(weaponItem())
-    const button = screen.getByRole('button', { name: 'More weapon details' })
-    expect(button).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByText('Proficiency')).toBeNull()
     await userEvent.click(button)
     expect(screen.getByRole('button', { name: 'Less' })).toHaveAttribute('aria-expanded', 'true')
-    expect(
-      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
-        (row) => row.textContent,
-      ),
-    ).toEqual([
+    expect(detailRowText(container)).toEqual([
       'Damage1.6[2d6]+5',
       'Crit range19–20',
       'Crit multiplier×2',
+      'Enhancement+5',
       'TypeGreat Sword',
       'ProficiencyMartial',
       'HandednessTwo-handed',
+      'MaterialSteel',
       'Damage reduction bypassesChaotic, Evil, Good, Lawful, Magic, Slash',
     ])
     expect(screen.getAllByText('Material')).toHaveLength(1)
     expect(screen.queryByText('Damage type')).toBeNull()
     const values = Array.from(
-      container.querySelectorAll('.resources-weapon-stats .detail-value-row__value'),
+      container.querySelectorAll('.resources-item-details .detail-value-row__value'),
     )
-    expect(values.slice(0, 3).every((value) => value.classList.contains('num'))).toBe(true)
-    expect(values.slice(3).every((value) => !value.classList.contains('num'))).toBe(true)
+    expect(values.slice(0, 4).every((value) => value.classList.contains('num'))).toBe(true)
+    expect(values.slice(4).every((value) => !value.classList.contains('num'))).toBe(true)
     await userEvent.click(screen.getByRole('button', { name: 'Less' }))
     expect(screen.queryByText('Proficiency')).toBeNull()
+    expect(detailRowText(container)).toHaveLength(3)
     expect(button).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('keeps an armor’s bonuses visible and reveals its remaining stats', async () => {
+    const { container } = renderItemDetailCard(toItem(capturedArmor as ApiItemDetail))
+    expect(container.querySelector('.resources-kv-grid')).toBeNull()
+    expect(container.querySelector('.resources-stat-list')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Armor' })).toBeNull()
+    expect(detailRowText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1'])
+    expect(screen.getByText('Gear slot')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'More armor details' }))
+    expect(detailRowText(container)).toEqual([
+      'Armor bonus16',
+      'Max Dex bonus1',
+      'Enhancement+5',
+      'Arcane spell failure35%',
+      'Armor check penalty-5',
+      'MaterialMagesteel',
+    ])
+    expect(screen.queryByText('Shield bonus')).toBeNull()
+    expect(screen.queryByText('Damage reduction')).toBeNull()
+    const values = Array.from(
+      container.querySelectorAll('.resources-item-details .detail-value-row__value'),
+    )
+    expect(values.map((value) => value.classList.contains('num'))).toEqual([
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+    ])
+    expect(screen.getByText('Obtained from')).toBeInTheDocument()
+  })
+
+  it('reveals damage reduction only when the API supplies it', async () => {
+    const item = toItem({
+      ...(capturedArmor as ApiItemDetail),
+      armor: { ...capturedArmor.armor, damage_reduction: 5 },
+    })
+    const { container } = renderItemDetailCard(item)
+    await userEvent.click(screen.getByRole('button', { name: 'More armor details' }))
+    expect(detailRowText(container)).toContain('Damage reduction5')
   })
 
   it('keeps an unsplittable critical in one row and omits blank stats', async () => {
@@ -175,11 +222,7 @@ describe('ItemDetailCard weapon stats', () => {
         dr_bypass: [],
       }),
     )
-    expect(
-      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
-        (row) => row.textContent,
-      ),
-    ).toEqual(['Criticalspecial critical'])
+    expect(detailRowText(container)).toEqual(['Criticalspecial critical'])
     await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
     expect(screen.queryByText('Damage reduction bypasses')).toBeNull()
   })
@@ -193,11 +236,11 @@ describe('ItemDetailCard weapon stats', () => {
         critical: 'unparseable',
       }),
     )
-    expect(
-      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
-        (row) => row.textContent,
-      ),
-    ).toEqual(['Damage1.6[2d6]+10', 'Crit range15–20', 'Crit multiplier×2'])
+    expect(detailRowText(container)).toEqual([
+      'Damage1.6[2d6]+10',
+      'Crit range15–20',
+      'Crit multiplier×2',
+    ])
   })
 
   it('adds the enhancement bonus to the dice and drops a unit multiplier', () => {
@@ -209,11 +252,7 @@ describe('ItemDetailCard weapon stats', () => {
         critical_multiplier: 4,
       }),
     )
-    expect(
-      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
-        (row) => row.textContent,
-      ),
-    ).toEqual(['Damage2d6+5', 'Crit range20', 'Crit multiplier×4'])
+    expect(detailRowText(container)).toEqual(['Damage2d6+5', 'Crit range20', 'Crit multiplier×4'])
   })
 
   it('falls back to the critical string when numeric critical fields are null', () => {
@@ -226,34 +265,122 @@ describe('ItemDetailCard weapon stats', () => {
         critical: '18-20/x3',
       }),
     )
-    expect(
-      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
-        (row) => row.textContent,
-      ),
-    ).toEqual(['Crit range18–20', 'Crit multiplier×3'])
+    expect(detailRowText(container)).toEqual(['Crit range18–20', 'Crit multiplier×3'])
   })
 
-  it('shows a rune arm’s available details inline when it has no primary stats', () => {
+  it('shows a rune arm’s extra rows only after expanding and no rows in hover', async () => {
     const item = toItem(capturedRuneArm as ApiItemDetail)
     const { container, rerender } = renderItemDetailCard(item)
-    expect(
-      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
-        (row) => row.textContent,
-      ),
-    ).toEqual(['TypeRune Arm', 'HandednessOff-hand'])
-    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
+    expect(detailRowText(container)).toEqual([])
+    await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
+    expect(detailRowText(container)).toEqual([
+      'TypeRune Arm',
+      'HandednessOff-hand',
+      'MaterialForce',
+    ])
     rerender(<ItemDetailCard item={item} variant="hover" />)
-    expect(
-      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
-        (row) => row.textContent,
-      ),
-    ).toEqual(['TypeRune Arm', 'HandednessOff-hand'])
+    expect(detailRowText(container)).toEqual([])
+    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
   })
 
-  it('does not add weapon rows or a toggle to non-weapons', () => {
+  it('shows only a toggle for a ring with an attribute row', async () => {
+    const { container } = renderItemDetailCard(toItem(capturedRing as ApiItemDetail))
+    expect(container.querySelector('.detail-card__header .section-label')).toHaveTextContent(
+      'Jewelry',
+    )
+    expect(detailRowText(container)).toEqual([])
+    await userEvent.click(screen.getByRole('button', { name: 'More details' }))
+    expect(detailRowText(container)).toEqual(['MaterialSteel'])
+  })
+
+  it('reveals enhancement and material together when a ring has both', async () => {
+    const item = toItem({ ...(capturedRing as ApiItemDetail), enhancement_bonus: 2 })
+    const { container } = renderItemDetailCard(item)
+    await userEvent.click(screen.getByRole('button', { name: 'More details' }))
+    expect(detailRowText(container)).toEqual(['Enhancement+2', 'MaterialSteel'])
+  })
+
+  it('places an open socket ledger immediately after unchanged facts', async () => {
+    const { container } = renderItemDetailCard(toItem(capturedRing as ApiItemDetail))
+    const facts = container.querySelector('.detail-card__facts')!
+    const raid = facts.children[3] as HTMLElement
+    const rare = facts.children[4] as HTMLElement
+    const raidTop = raid.offsetTop
+    const rareTop = rare.offsetTop
+    const factLabels = (): Array<string | null | undefined> =>
+      Array.from(facts.children).map((fact) => fact.querySelector('.section-label')?.textContent)
+    const originalLabels = factLabels()
+    await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
+    const ledger = container.querySelector('.resources-augment-candidates')!
+    expect(ledger).not.toBeNull()
+    expect(facts.contains(ledger)).toBe(false)
+    expect(facts.nextElementSibling).toBe(ledger)
+    expect(factLabels()).toEqual(originalLabels)
+    expect(facts.children[3]).toBe(raid)
+    expect(facts.children[4]).toBe(rare)
+    expect(raid.offsetTop).toBe(raidTop)
+    expect(rare.offsetTop).toBe(rareTop)
+    expect(screen.getByText('Yellow socket · 0 augments')).toBeInTheDocument()
+    expect(
+      ledger.compareDocumentPosition(container.querySelector('.resources-detail-description')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
+    expect(container.querySelector('.resources-augment-candidates')).toBeNull()
+    expect(facts.nextElementSibling).toHaveClass('detail-card__body')
+    expect(raid.offsetTop).toBe(raidTop)
+    expect(rare.offsetTop).toBe(rareTop)
+  })
+
+  it('shows shield primary rows and reserves the remaining shield stats for its toggle', async () => {
+    const item = toItem(capturedShield as ApiItemDetail)
+    const { container, rerender } = renderItemDetailCard(item)
+    expect(container.querySelector('.resources-detail-body')).not.toHaveClass(
+      'resources-detail-body--weapon',
+    )
+    expect(detailRowText(container)).toEqual(['Shield bonus17', 'Max Dex bonus2'])
+    expect(screen.queryByText('Damage')).toBeNull()
+    expect(screen.queryByText('Crit range')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'More shield details' }))
+    expect(detailRowText(container)).toEqual([
+      'Shield bonus17',
+      'Max Dex bonus2',
+      'Enhancement+5',
+      'Arcane spell failure50%',
+      'Armor check penalty-9',
+      'Damage reduction13',
+      'MaterialSteel',
+    ])
+    rerender(<ItemDetailCard item={item} variant="hover" />)
+    expect(detailRowText(container)).toEqual(['Shield bonus17', 'Max Dex bonus2'])
+    expect(screen.queryByRole('button', { name: 'More shield details' })).toBeNull()
+    expect(container.querySelector('.resources-detail-description')).toBeNull()
+  })
+
+  it('shows armor primary rows without description or a toggle in hover', () => {
+    const { container } = render(
+      <ItemDetailCard item={toItem(capturedArmor as ApiItemDetail)} variant="hover" />,
+    )
+    expect(detailRowText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1'])
+    expect(container.querySelector('.resources-detail-description')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'More armor details' })).toBeNull()
+  })
+
+  it('shows no toggle when an item has no details to reveal', () => {
     const { container } = renderItemDetailCard(plainItem)
-    expect(container.querySelector('.resources-weapon-stats')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
+    expect(container.querySelector('.resources-item-details')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()
+  })
+
+  it('gives weapon values and enchantment values the same hover row rhythm', () => {
+    const { container, rerender } = render(<ItemDetailCard item={weaponItem()} variant="hover" />)
+    expect(container.querySelector('.resources-item-details .detail-value-row')).toHaveClass(
+      'hover-card-row',
+    )
+    rerender(<ItemDetailCard item={toItem(capturedNecklace as ApiItemDetail)} variant="hover" />)
+    expect(
+      container.querySelector('.resources-hover-enchantment-row .detail-value-row'),
+    ).toHaveClass('hover-card-row')
   })
 })
 
@@ -276,11 +403,11 @@ describe('ItemDetailCard drop locations', () => {
       screen.getByText("Delera's Tomb", { selector: '.resources-hover-anchor' }),
     ).toBeInTheDocument()
     expect(
-      Array.from(document.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+      Array.from(document.querySelectorAll('.resources-item-details .detail-value-row')).map(
         (row) => row.textContent,
       ),
     ).toEqual(['Damage1.6[2d6]+5', 'Crit range20', 'Crit multiplier×2'])
-    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()
   })
   it('renders a wiki link icon next to each quest in Obtained from', () => {
     renderItemDetailCard({ ...plainItem, quests: [quest()] })
@@ -628,8 +755,10 @@ describe('ItemDetailCard sources beyond quests', () => {
 })
 
 describe('ItemDetailCard header attributes', () => {
-  it('shows the enhancement bonus signed and the set name when present', () => {
+  it('reveals the enhancement bonus signed and keeps the set name in the facts', async () => {
     renderItemDetailCard({ ...plainItem, enhancementBonus: 5, setName: 'Adherent of the Mists' })
+    expect(screen.queryByText('Enhancement')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'More details' }))
     expect(screen.getByText('Enhancement')).toBeInTheDocument()
     expect(screen.getByText('+5')).toBeInTheDocument()
     expect(screen.getByText('Adherent of the Mists')).toBeInTheDocument()

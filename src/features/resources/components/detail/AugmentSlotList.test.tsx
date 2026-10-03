@@ -1,8 +1,9 @@
 import { it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useId, useState, type JSX } from 'react'
 import { HoverCardProvider } from '../../../../components'
-import { AugmentSlotList } from './AugmentSlotList'
+import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 
 let augmentsBySlotLabel: Record<string, AugmentSummary[]> = {}
@@ -48,9 +49,35 @@ const RED_AUGMENTS: AugmentSummary[] = [
   },
 ]
 
+function AugmentSlotPicker({ augmentSlots }: { augmentSlots: ItemAugmentSlot[] }): JSX.Element {
+  const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
+  const ledgerId = useId()
+  const expandedSlot = augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
+  return (
+    <>
+      <AugmentSlotList
+        augmentSlots={augmentSlots}
+        expandedSlotSortOrder={expandedSlotSortOrder}
+        ledgerId={ledgerId}
+        onToggleSlot={(sortOrder) =>
+          setExpandedSlotSortOrder((current) => (current === sortOrder ? null : sortOrder))
+        }
+        onClose={() => setExpandedSlotSortOrder(null)}
+      />
+      {expandedSlot && (
+        <AugmentCandidateLedger
+          slot={expandedSlot}
+          ledgerId={ledgerId}
+          onClose={() => setExpandedSlotSortOrder(null)}
+        />
+      )}
+    </>
+  )
+}
+
 it('makes every socket a button, including empty colour and crafting sockets', () => {
   render(
-    <AugmentSlotList
+    <AugmentSlotPicker
       augmentSlots={[slot(0, 'red'), slot(1, 'sun'), slot(2, "slaver's: prefix", 'slavers')]}
     />,
   )
@@ -59,10 +86,11 @@ it('makes every socket a button, including empty colour and crafting sockets', (
 })
 
 it('opens a plain ledger of fitting augments with name, level and slots but no selection roles', async () => {
-  render(<AugmentSlotList augmentSlots={[slot(0, 'red')]} />)
-  expect(fittingAugmentsHookMock).toHaveBeenLastCalledWith(null)
+  render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
+  expect(fittingAugmentsHookMock).not.toHaveBeenCalled()
   await userEvent.click(screen.getByRole('button', { name: /Red/ }))
   expect(fittingAugmentsHookMock).toHaveBeenLastCalledWith('red')
+  expect(screen.getByText('Red socket · 2 augments')).toBeInTheDocument()
   expect(screen.getByRole('table', { name: /Augments that fit the Red slot/ })).toBeInTheDocument()
   expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
   expect(screen.getByRole('columnheader', { name: /ML/ })).toBeInTheDocument()
@@ -75,7 +103,7 @@ it('opens a plain ledger of fitting augments with name, level and slots but no s
 })
 
 it('toggles with keyboard, allows ledger arrows, and closes on Escape', async () => {
-  render(<AugmentSlotList augmentSlots={[slot(0, 'red')]} />)
+  render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
   const button = screen.getByRole('button', { name: /Red/ })
   button.focus()
   await userEvent.keyboard('{Enter}')
@@ -89,7 +117,7 @@ it('toggles with keyboard, allows ledger arrows, and closes on Escape', async ()
 })
 
 it('closes the first table when another socket opens and closes on a second click', async () => {
-  render(<AugmentSlotList augmentSlots={[slot(0, 'red'), slot(1, 'sun')]} />)
+  render(<AugmentSlotPicker augmentSlots={[slot(0, 'red'), slot(1, 'sun')]} />)
   const red = screen.getByRole('button', { name: /Red/ })
   const sun = screen.getByRole('button', { name: /Sun/ })
   await userEvent.click(red)
@@ -97,6 +125,7 @@ it('closes the first table when another socket opens and closes on a second clic
   await userEvent.click(sun)
   expect(screen.queryByText('Ruby of Flame')).toBeNull()
   expect(screen.getByText('Solar Gem')).toBeInTheDocument()
+  expect(screen.getByText('Sun socket · 1 augment')).toBeInTheDocument()
   await userEvent.click(sun)
   expect(screen.queryByRole('table')).toBeNull()
 })
@@ -104,7 +133,7 @@ it('closes the first table when another socket opens and closes on a second clic
 it('lets Escape close the augment hover card before closing its table', async () => {
   render(
     <HoverCardProvider>
-      <AugmentSlotList augmentSlots={[slot(0, 'red')]} />
+      <AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />
     </HoverCardProvider>,
   )
   await userEvent.click(screen.getByRole('button', { name: /Red/ }))

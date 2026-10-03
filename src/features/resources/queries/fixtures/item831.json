@@ -1,0 +1,143 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": null,
+      "id": 46,
+      "is_rare": false,
+      "loot_type": null,
+      "name": "Harbinger of Madness",
+      "wiki_url": "https://ddowiki.com/page/Harbinger_of_Madness"
+    },
+    {
+      "chest": "opuloxx chest",
+      "id": 52,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Reign of Madness",
+      "wiki_url": "https://ddowiki.com/page/Reign_of_Madness"
+    }
+  ],
+  "armor": {
+    "adamantine_body": null,
+    "arcane_spell_failure": 35,
+    "armor_bonus": 16,
+    "armor_check_penalty": -5,
+    "armor_type": "Heavy",
+    "damage_reduction": null,
+    "max_dex_bonus": 1,
+    "mithral_body": null,
+    "shield_bonus": null
+  },
+  "augment_slots": [
+    {
+      "family": "crafting",
+      "label": "crafting: trace of madness",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 47,
+      "sort_order": 0,
+      "variant": "trace of madness"
+    }
+  ],
+  "bonuses": [],
+  "category": "Armor",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "Some beholders of Xoriat are fitted with resilient metal plates to bolster their\nweak physical defenses. Metal from those same plates was used in crafting this\nsuit of armor, granting it wondrous Antimagic properties.",
+  "drop_location": "The Lord of Eyes, Opuloxx chest; \n Harbinger of Madness, Quest chain end reward",
+  "effects": [
+    {
+      "description": "Antimagic Spike: This item was made from powerful antimagic materials. When scoring a critical hit on an enemy with your ranged or melee weapons, the target must make a DC 28 Fortitude save or be unable to cast spells for a brief duration.",
+      "id": 189,
+      "name": "Antimagic Spike",
+      "target": null,
+      "value": null
+    },
+    {
+      "description": "Telekinesis Guard: When enemies hit you, they may be assaulted by these psychic forces, falling to the ground unless they make a DC 35 Reflex save.",
+      "id": 190,
+      "name": "Telekinesis Guard",
+      "target": null,
+      "value": null
+    },
+    {
+      "description": "Metal Fatigue: The metal plates of this armor sometimes tire you out. When you are damaged there is a small chance that you will become Exhausted.",
+      "id": 191,
+      "name": "Metal Fatigue",
+      "target": null,
+      "value": null
+    }
+  ],
+  "enhancement_bonus": 5,
+  "events": [],
+  "icon": "HeavyArmor_1a",
+  "id": 831,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": "Heavy",
+  "material": "Magesteel",
+  "minimum_level": 14,
+  "modifiers": [],
+  "name": "Beholder Plate Armor",
+  "quest_chains": [
+    {
+      "id": 11,
+      "is_rare": false,
+      "name": "Harbinger of Madness",
+      "wiki_url": "https://ddowiki.com/page/Harbinger_of_Madness"
+    }
+  ],
+  "quests": [
+    {
+      "chest": "opuloxx chest",
+      "difficulties": ["normal", "hard", "elite", "reaper"],
+      "epic_level": null,
+      "id": 449,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 17,
+      "loot_type": "chest",
+      "name": "The Lord of Eyes",
+      "pack": "Reign of Madness",
+      "patron": "The Twelve"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Body",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "opuloxx chest",
+      "cost": null,
+      "id": 449,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "The Lord of Eyes",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/The_Lord_of_Eyes"
+    },
+    {
+      "character_level": null,
+      "chest": null,
+      "cost": null,
+      "id": 11,
+      "is_rare": false,
+      "kind": "quest_chain",
+      "loot_type": null,
+      "name": "Harbinger of Madness",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Harbinger_of_Madness"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": null,
+  "wiki_url": "https://ddowiki.com/page/Item:Beholder_Plate_Armor"
+}

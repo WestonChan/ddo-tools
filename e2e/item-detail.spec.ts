@@ -1,4 +1,74 @@
 import { expect, test } from '@playwright/test'
+import capturedRing from '../src/features/resources/queries/fixtures/item487.json' with { type: 'json' }
+
+test('opening an augment socket leaves every fact in its original position', async ({ page }) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response =
+      path === '/v1/items/487'
+        ? capturedRing
+        : path === '/v1/items'
+          ? {
+              total: 1,
+              limit: 200,
+              offset: 0,
+              items: [
+                {
+                  id: capturedRing.id,
+                  name: capturedRing.name,
+                  slot: capturedRing.slot,
+                  category: capturedRing.category,
+                  item_type: capturedRing.item_type,
+                  minimum_level: capturedRing.minimum_level,
+                  enhancement_bonus: capturedRing.enhancement_bonus,
+                  icon: capturedRing.icon,
+                  pack: null,
+                  is_raid: false,
+                  is_rare: false,
+                  is_legacy: capturedRing.is_legacy,
+                },
+              ],
+            }
+          : path === '/v1/augments'
+            ? { total: 0, limit: 200, offset: 0, augments: [] }
+            : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.goto('/resources/items/487')
+  const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
+  const facts = detailPane.locator('.detail-card__facts')
+  await expect(facts.getByRole('button', { name: 'Yellow', exact: true })).toBeVisible()
+  const factPositions = (): Promise<
+    Array<{ label: string | null | undefined; offsetTop: number; offsetLeft: number }>
+  > =>
+    facts.evaluate((grid) =>
+      Array.from(grid.children).map((fact) => ({
+        label: fact.querySelector('.section-label')?.textContent,
+        offsetTop: (fact as HTMLElement).offsetTop,
+        offsetLeft: (fact as HTMLElement).offsetLeft,
+      })),
+    )
+  await page.evaluate(() => document.fonts.ready)
+  const closedPositions = await factPositions()
+  await facts.getByRole('button', { name: 'Yellow', exact: true }).click()
+  const ledger = detailPane.locator('.resources-augment-candidates')
+  await expect(ledger).toBeVisible()
+  await expect(ledger.locator('.resources-augment-candidates__heading')).toHaveText(
+    'Yellow socket · 0 augments',
+  )
+  expect(await facts.evaluate((grid) => grid.nextElementSibling?.className)).toBe(
+    'resources-augment-candidates',
+  )
+  expect(await factPositions()).toEqual(closedPositions)
+  await facts.getByRole('button', { name: 'Yellow', exact: true }).click()
+  await expect(ledger).toHaveCount(0)
+  expect(await factPositions()).toEqual(closedPositions)
+})
 
 test('the detail pane displays the item name once beside the list and takes over at 375px', async ({
   page,

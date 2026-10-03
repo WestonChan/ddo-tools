@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
 import capturedItem from './fixtures/item7631.json'
 import capturedWeapon from './fixtures/item3479.json'
+import capturedShield from './fixtures/item8203.json'
 import capturedAugment from './fixtures/augment1902.json'
 import {
   fetchAdventurePackNames,
@@ -248,6 +249,18 @@ describe('mappers', () => {
       criticalThreatRange: 2,
       criticalMultiplier: 2,
       damageReductionBypasses: ['Chaotic', 'Evil', 'Good', 'Lawful', 'Magic', 'Slash'],
+    })
+  })
+
+  it('maps a captured shield with both armor and weapon blocks as a shield', () => {
+    const item = toItem(capturedShield as ApiItemDetail)
+    expect(item.category).toBe('Shield')
+    expect(item.weaponStats).toMatchObject({ weaponType: 'Tower Shield' })
+    expect(item.armorStats).toMatchObject({
+      armorType: 'Shield',
+      shieldBonus: 17,
+      maximumDexterityBonus: 2,
+      damageReduction: 13,
     })
   })
 

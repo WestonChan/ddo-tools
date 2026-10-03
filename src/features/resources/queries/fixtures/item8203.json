@@ -1,0 +1,148 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": "end chest",
+      "id": 2,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Magic of Myth Drannor",
+      "wiki_url": "https://ddowiki.com/page/Magic_of_Myth_Drannor"
+    }
+  ],
+  "armor": {
+    "adamantine_body": null,
+    "arcane_spell_failure": 50,
+    "armor_bonus": null,
+    "armor_check_penalty": -9,
+    "armor_type": "Shield",
+    "damage_reduction": 13,
+    "max_dex_bonus": 2,
+    "mithral_body": null,
+    "shield_bonus": 17
+  },
+  "augment_slots": [
+    {
+      "family": "standard",
+      "label": "red",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 9,
+      "sort_order": 0,
+      "variant": "red"
+    }
+  ],
+  "bonuses": [
+    {
+      "bonus_type": "Insight",
+      "description": "Insight Incite 27%: 27% Insight bonus to increased threat generation from melee damage",
+      "id": 2746,
+      "name": "Melee Threat Generation +27",
+      "stat": "Melee Threat Generation",
+      "stat_category": "martial",
+      "value": 27,
+      "value2": null
+    },
+    {
+      "bonus_type": "Primal",
+      "description": "Primal Rough Hide 7: This item fuses with your body and toughens your skin, providing a 7 Primal bonus to your natural armor.",
+      "id": 1284,
+      "name": "Armor Class +7",
+      "stat": "Armor Class",
+      "stat_category": "defensive",
+      "value": 7,
+      "value2": null
+    },
+    {
+      "bonus_type": "Profane",
+      "description": "Profane Lifeforce 23: 23 Profane bonus to Hit Points.",
+      "id": 2631,
+      "name": "Hit Points +23",
+      "stat": "Hit Points",
+      "stat_category": "martial",
+      "value": 23,
+      "value2": null
+    }
+  ],
+  "category": "Shield",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "Wild magic has imbued entropy into this shield over the years.",
+  "drop_location": "Portal to Below, end chest",
+  "effects": [
+    {
+      "description": "Legendary Conditioning %v1%: You have a %v1% %b1 bonus to Maximum Hit Points.",
+      "id": 149,
+      "name": "Legendary Conditioning",
+      "target": null,
+      "value": 20
+    }
+  ],
+  "enhancement_bonus": 5,
+  "events": [],
+  "icon": "Shield_2",
+  "id": 8203,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": "Tower Shield",
+  "material": "Steel",
+  "minimum_level": 13,
+  "modifiers": [],
+  "name": "Tower Shield of the Fallen Age",
+  "quest_chains": [],
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": ["normal", "hard", "elite", "reaper"],
+      "epic_level": 35,
+      "id": 367,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 13,
+      "loot_type": "chest",
+      "name": "Portal to Below",
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Off Hand",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 367,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "Portal to Below",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Portal_to_Below"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": {
+    "attack_modifier": "Strength",
+    "base_dice_bonus": null,
+    "base_dice_count": 1,
+    "base_dice_sides": 12,
+    "critical": "19-20 / x3",
+    "critical_multiplier": 3,
+    "critical_threat_range": 2,
+    "damage": "1.6[1d12] + 5 Bludgeon, Magic",
+    "damage_modifier": "Strength",
+    "damage_multiplier": 1.6,
+    "dr_bypass": ["Bludgeon", "Magic"],
+    "handedness": "Off-hand",
+    "proficiency": null,
+    "weapon_type": "Tower Shield"
+  },
+  "wiki_url": "https://ddowiki.com/page/Item:Tower_Shield_of_the_Fallen_Age"
+}

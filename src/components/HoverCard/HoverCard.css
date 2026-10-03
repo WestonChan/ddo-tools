@@ -2,7 +2,7 @@
   position: fixed;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-2-5);
   width: min(300px, calc(100vw - 16px));
   max-height: 70vh;
   overflow: auto;
@@ -22,9 +22,18 @@
 .hover-card--hint {
   width: max-content;
   max-width: min(260px, calc(100vw - 16px));
-  padding: var(--space-1-5) var(--space-2);
+  gap: 0;
+  padding: var(--space-1-5) calc(var(--space-2) + var(--space-px));
   color: var(--text-body);
-  font-size: var(--fs-body-sm);
+  font-size: var(--fs-hover-copy);
+}
+
+.hover-card[data-hover-card] .hover-card-row {
+  min-height: var(--space-7);
+  padding: var(--space-0-5) var(--space-1);
+  column-gap: var(--space-2-5);
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: var(--fs-hover-copy);
 }
 
 .hover-card__status {

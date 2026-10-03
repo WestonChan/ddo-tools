@@ -111,8 +111,11 @@
   --fs-h1: 26px;
   --fs-h2: 20px;
   --fs-h3: 16px;
+  --fs-hover-title: 15px;
   --fs-body: 14px;
   --fs-body-sm: 13px;
+  --fs-hover-copy: 12.5px;
+  --fs-detail-numeric: 12.5px;
   --fs-label: 12px;
   --fs-micro: 11px;
   --fs-stat-lg: 30px;

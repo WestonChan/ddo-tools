@@ -78,6 +78,7 @@ export function AugmentHoverContent({ augmentId }: { augmentId: number }): JSX.E
               label={bonus.statName}
               value={value}
               tag={bonus.bonusType}
+              className="hover-card-row"
             />
           )
         )
@@ -85,7 +86,15 @@ export function AugmentHoverContent({ augmentId }: { augmentId: number }): JSX.E
       {augment.modifiers.flatMap((modifier) => {
         const damage = damageExpression(modifier)
         return damage
-          ? [<DetailValueRow key={modifier.id} label="Damage" value={damage} tone="damage" />]
+          ? [
+              <DetailValueRow
+                key={modifier.id}
+                label="Damage"
+                value={damage}
+                tone="damage"
+                className="hover-card-row"
+              />,
+            ]
           : []
       })}
       {(augment.effectDescription || augment.description) && (
@@ -174,7 +183,7 @@ function LinkedItemRow({
   return (
     <button
       type="button"
-      className="resources-hover-row"
+      className="resources-hover-row hover-card-row"
       onClick={() => onOpenItem(id, name)}
       {...anchor}
     >
@@ -288,7 +297,7 @@ function LoadedSourceCard({
         <DetailCardSection heading="Quests">
           <div className="resources-hover-rows">
             {source.quests.slice(0, 5).map((quest) => (
-              <div key={quest.id} className="resources-hover-row">
+              <div key={quest.id} className="resources-hover-row hover-card-row">
                 <QuestHoverAnchor questId={quest.id} onOpenItem={onOpenItem}>
                   {quest.name}
                 </QuestHoverAnchor>
@@ -315,7 +324,7 @@ function LoadedSourceCard({
         <DetailCardSection heading="Recipes">
           <div className="resources-hover-rows">
             {source.recipes.slice(0, 5).map((recipe, index) => (
-              <div key={`${recipe.name}-${index}`} className="resources-hover-row">
+              <div key={`${recipe.name}-${index}`} className="resources-hover-row hover-card-row">
                 <span>{recipe.name}</span>
                 <span>{recipe.outputs.join(' · ')}</span>
               </div>
@@ -448,7 +457,7 @@ export function SetHoverContent({
       <DetailCardSection heading="Set bonuses">
         {set.tiers.map((tier) => (
           <div key={tier.equippedCount}>
-            <div className="resources-set-tier">
+            <div className="resources-set-tier hover-card-row">
               <span>{tier.equippedCount} pieces</span>
               {tier.description && <span>{tier.description}</span>}
             </div>
@@ -488,7 +497,7 @@ function SetBonusRow({
     ),
   })
   return (
-    <div className="resources-hover-row" tabIndex={0} {...anchor}>
+    <div className="resources-hover-row hover-card-row" tabIndex={0} {...anchor}>
       <span>{name}</span>
       <span>{type}</span>
     </div>

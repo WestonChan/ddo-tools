@@ -1,0 +1,129 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": "end chest",
+      "id": 34,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Mists of Ravenloft",
+      "wiki_url": "https://ddowiki.com/page/Mists_of_Ravenloft"
+    }
+  ],
+  "armor": null,
+  "augment_slots": [
+    {
+      "family": "standard",
+      "label": "yellow",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 7,
+      "sort_order": 0,
+      "variant": "yellow"
+    }
+  ],
+  "bonuses": [
+    {
+      "bonus_type": "Equipment",
+      "description": "Equipment Abjuration Focus 4: 4 Equipment bonus to the DC of Abjuration spells.",
+      "id": 632,
+      "name": "Abjuration Spell Focus +4",
+      "stat": "Abjuration Spell Focus",
+      "stat_category": "magical",
+      "value": 4,
+      "value2": null
+    },
+    {
+      "bonus_type": "Insight",
+      "description": "Insight Abjuration Focus 2: 2 Insight bonus to the DC of Abjuration spells.",
+      "id": 633,
+      "name": "Abjuration Spell Focus +2",
+      "stat": "Abjuration Spell Focus",
+      "stat_category": "magical",
+      "value": 2,
+      "value2": null
+    },
+    {
+      "bonus_type": "Enhancement",
+      "description": "Enhancement Wizardry 112: Passive: 112 Enhancement Bonus to Spell Points. If you have Sorcerer or Favored Soul levels, you gain additional spell points proportionate to the ratio of those levels to other heroic classes.",
+      "id": 634,
+      "name": "Spell Points +112",
+      "stat": "Spell Points",
+      "stat_category": "magical",
+      "value": 112,
+      "value2": null
+    },
+    {
+      "bonus_type": "Equipment",
+      "description": "Equipment Spell Penetration 4: Passive: 4 Equipment bonus to Spell Penetration checks.",
+      "id": 635,
+      "name": "Spell Penetration +4",
+      "stat": "Spell Penetration",
+      "stat_category": "magical",
+      "value": 4,
+      "value2": null
+    }
+  ],
+  "category": "Jewelry",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "A strange force pushes away from this ring when it is brought near a metal.",
+  "drop_location": "Mad Tea Party, End chest",
+  "effects": [],
+  "enhancement_bonus": null,
+  "events": [],
+  "icon": "Ring_5",
+  "id": 487,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": null,
+  "material": "Steel",
+  "minimum_level": 10,
+  "modifiers": [],
+  "name": "Adversion",
+  "quest_chains": [],
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": ["normal", "hard", "elite", "reaper"],
+      "epic_level": 31,
+      "id": 301,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 11,
+      "loot_type": "chest",
+      "name": "Mad Tea Party",
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": {
+    "icon": "AdherentOfTheMists",
+    "id": 93,
+    "name": "Adherent of the Mists Set (Heroic)"
+  },
+  "set_name": "Adherent of the Mists Set (Heroic)",
+  "slot": "Ring",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 301,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "Mad Tea Party",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Mad_Tea_Party"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": null,
+  "wiki_url": "https://ddowiki.com/page/Item:Adversion"
+}

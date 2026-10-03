@@ -268,13 +268,24 @@ function EnchantmentHoverContent({
     <>
       <strong className="resources-hover-title">{row.name}</strong>
       {row.hoverValue && itemName && (
-        <DetailValueRow label={`From ${itemName}`} value={row.hoverValue} tag={row.type} />
+        <DetailValueRow
+          label={`From ${itemName}`}
+          value={row.hoverValue}
+          tag={row.type}
+          className="hover-card-row"
+        />
       )}
       {!row.hoverValue && row.type && (
         <span className="resources-hover-fact">Type · {row.type}</span>
       )}
       {matchingDamageExpressions(row, modifiers).map((damage, index) => (
-        <DetailValueRow key={`${damage}-${index}`} label="Damage" value={damage} tone="damage" />
+        <DetailValueRow
+          key={`${damage}-${index}`}
+          label="Damage"
+          value={damage}
+          tone="damage"
+          className="hover-card-row"
+        />
       ))}
       {row.description && <p className="resources-hover-definition">{row.description}</p>}
     </>
@@ -298,9 +309,14 @@ function EnchantmentHoverRow({
   return (
     <div className="resources-hover-enchantment-row" tabIndex={0} {...anchor}>
       {row.hoverValue ? (
-        <DetailValueRow label={row.name} value={row.hoverValue} tag={row.type} />
+        <DetailValueRow
+          label={row.name}
+          value={row.hoverValue}
+          tag={row.type}
+          className="hover-card-row"
+        />
       ) : (
-        <div className="resources-hover-row">
+        <div className="resources-hover-row hover-card-row">
           <span>{row.name}</span>
           <span>{row.type}</span>
         </div>

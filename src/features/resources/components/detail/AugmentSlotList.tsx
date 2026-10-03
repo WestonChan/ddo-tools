@@ -1,4 +1,4 @@
-import { useId, useState, type JSX } from 'react'
+import type { JSX } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { LedgerTable, type LedgerColumn } from '../../../../components'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
@@ -8,6 +8,10 @@ import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 
 interface AugmentSlotListProps {
   augmentSlots: ItemAugmentSlot[]
+  expandedSlotSortOrder: number | null
+  ledgerId: string
+  onToggleSlot: (sortOrder: number) => void
+  onClose: () => void
 }
 
 const AUGMENT_COLUMNS: LedgerColumn<AugmentSummary>[] = [
@@ -40,13 +44,13 @@ const AUGMENT_COLUMNS: LedgerColumn<AugmentSummary>[] = [
   },
 ]
 
-export function AugmentSlotList({ augmentSlots }: AugmentSlotListProps): JSX.Element {
-  const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
-  const tableId = useId()
-  const expandedSlot = augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
-  const fittingAugmentsQuery = useFittingAugmentsBySlotLabel(expandedSlot?.label ?? null)
-  const fittingAugments = fittingAugmentsQuery.data ?? []
-
+export function AugmentSlotList({
+  augmentSlots,
+  expandedSlotSortOrder,
+  ledgerId,
+  onToggleSlot,
+  onClose,
+}: AugmentSlotListProps): JSX.Element {
   return (
     <div
       className="resources-augment-slots"
@@ -55,7 +59,7 @@ export function AugmentSlotList({ augmentSlots }: AugmentSlotListProps): JSX.Ele
           return
         event.preventDefault()
         event.stopPropagation()
-        setExpandedSlotSortOrder(null)
+        onClose()
       }}
     >
       <ul className="resources-augment-list">
@@ -68,8 +72,8 @@ export function AugmentSlotList({ augmentSlots }: AugmentSlotListProps): JSX.Ele
                 type="button"
                 className="resources-augment-pill resources-augment-control hoverable"
                 aria-expanded={isExpanded}
-                aria-controls={isExpanded ? tableId : undefined}
-                onClick={() => setExpandedSlotSortOrder(isExpanded ? null : slot.sortOrder)}
+                aria-controls={isExpanded ? ledgerId : undefined}
+                onClick={() => onToggleSlot(slot.sortOrder)}
               >
                 {slot.family === 'standard' && (
                   <span className="resources-augment-gem" aria-hidden />
@@ -81,32 +85,59 @@ export function AugmentSlotList({ augmentSlots }: AugmentSlotListProps): JSX.Ele
           )
         })}
       </ul>
-      {expandedSlot && (
-        <div id={tableId} className="resources-augment-candidates">
-          <LedgerTable
-            columns={AUGMENT_COLUMNS}
-            rowCount={fittingAugments.length}
-            rowAt={(index) => fittingAugments[index]}
-            rowKey={(augment) => augment.id}
-            onRowActivate={() => {}}
-            isVirtualized={false}
-            isDense
-            label={`Augments that fit the ${titleCasedSlotLabel(expandedSlot.label)} slot`}
-            emptyState={
-              fittingAugmentsQuery.isPending
-                ? 'Loading augments…'
-                : fittingAugmentsQuery.error
-                  ? 'Could not load augments'
-                  : 'No augments found'
-            }
-            hoverCard={(augment) => ({
-              kind: 'augment',
-              delayMs: 120,
-              render: () => <AugmentHoverContent augmentId={augment.id} />,
-            })}
-          />
-        </div>
-      )}
     </div>
+  )
+}
+
+export function AugmentCandidateLedger({
+  slot,
+  ledgerId,
+  onClose,
+}: {
+  slot: ItemAugmentSlot
+  ledgerId: string
+  onClose: () => void
+}): JSX.Element {
+  const fittingAugmentsQuery = useFittingAugmentsBySlotLabel(slot.label)
+  const fittingAugments = fittingAugmentsQuery.data ?? []
+  const socketName = titleCasedSlotLabel(slot.label)
+  return (
+    <section
+      id={ledgerId}
+      className="resources-augment-candidates"
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || event.defaultPrevented) return
+        event.preventDefault()
+        event.stopPropagation()
+        onClose()
+      }}
+    >
+      <h3 className="section-label resources-augment-candidates__heading">
+        {socketName} socket · {fittingAugments.length}{' '}
+        {fittingAugments.length === 1 ? 'augment' : 'augments'}
+      </h3>
+      <LedgerTable
+        columns={AUGMENT_COLUMNS}
+        rowCount={fittingAugments.length}
+        rowAt={(index) => fittingAugments[index]}
+        rowKey={(augment) => augment.id}
+        onRowActivate={() => {}}
+        isVirtualized={false}
+        isDense
+        label={`Augments that fit the ${socketName} slot`}
+        emptyState={
+          fittingAugmentsQuery.isPending
+            ? 'Loading augments…'
+            : fittingAugmentsQuery.error
+              ? 'Could not load augments'
+              : 'No augments found'
+        }
+        hoverCard={(augment) => ({
+          kind: 'augment',
+          delayMs: 120,
+          render: () => <AugmentHoverContent augmentId={augment.id} />,
+        })}
+      />
+    </section>
   )
 }

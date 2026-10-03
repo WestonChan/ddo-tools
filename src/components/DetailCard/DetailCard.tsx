@@ -4,11 +4,13 @@ import './DetailCard.css'
 export function DetailCard({
   header,
   facts,
+  afterFacts,
   children,
   variant = 'pane',
 }: {
   header: ReactNode
   facts?: ReactNode
+  afterFacts?: ReactNode
   children: ReactNode
   variant?: 'pane' | 'hover'
 }): JSX.Element {
@@ -16,6 +18,7 @@ export function DetailCard({
     <article className={`detail-card detail-card--${variant}`}>
       {header}
       {facts && <div className="detail-card__facts">{facts}</div>}
+      {afterFacts}
       <div className="detail-card__body">{children}</div>
     </article>
   )
