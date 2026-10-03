@@ -15,7 +15,6 @@ export function DetailValueRow({
   type,
   typePresentation = 'plain',
   tone = 'accent',
-  layout = 'inline',
   isNumeric = true,
   className,
 }: {
@@ -24,16 +23,11 @@ export function DetailValueRow({
   type?: string | null
   typePresentation?: 'plain' | 'tag'
   tone?: 'accent' | 'damage'
-  layout?: 'inline' | 'ledger'
   isNumeric?: boolean
   className?: string
 }): JSX.Element {
   return (
-    <div
-      className={`detail-value-row${className ? ` ${className}` : ''}`}
-      data-tone={tone}
-      data-layout={layout}
-    >
+    <div className={`detail-value-row${className ? ` ${className}` : ''}`} data-tone={tone}>
       <span className="detail-value-row__label">{label}</span>
       {type && typePresentation === 'plain' && (
         <span className="detail-value-row__type">{type}</span>

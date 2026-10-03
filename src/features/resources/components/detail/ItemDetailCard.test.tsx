@@ -110,26 +110,29 @@ function weaponItem(weaponOverrides: Partial<ApiWeaponStats> = {}): Item {
   })
 }
 
-function detailRowText(container: HTMLElement): Array<string | null> {
-  return Array.from(container.querySelectorAll('.resources-item-details .detail-value-row')).map(
-    (row) => row.textContent,
-  )
+function detailStatText(container: HTMLElement): Array<string | null> {
+  return Array.from(
+    container.querySelectorAll('.detail-fact-grid__cell, .detail-extras__entry'),
+  ).map((stat) => stat.textContent)
 }
 
 describe('ItemDetailCard details', () => {
   it('keeps a weapon’s primary rows above one toggle and reveals its attributes and extras', async () => {
     const { container } = renderItemDetailCard(weaponItem())
-    expect(detailRowText(container)).toEqual([
+    expect(detailStatText(container)).toEqual([
       'Damage1.6[2d6]+5',
       'Crit range19–20',
       'Crit multiplier×2',
+      'Enhancement+5',
     ])
+    expect(container.querySelectorAll('.detail-fact-grid__cell')).toHaveLength(4)
+    expect(container.querySelector('.detail-extras')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Weapon' })).toBeNull()
     expect(container.querySelector('.resources-kv-grid')).toBeNull()
     expect(screen.queryByText('Material')).toBeNull()
     const button = screen.getByRole('button', { name: 'More weapon details' })
     expect(button).toHaveAttribute('aria-expanded', 'false')
-    expect(button.parentElement?.previousElementSibling).toHaveTextContent('Crit multiplier×2')
+    expect(button.parentElement?.previousElementSibling).toHaveClass('detail-fact-grid')
     expect(
       container
         .querySelector('.resources-detail-description')!
@@ -144,7 +147,7 @@ describe('ItemDetailCard details', () => {
     ).toBeTruthy()
     await userEvent.click(button)
     expect(screen.getByRole('button', { name: 'Less' })).toHaveAttribute('aria-expanded', 'true')
-    expect(detailRowText(container)).toEqual([
+    expect(detailStatText(container)).toEqual([
       'Damage1.6[2d6]+5',
       'Crit range19–20',
       'Crit multiplier×2',
@@ -153,18 +156,27 @@ describe('ItemDetailCard details', () => {
       'ProficiencyMartial',
       'HandednessTwo-handed',
       'MaterialSteel',
-      'Damage reduction bypassesChaotic, Evil, Good, Lawful, Magic, Slash',
+      'BypassesChaotic',
+      'BypassesEvil',
+      'BypassesGood',
+      'BypassesLawful',
+      'BypassesMagic',
+      'BypassesSlash',
     ])
+    expect(container.querySelector('.detail-extras')).not.toBeNull()
+    expect(container.querySelectorAll('.detail-extras__entry')).toHaveLength(10)
+    expect(container.querySelector('.detail-extras')).not.toHaveAttribute('data-layout')
+    expect(container.querySelector('.detail-extras')).not.toHaveTextContent('Enhancement')
     expect(screen.getAllByText('Material')).toHaveLength(1)
     expect(screen.queryByText('Damage type')).toBeNull()
     const values = Array.from(
-      container.querySelectorAll('.resources-item-details .detail-value-row__value'),
+      container.querySelectorAll('.detail-fact-grid__value, .detail-extras__value'),
     )
     expect(values.slice(0, 4).every((value) => value.classList.contains('num'))).toBe(true)
     expect(values.slice(4).every((value) => !value.classList.contains('num'))).toBe(true)
     await userEvent.click(screen.getByRole('button', { name: 'Less' }))
     expect(screen.queryByText('Proficiency')).toBeNull()
-    expect(detailRowText(container)).toHaveLength(3)
+    expect(detailStatText(container)).toHaveLength(4)
     expect(button).toHaveAttribute('aria-expanded', 'false')
   })
 
@@ -173,10 +185,11 @@ describe('ItemDetailCard details', () => {
     expect(container.querySelector('.resources-kv-grid')).toBeNull()
     expect(container.querySelector('.resources-stat-list')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Armor' })).toBeNull()
-    expect(detailRowText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1'])
+    expect(detailStatText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1', 'Enhancement+5'])
+    expect(container.querySelectorAll('.detail-fact-grid__cell')).toHaveLength(3)
     expect(screen.getByText('Gear slot')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'More armor details' }))
-    expect(detailRowText(container)).toEqual([
+    expect(detailStatText(container)).toEqual([
       'Armor bonus16',
       'Max Dex bonus1',
       'Enhancement+5',
@@ -187,7 +200,7 @@ describe('ItemDetailCard details', () => {
     expect(screen.queryByText('Shield bonus')).toBeNull()
     expect(screen.queryByText('Damage reduction')).toBeNull()
     const values = Array.from(
-      container.querySelectorAll('.resources-item-details .detail-value-row__value'),
+      container.querySelectorAll('.detail-fact-grid__value, .detail-extras__value'),
     )
     expect(values.map((value) => value.classList.contains('num'))).toEqual([
       true,
@@ -207,7 +220,7 @@ describe('ItemDetailCard details', () => {
     })
     const { container } = renderItemDetailCard(item)
     await userEvent.click(screen.getByRole('button', { name: 'More armor details' }))
-    expect(detailRowText(container)).toContain('Damage reduction5')
+    expect(detailStatText(container)).toContain('Damage reduction5')
   })
 
   it('keeps an unsplittable critical in one row and omits blank stats', async () => {
@@ -222,9 +235,9 @@ describe('ItemDetailCard details', () => {
         dr_bypass: [],
       }),
     )
-    expect(detailRowText(container)).toEqual(['Criticalspecial critical'])
+    expect(detailStatText(container)).toEqual(['Criticalspecial critical', 'Enhancement+5'])
     await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
-    expect(screen.queryByText('Damage reduction bypasses')).toBeNull()
+    expect(screen.queryByText('Bypasses')).toBeNull()
   })
 
   it('uses numeric dice, bonus and threat range in place of descriptive strings', () => {
@@ -236,10 +249,11 @@ describe('ItemDetailCard details', () => {
         critical: 'unparseable',
       }),
     )
-    expect(detailRowText(container)).toEqual([
+    expect(detailStatText(container)).toEqual([
       'Damage1.6[2d6]+10',
       'Crit range15–20',
       'Crit multiplier×2',
+      'Enhancement+5',
     ])
   })
 
@@ -252,7 +266,12 @@ describe('ItemDetailCard details', () => {
         critical_multiplier: 4,
       }),
     )
-    expect(detailRowText(container)).toEqual(['Damage2d6+5', 'Crit range20', 'Crit multiplier×4'])
+    expect(detailStatText(container)).toEqual([
+      'Damage2d6+5',
+      'Crit range20',
+      'Crit multiplier×4',
+      'Enhancement+5',
+    ])
   })
 
   it('falls back to the critical string when numeric critical fields are null', () => {
@@ -265,22 +284,32 @@ describe('ItemDetailCard details', () => {
         critical: '18-20/x3',
       }),
     )
-    expect(detailRowText(container)).toEqual(['Crit range18–20', 'Crit multiplier×3'])
+    expect(detailStatText(container)).toEqual([
+      'Crit range18–20',
+      'Crit multiplier×3',
+      'Enhancement+5',
+    ])
   })
 
-  it('shows a rune arm’s extra rows only after expanding and no rows in hover', async () => {
+  it('shows a rune arm’s extras after expanding without an empty primary grid', async () => {
     const item = toItem(capturedRuneArm as ApiItemDetail)
     const { container, rerender } = renderItemDetailCard(item)
-    expect(detailRowText(container)).toEqual([])
+    expect(detailStatText(container)).toEqual([])
+    expect(container.querySelector('.detail-fact-grid')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
-    expect(detailRowText(container)).toEqual([
+    expect(detailStatText(container)).toEqual([
       'TypeRune Arm',
       'HandednessOff-hand',
       'MaterialForce',
     ])
+    rerender(<></>)
     rerender(<ItemDetailCard item={item} variant="hover" />)
-    expect(detailRowText(container)).toEqual([])
-    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
+    expect(detailStatText(container)).toEqual([])
+    expect(container.querySelector('.detail-fact-grid')).toBeNull()
+    expect(screen.getByRole('button', { name: 'More weapon details' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
   })
 
   it('shows only a toggle for a ring with an attribute row', async () => {
@@ -288,16 +317,25 @@ describe('ItemDetailCard details', () => {
     expect(container.querySelector('.detail-card__header .section-label')).toHaveTextContent(
       'Jewelry',
     )
-    expect(detailRowText(container)).toEqual([])
+    expect(detailStatText(container)).toEqual([])
+    expect(container.querySelector('.detail-fact-grid')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'More details' }))
-    expect(detailRowText(container)).toEqual(['MaterialSteel'])
+    expect(detailStatText(container)).toEqual(['MaterialSteel'])
   })
 
-  it('reveals enhancement and material together when a ring has both', async () => {
+  it('shows a ring’s enhancement as its only primary cell and keeps material in extras', async () => {
     const item = toItem({ ...(capturedRing as ApiItemDetail), enhancement_bonus: 2 })
     const { container } = renderItemDetailCard(item)
+    expect(detailStatText(container)).toEqual(['Enhancement+2'])
+    expect(container.querySelectorAll('.detail-fact-grid__cell')).toHaveLength(1)
     await userEvent.click(screen.getByRole('button', { name: 'More details' }))
-    expect(detailRowText(container)).toEqual(['Enhancement+2', 'MaterialSteel'])
+    expect(detailStatText(container)).toEqual(['Enhancement+2', 'MaterialSteel'])
+  })
+
+  it('keeps a zero enhancement as a primary cell', async () => {
+    const item = toItem({ ...(capturedRing as ApiItemDetail), enhancement_bonus: 0 })
+    const { container } = renderItemDetailCard(item)
+    expect(detailStatText(container)).toEqual(['Enhancement0'])
   })
 
   it('keeps every header fact in place when its socket opens and puts the ledger below the header', async () => {
@@ -362,11 +400,12 @@ describe('ItemDetailCard details', () => {
     expect(container.querySelector('.resources-detail-body')).not.toHaveClass(
       'resources-detail-body--weapon',
     )
-    expect(detailRowText(container)).toEqual(['Shield bonus17', 'Max Dex bonus2'])
+    expect(detailStatText(container)).toEqual(['Shield bonus17', 'Max Dex bonus2', 'Enhancement+5'])
+    expect(container.querySelectorAll('.detail-fact-grid__cell')).toHaveLength(3)
     expect(screen.queryByText('Damage')).toBeNull()
     expect(screen.queryByText('Crit range')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'More shield details' }))
-    expect(detailRowText(container)).toEqual([
+    expect(detailStatText(container)).toEqual([
       'Shield bonus17',
       'Max Dex bonus2',
       'Enhancement+5',
@@ -375,19 +414,26 @@ describe('ItemDetailCard details', () => {
       'Damage reduction13',
       'MaterialSteel',
     ])
+    rerender(<></>)
     rerender(<ItemDetailCard item={item} variant="hover" />)
-    expect(detailRowText(container)).toEqual(['Shield bonus17', 'Max Dex bonus2'])
-    expect(screen.queryByRole('button', { name: 'More shield details' })).toBeNull()
+    expect(detailStatText(container)).toEqual(['Shield bonus17', 'Max Dex bonus2', 'Enhancement+5'])
+    expect(screen.getByRole('button', { name: 'More shield details' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
     expect(container.querySelector('.resources-detail-description')).toBeNull()
   })
 
-  it('shows armor primary rows without description or a toggle in hover', () => {
+  it('shows armor primary cells without description and leaves extras collapsed in hover', () => {
     const { container } = render(
       <ItemDetailCard item={toItem(capturedArmor as ApiItemDetail)} variant="hover" />,
     )
-    expect(detailRowText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1'])
+    expect(detailStatText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1', 'Enhancement+5'])
     expect(container.querySelector('.resources-detail-description')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'More armor details' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'More armor details' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
   })
 
   it('shows no toggle when an item has no details to reveal', () => {
@@ -396,15 +442,39 @@ describe('ItemDetailCard details', () => {
     expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()
   })
 
-  it('gives weapon values and enchantment values the same hover row rhythm', () => {
+  it('uses the fact grid for weapon stats and keeps enchantment rows in hover', () => {
     const { container, rerender } = render(<ItemDetailCard item={weaponItem()} variant="hover" />)
-    expect(container.querySelector('.resources-item-details .detail-value-row')).toHaveClass(
-      'hover-card-row',
-    )
+    expect(container.querySelector('.resources-item-details .detail-fact-grid')).not.toBeNull()
     rerender(<ItemDetailCard item={toItem(capturedNecklace as ApiItemDetail)} variant="hover" />)
     expect(
       container.querySelector('.resources-hover-enchantment-row .detail-value-row'),
     ).toHaveClass('hover-card-row')
+  })
+
+  it('uses the same tags and ordering for pane and hover extras', async () => {
+    const item = weaponItem()
+    const pane = render(<ItemDetailCard item={item} />)
+    await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
+    expect(pane.container.querySelector('.detail-extras')).not.toBeNull()
+    expect(detailStatText(pane.container).slice(4)).toEqual([
+      'TypeGreat Sword',
+      'ProficiencyMartial',
+      'HandednessTwo-handed',
+      'MaterialSteel',
+      'BypassesChaotic',
+      'BypassesEvil',
+      'BypassesGood',
+      'BypassesLawful',
+      'BypassesMagic',
+      'BypassesSlash',
+    ])
+    const paneExtraText = detailStatText(pane.container).slice(4)
+    pane.unmount()
+    const hover = render(<ItemDetailCard item={item} variant="hover" />)
+    expect(hover.container.querySelectorAll('.detail-fact-grid__cell')).toHaveLength(4)
+    await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
+    expect(hover.container.querySelector('.detail-extras')).not.toBeNull()
+    expect(detailStatText(hover.container).slice(4)).toEqual(paneExtraText)
   })
 })
 
@@ -427,11 +497,14 @@ describe('ItemDetailCard drop locations', () => {
       screen.getByText("Delera's Tomb", { selector: '.resources-hover-anchor' }),
     ).toBeInTheDocument()
     expect(
-      Array.from(document.querySelectorAll('.resources-item-details .detail-value-row')).map(
-        (row) => row.textContent,
+      Array.from(document.querySelectorAll('.resources-item-details .detail-fact-grid__cell')).map(
+        (cell) => cell.textContent,
       ),
-    ).toEqual(['Damage1.6[2d6]+5', 'Crit range20', 'Crit multiplier×2'])
-    expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()
+    ).toEqual(['Damage1.6[2d6]+5', 'Crit range20', 'Crit multiplier×2', 'Enhancement+5'])
+    expect(screen.getByRole('button', { name: 'More weapon details' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
   })
   it('renders a wiki link icon next to each quest in Obtained from', () => {
     renderItemDetailCard({ ...plainItem, quests: [quest()] })
@@ -779,13 +852,12 @@ describe('ItemDetailCard sources beyond quests', () => {
 })
 
 describe('ItemDetailCard header attributes', () => {
-  it('reveals the enhancement bonus signed and keeps the set name in the facts', async () => {
+  it('shows the signed enhancement as a primary cell and keeps the set name in the header', () => {
     renderItemDetailCard({ ...plainItem, enhancementBonus: 5, setName: 'Adherent of the Mists' })
-    expect(screen.queryByText('Enhancement')).toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'More details' }))
     expect(screen.getByText('Enhancement')).toBeInTheDocument()
     expect(screen.getByText('+5')).toBeInTheDocument()
     expect(screen.getByText('Adherent of the Mists')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()
   })
 
   it('lists clickies with their description', () => {

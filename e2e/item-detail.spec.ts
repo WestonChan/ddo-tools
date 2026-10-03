@@ -67,6 +67,89 @@ test('search keyboard navigation scrolls a virtualized result into view and open
   await expect(page.locator('.ledger-row--keyboard-highlighted')).toHaveCount(0)
 })
 
+test('item detail fact cells and tags render in pane and hover', async ({ page }) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response =
+      path === '/v1/items/831'
+        ? capturedArmor
+        : path === '/v1/items'
+          ? {
+              total: 1,
+              limit: 200,
+              offset: 0,
+              items: [
+                {
+                  id: capturedArmor.id,
+                  name: capturedArmor.name,
+                  slot: capturedArmor.slot,
+                  category: capturedArmor.category,
+                  item_type: capturedArmor.item_type,
+                  minimum_level: capturedArmor.minimum_level,
+                  enhancement_bonus: capturedArmor.enhancement_bonus,
+                  icon: capturedArmor.icon,
+                  pack: null,
+                  is_raid: false,
+                  is_rare: false,
+                  is_legacy: capturedArmor.is_legacy,
+                },
+              ],
+            }
+          : path === '/v1/augments'
+            ? { total: 0, limit: 200, offset: 0, augments: [] }
+            : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.goto('/resources/items/831')
+  const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
+  const grid = detailPane.locator('.detail-fact-grid')
+  await expect(grid.locator('.detail-fact-grid__cell')).toHaveText([
+    'Armor bonus16',
+    'Max Dex bonus1',
+    'Enhancement+5',
+  ])
+  expect(
+    await grid.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return [style.display, style.columnGap, style.rowGap, style.padding]
+    }),
+  ).toEqual(['grid', '16px', '10px', '2px 12px 4px'])
+  await detailPane.getByRole('button', { name: 'More armor details', exact: true }).click()
+  const tags = detailPane.locator('.detail-extras')
+  await expect(tags.locator('.detail-extras__entry')).toHaveText([
+    'Arcane spell failure35%',
+    'Armor check penalty-5',
+    'MaterialMagesteel',
+  ])
+  await expect(tags).not.toHaveAttribute('data-layout')
+  expect(
+    await tags.evaluate((element) => {
+      const style = getComputedStyle(element)
+      return [style.display, style.flexWrap, style.gap]
+    }),
+  ).toEqual(['flex', 'wrap', '6px'])
+  const itemRow = page.getByRole('row', { name: /Beholder Plate Armor/ })
+  await itemRow.hover()
+  await itemRow.press('t')
+  const hoverCard = page.locator('[data-hover-card]')
+  await expect(hoverCard.locator('.detail-fact-grid__cell')).toHaveText([
+    'Armor bonus16',
+    'Max Dex bonus1',
+    'Enhancement+5',
+  ])
+  await hoverCard.getByRole('button', { name: 'More armor details', exact: true }).click()
+  await expect(hoverCard.locator('.detail-extras__entry')).toHaveText([
+    'Arcane spell failure35%',
+    'Armor check penalty-5',
+    'MaterialMagesteel',
+  ])
+})
+
 test('set band heights and opening an augment socket preserve the item detail layout', async ({
   page,
 }) => {

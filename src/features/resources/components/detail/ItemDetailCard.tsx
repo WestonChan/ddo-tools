@@ -5,9 +5,12 @@ import {
   DetailCardFooter,
   DetailCardSection,
   DetailFact,
+  DetailFactGrid,
+  DetailExtras,
   DetailMore,
   DetailValueRow,
   WikiLinkIcon,
+  type DetailStat,
 } from '../../../../components'
 import { DropTagChip } from '../DropTagChip'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
@@ -89,12 +92,6 @@ function ItemSourceRow({
   )
 }
 
-interface ItemDetailRow {
-  label: string
-  value: string | number
-  isNumeric: boolean
-}
-
 type ItemDetailKind = 'shield' | 'weapon' | 'armor' | 'other'
 
 function itemDetailKind(item: Item): ItemDetailKind {
@@ -105,8 +102,8 @@ function itemDetailKind(item: Item): ItemDetailKind {
   return 'other'
 }
 
-function toHeaderAttributes(item: Item): ItemDetailRow[] {
-  const attributes: ItemDetailRow[] = []
+function toItemAttributeStats(item: Item): DetailStat[] {
+  const attributes: DetailStat[] = []
   if (item.enhancementBonus !== null) {
     attributes.push({
       label: 'Enhancement',
@@ -120,11 +117,11 @@ function toHeaderAttributes(item: Item): ItemDetailRow[] {
   return attributes
 }
 
-function primaryWeaponRows(
+function toPrimaryWeaponStats(
   weaponStats: ItemWeaponStats,
   enhancementBonus: number | null,
-): ItemDetailRow[] {
-  const rows: ItemDetailRow[] = []
+): DetailStat[] {
+  const primaryStats: DetailStat[] = []
   const { baseDiceCount, baseDiceSides, baseDiceBonus, damageMultiplier } = weaponStats
   if (
     baseDiceCount !== null &&
@@ -139,7 +136,7 @@ function primaryWeaponRows(
       damageMultiplier !== null && damageMultiplier !== 1 ? `${damageMultiplier}[${dice}]` : dice
     const totalBonus = (baseDiceBonus ?? 0) + (enhancementBonus ?? 0)
     const bonus = totalBonus ? `${totalBonus > 0 ? '+' : ''}${totalBonus}` : ''
-    rows.push({ label: 'Damage', value: `${multipliedDice}${bonus}`, isNumeric: true })
+    primaryStats.push({ label: 'Damage', value: `${multipliedDice}${bonus}`, isNumeric: true })
   }
 
   const critical = weaponStats.critical?.trim()
@@ -162,16 +159,17 @@ function primaryWeaponRows(
     numericMultiplier !== null && Number.isInteger(numericMultiplier) && numericMultiplier > 0
       ? `${numericMultiplier}`
       : criticalParts?.[3]
-  if (range) rows.push({ label: 'Crit range', value: range, isNumeric: true })
-  if (multiplier) rows.push({ label: 'Crit multiplier', value: `×${multiplier}`, isNumeric: true })
+  if (range) primaryStats.push({ label: 'Crit range', value: range, isNumeric: true })
+  if (multiplier)
+    primaryStats.push({ label: 'Crit multiplier', value: `×${multiplier}`, isNumeric: true })
   if (!range && !multiplier && critical) {
-    rows.push({ label: 'Critical', value: critical, isNumeric: false })
+    primaryStats.push({ label: 'Critical', value: critical, isNumeric: false })
   }
-  return rows
+  return primaryStats
 }
 
-function extraWeaponRows(weaponStats: ItemWeaponStats): ItemDetailRow[] {
-  const rows: ItemDetailRow[] = []
+function toExtraWeaponStats(weaponStats: ItemWeaponStats): DetailStat[] {
+  const rows: DetailStat[] = []
   const details = [
     ['Type', weaponStats.weaponType],
     ['Proficiency', weaponStats.proficiency],
@@ -181,70 +179,52 @@ function extraWeaponRows(weaponStats: ItemWeaponStats): ItemDetailRow[] {
     const value = rawValue?.trim()
     if (value) rows.push({ label, value, isNumeric: false })
   }
-  const bypasses = weaponStats.damageReductionBypasses
-    .map((bypass) => bypass.trim())
-    .filter(Boolean)
-  if (bypasses.length)
-    rows.push({ label: 'Damage reduction bypasses', value: bypasses.join(', '), isNumeric: false })
   return rows
 }
 
-function ItemDetailRows({
-  item,
-  kind,
-  variant,
-}: {
-  item: Item
-  kind: ItemDetailKind
-  variant: 'pane' | 'hover'
-}): JSX.Element | null {
+function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): JSX.Element | null {
   const [isExpanded, setIsExpanded] = useState(false)
-  const attributes = toHeaderAttributes(item)
-  const enhancementRows = attributes.filter((row) => row.label === 'Enhancement')
-  const materialRows = attributes.filter((row) => row.label === 'Material')
-  const armorRows = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
+  const itemAttributes = toItemAttributeStats(item)
+  const enhancementStats = itemAttributes.filter((stat) => stat.label === 'Enhancement')
+  const materialStats = itemAttributes.filter((stat) => stat.label === 'Material')
+  const labeledArmorStats = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
   const isShield = kind === 'shield'
-  let primaryRows: ItemDetailRow[] = []
-  let extraRows: ItemDetailRow[] = attributes
+  let primaryStats: DetailStat[] = enhancementStats
+  let extraStats: DetailStat[] = itemAttributes.filter((stat) => stat.label !== 'Enhancement')
   let moreLabel = 'More details'
   if (kind === 'armor' || kind === 'shield') {
     const primaryLabels = isShield
       ? ['Shield bonus', 'Max Dex bonus']
       : ['Armor bonus', 'Max Dex bonus']
     const extraLabels = ['Arcane spell failure', 'Armor check penalty', 'Damage reduction']
-    primaryRows = primaryLabels.flatMap((label) => armorRows.filter((row) => row.label === label))
-    extraRows = [
-      ...enhancementRows,
-      ...extraLabels.flatMap((label) => armorRows.filter((row) => row.label === label)),
-      ...materialRows,
+    primaryStats = [
+      ...primaryLabels.flatMap((label) => labeledArmorStats.filter((stat) => stat.label === label)),
+      ...enhancementStats,
+    ]
+    extraStats = [
+      ...extraLabels.flatMap((label) => labeledArmorStats.filter((stat) => stat.label === label)),
+      ...materialStats,
     ]
     moreLabel = isShield ? 'More shield details' : 'More armor details'
   } else if (kind === 'weapon' && item.weaponStats) {
-    const weaponExtras = extraWeaponRows(item.weaponStats)
-    primaryRows = primaryWeaponRows(item.weaponStats, item.enhancementBonus)
-    extraRows = [
-      ...enhancementRows,
-      ...weaponExtras.filter((row) => row.label !== 'Damage reduction bypasses'),
-      ...materialRows,
-      ...weaponExtras.filter((row) => row.label === 'Damage reduction bypasses'),
+    const bypassStats: DetailStat[] = item.weaponStats.damageReductionBypasses
+      .map((bypass) => bypass.trim())
+      .filter(Boolean)
+      .map((bypass) => ({ label: 'Bypasses', value: bypass, isNumeric: false }))
+    primaryStats = [
+      ...toPrimaryWeaponStats(item.weaponStats, item.enhancementBonus),
+      ...enhancementStats,
     ]
+    extraStats = [...toExtraWeaponStats(item.weaponStats), ...materialStats, ...bypassStats]
     moreLabel = 'More weapon details'
   }
-  if (primaryRows.length === 0 && (variant === 'hover' || extraRows.length === 0)) return null
+  if (primaryStats.length === 0 && extraStats.length === 0) return null
 
   return (
     <div className="resources-item-details">
-      {primaryRows.map((row) => (
-        <DetailValueRow
-          key={row.label}
-          label={row.label}
-          value={row.value}
-          isNumeric={row.isNumeric}
-          layout="ledger"
-          className={variant === 'hover' ? 'hover-card-row' : undefined}
-        />
-      ))}
-      {variant === 'pane' && extraRows.length > 0 && (
+      <DetailFactGrid stats={primaryStats} />
+      {isExpanded && <DetailExtras stats={extraStats} />}
+      {extraStats.length > 0 && (
         <div className="resources-item-details__toggle-row">
           <button
             type="button"
@@ -261,23 +241,12 @@ function ItemDetailRows({
           </button>
         </div>
       )}
-      {variant === 'pane' &&
-        isExpanded &&
-        extraRows.map((row, index) => (
-          <DetailValueRow
-            key={`${row.label}-${index}`}
-            label={row.label}
-            value={row.value}
-            isNumeric={row.isNumeric}
-            layout="ledger"
-          />
-        ))}
     </div>
   )
 }
 
-function toLabeledArmorStats(armorStats: ItemArmorStats): ItemDetailRow[] {
-  const labeledStats: ItemDetailRow[] = []
+function toLabeledArmorStats(armorStats: ItemArmorStats): DetailStat[] {
+  const labeledStats: DetailStat[] = []
   if (armorStats.armorBonus !== null)
     labeledStats.push({
       label: 'Armor bonus',
@@ -514,7 +483,7 @@ export function ItemDetailCard({
         {variant === 'pane' && item.description && (
           <p className="resources-detail-description">{item.description}</p>
         )}
-        <ItemDetailRows key={item.id} item={item} kind={detailKind} variant={variant} />
+        <ItemDetailStats key={item.id} item={item} kind={detailKind} />
         {variant === 'hover' &&
           item.modifiers.flatMap((modifier) => {
             const damage = damageExpression(modifier)

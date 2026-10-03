@@ -9,6 +9,9 @@ export {
   DetailCardSection,
   DetailMore,
   DetailValueRow,
+  DetailFactGrid,
+  DetailExtras,
+  type DetailStat,
 } from './DetailCard'
 export { WikiLinkIcon } from './WikiLinkIcon'
 export { ErrorScreen } from './ErrorScreen'

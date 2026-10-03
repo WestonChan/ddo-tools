@@ -116,6 +116,7 @@
   --fs-body-sm: 13px;
   --fs-hover-copy: 12.5px;
   --fs-detail-numeric: 12.5px;
+  --fs-detail-tag-label: 11.5px;
   --fs-label: 12px;
   --fs-micro: 11px;
   --fs-stat-lg: 30px;
@@ -126,6 +127,7 @@
   --lh-dense: 1.35;
   --ls-wordmark: 0.06em;
   --ls-eyebrow: 0.08em;
+  --ls-detail-stat: 0.06em;
   --ls-heading: -0.005em;
   --ls-body: 0;
   --ls-numeric: 0.01em;
