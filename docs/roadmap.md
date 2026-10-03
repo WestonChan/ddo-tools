@@ -1288,6 +1288,13 @@ buff's effect types through `effect_map.toml` when `buff_map.toml` has no entry 
 once), and decide the rest of the list family by family: a stat worth tracking gets a stats seed entry,
 prose stays prose with no amount.
 
+**Multi-valued filters (decided 2026-10-03, ships with the 4e API chunk).** Every `/v1/items` filter that
+names a vocabulary value (`slot`, `category`, `pack`, `quest`, `quest_chain`, `saga`, `enchantment`) accepts
+repeated keys, never comma lists, and several values mean any of them; `<name>_match=all` switches a filter
+to all of them, defaulting to `any`, documented once under "Query parameters" in the API Introduction with
+the list of filters that honour `all` (an item has one slot, so `slot_match=all` is a 400). The picker's
+chips send the same shape.
+
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
 `routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
 hover cards and filter vocabulary, then the wiki reads fill exact text as they happen (see the tooltip
