@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-03',
     changes: [
+      'A weapon shows its damage, critical range and critical multiplier as rows at the top of its detail, with the rest of its weapon details behind a More link',
       'The row or link that opened a hover card is outlined only while that card is pinned, and keeps it after clicking inside the card',
       'The enchantment table no longer repeats an Enchantments heading above its own column header',
       'On narrow screens an item opens in place of the list; Back to items and the browser Back button return to the list where you left it',

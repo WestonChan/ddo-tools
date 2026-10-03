@@ -1,4 +1,5 @@
-import type { JSX } from 'react'
+import { useState, type JSX } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   DetailCard,
   DetailCardFooter,
@@ -104,22 +105,129 @@ function toHeaderAttributes(item: Item): KeyValuePair[] {
   return attributes
 }
 
-function toLabeledWeaponStats(weaponStats: ItemWeaponStats): KeyValuePair[] {
-  const labeledStats: KeyValuePair[] = []
-  if (weaponStats.damage)
-    labeledStats.push({ label: 'Damage', value: weaponStats.damage, isNumeric: true })
-  if (weaponStats.critical)
-    labeledStats.push({
-      label: 'Critical',
-      value: weaponStats.critical,
-      isNumeric: true,
-    })
-  labeledStats.push({ label: 'Type', value: weaponStats.weaponType })
-  if (weaponStats.proficiency)
-    labeledStats.push({ label: 'Proficiency', value: weaponStats.proficiency })
-  if (weaponStats.handedness)
-    labeledStats.push({ label: 'Handedness', value: weaponStats.handedness })
-  return labeledStats
+interface WeaponStatRow {
+  label: string
+  value: string
+  isNumeric: boolean
+}
+
+function primaryWeaponRows(
+  weaponStats: ItemWeaponStats,
+  enhancementBonus: number | null,
+): WeaponStatRow[] {
+  const rows: WeaponStatRow[] = []
+  const { baseDiceCount, baseDiceSides, baseDiceBonus, damageMultiplier } = weaponStats
+  if (
+    baseDiceCount !== null &&
+    baseDiceSides !== null &&
+    Number.isInteger(baseDiceCount) &&
+    Number.isInteger(baseDiceSides) &&
+    baseDiceCount > 0 &&
+    baseDiceSides > 0
+  ) {
+    const dice = `${baseDiceCount}d${baseDiceSides}`
+    const multipliedDice =
+      damageMultiplier !== null && damageMultiplier !== 1 ? `${damageMultiplier}[${dice}]` : dice
+    const totalBonus = (baseDiceBonus ?? 0) + (enhancementBonus ?? 0)
+    const bonus = totalBonus ? `${totalBonus > 0 ? '+' : ''}${totalBonus}` : ''
+    rows.push({ label: 'Damage', value: `${multipliedDice}${bonus}`, isNumeric: true })
+  }
+
+  const critical = weaponStats.critical?.trim()
+  const criticalParts = critical?.match(/^(\d{1,2})(?:\s*[-–]\s*(\d{1,2}))?\s*\/\s*[x×]\s*(\d+)$/i)
+  const threatCount = weaponStats.criticalThreatRange
+  const numericRange =
+    threatCount !== null && Number.isInteger(threatCount) && threatCount >= 1 && threatCount <= 20
+      ? threatCount === 1
+        ? '20'
+        : `${21 - threatCount}–20`
+      : null
+  const fallbackRange = criticalParts
+    ? criticalParts[2]
+      ? `${criticalParts[1]}–${criticalParts[2]}`
+      : criticalParts[1]
+    : null
+  const range = numericRange ?? fallbackRange
+  const numericMultiplier = weaponStats.criticalMultiplier
+  const multiplier =
+    numericMultiplier !== null && Number.isInteger(numericMultiplier) && numericMultiplier > 0
+      ? `${numericMultiplier}`
+      : criticalParts?.[3]
+  if (range) rows.push({ label: 'Crit range', value: range, isNumeric: true })
+  if (multiplier) rows.push({ label: 'Crit multiplier', value: `×${multiplier}`, isNumeric: true })
+  if (!range && !multiplier && critical) {
+    rows.push({ label: 'Critical', value: critical, isNumeric: false })
+  }
+  return rows
+}
+
+function extraWeaponRows(weaponStats: ItemWeaponStats): WeaponStatRow[] {
+  const rows: WeaponStatRow[] = []
+  const details = [
+    ['Type', weaponStats.weaponType],
+    ['Proficiency', weaponStats.proficiency],
+    ['Handedness', weaponStats.handedness],
+  ] as const
+  for (const [label, rawValue] of details) {
+    const value = rawValue?.trim()
+    if (value) rows.push({ label, value, isNumeric: false })
+  }
+  const bypasses = weaponStats.damageReductionBypasses
+    .map((bypass) => bypass.trim())
+    .filter(Boolean)
+  if (bypasses.length)
+    rows.push({ label: 'Damage reduction bypasses', value: bypasses.join(', '), isNumeric: false })
+  return rows
+}
+
+function WeaponStats({
+  weaponStats,
+  enhancementBonus,
+  variant,
+}: {
+  weaponStats: ItemWeaponStats
+  enhancementBonus: number | null
+  variant: 'pane' | 'hover'
+}): JSX.Element | null {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const primaryRows = primaryWeaponRows(weaponStats, enhancementBonus)
+  const extraRows = extraWeaponRows(weaponStats)
+  if (primaryRows.length === 0 && extraRows.length === 0) return null
+  const visibleRows =
+    primaryRows.length === 0
+      ? extraRows
+      : [...primaryRows, ...(variant === 'pane' && isExpanded ? extraRows : [])]
+
+  return (
+    <div className="resources-weapon-stats">
+      {visibleRows.map((row) => (
+        <DetailValueRow
+          key={row.label}
+          label={row.label}
+          value={row.value}
+          isNumeric={row.isNumeric}
+          layout="ledger"
+        />
+      ))}
+      {variant === 'pane' && primaryRows.length > 0 && extraRows.length > 0 && (
+        <div className="resources-weapon-stats__toggle-row">
+          <button
+            type="button"
+            className="resources-weapon-stats__toggle"
+            aria-expanded={isExpanded}
+            onClick={() => setIsExpanded((wasExpanded) => !wasExpanded)}
+          >
+            {isExpanded ? 'Less' : 'More weapon details'}
+            {isExpanded ? (
+              <ChevronUp size={12} aria-hidden="true" />
+            ) : (
+              <ChevronDown size={12} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function toLabeledArmorStats(armorStats: ItemArmorStats): KeyValuePair[] {
@@ -271,7 +379,6 @@ export function ItemDetailCard({
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element {
   const headerAttributes = toHeaderAttributes(item)
-  const labeledWeaponStats = item.weaponStats ? toLabeledWeaponStats(item.weaponStats) : []
   const labeledArmorStats = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
   const hasLinkedSource =
     item.quests.length > 0 ||
@@ -281,7 +388,9 @@ export function ItemDetailCard({
     item.sourcesBeyondQuests.length > 0
 
   return (
-    <div className="resources-detail-body">
+    <div
+      className={`resources-detail-body${item.weaponStats ? ' resources-detail-body--weapon' : ''}`}
+    >
       <DetailCard
         variant={variant}
         header={
@@ -337,6 +446,14 @@ export function ItemDetailCard({
         {headerAttributes.length > 0 && variant === 'pane' && (
           <KeyValueGrid pairs={headerAttributes} />
         )}
+        {item.weaponStats && (
+          <WeaponStats
+            key={item.id}
+            weaponStats={item.weaponStats}
+            enhancementBonus={item.enhancementBonus}
+            variant={variant}
+          />
+        )}
         {item.description && <p className="resources-detail-description">{item.description}</p>}
         {variant === 'hover' &&
           item.modifiers.flatMap((modifier) => {
@@ -345,11 +462,6 @@ export function ItemDetailCard({
               ? [<DetailValueRow key={modifier.id} label="Damage" value={damage} tone="damage" />]
               : []
           })}
-        {variant === 'pane' && labeledWeaponStats.length > 0 && (
-          <DetailCardSection heading="Weapon">
-            <StatList stats={labeledWeaponStats} />
-          </DetailCardSection>
-        )}
         {variant === 'pane' && labeledArmorStats.length > 0 && (
           <DetailCardSection heading="Armor">
             <StatList stats={labeledArmorStats} />

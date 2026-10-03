@@ -1,0 +1,120 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": "any end chest",
+      "id": 2,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Magic of Myth Drannor",
+      "wiki_url": "https://ddowiki.com/page/Magic_of_Myth_Drannor"
+    }
+  ],
+  "armor": null,
+  "augment_slots": [
+    {
+      "family": "standard",
+      "label": "red",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 9,
+      "sort_order": 0,
+      "variant": "red"
+    }
+  ],
+  "bonuses": [],
+  "category": "Weapon",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "Wild magic has imbued entropy into this weapon over the years.",
+  "drop_location": "Magic of Myth Drannor, any end chest",
+  "effects": [
+    {
+      "description": "Anarchic Blast 3: This weapon is a chaotic conduit, dealing 3d6 Chaos damage on a successful hit, and an additional 3d6 Chaos damage on a critical hit. This effect makes the weapon chaotically aligned. Lawful characters wielding this weapon will suffer one negative level.",
+      "id": 161,
+      "name": "Anarchic Blast 3",
+      "target": "All",
+      "value": null
+    },
+    {
+      "description": "Anarchic 3: This weapon is chaotic and used to undermine the righteous, dealing an additional 3d6 chaos damage on each hit. This effect makes the weapon chaotic aligned. (Lawful characters wielding this weapon will suffer one negative level.)",
+      "id": 162,
+      "name": "Anarchic 3",
+      "target": "All",
+      "value": null
+    },
+    {
+      "description": "Penalty: If equipped by a Lawful user, they receive 1 Negative Level for as long as this item is equipped.",
+      "id": 163,
+      "name": "Penalty Lawful",
+      "target": null,
+      "value": null
+    },
+    {
+      "description": "Aligned: This weapon transmutes into a form that is able to bypass any alignment based Damage Reduction. (Chaotic, Good, Evil, Lawful)",
+      "id": 164,
+      "name": "Aligned",
+      "target": null,
+      "value": null
+    },
+    {
+      "description": "Keen: The base critical threat range of this weapon is doubled. This does not stack with Improved Critical feat. Vorpal Strikes by this weapon also bypass all Fortification.",
+      "id": 53,
+      "name": "Keen",
+      "target": null,
+      "value": null
+    }
+  ],
+  "enhancement_bonus": 5,
+  "events": [],
+  "icon": "Greatsword_1p",
+  "id": 3479,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": "Great Sword",
+  "material": "Steel",
+  "minimum_level": 13,
+  "modifiers": [],
+  "name": "Greatsword of the Fallen Age",
+  "quest_chains": [],
+  "quests": [],
+  "race_required": null,
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Main Hand",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "any end chest",
+      "cost": null,
+      "id": 2,
+      "is_rare": false,
+      "kind": "adventure_pack",
+      "loot_type": "chest",
+      "name": "Magic of Myth Drannor",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Magic_of_Myth_Drannor"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": {
+    "attack_modifier": "Strength",
+    "base_dice_bonus": null,
+    "base_dice_count": 2,
+    "base_dice_sides": 6,
+    "critical": "19-20 / x2",
+    "critical_multiplier": 2,
+    "critical_threat_range": 2,
+    "damage": "1.6[2d6] + 5 Chaotic, Evil, Good, Lawful, Magic, Slash",
+    "damage_modifier": "Strength",
+    "damage_multiplier": 1.6,
+    "dr_bypass": ["Chaotic", "Evil", "Good", "Lawful", "Magic", "Slash"],
+    "handedness": "Two-handed",
+    "proficiency": "Martial",
+    "weapon_type": "Great Sword"
+  },
+  "wiki_url": "https://ddowiki.com/page/Item:Greatsword_of_the_Fallen_Age"
+}

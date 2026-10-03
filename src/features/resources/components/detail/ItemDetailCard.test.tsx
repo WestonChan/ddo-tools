@@ -1,5 +1,10 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import type { ApiItemDetail, ApiWeaponStats } from '../../../../lib/api'
+import capturedWeapon from '../../queries/fixtures/item3479.json'
+import capturedRuneArm from '../../queries/fixtures/item924.json'
+import { toItem } from '../../queries/items'
 import { ItemDetailCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
@@ -91,31 +96,191 @@ function renderItemDetailCard(item: Item): RenderResult {
   return render(<ItemDetailCard item={item} />)
 }
 
+function weaponItem(weaponOverrides: Partial<ApiWeaponStats> = {}): Item {
+  return toItem({
+    ...(capturedWeapon as ApiItemDetail),
+    weapon: {
+      ...(capturedWeapon.weapon as ApiWeaponStats),
+      ...weaponOverrides,
+    },
+  })
+}
+
+describe('ItemDetailCard weapon stats', () => {
+  it('shows damage and both critical parts between the facts and enchantments without a Weapon section', () => {
+    const { container } = renderItemDetailCard(weaponItem())
+    const rows = Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row'))
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'Damage1.6[2d6]+5',
+      'Crit range19–20',
+      'Crit multiplier×2',
+    ])
+    expect(container.querySelector('.resources-weapon-stats .resources-stat-list')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Weapon' })).toBeNull()
+    expect(screen.getByText('Material').closest('.resources-kv-row')).toHaveTextContent(
+      'MaterialSteel',
+    )
+    expect(container.querySelector('.resources-kv-grid')?.nextElementSibling).toHaveClass(
+      'resources-weapon-stats',
+    )
+    expect(
+      container
+        .querySelector('.resources-weapon-stats')!
+        .compareDocumentPosition(container.querySelector('.resources-enchantment-ledger')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('opens and closes the extra rows without duplicating material', async () => {
+    const { container } = renderItemDetailCard(weaponItem())
+    const button = screen.getByRole('button', { name: 'More weapon details' })
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText('Proficiency')).toBeNull()
+    await userEvent.click(button)
+    expect(screen.getByRole('button', { name: 'Less' })).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual([
+      'Damage1.6[2d6]+5',
+      'Crit range19–20',
+      'Crit multiplier×2',
+      'TypeGreat Sword',
+      'ProficiencyMartial',
+      'HandednessTwo-handed',
+      'Damage reduction bypassesChaotic, Evil, Good, Lawful, Magic, Slash',
+    ])
+    expect(screen.getAllByText('Material')).toHaveLength(1)
+    expect(screen.queryByText('Damage type')).toBeNull()
+    const values = Array.from(
+      container.querySelectorAll('.resources-weapon-stats .detail-value-row__value'),
+    )
+    expect(values.slice(0, 3).every((value) => value.classList.contains('num'))).toBe(true)
+    expect(values.slice(3).every((value) => !value.classList.contains('num'))).toBe(true)
+    await userEvent.click(screen.getByRole('button', { name: 'Less' }))
+    expect(screen.queryByText('Proficiency')).toBeNull()
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('keeps an unsplittable critical in one row and omits blank stats', async () => {
+    const { container } = renderItemDetailCard(
+      weaponItem({
+        base_dice_count: null,
+        base_dice_sides: null,
+        critical_threat_range: null,
+        critical_multiplier: null,
+        damage: '  ',
+        critical: 'special critical',
+        dr_bypass: [],
+      }),
+    )
+    expect(
+      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(['Criticalspecial critical'])
+    await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
+    expect(screen.queryByText('Damage reduction bypasses')).toBeNull()
+  })
+
+  it('uses numeric dice, bonus and threat range in place of descriptive strings', () => {
+    const { container } = renderItemDetailCard(
+      weaponItem({
+        base_dice_bonus: 5,
+        damage_multiplier: 1.6,
+        critical_threat_range: 6,
+        critical: 'unparseable',
+      }),
+    )
+    expect(
+      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(['Damage1.6[2d6]+10', 'Crit range15–20', 'Crit multiplier×2'])
+  })
+
+  it('adds the enhancement bonus to the dice and drops a unit multiplier', () => {
+    const { container } = renderItemDetailCard(
+      weaponItem({
+        base_dice_bonus: 0,
+        damage_multiplier: 1,
+        critical_threat_range: 1,
+        critical_multiplier: 4,
+      }),
+    )
+    expect(
+      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(['Damage2d6+5', 'Crit range20', 'Crit multiplier×4'])
+  })
+
+  it('falls back to the critical string when numeric critical fields are null', () => {
+    const { container } = renderItemDetailCard(
+      weaponItem({
+        base_dice_count: null,
+        base_dice_sides: null,
+        critical_threat_range: null,
+        critical_multiplier: null,
+        critical: '18-20/x3',
+      }),
+    )
+    expect(
+      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(['Crit range18–20', 'Crit multiplier×3'])
+  })
+
+  it('shows a rune arm’s available details inline when it has no primary stats', () => {
+    const item = toItem(capturedRuneArm as ApiItemDetail)
+    const { container, rerender } = renderItemDetailCard(item)
+    expect(
+      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(['TypeRune Arm', 'HandednessOff-hand'])
+    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
+    rerender(<ItemDetailCard item={item} variant="hover" />)
+    expect(
+      Array.from(container.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(['TypeRune Arm', 'HandednessOff-hand'])
+  })
+
+  it('does not add weapon rows or a toggle to non-weapons', () => {
+    const { container } = renderItemDetailCard(plainItem)
+    expect(container.querySelector('.resources-weapon-stats')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
+  })
+})
+
 describe('ItemDetailCard drop locations', () => {
-  it('trims the same detail card to facts, enchantments, and drops for hover', () => {
+  it('shows a weapon’s primary rows with facts, enchantments, and drops for hover', () => {
     render(
       <ItemDetailCard
         item={{
-          ...plainItem,
-          weaponStats: {
-            damage: '1d6',
-            critical: '20/x2',
-            weaponType: 'Sword',
-            proficiency: null,
-            handedness: null,
-            damageReductionBypasses: [],
-          },
+          ...weaponItem({ critical_threat_range: 1, critical: '20/x2' }),
           quests: [quest()],
         }}
         variant="hover"
       />,
     )
-    expect(screen.getByRole('heading', { name: 'Voice of the Master' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Greatsword of the Fallen Age' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('ML')).toBeInTheDocument()
     expect(
       screen.getByText("Delera's Tomb", { selector: '.resources-hover-anchor' }),
     ).toBeInTheDocument()
-    expect(screen.queryByText('Weapon')).toBeNull()
+    expect(
+      Array.from(document.querySelectorAll('.resources-weapon-stats .detail-value-row')).map(
+        (row) => row.textContent,
+      ),
+    ).toEqual(['Damage1.6[2d6]+5', 'Crit range20', 'Crit multiplier×2'])
+    expect(screen.queryByRole('button', { name: 'More weapon details' })).toBeNull()
   })
   it('renders a wiki link icon next to each quest in Obtained from', () => {
     renderItemDetailCard({ ...plainItem, quests: [quest()] })

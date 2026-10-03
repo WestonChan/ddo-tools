@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
 import capturedItem from './fixtures/item7631.json'
+import capturedWeapon from './fixtures/item3479.json'
 import capturedAugment from './fixtures/augment1902.json'
 import {
   fetchAdventurePackNames,
@@ -235,6 +236,18 @@ describe('mappers', () => {
       isRareLoot: true,
       isFreeToPlay: false,
       chests: ['raid warded chest'],
+    })
+  })
+
+  it('maps the structured weapon fields from an API item detail', () => {
+    expect(toItem(capturedWeapon as ApiItemDetail).weaponStats).toMatchObject({
+      baseDiceCount: 2,
+      baseDiceSides: 6,
+      baseDiceBonus: null,
+      damageMultiplier: 1.6,
+      criticalThreatRange: 2,
+      criticalMultiplier: 2,
+      damageReductionBypasses: ['Chaotic', 'Evil', 'Good', 'Lawful', 'Magic', 'Slash'],
     })
   })
 

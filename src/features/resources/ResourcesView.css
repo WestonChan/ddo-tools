@@ -695,6 +695,32 @@ button.resources-hover-row:hover {
   overflow-wrap: anywhere;
 }
 
+.resources-weapon-stats {
+  display: flex;
+  flex-direction: column;
+}
+
+.resources-detail-body--weapon .detail-card--pane .detail-card__body {
+  gap: calc(var(--space-4) + var(--space-0-5));
+  padding: var(--space-3-5);
+}
+
+.resources-weapon-stats__toggle-row {
+  padding: var(--space-1) var(--space-3) 0;
+}
+
+.resources-weapon-stats__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-link);
+  font-size: var(--fs-label);
+  cursor: pointer;
+}
+
 .resources-stat-list,
 .resources-bonus-list,
 .resources-clicky-list,
@@ -898,4 +924,8 @@ button.resources-hover-row:hover {
 .resources-augment-candidates {
   max-height: 14rem;
   overflow-y: auto;
+}
+
+.resources-weapon-stats .detail-value-row[data-layout='ledger'] .detail-value-row__value.num {
+  grid-column: 2 / 4;
 }

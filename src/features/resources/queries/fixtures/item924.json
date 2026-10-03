@@ -1,0 +1,187 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": "end chest",
+      "id": 34,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Mists of Ravenloft",
+      "wiki_url": "https://ddowiki.com/page/Mists_of_Ravenloft"
+    }
+  ],
+  "armor": null,
+  "augment_slots": [
+    {
+      "family": "standard",
+      "label": "green",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 6,
+      "sort_order": 0,
+      "variant": "green"
+    }
+  ],
+  "bonuses": [
+    {
+      "bonus_type": "Enhancement",
+      "description": "Enhancement Combustion 77: 77 Enhancement bonus to Fire spell power.",
+      "id": 1046,
+      "name": "Fire Spell Power +77",
+      "stat": "Fire Spell Power",
+      "stat_category": "magical",
+      "value": 77,
+      "value2": null
+    },
+    {
+      "bonus_type": "Quality",
+      "description": "Quality Combustion 18: 18 Quality bonus to Fire spell power.",
+      "id": 1047,
+      "name": "Fire Spell Power +18",
+      "stat": "Fire Spell Power",
+      "stat_category": "magical",
+      "value": 18,
+      "value2": null
+    },
+    {
+      "bonus_type": "Equipment",
+      "description": "Equipment Fire Lore 11%: Passive: Your Fire spells gain a 11% Equipment bonus to their chance to critical hit.",
+      "id": 1048,
+      "name": "Fire Spell Lore +11",
+      "stat": "Fire Spell Lore",
+      "stat_category": "magical",
+      "value": 11,
+      "value2": null
+    }
+  ],
+  "category": "Weapon",
+  "challenge_packs": [],
+  "clickies": [
+    {
+      "clickie_id": 37,
+      "description": "Target: Foe, Directional, Breakable\nSchool: Evocation\nSpell Resistance: No\nDeals fire damage to a target with a cone shaped blast of fire. At higher charge\ntiers the blast is larger. Opponents within the blast receive a Will save for\nhalf damage. At charge Tier 3 and higher, opponents within the blast have a 25%\nchance to have a Curse spell cast on them.\n\nCharge Tier 1: 4 to 10 + 1 to 2 per Artificer Level\nCharge Tier 2: 5 to 15 + 1 to 4 per Artificer Level\nCharge Tier 3: 6 to 20 + 1 to 6 per Artificer Level\nCharge Tier 4: 7 to 25 + 1 to 8 per Artificer Level\nCharge Tier 5: 8 to 30 + 1 to 10 per Artificer Level",
+      "icon": "Scorch",
+      "name": "Corrupted Fire Blast",
+      "spell_id": null
+    }
+  ],
+  "crafting_systems": [],
+  "description": "A strange item crafted by an eccentric arcane. Useful for clearing the area\nof noxious weeds (ambulatory or otherwise.)",
+  "drop_location": "Mad Tea Party, End Chest",
+  "effects": [
+    {
+      "description": "Maximum Charge Tier III: The maximum charge tier of this rune arm is tier 3.",
+      "id": 27,
+      "name": "MaximumChargeTierIII",
+      "target": null,
+      "value": null
+    },
+    {
+      "description": "Tira's Splendor: Any weapon you wield becomes able to bypass silver damage reduction.",
+      "id": 240,
+      "name": "Tira's Splendor",
+      "target": null,
+      "value": null
+    },
+    {
+      "description": "Rune Arm Imbue - Fire III: Wearing this Rune Arm will imbue any weapon you wield, dealing 2d6 points of Fire damage per hit. This damage scales with 200% Melee or Ranged power (whichever is higher).",
+      "id": 241,
+      "name": "Rune Arm Imbue - Fire III",
+      "target": null,
+      "value": null
+    }
+  ],
+  "enhancement_bonus": null,
+  "events": [],
+  "icon": "RuneArm_1b",
+  "id": 924,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": "Rune Arm",
+  "material": "Force",
+  "minimum_level": 10,
+  "modifiers": [
+    {
+      "amount_type": "SpellInfo",
+      "amounts": [0, 0, 0],
+      "apply_as_item_effect": false,
+      "bonus": "Enhancement",
+      "bonus_type": "Enhancement",
+      "cap": null,
+      "damage": null,
+      "dice_bonus": null,
+      "dice_damage": null,
+      "dice_number": null,
+      "dice_sides": null,
+      "display_name": null,
+      "effect_type": "ItemClickie",
+      "extra_types": null,
+      "id": 10004,
+      "is_item_specific": false,
+      "is_rare": false,
+      "percent": false,
+      "rank": null,
+      "requirements": [],
+      "sort_order": 0,
+      "stack_source": null,
+      "targets": ["Corrupted Fire Blast", "Unknown"],
+      "value": null
+    }
+  ],
+  "name": "Blight Inferno",
+  "quest_chains": [],
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": ["normal", "hard", "elite", "reaper"],
+      "epic_level": 31,
+      "id": 301,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 11,
+      "loot_type": "chest",
+      "name": "Mad Tea Party",
+      "pack": "Mists of Ravenloft",
+      "patron": "Keepers of Barovia"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": { "icon": "AdherentOfTheMists", "id": 93, "name": "Adherent of the Mists Set (Heroic)" },
+  "set_name": "Adherent of the Mists Set (Heroic)",
+  "slot": "Runearm",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 301,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "Mad Tea Party",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Mad_Tea_Party"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": {
+    "attack_modifier": null,
+    "base_dice_bonus": null,
+    "base_dice_count": null,
+    "base_dice_sides": null,
+    "critical": null,
+    "critical_multiplier": null,
+    "critical_threat_range": null,
+    "damage": null,
+    "damage_modifier": null,
+    "damage_multiplier": null,
+    "dr_bypass": [],
+    "handedness": "Off-hand",
+    "proficiency": null,
+    "weapon_type": "Rune Arm"
+  },
+  "wiki_url": "https://ddowiki.com/page/Item:Blight_Inferno"
+}

@@ -91,8 +91,13 @@ export interface ItemAttributes {
 }
 
 export interface ItemWeaponStats {
-  damage: string | null
   critical: string | null
+  baseDiceCount: number | null
+  baseDiceSides: number | null
+  baseDiceBonus: number | null
+  damageMultiplier: number | null
+  criticalThreatRange: number | null
+  criticalMultiplier: number | null
   weaponType: string
   proficiency: string | null
   handedness: string | null
@@ -291,8 +296,13 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
     isLegacy: apiItemDetail.is_legacy,
     weaponStats: apiItemDetail.weapon
       ? {
-          damage: apiItemDetail.weapon.damage,
           critical: apiItemDetail.weapon.critical,
+          baseDiceCount: apiItemDetail.weapon.base_dice_count,
+          baseDiceSides: apiItemDetail.weapon.base_dice_sides,
+          baseDiceBonus: apiItemDetail.weapon.base_dice_bonus,
+          damageMultiplier: apiItemDetail.weapon.damage_multiplier,
+          criticalThreatRange: apiItemDetail.weapon.critical_threat_range,
+          criticalMultiplier: apiItemDetail.weapon.critical_multiplier,
           weaponType: apiItemDetail.weapon.weapon_type,
           proficiency: apiItemDetail.weapon.proficiency,
           handedness: apiItemDetail.weapon.handedness,
