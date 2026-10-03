@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import { Check, Flag, Link as LinkIcon, Link2Off } from 'lucide-react'
 import { DetailCardHeader, HintAnchor, WikiLinkIcon } from '../../../../components'
 import { githubIssueUrls } from '../../../../lib/githubIssue'
@@ -15,6 +15,7 @@ export function DetailHeader({
   isLegacy = false,
   isCraftable = false,
   variant = 'pane',
+  facts,
 }: {
   name: string
   kicker?: string
@@ -23,6 +24,7 @@ export function DetailHeader({
   isLegacy?: boolean
   isCraftable?: boolean
   variant?: 'pane' | 'hover'
+  facts?: ReactNode
 }): JSX.Element {
   const { deepLinkUrl } = useDetailNavigation()
   const [isLinkCopied, setIsLinkCopied] = useState(false)
@@ -51,6 +53,7 @@ export function DetailHeader({
     <DetailCardHeader
       kicker={kicker}
       name={name}
+      facts={facts}
       titleId={variant === 'pane' ? DETAIL_TITLE_ID : undefined}
       badges={
         <>

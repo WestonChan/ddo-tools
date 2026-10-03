@@ -3,22 +3,19 @@ import './DetailCard.css'
 
 export function DetailCard({
   header,
-  facts,
-  afterFacts,
+  afterHeader,
   children,
   variant = 'pane',
 }: {
   header: ReactNode
-  facts?: ReactNode
-  afterFacts?: ReactNode
+  afterHeader?: ReactNode
   children: ReactNode
   variant?: 'pane' | 'hover'
 }): JSX.Element {
   return (
     <article className={`detail-card detail-card--${variant}`}>
       {header}
-      {facts && <div className="detail-card__facts">{facts}</div>}
-      {afterFacts}
+      {afterHeader}
       <div className="detail-card__body">{children}</div>
     </article>
   )
@@ -30,25 +27,30 @@ export function DetailCardHeader({
   titleId,
   badges,
   actions,
+  facts,
 }: {
   kicker: string
   name: string
   titleId?: string
   badges?: ReactNode
   actions?: ReactNode
+  facts?: ReactNode
 }): JSX.Element {
   return (
     <header className="detail-card__header">
-      <div className="detail-card__title-block">
-        <span className="section-label">{kicker}</span>
-        <div className="detail-card__name-row">
-          <h2 id={titleId} tabIndex={titleId ? -1 : undefined} className="detail-card__name">
-            {name}
-          </h2>
-          {badges}
+      <div className="detail-card__header-top">
+        <div className="detail-card__title-block">
+          <span className="section-label">{kicker}</span>
+          <div className="detail-card__name-row">
+            <h2 id={titleId} tabIndex={titleId ? -1 : undefined} className="detail-card__name">
+              {name}
+            </h2>
+            {badges}
+          </div>
         </div>
+        {actions && <div className="detail-card__actions">{actions}</div>}
       </div>
-      {actions && <div className="detail-card__actions">{actions}</div>}
+      {facts && <div className="detail-card__facts">{facts}</div>}
     </header>
   )
 }
@@ -63,7 +65,7 @@ export function DetailFact({
   return (
     <div className="detail-card__fact">
       <span className="section-label">{label}</span>
-      <span>{children}</span>
+      <div>{children}</div>
     </div>
   )
 }

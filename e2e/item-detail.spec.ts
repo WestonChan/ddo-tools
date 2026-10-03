@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/item487.json' with { type: 'json' }
+import capturedArmor from '../src/features/resources/queries/fixtures/item831.json' with { type: 'json' }
 
 test('opening an augment socket leaves every fact in its original position', async ({ page }) => {
   await page.route('**/v1/**', async (route) => {
@@ -41,8 +42,20 @@ test('opening an augment socket leaves every fact in its original position', asy
 
   await page.goto('/resources/items/487')
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
-  const facts = detailPane.locator('.detail-card__facts')
-  await expect(facts.getByRole('button', { name: 'Yellow', exact: true })).toBeVisible()
+  const header = detailPane.locator('.detail-card__header')
+  const facts = header.locator('.detail-card__facts')
+  const socket = facts.getByRole('button', { name: 'Yellow', exact: true })
+  await expect(socket).toBeVisible()
+  await expect(facts.locator('.detail-card__fact .section-label')).toHaveText([
+    'ML',
+    'Gear slot',
+    'Raid',
+    'Rare',
+    'Set',
+    'Augments',
+  ])
+  expect(await facts.evaluate((row) => getComputedStyle(row).columnGap)).toBe('28px')
+  expect(await facts.evaluate((row) => getComputedStyle(row).rowGap)).toBe('10px')
   const factPositions = (): Promise<
     Array<{ label: string | null | undefined; offsetTop: number; offsetLeft: number }>
   > =>
@@ -55,19 +68,60 @@ test('opening an augment socket leaves every fact in its original position', asy
     )
   await page.evaluate(() => document.fonts.ready)
   const closedPositions = await factPositions()
-  await facts.getByRole('button', { name: 'Yellow', exact: true }).click()
+  await socket.click()
   const ledger = detailPane.locator('.resources-augment-candidates')
   await expect(ledger).toBeVisible()
   await expect(ledger.locator('.resources-augment-candidates__heading')).toHaveText(
     'Yellow socket · 0 augments',
   )
-  expect(await facts.evaluate((grid) => grid.nextElementSibling?.className)).toBe(
+  expect(await header.evaluate((titleBar) => titleBar.nextElementSibling?.className)).toBe(
     'resources-augment-candidates',
   )
+  const headerBounds = await header.boundingBox()
+  const ledgerBounds = await ledger.boundingBox()
+  expect(ledgerBounds?.x).toBe(headerBounds?.x)
+  expect(ledgerBounds?.width).toBe(headerBounds?.width)
   expect(await factPositions()).toEqual(closedPositions)
-  await facts.getByRole('button', { name: 'Yellow', exact: true }).click()
+  await socket.click()
   await expect(ledger).toHaveCount(0)
   expect(await factPositions()).toEqual(closedPositions)
+  await page.getByRole('row', { name: /Adversion/ }).hover()
+  const hoverCard = page.locator('[data-hover-card]')
+  await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
+  await expect(hoverCard.locator('.detail-card__facts .resources-augment-gem')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(hoverCard).toHaveCount(0)
+  await page.setViewportSize({ width: 375, height: 800 })
+  await page.goto('/resources/items/487')
+  await expect(facts).toBeVisible()
+  await expect(page.locator('.resources-picker')).toHaveCount(0)
+  await page.evaluate(() => document.fonts.ready)
+  const mobileLayout = await page.evaluate(() => {
+    const titleBar = document.querySelector<HTMLElement>(
+      '.resources-detail-pane .detail-card__header',
+    )!
+    const headerBox = titleBar.getBoundingClientRect()
+    return {
+      headerLeft: headerBox.left,
+      headerRight: headerBox.right,
+      viewportWidth: window.innerWidth,
+      facts: Array.from(titleBar.querySelectorAll<HTMLElement>('.detail-card__fact')).map(
+        (fact) => {
+          const box = fact.getBoundingClientRect()
+          return { offsetTop: fact.offsetTop, left: box.left, right: box.right }
+        },
+      ),
+    }
+  })
+  expect(mobileLayout.facts.some((fact) => fact.offsetTop > mobileLayout.facts[0].offsetTop)).toBe(
+    true,
+  )
+  expect(mobileLayout.headerRight).toBeLessThanOrEqual(mobileLayout.viewportWidth)
+  expect(
+    mobileLayout.facts.every(
+      (fact) => fact.left >= mobileLayout.headerLeft && fact.right <= mobileLayout.headerRight,
+    ),
+  ).toBe(true)
 })
 
 test('the detail pane displays the item name once beside the list and takes over at 375px', async ({
@@ -82,43 +136,7 @@ test('the detail pane displays the item name once beside the list and takes over
     const path = new URL(route.request().url()).pathname
     const response =
       path === '/v1/items/831'
-        ? {
-            id: 831,
-            name: 'Beholder Plate Armor',
-            slot: 'Body',
-            category: 'Armor',
-            item_type: null,
-            minimum_level: 10,
-            enhancement_bonus: null,
-            material: null,
-            race_required: null,
-            icon: null,
-            description: null,
-            drop_location: null,
-            set_name: null,
-            accepts_sentience: false,
-            is_minor_artifact: false,
-            wiki_url: null,
-            is_legacy: false,
-            weapon: null,
-            armor: null,
-            bonuses: [],
-            modifiers: [],
-            effects: [],
-            augment_slots: [],
-            clickies: [],
-            set: null,
-            quests: [],
-            quest_chains: [],
-            sagas: [],
-            adventure_packs: [],
-            crafting_systems: [],
-            challenge_packs: [],
-            vendors: [],
-            events: [],
-            starter_rewards: [],
-            sources: [],
-          }
+        ? capturedArmor
         : path === '/v1/items'
           ? {
               total: 1,
@@ -126,18 +144,18 @@ test('the detail pane displays the item name once beside the list and takes over
               offset: 0,
               items: [
                 {
-                  id: 831,
-                  name: 'Beholder Plate Armor',
-                  slot: 'Body',
-                  category: 'Armor',
-                  item_type: null,
-                  minimum_level: 10,
-                  enhancement_bonus: null,
-                  icon: null,
+                  id: capturedArmor.id,
+                  name: capturedArmor.name,
+                  slot: capturedArmor.slot,
+                  category: capturedArmor.category,
+                  item_type: capturedArmor.item_type,
+                  minimum_level: capturedArmor.minimum_level,
+                  enhancement_bonus: capturedArmor.enhancement_bonus,
+                  icon: capturedArmor.icon,
                   pack: null,
                   is_raid: false,
                   is_rare: false,
-                  is_legacy: false,
+                  is_legacy: capturedArmor.is_legacy,
                 },
               ],
             }
@@ -164,7 +182,10 @@ test('the detail pane displays the item name once beside the list and takes over
   expect((desktopPane?.x ?? 0) > (desktopPicker?.x ?? 0)).toBe(true)
   const itemRow = page.getByRole('row', { name: /Beholder Plate Armor/ })
   await itemRow.hover()
-  await expect(page.locator('[data-hover-card]')).toBeVisible()
+  const hoverCard = page.locator('[data-hover-card]')
+  await expect(hoverCard).toBeVisible()
+  await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
+  await expect(hoverCard.locator('.detail-card__facts .resources-augment-control')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.locator('[data-hover-card]')).toHaveCount(0)
   await expect(page).toHaveURL(/\/resources\/items\/831$/)
@@ -178,7 +199,8 @@ test('the detail pane displays the item name once beside the list and takes over
   ).toBeVisible()
   await expect(picker).toHaveCount(0)
   await expect(detailPane).toBeInViewport()
-  await expect(detailPane.locator('.detail-card__facts')).toBeInViewport()
+  await expect(detailPane.locator('.detail-card__header .detail-card__facts')).toBeInViewport()
+  await expect(detailPane.locator('.detail-card__facts .resources-augment-control')).toBeVisible()
   const mobileName = await detailPane.locator('.detail-card__name').boundingBox()
   const mobileActions = await detailPane.locator('.detail-card__actions').boundingBox()
   expect((mobileActions?.y ?? 0) >= (mobileName?.y ?? 0) + (mobileName?.height ?? 0)).toBe(true)

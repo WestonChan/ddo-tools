@@ -451,62 +451,64 @@ export function ItemDetailCard({
               (source) => source.kind === 'craftingSystem',
             )}
             variant={variant}
+            facts={
+              <>
+                <DetailFact label="ML">
+                  <span className="num">{item.minimumLevel ?? '—'}</span>
+                </DetailFact>
+                <DetailFact label="Gear slot">{item.equipmentSlot}</DetailFact>
+                <DetailFact label="Raid">
+                  {item.quests.some((quest) => quest.isRaid) ? 'Yes' : '—'}
+                </DetailFact>
+                <DetailFact label="Rare">
+                  {item.quests.some((quest) => quest.isRareLoot) ||
+                  item.adventurePackDrops.some((source) => source.isRareLoot) ||
+                  item.sourcesBeyondQuests.some((source) => source.isRareLoot) ||
+                  item.questChains.some((chain) => chain.isRareLoot) ||
+                  item.sagas.some((saga) => saga.isRareLoot)
+                    ? 'Yes'
+                    : '—'}
+                </DetailFact>
+                {item.setName && (
+                  <DetailFact label="Set">
+                    {item.setId ? (
+                      <SetHoverAnchor
+                        setId={item.setId}
+                        name={item.setName}
+                        onOpenItem={onOpenItem}
+                      />
+                    ) : (
+                      item.setName
+                    )}
+                  </DetailFact>
+                )}
+                {item.augmentSlots.length > 0 && (
+                  <DetailFact label="Augments">
+                    <AugmentSlotList
+                      augmentSlots={item.augmentSlots}
+                      expandedSlotSortOrder={expandedSlotSortOrder}
+                      ledgerId={augmentLedgerId}
+                      onToggleSlot={(sortOrder) =>
+                        setExpandedSlotSortOrder((current) =>
+                          current === sortOrder ? null : sortOrder,
+                        )
+                      }
+                      onClose={() => setExpandedSlotSortOrder(null)}
+                    />
+                  </DetailFact>
+                )}
+              </>
+            }
           />
         }
-        facts={
-          <>
-            <DetailFact label="ML">
-              <span className="num">{item.minimumLevel ?? '—'}</span>
-            </DetailFact>
-            <DetailFact label="Gear slot">{item.equipmentSlot}</DetailFact>
-            <DetailFact label="Augments">
-              {item.augmentSlots.length ? (
-                <AugmentSlotList
-                  augmentSlots={item.augmentSlots}
-                  expandedSlotSortOrder={expandedSlotSortOrder}
-                  ledgerId={augmentLedgerId}
-                  onToggleSlot={(sortOrder) =>
-                    setExpandedSlotSortOrder((current) =>
-                      current === sortOrder ? null : sortOrder,
-                    )
-                  }
-                  onClose={() => setExpandedSlotSortOrder(null)}
-                />
-              ) : (
-                '—'
-              )}
-            </DetailFact>
-            <DetailFact label="Raid">
-              {item.quests.some((quest) => quest.isRaid) ? 'Yes' : '—'}
-            </DetailFact>
-            <DetailFact label="Rare">
-              {item.quests.some((quest) => quest.isRareLoot) ||
-              item.adventurePackDrops.some((source) => source.isRareLoot) ||
-              item.sourcesBeyondQuests.some((source) => source.isRareLoot) ||
-              item.questChains.some((chain) => chain.isRareLoot) ||
-              item.sagas.some((saga) => saga.isRareLoot)
-                ? 'Yes'
-                : '—'}
-            </DetailFact>
-            {item.setName && (
-              <DetailFact label="Set">
-                {item.setId ? (
-                  <SetHoverAnchor setId={item.setId} name={item.setName} onOpenItem={onOpenItem} />
-                ) : (
-                  item.setName
-                )}
-              </DetailFact>
-            )}
-          </>
-        }
-        afterFacts={
-          expandedSlot ? (
+        afterHeader={
+          expandedSlot && (
             <AugmentCandidateLedger
               slot={expandedSlot}
               ledgerId={augmentLedgerId}
               onClose={() => setExpandedSlotSortOrder(null)}
             />
-          ) : null
+          )
         }
       >
         {variant === 'pane' && item.description && (

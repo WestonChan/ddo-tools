@@ -300,26 +300,30 @@ describe('ItemDetailCard details', () => {
     expect(detailRowText(container)).toEqual(['Enhancement+2', 'MaterialSteel'])
   })
 
-  it('places an open socket ledger immediately after unchanged facts', async () => {
+  it('keeps every header fact in place when its socket opens and puts the ledger below the header', async () => {
     const { container } = renderItemDetailCard(toItem(capturedRing as ApiItemDetail))
-    const facts = container.querySelector('.detail-card__facts')!
-    const raid = facts.children[3] as HTMLElement
-    const rare = facts.children[4] as HTMLElement
-    const raidTop = raid.offsetTop
-    const rareTop = rare.offsetTop
+    const header = container.querySelector('.detail-card__header')!
+    const facts = header.querySelector('.detail-card__facts')!
+    const originalFacts = Array.from(facts.children) as HTMLElement[]
+    const originalPositions = originalFacts.map((fact) => ({
+      offsetTop: fact.offsetTop,
+      offsetLeft: fact.offsetLeft,
+    }))
     const factLabels = (): Array<string | null | undefined> =>
       Array.from(facts.children).map((fact) => fact.querySelector('.section-label')?.textContent)
     const originalLabels = factLabels()
+    expect(originalLabels).toEqual(['ML', 'Gear slot', 'Raid', 'Rare', 'Set', 'Augments'])
+    expect(originalFacts.at(-1)?.querySelector('.resources-augment-gem')).not.toBeNull()
     await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
     const ledger = container.querySelector('.resources-augment-candidates')!
     expect(ledger).not.toBeNull()
     expect(facts.contains(ledger)).toBe(false)
-    expect(facts.nextElementSibling).toBe(ledger)
+    expect(header.nextElementSibling).toBe(ledger)
     expect(factLabels()).toEqual(originalLabels)
-    expect(facts.children[3]).toBe(raid)
-    expect(facts.children[4]).toBe(rare)
-    expect(raid.offsetTop).toBe(raidTop)
-    expect(rare.offsetTop).toBe(rareTop)
+    expect(Array.from(facts.children)).toEqual(originalFacts)
+    expect(
+      originalFacts.map((fact) => ({ offsetTop: fact.offsetTop, offsetLeft: fact.offsetLeft })),
+    ).toEqual(originalPositions)
     expect(screen.getByText('Yellow socket · 0 augments')).toBeInTheDocument()
     expect(
       ledger.compareDocumentPosition(container.querySelector('.resources-detail-description')!) &
@@ -327,9 +331,29 @@ describe('ItemDetailCard details', () => {
     ).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
     expect(container.querySelector('.resources-augment-candidates')).toBeNull()
-    expect(facts.nextElementSibling).toHaveClass('detail-card__body')
-    expect(raid.offsetTop).toBe(raidTop)
-    expect(rare.offsetTop).toBe(rareTop)
+    expect(header.nextElementSibling).toHaveClass('detail-card__body')
+    expect(
+      originalFacts.map((fact) => ({ offsetTop: fact.offsetTop, offsetLeft: fact.offsetLeft })),
+    ).toEqual(originalPositions)
+  })
+
+  it('omits the Augments fact for items without sockets', () => {
+    const { container } = renderItemDetailCard(plainItem)
+    const header = container.querySelector('.detail-card__header')!
+    expect(header.querySelector('.detail-card__facts')).not.toBeNull()
+    expect(header.nextElementSibling).toHaveClass('detail-card__body')
+    expect(screen.queryByText('Augments')).toBeNull()
+  })
+
+  it('keeps hover card sockets last in the header facts', () => {
+    const { container } = render(
+      <ItemDetailCard item={toItem(capturedRing as ApiItemDetail)} variant="hover" />,
+    )
+    const header = container.querySelector('.detail-card--hover .detail-card__header')!
+    const facts = header.querySelector('.detail-card__facts')!
+    expect(facts.lastElementChild?.querySelector('.section-label')).toHaveTextContent('Augments')
+    expect(facts.lastElementChild?.querySelector('.resources-augment-gem')).not.toBeNull()
+    expect(header.nextElementSibling).toHaveClass('detail-card__body')
   })
 
   it('shows shield primary rows and reserves the remaining shield stats for its toggle', async () => {
