@@ -117,7 +117,7 @@ function LedgerRow<Row>({
       style={style}
       tabIndex={isHeading ? -1 : index === focusedIndex ? 0 : -1}
       aria-current={isSelected || undefined}
-      data-hover-card-open={hoverOptions ? hoverAnchor['data-hover-card-open'] : undefined}
+      data-hover-card-pinned={hoverOptions ? hoverAnchor['data-hover-card-pinned'] : undefined}
       onFocus={() => onFocusedIndexChange(index)}
       onClick={() => !isHeading && onRowActivate(row)}
       onKeyDown={(event) => !isHeading && onRowKeyDown(event, index)}

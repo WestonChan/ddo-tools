@@ -484,11 +484,11 @@
   cursor: default;
 }
 
-.resources-view [data-hover-card-open],
-.resources-hover-anchor[data-hover-card-open],
-.resources-hover-row[data-hover-card-open],
-.resources-hover-enchantment-row[data-hover-card-open],
-.resources-augment-candidates .ledger-row[data-hover-card-open] {
+.resources-view [data-hover-card-pinned],
+.resources-hover-anchor[data-hover-card-pinned],
+.resources-hover-row[data-hover-card-pinned],
+.resources-hover-enchantment-row[data-hover-card-pinned],
+.resources-augment-candidates .ledger-row[data-hover-card-pinned] {
   outline: 2px solid var(--border-focus);
   outline-offset: -2px;
 }

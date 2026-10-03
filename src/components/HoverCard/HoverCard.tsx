@@ -37,7 +37,7 @@ interface CardController {
   closeFrom: (depth: number) => void
   removeAnchor: (anchorId: string) => void
   clear: () => void
-  openAnchorIds: ReadonlySet<string>
+  pinnedAnchorIds: ReadonlySet<string>
 }
 
 const ControllerContext = createContext<CardController | null>(null)
@@ -260,7 +260,9 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         closeFrom,
         removeAnchor,
         clear,
-        openAnchorIds: new Set(cards.flatMap((card) => (card.anchorId ? [card.anchorId] : []))),
+        pinnedAnchorIds: new Set(
+          cards.flatMap((card) => (card.isPinned && card.anchorId ? [card.anchorId] : [])),
+        ),
       }}
     >
       {children}
@@ -277,7 +279,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions): {
-  'data-hover-card-open': '' | undefined
+  'data-hover-card-pinned': '' | undefined
   onMouseEnter: (event: React.MouseEvent<HTMLElement>) => void
   onMouseLeave: () => void
   onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void
@@ -290,7 +292,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
   const removeAnchor = controller?.removeAnchor
   useEffect(() => () => removeAnchor?.(anchorId), [removeAnchor, anchorId])
   return {
-    'data-hover-card-open': controller?.openAnchorIds.has(anchorId) ? '' : undefined,
+    'data-hover-card-pinned': controller?.pinnedAnchorIds.has(anchorId) ? '' : undefined,
     onMouseEnter: (event) =>
       controller?.open(
         {
