@@ -1277,6 +1277,17 @@ Nothing goes blank in between. `/v1/enchantments` lists kinds and stats, each on
 detail return each enchantment with its rendered text and description, its family and the stat rows the join yields. This also supplies the
 "via Combustion" caption the 4g API note asks for, since the kind is the enchantment's display name.
 
+**Buff map sweep first (found 2026-10-03).** The ETL turns a Maetrim buff into a bonus only through
+`buff_map.toml`, never through the buff's own `<Effect>` types, so 339 effect families whose effect types
+`effect_map.toml` already maps (Shield Bashing, Improved Deception, Proof Against Poison, Negative
+Amplification, Repair Lore, Melee Alacrity, Ghost Touch, Vorpal, Blurry, True Seeing, …) sit in `effects`
+as text with a number the engine cannot use. Hallowed and Sacred were mapped by hand (Turn Undead Max Dice
+and Turn Undead Level, ddo-data caa4918) and `check-db` now warns `effects_with_a_value_but_no_stat` (117
+families on the upstream build), the work list. Before the schema change: let the ETL fall back to the
+buff's effect types through `effect_map.toml` when `buff_map.toml` has no entry (the mapping then lives
+once), and decide the rest of the list family by family: a stat worth tracking gets a stats seed entry,
+prose stays prose with no amount.
+
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
 `routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
 hover cards and filter vocabulary, then the wiki reads fill exact text as they happen (see the tooltip

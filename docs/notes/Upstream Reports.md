@@ -75,3 +75,7 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 The Lost Purpose set is still named "Devil's Infernal Dance"; only its augments were renamed.
 - 📋 Epic-only quests carry `level` equal to their epic level; `level` should probably be null for them.
 - 📋 Dampened Shatterbow: the wiki's own item page agrees with his "Scorpions optional chest"; only the Dampened crafting page says end chests, so nothing is corrected.
+
+## Item buffs
+
+- 📋 Hallowed — his `ItemBuffs.xml` types the buff's effect `TurnDiceBonus` (turn undead dice) while its own text and the wiki say "maximum Hit Dice of undead turned" (`TurnMaxDice`); `buff_map.toml` maps it to Turn Undead Max Dice per the text. Source: https://ddowiki.com/page/Hallowed.
