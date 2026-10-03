@@ -139,13 +139,9 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => chooseOption(option)}
               >
-                {isMultiple && (
-                  <span
-                    className={`combobox-check${isSelected ? ' combobox-check--selected' : ''}`}
-                  >
-                    {isSelected && <Check size={11} aria-hidden />}
-                  </span>
-                )}
+                <span className={`combobox-check${isSelected ? ' combobox-check--selected' : ''}`}>
+                  {isSelected && <Check size={11} aria-hidden />}
+                </span>
                 <span className="combobox-option-label">
                   {renderOption ? renderOption(option) : option.label}
                 </span>

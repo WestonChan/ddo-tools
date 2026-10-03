@@ -10,7 +10,7 @@ import {
   type RefObject,
 } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Search } from 'lucide-react'
+import { Check, Search } from 'lucide-react'
 import { ApiGate, LedgerTable, type LedgerColumn, type LedgerSort } from '../../../components'
 import { useDebouncedValue } from '../../../hooks'
 import { FilterChipRow } from '../filters/FilterChipRow'
@@ -321,6 +321,9 @@ export function ItemPicker({
                 checked={includesSetBonuses}
                 onChange={(event) => setIncludesSetBonuses(event.target.checked)}
               />
+              <span className="resources-include-sets-box" aria-hidden>
+                {includesSetBonuses && <Check size={10} />}
+              </span>
               Include set bonuses
             </label>
           ),
@@ -374,7 +377,7 @@ export function ItemPicker({
           ) : (
             <>
               <span>No items match your filters.</span>
-              <button type="button" className="resources-empty-clear" onClick={clearAll}>
+              <button type="button" className="btn-ghost-sm" onClick={clearAll}>
                 Clear filters
               </button>
             </>

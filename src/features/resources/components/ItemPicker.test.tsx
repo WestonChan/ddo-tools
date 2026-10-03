@@ -112,10 +112,21 @@ describe('ItemPicker server-backed filters', () => {
     expect(
       within(chipRow)
         .getAllByRole('button')
-        .map((button) => button.textContent),
-    ).toEqual(['ML', 'Slot', 'Enchantments', 'Pack', 'Raid', 'Rare only', 'Raid only'])
+        .map((button) => button.getAttribute('data-tip')),
+    ).toEqual(['ML range', 'Gear slot', 'Enchantments', 'Pack', 'Raid', 'Rare only', 'Raid only'])
     expect(screen.getByText('93 results')).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'items list' })).toBeInTheDocument()
+  })
+
+  it('shows a large response total without grouping separators', () => {
+    pageState = {
+      data: { total: 8084, items: SAMPLE_ITEMS },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    renderItemPicker()
+    expect(screen.getByText('8084 results')).toBeInTheDocument()
   })
 
   it('renders Raid and Rare as static headers while other columns remain sortable', () => {
@@ -148,16 +159,16 @@ describe('ItemPicker server-backed filters', () => {
   it('passes slot, two enchantments, set bonuses, raid, range, rare and search to one page hook', async () => {
     const user = userEvent.setup()
     renderItemPicker()
-    await user.click(screen.getByRole('button', { name: 'Slot' }))
+    await user.click(screen.getByRole('button', { name: 'Gear slot' }))
     await user.click(screen.getByRole('option', { name: 'Back' }))
     await user.click(screen.getByRole('button', { name: 'Enchantments' }))
     await user.click(screen.getByRole('option', { name: 'Strength' }))
     await user.click(screen.getByRole('option', { name: /Vorpal/ }))
     await user.click(screen.getByRole('checkbox', { name: 'Include set bonuses' }))
-    await user.click(screen.getByRole('button', { name: 'Enchantments · 2' }))
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
     await user.click(screen.getByRole('button', { name: 'Raid' }))
     await user.click(screen.getByRole('option', { name: /The Raid/ }))
-    await user.click(screen.getByRole('button', { name: 'ML' }))
+    await user.click(screen.getByRole('button', { name: 'ML range' }))
     await user.type(screen.getByRole('spinbutton', { name: 'Min ML' }), '20')
     await user.type(screen.getByRole('spinbutton', { name: 'Max ML' }), '32{Enter}')
     await user.click(screen.getByRole('button', { name: 'Rare only' }))
@@ -175,8 +186,11 @@ describe('ItemPicker server-backed filters', () => {
       isRaidOnly: false,
     })
     expect(useItemPageMock.mock.lastCall?.[2]).toBe(true)
-    await user.click(screen.getByRole('button', { name: 'Show applied · 7' }))
-    await user.click(screen.getByRole('button', { name: 'Remove Slot: Back' }))
+    await user.click(screen.getByRole('button', { name: 'Show applied · 6' }))
+    expect(
+      Array.from(document.querySelectorAll('.filter-applied-label'), (label) => label.textContent),
+    ).toEqual(['ML', 'Gear slot', 'Enchantments', 'Raid', 'Show'])
+    await user.click(screen.getByRole('button', { name: 'Remove Gear slot: Back' }))
     expect(latestFilters().slot).toBe('')
   })
 
@@ -280,6 +294,11 @@ describe('ItemPicker server-backed filters', () => {
     expect(latestFilters().raid).toBe('8')
     expect(screen.getByText('0 results')).toBeInTheDocument()
     expect(screen.getByText('No items match your filters.')).toBeInTheDocument()
+    expect(
+      within(document.querySelector('.ledger-empty') as HTMLElement).getByRole('button', {
+        name: 'Clear filters',
+      }),
+    ).toHaveClass('btn-ghost-sm')
   })
 
   it('opens the detail route from a ledger row', async () => {

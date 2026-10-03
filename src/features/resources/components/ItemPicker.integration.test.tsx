@@ -55,7 +55,7 @@ describe('ItemPicker page errors', () => {
     expect(fetchMock.mock.calls.map(([request]) => new URL(String(request)).pathname)).toEqual([
       '/v1/items',
     ])
-    await userEvent.click(screen.getByRole('button', { name: 'Slot' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Gear slot' }))
     expect(screen.getByText('Loading options…')).toHaveAttribute('role', 'status')
     expect(fetchMock.mock.calls.map(([request]) => new URL(String(request)).pathname)).toEqual([
       '/v1/items',
@@ -155,7 +155,7 @@ describe('ItemPicker page errors', () => {
     await user.click(screen.getByRole('option', { name: 'Bad Filter' }))
     expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Enchantments · 1' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enchantments' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Show applied · 1' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
@@ -215,7 +215,7 @@ describe('ItemPicker page errors', () => {
     expect(await screen.findByText('Could not load sorted items.')).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /ML/ })).toBeInTheDocument()
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Slot' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Gear slot' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Reset sort' }))
     expect(await screen.findByText('1 result')).toBeInTheDocument()

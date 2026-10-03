@@ -181,6 +181,7 @@
   --glow-accent: 0 0 0 1px var(--gold-500), 0 0 12px -2px rgb(from var(--accent) r g b / 0.35);
   --ring-focus: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--border-focus);
   --inset-mark-accent: inset 2px 0 0 var(--accent-fill);
+  --inset-mark-picker: inset 2px 0 0 var(--gold-400);
   --inset-mark-secondary: inset 2px 0 0 var(--arcane-400);
   --inset-drop-line: inset 0 2px 0 var(--accent-fill);
 

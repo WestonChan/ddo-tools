@@ -114,6 +114,45 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
+test('filter chips keep their label width when values are selected', async ({ page }) => {
+  await page.goto('/resources/items')
+  await expect(page.getByRole('table', { name: 'items list', exact: true })).toBeVisible()
+  await page.evaluate(async () => {
+    await document.fonts.ready
+  })
+  const chips = page.locator('.filter-chip-wrap .filter-chip')
+  const widths = await Promise.all(
+    [0, 1, 2].map((index) =>
+      chips.nth(index).evaluate((chip) => (chip as HTMLElement).offsetWidth),
+    ),
+  )
+  await chips.nth(0).click()
+  await page.getByRole('spinbutton', { name: 'Min ML', exact: true }).fill('20')
+  await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).fill('32')
+  await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).press('Enter')
+  const slotChip = chips.nth(1)
+  await slotChip.click()
+  await page.getByRole('option', { name: 'Back', exact: true }).click()
+  await expect(slotChip.locator('.filter-chip-text')).toHaveText('Gear slot')
+  await expect(slotChip).toHaveAttribute('data-tip', 'Gear slot: Back')
+  await expect(page.locator('.filter-chip-wrap').nth(1).locator('.filter-chip-badge')).toHaveText(
+    '1',
+  )
+  const enchantmentsChip = chips.nth(2)
+  await enchantmentsChip.click()
+  await page.getByRole('option', { name: 'Strength', exact: true }).click()
+  await page.getByRole('option', { name: 'Vorpal', exact: true }).click()
+  await expect(enchantmentsChip.locator('.filter-chip-text')).toHaveText('Enchantments')
+  await expect(page.locator('.filter-chip-wrap').nth(2).locator('.filter-chip-badge')).toHaveText(
+    '2',
+  )
+  for (const index of [0, 1, 2]) {
+    expect(await chips.nth(index).evaluate((chip) => (chip as HTMLElement).offsetWidth)).toBe(
+      widths[index],
+    )
+  }
+})
+
 for (const theme of ['dark', 'light']) {
   test(`ledger and filters work in ${theme} theme at desktop and 375px`, async ({ page }) => {
     await page.addInitScript((selectedTheme) => localStorage.setItem('theme', selectedTheme), theme)
@@ -192,16 +231,16 @@ test('sends all active filters in one item request and removes cleared parameter
   })
   await page.goto('/resources/items')
   await expect(page.getByRole('table', { name: 'items list', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Slot', exact: true }).click()
+  await page.getByRole('button', { name: 'Gear slot', exact: true }).click()
   await page.getByRole('option', { name: 'Back', exact: true }).click()
   await page.getByRole('button', { name: 'Enchantments', exact: true }).click()
   await page.getByRole('option', { name: 'Strength', exact: true }).click()
   await page.getByRole('option', { name: /Vorpal/ }).click()
   await page.getByRole('checkbox', { name: 'Include set bonuses', exact: true }).check()
-  await page.getByRole('button', { name: 'Enchantments · 2', exact: true }).click()
+  await page.getByRole('button', { name: 'Enchantments', exact: true }).click()
   await page.getByRole('button', { name: 'Raid', exact: true }).click()
   await page.getByRole('option', { name: /The Raid/ }).click()
-  await page.getByRole('button', { name: 'ML', exact: true }).click()
+  await page.getByRole('button', { name: 'ML range', exact: true }).click()
   await page.getByRole('spinbutton', { name: 'Min ML', exact: true }).fill('20')
   await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).fill('32')
   await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).press('Enter')
@@ -226,7 +265,7 @@ test('sends all active filters in one item request and removes cleared parameter
   expect(
     itemRequests.filter((url) => Object.fromEntries(url.searchParams).q === 'torc'),
   ).toHaveLength(1)
-  await page.getByRole('button', { name: 'Clear Slot', exact: true }).click()
+  await page.getByRole('button', { name: 'Clear Gear slot', exact: true }).click()
   await expect.poll(() => itemRequests.at(-1)?.searchParams.has('slot')).toBe(false)
   expect(itemRequests.at(-1)?.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
   expect(new Set(itemRequests.map((url) => url.search)).size).toBe(itemRequests.length)

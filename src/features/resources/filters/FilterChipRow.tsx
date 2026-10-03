@@ -14,9 +14,11 @@ import {
   clearedFilterChipValues,
   clearedFilterValues,
   commitNumericRange,
+  filterChipHint,
   filterChipText,
   isFilterSet,
   type AnyFilterDefinition,
+  type AppliedFilterValue,
   type FilterDefinition,
   type FilterValue,
   type NumericRange,
@@ -85,7 +87,7 @@ function RangePopover({
       anchorRef={anchorRef}
       placement="below"
       widthPx={236}
-      label={definition.label + ' range'}
+      label={definition.label}
       onClose={onClose}
       className="filter-range-menu"
     >
@@ -148,6 +150,13 @@ function FilterChip({
   const anchorRef = useRef<HTMLButtonElement>(null)
   const isSelected = isFilterSet(definition, value)
   const isToggle = definition.kind === 'toggle'
+  const chipText = filterChipText(definition, value)
+  const badgeCount =
+    definition.kind === 'multi' && Array.isArray(value)
+      ? value.length
+      : definition.kind === 'single' && isSelected
+        ? 1
+        : 0
   return (
     <div className="filter-chip-wrap">
       <button
@@ -161,20 +170,40 @@ function FilterChip({
         aria-haspopup={isToggle ? undefined : 'listbox'}
         aria-expanded={isToggle ? undefined : isOpen}
         aria-pressed={isToggle ? Boolean(value) : undefined}
+        data-tip={filterChipHint(definition, value)}
         onClick={onToggle}
       >
-        <span>{filterChipText(definition, value)}</span>
-        {!isToggle && !isSelected && <ChevronDown size={12} aria-hidden />}
+        {isToggle ? (
+          chipText
+        ) : (
+          <>
+            <span className="filter-chip-content">
+              <span className="filter-chip-sizer" aria-hidden>
+                {definition.label}
+              </span>
+              <span className="filter-chip-text">{chipText}</span>
+            </span>
+            <span className="filter-chip-end" aria-hidden>
+              {!isSelected && <ChevronDown size={12} />}
+            </span>
+          </>
+        )}
       </button>
       {isSelected && !isToggle && (
         <button
           type="button"
           className="filter-chip-remove"
           aria-label={'Clear ' + definition.label}
+          data-tip="Clear"
           onClick={onClear}
         >
           <X size={12} aria-hidden />
         </button>
+      )}
+      {badgeCount > 0 && (
+        <span className="filter-chip-badge" aria-hidden>
+          {badgeCount}
+        </span>
       )}
       {isOpen && definition.kind === 'range' && (
         <RangePopover
@@ -232,6 +261,23 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   const rangeCommitRef = useRef<(() => void) | null>(null)
   const appliedValues = appliedFilterValues(definitions, values)
   const hasActiveFilters = appliedValues.length > 0 || hasSearchTerm
+  const appliedGroups = definitions.reduce<
+    {
+      label: string
+      entries: { definition: FilterDefinition<Values>; value: AppliedFilterValue }[]
+    }[]
+  >((grouped, definition) => {
+    const entries = appliedValues.filter((entry) => entry.key === definition.key)
+    if (!entries.length) return grouped
+    const label = entries[0].groupLabel
+    let group = grouped.find((candidate) => candidate.label === label)
+    if (!group) {
+      group = { label, entries: [] }
+      grouped.push(group)
+    }
+    group.entries.push(...entries.map((value) => ({ definition, value })))
+    return grouped
+  }, [])
   const groups = definitions.reduce<FilterDefinition<Values>[][]>((grouped, definition) => {
     const lastGroup = grouped[grouped.length - 1]
     if (lastGroup && lastGroup[0].group === definition.group) lastGroup.push(definition)
@@ -255,7 +301,7 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   function removeAppliedValue(
     event: MouseEvent<HTMLButtonElement>,
     definition: FilterDefinition<Values>,
-    value: string | boolean,
+    value: string | boolean | null,
   ): void {
     const buttons = Array.from(
       event.currentTarget
@@ -334,27 +380,25 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
       )}
       {isAppliedOpen && appliedValues.length > 0 && (
         <div className="filter-applied-values" role="region" aria-label="Applied filters">
-          {definitions.map((definition) => {
-            const entries = appliedValues.filter((entry) => entry.key === definition.key)
-            if (!entries.length) return null
-            return (
-              <div className="filter-applied-group" key={definition.key}>
-                <span className="filter-applied-label">{definition.label}</span>
-                {entries.map((entry) => (
-                  <button
-                    type="button"
-                    key={String(entry.value)}
-                    className="filter-applied-value"
-                    aria-label={'Remove ' + definition.label + ': ' + entry.text}
-                    onClick={(event) => removeAppliedValue(event, definition, entry.value)}
-                  >
-                    {entry.text}
-                    <X size={11} aria-hidden />
-                  </button>
-                ))}
-              </div>
-            )
-          })}
+          {appliedGroups.map((group) => (
+            <div className="filter-applied-group" key={group.label}>
+              <span className="filter-applied-label">{group.label}</span>
+              {group.entries.map(({ definition, value: entry }) => (
+                <button
+                  type="button"
+                  key={definition.key + String(entry.value)}
+                  className="filter-applied-value"
+                  aria-label={'Remove ' + definition.label + ': ' + entry.text}
+                  onClick={(event) => removeAppliedValue(event, definition, entry.value)}
+                >
+                  {entry.text}
+                  <span className="filter-applied-value-remove" data-tip="Remove" aria-hidden>
+                    <X size={11} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </>

@@ -139,6 +139,10 @@
   font-size: var(--fs-label);
 }
 
+.resources-picker-inner .ledger-empty {
+  padding: calc(var(--space-6) + var(--space-6)) var(--space-5);
+}
+
 .resources-ledger-name {
   display: flex;
   align-items: center;
@@ -155,27 +159,48 @@
 }
 
 .resources-include-sets {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
   cursor: pointer;
 
   & input {
-    width: 12px;
-    height: 12px;
-    accent-color: var(--accent-fill);
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
   }
 }
 
-.resources-empty-clear {
-  height: 30px;
-  padding: 0 var(--space-3);
-  background: var(--surface-card);
-  border: 1px solid var(--border-default);
+.resources-include-sets-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-xs);
-  color: var(--text-link);
-  font-size: var(--fs-label);
-  cursor: pointer;
+
+  & svg {
+    flex: 0 0 auto;
+  }
+}
+
+.resources-include-sets:has(input:checked) .resources-include-sets-box {
+  background: var(--accent-fill);
+  border-color: var(--border-accent);
+  color: var(--text-inverse);
+}
+
+.resources-include-sets:has(input:focus-visible) .resources-include-sets-box {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 .resources-chip {

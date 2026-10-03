@@ -20,6 +20,8 @@ export interface RangeDefinition {
 interface FilterDefinitionBase<Key extends string> {
   key: Key
   label: string
+  shortLabel?: string
+  appliedGroupLabel?: string
   group?: string
   formatValue?: (value: FilterValue) => string
 }
@@ -55,13 +57,17 @@ export type FilterDefinition<Values extends { [Key in keyof Values]: FilterValue
 
 export interface AppliedFilterValue {
   key: string
-  label: string
-  value: string | boolean
+  groupLabel: string
+  value: string | boolean | null
   text: string
 }
 
 function isNumericRange(value: FilterValue | undefined): value is NumericRange {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function filterOptionLabel(options: FilterOption[] | undefined, value: string): string {
+  return options?.find((option) => option.value === value)?.label ?? value
 }
 
 export function appliedFilterValues<Values extends { [Key in keyof Values]: FilterValue }>(
@@ -70,24 +76,25 @@ export function appliedFilterValues<Values extends { [Key in keyof Values]: Filt
 ): AppliedFilterValue[] {
   return definitions.flatMap<AppliedFilterValue>((definition) => {
     const selectedValue = values[definition.key]
+    const groupLabel = definition.appliedGroupLabel ?? definition.shortLabel ?? definition.label
     if (definition.kind === 'range') {
-      if (!isNumericRange(selectedValue)) return []
-      return (['min', 'max'] as const)
-        .filter((bound) => !!selectedValue[bound])
-        .map((bound) => ({
+      if (!isNumericRange(selectedValue) || !isFilterSet(definition, selectedValue)) return []
+      return [
+        {
           key: definition.key,
-          label: definition.label,
-          value: bound,
-          text: `${bound === 'min' ? '≥' : '≤'} ${selectedValue[bound]}`,
-        }))
+          groupLabel,
+          value: null,
+          text: filterChipText(definition, selectedValue),
+        },
+      ]
     }
     if (definition.kind === 'multi') {
       if (!Array.isArray(selectedValue)) return []
       return selectedValue.map((selected) => ({
         key: definition.key,
-        label: definition.label,
+        groupLabel,
         value: selected,
-        text: definition.options?.find((option) => option.value === selected)?.label ?? selected,
+        text: filterOptionLabel(definition.options, selected),
       }))
     }
     if (typeof selectedValue !== 'string' && typeof selectedValue !== 'boolean') return []
@@ -95,13 +102,12 @@ export function appliedFilterValues<Values extends { [Key in keyof Values]: Filt
     return [
       {
         key: definition.key,
-        label: definition.label,
+        groupLabel,
         value: selectedValue,
         text:
           definition.kind === 'toggle'
             ? definition.label
-            : (definition.options?.find((option) => option.value === selectedValue)?.label ??
-              String(selectedValue)),
+            : filterOptionLabel(definition.options, String(selectedValue)),
       },
     ]
   })
@@ -110,13 +116,10 @@ export function appliedFilterValues<Values extends { [Key in keyof Values]: Filt
 export function clearedFilterValues<Values extends { [Key in keyof Values]: FilterValue }>(
   values: Values,
   definition: FilterDefinition<Values>,
-  value: string | boolean,
+  value: string | boolean | null,
 ): Values {
   const selectedValue = values[definition.key]
-  if (definition.kind === 'range') {
-    const range = isNumericRange(selectedValue) ? selectedValue : { min: '', max: '' }
-    return { ...values, [definition.key]: { ...range, [String(value)]: '' } }
-  }
+  if (definition.kind === 'range') return clearedFilterChipValues(values, definition)
   if (definition.kind === 'multi') {
     return {
       ...values,
@@ -178,20 +181,30 @@ export function filterChipText(
   value: FilterValue | undefined,
 ): string {
   if (!isFilterSet(definition, value)) return definition.label
-  if (value !== undefined && definition.formatValue) return definition.formatValue(value)
   if (definition.kind === 'range' && isNumericRange(value)) {
+    if (definition.formatValue) return definition.formatValue(value)
     return value.min && value.max
       ? `${value.min}–${value.max}`
       : value.min
         ? `≥ ${value.min}`
         : `≤ ${value.max}`
   }
+  return definition.label
+}
+
+export function filterChipHint(
+  definition: AnyFilterDefinition,
+  value: FilterValue | undefined,
+): string {
+  if (!isFilterSet(definition, value)) return definition.label
+  if (definition.kind === 'range') {
+    return `${definition.shortLabel ?? definition.label} ${filterChipText(definition, value)}`
+  }
   if (definition.kind === 'multi' && Array.isArray(value)) {
-    return `${definition.label} · ${value.length}`
+    return `${definition.label}: ${value.map((selected) => filterOptionLabel(definition.options, selected)).join(', ')}`
   }
-  if (definition.kind === 'toggle') return definition.label
-  if (definition.kind === 'single') {
-    return `${definition.label} · ${definition.options?.find((option) => option.value === value)?.label ?? String(value)}`
-  }
+  if (definition.kind === 'single')
+    return `${definition.label}: ${filterOptionLabel(definition.options, String(value))}`
+  if (definition.kind === 'toggle') return `${definition.label}: on`
   return definition.label
 }

@@ -10,7 +10,8 @@ export function itemFilterDefinitions(
   return [
     {
       key: 'ml',
-      label: 'ML',
+      label: 'ML range',
+      shortLabel: 'ML',
       kind: 'range',
       group: 'item',
       range: {
@@ -25,7 +26,7 @@ export function itemFilterDefinitions(
     },
     {
       key: 'slot',
-      label: 'Slot',
+      label: 'Gear slot',
       kind: 'single',
       group: 'item',
       searchPlaceholder: 'Find a slot…',
@@ -36,7 +37,7 @@ export function itemFilterDefinitions(
       label: 'Enchantments',
       kind: 'multi',
       group: 'item',
-      searchPlaceholder: 'Find an enchantment…',
+      searchPlaceholder: 'Bonus or enchantment…',
       options: enchantmentNames.map((name) => ({ value: name, label: name })),
     },
     {
@@ -59,7 +60,19 @@ export function itemFilterDefinitions(
         caption: quest.pack ?? undefined,
       })),
     },
-    { key: 'isRareOnly', label: 'Rare only', kind: 'toggle', group: 'loot' },
-    { key: 'isRaidOnly', label: 'Raid only', kind: 'toggle', group: 'loot' },
+    {
+      key: 'isRareOnly',
+      label: 'Rare only',
+      kind: 'toggle',
+      group: 'loot',
+      appliedGroupLabel: 'Show',
+    },
+    {
+      key: 'isRaidOnly',
+      label: 'Raid only',
+      kind: 'toggle',
+      group: 'loot',
+      appliedGroupLabel: 'Show',
+    },
   ]
 }
