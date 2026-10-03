@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LedgerTable } from './LedgerTable'
 import type { LedgerColumn } from './ledgerModel'
@@ -105,12 +105,47 @@ describe('LedgerTable', () => {
       'aria-sort',
       'descending',
     )
+    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveClass('sr-only')
+    expect(screen.getByRole('button', { name: 'Move ML' })).not.toHaveAttribute('title')
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveTextContent('ML')
     expect(
       screen.getAllByRole('columnheader').filter((header) => header.tabIndex >= 0),
     ).toHaveLength(0)
   })
 
-  it('renders a column marked unsortable as a static header without changing the other controls', () => {
+  it('sorts on a plain header click but not on its resize grip or reorder handle', async () => {
+    const onSortChange = vi.fn()
+    render(
+      <LedgerTable
+        columns={columns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        onSortChange={onSortChange}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    await userEvent.click(screen.getByRole('columnheader', { name: /ML/ }))
+    expect(onSortChange).toHaveBeenCalledWith({ key: 'ml', direction: 'desc' })
+    await userEvent.click(screen.getByRole('separator', { name: 'Resize ML' }))
+    screen.getByRole('button', { name: 'Sort ML' }).focus()
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveFocus()
+    await userEvent.keyboard(' ')
+    await waitFor(() =>
+      expect(screen.getByRole('columnheader', { name: /ML/ })).toHaveClass(
+        'ledger-header-cell--dragging',
+      ),
+    )
+    await userEvent.keyboard('{Escape}')
+    expect(onSortChange).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders a column marked unsortable without a sort button but with a reorder handle', () => {
     const staticColumns = columns.map((column) =>
       column.key === 'pack' ? { ...column, isSortable: false } : column,
     )
@@ -127,7 +162,8 @@ describe('LedgerTable', () => {
     )
     const packHeader = screen.getByRole('columnheader', { name: /Pack/ })
     expect(packHeader).not.toHaveAttribute('aria-sort')
-    expect(packHeader.querySelector('button')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Sort Pack' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Move Pack' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sort Name' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sort ML' })).toBeInTheDocument()
   })
@@ -182,7 +218,7 @@ describe('LedgerTable', () => {
     expect(screen.getAllByRole('row')[3]).toHaveFocus()
   })
 
-  it('keeps both columns above their minimum width when a divider is dragged', () => {
+  it('resizes with a pointer on the grip without reordering either column', () => {
     render(
       <LedgerTable
         columns={columns}
@@ -194,13 +230,24 @@ describe('LedgerTable', () => {
         viewportWidth={800}
       />,
     )
-    fireEvent.mouseDown(screen.getByRole('separator', { name: 'Resize ML' }), { clientX: 0 })
-    fireEvent.mouseMove(window, { clientX: 100 })
-    fireEvent.mouseUp(window)
+    fireEvent.pointerDown(screen.getByRole('separator', { name: 'Resize ML' }), {
+      button: 0,
+      pointerId: 1,
+      isPrimary: true,
+      clientX: 0,
+    })
+    fireEvent.pointerMove(window, { pointerId: 1, clientX: 100 })
+    expect(screen.getByRole('columnheader', { name: /ML/ })).not.toHaveClass(
+      'ledger-header-cell--dragging',
+    )
+    fireEvent.pointerUp(window, { pointerId: 1 })
     expect(screen.getByRole('columnheader', { name: /ML/ })).toHaveStyle({ flex: '0 0 40px' })
+    expect(
+      screen.getAllByRole('columnheader').map((header) => header.getAttribute('data-column-key')),
+    ).toEqual(['name', 'ml', 'pack'])
   })
 
-  it('reorders a column when its header is dragged to the right', async () => {
+  it('reorders a column when its label is dragged to the right', async () => {
     render(
       <LedgerTable
         columns={columns}
@@ -213,12 +260,17 @@ describe('LedgerTable', () => {
       />,
     )
     const headers = screen.getAllByRole('columnheader')
+    const headerRects = [
+      { x: 0, width: 120 },
+      { x: 120, width: 44 },
+      { x: 164, width: 168 },
+    ]
     headers.forEach((header, index) => {
       vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
-        DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+        DOMRect.fromRect({ ...headerRects[index], y: 0, height: 30 }),
       )
     })
-    fireEvent.pointerDown(headers[1], {
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Sort ML' }), {
       button: 0,
       pointerId: 1,
       isPrimary: true,
@@ -229,10 +281,96 @@ describe('LedgerTable', () => {
     expect(headers[1]).toHaveClass('ledger-header-cell--dragging')
     fireEvent.pointerMove(document, { pointerId: 1, clientX: 275, clientY: 15 })
     await waitFor(() => expect(headers[2]).toHaveClass('ledger-header-cell--over'))
+    expect(headers[1].style.transform).toContain('translate3d(')
+    expect(headers[1].style.transform).not.toContain('scale')
     fireEvent.pointerUp(document, { pointerId: 1, clientX: 260, clientY: 15 })
     expect(
       screen.getAllByRole('columnheader').map((header) => header.getAttribute('data-column-key')),
     ).toEqual(['name', 'pack', 'ml'])
+  })
+
+  it('reorders a static column from its keyboard handle', async () => {
+    const staticColumns = columns.map((column) =>
+      column.key === 'pack' ? { ...column, isSortable: false } : column,
+    )
+    render(
+      <LedgerTable
+        columns={staticColumns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    screen.getAllByRole('columnheader').forEach((header, index) => {
+      vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+      )
+    })
+    screen.getByRole('button', { name: 'Sort ML' }).focus()
+    await userEvent.tab()
+    await userEvent.tab()
+    const reorderHandle = screen.getByRole('button', { name: 'Move Pack' })
+    expect(reorderHandle).toHaveFocus()
+    await userEvent.keyboard(' ')
+    await waitFor(() =>
+      expect(screen.getByRole('columnheader', { name: /Pack/ })).toHaveClass(
+        'ledger-header-cell--dragging',
+      ),
+    )
+    await userEvent.keyboard('{ArrowLeft}')
+    await waitFor(() =>
+      expect(screen.getByRole('columnheader', { name: /ML/ })).toHaveClass(
+        'ledger-header-cell--over',
+      ),
+    )
+    await userEvent.keyboard(' ')
+    expect(
+      screen.getAllByRole('columnheader').map((header) => header.getAttribute('data-column-key')),
+    ).toEqual(['name', 'pack', 'ml'])
+    expect(reorderHandle).toHaveFocus()
+  })
+
+  it('reorders a static column from its label with the pointer', () => {
+    const staticColumns = columns.map((column) =>
+      column.key === 'pack' ? { ...column, isSortable: false } : column,
+    )
+    render(
+      <LedgerTable
+        columns={staticColumns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    screen.getAllByRole('columnheader').forEach((header, index) => {
+      vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+      )
+    })
+    const packHeader = screen.getByRole('columnheader', { name: /Pack/ })
+    fireEvent.pointerDown(
+      within(packHeader).getByText('Pack', { selector: '.ledger-header-label' }),
+      {
+        button: 0,
+        pointerId: 1,
+        isPrimary: true,
+        clientX: 250,
+        clientY: 15,
+      },
+    )
+    fireEvent.pointerMove(document, { pointerId: 1, clientX: 140, clientY: 15 })
+    fireEvent.pointerMove(document, { pointerId: 1, clientX: 125, clientY: 15 })
+    fireEvent.pointerUp(document, { pointerId: 1, clientX: 125, clientY: 15 })
+    expect(
+      screen.getAllByRole('columnheader').map((header) => header.getAttribute('data-column-key')),
+    ).toEqual(['name', 'pack', 'ml'])
+    expect(packHeader).not.toHaveAttribute('aria-sort')
   })
 
   it('does not sort the same rows again for an unrelated render', () => {

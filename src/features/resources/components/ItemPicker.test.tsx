@@ -129,12 +129,13 @@ describe('ItemPicker server-backed filters', () => {
     expect(screen.getByText('8084 results')).toBeInTheDocument()
   })
 
-  it('renders Raid and Rare as static headers while other columns remain sortable', () => {
+  it('renders Raid and Rare without sort controls but with reorder handles', () => {
     renderItemPicker()
     for (const label of ['Raid', 'Rare']) {
       const header = screen.getByRole('columnheader', { name: new RegExp(label) })
       expect(header).not.toHaveAttribute('aria-sort')
-      expect(within(header).queryByRole('button')).toBeNull()
+      expect(within(header).queryByRole('button', { name: `Sort ${label}` })).toBeNull()
+      expect(within(header).getByRole('button', { name: `Move ${label}` })).toBeInTheDocument()
     }
     expect(screen.getByRole('button', { name: 'Sort Name' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sort ML' })).toBeInTheDocument()

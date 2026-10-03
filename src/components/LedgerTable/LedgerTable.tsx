@@ -7,13 +7,25 @@ import {
   type CSSProperties,
   type JSX,
   type KeyboardEvent,
-  type MouseEvent,
+  type PointerEvent,
   type ReactNode,
 } from 'react'
-import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
 import { List, type ListImperativeAPI, type RowComponentProps } from 'react-window'
 import { useHoverCard, type HoverCardOptions } from '../HoverCard'
 import {
@@ -158,7 +170,7 @@ interface HeaderCellProps<Row> {
   isSorted: boolean
   sortDirection: 'asc' | 'desc' | null
   onSort: () => void
-  onResize: (event: MouseEvent<HTMLSpanElement>, column: LedgerColumn<Row>) => void
+  onResize: (event: PointerEvent<HTMLSpanElement>, column: LedgerColumn<Row>) => void
 }
 
 function HeaderCell<Row>({
@@ -170,14 +182,19 @@ function HeaderCell<Row>({
   onSort,
   onResize,
 }: HeaderCellProps<Row>): JSX.Element {
-  const { listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging, isOver } =
-    useSortable({ id: column.key })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id: column.key })
   return (
     <div
-      ref={(node) => {
-        setNodeRef(node)
-        setActivatorNodeRef(node)
-      }}
+      ref={setNodeRef}
       data-column-key={column.key}
       aria-sort={
         column.isSortable === false
@@ -195,11 +212,13 @@ function HeaderCell<Row>({
       }
       style={{
         ...columnStyle(column, widths),
-        transform: CSS.Transform.toString(transform),
+        transform: CSS.Translate.toString(transform),
         transition,
       }}
       {...listeners}
       role="columnheader"
+      aria-label={column.label}
+      onClick={column.isSortable === false ? undefined : onSort}
     >
       {!isFirst && (
         <span
@@ -207,8 +226,8 @@ function HeaderCell<Row>({
           aria-label={'Resize ' + column.label}
           aria-orientation="vertical"
           className="ledger-resize-grip"
-          onPointerDown={(event) => event.stopPropagation()}
-          onMouseDown={(event) => onResize(event, column)}
+          onPointerDown={(event) => onResize(event, column)}
+          onClick={(event) => event.stopPropagation()}
         >
           <span />
         </span>
@@ -216,12 +235,7 @@ function HeaderCell<Row>({
       {column.isSortable === false ? (
         <span className="ledger-header-label">{column.label}</span>
       ) : (
-        <button
-          type="button"
-          aria-label={'Sort ' + column.label}
-          className="ledger-sort-button"
-          onClick={onSort}
-        >
+        <button type="button" aria-label={'Sort ' + column.label} className="ledger-sort-button">
           {column.label}
           {isSorted &&
             (sortDirection === 'asc' ? (
@@ -231,6 +245,17 @@ function HeaderCell<Row>({
             ))}
         </button>
       )}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        className="ledger-header-reorder sr-only"
+        {...attributes}
+        aria-label={'Move ' + column.label}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <GripVertical size={8} aria-hidden />
+        <span>{column.label}</span>
+      </button>
     </div>
   )
 }
@@ -284,7 +309,10 @@ export function LedgerTable<Row>({
     [rows, columns, sort, rowKind, isSortedExternally],
   )
   const tabbableRowIndex = Math.min(focusedIndex, Math.max(0, sortedRows.length - 1))
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   useEffect(() => {
     if (viewportWidth !== undefined) return
@@ -357,13 +385,16 @@ export function LedgerTable<Row>({
     else setUncontrolledOrder(nextOrder)
   }
 
-  function resizeColumn(event: MouseEvent<HTMLSpanElement>, column: LedgerColumn<Row>): void {
+  function resizeColumn(event: PointerEvent<HTMLSpanElement>, column: LedgerColumn<Row>): void {
+    if (!event.isPrimary || event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
     const columnIndex = visibleColumns.findIndex((candidate) => candidate.key === column.key)
     const previousColumn = visibleColumns[columnIndex - 1]
     if (!previousColumn) return
     const startX = event.clientX
+    const pointerId = event.pointerId
+    event.currentTarget.setPointerCapture?.(pointerId)
     const currentElement = event.currentTarget.closest<HTMLElement>('.ledger-header-cell')
     const previousElement = currentElement?.previousElementSibling as HTMLElement | null
     const leftWidth =
@@ -376,7 +407,8 @@ export function LedgerTable<Row>({
       widths[column.key] ||
       column.width ||
       column.minWidth
-    function move(pointer: globalThis.MouseEvent): void {
+    function move(pointer: globalThis.PointerEvent): void {
+      if (pointer.pointerId !== pointerId) return
       const resized = resizedDividerWidths(
         leftWidth,
         rightWidth,
@@ -392,12 +424,15 @@ export function LedgerTable<Row>({
       if (onColumnWidthsChange) onColumnWidthsChange(nextWidths)
       else setUncontrolledWidths(nextWidths)
     }
-    function stop(): void {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseup', stop)
+    function stop(pointer: globalThis.PointerEvent): void {
+      if (pointer.pointerId !== pointerId) return
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', stop)
+      window.removeEventListener('pointercancel', stop)
     }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', stop, { once: true })
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', stop)
+    window.addEventListener('pointercancel', stop)
   }
 
   const rowProps: LedgerRowProps<Row> = {

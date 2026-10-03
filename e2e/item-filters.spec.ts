@@ -234,11 +234,12 @@ test('sorts with the signed sort field and keeps Raid and Rare headers static', 
     if (url.pathname === '/v1/items') itemRequests.push(url)
   })
   await page.goto('/resources/items')
-  for (const column of ['raid', 'rare']) {
-    const header = page.locator(`.ledger-header-cell[data-column-key="${column}"]`)
+  for (const label of ['Raid', 'Rare']) {
+    const header = page.locator(`.ledger-header-cell[data-column-key="${label.toLowerCase()}"]`)
     await expect(header).toBeVisible()
     expect(await header.getAttribute('aria-sort')).toBeNull()
-    await expect(header.getByRole('button')).toHaveCount(0)
+    await expect(header.getByRole('button', { name: `Sort ${label}`, exact: true })).toHaveCount(0)
+    await expect(header.getByRole('button', { name: `Move ${label}`, exact: true })).toHaveCount(1)
   }
   await page.getByRole('button', { name: 'Sort ML', exact: true }).click()
   await expect
@@ -250,6 +251,59 @@ test('sorts with the signed sort field and keeps Raid and Rare headers static', 
     .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
     .toEqual(['minimum_level'])
   expect(itemRequests.at(-1)?.searchParams.has('order')).toBe(false)
+})
+
+test('dragging a header label reorders while clicking sorts and dragging its full-height grip resizes', async ({
+  page,
+}) => {
+  await page.goto('/resources/items')
+  const headers = page
+    .getByRole('table', { name: 'items list', exact: true })
+    .getByRole('columnheader')
+  const sortButton = page.getByRole('button', { name: 'Sort ML', exact: true })
+  const labelBox = await sortButton.boundingBox()
+  const slotBox = await page.locator('.ledger-header-cell[data-column-key="slot"]').boundingBox()
+  expect(labelBox).not.toBeNull()
+  expect(slotBox).not.toBeNull()
+  await page.mouse.move(labelBox!.x + labelBox!.width / 2, labelBox!.y + labelBox!.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(slotBox!.x + slotBox!.width * 0.75, slotBox!.y + slotBox!.height / 2, {
+    steps: 8,
+  })
+  await page.mouse.up()
+  await expect(page.locator('.ledger-header-cell--dragging')).toHaveCount(0)
+  await expect
+    .poll(() =>
+      headers.evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-column-key'))),
+    )
+    .toEqual(['name', 'slot', 'ml', 'pack', 'raid', 'rare'])
+
+  const mlHeader = page.locator('.ledger-header-cell[data-column-key="ml"]')
+  await expect(async () => {
+    if ((await mlHeader.getAttribute('aria-sort')) !== 'descending') await sortButton.click()
+    await expect(mlHeader).toHaveAttribute('aria-sort', 'descending', { timeout: 300 })
+  }).toPass({ timeout: 5000 })
+  const grip = page.getByRole('separator', { name: 'Resize ML', exact: true })
+  const headerBox = await mlHeader.boundingBox()
+  const gripBox = await grip.boundingBox()
+  expect(headerBox).not.toBeNull()
+  expect(gripBox).not.toBeNull()
+  expect(gripBox!.y).toBeCloseTo(headerBox!.y, 0)
+  expect(gripBox!.height).toBeCloseTo(headerBox!.height, 0)
+  expect(gripBox!.width).toBeGreaterThanOrEqual(12)
+  await page.mouse.move(gripBox!.x + gripBox!.width / 2, gripBox!.y + 2)
+  await page.mouse.down()
+  await page.mouse.move(gripBox!.x + gripBox!.width / 2 - 10, gripBox!.y + 2, { steps: 4 })
+  await page.mouse.up()
+  await expect
+    .poll(async () => (await mlHeader.boundingBox())?.width)
+    .toBeGreaterThan(headerBox!.width)
+  await expect(mlHeader).toHaveAttribute('aria-sort', 'descending')
+  await expect
+    .poll(() =>
+      headers.evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-column-key'))),
+    )
+    .toEqual(['name', 'slot', 'ml', 'pack', 'raid', 'rare'])
 })
 
 test('sends all active filters in one item request and removes cleared parameters', async ({
