@@ -12,8 +12,7 @@ export interface HotbarSlotAddress {
 }
 
 export type HotbarDragSource =
-  | { kind: 'pool'; abilityId: string }
-  | { kind: 'slot'; slot: HotbarSlotAddress }
+  { kind: 'pool'; abilityId: string } | { kind: 'slot'; slot: HotbarSlotAddress }
 
 const BAR_ID_PREFIX = 'bar-'
 const BAR_LABEL_PREFIX = 'Bar '

@@ -6,8 +6,7 @@ import { EditableText } from '../../../components'
 import { Star } from 'lucide-react'
 
 export type ReincarnationChoice =
-  | { mode: 'epic'; epicFeatId: string }
-  | { mode: 'true'; reincarnationType: ReincarnationType }
+  { mode: 'epic'; epicFeatId: string } | { mode: 'true'; reincarnationType: ReincarnationType }
 
 type ReincarnationMode = 'epic' | 'true'
 

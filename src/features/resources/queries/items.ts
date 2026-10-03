@@ -196,12 +196,7 @@ export interface RewardingSaga {
 }
 
 export type ItemSourceKind =
-  | 'adventurePack'
-  | 'craftingSystem'
-  | 'challengePack'
-  | 'vendor'
-  | 'event'
-  | 'starter'
+  'adventurePack' | 'craftingSystem' | 'challengePack' | 'vendor' | 'event' | 'starter'
 
 export interface ItemSource {
   kind: ItemSourceKind

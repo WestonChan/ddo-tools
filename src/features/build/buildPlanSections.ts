@@ -2,12 +2,7 @@ import { GitBranch, ListOrdered, Orbit, Skull, Sparkles, TableProperties } from 
 import type { LucideIcon } from 'lucide-react'
 
 export type BuildPlanSectionId =
-  | 'levels'
-  | 'skills'
-  | 'spells'
-  | 'enhancements'
-  | 'destinies'
-  | 'reaper'
+  'levels' | 'skills' | 'spells' | 'enhancements' | 'destinies' | 'reaper'
 
 export interface BuildPlanSection {
   id: BuildPlanSectionId

@@ -12,9 +12,7 @@ export const API_NETWORK_ERROR = 'api-network' as const
 export const API_TIMEOUT_ERROR = 'api-timeout' as const
 
 export type ApiErrorKind =
-  | typeof API_HTTP_ERROR
-  | typeof API_NETWORK_ERROR
-  | typeof API_TIMEOUT_ERROR
+  typeof API_HTTP_ERROR | typeof API_NETWORK_ERROR | typeof API_TIMEOUT_ERROR
 
 export class ApiError extends Error {
   readonly kind: ApiErrorKind
