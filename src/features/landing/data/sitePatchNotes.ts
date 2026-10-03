@@ -7,6 +7,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-03',
     changes: [
+      'The row or link that opened a hover card keeps its outline while the card is open, even after clicking inside the card',
+      'The enchantment table no longer repeats an Enchantments heading above its own column header',
       'On narrow screens an item opens in place of the list; Back to items and the browser Back button return to the list where you left it',
       'Click an augment socket to see the augments that fit it, each with a hover card; red sockets include colorless and multi-color augments',
       'Hover cards for enchantments and augments show the value this item gives and any dice damage as their own rows',

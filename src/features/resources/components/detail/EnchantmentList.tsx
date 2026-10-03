@@ -176,7 +176,7 @@ export function EnchantmentList({
   const rows = [...itemRows, ...(setDetail ? setRows(setDetail, matchingNames) : [])]
   if (variant === 'hover') {
     return (
-      <DetailCardSection heading="Enchantments">
+      <DetailCardSection>
         <div className="resources-hover-rows">
           {itemRows.slice(0, 5).map((row) => (
             <EnchantmentHoverRow
@@ -192,7 +192,7 @@ export function EnchantmentList({
     )
   }
   return (
-    <DetailCardSection heading="Enchantments">
+    <DetailCardSection>
       {matchingEnchantments.length > 0 && (
         <div className="resources-enchantment-legend">
           <span />

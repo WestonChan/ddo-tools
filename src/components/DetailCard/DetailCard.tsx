@@ -69,14 +69,15 @@ export function DetailCardSection({
   heading,
   children,
 }: {
-  heading: string
+  heading?: string
   children: ReactNode
 }): JSX.Element {
+  const Container = heading ? 'section' : 'div'
   return (
-    <section className="detail-card__section">
-      <h3 className="section-label">{heading}</h3>
+    <Container className="detail-card__section">
+      {heading && <h3 className="section-label">{heading}</h3>}
       <div>{children}</div>
-    </section>
+    </Container>
   )
 }
 

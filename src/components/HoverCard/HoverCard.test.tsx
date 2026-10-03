@@ -26,6 +26,7 @@ function CardHarness(): React.JSX.Element {
       <>
         <NestedAnchor />
         <button data-tip="Nested hint">Hint anchor</button>
+        <button>Card action</button>
       </>
     ),
   })
@@ -48,19 +49,41 @@ it('delays opening, pins the top card, stacks nested cards, and pops with Escape
   expect(screen.queryByText('Nested anchor')).toBeNull()
   act(() => vi.advanceTimersByTime(1))
   expect(screen.getByText('Nested anchor')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Item anchor' })).toHaveAttribute(
+    'data-hover-card-open',
+  )
   fireEvent.keyDown(document, { key: 't' })
   expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
-  fireEvent.mouseDown(screen.getByRole('dialog'))
+  act(() => screen.getByRole('button', { name: 'Item anchor' }).focus())
+  const cardAction = screen.getByRole('button', { name: 'Card action' })
+  act(() => cardAction.focus())
+  fireEvent.mouseDown(cardAction)
+  fireEvent.click(cardAction)
   expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
   fireEvent.mouseLeave(screen.getByText('Item anchor'))
+  expect(screen.getByRole('button', { name: 'Item anchor' })).toHaveAttribute(
+    'data-hover-card-open',
+  )
   fireEvent.mouseEnter(screen.getByText('Nested anchor'))
   act(() => vi.advanceTimersByTime(120))
   expect(screen.getByText('Nested facts')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Nested anchor' })).toHaveAttribute(
+    'data-hover-card-open',
+  )
   fireEvent.keyDown(document, { key: 'Escape' })
   expect(screen.queryByText('Nested facts')).toBeNull()
+  expect(screen.getByRole('button', { name: 'Nested anchor' })).not.toHaveAttribute(
+    'data-hover-card-open',
+  )
   expect(screen.getByText('Nested anchor')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Item anchor' })).toHaveAttribute(
+    'data-hover-card-open',
+  )
   fireEvent.mouseDown(document.body)
   expect(screen.queryByText('Nested anchor')).toBeNull()
+  expect(screen.getByRole('button', { name: 'Item anchor' })).not.toHaveAttribute(
+    'data-hover-card-open',
+  )
 })
 
 it('keeps an unpinned card through clicks on its anchor and elsewhere until mouse leave', () => {
@@ -75,11 +98,17 @@ it('keeps an unpinned card through clicks on its anchor and elsewhere until mous
   fireEvent.mouseEnter(anchor)
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(anchor).toHaveAttribute('data-hover-card-open')
 
   fireEvent.mouseDown(anchor)
   fireEvent.click(anchor)
   expect(anchor).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getByRole('dialog')).toBeInTheDocument()
+  expect(anchor).toHaveAttribute('data-hover-card-open')
+
+  fireEvent.mouseDown(screen.getByRole('dialog'))
+  fireEvent.click(screen.getByRole('dialog'))
+  expect(anchor).toHaveAttribute('data-hover-card-open')
 
   fireEvent.mouseDown(screen.getByRole('button', { name: 'Filter chip' }))
   fireEvent.click(screen.getByRole('button', { name: 'Filter chip' }))
@@ -89,6 +118,7 @@ it('keeps an unpinned card through clicks on its anchor and elsewhere until mous
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   fireEvent.mouseLeave(anchor)
   expect(screen.queryByRole('dialog')).toBeNull()
+  expect(anchor).not.toHaveAttribute('data-hover-card-open')
 })
 
 it('clears a pinned card and its nested card on outside mousedown', () => {

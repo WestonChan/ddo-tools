@@ -37,6 +37,7 @@ interface CardController {
   closeFrom: (depth: number) => void
   removeAnchor: (anchorId: string) => void
   clear: () => void
+  openAnchorIds: ReadonlySet<string>
 }
 
 const ControllerContext = createContext<CardController | null>(null)
@@ -253,7 +254,15 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   }, [open, closeFrom])
 
   return (
-    <ControllerContext.Provider value={{ open, closeFrom, removeAnchor, clear }}>
+    <ControllerContext.Provider
+      value={{
+        open,
+        closeFrom,
+        removeAnchor,
+        clear,
+        openAnchorIds: new Set(cards.flatMap((card) => (card.anchorId ? [card.anchorId] : []))),
+      }}
+    >
       {children}
       {cards.map((card) => createPortal(<CardLayer key={card.id} card={card} />, document.body))}
     </ControllerContext.Provider>
@@ -268,6 +277,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions): {
+  'data-hover-card-open': '' | undefined
   onMouseEnter: (event: React.MouseEvent<HTMLElement>) => void
   onMouseLeave: () => void
   onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void
@@ -280,6 +290,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
   const removeAnchor = controller?.removeAnchor
   useEffect(() => () => removeAnchor?.(anchorId), [removeAnchor, anchorId])
   return {
+    'data-hover-card-open': controller?.openAnchorIds.has(anchorId) ? '' : undefined,
     onMouseEnter: (event) =>
       controller?.open(
         {

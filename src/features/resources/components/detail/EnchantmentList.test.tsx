@@ -53,12 +53,22 @@ it('shows the captured item bonus value and type in its enchantment card', () =>
       />
     </HoverCardProvider>,
   )
-  fireEvent.mouseEnter(screen.getByRole('row', { name: /Charisma/ }))
+  const row = screen.getByRole('row', { name: /Charisma/ })
+  fireEvent.mouseEnter(row)
   act(() => vi.advanceTimersByTime(120))
   const card = screen.getByRole('dialog')
+  expect(row).toHaveAttribute('data-hover-card-open')
+  fireEvent.keyDown(document, { key: 't' })
+  fireEvent.mouseDown(card)
+  fireEvent.click(card)
+  fireEvent.mouseLeave(row)
+  expect(row).toHaveAttribute('data-hover-card-open')
   expect(card).toHaveTextContent('From Stolen Necklace (Level 25)')
   expect(within(card).getByText('+8')).toHaveClass('detail-value-row__value')
   expect(within(card).getByText('Enhancement')).toHaveClass('detail-type-tag')
+  expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
+  fireEvent.keyDown(document, { key: 'Escape' })
+  expect(row).not.toHaveAttribute('data-hover-card-open')
 })
 
 it('shows a second value and API-shaped damage modifier in separate rows', () => {
@@ -82,6 +92,16 @@ it('shows a second value and API-shaped damage modifier in separate rows', () =>
   const card = screen.getByRole('dialog')
   expect(within(card).getByText('+3 / +5')).toHaveClass('detail-value-row__value')
   expect(within(card).getByText('1d6 Electric')).toHaveClass('detail-value-row__value')
+})
+
+it('shows hover variant enchantment rows without a section heading', () => {
+  render(
+    <HoverCardProvider>
+      <EnchantmentList bonuses={[bonus()]} effects={[]} variant="hover" />
+    </HoverCardProvider>,
+  )
+  expect(screen.getByText('Charisma')).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
 })
 
 describe('EnchantmentList', () => {
@@ -122,6 +142,8 @@ describe('EnchantmentList', () => {
     )
     expect(screen.getByText('2 pieces').closest('[role="row"]')).toHaveClass('ledger-row--heading')
     expect(screen.getByRole('table', { name: 'Enchantments' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Enchantment' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
   })
   it('renders nothing when there are no bonuses or effects', () => {
     const { container } = render(<EnchantmentList bonuses={[]} effects={[]} />)

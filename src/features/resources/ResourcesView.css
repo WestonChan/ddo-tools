@@ -484,6 +484,15 @@
   cursor: default;
 }
 
+.resources-view [data-hover-card-open],
+.resources-hover-anchor[data-hover-card-open],
+.resources-hover-row[data-hover-card-open],
+.resources-hover-enchantment-row[data-hover-card-open],
+.resources-augment-candidates .ledger-row[data-hover-card-open] {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
 .hover-card[data-kind='item'] .hover-card__status {
   position: absolute;
   top: var(--space-3);
