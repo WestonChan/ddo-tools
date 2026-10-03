@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import { HoverCardProvider, positionedCard, useHoverCard } from './HoverCard'
 
 afterEach(() => {
@@ -17,12 +18,22 @@ function NestedAnchor(): React.JSX.Element {
 }
 
 function CardHarness(): React.JSX.Element {
+  const [isSelected, setIsSelected] = useState(false)
   const anchor = useHoverCard({
     kind: 'item',
     delayMs: 260,
-    render: () => <NestedAnchor />,
+    render: () => (
+      <>
+        <NestedAnchor />
+        <button data-tip="Nested hint">Hint anchor</button>
+      </>
+    ),
   })
-  return <button {...anchor}>Item anchor</button>
+  return (
+    <button {...anchor} aria-pressed={isSelected} onClick={() => setIsSelected(true)}>
+      Item anchor
+    </button>
+  )
 }
 
 it('delays opening, pins the top card, stacks nested cards, and pops with Escape', () => {
@@ -39,6 +50,8 @@ it('delays opening, pins the top card, stacks nested cards, and pops with Escape
   expect(screen.getByText('Nested anchor')).toBeInTheDocument()
   fireEvent.keyDown(document, { key: 't' })
   expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
+  fireEvent.mouseDown(screen.getByRole('dialog'))
+  expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
   fireEvent.mouseLeave(screen.getByText('Item anchor'))
   fireEvent.mouseEnter(screen.getByText('Nested anchor'))
   act(() => vi.advanceTimersByTime(120))
@@ -50,7 +63,76 @@ it('delays opening, pins the top card, stacks nested cards, and pops with Escape
   expect(screen.queryByText('Nested anchor')).toBeNull()
 })
 
-it('opens a hint from data-tip and fits a card in a narrow viewport', () => {
+it('keeps an unpinned card through clicks on its anchor and elsewhere until mouse leave', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <button>Filter chip</button>
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.mouseEnter(anchor)
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.mouseDown(anchor)
+  fireEvent.click(anchor)
+  expect(anchor).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.mouseDown(screen.getByRole('button', { name: 'Filter chip' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Filter chip' }))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.mouseDown(document.body)
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.mouseLeave(anchor)
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+it('clears a pinned card and its nested card on outside mousedown', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.mouseEnter(anchor)
+  act(() => vi.advanceTimersByTime(260))
+  fireEvent.keyDown(document, { key: 't' })
+  fireEvent.mouseLeave(anchor)
+  fireEvent.mouseEnter(screen.getByText('Nested anchor'))
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getAllByRole('dialog')).toHaveLength(2)
+
+  fireEvent.mouseDown(document.body)
+  expect(screen.queryAllByRole('dialog')).toHaveLength(0)
+})
+
+it('clears a hint anchored inside a pinned card on outside mousedown', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.mouseEnter(anchor)
+  act(() => vi.advanceTimersByTime(260))
+  fireEvent.keyDown(document, { key: 't' })
+  fireEvent.mouseLeave(anchor)
+  fireEvent.mouseOver(screen.getByRole('button', { name: 'Hint anchor' }))
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Nested hint')
+
+  fireEvent.mouseDown(document.body)
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(screen.queryByRole('tooltip')).toBeNull()
+})
+
+it('keeps a data-tip hint through mousedown until mouseout', () => {
   vi.useFakeTimers()
   render(
     <HoverCardProvider>
@@ -61,6 +143,14 @@ it('opens a hint from data-tip and fits a card in a narrow viewport', () => {
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful text')
   expect(screen.getByRole('tooltip')).toHaveClass('hover-card--hint')
+  fireEvent.mouseDown(screen.getByText('Help'))
+  fireEvent.click(screen.getByText('Help'))
+  expect(screen.getByRole('tooltip')).toBeInTheDocument()
+  fireEvent.mouseDown(document.body)
+  fireEvent.click(document.body)
+  expect(screen.getByRole('tooltip')).toBeInTheDocument()
+  fireEvent.mouseOut(screen.getByText('Help'))
+  expect(screen.queryByRole('tooltip')).toBeNull()
 })
 
 it('opens a pinned card from a focused anchor on T', () => {

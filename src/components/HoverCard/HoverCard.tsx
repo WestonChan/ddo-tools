@@ -196,7 +196,16 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       }
     }
     function onMouseDown(event: globalThis.MouseEvent): void {
-      if (!(event.target as Element).closest('[data-hover-card]')) clear()
+      if (
+        cards.some((card) => card.isPinned) &&
+        !(event.target as Element).closest('[data-hover-card]')
+      ) {
+        cancelPending()
+        setCards((current) => {
+          const pinnedIndex = current.findIndex((card) => card.isPinned)
+          return pinnedIndex < 0 ? current : current.slice(0, pinnedIndex)
+        })
+      }
     }
     document.addEventListener('keydown', onKeyDown, true)
     document.addEventListener('mousedown', onMouseDown, true)
@@ -204,7 +213,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       document.removeEventListener('keydown', onKeyDown, true)
       document.removeEventListener('mousedown', onMouseDown, true)
     }
-  }, [cards, clear])
+  }, [cards, cancelPending])
 
   useEffect(() => {
     function onMouseOver(event: globalThis.MouseEvent): void {

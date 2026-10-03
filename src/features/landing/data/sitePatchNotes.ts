@@ -8,6 +8,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     date: '2026-10-03',
     changes: [
       "Filter pickers, sets and socket augment lists read the API's new paged responses in full, so no list is cut off at the first 100 rows",
+      'Hover cards stay open while the pointer is on their row or link, even when you click; they close when you move away, and pinned cards still close with Escape',
     ],
   },
   {
