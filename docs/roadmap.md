@@ -939,7 +939,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V7 | done | Wiki gap-fill -- quest loot rarity, quest facts, all 37 crafting systems and blank descriptions read from ddowiki into ETL overrides; the unread parts of Maetrim's files; per-table ledger in `docs/notes/Data Verification.md` |
 | V7b | done | Item sources -- every item has a structured source: vendors, events, crafting outputs, challenges and starter gear join quests, chains, sagas and packs; `drops` becomes `sources` and provenance becomes `provenance`; the "every item has a source" integrity check turns hard |
 | 4d | done | Filter UX overhaul -- chip-row filters sent as `/v1/items` parameters, shared `Combobox`, `LedgerTable` (sort, resize, reorder, arrow keys), `HoverCard` system with pinning, the designed item detail card |
-| **4e** | **→ NEXT** | Stat DB rework -- **needs spec expansion before starting**, see the phase entry |
+| **4e** | **→ NEXT** | Enchantment lines (the stat DB rework) -- kinds, lines and stat rows replace `bonuses`/`effects`; `bonus_alias`; spec decided 2026-10-03, see the phase entry |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
 | 4g | planned | Polish -- filter persistence, sortable picker table |
 | 5 | planned | Characters view & build context -- `user.db`, Zustand stores |
@@ -1219,17 +1219,50 @@ Follow-ups shipped 2026-10-03 after use: hover cards survive clicks (unpinned ca
 
 Deferred from the original scope, each with a home: to-hit and to-damage by stat (Phase 4e/4f, the stat list has no such entries); material, binding and augment-slot filters, "Content you own", column and filter persistence, a "via <enchantment>" caption, fuzzy search (Phase 4g); report mode (Phase 5b); the compare bookmark and the augment slot picker (Phase 8).
 
-#### Phase 4e — Stat DB Rework
+#### Phase 4e — Enchantment lines (the stat DB rework), spec decided 2026-10-03
 
-> **Needs spec expansion before an agent can start.** The bullet below says bonuses "currently live
-> as denormalized fields per item/feat/etc.", but `ddo.db` already has a populated `bonuses` table
-> (4,948 rows) alongside `item_bonuses` / `enhancement_bonuses`. What "promote to their own table"
-> means relative to those three existing tables is unresolved. Write out current schema -> target
-> schema, and what `bonus_alias` keys off, before picking this up.
+Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). A `ddo-data` schema change first, then the
+frontend's enchantment table and filter vocabulary follow it. Decided with the maintainer on 2026-10-03 after
+the Dread Isle's Curse case: the wiki's one line "+2 Profane bonus to all Ability Scores" had to become six
+`bonuses` rows because today a bonus row is both the line the game shows and the single stat behind it.
 
-Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). Promotes each bonus to a first-class DB row and adds a `bonus_alias` table so user input (typos, alternate names) can resolve to canonical stats. Required before Phase 4f Categories ships a first-class stats category, and before Phase 5+ Resource Report View can offer alias-aware search in the bonus editor.
-- Promote bonuses to their own table so each bonus is a queryable row (see the blocker above -- reconcile with the existing `bonuses` / `item_bonuses` / `enhancement_bonuses` tables first)
-- Add `bonus_alias` table mapping freeform aliases (typos, alternate spellings, common shorthand) to canonical bonus rows; powers fuzzy search in user-facing bonus selectors
+**Current schema.** `bonuses` (name with the value baked in, "Wisdom +14"; description; one stat, one bonus
+type, one value) linked from `item_bonuses`, `augment_bonuses`, `set_bonus_tier_bonuses`; `effects` (a
+templated name and description, "Hallowed %v1", the value on the `item_effects` link) for buffs the ETL
+could not map to a stat; one `description` string per set tier. The two tables record whether the ETL's
+stat mapping succeeded, which is an ETL fact leaking into the schema, and `/v1/enchantments` already papers
+over it with a `kind` flag.
+
+**Target schema.** Three tables at two grains, one owner per fact:
+- `enchantment_kinds` (grown from `effects`): the family. `name` ("Wisdom", "Hallowed", "Power of the Dark
+  Restoration"), `text_template` and `description_template` with value placeholders ("Passive: +{value}
+  Enhancement bonus to Wisdom."), `wiki_url` (the wiki's enchantment page), and the stacking note.
+- `enchantments` (grown from `bonuses`): the line. `kind_id`, `value` and `value2`, and nullable `text` and
+  `description` overrides for the lines whose sentence is not a function of the value (set tier prose,
+  procs). The line's text and description are rendered from the kind's templates at read time, so the API
+  returns the rendered strings beside the template and values and never stores a second copy.
+- `enchantment_bonuses`: the stat rows behind a line, zero or more per line (`stat_id`, `bonus_type_id`,
+  `value`, `value2`). "+2 Profane bonus to all Ability Scores" is one line with six rows; "Hallowed 14" is a
+  line with none.
+- Owner links `item_enchantments`, `augment_enchantments`, `set_bonus_tier_enchantments` (owner, enchantment,
+  sort order) replace `item_bonuses`, `item_effects`, `augment_bonuses` and `set_bonus_tier_bonuses`;
+  `set_bonus_tiers.description` goes away, its lines are enchantments.
+- `bonus_alias` (the original 4e bullet) keys off `enchantment_kinds` and `stats`: freeform aliases (typos,
+  shorthand) to a canonical kind or stat, for user-facing selectors in Phase 5b.
+
+**Data flow.** Maetrim supplies the structured rows and the templates, so the ETL splits every bonus into
+kind plus value and renders the lines from his templates; the wiki reads (items by sample, sets, the
+enhancement trees) supply the exact lines and the kind pages, and a correction records each disagreement.
+Nothing goes blank in between. `/v1/enchantments` lists kinds and stats, each once, not every value; the
+`enchantment` filter matches a kind name or a stat name through `enchantment_bonuses`; item, augment and set
+detail return lines with their rendered text, description, kind and stat rows. This also supplies the
+"via Combustion" caption the 4g API note asks for, since the kind is the enchantment's display name.
+
+**Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
+`routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
+hover cards and filter vocabulary, then the wiki reads fill exact text as they happen (see the tooltip
+section of [docs/notes/Data Verification.md](notes/Data%20Verification.md)). Required before 4f ships a
+first-class stats category.
 
 #### Phase 4f — Categories
 - **Crafting systems** becomes a Resources category (`/resources/crafting-systems`), not a top-level view: an info page per system (38 systems; where, materials, mechanics). Decided in the D1 navigation review — its interactive halves already live elsewhere (craftable options inline on item detail; materials summing in the Farm checklist), so what remains is reference content. Scope is large; plan it with the rest of this phase.
