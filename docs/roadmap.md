@@ -2147,6 +2147,18 @@ Also deferred: `/v1/quests` has no `raid` filter, so the Raid picker's `fetchRai
 every quest and keeps `is_raid` rows in the browser, against the filtering rule; add `raid` to `/v1/quests`
 (and `pack`, so pickers can narrow by pack) in ddo-data, then point the fetcher at it.
 
+**Pack derivation (shipped 2026-10-03, ddo-data b3eb031 and 0862301).** An item's pack reached the API
+only from quest and pack source rows, so 2,805 of 8,077 non-legacy items showed none. A
+`loot_adventure_packs` view (schema 20) now reaches a pack through a source's own pack, its quest, the
+quests of its chain or saga, its crafting system or its vendor; the list column, the `pack` filter, the
+exact-pack search and item and augment detail all read it, and detail keeps one row per distinct pack,
+loot type, rarity and chest (a rare and a non-rare reward are different source rows). Eight vendors
+gained their pack in `vendors.toml`. Pack-less non-legacy items: 1,424, of which events 561 and iconic
+starter gear 174 have no pack by nature, 574 have no source yet (the V7b tail), and 115 are flagged by
+the new `items_with_a_source_but_no_pack` warning: five crafting systems without a pack (Dragonscale,
+Dragoncraft, Elfcraft and Giantcraft Armor, Nebula Fragment Crafting, Stone of Change) and the favor and
+free-area vendors (Squire Rale, Champion Hunter, Chirugeon Laj'amal).
+
 **Plan as decided.**
 1. Rename: the loot table and the item/augment detail array become `sources`, since vendors and
    crafting are not drops; the provenance column `source` (maetrim | wiki) on items, quests,
