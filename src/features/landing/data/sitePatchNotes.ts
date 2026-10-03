@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-03',
+    changes: [
+      "Filter pickers, sets and socket augment lists read the API's new paged responses in full, so no list is cut off at the first 100 rows",
+    ],
+  },
+  {
     date: '2026-10-02',
     changes: [
       'An item that both drops from a quest chest and is its end reward shows one row for that quest naming the chest and End reward',

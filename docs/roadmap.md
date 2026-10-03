@@ -1211,7 +1211,7 @@ Large enough that it should be split when picked up — suggested slices, in ord
 Shipped 2026-10-02 from the Claude Design file `Item Filters.dc.html` (project in `reference_claude_design_project`):
 
 - **One chip row** below the search well: ML (range popover), Slot, Enchantments (multi, any-match, with "Include set bonuses"), Pack, Raid (a specific raid), Rare only, Raid only, Clear filters; a "Show applied" row with per-value ×; a live "N results" count; the designed empty state; chips wrap at 375px.
-- **Every filter is a `/v1/items` query parameter** (`q`, `slot`, `min_level`/`max_level`, `pack`, `quest`, `enchantment` as repeated keys, `include_set_bonuses`, `rare`, `raid`), one request per change, `total` as the count; the frontend keeps no matching logic and the Fuse index is gone. The list pages 200 rows at a time (`limit`/`offset`, the next page as the ledger nears its end) and sends column sorting as `sort`/`order`, so the API orders every page; picker vocabularies load when a picker first opens. Live sorting switches on when `ddo-data` deploys those two parameters; until then a sorted request fails inline with Reset sort. Rule recorded in `docs/styling.md`'s neighbours and the project memory: a missing filter is a `ddo-data` parameter, landed first.
+- **Every filter is a `/v1/items` query parameter** (`q`, `slot`, `min_level`/`max_level`, `pack`, `quest`, `enchantment` as repeated keys, `include_set_bonuses`, `rare`, `raid`), one request per change, `total` as the count; the frontend keeps no matching logic and the Fuse index is gone. The list pages 200 rows at a time (`limit`/`offset`, the next page as the ledger nears its end) and sends column sorting as repeatable `sort` keys (`sort=-name&sort=minimum_level`, a leading `-` for descending), so the API orders every page; picker vocabularies load when a picker first opens. `ddo-data` 868a280 (2026-10-03) shipped `sort` on every list route. Rule recorded in `docs/styling.md`'s neighbours and the project memory: a missing filter is a `ddo-data` parameter, landed first.
 - **Shared primitives** in `src/components/`: `Combobox` (searchable single/multi, keyboard complete), `LedgerTable` (sortable, resizable, drag-reorderable columns, virtualized or plain body, heading rows, roving-tabindex arrow keys), `HoverCard` (provider, nested cards, `T` pins, `Esc` pops, `data-tip` hints; replaced `Tooltip`), `DetailCard` (header strip, facts, sections). The filter model lives in `features/resources/filters/` until a second feature lifts it. Built in-house rather than on Base UI, which stayed pre-1.0; the 2026-07-26 library research is superseded.
 - **Item detail is the designed card in the page**, beside the list in a two-column grid (stacked below about 980px of content width) with a "Select an item" placeholder; the 4b slide-over drawer and its modal behaviour are gone, while 4b's hybrid URL strategy and in-memory detail stack stay (`ResourceDetailPane`, `useDetailStack`). `ItemDetailCard` is one component for the pane and the item hover card, with the enchantment ledger on `LedgerTable`, set-bonus tiers from `/v1/sets/{id}` under heading rows, hued type tags, augment hex dots, and a "Matches your Enchantments filter" legend.
 
@@ -2126,6 +2126,24 @@ Forged Weaponry, Dragoncraft/Elfcraft/Giantcraft Armor, Tome of Untold Legends, 
 quests his files lack (the Return to Gianthold four, The Darklake, The Borderlands, Sands of
 Menechtarun, The Voyage; a reader is creating them), the DDO Store and "Random" text, and 56 items
 with no drop text at all. `items_without_a_source` stays a warning until those are in.
+
+**Uniform list parameters (shipped 2026-10-03, ddo-data 868a280).** Every `/v1` list route takes `q`,
+`limit`, `offset` and a repeatable `sort` (`sort=-name&sort=minimum_level`; `-` is descending, key
+order is precedence, omitted keeps the route's default, `items?q=` keeps its relevance ranking) and
+returns `{ total, limit, offset, <rows> }`; the default page is 100 rows. Each route names its sortable
+columns once; the `sort` description and both 400s (unknown sort field, unknown query key naming every
+accepted key) are generated from that declaration, and two contract tests plus `cargo lint` keep the
+docs and the runtime in step. The conventions are written once under "Query parameters" in the API
+Introduction. Frontend follow-up: every fetcher that read a bare array (sets, stats, slots, slot types,
+enchantments, packs, patrons, chains, sagas, vendors, events) parses the envelope through one shared
+helper and passes `limit=10000` where it needs the whole list (branch `api-envelope`). Deferred, for a
+batching pass of its own: eight list routes (clickies, filigrees, enhancement-trees, stances, buffs,
+crafting-systems, feats, augments) still run a child query per row, so their cost grows with `limit`;
+the fix loads the children in one query per page and lands with a test asserting the query count does
+not grow with the row count.
+Also deferred: `/v1/quests` has no `raid` filter, so the Raid picker's `fetchRaidQuests` still downloads
+every quest and keeps `is_raid` rows in the browser, against the filtering rule; add `raid` to `/v1/quests`
+(and `pack`, so pickers can narrow by pack) in ddo-data, then point the fetcher at it.
 
 **Plan as decided.**
 1. Rename: the loot table and the item/augment detail array become `sources`, since vendors and

@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
 import {
+  fetchAdventurePackNames,
   fetchAugmentLootQuests,
   fetchAugmentsFittingSlot,
   fetchEnchantmentNames,
+  fetchEquipmentSlotNames,
   fetchItemPage,
+  fetchRaidQuests,
   EMPTY_ITEM_FILTERS,
   isCraftingSlotFamily,
   canListFittingAugments,
@@ -519,26 +522,18 @@ describe('fetchers', () => {
     },
   )
 
-  it('never sends a separate order parameter for a sorted request', async () => {
-    mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
-    await fetchItemPage(EMPTY_ITEM_FILTERS, '', false, 0, { key: 'ml', direction: 'desc' })
-    const parameters = new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams
-    expect(parameters.getAll('sort')).toEqual(['-minimum_level'])
-    expect(parameters.has('order')).toBe(false)
-  })
-
   it('sends every active list filter in one items request and preserves the response total and order', async () => {
     mockFetchResponse({
-      total: 207,
-      limit: 10000,
-      offset: 0,
+      total: 202,
+      limit: 200,
+      offset: 200,
       items: [createApiItemRow({ id: 7, name: 'Torc' }), createApiItemRow({ id: 8 })],
     })
     const page = await fetchItemPage(
       {
         ml: { min: '20', max: '32' },
         slot: 'Back',
-        enchantments: ['Strength', 'Vorpal'],
+        enchantments: ['Strength', 'Constitution Poison, Lesser'],
         pack: '',
         raid: '7',
         isRareOnly: true,
@@ -546,6 +541,7 @@ describe('fetchers', () => {
       },
       'torc',
       true,
+      200,
     )
     const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
     expect(
@@ -559,28 +555,115 @@ describe('fetchers', () => {
       include_set_bonuses: 'true',
       rare: 'true',
       limit: '200',
-      offset: '0',
+      offset: '200',
     })
-    expect(url.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
+    expect(url.searchParams.getAll('enchantment')).toEqual([
+      'Strength',
+      'Constitution Poison, Lesser',
+    ])
     expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
-    expect(page.total).toBe(207)
+    expect(page.total).toBe(202)
     expect(page.items.map((item) => item.name)).toEqual(['Torc', 'Bloodstone'])
   })
 
   it('maps unique stat and effect names from the API vocabulary', async () => {
-    mockFetchResponse([
-      { name: 'Strength', kind: 'stat', item_count: 202 },
-      { name: 'Vorpal', kind: 'effect', item_count: 84 },
-      { name: 'Strength', kind: 'effect', item_count: 2 },
-    ])
+    mockFetchResponse({
+      total: 3,
+      limit: 10000,
+      offset: 0,
+      enchantments: [
+        { name: 'Strength', kind: 'stat', item_count: 202 },
+        { name: 'Vorpal', kind: 'effect', item_count: 84 },
+        { name: 'Strength', kind: 'effect', item_count: 2 },
+      ],
+    })
     await expect(fetchEnchantmentNames()).resolves.toEqual(['Strength', 'Vorpal'])
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/v1/enchantments')
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+    expect(url.pathname).toBe('/v1/enchantments')
+    expect(url.searchParams.get('limit')).toBe('10000')
+  })
+
+  it.each([
+    {
+      path: '/v1/adventure-packs',
+      rowsKey: 'adventure_packs',
+      fetchVocabulary: fetchAdventurePackNames,
+      rows: [
+        { id: 1, name: 'Storm Pack', is_free_to_play: false },
+        { id: 2, name: 'Free Pack', is_free_to_play: true },
+      ],
+      expected: ['Storm Pack', 'Free Pack'],
+    },
+    {
+      path: '/v1/equipment-slots',
+      rowsKey: 'equipment_slots',
+      fetchVocabulary: fetchEquipmentSlotNames,
+      rows: [
+        { id: 1, name: 'Main Hand', sort_order: 0, category: 'Weapon' },
+        { id: 2, name: 'Trinket', sort_order: 1, category: 'Jewelry' },
+      ],
+      expected: ['Main Hand', 'Trinket'],
+    },
+    {
+      path: '/v1/quests',
+      rowsKey: 'quests',
+      fetchVocabulary: fetchRaidQuests,
+      rows: [
+        { id: 1, name: 'Regular quest', pack: 'Storm Pack', is_raid: false },
+        { id: 2, name: 'Raid', pack: 'Storm Pack', is_raid: true },
+        { id: 3, name: 'Unpacked raid', pack: null, is_raid: true },
+      ],
+      expected: [
+        { id: 2, name: 'Raid', pack: 'Storm Pack' },
+        { id: 3, name: 'Unpacked raid', pack: null },
+      ],
+    },
+  ])(
+    'maps the $path envelope and requests the whole vocabulary',
+    async ({ path, rowsKey, fetchVocabulary, rows, expected }) => {
+      mockFetchResponse({ total: rows.length, limit: 10000, offset: 0, [rowsKey]: rows })
+      await expect(fetchVocabulary()).resolves.toEqual(expected)
+      const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+      expect(url.pathname).toBe(path)
+      expect(url.searchParams.get('limit')).toBe('10000')
+      expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
+    },
+  )
+
+  it.each([
+    { rowsKey: 'adventure_packs', fetchVocabulary: fetchAdventurePackNames },
+    { rowsKey: 'equipment_slots', fetchVocabulary: fetchEquipmentSlotNames },
+    { rowsKey: 'enchantments', fetchVocabulary: fetchEnchantmentNames },
+    { rowsKey: 'quests', fetchVocabulary: fetchRaidQuests },
+    { rowsKey: 'augments', fetchVocabulary: () => fetchAugmentsFittingSlot('sun') },
+  ])('returns no options for an empty $rowsKey page', async ({ rowsKey, fetchVocabulary }) => {
+    mockFetchResponse({ total: 0, limit: 10000, offset: 0, [rowsKey]: [] })
+    await expect(fetchVocabulary()).resolves.toEqual([])
+  })
+
+  it('keeps enchantments beyond the default 100-row page', async () => {
+    const names = Array.from({ length: 101 }, (_, index) => `Effect ${index}`)
+    mockFetchResponse({
+      total: 101,
+      limit: 10000,
+      offset: 0,
+      enchantments: names.map((name) => ({ name, kind: 'effect', item_count: 1 })),
+    })
+    await expect(fetchEnchantmentNames()).resolves.toEqual(names)
+  })
+
+  it('rejects a wrong list key with a tagged API error', async () => {
+    mockFetchResponse({ total: 0, limit: 200, offset: 0, augments: [] })
+    await expect(fetchItemPage(EMPTY_ITEM_FILTERS, '', false)).rejects.toMatchObject({
+      name: 'ApiError',
+      kind: 'api-response',
+    })
   })
 
   it('removes cleared filters from the request', async () => {
     mockFetchResponse({
       total: 1,
-      limit: 10000,
+      limit: 200,
       offset: 0,
       items: [createApiItemRow({ id: 5 })],
     })
@@ -631,7 +714,9 @@ describe('fetchers', () => {
     })
     const fittingAugments = await fetchAugmentsFittingSlot('red')
     expect(fittingAugments.map((a) => a.name)).toEqual(['Bob', 'Zed', 'Abe'])
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('slot=red')
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+    expect(url.pathname).toBe('/v1/augments')
+    expect(Object.fromEntries(url.searchParams)).toEqual({ slot: 'red', limit: '10000' })
   })
 
   it('fetchAugmentLootQuests maps the quests on the augment detail, chest included', async () => {

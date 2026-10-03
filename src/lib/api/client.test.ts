@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, expectTypeOf, vi, afterEach } from 'vitest'
 import {
   API_BASE_URL,
   fetchApiJson,
+  fetchApiPage,
   apiUrl,
   API_HTTP_ERROR,
   API_NETWORK_ERROR,
@@ -23,14 +24,131 @@ describe('apiUrl', () => {
     expect(apiUrl('/v1/version')).toBe(`${API_BASE_URL}/v1/version`)
   })
 
-  it('repeats a query key for multiple exact names, including names containing commas', () => {
-    const url = new URL(apiUrl('/v1/items', { enchantment: ['Strength', 'Keen, Vorpal'] }))
-    expect(url.searchParams.getAll('enchantment')).toEqual(['Strength', 'Keen, Vorpal'])
+  it('appends repeated enchantments and sort keys in order, preserving commas and dropping empty values', () => {
+    const url = new URL(
+      apiUrl('/v1/items', {
+        enchantment: ['Strength', '', 'Constitution Poison, Lesser'],
+        sort: ['-name', 'minimum_level'],
+      }),
+    )
+    expect(url.searchParams.getAll('enchantment')).toEqual([
+      'Strength',
+      'Constitution Poison, Lesser',
+    ])
+    expect(url.searchParams.getAll('sort')).toEqual(['-name', 'minimum_level'])
+    expect(apiUrl('/v1/items', { enchantment: [], sort: [''] })).toBe(`${API_BASE_URL}/v1/items`)
   })
 
   it('always has an origin, so an unset VITE_API_URL still reaches the public API', () => {
     expect(API_BASE_URL).toMatch(/^https?:\/\//)
     expect(API_BASE_URL.endsWith('/')).toBe(false)
+  })
+})
+
+describe('fetchApiPage', () => {
+  it.each(['items', 'equipment_slots'] as const)(
+    'extracts typed rows and metadata from the %s key',
+    async (rowsKey) => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            total: 202,
+            limit: 200,
+            offset: 200,
+            [rowsKey]: [
+              { id: 9, name: 'Zed' },
+              { id: 7, name: 'Abe' },
+            ],
+          }),
+        ),
+      )
+      const page = await fetchApiPage<{ id: number; name: string }, typeof rowsKey>(
+        '/v1/catalog',
+        rowsKey,
+        { limit: 200, offset: 200 },
+      )
+      expectTypeOf(page.rows).toEqualTypeOf<{ id: number; name: string }[]>()
+      expect(page).toEqual({
+        total: 202,
+        limit: 200,
+        offset: 200,
+        rows: [
+          { id: 9, name: 'Zed' },
+          { id: 7, name: 'Abe' },
+        ],
+      })
+      expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
+      const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+      expect(Object.fromEntries(url.searchParams)).toEqual({ limit: '200', offset: '200' })
+    },
+  )
+
+  it.each([
+    { requestedLimit: 1, total: 0, limit: 1, offset: 0, items: [] },
+    { requestedLimit: 200, total: 3, limit: 200, offset: 200, items: [] },
+    { requestedLimit: 20000, total: 10001, limit: 10000, offset: 10000, items: [{ id: 1 }] },
+  ])(
+    'preserves empty and capped pages at offset $offset and total $total',
+    async ({ requestedLimit, items, ...metadata }) => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ ...metadata, items })),
+      )
+      await expect(
+        fetchApiPage('/v1/items', 'items', { limit: requestedLimit, offset: metadata.offset }),
+      ).resolves.toEqual({
+        ...metadata,
+        rows: items,
+      })
+    },
+  )
+
+  it.each([
+    { name: 'wrong key', body: { total: 0, limit: 100, offset: 0, augments: [] } },
+    { name: 'bare array', body: [] },
+    { name: 'null', body: null },
+    { name: 'scalar', body: 'items' },
+    { name: 'missing rows', body: { total: 0, limit: 100, offset: 0 } },
+    { name: 'null rows', body: { total: 0, limit: 100, offset: 0, items: null } },
+    { name: 'object rows', body: { total: 0, limit: 100, offset: 0, items: {} } },
+    ...['total', 'limit', 'offset'].flatMap((field) => [
+      {
+        name: `missing ${field}`,
+        body: { total: 0, limit: 100, offset: 0, items: [], [field]: undefined },
+      },
+      {
+        name: `null ${field}`,
+        body: { total: 0, limit: 100, offset: 0, items: [], [field]: null },
+      },
+      {
+        name: `string ${field}`,
+        body: { total: 0, limit: 100, offset: 0, items: [], [field]: '100' },
+      },
+      {
+        name: `negative ${field}`,
+        body: { total: 0, limit: 100, offset: 0, items: [], [field]: -1 },
+      },
+      {
+        name: `fractional ${field}`,
+        body: { total: 0, limit: 100, offset: 0, items: [], [field]: 0.5 },
+      },
+      {
+        name: `unsafe ${field}`,
+        body: { total: 0, limit: 100, offset: 0, items: [], [field]: Number.MAX_SAFE_INTEGER + 1 },
+      },
+    ]),
+    { name: 'zero limit', body: { total: 0, limit: 0, offset: 0, items: [] } },
+  ])('rejects $name with a tagged response error', async ({ body }) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(body)))
+    const error = await fetchApiPage('/v1/items', 'items').catch((caught: unknown) => caught)
+    expect(isApiError(error)).toBe(true)
+    expect(error).toMatchObject({ name: 'ApiError', kind: 'api-response' })
+    if (!isApiError(error)) throw new Error('Expected ApiError')
+    expect(error.message).toContain('/v1/items')
+    expect(error.message).toContain('items')
+    expect(apiErrorDescription(error)).toEqual({
+      heading: 'The game data API returned an unexpected response',
+      hint: 'Report this response mismatch.',
+    })
   })
 })
 

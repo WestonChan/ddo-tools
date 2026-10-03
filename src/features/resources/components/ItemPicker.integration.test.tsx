@@ -25,9 +25,24 @@ describe('ItemPicker page errors', () => {
       }
       const responses: Record<string, unknown> = {
         '/v1/items': { total: 0, limit: 200, offset: 0, items: [] },
-        '/v1/enchantments': [{ name: 'Strength', kind: 'stat', item_count: 1 }],
-        '/v1/adventure-packs': [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
-        '/v1/quests': [{ id: 7, name: 'The Raid', pack: null, is_raid: true }],
+        '/v1/enchantments': {
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          enchantments: [{ name: 'Strength', kind: 'stat', item_count: 1 }],
+        },
+        '/v1/adventure-packs': {
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          adventure_packs: [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
+        },
+        '/v1/quests': {
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          quests: [{ id: 7, name: 'The Raid', pack: null, is_raid: true }],
+        },
       }
       return Promise.resolve(new Response(JSON.stringify(responses[path]), { status: 200 }))
     })
@@ -48,7 +63,12 @@ describe('ItemPicker page errors', () => {
     ])
     finishSlots?.(
       new Response(
-        JSON.stringify([{ id: 1, name: 'Trinket', sort_order: 1, category: 'Jewelry' }]),
+        JSON.stringify({
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          equipment_slots: [{ id: 1, name: 'Trinket', sort_order: 1, category: 'Jewelry' }],
+        }),
         { status: 200 },
       ),
     )
@@ -99,10 +119,25 @@ describe('ItemPicker page errors', () => {
         )
       }
       const vocabulary: Record<string, unknown> = {
-        '/v1/enchantments': [{ name: 'Bad Filter', kind: 'stat', item_count: 1 }],
-        '/v1/equipment-slots': [{ id: 1, name: 'Trinket', sort_order: 1, category: 'Jewelry' }],
-        '/v1/adventure-packs': [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
-        '/v1/quests': [],
+        '/v1/enchantments': {
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          enchantments: [{ name: 'Bad Filter', kind: 'stat', item_count: 1 }],
+        },
+        '/v1/equipment-slots': {
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          equipment_slots: [{ id: 1, name: 'Trinket', sort_order: 1, category: 'Jewelry' }],
+        },
+        '/v1/adventure-packs': {
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          adventure_packs: [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
+        },
+        '/v1/quests': { total: 0, limit: 10000, offset: 0, quests: [] },
       }
       return Promise.resolve(
         new Response(JSON.stringify(vocabulary[url.pathname]), { status: 200 }),

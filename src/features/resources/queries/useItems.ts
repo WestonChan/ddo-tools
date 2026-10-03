@@ -7,7 +7,7 @@ import {
   type UseInfiniteQueryResult,
   type UseQueryResult,
 } from '@tanstack/react-query'
-import { API_HTTP_ERROR, isApiError } from '../../../lib/api'
+import { API_HTTP_ERROR, isApiError, shouldRetryQuery } from '../../../lib/api'
 import {
   canListFittingAugments,
   fetchAdventurePackNames,
@@ -75,7 +75,7 @@ export function useItemPage(
     },
     placeholderData: keepPreviousData,
     retry: (failureCount, error) =>
-      failureCount < 2 &&
+      shouldRetryQuery(failureCount, error) &&
       isApiError(error) &&
       (error.kind !== API_HTTP_ERROR || error.httpStatus === 429 || error.httpStatus >= 500),
     ...NEVER_STALE_QUERY_OPTIONS,

@@ -1,3 +1,5 @@
+import type { ApiPage, ApiQueryParameters } from './types'
+
 const PUBLIC_API_URL = 'https://ddo-data.fly.dev'
 
 export const API_BASE_URL: string = (import.meta.env.VITE_API_URL || PUBLIC_API_URL).replace(
@@ -6,13 +8,18 @@ export const API_BASE_URL: string = (import.meta.env.VITE_API_URL || PUBLIC_API_
 )
 
 const API_TIMEOUT_MS = 30_000
+export const WHOLE_LIST_PAGE_LIMIT = 10_000
 
 export const API_HTTP_ERROR = 'api-http' as const
 export const API_NETWORK_ERROR = 'api-network' as const
 export const API_TIMEOUT_ERROR = 'api-timeout' as const
+export const API_RESPONSE_ERROR = 'api-response' as const
 
 export type ApiErrorKind =
-  typeof API_HTTP_ERROR | typeof API_NETWORK_ERROR | typeof API_TIMEOUT_ERROR
+  | typeof API_HTTP_ERROR
+  | typeof API_NETWORK_ERROR
+  | typeof API_TIMEOUT_ERROR
+  | typeof API_RESPONSE_ERROR
 
 export class ApiError extends Error {
   readonly kind: ApiErrorKind
@@ -29,10 +36,7 @@ export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError
 }
 
-export function apiUrl(
-  path: string,
-  queryParameters?: Record<string, string | number | boolean | readonly string[] | undefined>,
-): string {
+export function apiUrl(path: string, queryParameters?: ApiQueryParameters): string {
   const url = `${API_BASE_URL}${path}`
   if (!queryParameters) return url
   const searchParameters = new URLSearchParams()
@@ -42,7 +46,7 @@ export function apiUrl(
       continue
     }
     if (value === undefined || value === '' || value === false) continue
-    searchParameters.set(key, String(value))
+    searchParameters.append(key, String(value))
   }
   const queryString = searchParameters.toString()
   return queryString ? `${url}?${queryString}` : url
@@ -50,7 +54,7 @@ export function apiUrl(
 
 export async function fetchApiJson<T>(
   path: string,
-  queryParameters?: Record<string, string | number | boolean | readonly string[] | undefined>,
+  queryParameters?: ApiQueryParameters,
 ): Promise<T> {
   const abortController = new AbortController()
   const abortTimer = setTimeout(() => abortController.abort(), API_TIMEOUT_MS)
@@ -86,9 +90,40 @@ export async function fetchApiJson<T>(
   }
 }
 
+export async function fetchApiPage<T, K extends string>(
+  path: string,
+  rowsKey: K,
+  queryParameters?: ApiQueryParameters,
+): Promise<ApiPage<T, 'rows'>> {
+  const page = await fetchApiJson<ApiPage<T, K>>(path, queryParameters)
+  if (
+    !page ||
+    typeof page !== 'object' ||
+    !Array.isArray(page[rowsKey]) ||
+    !Number.isSafeInteger(page.total) ||
+    page.total < 0 ||
+    !Number.isSafeInteger(page.limit) ||
+    page.limit < 1 ||
+    !Number.isSafeInteger(page.offset) ||
+    page.offset < 0
+  ) {
+    throw new ApiError(
+      API_RESPONSE_ERROR,
+      0,
+      `Invalid list response for ${path}: expected ${rowsKey} rows and total, limit, offset`,
+    )
+  }
+  return { rows: page[rowsKey], total: page.total, limit: page.limit, offset: page.offset }
+}
+
 export function apiErrorDescription(error: unknown): { heading: string; hint: string | null } {
   if (!isApiError(error)) return { heading: 'Something went wrong loading game data', hint: null }
   switch (error.kind) {
+    case API_RESPONSE_ERROR:
+      return {
+        heading: 'The game data API returned an unexpected response',
+        hint: 'Report this response mismatch.',
+      }
     case API_NETWORK_ERROR:
       return {
         heading: 'Could not reach the game data API',

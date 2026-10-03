@@ -1,3 +1,14 @@
+export type ApiQueryParameters = Record<
+  string,
+  string | number | boolean | readonly string[] | undefined
+>
+
+export type ApiPage<T, K extends string> = {
+  total: number
+  limit: number
+  offset: number
+} & Record<K, T[]>
+
 export interface ApiItemRow {
   id: number
   name: string
@@ -11,13 +22,6 @@ export interface ApiItemRow {
   is_raid: boolean
   is_rare: boolean
   is_legacy: boolean
-}
-
-export interface ApiItemsPage {
-  total: number
-  limit: number
-  offset: number
-  items: ApiItemRow[]
 }
 
 export interface ApiBonus {
@@ -255,13 +259,6 @@ export interface ApiCraftingRecipe {
   tier: ApiCraftingTier
   option: string
   cost: ApiCraftingIngredientCost[]
-}
-
-export interface ApiAugmentsPage {
-  total: number
-  limit: number
-  offset: number
-  augments: ApiAugment[]
 }
 
 export interface ApiAdventurePack {

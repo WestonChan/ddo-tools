@@ -83,6 +83,21 @@ const popupRoleClaimRestriction = {
   },
 }
 
+const apiListResponseRestriction = {
+  files: ['src/lib/api/**/*.ts', 'src/features/*/queries/**/*.{ts,tsx}'],
+  ignores: ['**/index.ts'],
+  rules: {
+    'no-restricted-syntax': [
+      ...popupRoleClaimRestriction.rules['no-restricted-syntax'],
+      {
+        selector:
+          "CallExpression[callee.name='fetchApiJson'] > TSTypeParameterInstantiation > TSArrayType, CallExpression[callee.name='fetchApiJson'] > TSTypeParameterInstantiation > TSTypeOperator > TSArrayType, CallExpression[callee.name='fetchApiJson'] > TSTypeParameterInstantiation > TSTypeReference[typeName.name=/^(Array|ReadonlyArray)$/]",
+        message: 'List routes return envelopes. Use fetchApiPage to read their rows and total.',
+      },
+    ],
+  },
+}
+
 const EMPTY_TYPE_NAME_SUFFIXES = [
   'Manager',
   'Helper',
@@ -186,6 +201,7 @@ export default defineConfig([
   barrelReExportRestriction,
   exactRoleNameRestriction,
   popupRoleClaimRestriction,
+  apiListResponseRestriction,
   typeNamingRules,
   booleanNamingRules,
   eslintConfigPrettier,

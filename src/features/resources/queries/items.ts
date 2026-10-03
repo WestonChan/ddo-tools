@@ -1,9 +1,8 @@
-import { fetchApiJson } from '../../../lib/api'
+import { fetchApiJson, fetchApiPage, WHOLE_LIST_PAGE_LIMIT } from '../../../lib/api'
 import type {
   ApiAdventurePack,
   ApiAugment,
   ApiAugmentDetail,
-  ApiAugmentsPage,
   ApiCraftingRecipe,
   ApiCraftingTier,
   ApiItemAdventurePack,
@@ -13,14 +12,13 @@ import type {
   ApiItemEvent,
   ApiItemVendor,
   ApiItemRow,
-  ApiItemsPage,
   ApiEnchantment,
   ApiEquipmentSlot,
   ApiLootQuest,
+  ApiQueryParameters,
   ApiQuestSummary,
 } from '../../../lib/api'
 
-const AUGMENT_PAGE_LIMIT = 10_000
 export const ITEM_PAGE_SIZE = 200
 const ITEM_SORT_FIELD_BY_COLUMN: Record<string, string> = {
   name: 'name',
@@ -441,7 +439,7 @@ export function itemListParameters(
   includesSetBonuses: boolean,
   offset = 0,
   sort: ItemListSort | null = null,
-): Record<string, string | number | boolean | readonly string[] | undefined> {
+): ApiQueryParameters {
   const sortField = sort ? ITEM_SORT_FIELD_BY_COLUMN[sort.key] : undefined
   return {
     q: searchQuery.trim() || undefined,
@@ -467,11 +465,12 @@ export async function fetchItemPage(
   offset = 0,
   sort: ItemListSort | null = null,
 ): Promise<ItemPage> {
-  const page = await fetchApiJson<ApiItemsPage>(
+  const page = await fetchApiPage<ApiItemRow, 'items'>(
     '/v1/items',
+    'items',
     itemListParameters(filters, searchQuery, includesSetBonuses, offset, sort),
   )
-  return { total: page.total, items: page.items.map(toItemSummary) }
+  return { total: page.total, items: page.rows.map(toItemSummary) }
 }
 
 export async function fetchItem(id: number): Promise<Item> {
@@ -479,26 +478,38 @@ export async function fetchItem(id: number): Promise<Item> {
 }
 
 export async function fetchAdventurePackNames(): Promise<string[]> {
-  const packs = await fetchApiJson<ApiAdventurePack[]>('/v1/adventure-packs')
-  return packs.map((p) => p.name)
+  const page = await fetchApiPage<ApiAdventurePack, 'adventure_packs'>(
+    '/v1/adventure-packs',
+    'adventure_packs',
+    { limit: WHOLE_LIST_PAGE_LIMIT },
+  )
+  return page.rows.map((pack) => pack.name)
 }
 
 export async function fetchEquipmentSlotNames(): Promise<string[]> {
-  const slots = await fetchApiJson<ApiEquipmentSlot[]>('/v1/equipment-slots')
-  return slots.map((slot) => slot.name)
+  const page = await fetchApiPage<ApiEquipmentSlot, 'equipment_slots'>(
+    '/v1/equipment-slots',
+    'equipment_slots',
+    { limit: WHOLE_LIST_PAGE_LIMIT },
+  )
+  return page.rows.map((slot) => slot.name)
 }
 
 export async function fetchEnchantmentNames(): Promise<string[]> {
-  const enchantments = await fetchApiJson<ApiEnchantment[]>('/v1/enchantments')
-  return [...new Set(enchantments.map(({ name }) => name))]
+  const page = await fetchApiPage<ApiEnchantment, 'enchantments'>(
+    '/v1/enchantments',
+    'enchantments',
+    { limit: WHOLE_LIST_PAGE_LIMIT },
+  )
+  return [...new Set(page.rows.map(({ name }) => name))]
 }
 
 export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<AugmentSummary[]> {
-  const page = await fetchApiJson<ApiAugmentsPage>('/v1/augments', {
+  const page = await fetchApiPage<ApiAugment, 'augments'>('/v1/augments', 'augments', {
     slot: slotLabel,
-    limit: AUGMENT_PAGE_LIMIT,
+    limit: WHOLE_LIST_PAGE_LIMIT,
   })
-  return page.augments.map(toAugmentSummary).sort((a, b) => {
+  return page.rows.map(toAugmentSummary).sort((a, b) => {
     if (a.minimumLevel === null && b.minimumLevel !== null) return 1
     if (b.minimumLevel === null && a.minimumLevel !== null) return -1
     if (a.minimumLevel !== b.minimumLevel) return (a.minimumLevel ?? 0) - (b.minimumLevel ?? 0)
@@ -512,8 +523,10 @@ export async function fetchAugmentLootQuests(augmentId: number): Promise<LootQue
 }
 
 export async function fetchRaidQuests(): Promise<RaidQuest[]> {
-  const quests = await fetchApiJson<ApiQuestSummary[]>('/v1/quests')
-  return quests
+  const page = await fetchApiPage<ApiQuestSummary, 'quests'>('/v1/quests', 'quests', {
+    limit: WHOLE_LIST_PAGE_LIMIT,
+  })
+  return page.rows
     .filter((quest) => quest.is_raid)
     .map((quest) => ({ id: quest.id, name: quest.name, pack: quest.pack }))
 }

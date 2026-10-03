@@ -8,6 +8,7 @@ import { CharacterProvider } from './features/character'
 import { router } from './router'
 import { captureBoundaryError, initializeSentry } from './lib/sentry'
 import { persistNormalizedAccent, restoreAccent } from './lib/accent'
+import { shouldRetryQuery } from './lib/api'
 import './index.css'
 
 initializeSentry()
@@ -16,7 +17,7 @@ persistNormalizedAccent()
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: Infinity, refetchOnWindowFocus: false, retry: 2 },
+    queries: { staleTime: Infinity, refetchOnWindowFocus: false, retry: shouldRetryQuery },
   },
 })
 

@@ -146,16 +146,22 @@ describe('useItemPage', () => {
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
-  it('shows a 400 error after one request without retrying', async () => {
+  it.each([
+    { name: '400', body: 'Unknown enchantment', status: 400, kind: 'api-http' },
+    {
+      name: 'invalid envelope',
+      body: JSON.stringify({ total: 0, limit: 200, offset: 0, augments: [] }),
+      status: 200,
+      kind: 'api-response',
+    },
+  ])('shows a $name error after one request without retrying', async ({ body, status, kind }) => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(
-        new Response('Unknown enchantment', { status: 400, statusText: 'Bad Request' }),
-      )
+      .mockResolvedValue(new Response(body, { status }))
     const { result } = renderHook(() => useItemPage(EMPTY_FILTERS, '', false), {
       wrapper: QueryWrapper,
     })
-    await waitFor(() => expect(result.current.error).not.toBeNull())
+    await waitFor(() => expect(result.current.error).toMatchObject({ name: 'ApiError', kind }))
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 
