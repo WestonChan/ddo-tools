@@ -1250,11 +1250,14 @@ at a value", so the value lives on the owner link, as `item_effects` already sto
   `augment_bonuses` and `set_bonus_tier_bonuses`; `set_bonus_tiers.description` goes away.
 - An owner's bonuses are the join of its links with the family's stat rows, amount = the named value or
   the constant; nothing stores a second copy.
-- Tiers: a numeric ladder ("Wisdom +6 / +8 / +14") is one family and the value is the tier. A Roman-numeral
-  or named ladder whose stats change non-linearly ("Insightful Spell Lore II", "Devotion III") is one family
-  with `value` = the tier number and stat rows keyed by `tier`; the join takes rows where `tier IS NULL OR
-  tier = value`, and the kind renders the numeral. Crafting upgrade ladders (Green Steel, Thunder-Forged)
-  stay in the crafting tables.
+- Tiers: a numeric ladder ("Wisdom +6 / +8 / +14") is one family and the value is the tier. A named or
+  numbered ladder whose stats change per step (Deception / Improved Deception / Greater Deception, which
+  share one wiki page; "Insightful Spell Lore II") is one family with `value` = the tier number, stat rows
+  keyed by `tier` (the join takes rows where `tier IS NULL OR tier = value`), and an `enchantment_tiers`
+  table (`enchantment_id`, `tier`, `name`) that gives each step its displayed name ("Improved Deception",
+  "Spell Lore II"); the template's name slot renders from it. The family is the link between the steps:
+  the filter matches "Deception" at any tier and a tooltip can show the ladder. Crafting upgrade ladders
+  (Green Steel, Thunder-Forged) stay in the crafting tables.
 - Constraints: in the schema, `amount_count BETWEEN 0 AND 2`, `amount_from BETWEEN 0 AND 2`, `constant`
   NOT NULL exactly when `amount_from = 0`, and `(value IS NULL) <= (value2 IS NULL)` on every link; across
   tables, as HARD `check-db` rules and ETL build failures: a link's count of non-null values equals its
