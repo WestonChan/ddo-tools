@@ -1259,7 +1259,10 @@ at a value", so the value lives on the owner link, as `item_effects` already sto
   NOT NULL exactly when `amount_from = 0`, and `(value IS NULL) <= (value2 IS NULL)` on every link; across
   tables, as HARD `check-db` rules and ETL build failures: a link's count of non-null values equals its
   family's `amount_count`, every stat row's `amount_from` is at most `amount_count`, the template's
-  placeholders match `amount_count`, and every family has an owner.
+  placeholders match `amount_count`, and every family has an owner. A family with no stat rows has `amount_count` 0 and
+  its links carry no values: a number the engine has no stat for ("Hallowed 14", the hit dice of undead
+  turned) stays in the template text, one family per value, until a stat exists for it; a `check-db` WARN
+  lists families whose template holds a digit with `amount_count` 0 so they get looked at.
 - `bonus_alias` (the original 4e bullet) keys off `enchantments` and `stats`: freeform aliases (typos,
   shorthand) to a canonical family or stat, for user-facing selectors in Phase 5b.
 
