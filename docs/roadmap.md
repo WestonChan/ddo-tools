@@ -1311,13 +1311,35 @@ chips send the same shape.
 
 **What a line can carry (survey of 2026-10-03).** Maetrim's 1,795 buff texts and the wiki's Riposte, Parrying
 and Deception pages: scalar stat lines dominate and need one scaling rule, so `enchantment_stats` carries
-`numerator`, `denominator` (default 1/1) and `rounding` (down, up, nearest) for "X/2 round up" cases and
-the numeral-form halves, with families carrying `default_value`/`default_value2` for Maetrim's definition
+`scale` REAL (default 1) and `rounding` (down, up, nearest) for "X/2 round up" cases and the numeral-form
+halves (a static row has `amount_from` 0 and a `constant`; a scaled row reads a link value: the two never mix), with families carrying `default_value`/`default_value2` for Maetrim's definition
 defaults so a link stores only what the item states; two independent numbers per line are `value`/`value2`
 (Deception's hit and damage); procs with damage (755 texts; dice or a range, a trigger such as on hit or
 when missed, scaling by the value) get a later `enchantment_damage` table with a `trigger` column; DCs (162
 texts; the 45/117 heroic and legendary pairs) get `enchantment_saves` in the DC/CC capture step; conditions,
 durations and stacks stay prose for the Phase 6 engine. Nothing else earns a column.
+
+**Deferred, each its own small chunk after the three land (decided 2026-10-03).**
+1. `enchantment_damage`: procs with damage (755 of Maetrim's texts): dice or a min–max range, damage type,
+   `trigger` (on hit, on critical, on vorpal, when missed in melee), scaling by the link value (Riposte's
+   X–4X); consumer: the Damage calc tool.
+2. `enchantment_saves`: DCs (162 texts; the 45/117 heroic and legendary pairs Maetrim stores as values on
+   Telekinetic, Sunburst, Staggering, Paralyzing, Nightshade Venom, Antimagic Spike): versus, DC from a slot
+   or constant, the effect; the DC/CC capture in [docs/notes/Data Verification.md](notes/Data%20Verification.md)
+   fills it from the wiki reads.
+3. Conditions and timing: a `conditions` vocabulary (name, kind: target type, wielding, stance, health
+   threshold, action) with nullable `condition_id` on stat rows and later damage rows, seeded from Maetrim's
+   `<Requirements>`/`<Stance>` and filled by the wiki reads, so a build can toggle "against evil" or "while
+   two-handed"; nullable `duration_seconds`, `tick_seconds`, `max_stacks`, `cooldown_seconds` on the family
+   for uptime; consumer: the Phase 6 engine.
+4. Cleanup run over the check-db work lists: the 37 numbered groups that may be ladders (Arcane Augmentation,
+   Parrying, Riposte, Spell Focus, Spell Penetration, Sundering, Rune Arm Imbues) and Improved/Greater pairs,
+   checked against wiki page titles by the Claude reader; identifier-looking names
+   (`enchantments_named_like_identifiers`); the valued text-only families that should be stats
+   (`enchantments_text_only_with_item_values`: Shield Bashing, Melee Alacrity, 3rd Degree Burns, Undead
+   Guard, Underwater Action); unclassified effect types (`effect_types_not_classified`).
+5. `bonus_alias` for Phase 5b's selectors; `modifiers` consumers onto the enchantment tables; the
+   `derive_bonuses` path for feats, enhancements and sets fully through the family resolver.
 
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
 `routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
