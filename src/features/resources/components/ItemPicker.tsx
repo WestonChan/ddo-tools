@@ -63,6 +63,7 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
     key: 'name',
     label: 'Name',
     isFlexible: true,
+    isPrimary: true,
     minWidth: 120,
     sortValue: (item) => item.name,
     render: (item) => (

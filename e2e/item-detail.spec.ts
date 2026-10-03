@@ -49,6 +49,7 @@ test('search keyboard navigation scrolls a virtualized result into view and open
   await page.keyboard.press('End')
   const lastRow = page.getByRole('row', { name: /Armor 120/ })
   await expect(lastRow).toHaveClass(/ledger-row--keyboard-highlighted/)
+  expect(await lastRow.evaluate((row) => getComputedStyle(row).boxShadow)).toBe('none')
   await expect(lastRow).toBeInViewport()
   await expect(search).toBeFocused()
   await expect(search).toHaveAttribute('aria-controls', (await scrollBody.getAttribute('id')) ?? '')
@@ -59,6 +60,35 @@ test('search keyboard navigation scrolls a virtualized result into view and open
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/resources\/items\/9119$/)
   await expect(lastRow).toBeFocused()
+  await expect(lastRow).toHaveClass(/ledger-row--selected/)
+  const selectedRowStyle = await lastRow.evaluate((row) => {
+    const rowStyle = getComputedStyle(row)
+    const name = row.querySelector('.resources-ledger-name')
+    if (!name) throw new Error('Selected row has no name')
+    const colorSample = document.createElement('span')
+    colorSample.style.color = 'var(--text-accent)'
+    colorSample.style.backgroundColor = 'var(--surface-active)'
+    row.append(colorSample)
+    const accentColor = getComputedStyle(colorSample).color
+    const activeFill = getComputedStyle(colorSample).backgroundColor
+    colorSample.remove()
+    return {
+      boxShadow: rowStyle.boxShadow,
+      outlineStyle: rowStyle.outlineStyle,
+      outlineColor: rowStyle.outlineColor,
+      backgroundColor: rowStyle.backgroundColor,
+      activeFill,
+      nameColor: getComputedStyle(name).color,
+      accentColor,
+      nameWeight: getComputedStyle(name).fontWeight,
+    }
+  })
+  expect(selectedRowStyle.boxShadow).toBe('none')
+  expect(selectedRowStyle.outlineStyle).toBe('solid')
+  expect(selectedRowStyle.outlineColor).toBe('rgba(0, 0, 0, 0)')
+  expect(selectedRowStyle.backgroundColor).toBe(selectedRowStyle.activeFill)
+  expect(selectedRowStyle.nameColor).toBe(selectedRowStyle.accentColor)
+  expect(selectedRowStyle.nameWeight).toBe('600')
   await expect(page.getByRole('heading', { name: 'Armor 120', exact: true })).not.toBeFocused()
   await expect(search).not.toBeFocused()
   await page.keyboard.press('/')
@@ -136,7 +166,15 @@ test('item detail fact cells and tags render in pane and hover', async ({ page }
   const itemRow = page.getByRole('row', { name: /Beholder Plate Armor/ })
   await itemRow.hover()
   await itemRow.press('t')
+  await expect(itemRow).toHaveAttribute('data-hover-card-pinned', '')
   const hoverCard = page.locator('[data-hover-card]')
+  await expect(hoverCard).toBeFocused()
+  expect(await hoverCard.evaluate((card) => getComputedStyle(card).outlineColor)).toBe(
+    'rgba(0, 0, 0, 0)',
+  )
+  expect(await itemRow.evaluate((row) => getComputedStyle(row).outlineColor)).not.toBe(
+    'rgba(0, 0, 0, 0)',
+  )
   await expect(hoverCard.locator('.detail-fact-grid__cell')).toHaveText([
     'Armor bonus16',
     'Max Dex bonus1',

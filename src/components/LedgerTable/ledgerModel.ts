@@ -6,6 +6,7 @@ export interface LedgerColumn<Row> {
   label: string
   width?: number
   isFlexible?: boolean
+  isPrimary?: boolean
   minWidth: number
   align?: 'left' | 'right' | 'center'
   isMonospaced?: boolean

@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type JSX,
@@ -16,6 +17,7 @@ import './HoverCard.css'
 interface CardEntry {
   id: number
   anchorId: string | null
+  anchorElement: HTMLElement | null
   kind: string
   label?: string
   depth: number
@@ -37,6 +39,8 @@ interface CardController {
   closeFrom: (depth: number) => void
   removeAnchor: (anchorId: string) => void
   clear: () => void
+  restoreAnchorFocus: (anchor: HTMLElement) => void
+  isRestoringAnchorFocus: (anchor: HTMLElement) => boolean
   pinnedAnchorIds: ReadonlySet<string>
 }
 
@@ -64,6 +68,8 @@ export function positionedCard(
 
 function CardLayer({ card }: { card: CardEntry }): JSX.Element {
   const elementRef = useRef<HTMLDivElement>(null)
+  const hasFocusedPinnedCard = useRef(false)
+  const restoreAnchorFocus = useContext(ControllerContext)?.restoreAnchorFocus
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null)
   const positionElement = useCallback(
     (element: HTMLDivElement | null) => {
@@ -102,11 +108,27 @@ function CardLayer({ card }: { card: CardEntry }): JSX.Element {
     observer.observe(elementRef.current)
     return () => observer.disconnect()
   }, [card.anchorRect, card.pointerX])
+  useLayoutEffect(() => {
+    if (!card.isPinned || !position || hasFocusedPinnedCard.current) return
+    const cardElement = elementRef.current
+    if (!cardElement) return
+    cardElement.focus({ preventScroll: true })
+    hasFocusedPinnedCard.current = true
+  }, [card.isPinned, position])
+  useLayoutEffect(() => {
+    if (!card.isPinned) return
+    const cardElement = elementRef.current
+    return () => {
+      if (card.anchorElement?.isConnected && cardElement?.contains(document.activeElement))
+        restoreAnchorFocus?.(card.anchorElement)
+    }
+  }, [card.anchorElement, card.isPinned, restoreAnchorFocus])
   return (
     <DepthContext.Provider value={card.depth + 1}>
       <div
         ref={positionElement}
         role={card.kind === 'hint' ? 'tooltip' : 'dialog'}
+        tabIndex={card.isPinned ? -1 : undefined}
         data-hover-card=""
         data-kind={card.kind}
         data-depth={card.depth}
@@ -129,7 +151,17 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   const [cards, setCards] = useState<CardEntry[]>([])
   const pendingTimer = useRef<number | null>(null)
   const pendingAnchorId = useRef<string | null>(null)
+  const restoringAnchor = useRef<HTMLElement | null>(null)
   const nextId = useRef(0)
+  const restoreAnchorFocus = useCallback((anchor: HTMLElement) => {
+    restoringAnchor.current = anchor
+    anchor.focus({ preventScroll: true })
+    restoringAnchor.current = null
+  }, [])
+  const isRestoringAnchorFocus = useCallback(
+    (anchor: HTMLElement) => restoringAnchor.current === anchor,
+    [],
+  )
   const cancelPending = useCallback(() => {
     if (pendingTimer.current !== null) window.clearTimeout(pendingTimer.current)
     pendingTimer.current = null
@@ -239,6 +271,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         {
           kind: 'hint',
           anchorId: null,
+          anchorElement: anchor,
           depth,
           anchorRect: anchor.getBoundingClientRect(),
           pointerX: null,
@@ -269,6 +302,8 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         closeFrom,
         removeAnchor,
         clear,
+        restoreAnchorFocus,
+        isRestoringAnchorFocus,
         pinnedAnchorIds: new Set(
           cards.flatMap((card) => (card.isPinned && card.anchorId ? [card.anchorId] : [])),
         ),
@@ -308,6 +343,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           kind,
           label,
           anchorId,
+          anchorElement: event.currentTarget,
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: event.clientX,
@@ -316,19 +352,22 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
         delayMs,
       ),
     onMouseLeave: () => controller?.closeFrom(depth),
-    onFocus: (event) =>
+    onFocus: (event) => {
+      if (controller?.isRestoringAnchorFocus(event.currentTarget)) return
       controller?.open(
         {
           kind,
           label,
           anchorId,
+          anchorElement: event.currentTarget,
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: null,
           render,
         },
         0,
-      ),
+      )
+    },
     onBlur: () => controller?.closeFrom(depth),
     onKeyDown: (event) => {
       if (event.key.toLowerCase() !== 't' || isTypingTarget(event.target)) return
@@ -339,6 +378,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           kind,
           label,
           anchorId,
+          anchorElement: event.currentTarget,
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: null,

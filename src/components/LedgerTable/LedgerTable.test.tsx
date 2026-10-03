@@ -7,6 +7,7 @@ import { LedgerTable } from './LedgerTable'
 import type { LedgerColumn } from './ledgerModel'
 
 const ledgerStyles = readFileSync('src/components/LedgerTable/LedgerTable.css', 'utf8')
+const globalStyles = readFileSync('src/index.css', 'utf8')
 
 const rows = [
   { id: 1, name: 'Belt', ml: 4 },
@@ -46,14 +47,57 @@ const columns: LedgerColumn<(typeof rows)[number]>[] = [
 afterEach(cleanup)
 
 describe('LedgerTable', () => {
-  it('uses the picker highlight treatment separately from selected rows', () => {
+  it('uses fills and selected name text without inset marks or row focus outlines', () => {
+    const rowStyle = [...ledgerStyles.matchAll(/^\.ledger-row\s*\{([\s\S]*?)\n\}/gm)].find(
+      ([, style]) => style.includes('cursor: pointer'),
+    )?.[1]
     const selectedStyle = ledgerStyles.match(/\.ledger-row--selected\s*\{([^}]+)\}/)?.[1]
     const highlightedStyle = ledgerStyles.match(
       /\.ledger-row--keyboard-highlighted\s*\{([^}]+)\}/,
     )?.[1]
+    const selectedNameStyle = ledgerStyles.match(
+      /\.ledger-row--selected \.ledger-cell--primary\s*\{([^}]+)\}/,
+    )?.[1]
+    const focusedStyle = ledgerStyles.match(
+      /\.ledger-table \.ledger-row:focus-visible\s*\{([^}]+)\}/,
+    )?.[1]
+    const unpinnedFocusStyle = ledgerStyles.match(
+      /\.ledger-table \.ledger-row:focus-visible:not\(\[data-hover-card-pinned\]\)\s*\{([^}]+)\}/,
+    )?.[1]
+    const globalFocusStyle = globalStyles.match(/^:focus-visible\s*\{([^}]+)\}/m)?.[1]
+    expect(rowStyle).toContain(
+      '&:hover:not(.ledger-row--selected, .ledger-row--keyboard-highlighted, :focus-visible)',
+    )
     expect(selectedStyle).toContain('background: var(--surface-selected)')
+    expect(selectedStyle).not.toMatch(/box-shadow|outline|border-left/)
+    expect(selectedNameStyle).toContain('color: var(--text-accent)')
+    expect(selectedNameStyle).toContain('font-weight: var(--fw-semibold)')
     expect(highlightedStyle).toContain('background: var(--surface-active)')
-    expect(highlightedStyle).toContain('box-shadow: var(--inset-mark-picker)')
+    expect(highlightedStyle).not.toMatch(/box-shadow|outline|border-left/)
+    expect(focusedStyle).toContain('background: var(--surface-active)')
+    expect(unpinnedFocusStyle).toContain('outline: 2px solid transparent')
+    expect(globalFocusStyle).toContain('outline: 2px solid var(--border-focus)')
+
+    const primaryColumns = columns.map((column) =>
+      column.key === 'name' ? { ...column, key: 'display', isPrimary: true } : column,
+    )
+
+    render(
+      <LedgerTable
+        columns={primaryColumns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        selectedRowKey={2}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+      />,
+    )
+    const selectedRow = screen.getByRole('row', { name: /Back/ })
+    expect(selectedRow).toHaveClass('ledger-row--selected')
+    expect(within(selectedRow).getByRole('cell', { name: 'Back' })).toHaveClass(
+      'ledger-cell--primary',
+    )
   })
 
   it('skips heading rows when navigating from an external input', async () => {

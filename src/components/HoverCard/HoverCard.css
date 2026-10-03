@@ -19,6 +19,10 @@
   pointer-events: auto;
 }
 
+.hover-card--pinned:focus-visible {
+  outline: 2px solid transparent;
+}
+
 .hover-card--hint {
   width: max-content;
   max-width: min(260px, calc(100vw - 16px));

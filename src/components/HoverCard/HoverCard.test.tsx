@@ -1,11 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { useState } from 'react'
+import { StrictMode, useState } from 'react'
 import { HoverCardProvider, positionedCard, useHoverCard } from './HoverCard'
 
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 function NestedAnchor(): React.JSX.Element {
@@ -68,6 +70,37 @@ function renderOpenItemCard(): HTMLElement {
   act(() => vi.advanceTimersByTime(260))
   return itemAnchor
 }
+
+it('moves focus from an unrelated link into a pinned card and back to its anchor on Escape', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <a href="/">Navigation</a>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  const navigation = screen.getByRole('link', { name: 'Navigation' })
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  act(() => navigation.focus())
+  fireEvent.mouseEnter(anchor)
+  act(() => vi.advanceTimersByTime(260))
+  fireEvent.keyDown(navigation, { key: 't' })
+  const pinnedCard = screen.getByRole('dialog')
+  expect(anchor).toHaveAttribute('data-hover-card-pinned')
+  expect(pinnedCard).toHaveAttribute('tabindex', '-1')
+  expect(pinnedCard).toHaveFocus()
+  expect(readFileSync('src/index.css', 'utf8')).toContain(':focus-visible {')
+  expect(readFileSync('src/components/HoverCard/HoverCard.css', 'utf8')).toContain(
+    '.hover-card--pinned:focus-visible {\n  outline: 2px solid transparent;',
+  )
+  const cardAction = screen.getByRole('button', { name: 'Card action' })
+  act(() => cardAction.focus())
+  fireEvent.keyDown(cardAction, { key: 'Escape' })
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(anchor).toHaveFocus()
+  act(() => vi.runOnlyPendingTimers())
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
 
 it('delays opening, pins the top card, stacks nested cards, and pops with Escape', () => {
   vi.useFakeTimers()
@@ -233,6 +266,7 @@ it('clears a pinned card and its nested card on outside mousedown', () => {
   const anchor = renderOpenItemCard()
   fireEvent.keyDown(document, { key: 't' })
   expect(anchor).toHaveAttribute('data-hover-card-pinned')
+  expect(screen.getByRole('dialog')).toHaveFocus()
   fireEvent.mouseLeave(anchor)
   fireEvent.mouseEnter(screen.getByText('Nested anchor'))
   act(() => vi.advanceTimersByTime(120))
@@ -244,6 +278,9 @@ it('clears a pinned card and its nested card on outside mousedown', () => {
   fireEvent.mouseDown(document.body)
   expect(screen.queryAllByRole('dialog')).toHaveLength(0)
   expect(anchor).not.toHaveAttribute('data-hover-card-pinned')
+  expect(anchor).toHaveFocus()
+  act(() => vi.runOnlyPendingTimers())
+  expect(screen.queryByRole('dialog')).toBeNull()
 })
 
 it('clears a hint anchored inside a pinned card on parent and outside mousedown', () => {
@@ -289,10 +326,20 @@ it('keeps a data-tip hint through mousedown until mouseout', () => {
 
 it('opens a pinned card from a focused anchor on T', () => {
   vi.useFakeTimers()
+  const focusElement = HTMLElement.prototype.focus
+  vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function (
+    this: HTMLElement,
+    options?: FocusOptions,
+  ) {
+    if (this.matches('[data-hover-card]') && this.style.visibility === 'hidden') return
+    focusElement.call(this, options)
+  })
   render(
-    <HoverCardProvider>
-      <CardHarness />
-    </HoverCardProvider>,
+    <StrictMode>
+      <HoverCardProvider>
+        <CardHarness />
+      </HoverCardProvider>
+    </StrictMode>,
   )
   const anchor = screen.getByText('Item anchor')
   anchor.focus()
@@ -300,8 +347,12 @@ it('opens a pinned card from a focused anchor on T', () => {
   act(() => vi.advanceTimersByTime(0))
   expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
   expect(anchor).toHaveAttribute('data-hover-card-pinned')
+  expect(screen.getByRole('dialog')).toHaveFocus()
   fireEvent.mouseLeave(anchor)
   expect(screen.getByText('Nested anchor')).toBeInTheDocument()
+  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+  expect(anchor).toHaveFocus()
+  expect(screen.queryByRole('dialog')).toBeNull()
 })
 
 it('places cards above crowded anchors and clamps them to the viewport', () => {

@@ -159,7 +159,11 @@ function LedgerRow<Row>({
           <div
             key={column.key}
             role="cell"
-            className={'ledger-cell' + (column.isMonospaced ? ' num' : '')}
+            className={
+              'ledger-cell' +
+              (column.isPrimary ? ' ledger-cell--primary' : '') +
+              (column.isMonospaced ? ' num' : '')
+            }
             style={{ ...columnStyle(column, widths), textAlign: column.align ?? 'left' }}
           >
             {column.render(row)}

@@ -152,19 +152,30 @@
   font-size: var(--fs-body-sm);
   cursor: pointer;
 
-  &:hover {
+  &:hover:not(.ledger-row--selected, .ledger-row--keyboard-highlighted, :focus-visible) {
     background: var(--surface-hover);
   }
 }
 
+.ledger-table .ledger-row:focus-visible {
+  background: var(--surface-active);
+}
+
+.ledger-table .ledger-row:focus-visible:not([data-hover-card-pinned]) {
+  outline: 2px solid transparent;
+}
+
 .ledger-row--selected {
   background: var(--surface-selected);
-  box-shadow: var(--inset-mark-accent);
+}
+
+.ledger-row--selected .ledger-cell--primary {
+  color: var(--text-accent);
+  font-weight: var(--fw-semibold);
 }
 
 .ledger-row--keyboard-highlighted {
   background: var(--surface-active);
-  box-shadow: var(--inset-mark-picker);
 }
 
 .ledger-row--heading,
@@ -180,6 +191,11 @@
   padding: 0 var(--space-1-5);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ledger-cell--primary {
+  color: var(--text-heading);
+  font-weight: var(--fw-medium);
 }
 
 .ledger-heading-cell {

@@ -373,7 +373,6 @@
 
   &.selected {
     background: var(--surface-selected);
-    box-shadow: var(--inset-mark-accent);
   }
 
   & .life-marker {

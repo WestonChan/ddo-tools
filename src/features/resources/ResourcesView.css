@@ -148,8 +148,6 @@
   align-items: center;
   gap: var(--space-1-5);
   min-width: 0;
-  color: var(--text-heading);
-  font-weight: var(--fw-medium);
 
   & > span:first-child {
     min-width: 0;
@@ -468,7 +466,7 @@
 
 .resources-enchantment-ledger
   .ledger-row--heading
-  ~ .ledger-row:not(.ledger-row--subheading, .ledger-row--highlighted):hover {
+  ~ .ledger-row:not(.ledger-row--subheading, .ledger-row--highlighted, :focus-visible):hover {
   background: var(--surface-hover);
 }
 
