@@ -3,18 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
 import { useItemPage, useFittingAugmentsBySlotLabel, useAdventurePack } from './useItems'
-import type { ItemListFilters } from './items'
+import { EMPTY_ITEM_FILTERS } from './items'
 import adventurePack from './fixtures/adventure-packs.json'
-
-const EMPTY_FILTERS: ItemListFilters = {
-  ml: { min: '', max: '' },
-  slot: '',
-  enchantments: [],
-  pack: '',
-  raid: '',
-  isRareOnly: false,
-  isRaidOnly: false,
-}
 
 function apiPage(name: string, total = 1): Response {
   return new Response(
@@ -97,7 +87,7 @@ describe('useItemPage', () => {
       return Promise.resolve(apiPage(`${params.get('sort') ?? 'default'} at ${offset}`, 201))
     })
     const { result, rerender } = renderHook(
-      ({ sort }) => useItemPage(EMPTY_FILTERS, '', false, sort),
+      ({ sort }) => useItemPage(EMPTY_ITEM_FILTERS, '', false, sort),
       {
         initialProps: { sort: null as { key: string; direction: 'asc' | 'desc' } | null },
         wrapper: QueryWrapper,
@@ -133,12 +123,12 @@ describe('useItemPage', () => {
       return Promise.resolve(apiPage('Old item', 40))
     })
     const { result, rerender } = renderHook(({ filters }) => useItemPage(filters, '', false), {
-      initialProps: { filters: EMPTY_FILTERS },
+      initialProps: { filters: EMPTY_ITEM_FILTERS },
       wrapper: QueryWrapper,
     })
     await waitFor(() => expect(result.current.data?.pages[0].total).toBe(40))
     expect(fetchMock).toHaveBeenCalledOnce()
-    rerender({ filters: { ...EMPTY_FILTERS, isRareOnly: true } })
+    rerender({ filters: { ...EMPTY_ITEM_FILTERS, isRareOnly: true } })
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
     expect(result.current.data?.pages[0].items[0].name).toBe('Old item')
     expect(result.current.isPlaceholderData).toBe(true)
@@ -163,13 +153,13 @@ describe('useItemPage', () => {
       return Promise.resolve(apiPage('Old item', 201))
     })
     const { result, rerender } = renderHook(({ filters }) => useItemPage(filters, '', false), {
-      initialProps: { filters: EMPTY_FILTERS },
+      initialProps: { filters: EMPTY_ITEM_FILTERS },
       wrapper: QueryWrapper,
     })
     await waitFor(() => expect(result.current.data?.pages[0].items[0].name).toBe('Old item'))
     void result.current.fetchNextPage()
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
-    rerender({ filters: { ...EMPTY_FILTERS, isRareOnly: true } })
+    rerender({ filters: { ...EMPTY_ITEM_FILTERS, isRareOnly: true } })
     await waitFor(() => expect(result.current.data?.pages[0].items[0].name).toBe('Rare item'))
     finishOldPage?.(apiPage('Stale item', 201))
     expect(result.current.data?.pages.map((page) => page.items[0].name)).toEqual(['Rare item'])
@@ -178,7 +168,7 @@ describe('useItemPage', () => {
   it('does not request set bonuses without an enchantment selection', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(apiPage('One item'))
     const { result, rerender } = renderHook(
-      ({ includesSetBonuses }) => useItemPage(EMPTY_FILTERS, '', includesSetBonuses),
+      ({ includesSetBonuses }) => useItemPage(EMPTY_ITEM_FILTERS, '', includesSetBonuses),
       { initialProps: { includesSetBonuses: false }, wrapper: QueryWrapper },
     )
     await waitFor(() => expect(result.current.data?.pages[0].total).toBe(1))
@@ -198,7 +188,7 @@ describe('useItemPage', () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(body, { status }))
-    const { result } = renderHook(() => useItemPage(EMPTY_FILTERS, '', false), {
+    const { result } = renderHook(() => useItemPage(EMPTY_ITEM_FILTERS, '', false), {
       wrapper: QueryWrapper,
     })
     await waitFor(() => expect(result.current.error).toMatchObject({ name: 'ApiError', kind }))
@@ -216,7 +206,7 @@ describe('useItemPage', () => {
       .spyOn(globalThis, 'fetch')
       .mockImplementationOnce(failure)
       .mockResolvedValue(apiPage('Recovered item'))
-    const { result } = renderHook(() => useItemPage(EMPTY_FILTERS, '', false), {
+    const { result } = renderHook(() => useItemPage(EMPTY_ITEM_FILTERS, '', false), {
       wrapper: QueryWrapper,
     })
     await waitFor(

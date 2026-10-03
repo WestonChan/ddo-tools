@@ -9,6 +9,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     changes: [
       "An item's ML, gear slot, Raid, Rare and augment sockets sit in the title bar again; an open socket lists its augments right below the title bar",
       "The filter row follows the design: chips keep their width and show a count badge, the pickers and the ML range popover share one look, applied filters group under short labels, and the result count sits at the table's edge",
+      'Gear slot, Pack and Raid take several values each, and the Enchantments picker has an Any / All switch for matching every chosen enchantment; both wait on the API deploy that accepts them',
+      'Filter pickers list what you have already chosen first and drop their footer; the All switch waits until an enchantment is chosen before it changes the list',
       "The enchantment table opens in the item's own order; click a column header to sort it",
       'Item detail keeps only the key facts in view; enhancement, material, race, armor stats and the rest sit behind one More details link in the same rows as weapon details',
       'A weapon shows its damage, critical range and critical multiplier as rows at the top of its detail, with the rest of its weapon details behind a More link',

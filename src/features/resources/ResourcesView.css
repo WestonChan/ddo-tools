@@ -177,6 +177,33 @@
   }
 }
 
+.resources-enchantment-match {
+  display: inline-flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+
+  & button {
+    height: 26px;
+    padding: 0 var(--space-2);
+    background: transparent;
+    border: 0;
+    color: var(--text-muted);
+    font-size: var(--fs-label);
+    cursor: pointer;
+
+    &:last-child {
+      border-left: 1px solid var(--border-default);
+    }
+
+    &[aria-pressed='true'] {
+      background: var(--surface-selected);
+      color: var(--text-accent);
+    }
+  }
+}
+
 .resources-include-sets-box {
   display: inline-flex;
   align-items: center;

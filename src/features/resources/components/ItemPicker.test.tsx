@@ -161,6 +161,7 @@ describe('ItemPicker server-backed filters', () => {
     renderItemPicker()
     await user.click(screen.getByRole('button', { name: 'Gear slot' }))
     await user.click(screen.getByRole('option', { name: 'Back' }))
+    await user.click(screen.getByRole('option', { name: 'Ring' }))
     await user.click(screen.getByRole('button', { name: 'Enchantments' }))
     await user.click(screen.getByRole('option', { name: 'Strength' }))
     await user.click(screen.getByRole('option', { name: /Vorpal/ }))
@@ -168,6 +169,7 @@ describe('ItemPicker server-backed filters', () => {
     await user.click(screen.getByRole('button', { name: 'Enchantments' }))
     await user.click(screen.getByRole('button', { name: 'Raid' }))
     await user.click(screen.getByRole('option', { name: /The Raid/ }))
+    await user.click(screen.getByRole('button', { name: 'Raid' }))
     await user.click(screen.getByRole('button', { name: 'ML range' }))
     await user.type(screen.getByRole('spinbutton', { name: 'Min ML' }), '20')
     await user.type(screen.getByRole('spinbutton', { name: 'Max ML' }), '32{Enter}')
@@ -178,20 +180,84 @@ describe('ItemPicker server-backed filters', () => {
     await waitFor(() => expect(useItemPageMock.mock.lastCall?.[1]).toBe('torc'))
     expect(latestFilters()).toEqual({
       ml: { min: '20', max: '32' },
-      slot: 'Back',
+      slot: ['Back', 'Ring'],
       enchantments: ['Strength', 'Vorpal'],
-      pack: '',
-      raid: '7',
+      enchantmentMatch: 'any',
+      pack: [],
+      raid: ['7'],
       isRareOnly: true,
       isRaidOnly: false,
     })
     expect(useItemPageMock.mock.lastCall?.[2]).toBe(true)
-    await user.click(screen.getByRole('button', { name: 'Show applied · 6' }))
+    await user.click(screen.getByRole('button', { name: 'Show applied · 7' }))
     expect(
       Array.from(document.querySelectorAll('.filter-applied-label'), (label) => label.textContent),
-    ).toEqual(['ML', 'Gear slot', 'Enchantments', 'Raid', 'Show'])
+    ).toEqual(['ML', 'Gear slot', 'Enchantments · any', 'Raid', 'Show'])
     await user.click(screen.getByRole('button', { name: 'Remove Gear slot: Back' }))
-    expect(latestFilters().slot).toBe('')
+    expect(latestFilters().slot).toEqual(['Ring'])
+  }, 10000)
+
+  it('shows match mode only for enchantments, labels applied values, and resets with Clear filters', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Gear slot' }))
+    expect(screen.queryByRole('button', { name: 'All' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.getByRole('button', { name: 'Any' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false')
+    await user.click(screen.getByRole('button', { name: 'All' }))
+    expect(latestFilters().enchantmentMatch).toBe('all')
+    await user.click(screen.getByRole('option', { name: 'Strength' }))
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('button', { name: 'Show applied · 1' }))
+    expect(
+      screen.getByText('Enchantments', { selector: '.filter-applied-label' }),
+    ).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('option', { name: 'Vorpal' }))
+    expect(screen.getByText('Enchantments · all')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(latestFilters().enchantmentMatch).toBe('any')
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.getByRole('button', { name: 'Any' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('does not offer Reset match for an error with no selected enchantments', async () => {
+    const view = render(<ItemPickerHarness />)
+    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'All' }))
+    pageState = {
+      data: { total: 93, items: SAMPLE_ITEMS },
+      isPending: false,
+      isFetching: false,
+      error: new Error('Filter unavailable'),
+    }
+    view.rerender(<ItemPickerHarness />)
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reset match' })).toBeNull()
+  })
+
+  it('lists each selected pack and raid in its applied group', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Pack' }))
+    await user.click(screen.getByRole('option', { name: 'Shadowfell' }))
+    await user.click(screen.getByRole('option', { name: 'Vault of Night' }))
+    await user.click(screen.getByRole('button', { name: 'Raid' }))
+    await user.click(screen.getByRole('option', { name: /The Raid/ }))
+    await user.click(screen.getByRole('option', { name: /Empty Raid/ }))
+    await user.click(screen.getByRole('button', { name: 'Raid' }))
+    await user.click(screen.getByRole('button', { name: 'Show applied · 4' }))
+    expect(latestFilters().pack).toEqual(['Shadowfell', 'Vault of Night'])
+    expect(latestFilters().raid).toEqual(['7', '8'])
+    expect(
+      Array.from(document.querySelectorAll('.filter-applied-label'), (label) => label.textContent),
+    ).toEqual(['Pack', 'Raid'])
+    for (const name of ['Shadowfell', 'Vault of Night', 'The Raid', 'Empty Raid']) {
+      expect(
+        screen.getByRole('button', { name: new RegExp(`Remove (Pack|Raid): ${name}`) }),
+      ).toBeInTheDocument()
+    }
   })
 
   it('keeps API order during search and sends header sorting to the page hook', async () => {
@@ -283,7 +349,7 @@ describe('ItemPicker server-backed filters', () => {
 
   it('shows an empty raid as a normal empty result', async () => {
     useItemPageMock.mockImplementation((filters) =>
-      filters.raid === '8'
+      filters.raid.includes('8')
         ? { data: { total: 0, items: [] }, isPending: false, isFetching: false, error: null }
         : pageState,
     )
@@ -291,7 +357,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(screen.getByText('93 results')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Raid' }))
     await userEvent.click(screen.getByRole('option', { name: /Empty Raid/ }))
-    expect(latestFilters().raid).toBe('8')
+    expect(latestFilters().raid).toEqual(['8'])
     expect(screen.getByText('0 results')).toBeInTheDocument()
     expect(screen.getByText('No items match your filters.')).toBeInTheDocument()
     expect(

@@ -204,8 +204,8 @@ export function ItemPicker({
   if (packQuery.isPending) loadingPickers.add('pack')
   if (raidQuery.isPending) loadingPickers.add('raid')
   const definitions = useMemo(
-    () => itemFilterDefinitions(equipmentSlots, enchantmentNames, packNames, raidQuests),
-    [equipmentSlots, enchantmentNames, packNames, raidQuests],
+    () => itemFilterDefinitions(equipmentSlots, enchantmentNames, packNames, raidQuests, filters),
+    [equipmentSlots, enchantmentNames, packNames, raidQuests, filters],
   )
   const rowAt = useCallback((index: number) => itemsToShow[index], [itemsToShow])
   const rowKey = useCallback((item: ItemSummary) => item.id, [])
@@ -313,9 +313,29 @@ export function ItemPicker({
         focusFallbackRef={effectiveSearchInputRef}
         onPickerOpen={(key) => setOpenedPickers((previous) => new Set(previous).add(String(key)))}
         loadingPickers={loadingPickers}
+        searchControls={{
+          enchantments: (
+            <span className="resources-enchantment-match" aria-label="Enchantment match mode">
+              {(['any', 'all'] as const).map((match) => (
+                <button
+                  key={match}
+                  type="button"
+                  aria-pressed={filters.enchantmentMatch === match}
+                  data-tip={`Match ${match}: item has ${match === 'any' ? 'at least one selected bonus' : 'every selected bonus'}`}
+                  onClick={() => onFiltersChange({ ...filters, enchantmentMatch: match })}
+                >
+                  {match === 'any' ? 'Any' : 'All'}
+                </button>
+              ))}
+            </span>
+          ),
+        }}
         extraControls={{
           enchantments: (
-            <label className="resources-include-sets">
+            <label
+              className="resources-include-sets"
+              data-tip="Also match items whose set bonuses grant these"
+            >
               <input
                 type="checkbox"
                 checked={includesSetBonuses}
@@ -368,6 +388,14 @@ export function ItemPicker({
                 {selectedSort && (
                   <button type="button" onClick={() => setSelectedSort(null)}>
                     Reset sort
+                  </button>
+                )}
+                {filters.enchantments.length > 0 && filters.enchantmentMatch === 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => onFiltersChange({ ...filters, enchantmentMatch: 'any' })}
+                  >
+                    Reset match
                   </button>
                 )}
               </div>

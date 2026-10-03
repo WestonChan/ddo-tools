@@ -42,10 +42,11 @@ export interface ItemSummary {
 
 export interface ItemListFilters {
   ml: { min: string; max: string }
-  slot: string
+  slot: string[]
   enchantments: string[]
-  pack: string
-  raid: string
+  enchantmentMatch: 'any' | 'all'
+  pack: string[]
+  raid: string[]
   isRareOnly: boolean
   isRaidOnly: boolean
 }
@@ -57,10 +58,11 @@ export interface ItemListSort {
 
 export const EMPTY_ITEM_FILTERS: ItemListFilters = {
   ml: { min: '', max: '' },
-  slot: '',
+  slot: [],
   enchantments: [],
-  pack: '',
-  raid: '',
+  enchantmentMatch: 'any',
+  pack: [],
+  raid: [],
   isRareOnly: false,
   isRaidOnly: false,
 }
@@ -515,12 +517,14 @@ export function itemListParameters(
   const sortField = sort ? ITEM_SORT_FIELD_BY_COLUMN[sort.key] : undefined
   return {
     q: searchQuery.trim() || undefined,
-    slot: filters.slot || undefined,
+    slot: filters.slot.length ? filters.slot : undefined,
     min_level: filters.ml.min || undefined,
     max_level: filters.ml.max || undefined,
-    pack: filters.pack || undefined,
-    quest: filters.raid || undefined,
+    pack: filters.pack.length ? filters.pack : undefined,
+    quest: filters.raid.length ? filters.raid : undefined,
     enchantment: filters.enchantments.length ? filters.enchantments : undefined,
+    enchantment_match:
+      filters.enchantments.length > 0 && filters.enchantmentMatch === 'all' ? 'all' : undefined,
     include_set_bonuses: filters.enchantments.length > 0 && includesSetBonuses,
     rare: filters.isRareOnly,
     raid: filters.isRaidOnly,

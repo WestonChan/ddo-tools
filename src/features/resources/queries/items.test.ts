@@ -578,10 +578,11 @@ describe('fetchers', () => {
     const page = await fetchItemPage(
       {
         ml: { min: '20', max: '32' },
-        slot: 'Back',
+        slot: ['Back', 'Ring'],
         enchantments: ['Strength', 'Constitution Poison, Lesser'],
-        pack: '',
-        raid: '7',
+        enchantmentMatch: 'all',
+        pack: ['Shadowfell', 'Vault of Night'],
+        raid: ['7', '8'],
         isRareOnly: true,
         isRaidOnly: false,
       },
@@ -591,13 +592,16 @@ describe('fetchers', () => {
     )
     const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
     expect(
-      Object.fromEntries([...url.searchParams].filter(([key]) => key !== 'enchantment')),
+      Object.fromEntries(
+        [...url.searchParams].filter(
+          ([key]) => !['slot', 'pack', 'quest', 'enchantment'].includes(key),
+        ),
+      ),
     ).toEqual({
       q: 'torc',
-      slot: 'Back',
       min_level: '20',
       max_level: '32',
-      quest: '7',
+      enchantment_match: 'all',
       include_set_bonuses: 'true',
       rare: 'true',
       limit: '200',
@@ -607,6 +611,9 @@ describe('fetchers', () => {
       'Strength',
       'Constitution Poison, Lesser',
     ])
+    expect(url.searchParams.getAll('slot')).toEqual(['Back', 'Ring'])
+    expect(url.searchParams.getAll('pack')).toEqual(['Shadowfell', 'Vault of Night'])
+    expect(url.searchParams.getAll('quest')).toEqual(['7', '8'])
     expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
     expect(page.total).toBe(202)
     expect(page.items.map((item) => item.name)).toEqual(['Torc', 'Bloodstone'])
@@ -716,10 +723,11 @@ describe('fetchers', () => {
     const page = await fetchItemPage(
       {
         ml: { min: '', max: '' },
-        slot: '',
+        slot: [],
         enchantments: [],
-        pack: 'Reign of Madness',
-        raid: '',
+        enchantmentMatch: 'any',
+        pack: ['Reign of Madness'],
+        raid: [],
         isRareOnly: false,
         isRaidOnly: true,
       },
@@ -734,6 +742,22 @@ describe('fetchers', () => {
       offset: '0',
     })
     expect(page.items[0].pack).toBe('Vault of Night')
+  })
+
+  it('omits the match parameter in Any mode while keeping repeated enchantments', async () => {
+    mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
+    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, enchantments: ['Strength', 'Vorpal'] }, '', false)
+    const parameters = new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams
+    expect(parameters.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
+    expect(parameters.has('enchantment_match')).toBe(false)
+  })
+
+  it('omits All mode until an enchantment is selected', async () => {
+    mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
+    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, enchantmentMatch: 'all' }, '', false)
+    const parameters = new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams
+    expect(parameters.has('enchantment_match')).toBe(false)
+    expect(parameters.has('enchantment')).toBe(false)
   })
 
   it('fetchAugmentsFittingSlot orders by level then name', async () => {

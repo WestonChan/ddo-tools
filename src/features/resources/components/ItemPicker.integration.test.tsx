@@ -172,6 +172,63 @@ describe('ItemPicker page errors', () => {
     )
   })
 
+  it('offers Reset match when the All request returns 400', async () => {
+    const itemRequests: URL[] = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+      const url = new URL(String(request))
+      if (url.pathname === '/v1/enchantments') {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              total: 2,
+              limit: 10000,
+              offset: 0,
+              enchantments: [
+                { name: 'Strength', kind: 'stat', item_count: 1 },
+                { name: 'Vorpal', kind: 'effect', item_count: 1 },
+              ],
+            }),
+            { status: 200 },
+          ),
+        )
+      }
+      itemRequests.push(url)
+      if (url.searchParams.get('enchantment_match') === 'all') {
+        return Promise.resolve(new Response('Unknown enchantment_match', { status: 400 }))
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] }), {
+          status: 200,
+        }),
+      )
+    })
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByText('0 results')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'All' }))
+    expect(itemRequests).toHaveLength(1)
+    expect(itemRequests[0].searchParams.has('enchantment_match')).toBe(false)
+    expect(screen.queryByRole('button', { name: 'Reset match' })).toBeNull()
+    await userEvent.click(await screen.findByRole('option', { name: 'Strength' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Vorpal' }))
+    expect(itemRequests.at(-1)?.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
+    expect(itemRequests.at(-1)?.searchParams.get('enchantment_match')).toBe('all')
+    expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset match' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Reset match' }))
+    expect(await screen.findByText('0 results')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Reset match' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.getByRole('button', { name: 'Any' })).toHaveAttribute('aria-pressed', 'true')
+    expect(itemRequests.some((url) => url.searchParams.get('enchantment_match') === 'all')).toBe(
+      true,
+    )
+  })
+
   it('keeps the headers and offers Reset sort after a sorted request returns 400', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
       const parameters = new URL(String(request)).searchParams

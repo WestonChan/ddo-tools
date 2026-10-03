@@ -31,6 +31,7 @@ interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue
   onChange: (values: Values) => void
   onClearAll: () => void
   extraControls?: Record<string, ReactNode>
+  searchControls?: Record<string, ReactNode>
   hasSearchTerm?: boolean
   focusFallbackRef?: RefObject<HTMLElement | null>
   onPickerOpen?: (key: keyof Values) => void
@@ -46,6 +47,7 @@ interface FilterChipProps {
   onChange: (value: FilterValue) => void
   onClear: () => void
   extraControl?: ReactNode
+  searchControl?: ReactNode
   rangeCommitRef: RefObject<(() => void) | null>
   isLoading?: boolean
 }
@@ -144,6 +146,7 @@ function FilterChip({
   onChange,
   onClear,
   extraControl,
+  searchControl,
   rangeCommitRef,
   isLoading = false,
 }: FilterChipProps): JSX.Element {
@@ -225,6 +228,7 @@ function FilterChip({
           searchPlaceholder={definition.searchPlaceholder ?? 'Search…'}
           onRequestClose={() => onClose()}
           extraControl={extraControl}
+          searchControl={searchControl}
           isLoading={isLoading}
         />
       )}
@@ -238,6 +242,7 @@ function FilterChip({
           searchPlaceholder={definition.searchPlaceholder ?? 'Search…'}
           onRequestClose={() => onClose()}
           extraControl={extraControl}
+          searchControl={searchControl}
           isLoading={isLoading}
         />
       )}
@@ -251,6 +256,7 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   onChange,
   onClearAll,
   extraControls,
+  searchControls,
   hasSearchTerm = false,
   focusFallbackRef,
   onPickerOpen,
@@ -350,6 +356,7 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
                   setOpenKey(null)
                 }}
                 extraControl={extraControls?.[definition.key]}
+                searchControl={searchControls?.[definition.key]}
                 rangeCommitRef={rangeCommitRef}
                 isLoading={loadingPickers?.has(String(definition.key))}
               />

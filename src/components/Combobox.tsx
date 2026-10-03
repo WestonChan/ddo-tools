@@ -16,6 +16,7 @@ interface ComboboxCommonProps {
   searchPlaceholder: string
   onRequestClose: () => void
   renderOption?: (option: FilterOption) => ReactNode
+  searchControl?: ReactNode
   extraControl?: ReactNode
   isLoading?: boolean
 }
@@ -34,25 +35,35 @@ export function Combobox(props: ComboboxProps): JSX.Element {
     searchPlaceholder,
     onRequestClose,
     renderOption,
+    searchControl,
     extraControl,
     isLoading = false,
   } = props
   const [searchQuery, setSearchQuery] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const [selectedAtOpen] = useState<ReadonlySet<string>>(
+    () => new Set(props.values ?? (props.value ? [props.value] : [])),
+  )
   const listId = useId()
   const optionRefs = useRef<Array<HTMLDivElement | null>>([])
   const matchingOptions = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLocaleLowerCase()
-    return options.filter((option) => option.label.toLocaleLowerCase().includes(normalizedQuery))
-  }, [options, searchQuery])
+    const selectedOptions: FilterOption[] = []
+    const unselectedOptions: FilterOption[] = []
+    for (const option of options) {
+      if (!option.label.toLocaleLowerCase().includes(normalizedQuery)) continue
+      if (selectedAtOpen.has(option.value)) selectedOptions.push(option)
+      else unselectedOptions.push(option)
+    }
+    return [...selectedOptions, ...unselectedOptions]
+  }, [options, searchQuery, selectedAtOpen])
   const isMultiple = props.values !== undefined
   const selectedValues: string[] = isMultiple ? props.values : props.value ? [props.value] : []
   const activeIndex = Math.min(highlightedIndex, Math.max(0, matchingOptions.length - 1))
-  const footerText = searchQuery.trim()
-    ? `${matchingOptions.length} of ${options.length}${selectedValues.length ? ` · ${selectedValues.length} selected` : ''}`
-    : isMultiple && selectedValues.length
-      ? `${selectedValues.length} selected · any match`
-      : `${options.length} options`
+  const firstUnpinnedIndex = matchingOptions.findIndex(
+    (option) => !selectedAtOpen.has(option.value),
+  )
+  const dividerIndex = firstUnpinnedIndex > 0 ? firstUnpinnedIndex - 1 : -1
 
   function chooseOption(option: FilterOption): void {
     if (props.values !== undefined) {
@@ -114,6 +125,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
             }}
           />
         </label>
+        {searchControl}
       </div>
       <div
         id={listId}
@@ -128,26 +140,32 @@ export function Combobox(props: ComboboxProps): JSX.Element {
             return (
               <div
                 key={option.value}
-                id={`${listId}-${index}`}
-                ref={(element) => {
-                  optionRefs.current[index] = element
-                }}
-                role="option"
-                aria-selected={isSelected}
-                className={`combobox-option${index === activeIndex ? ' combobox-option--active' : ''}`}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => chooseOption(option)}
+                className={`combobox-option-wrap${index === dividerIndex ? ' combobox-option-wrap--divider' : ''}`}
               >
-                <span className={`combobox-check${isSelected ? ' combobox-check--selected' : ''}`}>
-                  {isSelected && <Check size={11} aria-hidden />}
-                </span>
-                <span className="combobox-option-label">
-                  {renderOption ? renderOption(option) : option.label}
-                </span>
-                {option.caption && (
-                  <span className="combobox-option-caption">{option.caption}</span>
-                )}
+                <div
+                  id={`${listId}-${index}`}
+                  ref={(element) => {
+                    optionRefs.current[index] = element
+                  }}
+                  role="option"
+                  aria-selected={isSelected}
+                  className={`combobox-option${index === activeIndex ? ' combobox-option--active' : ''}`}
+                  onMouseEnter={() => setHighlightedIndex(index)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => chooseOption(option)}
+                >
+                  <span
+                    className={`combobox-check${isSelected ? ' combobox-check--selected' : ''}`}
+                  >
+                    {isSelected && <Check size={11} aria-hidden />}
+                  </span>
+                  <span className="combobox-option-label">
+                    {renderOption ? renderOption(option) : option.label}
+                  </span>
+                  {option.caption && (
+                    <span className="combobox-option-caption">{option.caption}</span>
+                  )}
+                </div>
               </div>
             )
           })
@@ -160,16 +178,6 @@ export function Combobox(props: ComboboxProps): JSX.Element {
         )}
       </div>
       {extraControl && <div className="combobox-extra">{extraControl}</div>}
-      <div className="combobox-footer">
-        <span className="num">{footerText}</span>
-        <button
-          type="button"
-          onClick={() => (isMultiple ? props.onChange([]) : props.onChange(''))}
-          aria-label={`Clear ${label}`}
-        >
-          Clear
-        </button>
-      </div>
     </AnchoredMenu>
   )
 }

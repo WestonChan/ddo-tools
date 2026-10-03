@@ -6,6 +6,7 @@ export function itemFilterDefinitions(
   enchantmentNames: string[],
   packNames: string[],
   raidQuests: RaidQuest[],
+  filters: ItemListFilters,
 ): FilterDefinition<ItemListFilters>[] {
   return [
     {
@@ -27,7 +28,7 @@ export function itemFilterDefinitions(
     {
       key: 'slot',
       label: 'Gear slot',
-      kind: 'single',
+      kind: 'multi',
       group: 'item',
       searchPlaceholder: 'Find a slot…',
       options: equipmentSlots.map((slot) => ({ value: slot, label: slot })),
@@ -37,13 +38,17 @@ export function itemFilterDefinitions(
       label: 'Enchantments',
       kind: 'multi',
       group: 'item',
+      appliedGroupLabel:
+        filters.enchantments.length > 1
+          ? `Enchantments · ${filters.enchantmentMatch}`
+          : 'Enchantments',
       searchPlaceholder: 'Bonus or enchantment…',
       options: enchantmentNames.map((name) => ({ value: name, label: name })),
     },
     {
       key: 'pack',
       label: 'Pack',
-      kind: 'single',
+      kind: 'multi',
       group: 'source',
       searchPlaceholder: 'Find a pack…',
       options: packNames.map((pack) => ({ value: pack, label: pack })),
@@ -51,7 +56,7 @@ export function itemFilterDefinitions(
     {
       key: 'raid',
       label: 'Raid',
-      kind: 'single',
+      kind: 'multi',
       group: 'source',
       searchPlaceholder: 'Find a raid…',
       options: raidQuests.map((quest) => ({
