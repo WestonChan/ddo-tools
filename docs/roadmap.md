@@ -1309,6 +1309,16 @@ to all of them, defaulting to `any`, documented once under "Query parameters" in
 the list of filters that honour `all` (an item has one slot, so `slot_match=all` is a 400). The picker's
 chips send the same shape.
 
+**What a line can carry (survey of 2026-10-03).** Maetrim's 1,795 buff texts and the wiki's Riposte, Parrying
+and Deception pages: scalar stat lines dominate and need one scaling rule, so `enchantment_stats` carries
+`numerator`, `denominator` (default 1/1) and `rounding` (down, up, nearest) for "X/2 round up" cases and
+the numeral-form halves, with families carrying `default_value`/`default_value2` for Maetrim's definition
+defaults so a link stores only what the item states; two independent numbers per line are `value`/`value2`
+(Deception's hit and damage); procs with damage (755 texts; dice or a range, a trigger such as on hit or
+when missed, scaling by the value) get a later `enchantment_damage` table with a `trigger` column; DCs (162
+texts; the 45/117 heroic and legendary pairs) get `enchantment_saves` in the DC/CC capture step; conditions,
+durations and stacks stay prose for the Phase 6 engine. Nothing else earns a column.
+
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
 `routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
 hover cards and filter vocabulary, then the wiki reads fill exact text as they happen (see the tooltip
