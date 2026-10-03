@@ -199,10 +199,19 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       }
     }
     function onMouseDown(event: globalThis.MouseEvent): void {
-      if (
-        cards.some((card) => card.isPinned) &&
-        !(event.target as Element).closest('[data-hover-card]')
-      ) {
+      const clickedCard =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>('[data-hover-card]')
+          : null
+      if (clickedCard) {
+        cancelPending()
+        const clickedCardDepth = Number(clickedCard.dataset.depth)
+        setCards((current) =>
+          current.some((card) => card.depth > clickedCardDepth)
+            ? current.filter((card) => card.depth <= clickedCardDepth)
+            : current,
+        )
+      } else if (cards.some((card) => card.isPinned)) {
         cancelPending()
         setCards((current) => {
           const pinnedIndex = current.findIndex((card) => card.isPinned)

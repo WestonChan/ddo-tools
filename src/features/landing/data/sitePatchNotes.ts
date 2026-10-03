@@ -20,6 +20,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
       'Item detail is one card instead of a card inside a card',
       "Filter pickers, sets and socket augment lists read the API's new paged responses in full, so no list is cut off at the first 100 rows",
       'Hover cards stay open while the pointer is on their row or link, even when you click; they close when you move away, and pinned cards still close with Escape',
+      'Clicking inside a hover card closes the cards opened from it and keeps that card and the ones above it',
     ],
   },
   {

@@ -9,12 +9,31 @@ afterEach(() => {
 })
 
 function NestedAnchor(): React.JSX.Element {
+  const [isSelected, setIsSelected] = useState(false)
   const anchor = useHoverCard({
     kind: 'nested',
     delayMs: 120,
-    render: () => <span>Nested facts</span>,
+    render: () => (
+      <>
+        <span>Nested facts</span>
+        <DeepAnchor />
+      </>
+    ),
   })
-  return <button {...anchor}>Nested anchor</button>
+  return (
+    <button {...anchor} aria-pressed={isSelected} onClick={() => setIsSelected(true)}>
+      Nested anchor
+    </button>
+  )
+}
+
+function DeepAnchor(): React.JSX.Element {
+  const anchor = useHoverCard({
+    kind: 'enchantment',
+    delayMs: 120,
+    render: () => <span>Enchantment facts</span>,
+  })
+  return <button {...anchor}>Enchantment anchor</button>
 }
 
 function CardHarness(): React.JSX.Element {
@@ -35,6 +54,19 @@ function CardHarness(): React.JSX.Element {
       Item anchor
     </button>
   )
+}
+
+function renderOpenItemCard(): HTMLElement {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  const itemAnchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.mouseEnter(itemAnchor)
+  act(() => vi.advanceTimersByTime(260))
+  return itemAnchor
 }
 
 it('delays opening, pins the top card, stacks nested cards, and pops with Escape', () => {
@@ -96,6 +128,65 @@ it('delays opening, pins the top card, stacks nested cards, and pops with Escape
   )
 })
 
+it('closes only deeper cards on mousedown inside a card and keeps the row click working', () => {
+  const itemAnchor = renderOpenItemCard()
+  fireEvent.keyDown(document, { key: 't' })
+  fireEvent.mouseLeave(itemAnchor)
+  const nestedAnchor = screen.getByRole('button', { name: 'Nested anchor' })
+  fireEvent.mouseEnter(nestedAnchor)
+  act(() => vi.advanceTimersByTime(120))
+  const enchantmentAnchor = screen.getByRole('button', { name: 'Enchantment anchor' })
+  fireEvent.mouseEnter(enchantmentAnchor)
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['0', '1', '2'])
+  fireEvent.keyDown(document, { key: 't' })
+  expect(enchantmentAnchor).toHaveAttribute('data-hover-card-pinned')
+
+  fireEvent.mouseDown(screen.getByText('Nested facts'))
+  expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['0', '1'])
+  expect(enchantmentAnchor).not.toHaveAttribute('data-hover-card-pinned')
+  expect(itemAnchor).toHaveAttribute('data-hover-card-pinned')
+  expect(screen.getByText('Nested facts')).toBeInTheDocument()
+
+  fireEvent.mouseEnter(enchantmentAnchor)
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getAllByRole('dialog')).toHaveLength(3)
+  fireEvent.mouseDown(nestedAnchor)
+  fireEvent.click(nestedAnchor)
+  expect(nestedAnchor).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['0'])
+  expect(itemAnchor).toHaveAttribute('data-hover-card-pinned')
+  expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
+})
+
+it('closes a deeper card when its pinned parent is the first remaining card', () => {
+  const itemAnchor = renderOpenItemCard()
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Nested anchor' }))
+  act(() => vi.advanceTimersByTime(120))
+  fireEvent.keyDown(document, { key: 't' })
+  fireEvent.mouseLeave(itemAnchor)
+  expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['1'])
+
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Enchantment anchor' }))
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['1', '2'])
+  fireEvent.mouseDown(screen.getByText('Nested facts'))
+  expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['1'])
+  expect(screen.getByRole('dialog')).toHaveClass('hover-card--pinned')
+})
+
+it('cancels a pending nested card on mousedown inside its parent', () => {
+  const itemAnchor = renderOpenItemCard()
+  fireEvent.keyDown(document, { key: 't' })
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Nested anchor' }))
+  act(() => vi.advanceTimersByTime(119))
+
+  fireEvent.mouseDown(screen.getByRole('button', { name: 'Card action' }))
+  act(() => vi.advanceTimersByTime(1))
+  expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['0'])
+  expect(itemAnchor).toHaveAttribute('data-hover-card-pinned')
+})
+
 it('keeps an unpinned card through clicks on its anchor and elsewhere until mouse leave', () => {
   vi.useFakeTimers()
   render(
@@ -120,6 +211,13 @@ it('keeps an unpinned card through clicks on its anchor and elsewhere until mous
   fireEvent.click(screen.getByRole('dialog'))
   expect(anchor).not.toHaveAttribute('data-hover-card-pinned')
 
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Nested anchor' }))
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getAllByRole('dialog')).toHaveLength(2)
+  fireEvent.mouseDown(screen.getByRole('button', { name: 'Card action' }))
+  expect(screen.getAllByRole('dialog')).toHaveLength(1)
+  expect(anchor).not.toHaveAttribute('data-hover-card-pinned')
+
   fireEvent.mouseDown(screen.getByRole('button', { name: 'Filter chip' }))
   fireEvent.click(screen.getByRole('button', { name: 'Filter chip' }))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -132,15 +230,7 @@ it('keeps an unpinned card through clicks on its anchor and elsewhere until mous
 })
 
 it('clears a pinned card and its nested card on outside mousedown', () => {
-  vi.useFakeTimers()
-  render(
-    <HoverCardProvider>
-      <CardHarness />
-    </HoverCardProvider>,
-  )
-  const anchor = screen.getByRole('button', { name: 'Item anchor' })
-  fireEvent.mouseEnter(anchor)
-  act(() => vi.advanceTimersByTime(260))
+  const anchor = renderOpenItemCard()
   fireEvent.keyDown(document, { key: 't' })
   expect(anchor).toHaveAttribute('data-hover-card-pinned')
   fireEvent.mouseLeave(anchor)
@@ -156,18 +246,17 @@ it('clears a pinned card and its nested card on outside mousedown', () => {
   expect(anchor).not.toHaveAttribute('data-hover-card-pinned')
 })
 
-it('clears a hint anchored inside a pinned card on outside mousedown', () => {
-  vi.useFakeTimers()
-  render(
-    <HoverCardProvider>
-      <CardHarness />
-    </HoverCardProvider>,
-  )
-  const anchor = screen.getByRole('button', { name: 'Item anchor' })
-  fireEvent.mouseEnter(anchor)
-  act(() => vi.advanceTimersByTime(260))
+it('clears a hint anchored inside a pinned card on parent and outside mousedown', () => {
+  const anchor = renderOpenItemCard()
   fireEvent.keyDown(document, { key: 't' })
   fireEvent.mouseLeave(anchor)
+  fireEvent.mouseOver(screen.getByRole('button', { name: 'Hint anchor' }))
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Nested hint')
+
+  fireEvent.mouseDown(screen.getByRole('button', { name: 'Card action' }))
+  expect(screen.queryByRole('tooltip')).toBeNull()
+  expect(screen.getByRole('dialog')).toHaveClass('hover-card--pinned')
   fireEvent.mouseOver(screen.getByRole('button', { name: 'Hint anchor' }))
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('tooltip')).toHaveTextContent('Nested hint')
