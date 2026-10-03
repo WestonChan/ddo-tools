@@ -1,16 +1,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
+import capturedItem from './fixtures/item7631.json'
+import capturedAugment from './fixtures/augment1902.json'
 import {
   fetchAdventurePackNames,
-  fetchAugmentLootQuests,
   fetchAugmentsFittingSlot,
   fetchEnchantmentNames,
   fetchEquipmentSlotNames,
   fetchItemPage,
   fetchRaidQuests,
   EMPTY_ITEM_FILTERS,
-  isCraftingSlotFamily,
-  canListFittingAugments,
   toAugmentSummary,
   toItem,
   toItemSummary,
@@ -85,6 +84,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
       value2: null,
     },
   ],
+  modifiers: [],
   effects: [{ id: 9, name: 'Supreme Good', description: 'Smites.', value: null, target: 'All' }],
   augment_slots: [
     {
@@ -154,6 +154,25 @@ const API_ITEM_DETAIL: ApiItemDetail = {
 }
 
 describe('mappers', () => {
+  it('maps captured item values and modifier fields from the API response', () => {
+    const item = toItem(capturedItem as ApiItemDetail)
+    expect(item.bonuses[0]).toMatchObject({ statName: 'Charisma', value: 8, value2: null })
+    expect(item.modifiers).toEqual([])
+    const diceModifier = capturedAugment.modifiers[0]
+    const itemWithModifier = toItem({
+      ...(capturedItem as ApiItemDetail),
+      modifiers: [
+        { ...diceModifier, dice_number: [2], dice_sides: [6], dice_bonus: [3], damage: 'Fire' },
+      ],
+    })
+    expect(itemWithModifier.modifiers[0]).toMatchObject({
+      diceNumber: [2],
+      diceSides: [6],
+      diceBonus: [3],
+      damage: 'Fire',
+    })
+  })
+
   it('toItemSummary renames the API columns the picker reads', () => {
     expect(toItemSummary(createApiItemRow())).toEqual({
       id: 1,
@@ -192,6 +211,7 @@ describe('mappers', () => {
       bonusType: 'Enhancement',
       statName: 'Fire Spell Power',
       value: 54,
+      value2: null,
       sortOrder: 0,
     })
     expect(item.effects[0]).toEqual({
@@ -265,6 +285,7 @@ describe('mappers', () => {
     expect(item.adventurePackDrops).toEqual([
       {
         kind: 'adventurePack',
+        id: 25,
         key: 'adventurePack-25',
         name: 'The Isle of Dread',
         vendorLocation: null,
@@ -276,6 +297,7 @@ describe('mappers', () => {
       },
       {
         kind: 'adventurePack',
+        id: 40,
         key: 'adventurePack-40',
         name: 'Magic of Myth Drannor',
         vendorLocation: null,
@@ -331,6 +353,7 @@ describe('mappers', () => {
     expect(item.sourcesBeyondQuests).toEqual([
       {
         kind: 'craftingSystem',
+        id: 32,
         key: 'craftingSystem-32',
         name: 'Thunder-Forged',
         vendorLocation: null,
@@ -342,6 +365,7 @@ describe('mappers', () => {
       },
       {
         kind: 'challengePack',
+        id: 62,
         key: 'challengePack-62',
         name: 'Secrets of the Artificers',
         vendorLocation: null,
@@ -353,6 +377,7 @@ describe('mappers', () => {
       },
       {
         kind: 'vendor',
+        id: 1,
         key: 'vendor-1',
         name: 'Morten Edgewright',
         vendorLocation: 'The Harbor',
@@ -364,6 +389,7 @@ describe('mappers', () => {
       },
       {
         kind: 'event',
+        id: 4,
         key: 'event-4',
         name: 'The Night Revels',
         vendorLocation: null,
@@ -375,6 +401,7 @@ describe('mappers', () => {
       },
       {
         kind: 'starter',
+        id: null,
         key: 'starter-15',
         name: 'Starter gear at level 15',
         vendorLocation: null,
@@ -449,6 +476,7 @@ describe('mappers', () => {
       id: 2,
       name: 'Silverscale',
       minimumLevel: 31,
+      slots: ['isle of dread: scale (armor)'],
       bonusNames: ['Healing Amplification +56'],
       recipes: [],
     })
@@ -486,14 +514,6 @@ describe('mappers', () => {
         ],
       },
     ])
-  })
-
-  it('slot rules: families and Sun/Moon get candidate lists', () => {
-    expect(isCraftingSlotFamily('standard')).toBe(false)
-    expect(isCraftingSlotFamily('lamordia')).toBe(true)
-    expect(canListFittingAugments('standard', 'sun')).toBe(true)
-    expect(canListFittingAugments('standard', 'red')).toBe(false)
-    expect(canListFittingAugments('crafting', 'crafting: tier 2')).toBe(true)
   })
 })
 
@@ -717,19 +737,5 @@ describe('fetchers', () => {
     const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
     expect(url.pathname).toBe('/v1/augments')
     expect(Object.fromEntries(url.searchParams)).toEqual({ slot: 'red', limit: '10000' })
-  })
-
-  it('fetchAugmentLootQuests maps the quests on the augment detail, chest included', async () => {
-    mockFetchResponse({
-      id: 1902,
-      name: 'Solar Gem of Physical Resistance Rating (Heroic)',
-      quests: [API_ITEM_DETAIL.quests[0], { ...API_ITEM_DETAIL.quests[0], id: 12, chest: null }],
-    })
-    const lootQuests = await fetchAugmentLootQuests(1902)
-    expect(vi.mocked(fetch).mock.calls[0][0]).toContain('/v1/augments/1902')
-    expect(lootQuests.map((q) => [q.id, q.chests])).toEqual([
-      [11, ['raid warded chest']],
-      [12, []],
-    ])
   })
 })

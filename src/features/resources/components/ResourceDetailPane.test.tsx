@@ -19,7 +19,14 @@ const MELANCHOLIC_SLOT = {
 }
 const AUGMENTS_BY_SLOT_LABEL = {
   [MELANCHOLIC_SLOT.label]: [
-    { id: 1, name: 'Melancholic Charisma', minimumLevel: 8, bonusNames: [], recipes: [] },
+    {
+      id: 1,
+      name: 'Melancholic Charisma',
+      minimumLevel: 8,
+      slots: ['lamordia: melancholic (accessory)'],
+      bonusNames: [],
+      recipes: [],
+    },
   ],
 }
 
@@ -46,6 +53,7 @@ function itemDetailFor(id: number): Item {
     armorStats: null,
     augmentSlots: [MELANCHOLIC_SLOT],
     bonuses: [],
+    modifiers: [],
     effects: [],
     clickies: [],
     quests: [],
@@ -67,7 +75,11 @@ vi.mock('../queries/useItems', () => ({
     }
     return { data: itemDetailFor(id), isPending: false, error: null }
   },
-  useFittingAugmentsBySlotLabel: () => AUGMENTS_BY_SLOT_LABEL,
+  useFittingAugmentsBySlotLabel: (label: string | null) => ({
+    data: label === null ? undefined : (AUGMENTS_BY_SLOT_LABEL[label] ?? []),
+    isPending: false,
+    error: null,
+  }),
   useSet: () => ({ data: undefined, isPending: false, error: null }),
 }))
 

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, type JSX } from 'react'
 import { DetailNavigationProvider } from '../contexts/DetailNavigationContext'
 import { useDetailStack, type ResourceReference } from '../hooks/useDetailStack'
 import { isApiError } from '../../../lib/api'
-import type { AugmentSummary, Item } from '../queries/items'
-import { useItem, useSet, useFittingAugmentsBySlotLabel } from '../queries/useItems'
+import type { Item } from '../queries/items'
+import { useItem, useSet } from '../queries/useItems'
 import { DETAIL_TITLE_ID, type ResourceCategory } from '../resourceCategories'
 import { DetailBreadcrumbBar } from './DetailBreadcrumbBar'
 import { StatusPlaceholder } from './StatusPlaceholder'
@@ -16,6 +16,7 @@ interface ResourceDetailPaneProps {
   focusItemId?: number | null
   onFocusItem?: () => void
   onDetailRendered?: () => void
+  onCloseDetail?: () => void
 }
 
 export function ResourceDetailPane({
@@ -25,6 +26,7 @@ export function ResourceDetailPane({
   focusItemId = null,
   onFocusItem,
   onDetailRendered,
+  onCloseDetail,
 }: ResourceDetailPaneProps): JSX.Element {
   const {
     stack,
@@ -37,6 +39,7 @@ export function ResourceDetailPane({
   } = useDetailStack({
     resourceInUrl,
     pickerCategory,
+    onCloseDetail,
   })
 
   const topEntry = stack[stack.length - 1] ?? null
@@ -45,9 +48,6 @@ export function ResourceDetailPane({
 
   const itemDetailQuery = useItem(topItemId)
   const setDetailQuery = useSet(itemDetailQuery.data?.setId ?? null)
-  const augmentsBySlotLabel = useFittingAugmentsBySlotLabel(
-    itemDetailQuery.data?.augmentSlots ?? [],
-  )
 
   const namedDetailStack = useMemo(() => {
     return stack.map((entry) => {
@@ -97,7 +97,6 @@ export function ResourceDetailPane({
             itemDetailQuery.data ?? null,
             itemDetailQuery.isPending,
             itemDetailQuery.error,
-            augmentsBySlotLabel,
             setDetailQuery.data ?? null,
             matchingEnchantments,
             (id, name) => pushResource({ category: 'items', id, name }),
@@ -113,7 +112,6 @@ function renderedDetailBody(
   itemDetail: Item | null,
   isPending: boolean,
   error: unknown,
-  augmentsBySlotLabel: Record<string, AugmentSummary[]>,
   setDetail: ReturnType<typeof useSet>['data'] | null,
   matchingEnchantments: string[],
   onOpenItem: (id: number, name: string) => void,
@@ -125,7 +123,6 @@ function renderedDetailBody(
         <ItemDetailCard
           key={`${topEntry.category}-${topEntry.id}`}
           item={itemDetail}
-          augmentsBySlotLabel={augmentsBySlotLabel}
           setDetail={setDetail}
           matchingEnchantments={matchingEnchantments}
           onOpenItem={onOpenItem}

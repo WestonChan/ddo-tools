@@ -1,0 +1,161 @@
+{
+  "adds_augment": null,
+  "adventure_packs": [],
+  "bonuses": [
+    {
+      "bonus_type": "Artifact",
+      "description": null,
+      "id": 4719,
+      "name": "Physical Resistance Rating +10",
+      "stat": "Physical Resistance Rating",
+      "stat_category": "defensive",
+      "value": 10,
+      "value2": null
+    }
+  ],
+  "choose_level": false,
+  "crafting": [],
+  "description": "+10 Artifact Bonus to Physical Resistance Rating.\nDrops in: Secrets of the Red Wizards, end chest\nThe Darkness and the Light, end chest\nThe Covered Culvert, optional chest\nZoo Creeper, end chest",
+  "dual_values": false,
+  "effect_description": null,
+  "enter_value": false,
+  "family": "SunAndMoon",
+  "grants_augment": null,
+  "icon": "HistoryBookWhite",
+  "id": 1902,
+  "level_values": null,
+  "level_values2": null,
+  "levels": null,
+  "min_level": 1,
+  "modifiers": [
+    {
+      "amount_type": "Simple",
+      "amounts": [
+        10
+      ],
+      "apply_as_item_effect": false,
+      "bonus": "Artifact",
+      "bonus_type": "Artifact",
+      "cap": null,
+      "damage": null,
+      "dice_bonus": null,
+      "dice_damage": null,
+      "dice_number": null,
+      "dice_sides": null,
+      "display_name": null,
+      "effect_type": "PRR",
+      "extra_types": null,
+      "id": 15024,
+      "is_item_specific": false,
+      "is_rare": false,
+      "percent": false,
+      "rank": null,
+      "requirements": [],
+      "sort_order": 0,
+      "stack_source": null,
+      "targets": null,
+      "value": null
+    }
+  ],
+  "name": "Solar Gem of Physical Resistance Rating (Heroic)",
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": [
+        "normal",
+        "hard",
+        "elite"
+      ],
+      "epic_level": 35,
+      "id": 360,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 13,
+      "loot_type": "chest",
+      "name": "Secrets of the Red Wizards",
+      "pack": "Magic of Myth Drannor",
+      "patron": "Cormanthor Elves"
+    },
+    {
+      "chest": "optional chest",
+      "difficulties": [
+        "casual",
+        "normal",
+        "hard"
+      ],
+      "epic_level": 35,
+      "id": 104,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 4,
+      "loot_type": "chest",
+      "name": "The Covered Culvert",
+      "pack": "Tavern Tales",
+      "patron": "The Free Agents"
+    },
+    {
+      "chest": "end chest",
+      "difficulties": [
+        "casual",
+        "normal",
+        "hard"
+      ],
+      "epic_level": 35,
+      "id": 103,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 4,
+      "loot_type": "chest",
+      "name": "The Darkness and the Light",
+      "pack": "Fall of the Night Brigade",
+      "patron": "The Harpers"
+    }
+  ],
+  "set_bonus": null,
+  "slots": [
+    "sun"
+  ],
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 360,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "Secrets of the Red Wizards",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Secrets_of_the_Red_Wizards"
+    },
+    {
+      "character_level": null,
+      "chest": "optional chest",
+      "cost": null,
+      "id": 104,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "The Covered Culvert",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/The_Covered_Culvert"
+    },
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 103,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "The Darkness and the Light",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/The_Darkness_and_the_Light"
+    }
+  ],
+  "suppress_set_bonus": false,
+  "weapon_class": null
+}

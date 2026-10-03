@@ -14,7 +14,7 @@ export function DetailHeader({
   wikiPageName,
   isLegacy = false,
   isCraftable = false,
-  variant = 'drawer',
+  variant = 'pane',
 }: {
   name: string
   kicker?: string
@@ -22,7 +22,7 @@ export function DetailHeader({
   wikiPageName?: string | null
   isLegacy?: boolean
   isCraftable?: boolean
-  variant?: 'drawer' | 'hover'
+  variant?: 'pane' | 'hover'
 }): JSX.Element {
   const { deepLinkUrl } = useDetailNavigation()
   const [isLinkCopied, setIsLinkCopied] = useState(false)
@@ -51,7 +51,7 @@ export function DetailHeader({
     <DetailCardHeader
       kicker={kicker}
       name={name}
-      titleId={variant === 'drawer' ? DETAIL_TITLE_ID : undefined}
+      titleId={variant === 'pane' ? DETAIL_TITLE_ID : undefined}
       badges={
         <>
           {isLegacy && (
@@ -67,7 +67,7 @@ export function DetailHeader({
         </>
       }
       actions={
-        variant === 'drawer' && (
+        variant === 'pane' && (
           <>
             <HintAnchor text="Linked wiki window arrives with Phase 4g">
               <button type="button" className="resources-wiki-chip" aria-pressed={false} disabled>

@@ -27,7 +27,10 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--resources-column-min-width)), 1fr)
+  );
   gap: var(--space-3);
   align-items: start;
   overflow-y: auto;
@@ -233,11 +236,6 @@
 
 .resources-detail {
   min-width: 0;
-
-  & > .detail-card {
-    border: 0;
-    border-radius: 0;
-  }
 
   & > .resources-status {
     padding: var(--space-4);
@@ -457,27 +455,6 @@
   font-size: var(--fs-micro);
 }
 
-.resources-bonus-type[data-type='insight'] {
-  color: var(--arcane-300);
-  border-color: var(--arcane-400);
-  background: color-mix(in srgb, var(--arcane-400) 12%, transparent);
-}
-.resources-bonus-type[data-type='quality'] {
-  color: var(--moss-400);
-  border-color: var(--moss-400);
-  background: color-mix(in srgb, var(--moss-400) 12%, transparent);
-}
-.resources-bonus-type[data-type='artifact'] {
-  color: var(--violet-400);
-  border-color: var(--violet-400);
-  background: color-mix(in srgb, var(--violet-400) 12%, transparent);
-}
-.resources-bonus-type[data-type='exceptional'] {
-  color: var(--amber-400);
-  border-color: var(--amber-400);
-  background: color-mix(in srgb, var(--amber-400) 12%, transparent);
-}
-
 .resources-hover-title {
   color: var(--text-heading);
   font-size: var(--fs-h3);
@@ -526,6 +503,14 @@
 .resources-hover-definition {
   color: var(--text-muted);
   font-size: var(--fs-label);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.resources-source-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 .resources-hover-rows {
@@ -545,8 +530,11 @@
 }
 
 .resources-hover-row > span:last-child {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--text-muted);
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .resources-hover-row > span:first-child {
@@ -769,22 +757,6 @@ button.resources-hover-row:hover {
   white-space: nowrap;
 }
 
-.resources-bonus-type {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-xs);
-  background: var(--surface-sunken);
-  color: var(--text-body);
-  font-size: var(--fs-micro);
-  font-weight: var(--fw-semibold);
-  letter-spacing: var(--ls-eyebrow);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 .resources-bonus-description {
   min-width: 0;
   color: var(--text-muted);
@@ -915,93 +887,6 @@ button.resources-hover-row:hover {
 }
 
 .resources-augment-candidates {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-px);
   max-height: 14rem;
   overflow-y: auto;
-  margin: 0;
-  padding: var(--space-1);
-  list-style: none;
-  background: var(--surface-card);
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
-}
-
-.resources-augment-candidate {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
-  padding: var(--space-1) var(--space-1-5);
-  border-radius: var(--radius-xs);
-  font-size: var(--fs-label);
-
-  &.selected {
-    background: var(--surface-selected);
-    box-shadow: var(--inset-mark-accent);
-
-    & .resources-augment-candidate-name {
-      color: var(--text-accent);
-      font-weight: var(--fw-semibold);
-    }
-  }
-}
-
-.resources-augment-candidate-name {
-  color: var(--text-body);
-}
-
-.resources-augment-candidate-level {
-  color: var(--text-faint);
-}
-
-.resources-augment-candidate-bonuses {
-  flex-basis: 100%;
-  color: var(--text-muted);
-}
-
-.resources-augment-candidate-recipe {
-  flex-basis: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  color: var(--text-faint);
-
-  & svg {
-    flex-shrink: 0;
-  }
-}
-
-.resources-augment-loot-quests {
-  flex-basis: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
-  color: var(--text-faint);
-}
-
-.resources-augment-loot-quests-heading {
-  color: var(--text-faint);
-}
-
-.resources-augment-loot-quest-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
-}
-
-.resources-augment-loot-quest {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--text-body);
-}
-
-.resources-augment-loot-quests-more {
-  color: var(--text-faint);
 }

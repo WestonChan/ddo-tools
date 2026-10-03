@@ -35,6 +35,22 @@ export interface ApiBonus {
   value2: number | null
 }
 
+export interface ApiModifier {
+  id: number
+  effect_type: string
+  display_name: string | null
+  bonus_type: string | null
+  amounts: number[] | null
+  value: string | null
+  dice_number: number[] | null
+  dice_sides: number[] | null
+  dice_bonus: number[] | null
+  dice_damage: string | null
+  damage: string | null
+  percent: boolean
+  cap: string | null
+}
+
 export interface ApiItemEffect {
   id: number
   name: string
@@ -214,6 +230,7 @@ export interface ApiItemDetail {
   weapon: ApiWeaponStats | null
   armor: ApiArmorStats | null
   bonuses: ApiBonus[]
+  modifiers: ApiModifier[]
   effects: ApiItemEffect[]
   augment_slots: ApiItemAugmentSlot[]
   clickies: ApiItemClickie[]
@@ -244,6 +261,8 @@ export interface ApiAugment {
 
 export interface ApiAugmentDetail extends ApiAugment {
   quests: ApiLootQuest[]
+  modifiers: ApiModifier[]
+  effect_description: string | null
 }
 
 export type ApiCraftingTier = 'heroic' | 'epic' | 'legendary' | 'any'
@@ -265,6 +284,56 @@ export interface ApiAdventurePack {
   id: number
   name: string
   is_free_to_play: boolean
+}
+
+export interface ApiSourceItem {
+  id: number
+  name: string
+  slot: string
+}
+
+export interface ApiSourceQuest {
+  id: number
+  name: string
+  level: number | null
+}
+
+export interface ApiAdventurePackDetail {
+  id: number
+  name: string
+  is_free_to_play: boolean
+  items: ApiSourceItem[]
+}
+
+export interface ApiQuestSeriesDetail {
+  id: number
+  name: string
+  pack: string | null
+  quests: ApiSourceQuest[]
+  rewards: ApiSourceItem[]
+}
+
+export interface ApiCraftingSystemDetail {
+  id: number
+  name: string
+  pack: string | null
+  npc: string | null
+  ingredient_count: number
+  recipes: Array<{ option: string; augments: Array<{ name: string }> }>
+}
+
+export interface ApiVendorDetail {
+  id: number
+  name: string
+  pack: string | null
+  location: string | null
+  items: ApiSourceItem[]
+}
+
+export interface ApiEventDetail {
+  id: number
+  name: string
+  items: ApiSourceItem[]
 }
 
 export interface ApiEquipmentSlot {

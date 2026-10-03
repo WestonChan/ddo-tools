@@ -1,0 +1,48 @@
+{
+  "id": 1,
+  "name": "The Lost Seekers",
+  "pack": null,
+  "quest_count": 4,
+  "quests": [
+    {
+      "id": 47,
+      "level": 3,
+      "name": "The Kobold's Den: Clan Gnashtooth"
+    },
+    {
+      "id": 46,
+      "level": 3,
+      "name": "The Kobold's Den: Rescuing Arlos"
+    },
+    {
+      "id": 82,
+      "level": 4,
+      "name": "Venn's Trail: Clan Tunnelworm"
+    }
+  ],
+  "reward_count": 22,
+  "rewards": [
+    {
+      "id": 468,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Acrobat's Ring",
+      "slot": "Ring"
+    },
+    {
+      "id": 637,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Armor of the Unknown Hero",
+      "slot": "Body"
+    },
+    {
+      "id": 894,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Black Widow Bracers",
+      "slot": "Wrists"
+    }
+  ],
+  "wiki_url": "https://ddowiki.com/page/The_Lost_Seekers"
+}

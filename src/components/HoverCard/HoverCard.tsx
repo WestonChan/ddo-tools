@@ -17,6 +17,7 @@ interface CardEntry {
   id: number
   anchorId: string | null
   kind: string
+  label?: string
   depth: number
   anchorRect: DOMRect
   pointerX: number | null
@@ -26,6 +27,7 @@ interface CardEntry {
 
 export interface HoverCardOptions {
   kind: string
+  label?: string
   delayMs: number
   render: () => ReactNode
 }
@@ -112,7 +114,7 @@ function CardLayer({ card }: { card: CardEntry }): JSX.Element {
       >
         {card.kind !== 'hint' && (
           <div className="hover-card__status">
-            <span className="section-label">{card.kind}</span>
+            <span className="section-label">{card.label ?? card.kind}</span>
             <span>{card.isPinned ? 'Pinned · Esc' : 'T to pin'}</span>
           </div>
         )}
@@ -265,7 +267,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   )
 }
 
-export function useHoverCard({ kind, delayMs, render }: HoverCardOptions): {
+export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions): {
   onMouseEnter: (event: React.MouseEvent<HTMLElement>) => void
   onMouseLeave: () => void
   onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void
@@ -282,6 +284,7 @@ export function useHoverCard({ kind, delayMs, render }: HoverCardOptions): {
       controller?.open(
         {
           kind,
+          label,
           anchorId,
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
@@ -295,6 +298,7 @@ export function useHoverCard({ kind, delayMs, render }: HoverCardOptions): {
       controller?.open(
         {
           kind,
+          label,
           anchorId,
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
@@ -311,6 +315,7 @@ export function useHoverCard({ kind, delayMs, render }: HoverCardOptions): {
       controller?.open(
         {
           kind,
+          label,
           anchorId,
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),

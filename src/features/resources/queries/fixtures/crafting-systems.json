@@ -1,0 +1,124 @@
+{
+  "families": [
+    "Slavelords_Heroic",
+    "Slavelords_Legendary"
+  ],
+  "id": 1,
+  "ingredient_count": 16,
+  "ingredients": [
+    {
+      "bind": "Unbound",
+      "id": 1,
+      "name": "Broken Shackle",
+      "source": "Part 1, Slave Pits of the Undercity",
+      "tier": "heroic"
+    },
+    {
+      "bind": "Unbound",
+      "id": 2,
+      "name": "Chain Links",
+      "source": "Part 2, Secret of the Slavers' Stockade",
+      "tier": "heroic"
+    },
+    {
+      "bind": "Unbound",
+      "id": 3,
+      "name": "Broken Collar",
+      "source": "Part 3, Assault on the Aerie of the Slave Lords",
+      "tier": "heroic"
+    }
+  ],
+  "name": "Slave Lords Crafting",
+  "npc": "Garvon <Armorer and Outfitter>, in the Forsaken Temple just inside the Slave Pits of the Undercity entrance",
+  "pack": "Against the Slave Lords",
+  "page": "https://ddowiki.com/page/Slave_Lords_Crafting",
+  "recipe_count": 74,
+  "recipes": [
+    {
+      "augments": [
+        {
+          "id": 1674,
+          "min_level": 8,
+          "name": "Strength +5"
+        },
+        {
+          "id": 1675,
+          "min_level": 8,
+          "name": "Intelligence +5"
+        },
+        {
+          "id": 1676,
+          "min_level": 8,
+          "name": "Dexterity +5"
+        }
+      ],
+      "cost": [
+        {
+          "ingredient": "Broken Shackle",
+          "quantity": 50,
+          "tier": "heroic"
+        }
+      ],
+      "grants_slot": null,
+      "id": 1,
+      "note": null,
+      "option": "Attributes +5",
+      "slot": "crafting: slavelords prefix",
+      "tier": "heroic"
+    },
+    {
+      "augments": [
+        {
+          "id": 1771,
+          "min_level": 28,
+          "name": "Strength +13"
+        },
+        {
+          "id": 1772,
+          "min_level": 28,
+          "name": "Intelligence +13"
+        },
+        {
+          "id": 1773,
+          "min_level": 28,
+          "name": "Dexterity +13"
+        }
+      ],
+      "cost": [
+        {
+          "ingredient": "Legendary Broken Shackle",
+          "quantity": 100,
+          "tier": "legendary"
+        }
+      ],
+      "grants_slot": null,
+      "id": 2,
+      "note": null,
+      "option": "Attributes +13",
+      "slot": "crafting: legendary slavelords prefix",
+      "tier": "legendary"
+    },
+    {
+      "augments": [
+        {
+          "id": 1680,
+          "min_level": 8,
+          "name": "False Life +18"
+        }
+      ],
+      "cost": [
+        {
+          "ingredient": "Broken Shackle",
+          "quantity": 50,
+          "tier": "heroic"
+        }
+      ],
+      "grants_slot": null,
+      "id": 3,
+      "note": null,
+      "option": "False Life +18",
+      "slot": "crafting: slavelords prefix",
+      "tier": "heroic"
+    }
+  ]
+}

@@ -88,8 +88,80 @@
   font-size: var(--fs-label);
 }
 
+.detail-value-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  min-height: 26px;
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--border-hairline);
+  font-size: var(--fs-label);
+}
+
+.detail-value-row__label {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-muted);
+}
+
+.detail-value-row__value {
+  color: var(--text-accent);
+  font-weight: var(--fw-semibold);
+}
+
+.detail-value-row[data-tone='damage'] .detail-value-row__value {
+  color: var(--rust-400);
+}
+
+.detail-type-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--surface-sunken);
+  color: var(--text-body);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.detail-type-tag[data-type='insight'] {
+  color: var(--arcane-300);
+  border-color: var(--arcane-400);
+  background: color-mix(in srgb, var(--arcane-400) 12%, transparent);
+}
+
+.detail-type-tag[data-type='quality'] {
+  color: var(--moss-400);
+  border-color: var(--moss-400);
+  background: color-mix(in srgb, var(--moss-400) 12%, transparent);
+}
+
+.detail-type-tag[data-type='artifact'] {
+  color: var(--violet-400);
+  border-color: var(--violet-400);
+  background: color-mix(in srgb, var(--violet-400) 12%, transparent);
+}
+
+.detail-type-tag[data-type='exceptional'] {
+  color: var(--amber-400);
+  border-color: var(--amber-400);
+  background: color-mix(in srgb, var(--amber-400) 12%, transparent);
+}
+
 .detail-card--hover {
   border: 0;
+  background: transparent;
+}
+
+.detail-card--pane {
+  border: 0;
+  border-radius: 0;
   background: transparent;
 }
 

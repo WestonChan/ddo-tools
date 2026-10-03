@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -39,6 +40,18 @@ interface ItemPickerProps {
   filters: ItemListFilters
   onFiltersChange: (filters: ItemListFilters) => void
   onOpenItemFromHover?: (id: number, name: string) => void
+  onOpenItem?: (id: number) => void
+  rowToFocusId?: number | null
+  onRowFocused?: () => void
+  session?: ItemPickerSession
+  onSessionChange?: (change: Partial<ItemPickerSession>) => void
+}
+export interface ItemPickerSession {
+  searchQuery: string
+  selectedSort: LedgerSort | null
+  includesSetBonuses: boolean
+  hasResolvedFirstPage: boolean
+  scrollTop: number
 }
 const EMPTY_NAMES: string[] = []
 const EMPTY_RAID_QUESTS: RaidQuest[] = []
@@ -117,20 +130,47 @@ export function ItemPicker({
   filters,
   onFiltersChange,
   onOpenItemFromHover,
+  onOpenItem,
+  rowToFocusId = null,
+  onRowFocused,
+  session,
+  onSessionChange,
 }: ItemPickerProps): JSX.Element {
   const navigate = useNavigate()
+  const pickerRootRef = useRef<HTMLDivElement>(null)
   const ownSearchInputRef = useRef<HTMLInputElement>(null)
   const effectiveSearchInputRef = searchInputRef ?? ownSearchInputRef
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(session?.searchQuery ?? '')
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 250)
   const activeSearchQuery = searchQuery ? debouncedSearchQuery : ''
-  const [selectedSort, setSelectedSort] = useState<LedgerSort | null>(null)
+  const [selectedSort, setSelectedSort] = useState<LedgerSort | null>(session?.selectedSort ?? null)
   const [openedPickers, setOpenedPickers] = useState<ReadonlySet<string>>(() => new Set())
-  const [includesSetBonuses, setIncludesSetBonuses] = useState(false)
-  const [hasResolvedFirstPage, setHasResolvedFirstPage] = useState(false)
+  const [includesSetBonuses, setIncludesSetBonuses] = useState(session?.includesSetBonuses ?? false)
+  const [hasResolvedFirstPage, setHasResolvedFirstPage] = useState(
+    session?.hasResolvedFirstPage ?? false,
+  )
+  const [initialScrollTop] = useState(session?.scrollTop ?? 0)
+  const hasRestoredScrollRef = useRef(false)
   const lastRequestedPage = useRef<{ query: string; loadedCount: number } | null>(null)
   const resultCountId = useId()
   const itemPageQuery = useItemPage(filters, activeSearchQuery, includesSetBonuses, selectedSort)
+  useEffect(() => {
+    onSessionChange?.({ searchQuery, selectedSort, includesSetBonuses, hasResolvedFirstPage })
+  }, [onSessionChange, searchQuery, selectedSort, includesSetBonuses, hasResolvedFirstPage])
+
+  useLayoutEffect(() => {
+    const body = pickerRootRef.current?.querySelector<HTMLElement>('.ledger-body')
+    if (!body || !onSessionChange) return
+    if (!hasRestoredScrollRef.current) {
+      body.scrollTop = initialScrollTop
+      hasRestoredScrollRef.current = true
+    }
+    const rememberScroll = (): void => {
+      onSessionChange({ scrollTop: body.scrollTop })
+    }
+    body.addEventListener('scroll', rememberScroll)
+    return () => body.removeEventListener('scroll', rememberScroll)
+  }, [initialScrollTop, onSessionChange, itemPageQuery.data])
   useEffect(() => {
     if (
       hasResolvedFirstPage ||
@@ -192,9 +232,31 @@ export function ItemPicker({
     }
   }, [itemPageQuery, pageQueryKey, itemsToShow.length])
   const openItemDetail = useCallback(
-    (item: ItemSummary) => navigate({ to: '/resources/' + category + '/' + item.id }),
-    [navigate, category],
+    (item: ItemSummary) => {
+      if (onOpenItem) onOpenItem(item.id)
+      else void navigate({ to: '/resources/' + category + '/' + item.id })
+    },
+    [navigate, category, onOpenItem],
   )
+
+  useEffect(() => {
+    if (rowToFocusId === null) return
+    const picker = pickerRootRef.current
+    if (!picker) return
+    const focusReturnedRow = (): boolean => {
+      const row = picker.querySelector<HTMLElement>(`[data-row-key="${rowToFocusId}"]`)
+      if (!row) return false
+      row.focus()
+      onRowFocused?.()
+      return true
+    }
+    if (focusReturnedRow()) return
+    const observer = new MutationObserver(() => {
+      if (focusReturnedRow()) observer.disconnect()
+    })
+    observer.observe(picker, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [rowToFocusId, onRowFocused, itemsToShow])
 
   function clearAll(): void {
     onFiltersChange(EMPTY_ITEM_FILTERS)
@@ -216,7 +278,7 @@ export function ItemPicker({
   }
 
   return (
-    <div className="resources-picker-inner">
+    <div className="resources-picker-inner" ref={pickerRootRef}>
       <div className="resources-search">
         <label className="search-well resources-search-well">
           <Search size={14} aria-hidden />

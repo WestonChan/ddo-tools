@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
-import { useItemPage } from './useItems'
+import { useItemPage, useFittingAugmentsBySlotLabel, useAdventurePack } from './useItems'
 import type { ItemListFilters } from './items'
+import adventurePack from './fixtures/adventure-packs.json'
 
 const EMPTY_FILTERS: ItemListFilters = {
   ml: { min: '', max: '' },
@@ -48,6 +49,45 @@ function QueryWrapper({ children }: { children: ReactNode }): ReactNode {
 }
 
 afterEach(() => vi.restoreAllMocks())
+
+it('fetches only the opened socket label and reuses it after closing', async () => {
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(JSON.stringify({ augments: [], total: 0, limit: 10000, offset: 0 }), {
+      status: 200,
+    }),
+  )
+  const { rerender } = renderHook(({ label }) => useFittingAugmentsBySlotLabel(label), {
+    initialProps: { label: null as string | null },
+    wrapper: QueryWrapper,
+  })
+  expect(fetchMock).not.toHaveBeenCalled()
+  rerender({ label: 'red' })
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+  rerender({ label: null })
+  rerender({ label: 'red' })
+  expect(fetchMock).toHaveBeenCalledTimes(1)
+  rerender({ label: 'sun' })
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  expect(
+    fetchMock.mock.calls.map(([url]) => new URL(String(url)).searchParams.get('slot')),
+  ).toEqual(['red', 'sun'])
+})
+
+it('reopens a cached source card without a second request', async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(new Response(JSON.stringify(adventurePack), { status: 200 }))
+  const queryClient = new QueryClient()
+  function CachedWrapper({ children }: { children: ReactNode }): ReactNode {
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  }
+  const first = renderHook(() => useAdventurePack(2), { wrapper: CachedWrapper })
+  await waitFor(() => expect(first.result.current.data?.name).toBe('Magic of Myth Drannor'))
+  first.unmount()
+  const second = renderHook(() => useAdventurePack(2), { wrapper: CachedWrapper })
+  expect(second.result.current.data?.name).toBe('Magic of Myth Drannor')
+  expect(fetchMock).toHaveBeenCalledOnce()
+})
 
 describe('useItemPage', () => {
   it('requests 200 rows per page, appends in API order, and restarts on sort', async () => {

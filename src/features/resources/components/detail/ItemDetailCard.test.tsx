@@ -3,6 +3,10 @@ import { render, screen, cleanup, type RenderResult } from '@testing-library/rea
 import { ItemDetailCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
+vi.mock('../../queries/useItems', () => ({
+  useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
+}))
+
 afterEach(() => {
   cleanup()
 })
@@ -29,6 +33,7 @@ const plainItem: Item = {
   armorStats: null,
   augmentSlots: [],
   bonuses: [],
+  modifiers: [],
   effects: [],
   clickies: [],
   quests: [],
@@ -57,6 +62,7 @@ function quest(overrides: Partial<LootQuest> = {}): LootQuest {
 function itemSource(overrides: Partial<ItemSource> = {}): ItemSource {
   return {
     kind: 'craftingSystem',
+    id: 32,
     key: 'craftingSystem-32',
     name: 'Thunder-Forged',
     vendorLocation: null,
@@ -72,6 +78,7 @@ function itemSource(overrides: Partial<ItemSource> = {}): ItemSource {
 function packDrop(overrides: Partial<ItemSource> = {}): ItemSource {
   return itemSource({
     kind: 'adventurePack',
+    id: 25,
     key: 'adventurePack-25',
     name: 'The Isle of Dread',
     chest: 'any legendary chest',
@@ -81,7 +88,7 @@ function packDrop(overrides: Partial<ItemSource> = {}): ItemSource {
 }
 
 function renderItemDetailCard(item: Item): RenderResult {
-  return render(<ItemDetailCard item={item} augmentsBySlotLabel={{}} />)
+  return render(<ItemDetailCard item={item} />)
 }
 
 describe('ItemDetailCard drop locations', () => {
@@ -100,7 +107,6 @@ describe('ItemDetailCard drop locations', () => {
           },
           quests: [quest()],
         }}
-        augmentsBySlotLabel={{}}
         variant="hover"
       />,
     )

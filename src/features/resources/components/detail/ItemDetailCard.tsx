@@ -5,6 +5,7 @@ import {
   DetailCardSection,
   DetailFact,
   DetailMore,
+  DetailValueRow,
   WikiLinkIcon,
 } from '../../../../components'
 import { DropTagChip } from '../DropTagChip'
@@ -16,9 +17,14 @@ import { KeyValueGrid, type KeyValuePair } from './KeyValueGrid'
 import { numberWithPlusSign } from './numberWithPlusSign'
 import type { SetDetail } from '../../queries/sets'
 import { sentenceCased } from './sentenceCased'
-import { QuestHoverAnchor, SetHoverAnchor } from './ResourceHoverCards'
+import {
+  QuestHoverAnchor,
+  SetHoverAnchor,
+  SourceHoverAnchor,
+  type SourceHoverKind,
+} from './ResourceHoverCards'
+import { damageExpression } from './structuredRows'
 import type {
-  AugmentSummary,
   Item,
   ItemSource,
   ItemSourceKind,
@@ -51,7 +57,13 @@ const SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE: ReadonlySet<ItemSourceKind
   'adventurePack',
 ])
 
-function ItemSourceRow({ itemSource }: { itemSource: ItemSource }): JSX.Element {
+function ItemSourceRow({
+  itemSource,
+  onOpenItem,
+}: {
+  itemSource: ItemSource
+  onOpenItem?: (id: number, name: string) => void
+}): JSX.Element {
   const metaLine = itemSourceMetaLine(itemSource)
   const hasWikiPage =
     itemSource.wikiUrl !== null ||
@@ -59,7 +71,15 @@ function ItemSourceRow({ itemSource }: { itemSource: ItemSource }): JSX.Element 
   return (
     <li className="resources-quest-row">
       <span className="resources-quest-name">
-        <span className="resources-quest-title">{itemSource.name}</span>
+        <SourceHoverAnchor
+          kind={itemSource.kind}
+          id={itemSource.id}
+          name={itemSource.name}
+          wikiUrl={itemSource.wikiUrl}
+          onOpenItem={onOpenItem}
+        >
+          <span className="resources-quest-title">{itemSource.name}</span>
+        </SourceHoverAnchor>
         {itemSource.isRareLoot && <DropTagChip kind="rare" />}
         {hasWikiPage && (
           <WikiLinkIcon href={itemSource.wikiUrl ?? undefined} pageName={itemSource.name} />
@@ -151,36 +171,59 @@ function HoverSourceSummary({
   item: Item
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element {
-  const sources = [
+  const sources: Array<{
+    key: string
+    name: string
+    note: string | null
+    questId: number | null
+    sourceKind: SourceHoverKind | null
+    sourceId: number | null
+    wikiUrl: string | null
+  }> = [
     ...item.quests.map((quest) => ({
       key: `quest-${quest.id}`,
       name: quest.name,
       note: quest.pack,
       questId: quest.id,
+      sourceKind: null,
+      sourceId: null,
+      wikiUrl: null,
     })),
     ...item.adventurePackDrops.map((source) => ({
       key: source.key,
       name: source.name,
       note: 'Anywhere in the pack',
       questId: null,
+      sourceKind: source.kind,
+      sourceId: source.id,
+      wikiUrl: source.wikiUrl,
     })),
     ...item.questChains.map((chain) => ({
       key: `chain-${chain.id}`,
       name: chain.name,
       note: 'Chain end reward',
       questId: null,
+      sourceKind: 'questChain' as const,
+      sourceId: chain.id,
+      wikiUrl: chain.wikiUrl,
     })),
     ...item.sagas.map((saga) => ({
       key: `saga-${saga.id}`,
       name: saga.name,
       note: 'Saga reward',
       questId: null,
+      sourceKind: 'saga' as const,
+      sourceId: saga.id,
+      wikiUrl: saga.wikiUrl,
     })),
     ...item.sourcesBeyondQuests.map((source) => ({
       key: source.key,
       name: source.name,
       note: ITEM_SOURCE_LABELS[source.kind],
       questId: null,
+      sourceKind: source.kind,
+      sourceId: source.id,
+      wikiUrl: source.wikiUrl,
     })),
   ]
   return (
@@ -188,12 +231,22 @@ function HoverSourceSummary({
       {sources.slice(0, 3).map((source) => (
         <div className="resources-hover-row" key={source.key}>
           <span>
-            {source.questId === null ? (
-              source.name
-            ) : (
+            {source.questId !== null ? (
               <QuestHoverAnchor questId={source.questId} onOpenItem={onOpenItem}>
                 {source.name}
               </QuestHoverAnchor>
+            ) : source.sourceKind ? (
+              <SourceHoverAnchor
+                kind={source.sourceKind}
+                id={source.sourceId}
+                name={source.name}
+                wikiUrl={source.wikiUrl}
+                onOpenItem={onOpenItem}
+              >
+                {source.name}
+              </SourceHoverAnchor>
+            ) : (
+              source.name
             )}
           </span>
           <span>{source.note}</span>
@@ -206,15 +259,13 @@ function HoverSourceSummary({
 
 export function ItemDetailCard({
   item,
-  augmentsBySlotLabel,
-  variant = 'drawer',
+  variant = 'pane',
   matchingEnchantments = [],
   setDetail,
   onOpenItem,
 }: {
   item: Item
-  augmentsBySlotLabel: Record<string, AugmentSummary[]>
-  variant?: 'drawer' | 'hover'
+  variant?: 'pane' | 'hover'
   matchingEnchantments?: string[]
   setDetail?: SetDetail | null
   onOpenItem?: (id: number, name: string) => void
@@ -254,10 +305,7 @@ export function ItemDetailCard({
             <DetailFact label="Gear slot">{item.equipmentSlot}</DetailFact>
             <DetailFact label="Augments">
               {item.augmentSlots.length ? (
-                <AugmentSlotList
-                  augmentSlots={item.augmentSlots}
-                  augmentsBySlotLabel={augmentsBySlotLabel}
-                />
+                <AugmentSlotList augmentSlots={item.augmentSlots} />
               ) : (
                 '—'
               )}
@@ -286,29 +334,38 @@ export function ItemDetailCard({
           </>
         }
       >
-        {headerAttributes.length > 0 && variant === 'drawer' && (
+        {headerAttributes.length > 0 && variant === 'pane' && (
           <KeyValueGrid pairs={headerAttributes} />
         )}
         {item.description && <p className="resources-detail-description">{item.description}</p>}
-        {variant === 'drawer' && labeledWeaponStats.length > 0 && (
+        {variant === 'hover' &&
+          item.modifiers.flatMap((modifier) => {
+            const damage = damageExpression(modifier)
+            return damage
+              ? [<DetailValueRow key={modifier.id} label="Damage" value={damage} tone="damage" />]
+              : []
+          })}
+        {variant === 'pane' && labeledWeaponStats.length > 0 && (
           <DetailCardSection heading="Weapon">
             <StatList stats={labeledWeaponStats} />
           </DetailCardSection>
         )}
-        {variant === 'drawer' && labeledArmorStats.length > 0 && (
+        {variant === 'pane' && labeledArmorStats.length > 0 && (
           <DetailCardSection heading="Armor">
             <StatList stats={labeledArmorStats} />
           </DetailCardSection>
         )}
         <EnchantmentList
+          itemName={item.name}
           bonuses={item.bonuses}
+          modifiers={item.modifiers}
           effects={item.effects}
           setDetail={setDetail}
           variant={variant}
           matchingEnchantments={matchingEnchantments}
           onOpenItem={onOpenItem}
         />
-        {variant === 'drawer' && item.clickies.length > 0 && (
+        {variant === 'pane' && item.clickies.length > 0 && (
           <DetailCardSection heading="Clickies">
             <ul className="resources-clicky-list">
               {item.clickies.map((c) => (
@@ -354,12 +411,20 @@ export function ItemDetailCard({
                   </li>
                 ))}
                 {item.adventurePackDrops.map((packDrop) => (
-                  <ItemSourceRow key={packDrop.key} itemSource={packDrop} />
+                  <ItemSourceRow key={packDrop.key} itemSource={packDrop} onOpenItem={onOpenItem} />
                 ))}
                 {item.questChains.map((questChain) => (
                   <li key={`chain-${questChain.id}`} className="resources-quest-row">
                     <span className="resources-quest-name">
-                      <span className="resources-quest-title">{questChain.name}</span>
+                      <SourceHoverAnchor
+                        kind="questChain"
+                        id={questChain.id}
+                        name={questChain.name}
+                        wikiUrl={questChain.wikiUrl}
+                        onOpenItem={onOpenItem}
+                      >
+                        <span className="resources-quest-title">{questChain.name}</span>
+                      </SourceHoverAnchor>
                       {questChain.isRareLoot && <DropTagChip kind="rare" />}
                       <WikiLinkIcon
                         href={questChain.wikiUrl ?? undefined}
@@ -372,7 +437,15 @@ export function ItemDetailCard({
                 {item.sagas.map((saga) => (
                   <li key={`saga-${saga.id}-${saga.tier}`} className="resources-quest-row">
                     <span className="resources-quest-name">
-                      <span className="resources-quest-title">{saga.name}</span>
+                      <SourceHoverAnchor
+                        kind="saga"
+                        id={saga.id}
+                        name={saga.name}
+                        wikiUrl={saga.wikiUrl}
+                        onOpenItem={onOpenItem}
+                      >
+                        <span className="resources-quest-title">{saga.name}</span>
+                      </SourceHoverAnchor>
                       {saga.isRareLoot && <DropTagChip kind="rare" />}
                       <WikiLinkIcon href={saga.wikiUrl ?? undefined} pageName={saga.name} />
                     </span>
@@ -384,7 +457,11 @@ export function ItemDetailCard({
                   </li>
                 ))}
                 {item.sourcesBeyondQuests.map((itemSource) => (
-                  <ItemSourceRow key={itemSource.key} itemSource={itemSource} />
+                  <ItemSourceRow
+                    key={itemSource.key}
+                    itemSource={itemSource}
+                    onOpenItem={onOpenItem}
+                  />
                 ))}
               </ul>
             )}
@@ -399,7 +476,7 @@ export function ItemDetailCard({
         {variant === 'hover' && (
           <DetailCardFooter>Click a row in the list to open it</DetailCardFooter>
         )}
-        {variant === 'drawer' && (
+        {variant === 'pane' && (
           <footer className="resources-detail-actions">
             <div className="resources-detail-action-buttons">
               <button

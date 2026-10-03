@@ -2,20 +2,25 @@ import type { JSX } from 'react'
 import {
   DetailCardSection,
   DetailMore,
+  DetailTypeTag,
+  DetailValueRow,
   LedgerTable,
   useHoverCard,
   type LedgerColumn,
 } from '../../../../components'
 import type { SetDetail } from '../../queries/sets'
-import type { ItemBonus, ItemEffect } from '../../queries/items'
+import type { ItemBonus, ItemEffect, ResourceModifier } from '../../queries/items'
 import { numberWithPlusSign } from './numberWithPlusSign'
+import { bonusValue, damageExpression } from './structuredRows'
 import { SetHoverContent } from './ResourceHoverCards'
 
 interface EnchantmentRow {
   key: string
   name: string
+  sourceName: string
   type: string | null
   value: string
+  hoverValue: string
   description: string | null
   headingKind: 'set' | 'tier' | null
   isMatch: boolean
@@ -25,8 +30,10 @@ function toBonusRow(bonus: ItemBonus, matchingNames: ReadonlySet<string>): Encha
   return {
     key: `b-${bonus.id}-${bonus.sortOrder}`,
     name: bonus.statName,
+    sourceName: bonus.name,
     type: bonus.bonusType,
     value: bonus.value === null ? '' : numberWithPlusSign(bonus.value),
+    hoverValue: bonusValue(bonus) ?? '',
     description: bonus.description && bonus.description !== bonus.name ? bonus.description : null,
     headingKind: null,
     isMatch:
@@ -40,8 +47,10 @@ function toEffectRow(effect: ItemEffect, matchingNames: ReadonlySet<string>): En
     key: `e-${effect.id}-${effect.sortOrder}`,
     name:
       effect.value === null ? effect.name : `${effect.name} ${numberWithPlusSign(effect.value)}`,
+    sourceName: effect.name,
     type: effect.target,
     value: '',
+    hoverValue: effect.value === null ? '' : numberWithPlusSign(effect.value),
     description:
       effect.description && effect.description !== effect.name ? effect.description : null,
     headingKind: null,
@@ -54,8 +63,10 @@ function setRows(setDetail: SetDetail, matchingNames: ReadonlySet<string>): Ench
     {
       key: `set-${setDetail.id}`,
       name: setDetail.name,
+      sourceName: setDetail.name,
       type: null,
       value: '',
+      hoverValue: '',
       description: null,
       headingKind: 'set',
       isMatch: false,
@@ -65,8 +76,10 @@ function setRows(setDetail: SetDetail, matchingNames: ReadonlySet<string>): Ench
     rows.push({
       key: `tier-${tier.equippedCount}`,
       name: `${tier.equippedCount} pieces`,
+      sourceName: `${tier.equippedCount} pieces`,
       type: null,
       value: '',
+      hoverValue: '',
       description: tier.description,
       headingKind: 'tier',
       isMatch: false,
@@ -75,8 +88,10 @@ function setRows(setDetail: SetDetail, matchingNames: ReadonlySet<string>): Ench
       rows.push({
         key: `tier-${tier.equippedCount}-${bonus.key}`,
         name: bonus.name,
+        sourceName: bonus.name,
         type: bonus.type,
         value: bonus.value === null ? '' : numberWithPlusSign(bonus.value),
+        hoverValue: bonus.value === null ? '' : numberWithPlusSign(bonus.value),
         description: bonus.description,
         headingKind: null,
         isMatch: matchingNames.has(bonus.name.toLowerCase()),
@@ -119,12 +134,7 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
     width: 120,
     minWidth: 120,
     sortValue: (row) => row.type ?? '',
-    render: (row) =>
-      row.type ? (
-        <span className="resources-bonus-type" data-type={row.type?.toLowerCase()}>
-          {row.type}
-        </span>
-      ) : null,
+    render: (row) => (row.type ? <DetailTypeTag type={row.type} /> : null),
   },
   {
     key: 'value',
@@ -139,18 +149,22 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
 ]
 
 export function EnchantmentList({
+  itemName = '',
   bonuses,
+  modifiers = [],
   effects,
   setDetail,
   matchingEnchantments = [],
-  variant = 'drawer',
+  variant = 'pane',
   onOpenItem,
 }: {
+  itemName?: string
   bonuses: ItemBonus[]
+  modifiers?: ResourceModifier[]
   effects: ItemEffect[]
   setDetail?: SetDetail | null
   matchingEnchantments?: string[]
-  variant?: 'drawer' | 'hover'
+  variant?: 'pane' | 'hover'
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element | null {
   if (!bonuses.length && !effects.length && !setDetail) return null
@@ -165,7 +179,12 @@ export function EnchantmentList({
       <DetailCardSection heading="Enchantments">
         <div className="resources-hover-rows">
           {itemRows.slice(0, 5).map((row) => (
-            <EnchantmentHoverRow key={row.key} row={row} />
+            <EnchantmentHoverRow
+              key={row.key}
+              row={row}
+              itemName={itemName}
+              modifiers={modifiers}
+            />
           ))}
         </div>
         <DetailMore count={itemRows.length - 5} />
@@ -205,7 +224,15 @@ export function EnchantmentList({
                 : {
                     kind: 'enchantment',
                     delayMs: 120,
-                    render: () => <EnchantmentHoverContent row={row} />,
+                    render: () => (
+                      <EnchantmentHoverContent
+                        row={row}
+                        itemName={
+                          row.key.startsWith('tier-') ? (setDetail?.name ?? itemName) : itemName
+                        }
+                        modifiers={modifiers}
+                      />
+                    ),
                   }
           }
         />
@@ -214,28 +241,70 @@ export function EnchantmentList({
   )
 }
 
-function EnchantmentHoverContent({ row }: { row: EnchantmentRow }): JSX.Element {
+function matchingDamageExpressions(row: EnchantmentRow, modifiers: ResourceModifier[]): string[] {
+  const normalizedNames = [row.name, row.sourceName].map((name) =>
+    name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+  )
+  return modifiers.flatMap((modifier) => {
+    const modifierNames = [modifier.effectType, modifier.displayName ?? ''].map((name) =>
+      name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+    )
+    if (!modifierNames.some((name) => name && normalizedNames.includes(name))) return []
+    const damage = damageExpression(modifier)
+    return damage ? [damage] : []
+  })
+}
+
+function EnchantmentHoverContent({
+  row,
+  itemName,
+  modifiers,
+}: {
+  row: EnchantmentRow
+  itemName: string
+  modifiers: ResourceModifier[]
+}): JSX.Element {
   return (
     <>
       <strong className="resources-hover-title">{row.name}</strong>
-      {row.type && <span className="resources-hover-fact">Type · {row.type}</span>}
-      <p className="resources-hover-definition">
-        {row.description ?? `Grants ${row.type ?? 'a'} bonus to ${row.name}.`}
-      </p>
+      {row.hoverValue && itemName && (
+        <DetailValueRow label={`From ${itemName}`} value={row.hoverValue} tag={row.type} />
+      )}
+      {!row.hoverValue && row.type && (
+        <span className="resources-hover-fact">Type · {row.type}</span>
+      )}
+      {matchingDamageExpressions(row, modifiers).map((damage, index) => (
+        <DetailValueRow key={`${damage}-${index}`} label="Damage" value={damage} tone="damage" />
+      ))}
+      {row.description && <p className="resources-hover-definition">{row.description}</p>}
     </>
   )
 }
 
-function EnchantmentHoverRow({ row }: { row: EnchantmentRow }): JSX.Element {
+function EnchantmentHoverRow({
+  row,
+  itemName,
+  modifiers,
+}: {
+  row: EnchantmentRow
+  itemName: string
+  modifiers: ResourceModifier[]
+}): JSX.Element {
   const anchor = useHoverCard({
     kind: 'enchantment',
     delayMs: 120,
-    render: () => <EnchantmentHoverContent row={row} />,
+    render: () => <EnchantmentHoverContent row={row} itemName={itemName} modifiers={modifiers} />,
   })
   return (
-    <div className="resources-hover-row" tabIndex={0} {...anchor}>
-      <span>{row.name}</span>
-      <span>{row.value || row.type}</span>
+    <div className="resources-hover-enchantment-row" tabIndex={0} {...anchor}>
+      {row.hoverValue ? (
+        <DetailValueRow label={row.name} value={row.hoverValue} tag={row.type} />
+      ) : (
+        <div className="resources-hover-row">
+          <span>{row.name}</span>
+          <span>{row.type}</span>
+        </div>
+      )}
     </div>
   )
 }

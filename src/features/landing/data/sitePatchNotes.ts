@@ -7,6 +7,11 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-03',
     changes: [
+      'On narrow screens an item opens in place of the list; Back to items and the browser Back button return to the list where you left it',
+      'Click an augment socket to see the augments that fit it, each with a hover card; red sockets include colorless and multi-color augments',
+      'Hover cards for enchantments and augments show the value this item gives and any dice damage as their own rows',
+      'Every Obtained from row has a hover card: adventure packs, quest chains, sagas, crafting systems, vendors and events list what they yield',
+      'Item detail is one card instead of a card inside a card',
       "Filter pickers, sets and socket augment lists read the API's new paged responses in full, so no list is cut off at the first 100 rows",
       'Hover cards stay open while the pointer is on their row or link, even when you click; they close when you move away, and pinned cards still close with Escape',
     ],

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { act, render, screen, cleanup, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ResourcesView from './ResourcesView'
 import type { Item, ItemSummary } from './queries/items'
@@ -48,6 +48,7 @@ const BLOODSTONE_ITEM: Item = {
   armorStats: null,
   augmentSlots: [],
   bonuses: [],
+  modifiers: [],
   effects: [],
   clickies: [],
   quests: [],
@@ -88,7 +89,7 @@ vi.mock('./queries/useItems', () => ({
   useEquipmentSlotNames: () => ({ data: ['Trinket'] }),
   useEnchantmentNames: () => ({ data: ['Charisma'] }),
   useRaidQuests: () => ({ data: [] }),
-  useFittingAugmentsBySlotLabel: () => ({}),
+  useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
   useSet: () => ({ data: undefined, isPending: false, error: null }),
 }))
 
@@ -193,6 +194,132 @@ describe('ResourcesView keyboard shortcuts', () => {
 })
 
 describe('ResourcesView detail pane', () => {
+  it('shows only the detail after narrow navigation and restores the list on Back', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
+    try {
+      const view = render(<ResourcesView />)
+      const search = screen.getByRole('searchbox', { name: 'Search items' })
+      await userEvent.type(search, 'Blood')
+      const listBody = view.container.querySelector<HTMLElement>('.ledger-body')
+      if (listBody) {
+        listBody.scrollTop = 120
+        fireEvent.scroll(listBody)
+        expect(listBody.scrollTop).toBe(120)
+      }
+      await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+
+      mockRouteParams = { category: 'items', id: '42' }
+      view.rerender(<ResourcesView />)
+      expect(screen.queryByRole('searchbox')).toBeNull()
+      expect(screen.getByRole('region', { name: 'Item details' })).toBeInTheDocument()
+
+      mockRouteParams = { category: 'items' }
+      view.rerender(<ResourcesView />)
+      expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('Blood')
+      expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+      if (listBody)
+        expect(view.container.querySelector('.ledger-body')).toHaveProperty('scrollTop', 120)
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('uses browser history on narrow close and focuses the row after delayed list loading', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {})
+    try {
+      const view = render(<ResourcesView />)
+      await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+      mockRouteParams = { category: 'items', id: '42' }
+      view.rerender(<ResourcesView />)
+      await userEvent.click(screen.getByRole('button', { name: 'Back to items' }))
+      expect(back).toHaveBeenCalledOnce()
+      expect(navigateMock).toHaveBeenCalledTimes(1)
+
+      itemPageQueryState = { data: undefined, isPending: true, isFetching: true, error: null }
+      mockRouteParams = { category: 'items' }
+      view.rerender(<ResourcesView />)
+      expect(screen.queryByRole('row', { name: /Bloodstone/ })).toBeNull()
+      expect(document.body).toHaveFocus()
+
+      itemPageQueryState = {
+        data: { total: 1, items: ITEM_SUMMARIES },
+        isPending: false,
+        isFetching: false,
+        error: null,
+      }
+      view.rerender(<ResourcesView />)
+      expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+    } finally {
+      back.mockRestore()
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('uses one column minimum for the CSS grid and takeover decision', () => {
+    const previousWidth = window.innerWidth
+    const previousResizeObserver = globalThis.ResizeObserver
+    let onResize: ResizeObserverCallback | undefined
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 })
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private callback: ResizeObserverCallback
+        constructor(callback: ResizeObserverCallback) {
+          this.callback = callback
+        }
+        observe(element: Element): void {
+          if (element.classList.contains('resources-body')) onResize = this.callback
+        }
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    )
+    try {
+      mockRouteParams = { category: 'items', id: '42' }
+      const view = render(<ResourcesView />)
+      const body = view.container.querySelector<HTMLElement>('.resources-body')!
+      expect(body.style.getPropertyValue('--resources-column-min-width')).toBe('480px')
+      act(() =>
+        onResize?.([{ contentRect: { width: 900 } } as ResizeObserverEntry], {} as ResizeObserver),
+      )
+      expect(view.container.querySelector('.resources-picker')).toBeNull()
+      act(() =>
+        onResize?.([{ contentRect: { width: 1100 } } as ResizeObserverEntry], {} as ResizeObserver),
+      )
+      expect(view.container.querySelector('.resources-picker')).not.toBeNull()
+    } finally {
+      vi.stubGlobal('ResizeObserver', previousResizeObserver)
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('renders a deep-linked narrow detail and returns to the list', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
+    try {
+      mockRouteParams = { category: 'items', id: '42' }
+      render(<ResourcesView />)
+      expect(screen.queryByRole('searchbox')).toBeNull()
+      await userEvent.click(screen.getByRole('button', { name: 'Back to items' }))
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items', replace: true })
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('renders one detail card within the pane', () => {
+    mockRouteParams = { category: 'items', id: '42' }
+    const { container } = render(<ResourcesView />)
+    expect(container.querySelectorAll('.resources-detail-pane .detail-card')).toHaveLength(1)
+    expect(container.querySelector('.resources-detail-pane .detail-card')).toHaveClass(
+      'detail-card--pane',
+    )
+  })
+
   it('renders the selected item in a labelled pane without a modal', () => {
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)

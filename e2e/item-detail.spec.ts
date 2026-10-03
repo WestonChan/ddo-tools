@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('the detail pane displays the item name once beside the list and stacks at 375px', async ({
+test('the detail pane displays the item name once beside the list and takes over at 375px', async ({
   page,
 }) => {
   const dataRequests: string[] = []
@@ -33,6 +33,7 @@ test('the detail pane displays the item name once beside the list and stacks at 
             weapon: null,
             armor: null,
             bonuses: [],
+            modifiers: [],
             effects: [],
             augment_slots: [],
             clickies: [],
@@ -105,12 +106,26 @@ test('the detail pane displays the item name once beside the list and stacks at 
   await expect(
     detailPane.getByRole('heading', { name: 'Beholder Plate Armor', exact: true }),
   ).toBeVisible()
-  const mobilePicker = await picker.boundingBox()
-  const mobilePane = await detailPane.boundingBox()
-  expect((mobilePane?.y ?? 0) >= (mobilePicker?.y ?? 0) + (mobilePicker?.height ?? 0)).toBe(true)
+  await expect(picker).toHaveCount(0)
   await expect(detailPane).toBeInViewport()
   await expect(detailPane.locator('.detail-card__facts')).toBeInViewport()
   const mobileName = await detailPane.locator('.detail-card__name').boundingBox()
   const mobileActions = await detailPane.locator('.detail-card__actions').boundingBox()
   expect((mobileActions?.y ?? 0) >= (mobileName?.y ?? 0) + (mobileName?.height ?? 0)).toBe(true)
+  await page.getByRole('button', { name: 'Back to items', exact: true }).click()
+  await expect(picker).toBeVisible()
+  await expect(detailPane).toHaveCount(0)
+  await page.getByRole('row', { name: /Beholder Plate Armor/ }).click()
+  await expect(detailPane).toBeVisible()
+  await page.goBack()
+  await expect(picker).toBeVisible()
+  await expect(detailPane).toHaveCount(0)
+  await expect(page.getByRole('row', { name: /Beholder Plate Armor/ })).toBeFocused()
+  await page.getByRole('row', { name: /Beholder Plate Armor/ }).click()
+  await expect(detailPane).toBeVisible()
+  await page.getByRole('button', { name: 'Back to items', exact: true }).click()
+  await expect(picker).toBeVisible()
+  await expect(page.getByRole('row', { name: /Beholder Plate Armor/ })).toBeFocused()
+  await page.goForward()
+  await expect(detailPane).toBeVisible()
 })

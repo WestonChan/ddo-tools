@@ -5,12 +5,12 @@ export function DetailCard({
   header,
   facts,
   children,
-  variant = 'drawer',
+  variant = 'pane',
 }: {
   header: ReactNode
   facts?: ReactNode
   children: ReactNode
-  variant?: 'drawer' | 'hover'
+  variant?: 'pane' | 'hover'
 }): JSX.Element {
   return (
     <article className={`detail-card detail-card--${variant}`}>

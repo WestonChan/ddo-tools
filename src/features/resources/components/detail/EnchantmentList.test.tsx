@@ -1,5 +1,11 @@
-import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { render, screen, cleanup, act, fireEvent, within } from '@testing-library/react'
+import { HoverCardProvider } from '../../../../components'
+import capturedItem from '../../queries/fixtures/item7631.json'
+import capturedDualValueItem from '../../queries/fixtures/item483.json'
+import capturedAugment from '../../queries/fixtures/augment77.json'
+import type { ApiItemDetail } from '../../../../lib/api'
+import { toItem } from '../../queries/items'
 import { EnchantmentList } from './EnchantmentList'
 import type { ItemBonus, ItemEffect } from '../../queries/items'
 
@@ -11,6 +17,7 @@ function bonus(overrides: Partial<ItemBonus> = {}): ItemBonus {
     bonusType: 'Enhancement',
     statName: 'Charisma',
     value: 5,
+    value2: null,
     sortOrder: 0,
     ...overrides,
   }
@@ -30,6 +37,51 @@ function effect(overrides: Partial<ItemEffect> = {}): ItemEffect {
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
+})
+
+it('shows the captured item bonus value and type in its enchantment card', () => {
+  vi.useFakeTimers()
+  const item = toItem(capturedItem as ApiItemDetail)
+  render(
+    <HoverCardProvider>
+      <EnchantmentList
+        itemName={item.name}
+        bonuses={item.bonuses}
+        effects={[]}
+        modifiers={item.modifiers}
+      />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('row', { name: /Charisma/ }))
+  act(() => vi.advanceTimersByTime(120))
+  const card = screen.getByRole('dialog')
+  expect(card).toHaveTextContent('From Stolen Necklace (Level 25)')
+  expect(within(card).getByText('+8')).toHaveClass('detail-value-row__value')
+  expect(within(card).getByText('Enhancement')).toHaveClass('detail-type-tag')
+})
+
+it('shows a second value and API-shaped damage modifier in separate rows', () => {
+  vi.useFakeTimers()
+  const item = toItem({
+    ...(capturedDualValueItem as ApiItemDetail),
+    modifiers: [{ ...capturedAugment.modifiers[0], display_name: 'Deception +3' }],
+  })
+  render(
+    <HoverCardProvider>
+      <EnchantmentList
+        itemName={item.name}
+        bonuses={item.bonuses}
+        effects={[]}
+        modifiers={item.modifiers}
+      />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('row', { name: /Deception/ }))
+  act(() => vi.advanceTimersByTime(120))
+  const card = screen.getByRole('dialog')
+  expect(within(card).getByText('+3 / +5')).toHaveClass('detail-value-row__value')
+  expect(within(card).getByText('1d6 Electric')).toHaveClass('detail-value-row__value')
 })
 
 describe('EnchantmentList', () => {
@@ -179,7 +231,7 @@ describe('EnchantmentList', () => {
     const { container } = render(
       <EnchantmentList bonuses={[]} effects={[effect({ target: null })]} />,
     )
-    expect(container.querySelector('.resources-bonus-type')).toBeNull()
+    expect(container.querySelector('.detail-type-tag')).toBeNull()
   })
 
   it('renders an expanded description as its own sub-line', () => {

@@ -11,6 +11,7 @@ export interface ResourceReference {
 export interface UseDetailStackOptions {
   resourceInUrl: ResourceReference | null
   pickerCategory: ResourceCategory
+  onCloseDetail?: () => void
 }
 
 export interface DetailStack {
@@ -31,6 +32,7 @@ function isSameResource(a: ResourceReference, b: ResourceReference): boolean {
 export function useDetailStack({
   resourceInUrl,
   pickerCategory,
+  onCloseDetail,
 }: UseDetailStackOptions): DetailStack {
   const navigate = useNavigate()
   const [stack, setStack] = useState<ResourceReference[]>(() =>
@@ -79,8 +81,9 @@ export function useDetailStack({
 
   const closeDetail = useCallback(() => {
     setStack([])
-    navigate({ to: `/resources/${pickerCategory}`, replace: true })
-  }, [navigate, pickerCategory])
+    if (onCloseDetail) onCloseDetail()
+    else navigate({ to: `/resources/${pickerCategory}`, replace: true })
+  }, [navigate, pickerCategory, onCloseDetail])
 
   const popResource = useCallback(() => {
     if (stack.length <= 1) {

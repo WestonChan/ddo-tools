@@ -15,6 +15,7 @@ import type {
   ApiEnchantment,
   ApiEquipmentSlot,
   ApiLootQuest,
+  ApiModifier,
   ApiQueryParameters,
   ApiQuestSummary,
 } from '../../../lib/api'
@@ -137,6 +138,7 @@ export interface AugmentSummary {
   id: number
   name: string
   minimumLevel: number | null
+  slots: string[]
   bonusNames: string[]
   recipes: CraftingRecipe[]
 }
@@ -148,7 +150,31 @@ export interface ItemBonus {
   bonusType: string | null
   statName: string
   value: number | null
+  value2: number | null
   sortOrder: number
+}
+
+export interface ResourceModifier {
+  id: number
+  effectType: string
+  displayName: string | null
+  bonusType: string | null
+  amounts: number[] | null
+  value: string | null
+  diceNumber: number[] | null
+  diceSides: number[] | null
+  diceBonus: number[] | null
+  diceDamage: string | null
+  damage: string | null
+  isPercent: boolean
+  cap: string | null
+}
+
+export interface AugmentDetail extends AugmentSummary {
+  description: string | null
+  effectDescription: string | null
+  bonuses: ItemBonus[]
+  modifiers: ResourceModifier[]
 }
 
 export interface ItemEffect {
@@ -198,6 +224,7 @@ export type ItemSourceKind =
 
 export interface ItemSource {
   kind: ItemSourceKind
+  id: number | null
   key: string
   name: string
   vendorLocation: string | null
@@ -219,6 +246,7 @@ export interface Item extends ItemAttributes {
   armorStats: ItemArmorStats | null
   augmentSlots: ItemAugmentSlot[]
   bonuses: ItemBonus[]
+  modifiers: ResourceModifier[]
   effects: ItemEffect[]
   clickies: ItemClickie[]
   quests: LootQuest[]
@@ -300,8 +328,10 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
       bonusType: b.bonus_type,
       statName: b.stat,
       value: b.value,
+      value2: b.value2,
       sortOrder: i,
     })),
+    modifiers: apiItemDetail.modifiers.map(toResourceModifier),
     effects: apiItemDetail.effects.map((e, i) => ({
       id: e.id,
       name: e.name,
@@ -344,6 +374,7 @@ function namedSource(
 ): ItemSource {
   return {
     kind,
+    id: apiSource.id,
     key: `${kind}-${apiSource.id}`,
     name: apiSource.name,
     vendorLocation: null,
@@ -367,6 +398,7 @@ function toSourcesBeyondQuests(apiItemDetail: ApiItemDetail): ItemSource[] {
     ...apiItemDetail.events.map((e) => namedSource('event', e)),
     ...apiItemDetail.starter_rewards.map((s) => ({
       kind: 'starter' as const,
+      id: null,
       key: `starter-${s.character_level}`,
       name: `Starter gear at level ${s.character_level}`,
       vendorLocation: null,
@@ -409,8 +441,46 @@ export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
     id: apiAugment.id,
     name: apiAugment.name,
     minimumLevel: apiAugment.min_level,
+    slots: apiAugment.slots,
     bonusNames: apiAugment.bonuses.map((b) => b.name),
     recipes: apiAugment.crafting.map(toCraftingRecipe),
+  }
+}
+
+function toResourceModifier(modifier: ApiModifier): ResourceModifier {
+  return {
+    id: modifier.id,
+    effectType: modifier.effect_type,
+    displayName: modifier.display_name,
+    bonusType: modifier.bonus_type,
+    amounts: modifier.amounts,
+    value: modifier.value,
+    diceNumber: modifier.dice_number,
+    diceSides: modifier.dice_sides,
+    diceBonus: modifier.dice_bonus,
+    diceDamage: modifier.dice_damage,
+    damage: modifier.damage,
+    isPercent: modifier.percent,
+    cap: modifier.cap,
+  }
+}
+
+export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
+  return {
+    ...toAugmentSummary(apiAugment),
+    description: apiAugment.description,
+    effectDescription: apiAugment.effect_description,
+    bonuses: apiAugment.bonuses.map((bonus, index) => ({
+      id: bonus.id,
+      name: bonus.name,
+      description: bonus.description,
+      bonusType: bonus.bonus_type,
+      statName: bonus.stat,
+      value: bonus.value,
+      value2: bonus.value2,
+      sortOrder: index,
+    })),
+    modifiers: apiAugment.modifiers.map(toResourceModifier),
   }
 }
 
@@ -423,14 +493,6 @@ function toCraftingRecipe(apiRecipe: ApiCraftingRecipe): CraftingRecipe {
       quantity: c.quantity,
     })),
   }
-}
-
-export function isCraftingSlotFamily(family: string): boolean {
-  return family !== 'standard'
-}
-
-export function canListFittingAugments(slotFamily: string, slotLabel: string): boolean {
-  return isCraftingSlotFamily(slotFamily) || slotLabel === 'sun' || slotLabel === 'moon'
 }
 
 export function itemListParameters(
@@ -517,9 +579,8 @@ export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<Augme
   })
 }
 
-export async function fetchAugmentLootQuests(augmentId: number): Promise<LootQuest[]> {
-  const augment = await fetchApiJson<ApiAugmentDetail>(`/v1/augments/${augmentId}`)
-  return toLootQuests(augment.quests)
+export async function fetchAugment(augmentId: number): Promise<AugmentDetail> {
+  return toAugmentDetail(await fetchApiJson<ApiAugmentDetail>(`/v1/augments/${augmentId}`))
 }
 
 export async function fetchRaidQuests(): Promise<RaidQuest[]> {

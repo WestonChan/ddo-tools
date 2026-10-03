@@ -1,0 +1,51 @@
+{
+  "id": 1,
+  "name": "The Haunting of Saltmarsh",
+  "pack": "Sinister Secret of Saltmarsh",
+  "quest_count": 10,
+  "quests": [
+    {
+      "id": 60,
+      "level": 3,
+      "name": "Back to Basics"
+    },
+    {
+      "id": 54,
+      "level": 3,
+      "name": "Danger at Dunwater"
+    },
+    {
+      "id": 53,
+      "level": 3,
+      "name": "Down You Go"
+    }
+  ],
+  "reward_count": 6,
+  "rewards": [
+    {
+      "id": 891,
+      "is_rare": false,
+      "minimum_level": 29,
+      "name": "Black Pearl Ring",
+      "slot": "Ring",
+      "tier": "epic"
+    },
+    {
+      "id": 2933,
+      "is_rare": false,
+      "minimum_level": 29,
+      "name": "Explorer of the Depths",
+      "slot": "Head",
+      "tier": "epic"
+    },
+    {
+      "id": 6868,
+      "is_rare": false,
+      "minimum_level": 29,
+      "name": "Ring of the Kraken",
+      "slot": "Ring",
+      "tier": "epic"
+    }
+  ],
+  "wiki_url": "https://ddowiki.com/page/Sinister_Secret_of_Saltmarsh_(Legendary)"
+}

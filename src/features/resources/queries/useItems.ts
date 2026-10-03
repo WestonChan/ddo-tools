@@ -1,7 +1,6 @@
 import {
   keepPreviousData,
   useInfiniteQuery,
-  useQueries,
   useQuery,
   type InfiniteData,
   type UseInfiniteQueryResult,
@@ -9,9 +8,8 @@ import {
 } from '@tanstack/react-query'
 import { API_HTTP_ERROR, isApiError, shouldRetryQuery } from '../../../lib/api'
 import {
-  canListFittingAugments,
+  fetchAugment,
   fetchAdventurePackNames,
-  fetchAugmentLootQuests,
   fetchAugmentsFittingSlot,
   fetchEnchantmentNames,
   fetchEquipmentSlotNames,
@@ -20,16 +18,24 @@ import {
   itemListParameters,
   fetchRaidQuests,
   type AugmentSummary,
+  type AugmentDetail,
   type Item,
-  type ItemAugmentSlot,
   type ItemListFilters,
   type ItemListSort,
   type ItemPage,
-  type LootQuest,
   ITEM_PAGE_SIZE,
 } from './items'
 import { fetchSet, type SetDetail } from './sets'
 import { fetchQuest, type QuestDetail } from './quests'
+import {
+  fetchAdventurePack,
+  fetchQuestChain,
+  fetchSaga,
+  fetchCraftingSystem,
+  fetchVendor,
+  fetchEvent,
+  type SourceDetail,
+} from './sources'
 
 const NEVER_STALE_QUERY_OPTIONS = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
 
@@ -50,10 +56,11 @@ const resourceQueryKeys = {
   equipmentSlotNames: ['items', 'slots'] as const,
   enchantmentNames: ['items', 'enchantments'] as const,
   augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
-  augmentLootQuests: (augmentId: number) => ['augments', 'loot-quests', augmentId] as const,
+  augment: (id: number) => ['augments', 'detail', id] as const,
   raidQuests: ['quests', 'raids'] as const,
   set: (id: number) => ['sets', 'detail', id] as const,
   quest: (id: number) => ['quests', 'detail', id] as const,
+  source: (kind: string, id: number) => ['sources', kind, id] as const,
 }
 
 export function useItemPage(
@@ -151,33 +158,60 @@ export function useRaidQuests(
 }
 
 export function useFittingAugmentsBySlotLabel(
-  augmentSlots: readonly ItemAugmentSlot[],
-): Record<string, AugmentSummary[]> {
-  const listedSlotLabels = [
-    ...new Set(
-      augmentSlots.filter((s) => canListFittingAugments(s.family, s.label)).map((s) => s.label),
-    ),
-  ]
-  const augmentQueries = useQueries({
-    queries: listedSlotLabels.map((label) => ({
-      queryKey: resourceQueryKeys.augmentsFittingSlot(label),
-      queryFn: () => fetchAugmentsFittingSlot(label),
-      ...NEVER_STALE_QUERY_OPTIONS,
-    })),
-  })
-  const augmentsBySlotLabel: Record<string, AugmentSummary[]> = {}
-  listedSlotLabels.forEach((label, i) => {
-    const fittingAugments = augmentQueries[i]?.data
-    if (fittingAugments) augmentsBySlotLabel[label] = fittingAugments
-  })
-  return augmentsBySlotLabel
-}
-
-export function useAugmentLootQuests(augmentId: number | null): UseQueryResult<LootQuest[]> {
+  slotLabel: string | null,
+): UseQueryResult<AugmentSummary[]> {
   return useQuery({
-    queryKey: resourceQueryKeys.augmentLootQuests(augmentId ?? -1),
-    queryFn: () => fetchAugmentLootQuests(augmentId as number),
-    enabled: augmentId !== null,
+    queryKey: resourceQueryKeys.augmentsFittingSlot(slotLabel ?? ''),
+    queryFn: () => fetchAugmentsFittingSlot(slotLabel as string),
+    enabled: slotLabel !== null,
+    retry: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
+}
+
+export function useAugment(id: number | null): UseQueryResult<AugmentDetail> {
+  return useQuery({
+    queryKey: resourceQueryKeys.augment(id ?? -1),
+    queryFn: () => fetchAugment(id as number),
+    enabled: id !== null,
+    retry: false,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
+}
+
+function useSourceDetail(
+  kind: SourceDetail['kind'],
+  id: number,
+  fetchSource: (id: number) => Promise<SourceDetail>,
+): UseQueryResult<SourceDetail> {
+  return useQuery({
+    queryKey: resourceQueryKeys.source(kind, id),
+    queryFn: () => fetchSource(id),
+    retry: false,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
+}
+
+export function useAdventurePack(id: number): UseQueryResult<SourceDetail> {
+  return useSourceDetail('adventurePack', id, fetchAdventurePack)
+}
+
+export function useQuestChain(id: number): UseQueryResult<SourceDetail> {
+  return useSourceDetail('questChain', id, fetchQuestChain)
+}
+
+export function useSaga(id: number): UseQueryResult<SourceDetail> {
+  return useSourceDetail('saga', id, fetchSaga)
+}
+
+export function useCraftingSystem(id: number): UseQueryResult<SourceDetail> {
+  return useSourceDetail('craftingSystem', id, fetchCraftingSystem)
+}
+
+export function useVendor(id: number): UseQueryResult<SourceDetail> {
+  return useSourceDetail('vendor', id, fetchVendor)
+}
+
+export function useEvent(id: number): UseQueryResult<SourceDetail> {
+  return useSourceDetail('event', id, fetchEvent)
 }
