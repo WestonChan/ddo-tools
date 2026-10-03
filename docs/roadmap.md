@@ -1266,14 +1266,20 @@ at a value", so the value lives on the owner link, as `item_effects` already sto
   the line still reads "Insightful Constitution +4". The `enchantment` filter takes `Stat:Type`
   (`enchantment=Constitution:Insightful`) beside the bare stat, and `/v1/enchantments` lists, per stat, the
   types it occurs in with counts, so a picker can offer "Constitution · Insightful".
-- Constraints: in the schema, `amount_count BETWEEN 0 AND 2`, `amount_from BETWEEN 0 AND 2`, `constant`
-  NOT NULL exactly when `amount_from = 0`, and `(value IS NULL) <= (value2 IS NULL)` on every link; across
-  tables, as HARD `check-db` rules and ETL build failures: a link's count of non-null values equals its
-  family's `amount_count`, every stat row's `amount_from` is at most `amount_count`, the template's
-  placeholders match `amount_count`, and every family has an owner. A family with no stat rows has `amount_count` 0 and
-  its links carry no values: a number the engine has no stat for ("Hallowed 14", the hit dice of undead
-  turned) stays in the template text, one family per value, until a stat exists for it; a `check-db` WARN
-  lists families whose template holds a digit with `amount_count` 0 so they get looked at.
+- Constraints (revised 2026-10-03 against Maetrim's data): in the schema, `amount_count BETWEEN 0 AND 2`,
+  `amount_from BETWEEN 0 AND 2`, `constant` NOT NULL exactly when `amount_from = 0`, and
+  `(value IS NULL) <= (value2 IS NULL)` on every link; across tables, as HARD `check-db` rules and ETL build
+  failures: `amount_count` equals the template's placeholders; a link's count of non-null values is at most
+  `amount_count`; every stat row's `amount_from` is at most `amount_count`; a stat row with a null type
+  belongs to a `%b1` family and every link to such a family carries a type; every family has an owner; every
+  ladder has at least two members with unique ranks; no family name contains " — ". `amount_count` follows
+  the placeholders, not the stat rows, so a text-only family may carry amounts (Shield Bashing 14, 10, 20,
+  …); the WARN `enchantments_text_only_with_item_values` lists those as the "should this be a stat" work
+  list. A link may omit a trailing amount (Command without a second value: no bonus from the row reading it,
+  its placeholder renders empty), and a mapped buff whose item carries no first value keeps one family with
+  a null `value`, listed by the WARN `enchantment_links_missing_first_amount` as an upstream gap a value
+  correction fills from the wiki. Further WARNs: `effect_types_not_classified`,
+  `enchantments_named_like_identifiers`, a digit in a family name with amounts.
 - `bonus_alias` (the original 4e bullet) keys off `enchantments` and `stats`: freeform aliases (typos,
   shorthand) to a canonical family or stat, for user-facing selectors in Phase 5b.
 
