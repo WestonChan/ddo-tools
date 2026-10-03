@@ -7,7 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-03',
     changes: [
-      'The enchantment table opens in the item's own order; click a column header to sort it',
+      "The enchantment table opens in the item's own order; click a column header to sort it",
       'Item detail keeps only the key facts in view; enhancement, material, race, armor stats and the rest sit behind one More details link in the same rows as weapon details',
       'A weapon shows its damage, critical range and critical multiplier as rows at the top of its detail, with the rest of its weapon details behind a More link',
       'The row or link that opened a hover card is outlined only while that card is pinned, and keeps it after clicking inside the card',
