@@ -1233,29 +1233,42 @@ could not map to a stat; one `description` string per set tier. The two tables r
 stat mapping succeeded, which is an ETL fact leaking into the schema, and `/v1/enchantments` already papers
 over it with a `kind` flag.
 
-**Target schema.** Three tables at two grains, one owner per fact:
-- `enchantment_kinds` (grown from `effects`): the family. `name` ("Wisdom", "Hallowed", "Power of the Dark
-  Restoration"), `text_template` and `description_template` with value placeholders ("Passive: +{value}
-  Enhancement bonus to Wisdom."), `wiki_url` (the wiki's enchantment page), and the stacking note.
-- `enchantments` (grown from `bonuses`): the line. `kind_id`, `value` and `value2`, and nullable `text` and
-  `description` overrides for the lines whose sentence is not a function of the value (set tier prose,
-  procs). The line's text and description are rendered from the kind's templates at read time, so the API
-  returns the rendered strings beside the template and values and never stores a second copy.
-- `enchantment_bonuses`: the stat rows behind a line, zero or more per line (`stat_id`, `bonus_type_id`,
-  `value`, `value2`). "+2 Profane bonus to all Ability Scores" is one line with six rows; "Hallowed 14" is a
-  line with none.
-- Owner links `item_enchantments`, `augment_enchantments`, `set_bonus_tier_enchantments` (owner, enchantment,
-  sort order) replace `item_bonuses`, `item_effects`, `augment_bonuses` and `set_bonus_tier_bonuses`;
-  `set_bonus_tiers.description` goes away, its lines are enchantments.
-- `bonus_alias` (the original 4e bullet) keys off `enchantment_kinds` and `stats`: freeform aliases (typos,
-  shorthand) to a canonical kind or stat, for user-facing selectors in Phase 5b.
+**Target schema (revised 2026-10-03 with the maintainer).** The wiki's noun is *enchantment* and it names
+the family ("Insightful Constitution", "Hallowed"), one page each; the game has no noun for "an enchantment
+at a value", so the value lives on the owner link, as `item_effects` already stores an effect's amount.
+- `enchantments` (grown from `effects`, absorbing the `bonuses` families): `name`, `text_template` and
+  `description_template` with `{1}`/`{2}` placeholders ("Passive: +{1} Enhancement bonus to Wisdom."),
+  `amount_count` (0, 1 or 2; the template carries exactly those placeholders), `wiki_url`, the stacking
+  note. A prose line ("permanent Haste") is a family with `amount_count` 0. Text and description are
+  rendered from the template and the link's values at read time, never stored per instance.
+- `enchantment_stats`: the stats a family affects, zero or more rows: `enchantment_id`, `stat_id`,
+  `bonus_type_id`, `amount_from` (1 or 2 = that value on the link; 0 = the row's `constant`), nullable
+  `tier`. "Profane bonus to all Ability Scores" is six rows all reading value 1; "Hallowed" has none;
+  "Power of the Dark Restoration" has three.
+- Owner links `item_enchantments`, `augment_enchantments`, `set_bonus_tier_enchantments`: owner id,
+  `enchantment_id`, `value`, `value2`, `sort_order`. They replace `item_bonuses`, `item_effects`,
+  `augment_bonuses` and `set_bonus_tier_bonuses`; `set_bonus_tiers.description` goes away.
+- An owner's bonuses are the join of its links with the family's stat rows, amount = the named value or
+  the constant; nothing stores a second copy.
+- Tiers: a numeric ladder ("Wisdom +6 / +8 / +14") is one family and the value is the tier. A Roman-numeral
+  or named ladder whose stats change non-linearly ("Insightful Spell Lore II", "Devotion III") is one family
+  with `value` = the tier number and stat rows keyed by `tier`; the join takes rows where `tier IS NULL OR
+  tier = value`, and the kind renders the numeral. Crafting upgrade ladders (Green Steel, Thunder-Forged)
+  stay in the crafting tables.
+- Constraints: in the schema, `amount_count BETWEEN 0 AND 2`, `amount_from BETWEEN 0 AND 2`, `constant`
+  NOT NULL exactly when `amount_from = 0`, and `(value IS NULL) <= (value2 IS NULL)` on every link; across
+  tables, as HARD `check-db` rules and ETL build failures: a link's count of non-null values equals its
+  family's `amount_count`, every stat row's `amount_from` is at most `amount_count`, the template's
+  placeholders match `amount_count`, and every family has an owner.
+- `bonus_alias` (the original 4e bullet) keys off `enchantments` and `stats`: freeform aliases (typos,
+  shorthand) to a canonical family or stat, for user-facing selectors in Phase 5b.
 
 **Data flow.** Maetrim supplies the structured rows and the templates, so the ETL splits every bonus into
 kind plus value and renders the lines from his templates; the wiki reads (items by sample, sets, the
 enhancement trees) supply the exact lines and the kind pages, and a correction records each disagreement.
 Nothing goes blank in between. `/v1/enchantments` lists kinds and stats, each once, not every value; the
 `enchantment` filter matches a kind name or a stat name through `enchantment_bonuses`; item, augment and set
-detail return lines with their rendered text, description, kind and stat rows. This also supplies the
+detail return each enchantment with its rendered text and description, its family and the stat rows the join yields. This also supplies the
 "via Combustion" caption the 4g API note asks for, since the kind is the enchantment's display name.
 
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
