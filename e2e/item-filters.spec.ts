@@ -45,6 +45,21 @@ const items = [
   },
 ]
 
+function listPage<K extends string, Row>(
+  rowsKey: K,
+  rows: Row[],
+): Record<K, Row[]> & {
+  total: number
+  limit: number
+  offset: number
+} {
+  return { total: rows.length, limit: 10_000, offset: 0, [rowsKey]: rows } as Record<K, Row[]> & {
+    total: number
+    limit: number
+    offset: number
+  }
+}
+
 test.beforeEach(async ({ page }) => {
   await page.route('**/v1/**', async (route) => {
     const requestedUrl = new URL(route.request().url())
@@ -71,24 +86,26 @@ test.beforeEach(async ({ page }) => {
             ),
           }
         : path === '/v1/enchantments'
-          ? [
+          ? listPage('enchantments', [
               { name: 'Strength', kind: 'stat', item_count: 2 },
               { name: 'Vorpal', kind: 'effect', item_count: 1 },
-            ]
+            ])
           : path === '/v1/equipment-slots'
-            ? [
+            ? listPage('equipment_slots', [
                 { id: 1, name: 'Back', sort_order: 1, category: 'Armor' },
                 { id: 2, name: 'Ring', sort_order: 2, category: 'Jewelry' },
                 { id: 3, name: 'Trinket', sort_order: 3, category: 'Jewelry' },
-              ]
+              ])
             : path === '/v1/adventure-packs'
-              ? [
+              ? listPage('adventure_packs', [
                   { id: 1, name: 'Shadowfell', is_free_to_play: false },
                   { id: 2, name: 'Vault of Night', is_free_to_play: false },
-                ]
+                ])
               : path === '/v1/quests'
-                ? [{ id: 7, name: 'The Raid', pack: 'Vault of Night', is_raid: true }]
-                : { items: [] }
+                ? listPage('quests', [
+                    { id: 7, name: 'The Raid', pack: 'Vault of Night', is_raid: true },
+                  ])
+                : listPage('items', [])
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
