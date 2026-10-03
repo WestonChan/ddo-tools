@@ -1258,11 +1258,14 @@ at a value", so the value lives on the owner link, as `item_effects` already sto
   in `enchantment_map.toml` (ladder name → ordered step names), so a wrong grouping is a data fix. The
   `enchantment` filter matches a ladder name as any of its steps and `/v1/enchantments/{id}` shows the ladder
   and its ordered steps. Crafting upgrade ladders (Green Steel, Thunder-Forged) stay in the crafting tables.
-- Families and bonus types: where Maetrim's definition text has a `%b1` slot the type varies per item, so
-  the family identity includes the resolved type and is named the wiki's way ("Constitution" for
-  Enhancement, "Insightful Constitution", "Quality Constitution", "Exceptional Constitution", "Profane
-  Constitution", "Constitution Penalty"); where the text names the type outright, the definition's type
-  wins over the item's placeholder field.
+- Families and bonus types (stat view, decided 2026-10-03): a family is one per Maetrim buff type and
+  `<Item>` target ("Constitution", "Hallowed"), never split by bonus type. Where the definition text has a
+  `%b1` slot the type varies per owner, so the owner link carries `bonus_type_id` and the family's stat
+  rows leave theirs null ("from the link"); where the text names the type outright the stat rows carry it
+  and the definition's type wins over the item's placeholder field. Rendering fills `%b1` from the link, so
+  the line still reads "Insightful Constitution +4". The `enchantment` filter takes `Stat:Type`
+  (`enchantment=Constitution:Insightful`) beside the bare stat, and `/v1/enchantments` lists, per stat, the
+  types it occurs in with counts, so a picker can offer "Constitution · Insightful".
 - Constraints: in the schema, `amount_count BETWEEN 0 AND 2`, `amount_from BETWEEN 0 AND 2`, `constant`
   NOT NULL exactly when `amount_from = 0`, and `(value IS NULL) <= (value2 IS NULL)` on every link; across
   tables, as HARD `check-db` rules and ETL build failures: a link's count of non-null values equals its
