@@ -218,6 +218,51 @@ it('moves focus from an unrelated link into a pinned card and back to its anchor
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
+it.each(['focus', 'pointer'] as const)(
+  'pops a %s-opened card when Escape immediately follows T',
+  (openedBy) => {
+    vi.useFakeTimers()
+    render(
+      <HoverCardProvider>
+        <LedgerTable
+          columns={[
+            {
+              key: 'name',
+              label: 'Name',
+              minWidth: 120,
+              sortValue: (row) => row.name,
+              render: (row) => row.name,
+            },
+          ]}
+          rowCount={1}
+          rowAt={() => ({ id: 1, name: 'Belt' })}
+          rowKey={(row) => row.id}
+          onRowActivate={vi.fn()}
+          hoverCard={(row) => ({ kind: 'item', delayMs: 260, render: () => row.name })}
+          isVirtualized={false}
+        />
+      </HoverCardProvider>,
+    )
+    const anchor = screen.getByRole('row', { name: 'Belt' })
+    if (openedBy === 'focus') act(() => anchor.focus())
+    else fireEvent.mouseEnter(anchor)
+    act(() => vi.advanceTimersByTime(260))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    act(() => {
+      const keyTarget = openedBy === 'focus' ? anchor : document
+      keyTarget.dispatchEvent(new KeyboardEvent('keydown', { key: 't', bubbles: true }))
+      keyTarget.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    })
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(anchor).toHaveFocus()
+    act(() => vi.runOnlyPendingTimers())
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(anchor).toHaveFocus()
+  },
+)
+
 it('delays opening, pins the top card, stacks nested cards, and pops with Escape', () => {
   vi.useFakeTimers()
   render(

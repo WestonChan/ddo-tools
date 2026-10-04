@@ -155,6 +155,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   const pendingAnchorElement = useRef<HTMLElement | null>(null)
   const restoringAnchor = useRef<HTMLElement | null>(null)
   const dismissedFocusAnchor = useRef<HTMLElement | null>(null)
+  const cardToPin = useRef<CardEntry | null>(null)
   const nextId = useRef(0)
   const restoreAnchorFocus = useCallback((anchor: HTMLElement) => {
     restoringAnchor.current = anchor
@@ -212,21 +213,30 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     setCards([])
   }, [cancelPending])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    cardToPin.current = null
     function onKeyDown(event: KeyboardEvent): void {
       const topCardIndex = cards.reduce(
         (index, card, cardIndex) => (card.kind === 'hint' ? index : cardIndex),
         -1,
       )
       if (event.key === 'Escape') {
+        const requestedPinnedCard = cardToPin.current
         const topPinnedCardIndex = cards.reduce(
           (index, card, cardIndex) => (card.isPinned ? cardIndex : index),
           -1,
         )
-        if (topPinnedCardIndex >= 0) {
+        if (requestedPinnedCard || topPinnedCardIndex >= 0) {
+          const pinnedCard = requestedPinnedCard ?? cards[topPinnedCardIndex]
           event.preventDefault()
           event.stopImmediatePropagation()
-          setCards((current) => current.slice(0, topPinnedCardIndex))
+          cancelPending()
+          cardToPin.current = null
+          setCards((current) => {
+            const pinnedCardIndex = current.findIndex((card) => card.id === pinnedCard.id)
+            return pinnedCardIndex < 0 ? current : current.slice(0, pinnedCardIndex)
+          })
+          if (pinnedCard.anchorElement?.isConnected) restoreAnchorFocus(pinnedCard.anchorElement)
         } else {
           const focusedElement = document.activeElement
           const focusedCardIndex = cards.reduce(
@@ -262,6 +272,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         !isTypingTarget(event.target)
       ) {
         event.preventDefault()
+        cardToPin.current = cards[topCardIndex]
         setCards((current) =>
           current.map((card, index) =>
             index === topCardIndex ? { ...card, isPinned: true } : card,
@@ -296,7 +307,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       document.removeEventListener('keydown', onKeyDown, true)
       document.removeEventListener('mousedown', onMouseDown, true)
     }
-  }, [cards, cancelPending])
+  }, [cards, cancelPending, restoreAnchorFocus])
 
   useEffect(() => {
     function onFocusOut(event: FocusEvent): void {
