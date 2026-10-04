@@ -238,4 +238,12 @@ it('shows set pieces and tier bonuses', () => {
   fireEvent.click(within(card).getByRole('button', { name: /Storm Blade/ }))
   expect(openItem).toHaveBeenCalledWith(11, 'Storm Blade')
   expect(screen.queryByRole('dialog')).toBeNull()
+
+  const setAnchor = screen.getByText('Storm Set')
+  act(() => setAnchor.focus())
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.keyDown(setAnchor, { key: 'Escape' })
+  expect(setAnchor).toHaveFocus()
+  expect(screen.queryByRole('dialog')).toBeNull()
 })

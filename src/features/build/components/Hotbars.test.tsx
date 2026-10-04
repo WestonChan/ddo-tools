@@ -314,6 +314,23 @@ describe('Hotbars', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  it('dismisses a focused slot card on Escape and reopens it when focus returns', async () => {
+    await renderHotbars()
+    const polarRay = slotButton('Nukes', 4)
+    act(() => polarRay.focus())
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(polarRay).toHaveFocus()
+    await new Promise((resolve) => window.setTimeout(resolve, 300))
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    act(() => slotButton('Nukes', 5).focus())
+    act(() => polarRay.focus())
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+  })
+
   it('keeps a filled slot when a touch long-press opens the context menu', async () => {
     await renderHotbars()
     fireEvent.pointerDown(slotButton('Nukes', 1), { pointerType: 'touch', isPrimary: true })

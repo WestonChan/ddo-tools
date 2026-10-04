@@ -23,6 +23,7 @@ interface CardEntry {
   depth: number
   anchorRect: DOMRect
   pointerX: number | null
+  openedBy: 'pointer' | 'focus'
   render: () => ReactNode
   isPinned: boolean
 }
@@ -152,6 +153,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   const pendingTimer = useRef<number | null>(null)
   const pendingAnchorId = useRef<string | null>(null)
   const restoringAnchor = useRef<HTMLElement | null>(null)
+  const dismissedFocusAnchor = useRef<HTMLElement | null>(null)
   const nextId = useRef(0)
   const restoreAnchorFocus = useCallback((anchor: HTMLElement) => {
     restoringAnchor.current = anchor
@@ -169,6 +171,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   }, [])
   const open = useCallback(
     (entry: Omit<CardEntry, 'id' | 'isPinned'>, delayMs: number, isPinned = false) => {
+      if (dismissedFocusAnchor.current === entry.anchorElement) return
       cancelPending()
       pendingAnchorId.current = entry.anchorId
       pendingTimer.current = window.setTimeout(() => {
@@ -220,7 +223,25 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           event.preventDefault()
           event.stopImmediatePropagation()
           setCards((current) => current.slice(0, topPinnedCardIndex))
-        } else if (cards.length > 0 && cards.every((card) => card.kind === 'hint')) setCards([])
+        } else {
+          const focusedElement = document.activeElement
+          const focusedCardIndex = cards.reduce(
+            (index, card, cardIndex) =>
+              card.openedBy === 'focus' && card.anchorElement?.contains(focusedElement)
+                ? cardIndex
+                : index,
+            -1,
+          )
+          if (focusedCardIndex < 0 || focusedElement?.closest('.ledger-row')) return
+          const focusedCard = cards[focusedCardIndex]
+          if (focusedCard.kind !== 'hint') {
+            event.preventDefault()
+            event.stopImmediatePropagation()
+          }
+          cancelPending()
+          dismissedFocusAnchor.current = focusedCard.anchorElement
+          setCards((current) => current.slice(0, focusedCardIndex))
+        }
       } else if (
         event.key.toLowerCase() === 't' &&
         topCardIndex >= 0 &&
@@ -264,11 +285,22 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   }, [cards, cancelPending])
 
   useEffect(() => {
-    function onMouseOver(event: globalThis.MouseEvent): void {
-      const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
-      if (!anchor || anchor.contains(event.relatedTarget as Node | null) || !anchor.dataset.tip)
-        return
+    function onFocusOut(event: FocusEvent): void {
+      const dismissedAnchor = dismissedFocusAnchor.current
+      if (
+        dismissedAnchor?.contains(event.target as Node) &&
+        !dismissedAnchor.contains(event.relatedTarget as Node | null)
+      )
+        dismissedFocusAnchor.current = null
+    }
+    document.addEventListener('focusout', onFocusOut)
+    return () => document.removeEventListener('focusout', onFocusOut)
+  }, [])
+
+  useEffect(() => {
+    function openHint(anchor: HTMLElement, openedBy: CardEntry['openedBy']): void {
       const hint = anchor.dataset.tip
+      if (!hint) return
       const parentCard = anchor.closest<HTMLElement>('[data-hover-card]')
       const depth = parentCard ? Number(parentCard.dataset.depth) + 1 : 0
       open(
@@ -279,23 +311,47 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           depth,
           anchorRect: anchor.getBoundingClientRect(),
           pointerX: null,
+          openedBy,
           render: () => hint,
         },
         260,
       )
     }
+    function closeHint(anchor: HTMLElement): void {
+      const parentCard = anchor.closest<HTMLElement>('[data-hover-card]')
+      closeFrom(parentCard ? Number(parentCard.dataset.depth) + 1 : 0)
+    }
+    function onMouseOver(event: globalThis.MouseEvent): void {
+      const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
+      if (!anchor || anchor.contains(event.relatedTarget as Node | null)) return
+      openHint(anchor, anchor.contains(document.activeElement) ? 'focus' : 'pointer')
+    }
     function onMouseOut(event: globalThis.MouseEvent): void {
       const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
-      if (anchor && !anchor.contains(event.relatedTarget as Node | null)) {
-        const parentCard = anchor.closest<HTMLElement>('[data-hover-card]')
-        closeFrom(parentCard ? Number(parentCard.dataset.depth) + 1 : 0)
-      }
+      if (
+        anchor &&
+        !anchor.contains(event.relatedTarget as Node | null) &&
+        !anchor.contains(document.activeElement)
+      )
+        closeHint(anchor)
+    }
+    function onFocusIn(event: FocusEvent): void {
+      const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
+      if (anchor && !anchor.contains(event.relatedTarget as Node | null)) openHint(anchor, 'focus')
+    }
+    function onFocusOut(event: FocusEvent): void {
+      const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
+      if (anchor && !anchor.contains(event.relatedTarget as Node | null)) closeHint(anchor)
     }
     document.addEventListener('mouseover', onMouseOver)
     document.addEventListener('mouseout', onMouseOut)
+    document.addEventListener('focusin', onFocusIn)
+    document.addEventListener('focusout', onFocusOut)
     return () => {
       document.removeEventListener('mouseover', onMouseOver)
       document.removeEventListener('mouseout', onMouseOut)
+      document.removeEventListener('focusin', onFocusIn)
+      document.removeEventListener('focusout', onFocusOut)
     }
   }, [open, closeFrom])
 
@@ -358,6 +414,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: event.clientX,
+          openedBy: event.currentTarget.contains(document.activeElement) ? 'focus' : 'pointer',
           render,
         },
         delayMs,
@@ -376,6 +433,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: null,
+          openedBy: 'focus',
           render,
         },
         delayMs,
@@ -396,6 +454,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           depth,
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: null,
+          openedBy: 'focus',
           render,
         },
         0,

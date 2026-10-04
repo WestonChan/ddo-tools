@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-04',
+    changes: [
+      'Escape closes a hover card that opened from keyboard focus on a link or hotbar slot, without moving focus',
+    ],
+  },
+  {
     date: '2026-10-03',
     changes: [
       'Arrow keys from the search step into the list; the focused row acts as hovered (its card opens, T pins it), Enter opens it and keeps your place, Escape steps back out; every table in the item detail works the same way, Shift+Tab mirrors Tab across the header, and Escape no longer closes the item',

@@ -2,7 +2,8 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { StrictMode, useState } from 'react'
-import { HoverCardProvider, positionedCard, useHoverCard } from './HoverCard'
+import { HintAnchor, HoverCardProvider, positionedCard, useHoverCard } from './HoverCard'
+import { LedgerTable } from '../LedgerTable'
 
 afterEach(() => {
   cleanup()
@@ -94,6 +95,68 @@ it('opens from focus after the pointer delay, switches anchors, and pins with T'
   expect(secondAnchor).toHaveAttribute('data-hover-card-pinned')
   fireEvent.keyDown(document, { key: 'Escape' })
   expect(secondAnchor).toHaveFocus()
+})
+
+it('dismisses a focus-opened card without moving focus or reopening until focus returns', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <button>Next control</button>
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  act(() => anchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.keyDown(anchor, { key: 'Escape' })
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(anchor).toHaveFocus()
+  fireEvent.mouseEnter(anchor)
+  act(() => vi.advanceTimersByTime(520))
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  act(() => screen.getByRole('button', { name: 'Next control' }).focus())
+  act(() => anchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
+it('lets a focused ledger row claim Escape after the pointer enters it', () => {
+  vi.useFakeTimers()
+  const rows = [{ id: 1, name: 'Belt' }]
+  render(
+    <HoverCardProvider>
+      <LedgerTable
+        columns={[
+          {
+            key: 'name',
+            label: 'Name',
+            minWidth: 120,
+            sortValue: (row) => row.name,
+            render: (row) => row.name,
+          },
+        ]}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        hoverCard={(row) => ({ kind: 'item', delayMs: 260, render: () => row.name })}
+        isVirtualized={false}
+      />
+    </HoverCardProvider>,
+  )
+  const row = screen.getByRole('row', { name: 'Belt' })
+  const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+  act(() => row.focus())
+  fireEvent.mouseEnter(row)
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.keyDown(row, { key: 'Escape' })
+  expect(body).toHaveFocus()
+  expect(screen.queryByRole('dialog')).toBeNull()
 })
 
 it('moves focus from an unrelated link into a pinned card and back to its anchor on Escape', () => {
@@ -349,6 +412,40 @@ it('keeps a data-tip hint through mousedown until mouseout', () => {
   expect(screen.queryByRole('tooltip')).toBeNull()
 })
 
+it('opens a data-tip hint from focus and dismisses it on Escape without moving focus', () => {
+  vi.useFakeTimers()
+  const onEscape = vi.fn()
+  render(
+    <HoverCardProvider>
+      <HintAnchor text="Helpful text">
+        <button onKeyDown={onEscape}>Help</button>
+      </HintAnchor>
+      <button>Next control</button>
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Help' })
+  act(() => anchor.focus())
+  act(() => vi.advanceTimersByTime(259))
+  expect(screen.queryByRole('tooltip')).toBeNull()
+  act(() => vi.advanceTimersByTime(1))
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful text')
+
+  fireEvent.keyDown(anchor, { key: 'Escape' })
+  expect(screen.queryByRole('tooltip')).toBeNull()
+  expect(anchor).toHaveFocus()
+  expect(onEscape).toHaveBeenCalled()
+  fireEvent.mouseOver(anchor)
+  act(() => vi.advanceTimersByTime(520))
+  expect(screen.queryByRole('tooltip')).toBeNull()
+
+  act(() => screen.getByRole('button', { name: 'Next control' }).focus())
+  act(() => anchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful text')
+  act(() => screen.getByRole('button', { name: 'Next control' }).focus())
+  expect(screen.queryByRole('tooltip')).toBeNull()
+})
+
 it('opens a pinned card from a focused anchor on T', () => {
   vi.useFakeTimers()
   const focusElement = HTMLElement.prototype.focus
@@ -427,7 +524,7 @@ it('keeps a pinned card when its anchor unmounts until Escape closes it', () => 
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
-it('lets Escape pass through a hint and never pins a hint', () => {
+it('lets Escape pass through a pointer-opened hint without dismissing or pinning it', () => {
   vi.useFakeTimers()
   const onEscape = vi.fn()
   render(
@@ -443,5 +540,7 @@ it('lets Escape pass through a hint and never pins a hint', () => {
   expect(screen.getByRole('tooltip')).not.toHaveClass('hover-card--pinned')
   fireEvent.keyDown(screen.getByText('Help'), { key: 'Escape' })
   expect(onEscape).toHaveBeenCalled()
+  expect(screen.getByRole('tooltip')).toBeInTheDocument()
+  fireEvent.mouseOut(screen.getByText('Help'))
   expect(screen.queryByRole('tooltip')).toBeNull()
 })
