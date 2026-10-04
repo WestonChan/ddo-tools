@@ -3,12 +3,14 @@ import {
   useRef,
   useState,
   type JSX,
+  type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
   type RefObject,
 } from 'react'
 import { ChevronDown, X } from 'lucide-react'
 import { AnchoredMenu, Combobox, type AnchoredMenuCloseReason } from '../../../components'
+import { useRovingGroup } from '../../../hooks'
 import {
   appliedFilterValues,
   clearedFilterChipValues,
@@ -50,6 +52,10 @@ interface FilterChipProps {
   searchControl?: ReactNode
   rangeCommitRef: RefObject<(() => void) | null>
   isLoading?: boolean
+  tabIndex: number
+  onFocusChip: () => void
+  onNavigateChip: (event: KeyboardEvent<HTMLButtonElement>) => void
+  onAnchorChange: (button: HTMLButtonElement | null) => void
 }
 
 function RangePopover({
@@ -149,6 +155,10 @@ function FilterChip({
   searchControl,
   rangeCommitRef,
   isLoading = false,
+  tabIndex,
+  onFocusChip,
+  onNavigateChip,
+  onAnchorChange,
 }: FilterChipProps): JSX.Element {
   const anchorRef = useRef<HTMLButtonElement>(null)
   const isSelected = isFilterSet(definition, value)
@@ -163,8 +173,12 @@ function FilterChip({
   return (
     <div className="filter-chip-wrap">
       <button
-        ref={anchorRef}
+        ref={(button) => {
+          anchorRef.current = button
+          onAnchorChange(button)
+        }}
         type="button"
+        tabIndex={tabIndex}
         className={
           'filter-chip' +
           (isSelected ? ' filter-chip--selected' : '') +
@@ -175,6 +189,8 @@ function FilterChip({
         aria-pressed={isToggle ? Boolean(value) : undefined}
         data-tip={filterChipHint(definition, value)}
         onClick={onToggle}
+        onFocus={onFocusChip}
+        onKeyDown={onNavigateChip}
       >
         {isToggle ? (
           chipText
@@ -265,6 +281,12 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [isAppliedOpen, setIsAppliedOpen] = useState(false)
   const rangeCommitRef = useRef<(() => void) | null>(null)
+  const chipButtonsByKey = useRef(new Map<string, HTMLButtonElement>())
+  const chipGroup = useRovingGroup({
+    keys: definitions.map((definition) => String(definition.key)),
+    direction: 'horizontal',
+    focusItem: (key) => chipButtonsByKey.current.get(key)?.focus(),
+  })
   const appliedValues = appliedFilterValues(definitions, values)
   const hasActiveFilters = appliedValues.length > 0 || hasSearchTerm
   const appliedGroups = definitions.reduce<
@@ -359,6 +381,24 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
                 searchControl={searchControls?.[definition.key]}
                 rangeCommitRef={rangeCommitRef}
                 isLoading={loadingPickers?.has(String(definition.key))}
+                tabIndex={chipGroup.tabStopKey === String(definition.key) ? 0 : -1}
+                onFocusChip={() => chipGroup.rememberFocus(String(definition.key))}
+                onNavigateChip={(event) => {
+                  if (
+                    event.target === event.currentTarget &&
+                    !event.nativeEvent.isComposing &&
+                    !event.altKey &&
+                    !event.ctrlKey &&
+                    !event.metaKey &&
+                    !event.shiftKey &&
+                    chipGroup.moveFocus(String(definition.key), event.key)
+                  )
+                    event.preventDefault()
+                }}
+                onAnchorChange={(button) => {
+                  if (button) chipButtonsByKey.current.set(String(definition.key), button)
+                  else chipButtonsByKey.current.delete(String(definition.key))
+                }}
               />
             ))}
           </div>

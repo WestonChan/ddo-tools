@@ -373,7 +373,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/1' })
   })
 
-  it('moves focus from search into rows and returns to the body without clearing the query', async () => {
+  it('moves focus from search into rows and keeps it there on Escape without clearing the query', async () => {
     renderItemPicker()
     const search = screen.getByRole('searchbox', { name: 'Search items' })
     await userEvent.type(search, 'ring')
@@ -386,11 +386,8 @@ describe('ItemPicker server-backed filters', () => {
     await userEvent.keyboard('{Home}')
     expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
     await userEvent.keyboard('{Escape}')
-    const body = document.querySelector<HTMLElement>('.ledger-body')!
-    expect(body).toHaveFocus()
-    expect(search).toHaveValue('ring')
-    await userEvent.keyboard('{Enter}')
     expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+    expect(search).toHaveValue('ring')
     search.focus()
     await userEvent.keyboard('{ArrowUp}')
     expect(screen.getByRole('row', { name: /Ring of Spell Storing/ })).toHaveFocus()
@@ -408,23 +405,24 @@ describe('ItemPicker server-backed filters', () => {
     expect(search).toHaveValue('')
   })
 
-  it('keeps the body tab stop and ignores arrows outside search and rows', async () => {
+  it('tabs from the header to one row and ignores vertical arrows on the header', async () => {
     renderItemPicker()
     const table = screen.getByRole('table', { name: 'items list' })
     const scrollBody = table.querySelector<HTMLElement>('.ledger-body')!
     expect(table).not.toHaveAttribute('tabindex')
-    expect(scrollBody).toHaveAttribute('tabindex', '0')
+    expect(scrollBody).not.toHaveAttribute('tabindex')
     expect(
       screen
         .getAllByRole('row')
         .filter((row) => row.classList.contains('ledger-row'))
-        .every((row) => row.tabIndex === -1),
-    ).toBe(true)
+        .filter((row) => row.tabIndex === 0),
+    ).toHaveLength(1)
     const search = screen.getByRole('searchbox', { name: 'Search items' })
-    scrollBody.focus()
+    const header = screen.getByRole('columnheader', { name: 'Name' })
+    header.focus()
     await userEvent.keyboard('{ArrowDown}')
-    expect(scrollBody).toHaveFocus()
-    await userEvent.keyboard('{Enter}')
+    expect(header).toHaveFocus()
+    await userEvent.tab()
     const row = screen.getByRole('row', { name: /Bloodstone/ })
     expect(row).toHaveFocus()
     await userEvent.keyboard('{ArrowDown}')
@@ -461,7 +459,7 @@ describe('ItemPicker server-backed filters', () => {
     await userEvent.type(search, 'ring')
     await userEvent.keyboard('{ArrowDown}{Escape}')
     expect(search).toHaveValue('ring')
-    expect(document.querySelector('.ledger-body')).toHaveFocus()
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
     search.focus()
     await userEvent.keyboard('{Escape}')
     expect(search).toHaveValue('')
@@ -481,7 +479,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(search).not.toHaveAttribute('aria-activedescendant')
     expect(scrollBody.contains(focusedRow)).toBe(true)
     await userEvent.keyboard('{Escape}')
-    expect(scrollBody).toHaveFocus()
+    expect(focusedRow).toHaveFocus()
     expect(search).not.toHaveAttribute('aria-activedescendant')
   })
 })

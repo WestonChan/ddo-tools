@@ -152,6 +152,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   const [cards, setCards] = useState<CardEntry[]>([])
   const pendingTimer = useRef<number | null>(null)
   const pendingAnchorId = useRef<string | null>(null)
+  const pendingAnchorElement = useRef<HTMLElement | null>(null)
   const restoringAnchor = useRef<HTMLElement | null>(null)
   const dismissedFocusAnchor = useRef<HTMLElement | null>(null)
   const nextId = useRef(0)
@@ -168,12 +169,14 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     if (pendingTimer.current !== null) window.clearTimeout(pendingTimer.current)
     pendingTimer.current = null
     pendingAnchorId.current = null
+    pendingAnchorElement.current = null
   }, [])
   const open = useCallback(
     (entry: Omit<CardEntry, 'id' | 'isPinned'>, delayMs: number, isPinned = false) => {
       if (dismissedFocusAnchor.current === entry.anchorElement) return
       cancelPending()
       pendingAnchorId.current = entry.anchorId
+      pendingAnchorElement.current = entry.anchorElement
       pendingTimer.current = window.setTimeout(() => {
         setCards((current) =>
           current.some((card) => card.isPinned && card.depth >= entry.depth)
@@ -182,6 +185,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         )
         pendingTimer.current = null
         pendingAnchorId.current = null
+        pendingAnchorElement.current = null
       }, delayMs)
     },
     [cancelPending],
@@ -233,7 +237,16 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
                 : index,
             -1,
           )
-          if (focusedCardIndex < 0) return
+          if (focusedCardIndex < 0) {
+            const pendingAnchor = pendingAnchorElement.current
+            if (pendingAnchor?.contains(document.activeElement)) {
+              event.preventDefault()
+              event.stopImmediatePropagation()
+              cancelPending()
+              dismissedFocusAnchor.current = pendingAnchor
+            }
+            return
+          }
           const focusedCard = cards[focusedCardIndex]
           if (focusedCard.kind !== 'hint') {
             event.preventDefault()

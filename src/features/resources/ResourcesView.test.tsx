@@ -163,6 +163,31 @@ describe('ResourcesView keyboard shortcuts', () => {
     expect(navigateMock).not.toHaveBeenCalled()
   })
 
+  it('keeps the open item route and tab focus when category keys reach the same tab', async () => {
+    const previousPath = window.location.pathname
+    try {
+      navigateMock.mockImplementationOnce(({ to }: { to: string }) => {
+        window.history.replaceState(null, '', to)
+        mockRouteParams = { category: 'items', id: to.split('/').at(-1) ?? '' }
+      })
+      const view = render(<ResourcesView />)
+      const search = screen.getByRole('searchbox', { name: 'Search items' })
+      act(() => search.focus())
+      await userEvent.keyboard('{ArrowDown}{Enter}')
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+      view.rerender(<ResourcesView />)
+      const itemsTab = screen.getByRole('tab', { name: 'Items' })
+      act(() => itemsTab.focus())
+      await userEvent.keyboard('{ArrowLeft}{ArrowRight}{Home}{End}')
+      expect(itemsTab).toHaveFocus()
+      expect(window.location.pathname).toBe('/resources/items/42')
+      expect(navigateMock).toHaveBeenCalledTimes(1)
+      expect(screen.getByRole('region', { name: 'Item details' })).toBeInTheDocument()
+    } finally {
+      window.history.replaceState(null, '', previousPath)
+    }
+  })
+
   it('ignores Escape when the detail is already closed', async () => {
     render(<ResourcesView />)
     await userEvent.keyboard('{Escape}')
@@ -248,7 +273,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     }
   })
 
-  it('returns from a row to its body without closing the selected detail', async () => {
+  it('keeps focus on a row on Escape without closing the selected detail', async () => {
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: 'Search items' })
@@ -256,11 +281,11 @@ describe('ResourcesView keyboard shortcuts', () => {
     await userEvent.type(input, 'torc')
     await userEvent.keyboard('{ArrowDown}{Escape}')
     expect(input).toHaveValue('torc')
-    expect(document.querySelector('.ledger-body')).toHaveFocus()
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
     expect(navigateMock).not.toHaveBeenCalled()
     await userEvent.keyboard('{Escape}')
     expect(input).toHaveValue('torc')
-    expect(document.querySelector('.ledger-body')).toHaveFocus()
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
     input.focus()
     await userEvent.keyboard('{Escape}')
     expect(input).toHaveValue('')

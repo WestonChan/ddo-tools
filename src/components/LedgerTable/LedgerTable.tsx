@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type FocusEvent,
   type JSX,
   type KeyboardEvent,
   type PointerEvent,
@@ -31,6 +32,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { List, type ListImperativeAPI, type RowComponentProps } from 'react-window'
 import { useHoverCard, type HoverCardOptions } from '../HoverCard'
+import { useRovingGroup } from '../../hooks'
 import {
   nextLedgerSort,
   reorderedColumnKeys,
@@ -78,6 +80,8 @@ interface LedgerRowProps<Row> {
   onRowActivate: (row: Row, activationSource: 'pointer' | 'keyboard') => void
   onRowKeyDown: (event: KeyboardEvent<HTMLDivElement>, index: number) => void
   onFocusedIndexChange: (index: number) => void
+  tabStopIndex: number | null
+  onTabStopFocus: (index: number) => boolean
   bodyId: string
   selectedRowKey: string | number | null
   rowKind?: (row: Row) => LedgerRowKind
@@ -105,6 +109,8 @@ function LedgerRow<Row>({
   onRowActivate,
   onRowKeyDown,
   onFocusedIndexChange,
+  tabStopIndex,
+  onTabStopFocus,
   bodyId,
   selectedRowKey,
   rowKind,
@@ -134,11 +140,12 @@ function LedgerRow<Row>({
         (isHeading ? ` ledger-row--${kind}` : '')
       }
       style={style}
-      tabIndex={-1}
+      tabIndex={!isHeading && index === tabStopIndex ? 0 : -1}
       aria-current={isSelected || undefined}
       data-hover-card-pinned={hoverOptions ? hoverAnchor['data-hover-card-pinned'] : undefined}
       onFocus={(event) => {
         if (event.target !== event.currentTarget || isHeading) return
+        if (onTabStopFocus(index)) return
         onFocusedIndexChange(index)
         if (hoverOptions) hoverAnchor.onFocus(event)
       }}
@@ -375,9 +382,11 @@ export function LedgerTable<Row>({
   const [uncontrolledWidths, setUncontrolledWidths] = useState<Record<string, number>>({})
   const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
   const [focusedIndex, setFocusedIndex] = useState(0)
-  const [focusedColumnKey, setFocusedColumnKey] = useState<string | null>(null)
+  const [currentFocusedRowKey, setCurrentFocusedRowKey] = useState<string | number | null>(null)
+  const [visibleRowRange, setVisibleRowRange] = useState<{ start: number; stop: number } | null>(
+    null,
+  )
   const [headerAnnouncement, setHeaderAnnouncement] = useState('')
-  const lastFocusedRowKey = useRef<string | number | null>(null)
   const bodyId = useId()
   const headerRowRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<ListImperativeAPI>(null)
@@ -394,9 +403,6 @@ export function LedgerTable<Row>({
     [orderedColumns, viewportWidth, windowWidth],
   )
   const announcements = useMemo(() => headerDragAnnouncements(visibleColumns), [visibleColumns])
-  const currentColumnKey = visibleColumns.some((column) => column.key === focusedColumnKey)
-    ? focusedColumnKey
-    : visibleColumns[0]?.key
   const rows = useMemo(
     () => Array.from({ length: rowCount }, (_, index) => rowAt(index)),
     [rowCount, rowAt],
@@ -409,6 +415,7 @@ export function LedgerTable<Row>({
     () => sortedRows.flatMap((row, index) => ((rowKind?.(row) ?? 'row') === 'row' ? [index] : [])),
     [sortedRows, rowKind],
   )
+  const navigableRowKeys = navigableRowIndices.map((index) => rowKey(sortedRows[index]))
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -442,6 +449,41 @@ export function LedgerTable<Row>({
     },
     [sortedRows.length, bodyId],
   )
+  const rowGroup = useRovingGroup({
+    keys: navigableRowKeys,
+    preferredKey: selectedRowKey,
+    direction: 'vertical',
+    focusItem: (key) => {
+      const index = navigableRowIndices.find((candidate) => rowKey(sortedRows[candidate]) === key)
+      if (index !== undefined) focusRow(index)
+    },
+  })
+  const headerGroup = useRovingGroup({
+    keys: visibleColumns.map((column) => column.key),
+    direction: 'horizontal',
+    focusItem: focusColumn,
+  })
+  const currentRowKey =
+    currentFocusedRowKey !== null && navigableRowKeys.includes(currentFocusedRowKey)
+      ? currentFocusedRowKey
+      : rowGroup.tabStopKey
+  const activeRowIndex = navigableRowIndices.find(
+    (index) => rowKey(sortedRows[index]) === currentRowKey,
+  )
+  const renderedActiveRowIndex =
+    activeRowIndex !== undefined &&
+    (!isVirtualized ||
+      (visibleRowRange !== null &&
+        activeRowIndex >= visibleRowRange.start &&
+        activeRowIndex <= visibleRowRange.stop))
+      ? activeRowIndex
+      : navigableRowIndices.find(
+          (index) =>
+            visibleRowRange !== null &&
+            index >= visibleRowRange.start &&
+            index <= visibleRowRange.stop,
+        )
+  const tabStopIndex = renderedActiveRowIndex ?? null
 
   useEffect(() => {
     const input = navigationInputRef?.current
@@ -462,19 +504,16 @@ export function LedgerTable<Row>({
       if (navigableRowIndices.length === 0) return
       event.preventDefault()
       event.stopPropagation()
-      const previousRowIndex = navigableRowIndices.find(
-        (index) => rowKey(sortedRows[index]) === lastFocusedRowKey.current,
-      )
       const nextIndex =
         event.key === 'ArrowUp'
           ? navigableRowIndices[navigableRowIndices.length - 1]
-          : (previousRowIndex ?? navigableRowIndices[0])
-      focusRow(nextIndex)
+          : navigableRowIndices[0]
+      rowGroup.focusKey(rowKey(sortedRows[nextIndex]))
       if (nextIndex === navigableRowIndices[navigableRowIndices.length - 1]) onNearEnd?.()
     }
     input.addEventListener('keydown', navigateFromInput)
     return () => input.removeEventListener('keydown', navigateFromInput)
-  }, [navigationInputRef, sortedRows, navigableRowIndices, rowKey, onNearEnd, focusRow])
+  }, [navigationInputRef, sortedRows, navigableRowIndices, rowKey, onNearEnd, rowGroup])
 
   useEffect(() => {
     const index = pendingFocusIndex.current
@@ -487,61 +526,45 @@ export function LedgerTable<Row>({
   }, [focusedIndex, sortedRows, bodyId])
 
   function onRowKeyDown(event: KeyboardEvent<HTMLDivElement>, index: number): void {
-    if (event.target !== event.currentTarget) return
     if (
-      event.key === 'ArrowDown' ||
-      event.key === 'ArrowUp' ||
-      event.key === 'Home' ||
-      event.key === 'End'
-    ) {
-      event.preventDefault()
-      const currentPosition = navigableRowIndices.indexOf(index)
-      const nextPosition =
-        event.key === 'Home'
-          ? 0
-          : event.key === 'End'
-            ? navigableRowIndices.length - 1
-            : Math.max(
-                0,
-                Math.min(
-                  navigableRowIndices.length - 1,
-                  currentPosition + (event.key === 'ArrowDown' ? 1 : -1),
-                ),
-              )
-      const nextIndex = navigableRowIndices[nextPosition]
-      focusRow(nextIndex)
-      if (
-        nextPosition === navigableRowIndices.length - 1 &&
-        (event.key === 'End' || event.key === 'ArrowDown')
-      ) {
-        onNearEnd?.()
-      }
-    }
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      onRowActivate(sortedRows[index], 'keyboard')
-    }
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      event.stopPropagation()
-      document.getElementById(bodyId)?.focus()
-    }
-  }
-
-  function onBodyKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
-    if (event.target !== event.currentTarget) return
+      event.target !== event.currentTarget ||
+      event.nativeEvent.isComposing ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    )
+      return
     if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
       return
     }
-    if (event.key !== 'Enter' || navigableRowIndices.length === 0) return
-    event.preventDefault()
-    event.stopPropagation()
-    const selectedIndex = navigableRowIndices.find(
-      (index) => rowKey(sortedRows[index]) === selectedRowKey,
+    const pageSize = Math.max(
+      1,
+      Math.floor((document.getElementById(bodyId)?.clientHeight ?? 0) / (isDense ? 30 : 32)),
     )
-    focusRow(selectedIndex ?? navigableRowIndices[0])
+    if (rowGroup.moveFocus(rowKey(sortedRows[index]), event.key, pageSize)) {
+      event.preventDefault()
+      const lastRow = sortedRows[navigableRowIndices[navigableRowIndices.length - 1]]
+      if (
+        lastRow &&
+        (pendingFocusIndex.current === navigableRowIndices[navigableRowIndices.length - 1] ||
+          document.activeElement?.getAttribute('data-row-key') === String(rowKey(lastRow))) &&
+        (event.key === 'End' || event.key === 'ArrowDown' || event.key === 'PageDown')
+      ) {
+        onNearEnd?.()
+      }
+      return
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onRowActivate(sortedRows[index], 'keyboard')
+    }
+  }
+
+  function clearFocusedRowOnBodyBlur(event: FocusEvent<HTMLDivElement>): void {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+      setCurrentFocusedRowKey(null)
   }
 
   function sortBy(column: LedgerColumn<Row>): void {
@@ -565,15 +588,15 @@ export function LedgerTable<Row>({
   }
 
   function navigateColumn(key: string, direction: -1 | 1 | 'first' | 'last'): void {
-    const currentIndex = visibleColumns.findIndex((column) => column.key === key)
-    if (currentIndex < 0) return
-    const nextIndex =
+    const pressedKey =
       direction === 'first'
-        ? 0
+        ? 'Home'
         : direction === 'last'
-          ? visibleColumns.length - 1
-          : Math.max(0, Math.min(visibleColumns.length - 1, currentIndex + direction))
-    focusColumn(visibleColumns[nextIndex].key)
+          ? 'End'
+          : direction === -1
+            ? 'ArrowLeft'
+            : 'ArrowRight'
+    headerGroup.moveFocus(key, pressedKey)
   }
 
   function moveColumn(key: string, direction: -1 | 1): void {
@@ -650,8 +673,18 @@ export function LedgerTable<Row>({
     onRowActivate,
     onRowKeyDown,
     onFocusedIndexChange: (index) => {
-      lastFocusedRowKey.current = rowKey(sortedRows[index])
+      const key = rowKey(sortedRows[index])
+      setCurrentFocusedRowKey(key)
+      rowGroup.rememberFocus(key)
       setFocusedIndex(index)
+    },
+    tabStopIndex,
+    onTabStopFocus: (index) => {
+      if (index !== tabStopIndex || activeRowIndex === undefined || index === activeRowIndex)
+        return false
+      if (pendingFocusIndex.current === index) return false
+      rowGroup.focusKey(rowKey(sortedRows[activeRowIndex]))
+      return true
     },
     bodyId,
     selectedRowKey,
@@ -696,10 +729,10 @@ export function LedgerTable<Row>({
                   widths={widths}
                   isFirst={index === 0}
                   isSorted={sort?.key === column.key}
-                  isFocusedColumn={column.key === currentColumnKey}
+                  isFocusedColumn={column.key === headerGroup.tabStopKey}
                   sortDirection={sort?.key === column.key ? sort.direction : null}
                   onSort={() => sortBy(column)}
-                  onFocusColumn={() => setFocusedColumnKey(column.key)}
+                  onFocusColumn={() => headerGroup.rememberFocus(column.key)}
                   onNavigateColumn={navigateColumn}
                   onMoveColumn={moveColumn}
                   onResize={resizeColumn}
@@ -724,8 +757,7 @@ export function LedgerTable<Row>({
           <List
             role="rowgroup"
             id={bodyId}
-            tabIndex={0}
-            onKeyDown={onBodyKeyDown}
+            onBlurCapture={clearFocusedRowOnBodyBlur}
             rowComponent={VirtualLedgerRow<Row>}
             rowCount={sortedRows.length}
             rowHeight={rowHeight}
@@ -735,6 +767,12 @@ export function LedgerTable<Row>({
             className="ledger-body"
             style={{ height: '100%' }}
             onRowsRendered={(visibleRows) => {
+              setVisibleRowRange((previous) =>
+                previous?.start === visibleRows.startIndex &&
+                previous.stop === visibleRows.stopIndex
+                  ? previous
+                  : { start: visibleRows.startIndex, stop: visibleRows.stopIndex },
+              )
               if (sortedRows.length - visibleRows.stopIndex <= 32) onNearEnd?.()
               const index = pendingFocusIndex.current
               if (index !== null) {
@@ -751,9 +789,8 @@ export function LedgerTable<Row>({
         <div
           role="rowgroup"
           id={bodyId}
-          tabIndex={0}
-          onKeyDown={onBodyKeyDown}
           className="ledger-plain-body"
+          onBlurCapture={clearFocusedRowOnBodyBlur}
         >
           {sortedRows.map((row, index) => (
             <LedgerRow key={rowKey(row)} index={index} {...rowProps} />

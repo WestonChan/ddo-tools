@@ -482,5 +482,8 @@ describe('StatsPanel', () => {
     await userEvent.keyboard('{End}')
     expect(buffsTab).toHaveFocus()
     expect(buffsTab).toHaveAttribute('aria-selected', 'true')
+
+    act(() => statsTab.focus())
+    expect(statsTab).toHaveAttribute('aria-selected', 'true')
   })
 })

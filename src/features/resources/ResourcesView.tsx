@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -39,6 +40,7 @@ function ResourcesView(): JSX.Element {
   const { category, selectedResourceId } = useResourceRouteParams()
   const navigate = useNavigate()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const categoryPanelId = useId()
   const [pickerSession, setPickerSession] = useState<ItemPickerSession>({
     searchQuery: '',
     selectedSort: null,
@@ -148,10 +150,17 @@ function ResourcesView(): JSX.Element {
   return (
     <div className="resources-view">
       <header className="resources-header">
-        <CategoryTabs activeCategory={category} onSelect={navigateToCategory} />
+        <CategoryTabs
+          activeCategory={category}
+          onSelect={navigateToCategory}
+          panelId={categoryPanelId}
+        />
       </header>
       <div
         className="resources-body"
+        id={categoryPanelId}
+        role="tabpanel"
+        aria-labelledby={`${categoryPanelId}-${category}-tab`}
         ref={bodyRef}
         style={
           { '--resources-column-min-width': `${RESOURCE_COLUMN_MINIMUM_PX}px` } as CSSProperties

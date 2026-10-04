@@ -86,6 +86,27 @@ function Row(): React.JSX.Element {
 afterEach(cleanup)
 
 describe('FilterChipRow', () => {
+  it('tabs to one chip, roves in order, opens with Enter, and returns on Escape', async () => {
+    render(<Row />)
+    const search = screen.getByRole('textbox', { name: 'Search' })
+    const ml = screen.getByRole('button', { name: 'ML' })
+    const slot = screen.getByRole('button', { name: 'Gear slot' })
+    search.focus()
+    await userEvent.tab()
+    expect(ml).toHaveFocus()
+    expect(ml).toHaveAttribute('tabindex', '0')
+    expect(slot).toHaveAttribute('tabindex', '-1')
+    await userEvent.keyboard('{ArrowRight}')
+    expect(slot).toHaveFocus()
+    await userEvent.keyboard('{End}{Home}{ArrowLeft}')
+    expect(ml).toHaveFocus()
+    await userEvent.keyboard('{ArrowRight}{Enter}')
+    expect(screen.getByRole('combobox', { name: 'Gear slot' })).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    expect(slot).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    expect(slot).toHaveFocus()
+  })
   it('opens a picker, shows an applied value, removes only that value, and clears all', async () => {
     render(<Row />)
     await userEvent.click(screen.getByRole('button', { name: 'Gear slot' }))

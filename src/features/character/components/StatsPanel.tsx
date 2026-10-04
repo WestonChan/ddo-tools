@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type JSX, type KeyboardEvent } from 'react'
+import { useRovingGroup } from '../../../hooks'
 import { DEFAULT_ACTIVE_BUFF_NAMES, DEFAULT_PINNED_STAT_GROUPS } from '../data/placeholderStats'
 import type { PinnedStatGroup } from '../pinnedStatGroups'
 import { BuffsTab } from './BuffsTab'
@@ -13,15 +14,6 @@ const TAB_LABELS: Record<StatsPanelTab, string> = {
 }
 
 const TABS = Object.keys(TAB_LABELS) as StatsPanelTab[]
-
-function tabReachedByKey(activeTab: StatsPanelTab, key: string): StatsPanelTab | null {
-  const activeIndex = TABS.indexOf(activeTab)
-  if (key === 'ArrowRight') return TABS[(activeIndex + 1) % TABS.length]
-  if (key === 'ArrowLeft') return TABS[(activeIndex - 1 + TABS.length) % TABS.length]
-  if (key === 'Home') return TABS[0]
-  if (key === 'End') return TABS[TABS.length - 1]
-  return null
-}
 
 function namesWithNameToggled(names: ReadonlySet<string>, name: string): Set<string> {
   const toggledNames = new Set(names)
@@ -45,13 +37,28 @@ export function StatsPanel(): JSX.Element {
   const tabId = (tab: StatsPanelTab): string => `${idPrefix}-${tab}-tab`
   const tabPanelId = `${idPrefix}-panel`
   const tabButtonsByTab = useRef(new Map<StatsPanelTab, HTMLButtonElement>())
+  const tabGroup = useRovingGroup({
+    keys: TABS,
+    preferredKey: activeTab,
+    direction: 'horizontal',
+    isWrapping: true,
+    focusItem: (tab) => {
+      tabButtonsByTab.current.get(tab)?.focus()
+    },
+  })
 
   function activateTabReachedByKey(e: KeyboardEvent<HTMLDivElement>): void {
-    const reachedTab = tabReachedByKey(activeTab, e.key)
-    if (!reachedTab) return
-    e.preventDefault()
-    setActiveTab(reachedTab)
-    tabButtonsByTab.current.get(reachedTab)?.focus()
+    if (
+      !(e.target instanceof HTMLButtonElement) ||
+      e.nativeEvent.isComposing ||
+      e.altKey ||
+      e.ctrlKey ||
+      e.metaKey ||
+      e.shiftKey
+    )
+      return
+    const tab = e.target.dataset.tab as StatsPanelTab | undefined
+    if (tab && tabGroup.moveFocus(tab, e.key)) e.preventDefault()
   }
 
   return (
@@ -70,13 +77,18 @@ export function StatsPanel(): JSX.Element {
               else tabButtonsByTab.current.delete(tab)
             }}
             id={tabId(tab)}
+            data-tab={tab}
             type="button"
             role="tab"
-            tabIndex={activeTab === tab ? 0 : -1}
+            tabIndex={tabGroup.tabStopKey === tab ? 0 : -1}
             aria-selected={activeTab === tab}
             aria-controls={tabPanelId}
             className={`segmented-control-segment${activeTab === tab ? ' segmented-control-segment--active' : ''}`}
             onClick={() => setActiveTab(tab)}
+            onFocus={() => {
+              tabGroup.rememberFocus(tab)
+              if (tab !== activeTab) setActiveTab(tab)
+            }}
           >
             {TAB_LABELS[tab]}
             {tab === 'buffs' && (
