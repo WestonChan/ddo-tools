@@ -1337,7 +1337,12 @@ durations and stacks stay prose for the Phase 6 engine. Nothing else earns a col
    checked against wiki page titles by the Claude reader; identifier-looking names
    (`enchantments_named_like_identifiers`); the valued text-only families that should be stats
    (`enchantments_text_only_with_item_values`: Shield Bashing, Melee Alacrity, 3rd Degree Burns, Undead
-   Guard, Underwater Action); unclassified effect types (`effect_types_not_classified`).
+   Guard, Underwater Action); unclassified effect types (`effect_types_not_classified`); the 20 valued rows
+   whose targets the map cannot resolve (critical-damage subtypes without seeded stats, Quivering Palm and
+   Shatter DCs, "Alignment" and lowercase "poison" lore: an alias and a few stats); the 35 links missing a
+   first amount (valueless upstream buffs, value corrections from the wiki). Engine note for Phase 6:
+   `Tactics` is the generic tactical bucket and sits beside the individual Trip, Sunder, Stun and Assassinate
+   DC rows on Combat Mastery, the Dolorous Invigorators and the Past Life feats; it is not added to each DC.
 5. `bonus_alias` for Phase 5b's selectors; `modifiers` consumers onto the enchantment tables; the
    `derive_bonuses` path for feats, enhancements and sets fully through the family resolver.
 

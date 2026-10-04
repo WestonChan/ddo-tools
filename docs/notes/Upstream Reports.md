@@ -79,3 +79,6 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 ## Item buffs
 
 - 📋 Hallowed — his `ItemBuffs.xml` types the buff's effect `TurnDiceBonus` (turn undead dice) while its own text and the wiki say "maximum Hit Dice of undead turned" (`TurnMaxDice`); `buff_map.toml` maps it to Turn Undead Max Dice per the text. Source: https://ddowiki.com/page/Hallowed.
+- 📋 Malleable Sceptre of Reconstruction — `RepairLore` buff `Value1` is 2122 (a typo; the wiki gives the real value). Kept as the effect's value, no stat row, until a value correction from the wiki item read. Source: https://ddowiki.com/page/Item:Malleable_Sceptre_of_Reconstruction.
+- 📋 Devils' Infernal Dance tier 3 — his Fortification Bypass effect carries a stray `<Type>Doubleshot</Type>` that would grant Doubleshot +10 Artifact beside the tier's own Doubleshot +5; removed by a `set_tier_bonus` correction. Source: https://ddowiki.com/page/Named_item_sets.
+- 📋 Dolorous Invigorator (Heroic, Legendary) — the `TacticalDC` effect has `<Bonus>Not Set</Bonus>`; the wiki types the DCs Profane; ten `augment_bonus` type corrections supply it.
