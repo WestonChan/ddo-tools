@@ -191,7 +191,7 @@ for (const theme of ['dark', 'light']) {
     await expect(page.getByRole('table', { name: 'items list', exact: true })).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     await expect(page.getByRole('columnheader', { name: /Pack/ })).toBeVisible()
-    await page.getByRole('button', { name: 'Sort ML', exact: true }).click()
+    await page.getByRole('columnheader', { name: 'ML', exact: true }).click()
     await expect
       .poll(() =>
         page.locator('.ledger-header-cell[data-column-key="ml"]').getAttribute('aria-sort'),
@@ -245,15 +245,15 @@ test('sorts with the signed sort field and keeps Raid and Rare headers static', 
     const header = page.locator(`.ledger-header-cell[data-column-key="${label.toLowerCase()}"]`)
     await expect(header).toBeVisible()
     expect(await header.getAttribute('aria-sort')).toBeNull()
-    await expect(header.getByRole('button', { name: `Sort ${label}`, exact: true })).toHaveCount(0)
-    await expect(header.getByRole('button', { name: `Move ${label}`, exact: true })).toHaveCount(1)
+    await expect(header).toHaveAttribute('aria-description', /Press M to pick up/)
+    await expect(header.getByRole('button')).toHaveCount(0)
   }
-  await page.getByRole('button', { name: 'Sort ML', exact: true }).click()
+  await page.getByRole('columnheader', { name: 'ML', exact: true }).click()
   await expect
     .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
     .toEqual(['-minimum_level'])
   expect(itemRequests.at(-1)?.searchParams.has('order')).toBe(false)
-  await page.getByRole('button', { name: 'Sort ML', exact: true }).click()
+  await page.getByRole('columnheader', { name: 'ML', exact: true }).click()
   await expect
     .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
     .toEqual(['minimum_level'])
@@ -267,8 +267,8 @@ test('dragging a header label reorders while clicking sorts and dragging its ful
   const headers = page
     .getByRole('table', { name: 'items list', exact: true })
     .getByRole('columnheader')
-  const sortButton = page.getByRole('button', { name: 'Sort ML', exact: true })
-  const labelBox = await sortButton.boundingBox()
+  const mlHeader = page.locator('.ledger-header-cell[data-column-key="ml"]')
+  const labelBox = await mlHeader.locator('.ledger-header-label').boundingBox()
   const slotBox = await page.locator('.ledger-header-cell[data-column-key="slot"]').boundingBox()
   expect(labelBox).not.toBeNull()
   expect(slotBox).not.toBeNull()
@@ -285,9 +285,8 @@ test('dragging a header label reorders while clicking sorts and dragging its ful
     )
     .toEqual(['name', 'slot', 'ml', 'pack', 'raid', 'rare'])
 
-  const mlHeader = page.locator('.ledger-header-cell[data-column-key="ml"]')
   await expect(async () => {
-    if ((await mlHeader.getAttribute('aria-sort')) !== 'descending') await sortButton.click()
+    if ((await mlHeader.getAttribute('aria-sort')) !== 'descending') await mlHeader.click()
     await expect(mlHeader).toHaveAttribute('aria-sort', 'descending', { timeout: 300 })
   }).toPass({ timeout: 5000 })
   const grip = page.getByRole('separator', { name: 'Resize ML', exact: true })
@@ -311,6 +310,61 @@ test('dragging a header label reorders while clicking sorts and dragging its ful
       headers.evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-column-key'))),
     )
     .toEqual(['name', 'slot', 'ml', 'pack', 'raid', 'rare'])
+})
+
+test('the header is one keyboard stop for sorting and moving columns', async ({ page }) => {
+  await page.goto('/resources/items')
+  async function waitForKeyboardSensor(): Promise<void> {
+    await page.evaluate(() => new Promise<void>((resolve) => setTimeout(resolve, 0)))
+  }
+  const table = page.getByRole('table', { name: 'items list', exact: true })
+  const headers = table.getByRole('columnheader')
+  const name = headers.filter({ hasText: 'Name' })
+  const ml = page.locator('.ledger-header-cell[data-column-key="ml"]')
+  const slot = page.locator('.ledger-header-cell[data-column-key="slot"]')
+  await page.locator('.filter-chip-row .filter-chip').last().focus()
+  await page.keyboard.press('Tab')
+  await expect(name).toBeFocused()
+  await page.keyboard.press('ArrowRight')
+  await expect(ml).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(ml).toHaveAttribute('aria-sort', 'descending')
+  await page.keyboard.press('Space')
+  await expect(ml).toHaveAttribute('aria-sort', 'ascending')
+  await page.keyboard.press('Tab')
+  await expect(page.locator('.ledger-body')).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(ml).toBeFocused()
+  await page.keyboard.press('Shift+ArrowLeft')
+  await expect(ml).toBeFocused()
+  await expect(headers.first()).toHaveAttribute('data-column-key', 'ml')
+  await expect(table.getByTestId('ledger-header-announcement')).toContainText('ML moved')
+  await page.keyboard.press('m')
+  await expect(ml).toHaveClass(/ledger-header-cell--dragging/)
+  await waitForKeyboardSensor()
+  await page.keyboard.press('ArrowRight')
+  await expect(name).toHaveClass(/ledger-header-cell--over/)
+  await expect(async () => {
+    if (await ml.evaluate((header) => header.classList.contains('ledger-header-cell--dragging'))) {
+      await page.keyboard.press('Space')
+    }
+    await expect(ml).not.toHaveClass(/ledger-header-cell--dragging/, { timeout: 300 })
+    await expect(headers.nth(1)).toHaveAttribute('data-column-key', 'ml', { timeout: 300 })
+  }).toPass({ timeout: 5000 })
+  await page.keyboard.press('m')
+  await expect(ml).toHaveClass(/ledger-header-cell--dragging/)
+  await waitForKeyboardSensor()
+  await page.keyboard.press('ArrowRight')
+  await expect(slot).toHaveClass(/ledger-header-cell--over/)
+  await waitForKeyboardSensor()
+  await expect(async () => {
+    if (await ml.evaluate((header) => header.classList.contains('ledger-header-cell--dragging'))) {
+      await page.keyboard.press('Escape')
+    }
+    await expect(ml).not.toHaveClass(/ledger-header-cell--dragging/, { timeout: 300 })
+  }).toPass({ timeout: 5000 })
+  await expect(headers.nth(1)).toHaveAttribute('data-column-key', 'ml')
+  await expect(ml).toBeFocused()
 })
 
 test('sends all active filters in one item request and removes cleared parameters', async ({

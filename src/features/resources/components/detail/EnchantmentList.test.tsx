@@ -310,7 +310,7 @@ describe('EnchantmentList', () => {
       expect.stringContaining('5 pieces'),
       expect.stringContaining('Universal Spell Power'),
     ])
-    fireEvent.click(screen.getByRole('button', { name: 'Sort Value' }))
+    fireEvent.click(screen.getByRole('columnheader', { name: 'Value' }))
     expect(rowTexts()).toEqual([
       expect.stringContaining('Dexterity'),
       expect.stringContaining('Strength'),
@@ -321,7 +321,7 @@ describe('EnchantmentList', () => {
       expect.stringContaining('5 pieces'),
       expect.stringContaining('Universal Spell Power'),
     ])
-    fireEvent.click(screen.getByRole('button', { name: 'Sort Enchantment' }))
+    fireEvent.click(screen.getByRole('columnheader', { name: 'Enchantment' }))
     expect(rowTexts()).toEqual([
       expect.stringContaining('Dexterity'),
       expect.stringContaining('Strength'),

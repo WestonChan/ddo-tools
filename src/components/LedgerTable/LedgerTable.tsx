@@ -18,6 +18,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type Announcements,
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
@@ -27,7 +28,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, ChevronUp, GripVertical } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { List, type ListImperativeAPI, type RowComponentProps } from 'react-window'
 import { useHoverCard, type HoverCardOptions } from '../HoverCard'
 import {
@@ -176,13 +177,47 @@ function VirtualLedgerRow<Row>(props: RowComponentProps<LedgerRowProps<Row>>): J
   return <LedgerRow {...props} />
 }
 
+function movedColumnAnnouncement(label: string, position: number, count: number): string {
+  return `${label} moved to position ${position} of ${count}.`
+}
+
+function headerDragAnnouncements<Row>(visibleColumns: LedgerColumn<Row>[]): Announcements {
+  function columnLabel(id: string | number): string {
+    return visibleColumns.find((column) => column.key === String(id))?.label ?? String(id)
+  }
+
+  return {
+    onDragStart: ({ active }) => `Picked up ${columnLabel(active.id)}.`,
+    onDragOver: ({ active, over }) => {
+      const label = columnLabel(active.id)
+      if (!over) return `${label} is not over a column.`
+      if (active.id === over.id) return `Picked up ${label}.`
+      return `${label} is over ${columnLabel(over.id)}.`
+    },
+    onDragEnd: ({ active, over }) => {
+      const label = columnLabel(active.id)
+      const destinationIndex = visibleColumns.findIndex((column) => column.key === String(over?.id))
+      if (destinationIndex < 0) return `Move of ${label} cancelled.`
+      if (active.id === over?.id) {
+        return `${label} stayed at position ${destinationIndex + 1} of ${visibleColumns.length}.`
+      }
+      return movedColumnAnnouncement(label, destinationIndex + 1, visibleColumns.length)
+    },
+    onDragCancel: ({ active }) => `Move of ${columnLabel(active.id)} cancelled.`,
+  }
+}
+
 interface HeaderCellProps<Row> {
   column: LedgerColumn<Row>
   widths: Record<string, number>
   isFirst: boolean
   isSorted: boolean
+  isFocusedColumn: boolean
   sortDirection: 'asc' | 'desc' | null
   onSort: () => void
+  onFocusColumn: () => void
+  onNavigateColumn: (key: string, direction: -1 | 1 | 'first' | 'last') => void
+  onMoveColumn: (key: string, direction: -1 | 1) => void
   onResize: (event: PointerEvent<HTMLSpanElement>, column: LedgerColumn<Row>) => void
 }
 
@@ -191,8 +226,12 @@ function HeaderCell<Row>({
   widths,
   isFirst,
   isSorted,
+  isFocusedColumn,
   sortDirection,
   onSort,
+  onFocusColumn,
+  onNavigateColumn,
+  onMoveColumn,
   onResize,
 }: HeaderCellProps<Row>): JSX.Element {
   const {
@@ -205,12 +244,51 @@ function HeaderCell<Row>({
     isDragging,
     isOver,
   } = useSortable({ id: column.key })
+  const setHeaderRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setNodeRef(node)
+      setActivatorNodeRef(node)
+    },
+    [setNodeRef, setActivatorNodeRef],
+  )
+  const isSortable = column.isSortable !== false
+  const keyHints =
+    (isSortable ? 'Enter or Space sorts. ' : '') +
+    'Left or Right changes column; Home or End jumps to an edge. Shift plus Left or Right moves this column one place. Press M to pick up; arrows move it; M, Enter, or Space drops it; Escape cancels.'
+
+  function onHeaderKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (event.target !== event.currentTarget || event.nativeEvent.isComposing) return
+    if (event.key.toLowerCase() === 'm' && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      listeners?.onKeyDown?.(event)
+      return
+    }
+    if (isDragging || event.altKey || event.ctrlKey || event.metaKey) return
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault()
+      const direction = event.key === 'ArrowLeft' ? -1 : 1
+      if (event.shiftKey) onMoveColumn(column.key, direction)
+      else onNavigateColumn(column.key, direction)
+      return
+    }
+    if (event.shiftKey) return
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault()
+      onNavigateColumn(column.key, event.key === 'Home' ? 'first' : 'last')
+      return
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      if (isSortable) onSort()
+    }
+  }
+
   return (
     <div
-      ref={setNodeRef}
+      ref={setHeaderRef}
       data-column-key={column.key}
+      tabIndex={isFocusedColumn ? 0 : -1}
       aria-sort={
-        column.isSortable === false
+        !isSortable
           ? undefined
           : isSorted
             ? sortDirection === 'asc'
@@ -228,10 +306,14 @@ function HeaderCell<Row>({
         transform: CSS.Translate.toString(transform),
         transition,
       }}
-      {...listeners}
       role="columnheader"
       aria-label={column.label}
-      onClick={column.isSortable === false ? undefined : onSort}
+      aria-description={keyHints}
+      aria-describedby={attributes['aria-describedby']}
+      onFocus={onFocusColumn}
+      onKeyDown={onHeaderKeyDown}
+      onPointerDown={(event) => listeners?.onPointerDown?.(event)}
+      onClick={isSortable ? onSort : undefined}
     >
       {!isFirst && (
         <span
@@ -245,30 +327,15 @@ function HeaderCell<Row>({
           <span />
         </span>
       )}
-      {column.isSortable === false ? (
-        <span className="ledger-header-label">{column.label}</span>
-      ) : (
-        <button type="button" aria-label={'Sort ' + column.label} className="ledger-sort-button">
-          {column.label}
-          {isSorted &&
-            (sortDirection === 'asc' ? (
-              <ChevronUp size={11} aria-hidden />
-            ) : (
-              <ChevronDown size={11} aria-hidden />
-            ))}
-        </button>
-      )}
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        className="ledger-header-reorder sr-only"
-        {...attributes}
-        aria-label={'Move ' + column.label}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <GripVertical size={8} aria-hidden />
-        <span>{column.label}</span>
-      </button>
+      <span className="ledger-header-label">
+        {column.label}
+        {isSorted &&
+          (sortDirection === 'asc' ? (
+            <ChevronUp size={11} aria-hidden />
+          ) : (
+            <ChevronDown size={11} aria-hidden />
+          ))}
+      </span>
     </div>
   )
 }
@@ -306,15 +373,28 @@ export function LedgerTable<Row>({
   const [uncontrolledWidths, setUncontrolledWidths] = useState<Record<string, number>>({})
   const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
   const [focusedIndex, setFocusedIndex] = useState(0)
+  const [focusedColumnKey, setFocusedColumnKey] = useState<string | null>(null)
+  const [headerAnnouncement, setHeaderAnnouncement] = useState('')
   const lastFocusedRowKey = useRef<string | number | null>(null)
   const bodyId = useId()
+  const headerRowRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<ListImperativeAPI>(null)
   const pendingFocusIndex = useRef<number | null>(null)
   const sort = controlledSort === undefined ? uncontrolledSort : controlledSort
   const order = controlledOrder ?? uncontrolledOrder
   const widths = controlledWidths ?? uncontrolledWidths
-  const orderedColumns = order.flatMap((key) => columns.find((column) => column.key === key) ?? [])
-  const visibleColumns = visibleLedgerColumns(orderedColumns, viewportWidth ?? windowWidth)
+  const orderedColumns = useMemo(
+    () => order.flatMap((key) => columns.find((column) => column.key === key) ?? []),
+    [order, columns],
+  )
+  const visibleColumns = useMemo(
+    () => visibleLedgerColumns(orderedColumns, viewportWidth ?? windowWidth),
+    [orderedColumns, viewportWidth, windowWidth],
+  )
+  const announcements = useMemo(() => headerDragAnnouncements(visibleColumns), [visibleColumns])
+  const currentColumnKey = visibleColumns.some((column) => column.key === focusedColumnKey)
+    ? focusedColumnKey
+    : visibleColumns[0]?.key
   const rows = useMemo(
     () => Array.from({ length: rowCount }, (_, index) => rowAt(index)),
     [rowCount, rowAt],
@@ -329,7 +409,14 @@ export function LedgerTable<Row>({
   )
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      keyboardCodes: {
+        start: ['KeyM'],
+        end: ['KeyM', 'Enter', 'Space'],
+        cancel: ['Escape'],
+      },
+    }),
   )
 
   useEffect(() => {
@@ -468,6 +555,41 @@ export function LedgerTable<Row>({
     else setUncontrolledOrder(nextOrder)
   }
 
+  function focusColumn(key: string): void {
+    const header = Array.from(
+      headerRowRef.current?.querySelectorAll<HTMLElement>('.ledger-header-cell') ?? [],
+    ).find((candidate) => candidate.dataset.columnKey === key)
+    header?.focus()
+  }
+
+  function navigateColumn(key: string, direction: -1 | 1 | 'first' | 'last'): void {
+    const currentIndex = visibleColumns.findIndex((column) => column.key === key)
+    if (currentIndex < 0) return
+    const nextIndex =
+      direction === 'first'
+        ? 0
+        : direction === 'last'
+          ? visibleColumns.length - 1
+          : Math.max(0, Math.min(visibleColumns.length - 1, currentIndex + direction))
+    focusColumn(visibleColumns[nextIndex].key)
+  }
+
+  function moveColumn(key: string, direction: -1 | 1): void {
+    const currentIndex = visibleColumns.findIndex((column) => column.key === key)
+    const nextColumn = visibleColumns[currentIndex + direction]
+    if (!nextColumn) return
+    const nextOrder = reorderedColumnKeys(order, key, nextColumn.key)
+    if (onColumnOrderChange) onColumnOrderChange(nextOrder)
+    else setUncontrolledOrder(nextOrder)
+    setHeaderAnnouncement(
+      movedColumnAnnouncement(
+        visibleColumns[currentIndex].label,
+        currentIndex + direction + 1,
+        visibleColumns.length,
+      ),
+    )
+  }
+
   function resizeColumn(event: PointerEvent<HTMLSpanElement>, column: LedgerColumn<Row>): void {
     if (!event.isPrimary || event.button !== 0) return
     event.preventDefault()
@@ -547,13 +669,24 @@ export function LedgerTable<Row>({
       aria-label={label}
       className={'ledger-table' + (isDense ? ' ledger-table--dense' : '')}
     >
-      <DndContext sensors={sensors} onDragEnd={reorderColumns}>
+      <DndContext
+        sensors={sensors}
+        onDragStart={() => setHeaderAnnouncement('')}
+        onDragEnd={reorderColumns}
+        accessibility={{
+          announcements,
+          screenReaderInstructions: {
+            draggable:
+              'Press M to pick up a column. Use Left and Right to move it. Press M, Enter, or Space to drop, or Escape to cancel.',
+          },
+        }}
+      >
         <SortableContext
           items={visibleColumns.map((column) => column.key)}
           strategy={horizontalListSortingStrategy}
         >
           <div role="rowgroup" className="ledger-head">
-            <div role="row" className="ledger-header-row">
+            <div ref={headerRowRef} role="row" className="ledger-header-row">
               {visibleColumns.map((column, index) => (
                 <HeaderCell
                   key={column.key}
@@ -561,8 +694,12 @@ export function LedgerTable<Row>({
                   widths={widths}
                   isFirst={index === 0}
                   isSorted={sort?.key === column.key}
+                  isFocusedColumn={column.key === currentColumnKey}
                   sortDirection={sort?.key === column.key ? sort.direction : null}
                   onSort={() => sortBy(column)}
+                  onFocusColumn={() => setFocusedColumnKey(column.key)}
+                  onNavigateColumn={navigateColumn}
+                  onMoveColumn={moveColumn}
                   onResize={resizeColumn}
                 />
               ))}
@@ -570,6 +707,14 @@ export function LedgerTable<Row>({
           </div>
         </SortableContext>
       </DndContext>
+      <div
+        role="status"
+        aria-live="polite"
+        className="sr-only"
+        data-testid="ledger-header-announcement"
+      >
+        {headerAnnouncement}
+      </div>
       {sortedRows.length === 0 ? (
         <div className="ledger-empty">{emptyState}</div>
       ) : isVirtualized ? (

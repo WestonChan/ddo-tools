@@ -268,7 +268,7 @@ describe('ItemPicker page errors', () => {
       </QueryClientProvider>,
     )
     expect(await screen.findByText('1 result')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Sort ML' }))
+    await userEvent.click(screen.getByRole('columnheader', { name: 'ML' }))
     expect(await screen.findByText('Could not load sorted items.')).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /ML/ })).toBeInTheDocument()
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()

@@ -40,6 +40,14 @@
   cursor: grab;
   user-select: none;
   touch-action: none;
+
+  &:is(:hover, :focus-visible):not(.ledger-header-cell--dragging) {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid transparent;
+  }
 }
 
 .ledger-header-cell--dragging {
@@ -50,16 +58,11 @@
   box-shadow: var(--inset-mark-accent);
 }
 
-.ledger-sort-button,
-.ledger-header-label,
-.ledger-header-reorder {
+.ledger-header-label {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
-  padding: 0;
-  background: none;
-  border: 0;
   color: var(--text-faint);
   font-size: var(--fs-micro);
   font-weight: var(--fw-semibold);
@@ -68,45 +71,12 @@
   white-space: nowrap;
 }
 
-.ledger-sort-button {
+.ledger-header-cell[aria-sort] .ledger-header-label {
   cursor: pointer;
 }
 
-.ledger-header-reorder {
-  position: absolute;
-  top: 0;
-  left: var(--space-2);
-  justify-content: flex-start;
-  border-radius: var(--radius-xs);
-  cursor: grab;
-  pointer-events: none;
-
-  &:focus-visible {
-    z-index: var(--z-local);
-    top: 50%;
-    width: max-content;
-    max-width: calc(100% - var(--space-4));
-    height: 20px;
-    gap: var(--space-px);
-    padding: 0 var(--space-px);
-    clip-path: none;
-    transform: translateY(-50%);
-    background: var(--surface-raised);
-    color: var(--text-heading);
-    pointer-events: auto;
-  }
-}
-
-.ledger-header-cell:has(.ledger-header-reorder:focus-visible) .ledger-sort-button,
-.ledger-header-cell:has(.ledger-header-reorder:focus-visible) .ledger-header-label {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.ledger-header-cell[aria-sort='ascending'] .ledger-sort-button,
-.ledger-header-cell[aria-sort='descending'] .ledger-sort-button,
-.ledger-header-cell[aria-sort='ascending'] .ledger-header-reorder:focus-visible,
-.ledger-header-cell[aria-sort='descending'] .ledger-header-reorder:focus-visible {
+.ledger-header-cell[aria-sort='ascending'] .ledger-header-label,
+.ledger-header-cell[aria-sort='descending'] .ledger-header-label {
   color: var(--text-accent);
 }
 

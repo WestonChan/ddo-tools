@@ -129,16 +129,15 @@ describe('ItemPicker server-backed filters', () => {
     expect(screen.getByText('8084 results')).toBeInTheDocument()
   })
 
-  it('renders Raid and Rare without sort controls but with reorder handles', () => {
+  it('renders Raid and Rare as static headers that can still be focused and moved', () => {
     renderItemPicker()
     for (const label of ['Raid', 'Rare']) {
       const header = screen.getByRole('columnheader', { name: new RegExp(label) })
       expect(header).not.toHaveAttribute('aria-sort')
-      expect(within(header).queryByRole('button', { name: `Sort ${label}` })).toBeNull()
-      expect(within(header).getByRole('button', { name: `Move ${label}` })).toBeInTheDocument()
+      expect(header).toHaveAttribute('aria-description', expect.stringContaining('M'))
     }
-    expect(screen.getByRole('button', { name: 'Sort Name' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sort ML' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('tabindex', '0')
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute('aria-sort', 'none')
   })
 
   it('does not label previous rows as results while a filtered retry is paused', async () => {
@@ -280,7 +279,7 @@ describe('ItemPicker server-backed filters', () => {
     })
     await waitFor(() => expect(useItemPageMock.mock.lastCall?.[1]).toBe('torc'))
     expect(screen.getAllByRole('row')[1]).toHaveTextContent('Torc of Prince')
-    await userEvent.click(screen.getByRole('button', { name: 'Sort Name' }))
+    await userEvent.click(screen.getByRole('columnheader', { name: 'Name' }))
     expect(useItemPageMock.mock.lastCall?.[3]).toEqual({ key: 'name', direction: 'asc' })
     expect(screen.getAllByRole('row')[1]).toHaveTextContent('Torc of Prince')
   })

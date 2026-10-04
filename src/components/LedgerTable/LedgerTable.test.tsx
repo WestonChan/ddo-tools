@@ -158,7 +158,7 @@ describe('LedgerTable', () => {
     const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
     screen.getByRole('button', { name: 'Before table' }).focus()
     await userEvent.tab()
-    expect(screen.getByRole('button', { name: 'Sort Name' })).toHaveFocus()
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveFocus()
     body.focus()
     await userEvent.keyboard('{Enter}')
     expect(screen.getByRole('row', { name: /Back/ })).toHaveFocus()
@@ -378,7 +378,7 @@ describe('LedgerTable', () => {
         viewportWidth={800}
       />,
     )
-    await userEvent.click(screen.getByRole('button', { name: /Sort ML/ }))
+    await userEvent.click(screen.getByRole('columnheader', { name: 'ML' }))
     expect(
       screen
         .getAllByRole('row')
@@ -395,7 +395,20 @@ describe('LedgerTable', () => {
   })
 
   it('hides columns at narrow widths and keeps selection marked', () => {
-    render(
+    const view = render(
+      <LedgerTable
+        columns={columns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        selectedRowKey={2}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    act(() => screen.getByRole('columnheader', { name: 'Pack' }).focus())
+    view.rerender(
       <LedgerTable
         columns={columns}
         rowCount={rows.length}
@@ -408,10 +421,87 @@ describe('LedgerTable', () => {
       />,
     )
     expect(screen.queryByRole('columnheader', { name: /Pack/ })).toBeNull()
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('tabindex', '0')
     expect(screen.getByRole('row', { name: /Back/ })).toHaveAttribute('aria-current', 'true')
   })
 
-  it('sorts with Enter on a header button and has one tab stop per header', async () => {
+  it('tabs into the current header and out to the body in either direction', async () => {
+    render(
+      <>
+        <button>Last filter chip</button>
+        <LedgerTable
+          columns={columns}
+          rowCount={rows.length}
+          rowAt={(index) => rows[index]}
+          rowKey={(row) => row.id}
+          onRowActivate={vi.fn()}
+          isVirtualized={false}
+          viewportWidth={800}
+        />
+        <button>After ledger</button>
+      </>,
+    )
+    screen.getByRole('button', { name: 'Last filter chip' }).focus()
+    await userEvent.tab()
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveFocus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveFocus()
+    await userEvent.tab()
+    expect(document.querySelector('.ledger-plain-body')).toHaveFocus()
+    await userEvent.tab({ shift: true })
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveFocus()
+    await userEvent.tab({ shift: true })
+    expect(screen.getByRole('button', { name: 'Last filter chip' })).toHaveFocus()
+    await userEvent.tab()
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveFocus()
+    expect(screen.getAllByRole('columnheader').filter((header) => header.tabIndex >= 0)).toEqual([
+      screen.getByRole('columnheader', { name: 'ML' }),
+    ])
+    expect(screen.queryByRole('button', { name: /^Sort |^Move / })).toBeNull()
+  })
+
+  it('skips the absent body when empty and keeps the empty message in the DOM', async () => {
+    render(
+      <>
+        <button>Before ledger</button>
+        <LedgerTable
+          columns={columns}
+          rowCount={0}
+          rowAt={(index) => rows[index]}
+          rowKey={(row) => row.id}
+          onRowActivate={vi.fn()}
+          isVirtualized={false}
+          emptyState="No rows match."
+        />
+        <button>After ledger</button>
+      </>,
+    )
+    screen.getByRole('button', { name: 'Before ledger' }).focus()
+    await userEvent.tab()
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveFocus()
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'After ledger' })).toHaveFocus()
+    expect(screen.getByText('No rows match.')).toBeVisible()
+  })
+
+  it('starts at the first visible header when the initial order is controlled', () => {
+    render(
+      <LedgerTable
+        columns={columns}
+        columnOrder={['ml', 'name', 'pack']}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={375}
+      />,
+    )
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute('tabindex', '0')
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('moves between visible headers with clamped arrows and Home and End', async () => {
     render(
       <LedgerTable
         columns={columns}
@@ -420,52 +510,50 @@ describe('LedgerTable', () => {
         rowKey={(row) => row.id}
         onRowActivate={vi.fn()}
         isVirtualized={false}
+        viewportWidth={375}
       />,
     )
-    const sortButton = screen.getByRole('button', { name: 'Sort ML' })
-    sortButton.focus()
-    await userEvent.keyboard('{Enter}')
-    expect(screen.getByRole('columnheader', { name: /ML/ })).toHaveAttribute(
-      'aria-sort',
-      'descending',
-    )
-    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveClass('sr-only')
-    expect(screen.getByRole('button', { name: 'Move ML' })).not.toHaveAttribute('title')
-    await userEvent.tab()
-    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveFocus()
-    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveTextContent('ML')
-    expect(
-      screen.getAllByRole('columnheader').filter((header) => header.tabIndex >= 0),
-    ).toHaveLength(0)
+    const name = screen.getByRole('columnheader', { name: 'Name' })
+    const ml = screen.getByRole('columnheader', { name: 'ML' })
+    act(() => name.focus())
+    await userEvent.keyboard('{ArrowLeft}{End}')
+    expect(ml).toHaveFocus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(ml).toHaveFocus()
+    await userEvent.keyboard('{Home}{ArrowRight}{ArrowLeft}')
+    expect(name).toHaveFocus()
+    expect(screen.queryByRole('columnheader', { name: 'Pack' })).toBeNull()
   })
 
-  it('tabs through sortable header controls in exactly reverse order with Shift+Tab', async () => {
+  it('sorts and flips with Enter and Space but leaves a static header unchanged', async () => {
+    const staticColumns = columns.map((column) =>
+      column.key === 'pack' ? { ...column, isSortable: false } : column,
+    )
     render(
       <LedgerTable
-        columns={columns.slice(0, 2)}
+        columns={staticColumns}
         rowCount={rows.length}
         rowAt={(index) => rows[index]}
         rowKey={(row) => row.id}
         onRowActivate={vi.fn()}
         isVirtualized={false}
+        viewportWidth={800}
       />,
     )
-    const stops = ['Sort Name', 'Move Name', 'Sort ML', 'Move ML']
-    screen.getByRole('button', { name: stops[0] }).focus()
-    for (const name of stops.slice(1)) {
-      await userEvent.tab()
-      expect(screen.getByRole('button', { name })).toHaveFocus()
-    }
-    for (const name of stops.slice(0, -1).reverse()) {
-      await userEvent.tab({ shift: true })
-      expect(screen.getByRole('button', { name })).toHaveFocus()
-    }
-    expect(ledgerStyles).not.toMatch(
-      /\.ledger-header-cell:has\(\.ledger-header-reorder:focus-visible\)[\s\S]*?visibility: hidden/,
-    )
+    const ml = screen.getByRole('columnheader', { name: 'ML' })
+    act(() => ml.focus())
+    await userEvent.keyboard('{Enter}')
+    expect(ml).toHaveAttribute('aria-sort', 'descending')
+    await userEvent.keyboard(' ')
+    expect(ml).toHaveAttribute('aria-sort', 'ascending')
+    const pack = screen.getByRole('columnheader', { name: 'Pack' })
+    act(() => pack.focus())
+    await userEvent.keyboard('{Enter} ')
+    expect(pack).not.toHaveAttribute('aria-sort')
+    expect(ml).toHaveAttribute('aria-sort', 'ascending')
   })
 
-  it('sorts on a plain header click but not on its resize grip or reorder handle', async () => {
+  it('sorts on a plain header click but not on its resize grip or keyboard grab', async () => {
     const onSortChange = vi.fn()
     render(
       <LedgerTable
@@ -482,10 +570,8 @@ describe('LedgerTable', () => {
     await userEvent.click(screen.getByRole('columnheader', { name: /ML/ }))
     expect(onSortChange).toHaveBeenCalledWith({ key: 'ml', direction: 'desc' })
     await userEvent.click(screen.getByRole('separator', { name: 'Resize ML' }))
-    screen.getByRole('button', { name: 'Sort ML' }).focus()
-    await userEvent.tab()
-    expect(screen.getByRole('button', { name: 'Move ML' })).toHaveFocus()
-    await userEvent.keyboard(' ')
+    act(() => screen.getByRole('columnheader', { name: 'ML' }).focus())
+    await userEvent.keyboard('m')
     await waitFor(() =>
       expect(screen.getByRole('columnheader', { name: /ML/ })).toHaveClass(
         'ledger-header-cell--dragging',
@@ -495,7 +581,7 @@ describe('LedgerTable', () => {
     expect(onSortChange).toHaveBeenCalledTimes(1)
   })
 
-  it('renders a column marked unsortable without a sort button but with a reorder handle', () => {
+  it('renders a static header with the same focus and reorder affordance', () => {
     const staticColumns = columns.map((column) =>
       column.key === 'pack' ? { ...column, isSortable: false } : column,
     )
@@ -512,10 +598,9 @@ describe('LedgerTable', () => {
     )
     const packHeader = screen.getByRole('columnheader', { name: /Pack/ })
     expect(packHeader).not.toHaveAttribute('aria-sort')
-    expect(screen.queryByRole('button', { name: 'Sort Pack' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Move Pack' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sort Name' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Sort ML' })).toBeInTheDocument()
+    expect(packHeader).toHaveAttribute('aria-description', expect.stringContaining('M'))
+    expect(packHeader).toHaveAttribute('tabindex', '-1')
+    expect(screen.queryByRole('button', { name: /^Sort |^Move / })).toBeNull()
   })
 
   it('keeps the body as the only rowgroup tab stop when the list shrinks', async () => {
@@ -621,7 +706,7 @@ describe('LedgerTable', () => {
         DOMRect.fromRect({ ...headerRects[index], y: 0, height: 30 }),
       )
     })
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Sort ML' }), {
+    fireEvent.pointerDown(screen.getByRole('columnheader', { name: 'ML' }), {
       button: 0,
       pointerId: 1,
       isPrimary: true,
@@ -640,7 +725,44 @@ describe('LedgerTable', () => {
     ).toEqual(['name', 'pack', 'ml'])
   })
 
-  it('reorders a static column from its keyboard handle', async () => {
+  it('moves a column one step with Shift+Arrow and announces the position', async () => {
+    render(
+      <LedgerTable
+        columns={columns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    const ml = screen.getByRole('columnheader', { name: 'ML' })
+    act(() => ml.focus())
+    await userEvent.keyboard('{Shift>}{ArrowRight}{/Shift}')
+    expect(screen.getAllByRole('columnheader').map((header) => header.dataset.columnKey)).toEqual([
+      'name',
+      'pack',
+      'ml',
+    ])
+    expect(ml).toHaveFocus()
+    expect(screen.getByTestId('ledger-header-announcement')).toHaveTextContent(
+      'ML moved to position 3 of 3.',
+    )
+    await userEvent.keyboard('{Shift>}{ArrowRight}{/Shift}{Shift>}{ArrowLeft}{/Shift}')
+    expect(screen.getAllByRole('columnheader').map((header) => header.dataset.columnKey)).toEqual([
+      'name',
+      'ml',
+      'pack',
+    ])
+    expect(ml).toHaveFocus()
+  })
+
+  it.each([
+    ['M', 'm'],
+    ['Enter', '{Enter}'],
+    ['Space', ' '],
+  ])('grabs a static header with M, moves it, and drops with %s', async (_key, dropKey) => {
     const staticColumns = columns.map((column) =>
       column.key === 'pack' ? { ...column, isSortable: false } : column,
     )
@@ -660,12 +782,9 @@ describe('LedgerTable', () => {
         DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
       )
     })
-    screen.getByRole('button', { name: 'Sort ML' }).focus()
-    await userEvent.tab()
-    await userEvent.tab()
-    const reorderHandle = screen.getByRole('button', { name: 'Move Pack' })
-    expect(reorderHandle).toHaveFocus()
-    await userEvent.keyboard(' ')
+    const packHeader = screen.getByRole('columnheader', { name: 'Pack' })
+    act(() => packHeader.focus())
+    await userEvent.keyboard('m')
     await waitFor(() =>
       expect(screen.getByRole('columnheader', { name: /Pack/ })).toHaveClass(
         'ledger-header-cell--dragging',
@@ -677,11 +796,75 @@ describe('LedgerTable', () => {
         'ledger-header-cell--over',
       ),
     )
-    await userEvent.keyboard(' ')
+    await userEvent.keyboard(dropKey)
     expect(
       screen.getAllByRole('columnheader').map((header) => header.getAttribute('data-column-key')),
     ).toEqual(['name', 'pack', 'ml'])
-    expect(reorderHandle).toHaveFocus()
+    expect(packHeader).toHaveFocus()
+  })
+
+  it('announces picked up, over, dropped, and cancelled columns by label', async () => {
+    render(
+      <LedgerTable
+        columns={columns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    screen.getAllByRole('columnheader').forEach((header, index) => {
+      vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+      )
+    })
+    const ml = screen.getByRole('columnheader', { name: 'ML' })
+    const pack = screen.getByRole('columnheader', { name: 'Pack' })
+    const liveRegion = document.querySelector<HTMLElement>('[id^="DndLiveRegion-"]')
+    expect(liveRegion).not.toBeNull()
+    act(() => ml.focus())
+    await userEvent.keyboard('m')
+    await waitFor(() => expect(liveRegion).toHaveTextContent('Picked up ML.'))
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(() => expect(pack).toHaveClass('ledger-header-cell--over'))
+    await waitFor(() => expect(liveRegion).toHaveTextContent('ML is over Pack.'))
+    await userEvent.keyboard(' ')
+    await waitFor(() => expect(liveRegion).toHaveTextContent('ML moved to position 3 of 3.'))
+    await userEvent.keyboard('m')
+    await waitFor(() => expect(ml).toHaveClass('ledger-header-cell--dragging'))
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(liveRegion).toHaveTextContent('Move of ML cancelled.'))
+  })
+
+  it('cancels a grabbed header with Escape and preserves its order', async () => {
+    render(
+      <LedgerTable
+        columns={columns}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    screen.getAllByRole('columnheader').forEach((header, index) => {
+      vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+      )
+    })
+    const ml = screen.getByRole('columnheader', { name: 'ML' })
+    act(() => ml.focus())
+    await userEvent.keyboard('m{ArrowRight}{Escape}')
+    expect(ml).not.toHaveClass('ledger-header-cell--dragging')
+    expect(screen.getAllByRole('columnheader').map((header) => header.dataset.columnKey)).toEqual([
+      'name',
+      'ml',
+      'pack',
+    ])
+    expect(ml).toHaveFocus()
   })
 
   it('reorders a static column from its label with the pointer', () => {
