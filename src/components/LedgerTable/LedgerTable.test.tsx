@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useRef } from 'react'
+import { StrictMode, useRef } from 'react'
 import { LedgerTable } from './LedgerTable'
+import { HoverCardProvider } from '../HoverCard'
 import type { LedgerColumn } from './ledgerModel'
 
 const ledgerStyles = readFileSync('src/components/LedgerTable/LedgerTable.css', 'utf8')
@@ -52,29 +53,23 @@ describe('LedgerTable', () => {
       ([, style]) => style.includes('cursor: pointer'),
     )?.[1]
     const selectedStyle = ledgerStyles.match(/\.ledger-row--selected\s*\{([^}]+)\}/)?.[1]
-    const highlightedStyle = ledgerStyles.match(
-      /\.ledger-row--keyboard-highlighted\s*\{([^}]+)\}/,
-    )?.[1]
     const selectedNameStyle = ledgerStyles.match(
       /\.ledger-row--selected \.ledger-cell--primary\s*\{([^}]+)\}/,
     )?.[1]
     const focusedStyle = ledgerStyles.match(
-      /\.ledger-table \.ledger-row:focus-visible\s*\{([^}]+)\}/,
+      /\.ledger-table \.ledger-row:is\(:hover, :focus-visible\):not\(\.ledger-row--selected\)\s*\{([^}]+)\}/,
     )?.[1]
     const unpinnedFocusStyle = ledgerStyles.match(
       /\.ledger-table \.ledger-row:focus-visible:not\(\[data-hover-card-pinned\]\)\s*\{([^}]+)\}/,
     )?.[1]
     const globalFocusStyle = globalStyles.match(/^:focus-visible\s*\{([^}]+)\}/m)?.[1]
-    expect(rowStyle).toContain(
-      '&:hover:not(.ledger-row--selected, .ledger-row--keyboard-highlighted, :focus-visible)',
-    )
+    expect(rowStyle).not.toContain('&:hover')
     expect(selectedStyle).toContain('background: var(--surface-selected)')
     expect(selectedStyle).not.toMatch(/box-shadow|outline|border-left/)
     expect(selectedNameStyle).toContain('color: var(--text-accent)')
     expect(selectedNameStyle).toContain('font-weight: var(--fw-semibold)')
-    expect(highlightedStyle).toContain('background: var(--surface-active)')
-    expect(highlightedStyle).not.toMatch(/box-shadow|outline|border-left/)
-    expect(focusedStyle).toContain('background: var(--surface-active)')
+    expect(ledgerStyles).not.toContain('ledger-row--keyboard-highlighted')
+    expect(focusedStyle).toContain('background: var(--surface-hover)')
     expect(unpinnedFocusStyle).toContain('outline: 2px solid transparent')
     expect(globalFocusStyle).toContain('outline: 2px solid var(--border-focus)')
 
@@ -100,7 +95,7 @@ describe('LedgerTable', () => {
     )
   })
 
-  it('skips heading rows when navigating from an external input', async () => {
+  it('moves focus from search through rows while skipping headings and keeping focus on Enter', async () => {
     const groupedRows = [{ id: 0, name: 'Items', ml: 0 }, ...rows]
     const onRowActivate = vi.fn()
     function SearchableLedger(): React.JSX.Element {
@@ -122,16 +117,214 @@ describe('LedgerTable', () => {
       )
     }
     render(<SearchableLedger />)
-    screen.getByRole('textbox', { name: 'Search rows' }).focus()
+    const search = screen.getByRole('textbox', { name: 'Search rows' })
+    search.focus()
     await userEvent.keyboard('{ArrowDown}')
-    expect(screen.getByRole('row', { name: /Belt/ })).toHaveClass(
-      'ledger-row--keyboard-highlighted',
-    )
-    expect(screen.getByRole('row', { name: /Items/ })).not.toHaveClass(
-      'ledger-row--keyboard-highlighted',
-    )
+    expect(screen.getByRole('row', { name: /Belt/ })).toHaveFocus()
+    expect(search).not.toHaveFocus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('row', { name: /Back/ })).toHaveFocus()
     await userEvent.keyboard('{End}{Enter}')
+    expect(screen.getByRole('row', { name: /Body/ })).toHaveFocus()
     expect(onRowActivate).toHaveBeenCalledWith(rows[2], 'keyboard')
+    await userEvent.keyboard('{Home}{ArrowUp}')
+    expect(screen.getByRole('row', { name: /Belt/ })).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+    expect(body).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    expect(screen.getByRole('row', { name: /Belt/ })).toHaveFocus()
+    search.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('row', { name: /Belt/ })).toHaveFocus()
+  })
+
+  it('enters the body at the selected row and exits to the body on Escape', async () => {
+    render(
+      <>
+        <button>Before table</button>
+        <LedgerTable
+          columns={columns}
+          rowCount={rows.length}
+          rowAt={(index) => rows[index]}
+          rowKey={(row) => row.id}
+          selectedRowKey={2}
+          onRowActivate={vi.fn()}
+          isVirtualized={false}
+        />
+        <button>After table</button>
+      </>,
+    )
+    const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+    screen.getByRole('button', { name: 'Before table' }).focus()
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'Sort Name' })).toHaveFocus()
+    body.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(screen.getByRole('row', { name: /Back/ })).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    expect(body).toHaveFocus()
+    await userEvent.tab()
+    expect(screen.getByRole('button', { name: 'After table' })).toHaveFocus()
+    await userEvent.tab({ shift: true })
+    expect(body).toHaveFocus()
+  })
+
+  it('opens the focused row card after the hover delay, switches cards, and pins with T', () => {
+    vi.useFakeTimers()
+    try {
+      render(
+        <HoverCardProvider>
+          <LedgerTable
+            columns={columns}
+            rowCount={rows.length}
+            rowAt={(index) => rows[index]}
+            rowKey={(row) => row.id}
+            onRowActivate={vi.fn()}
+            hoverCard={(row) => ({
+              kind: 'item',
+              delayMs: 260,
+              render: () => <span>{row.name} card</span>,
+            })}
+            isVirtualized={false}
+          />
+        </HoverCardProvider>,
+      )
+      const belt = screen.getByRole('row', { name: /Belt/ })
+      const back = screen.getByRole('row', { name: /Back/ })
+      act(() => belt.focus())
+      act(() => vi.advanceTimersByTime(259))
+      expect(screen.queryByRole('dialog')).toBeNull()
+      act(() => vi.advanceTimersByTime(1))
+      expect(screen.getByText('Belt card')).toBeInTheDocument()
+      act(() => back.focus())
+      expect(screen.queryByRole('dialog')).toBeNull()
+      act(() => vi.advanceTimersByTime(260))
+      expect(screen.getByText('Back card')).toBeInTheDocument()
+      fireEvent.keyDown(back, { key: 't' })
+      act(() => vi.runOnlyPendingTimers())
+      expect(back).toHaveAttribute('data-hover-card-pinned')
+      expect(screen.getByRole('dialog')).toHaveFocus()
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(back).toHaveFocus()
+      expect(back).not.toHaveAttribute('data-hover-card-pinned')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('leaves an unpinned focused row card on Escape and returns to the table body', () => {
+    vi.useFakeTimers()
+    try {
+      render(
+        <HoverCardProvider>
+          <LedgerTable
+            columns={columns}
+            rowCount={rows.length}
+            rowAt={(index) => rows[index]}
+            rowKey={(row) => row.id}
+            onRowActivate={vi.fn()}
+            hoverCard={(row) => ({
+              kind: 'item',
+              delayMs: 260,
+              render: () => <span>{row.name} card</span>,
+            })}
+            isVirtualized={false}
+          />
+        </HoverCardProvider>,
+      )
+      const belt = screen.getByRole('row', { name: /Belt/ })
+      const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+      act(() => belt.focus())
+      act(() => vi.advanceTimersByTime(260))
+      expect(screen.getByText('Belt card')).toBeInTheDocument()
+      fireEvent.keyDown(belt, { key: 'Escape' })
+      expect(body).toHaveFocus()
+      expect(screen.queryByRole('dialog')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('opens cards after focus jumps in a virtualized ledger', () => {
+    vi.useFakeTimers()
+    const originalScrollTo = HTMLElement.prototype.scrollTo
+    HTMLElement.prototype.scrollTo = function (
+      options: ScrollToOptions | number = {},
+      y?: number,
+    ): void {
+      this.scrollTop = (typeof options === 'number' ? y : options.top) ?? 0
+      fireEvent.scroll(this)
+    }
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private callback: ResizeObserverCallback
+        constructor(callback: ResizeObserverCallback) {
+          this.callback = callback
+        }
+        observe(target: Element): void {
+          if (!target.classList.contains('ledger-body')) return
+          this.callback(
+            [{ target, contentRect: new DOMRect(0, 0, 600, 128) } as ResizeObserverEntry],
+            this as ResizeObserver,
+          )
+        }
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    )
+    try {
+      const virtualRows = Array.from({ length: 120 }, (_, index) => ({
+        id: index + 1,
+        name: `Belt ${index + 1}`,
+        ml: index + 1,
+      }))
+      function VirtualLedger(): React.JSX.Element {
+        const navigationInputRef = useRef<HTMLInputElement>(null)
+        return (
+          <HoverCardProvider>
+            <input ref={navigationInputRef} aria-label="Search rows" />
+            <LedgerTable
+              columns={columns}
+              rowCount={virtualRows.length}
+              rowAt={(index) => virtualRows[index]}
+              rowKey={(row) => row.id}
+              onRowActivate={vi.fn()}
+              navigationInputRef={navigationInputRef}
+              hoverCard={(row) => ({
+                kind: 'item',
+                delayMs: 260,
+                render: () => <span>{row.name} card</span>,
+              })}
+            />
+          </HoverCardProvider>
+        )
+      }
+      render(
+        <StrictMode>
+          <VirtualLedger />
+        </StrictMode>,
+      )
+      const body = document.querySelector<HTMLElement>('.ledger-body')!
+      act(() => body.focus())
+      fireEvent.keyDown(body, { key: 'Enter' })
+      expect(screen.getByRole('row', { name: /Belt 1/ })).toHaveFocus()
+      act(() => vi.advanceTimersByTime(260))
+      expect(screen.getByText('Belt 1 card')).toBeInTheDocument()
+      expect(screen.queryByRole('row', { name: /Belt 120/ })).toBeNull()
+      const search = screen.getByRole('textbox', { name: 'Search rows' })
+      act(() => search.focus())
+      fireEvent.keyDown(search, { key: 'ArrowUp' })
+      expect(body.scrollTop).toBeGreaterThan(0)
+      expect(screen.getByRole('row', { name: /Belt 120/ })).toHaveFocus()
+      act(() => vi.advanceTimersByTime(260))
+      expect(screen.getByText('Belt 120 card')).toBeInTheDocument()
+    } finally {
+      HTMLElement.prototype.scrollTo = originalScrollTo
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
   })
 
   it('sorts from headers and navigates with one tab stop', async () => {
@@ -155,11 +348,12 @@ describe('LedgerTable', () => {
         .map((row) => row.textContent),
     ).toEqual(['Back20Pack', 'Body12Pack', 'Belt4Pack'])
     const firstRow = screen.getAllByRole('row')[1]
-    firstRow.focus()
+    act(() => firstRow.focus())
     await userEvent.keyboard('{ArrowDown}{End}{Home}{Enter}')
     expect(screen.getAllByRole('row')[1]).toHaveFocus()
     expect(onRowActivate).toHaveBeenCalledWith(rows[1], 'keyboard')
-    expect(screen.getAllByRole('row').filter((row) => row.tabIndex === 0)).toHaveLength(1)
+    expect(screen.getAllByRole('row').filter((row) => row.tabIndex === 0)).toHaveLength(0)
+    expect(document.querySelector('.ledger-plain-body')).toHaveAttribute('tabindex', '0')
   })
 
   it('hides columns at narrow widths and keeps selection marked', () => {
@@ -205,6 +399,32 @@ describe('LedgerTable', () => {
     expect(
       screen.getAllByRole('columnheader').filter((header) => header.tabIndex >= 0),
     ).toHaveLength(0)
+  })
+
+  it('tabs through sortable header controls in exactly reverse order with Shift+Tab', async () => {
+    render(
+      <LedgerTable
+        columns={columns.slice(0, 2)}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+      />,
+    )
+    const stops = ['Sort Name', 'Move Name', 'Sort ML', 'Move ML']
+    screen.getByRole('button', { name: stops[0] }).focus()
+    for (const name of stops.slice(1)) {
+      await userEvent.tab()
+      expect(screen.getByRole('button', { name })).toHaveFocus()
+    }
+    for (const name of stops.slice(0, -1).reverse()) {
+      await userEvent.tab({ shift: true })
+      expect(screen.getByRole('button', { name })).toHaveFocus()
+    }
+    expect(ledgerStyles).not.toMatch(
+      /\.ledger-header-cell:has\(\.ledger-header-reorder:focus-visible\)[\s\S]*?visibility: hidden/,
+    )
   })
 
   it('sorts on a plain header click but not on its resize grip or reorder handle', async () => {
@@ -260,7 +480,7 @@ describe('LedgerTable', () => {
     expect(screen.getByRole('button', { name: 'Sort ML' })).toBeInTheDocument()
   })
 
-  it('keeps one row tabbable when the list shrinks below the previous focus', async () => {
+  it('keeps the body as the only rowgroup tab stop when the list shrinks', async () => {
     const { rerender } = render(
       <LedgerTable
         columns={columns}
@@ -271,7 +491,7 @@ describe('LedgerTable', () => {
         isVirtualized={false}
       />,
     )
-    screen.getAllByRole('row')[3].focus()
+    act(() => screen.getAllByRole('row')[3].focus())
     rerender(
       <LedgerTable
         columns={columns}
@@ -282,7 +502,8 @@ describe('LedgerTable', () => {
         isVirtualized={false}
       />,
     )
-    expect(screen.getAllByRole('row')[1]).toHaveAttribute('tabindex', '0')
+    expect(document.querySelector('.ledger-plain-body')).toHaveAttribute('tabindex', '0')
+    expect(screen.getAllByRole('row')[1]).toHaveAttribute('tabindex', '-1')
   })
 
   it('requests more rows at End and continues keyboard navigation after rows append', async () => {

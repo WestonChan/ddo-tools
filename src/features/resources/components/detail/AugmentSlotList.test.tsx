@@ -102,15 +102,28 @@ it('opens a plain ledger of fitting augments with name, level and slots but no s
   expect(document.querySelector('[aria-selected]')).toBeNull()
 })
 
-it('toggles with keyboard, allows ledger arrows, and closes on Escape', async () => {
+it('enters the augment ledger from its body and returns to the body on Escape', async () => {
   render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
   const button = screen.getByRole('button', { name: /Red/ })
   button.focus()
   await userEvent.keyboard('{Enter}')
   const rows = screen.getAllByRole('row').filter((row) => row.classList.contains('ledger-row'))
-  rows[0].focus()
+  const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+  expect(body).toHaveAttribute('tabindex', '0')
+  expect(rows.every((row) => row.tabIndex === -1)).toBe(true)
+  body.focus()
+  await userEvent.keyboard('{Enter}')
+  expect(rows[0]).toHaveFocus()
   await userEvent.keyboard('{ArrowDown}')
   expect(rows[1]).toHaveFocus()
+  await userEvent.keyboard('{Enter}')
+  expect(rows[1]).toHaveFocus()
+  await userEvent.keyboard('{Escape}')
+  expect(body).toHaveFocus()
+  expect(screen.getByRole('table')).toBeInTheDocument()
+  await userEvent.keyboard('{Escape}')
+  expect(body).toHaveFocus()
+  button.focus()
   await userEvent.keyboard('{Escape}')
   expect(screen.queryByRole('table')).toBeNull()
   expect(button).toHaveAttribute('aria-expanded', 'false')
@@ -130,19 +143,27 @@ it('closes the first table when another socket opens and closes on a second clic
   expect(screen.queryByRole('table')).toBeNull()
 })
 
-it('lets Escape close the augment hover card before closing its table', async () => {
+it('opens a focused augment card, pins with T, and pops it before returning to the table body', async () => {
   render(
     <HoverCardProvider>
       <AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />
     </HoverCardProvider>,
   )
   await userEvent.click(screen.getByRole('button', { name: /Red/ }))
+  const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+  body.focus()
+  await userEvent.keyboard('{Enter}')
   const row = screen.getByRole('row', { name: /Ruby of Flame/ })
-  await userEvent.hover(row)
+  expect(row).toHaveFocus()
   await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+  await userEvent.keyboard('t')
+  expect(row).toHaveAttribute('data-hover-card-pinned')
+  expect(screen.getByRole('dialog')).toHaveFocus()
   await userEvent.keyboard('{Escape}')
   expect(screen.queryByRole('dialog')).toBeNull()
+  expect(row).toHaveFocus()
   expect(screen.getByRole('table')).toBeInTheDocument()
   await userEvent.keyboard('{Escape}')
-  expect(screen.queryByRole('table')).toBeNull()
+  expect(body).toHaveFocus()
+  expect(screen.getByRole('table')).toBeInTheDocument()
 })

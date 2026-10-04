@@ -131,17 +131,6 @@ function ResourcesView(): JSX.Element {
     }
   }, [selectedResourceId, isSingleColumn])
 
-  useEffect(() => {
-    if (selectedResourceId === null) return
-    function closeDetailOnEscape(event: KeyboardEvent): void {
-      if (event.key !== 'Escape' || event.defaultPrevented) return
-      event.preventDefault()
-      closeDetail()
-    }
-    document.addEventListener('keydown', closeDetailOnEscape)
-    return () => document.removeEventListener('keydown', closeDetailOnEscape)
-  }, [selectedResourceId, closeDetail])
-
   const resourceInUrl = selectedResourceId !== null ? { category, id: selectedResourceId } : null
 
   function openItemFromHover(id: number): void {

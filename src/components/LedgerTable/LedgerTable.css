@@ -99,7 +99,8 @@
 
 .ledger-header-cell:has(.ledger-header-reorder:focus-visible) .ledger-sort-button,
 .ledger-header-cell:has(.ledger-header-reorder:focus-visible) .ledger-header-label {
-  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .ledger-header-cell[aria-sort='ascending'] .ledger-sort-button,
@@ -151,14 +152,10 @@
   color: var(--text-body);
   font-size: var(--fs-body-sm);
   cursor: pointer;
-
-  &:hover:not(.ledger-row--selected, .ledger-row--keyboard-highlighted, :focus-visible) {
-    background: var(--surface-hover);
-  }
 }
 
-.ledger-table .ledger-row:focus-visible {
-  background: var(--surface-active);
+.ledger-table .ledger-row:is(:hover, :focus-visible):not(.ledger-row--selected) {
+  background: var(--surface-hover);
 }
 
 .ledger-table .ledger-row:focus-visible:not([data-hover-card-pinned]) {
@@ -172,10 +169,6 @@
 .ledger-row--selected .ledger-cell--primary {
   color: var(--text-accent);
   font-weight: var(--fw-semibold);
-}
-
-.ledger-row--keyboard-highlighted {
-  background: var(--surface-active);
 }
 
 .ledger-row--heading,

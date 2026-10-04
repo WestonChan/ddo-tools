@@ -152,7 +152,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     expect(input).toHaveValue('a/b')
   })
 
-  it('closes the detail on Escape even when focus sits outside the view', async () => {
+  it('does not close the detail on Escape when focus sits outside the view', async () => {
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
     ;(document.activeElement as HTMLElement | null)?.blur()
@@ -160,7 +160,7 @@ describe('ResourcesView keyboard shortcuts', () => {
 
     await userEvent.keyboard('{Escape}')
 
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items', replace: true })
+    expect(navigateMock).not.toHaveBeenCalled()
   })
 
   it('ignores Escape when the detail is already closed', async () => {
@@ -208,7 +208,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     }
   })
 
-  it('focuses the opened detail after Enter from search in the narrow layout', async () => {
+  it('focuses the opened detail after Enter from a row in the narrow layout', async () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
     try {
@@ -218,6 +218,7 @@ describe('ResourcesView keyboard shortcuts', () => {
       await userEvent.keyboard('{ArrowDown}{Enter}')
       expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
       expect(search).not.toHaveFocus()
+      expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
 
       mockRouteParams = { category: 'items', id: '42' }
       view.rerender(<ResourcesView />)
@@ -228,7 +229,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     }
   })
 
-  it('keeps focus on the opened row after Enter from search beside the detail', async () => {
+  it('keeps focus on the opened row after Enter beside the detail', async () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
     try {
@@ -247,7 +248,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     }
   })
 
-  it('clears the highlight before search text without closing the selected detail', async () => {
+  it('returns from a row to its body without closing the selected detail', async () => {
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: 'Search items' })
@@ -255,11 +256,14 @@ describe('ResourcesView keyboard shortcuts', () => {
     await userEvent.type(input, 'torc')
     await userEvent.keyboard('{ArrowDown}{Escape}')
     expect(input).toHaveValue('torc')
-    expect(input).toHaveFocus()
+    expect(document.querySelector('.ledger-body')).toHaveFocus()
     expect(navigateMock).not.toHaveBeenCalled()
     await userEvent.keyboard('{Escape}')
+    expect(input).toHaveValue('torc')
+    expect(document.querySelector('.ledger-body')).toHaveFocus()
+    input.focus()
+    await userEvent.keyboard('{Escape}')
     expect(input).toHaveValue('')
-    expect(input).toHaveFocus()
     expect(navigateMock).not.toHaveBeenCalled()
   })
 })

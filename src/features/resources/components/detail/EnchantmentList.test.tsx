@@ -116,6 +116,47 @@ it('shows hover variant enchantment rows without a section heading', () => {
 })
 
 describe('EnchantmentList', () => {
+  it('enters its ledger, skips set headings and tiers, and returns from a pinned bonus card', () => {
+    vi.useFakeTimers()
+    const item = toItem(capturedRing as ApiItemDetail)
+    const set = toSetDetail(capturedSet)
+    const onOpenItem = vi.fn()
+    render(
+      <HoverCardProvider>
+        <EnchantmentList
+          itemName={item.name}
+          bonuses={item.bonuses}
+          effects={item.effects}
+          setDetail={set}
+          onOpenItem={onOpenItem}
+        />
+      </HoverCardProvider>,
+    )
+    const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+    const rows = screen.getAllByRole('row').filter((row) => row.classList.contains('ledger-row'))
+    expect(body).toHaveAttribute('tabindex', '0')
+    expect(rows.every((row) => row.tabIndex === -1)).toBe(true)
+    act(() => body.focus())
+    fireEvent.keyDown(body, { key: 'Enter' })
+    expect(rows[0]).toHaveFocus()
+    act(() => vi.advanceTimersByTime(120))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    fireEvent.keyDown(rows[0], { key: 't' })
+    act(() => vi.runOnlyPendingTimers())
+    expect(rows[0]).toHaveAttribute('data-hover-card-pinned')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(rows[0]).toHaveFocus()
+    fireEvent.keyDown(rows[0], { key: 'End' })
+    const lastBonus = rows.at(-1)!
+    expect(lastBonus).toHaveFocus()
+    expect(lastBonus).not.toHaveClass('ledger-row--heading')
+    expect(lastBonus).not.toHaveClass('ledger-row--subheading')
+    fireEvent.keyDown(lastBonus, { key: 'Enter' })
+    expect(onOpenItem).not.toHaveBeenCalled()
+    fireEvent.keyDown(lastBonus, { key: 'Escape' })
+    expect(body).toHaveFocus()
+  })
+
   it('appends sortable set tiers and highlights a stat without inventing an enchantment name', () => {
     render(
       <EnchantmentList

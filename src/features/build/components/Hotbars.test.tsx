@@ -301,13 +301,16 @@ describe('Hotbars', () => {
     expect(router.state.location.pathname).toBe('/damage-calc')
   })
 
-  it('dismisses the stat block with Escape while it is shown', async () => {
+  it('keeps an unpinned stat block on Escape until hover ends', async () => {
     await renderHotbars()
-    await userEvent.hover(slotButton('Nukes', 4))
+    const polarRay = slotButton('Nukes', 4)
+    await userEvent.hover(polarRay)
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
     await userEvent.keyboard('{Escape}')
 
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await userEvent.unhover(polarRay)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 

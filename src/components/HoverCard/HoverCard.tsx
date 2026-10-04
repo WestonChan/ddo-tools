@@ -212,11 +212,15 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         -1,
       )
       if (event.key === 'Escape') {
-        if (topCardIndex >= 0) {
+        const topPinnedCardIndex = cards.reduce(
+          (index, card, cardIndex) => (card.isPinned ? cardIndex : index),
+          -1,
+        )
+        if (topPinnedCardIndex >= 0) {
           event.preventDefault()
           event.stopImmediatePropagation()
-          setCards((current) => current.slice(0, topCardIndex))
-        } else if (cards.length) setCards([])
+          setCards((current) => current.slice(0, topPinnedCardIndex))
+        } else if (cards.length > 0 && cards.every((card) => card.kind === 'hint')) setCards([])
       } else if (
         event.key.toLowerCase() === 't' &&
         topCardIndex >= 0 &&
@@ -333,11 +337,18 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
   const controller = useContext(ControllerContext)
   const depth = useContext(DepthContext)
   const anchorId = useId()
+  const anchorElement = useRef<HTMLElement | null>(null)
   const removeAnchor = controller?.removeAnchor
-  useEffect(() => () => removeAnchor?.(anchorId), [removeAnchor, anchorId])
+  useEffect(
+    () => () => {
+      if (anchorElement.current && !anchorElement.current.isConnected) removeAnchor?.(anchorId)
+    },
+    [removeAnchor, anchorId],
+  )
   return {
     'data-hover-card-pinned': controller?.pinnedAnchorIds.has(anchorId) ? '' : undefined,
-    onMouseEnter: (event) =>
+    onMouseEnter: (event) => {
+      anchorElement.current = event.currentTarget
       controller?.open(
         {
           kind,
@@ -350,9 +361,11 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           render,
         },
         delayMs,
-      ),
+      )
+    },
     onMouseLeave: () => controller?.closeFrom(depth),
     onFocus: (event) => {
+      anchorElement.current = event.currentTarget
       if (controller?.isRestoringAnchorFocus(event.currentTarget)) return
       controller?.open(
         {
@@ -365,12 +378,13 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           pointerX: null,
           render,
         },
-        0,
+        delayMs,
       )
     },
     onBlur: () => controller?.closeFrom(depth),
     onKeyDown: (event) => {
       if (event.key.toLowerCase() !== 't' || isTypingTarget(event.target)) return
+      anchorElement.current = event.currentTarget
       event.preventDefault()
       event.stopPropagation()
       controller?.open(

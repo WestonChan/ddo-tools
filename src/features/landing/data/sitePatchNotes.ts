@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-03',
     changes: [
+      'Arrow keys from the search step into the list; the focused row acts as hovered (its card opens, T pins it), Enter opens it and keeps your place, Escape steps back out; every table in the item detail works the same way, Shift+Tab mirrors Tab across the header, and Escape no longer closes the item',
       'List rows show selection and keyboard position as fills only; the accent border now means one thing, the row or link whose hover card is pinned, and pinning no longer lights up the nav',
       'Press / to jump to the item search even with an item open; arrow keys, Home, End and Enter walk the results only while the search box has focus, and Enter opens the row and leaves the search',
       "An item's key stats (damage, crit, armor or shield bonus, max Dex, enhancement) are cells at the top of its detail and hover card; the remaining details are tags behind More details, with each damage-reduction bypass its own tag",

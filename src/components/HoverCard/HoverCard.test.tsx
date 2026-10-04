@@ -71,6 +71,31 @@ function renderOpenItemCard(): HTMLElement {
   return itemAnchor
 }
 
+it('opens from focus after the pointer delay, switches anchors, and pins with T', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  const [firstAnchor, secondAnchor] = screen.getAllByRole('button', { name: 'Item anchor' })
+  act(() => firstAnchor.focus())
+  act(() => vi.advanceTimersByTime(259))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  act(() => vi.advanceTimersByTime(1))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  act(() => secondAnchor.focus())
+  expect(screen.queryByRole('dialog')).toBeNull()
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.keyDown(secondAnchor, { key: 't' })
+  act(() => vi.runOnlyPendingTimers())
+  expect(secondAnchor).toHaveAttribute('data-hover-card-pinned')
+  fireEvent.keyDown(document, { key: 'Escape' })
+  expect(secondAnchor).toHaveFocus()
+})
+
 it('moves focus from an unrelated link into a pinned card and back to its anchor on Escape', () => {
   vi.useFakeTimers()
   render(
