@@ -227,12 +227,13 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           const focusedElement = document.activeElement
           const focusedCardIndex = cards.reduce(
             (index, card, cardIndex) =>
-              card.openedBy === 'focus' && card.anchorElement?.contains(focusedElement)
+              card.anchorElement?.contains(focusedElement) &&
+              (card.openedBy === 'focus' || card.anchorElement.matches('.ledger-row'))
                 ? cardIndex
                 : index,
             -1,
           )
-          if (focusedCardIndex < 0 || focusedElement?.closest('.ledger-row')) return
+          if (focusedCardIndex < 0) return
           const focusedCard = cards[focusedCardIndex]
           if (focusedCard.kind !== 'hint') {
             event.preventDefault()

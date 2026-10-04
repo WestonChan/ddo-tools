@@ -208,12 +208,14 @@ describe('LedgerTable', () => {
       fireEvent.keyDown(document, { key: 'Escape' })
       expect(back).toHaveFocus()
       expect(back).not.toHaveAttribute('data-hover-card-pinned')
+      fireEvent.keyDown(back, { key: 'Escape' })
+      expect(document.querySelector('.ledger-plain-body')).toHaveFocus()
     } finally {
       vi.useRealTimers()
     }
   })
 
-  it('leaves an unpinned focused row card on Escape and returns to the table body', () => {
+  it('closes an unpinned focused row card before returning to the table body', () => {
     vi.useFakeTimers()
     try {
       render(
@@ -239,7 +241,43 @@ describe('LedgerTable', () => {
       act(() => vi.advanceTimersByTime(260))
       expect(screen.getByText('Belt card')).toBeInTheDocument()
       fireEvent.keyDown(belt, { key: 'Escape' })
+      expect(belt).toHaveFocus()
+      expect(screen.queryByRole('dialog')).toBeNull()
+      fireEvent.keyDown(belt, { key: 'Escape' })
       expect(body).toHaveFocus()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('returns to the table body and cancels a row card that has not opened', () => {
+    vi.useFakeTimers()
+    try {
+      render(
+        <HoverCardProvider>
+          <LedgerTable
+            columns={columns}
+            rowCount={rows.length}
+            rowAt={(index) => rows[index]}
+            rowKey={(row) => row.id}
+            onRowActivate={vi.fn()}
+            hoverCard={(row) => ({
+              kind: 'item',
+              delayMs: 260,
+              render: () => <span>{row.name} card</span>,
+            })}
+            isVirtualized={false}
+          />
+        </HoverCardProvider>,
+      )
+      const belt = screen.getByRole('row', { name: /Belt/ })
+      const body = document.querySelector<HTMLElement>('.ledger-plain-body')!
+      act(() => belt.focus())
+      act(() => vi.advanceTimersByTime(259))
+      expect(screen.queryByRole('dialog')).toBeNull()
+      fireEvent.keyDown(belt, { key: 'Escape' })
+      expect(body).toHaveFocus()
+      act(() => vi.advanceTimersByTime(260))
       expect(screen.queryByRole('dialog')).toBeNull()
     } finally {
       vi.useRealTimers()

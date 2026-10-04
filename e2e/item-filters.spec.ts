@@ -206,6 +206,9 @@ for (const theme of ['dark', 'light']) {
     await expect(page).toHaveURL(/\/resources\/items\/3$/)
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.keyboard.press('Escape')
+    await expect(rows.nth(3)).toBeFocused()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await page.keyboard.press('Escape')
     await expect(page.locator('.ledger-body')).toBeFocused()
     await expect(page).toHaveURL(/\/resources\/items\/3$/)
 

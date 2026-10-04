@@ -123,7 +123,7 @@ it('dismisses a focus-opened card without moving focus or reopening until focus 
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 })
 
-it('lets a focused ledger row claim Escape after the pointer enters it', () => {
+it('closes a card before leaving a focused ledger row, including pointer-opened cards', () => {
   vi.useFakeTimers()
   const rows = [{ id: 1, name: 'Belt' }]
   render(
@@ -155,7 +155,33 @@ it('lets a focused ledger row claim Escape after the pointer enters it', () => {
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 
   fireEvent.keyDown(row, { key: 'Escape' })
+  expect(row).toHaveFocus()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  fireEvent.mouseEnter(row)
+  act(() => vi.advanceTimersByTime(520))
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  fireEvent.keyDown(row, { key: 'Escape' })
   expect(body).toHaveFocus()
+  act(() => row.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.mouseLeave(row)
+  act(() => body.focus())
+  fireEvent.mouseEnter(row)
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.keyDown(body, { key: 'Escape' })
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  act(() => row.focus())
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.keyDown(row, { key: 'Escape' })
+  expect(row).toHaveFocus()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  fireEvent.keyDown(row, { key: 'Escape' })
+  expect(body).toHaveFocus()
+  fireEvent.mouseLeave(row)
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 

@@ -143,7 +143,7 @@ it('closes the first table when another socket opens and closes on a second clic
   expect(screen.queryByRole('table')).toBeNull()
 })
 
-it('opens a focused augment card, pins with T, and pops it before returning to the table body', async () => {
+it('closes an unpinned augment card before leaving the row and pops a pinned card', async () => {
   render(
     <HoverCardProvider>
       <AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />
@@ -155,6 +155,14 @@ it('opens a focused augment card, pins with T, and pops it before returning to t
   await userEvent.keyboard('{Enter}')
   const row = screen.getByRole('row', { name: /Ruby of Flame/ })
   expect(row).toHaveFocus()
+  await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
+  await userEvent.keyboard('{Escape}')
+  expect(row).toHaveFocus()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(screen.getByRole('table')).toBeInTheDocument()
+  await userEvent.keyboard('{Escape}')
+  expect(body).toHaveFocus()
+  await userEvent.keyboard('{Enter}')
   await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
   await userEvent.keyboard('t')
   expect(row).toHaveAttribute('data-hover-card-pinned')
