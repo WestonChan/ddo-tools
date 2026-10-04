@@ -41,49 +41,49 @@ Defined in `src/index.css`. Primitives are theme-independent; semantic aliases a
 
 ### Primitives
 
-| Ramp | Tokens | Role |
-|---|---|---|
-| Stone | `--stone-0` … `--stone-950` (0, 25, 50, 100, 200, 300, 400, 500, 600, 700, 750, 800, 850, 900, 950) | Warm-slate neutrals |
-| Gold | `--gold-200` … `--gold-700`: the ramp of the chosen accent preset (Gold by default). `applyAccent` and the pre-paint script write all six steps and `--accent` (= the 400 step) from `ACCENT_PRESETS` in `src/lib/accent.ts` | Accent |
-| Arcane | `--arcane-100` … `--arcane-700` | Secondary (comparison build, info) |
-| Moss / Amber / Rust / Violet | `--moss-400/500/600`, `--amber-400/500/600`, `--rust-400/500/600`, `--violet-400/500` | Semantic hues |
-| Damage | `--dmg-physical`, `-fire`, `-cold`, `-electric`, `-acid`, `-sonic`, `-force`, `-light`, `-negative`, `-poison` | Encodings |
-| Trees | `--tree-class` (gold), `--tree-racial` (moss), `--tree-universal` (arcane), `--tree-destiny` (violet) | Encodings |
+| Ramp                         | Tokens                                                                                                                                                                                                                       | Role                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Stone                        | `--stone-0` … `--stone-950` (0, 25, 50, 100, 200, 300, 400, 500, 600, 700, 750, 800, 850, 900, 950)                                                                                                                          | Warm-slate neutrals                |
+| Gold                         | `--gold-200` … `--gold-700`: the ramp of the chosen accent preset (Gold by default). `applyAccent` and the pre-paint script write all six steps and `--accent` (= the 400 step) from `ACCENT_PRESETS` in `src/lib/accent.ts` | Accent                             |
+| Arcane                       | `--arcane-100` … `--arcane-700`                                                                                                                                                                                              | Secondary (comparison build, info) |
+| Moss / Amber / Rust / Violet | `--moss-400/500/600`, `--amber-400/500/600`, `--rust-400/500/600`, `--violet-400/500`                                                                                                                                        | Semantic hues                      |
+| Damage                       | `--dmg-physical`, `-fire`, `-cold`, `-electric`, `-acid`, `-sonic`, `-force`, `-light`, `-negative`, `-poison`                                                                                                               | Encodings                          |
+| Trees                        | `--tree-class` (gold), `--tree-racial` (moss), `--tree-universal` (arcane), `--tree-destiny` (violet)                                                                                                                        | Encodings                          |
 
 ### Semantic aliases
 
-| Group | Tokens |
-|---|---|
-| Surfaces | `--bg-app`, `--bg-panel`, `--surface-card`, `--surface-raised`, `--surface-sunken`, `--surface-hover`, `--surface-active`, `--surface-selected`, `--scrim` |
-| Text | `--text-heading`, `--text-body`, `--text-muted`, `--text-faint`, `--text-inverse`, `--text-accent`, `--text-link`, `--text-link-hover`, `--text-numeric` |
-| Borders | `--border-hairline` (10%), `--border-default` (16%), `--border-strong` (28%), `--border-accent`, `--border-focus` |
-| Accent | `--accent-fill`, `--accent-fill-hover`, `--accent-fill-active`, `--accent-on` (text on a gold fill), `--accent-quiet` (14% wash) |
-| Secondary | `--secondary-fill`, `--secondary-quiet` |
-| Status | `--status-ok`, `--status-warn`, `--status-error`, `--status-info`, each with a `-quiet` wash |
+| Group     | Tokens                                                                                                                                                     |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Surfaces  | `--bg-app`, `--bg-panel`, `--surface-card`, `--surface-raised`, `--surface-sunken`, `--surface-hover`, `--surface-active`, `--surface-selected`, `--scrim` |
+| Text      | `--text-heading`, `--text-body`, `--text-muted`, `--text-faint`, `--text-inverse`, `--text-accent`, `--text-link`, `--text-link-hover`, `--text-numeric`   |
+| Borders   | `--border-hairline` (10%), `--border-default` (16%), `--border-strong` (28%), `--border-accent`, `--border-focus`                                          |
+| Accent    | `--accent-fill`, `--accent-fill-hover`, `--accent-fill-active`, `--accent-on` (text on a gold fill), `--accent-quiet` (14% wash)                           |
+| Secondary | `--secondary-fill`, `--secondary-quiet`                                                                                                                    |
+| Status    | `--status-ok`, `--status-warn`, `--status-error`, `--status-info`, each with a `-quiet` wash                                                               |
 
 Rules of thumb: page background is `--bg-app`; the rail, stats panel and drawers are `--bg-panel`; cards are `--surface-card` with `--border-hairline`; controls on a card and popovers are `--surface-raised`; inputs and segmented-control tracks are `--surface-sunken`. Body copy is `--text-body`, secondary facts `--text-muted`, eyebrows and hints `--text-faint`, names and titles `--text-heading`.
 
 ### Fonts and type
 
-| Token | Value |
-|---|---|
-| `--font-wordmark` | IM Fell DW Pica SC (the "DDO TOOLS" wordmark only, weight 400) |
-| `--font-ui` | Source Sans 3 — all UI, prose and headings (`--font-display` aliases it) |
-| `--font-mono` | JetBrains Mono — every compared number |
+| Token             | Value                                                                    |
+| ----------------- | ------------------------------------------------------------------------ |
+| `--font-wordmark` | IM Fell DW Pica SC (the "DDO TOOLS" wordmark only, weight 400)           |
+| `--font-ui`       | Source Sans 3 — all UI, prose and headings (`--font-display` aliases it) |
+| `--font-mono`     | JetBrains Mono — every compared number                                   |
 
 Fonts load from Google Fonts via the `<link>` in `index.html`.
 
-| Size token | px | Use |
-|---|---|---|
-| `--fs-micro` | 11 | Eyebrows, table headers, hints |
-| `--fs-label` | 12 | Captions, secondary facts, dense labels |
-| `--fs-body-sm` | 13 | Rail rows, list rows, chips, buttons |
-| `--fs-body` | 14 | Body copy |
-| `--fs-h3` | 16 | Section titles, card titles |
-| `--fs-h2` | 20 | View titles |
-| `--fs-h1` | 26 | Page headings |
-| `--fs-display` | 34 | Display |
-| `--fs-stat`, `--fs-stat-lg` | 18, 30 | Mono stat callouts |
+| Size token                  | px     | Use                                     |
+| --------------------------- | ------ | --------------------------------------- |
+| `--fs-micro`                | 11     | Eyebrows, table headers, hints          |
+| `--fs-label`                | 12     | Captions, secondary facts, dense labels |
+| `--fs-body-sm`              | 13     | Rail rows, list rows, chips, buttons    |
+| `--fs-body`                 | 14     | Body copy                               |
+| `--fs-h3`                   | 16     | Section titles, card titles             |
+| `--fs-h2`                   | 20     | View titles                             |
+| `--fs-h1`                   | 26     | Page headings                           |
+| `--fs-display`              | 34     | Display                                 |
+| `--fs-stat`, `--fs-stat-lg` | 18, 30 | Mono stat callouts                      |
 
 Line heights `--lh-tight/heading/body/dense`, letter-spacing `--ls-wordmark/eyebrow/heading/body/numeric`, weights `--fw-regular/medium/semibold/bold`, and composed roles `--type-wordmark/display/h1/h2/h3/body/label/eyebrow/numeric/stat` (use as `font: var(--type-body)`).
 
@@ -91,73 +91,73 @@ Line heights `--lh-tight/heading/body/dense`, letter-spacing `--ls-wordmark/eyeb
 
 4px base. Used for `padding`, `margin` and `gap` only.
 
-| Token | px |
-|---|---|
-| `--space-px` | 1 |
-| `--space-0-5` | 2 |
-| `--space-1` | 4 |
-| `--space-1-5` | 6 |
-| `--space-2` | 8 |
-| `--space-2-5` | 10 |
-| `--space-3` | 12 |
-| `--space-3-5` | 14 |
-| `--space-4` | 16 |
-| `--space-5` | 20 |
-| `--space-6` | 24 |
-| `--space-7` | 28 |
-| `--space-8` | 32 |
+| Token         | px  |
+| ------------- | --- |
+| `--space-px`  | 1   |
+| `--space-0-5` | 2   |
+| `--space-1`   | 4   |
+| `--space-1-5` | 6   |
+| `--space-2`   | 8   |
+| `--space-2-5` | 10  |
+| `--space-3`   | 12  |
+| `--space-3-5` | 14  |
+| `--space-4`   | 16  |
+| `--space-5`   | 20  |
+| `--space-6`   | 24  |
+| `--space-7`   | 28  |
+| `--space-8`   | 32  |
 
 Dense grids and tables use 6/8/10; page chrome uses 16/20/24. Never invent an in-between value.
 
 ### Chrome sizes
 
-| Token | Value |
-|---|---|
-| `--sidebar-w` / `--sidebar-collapsed-w` | 236px / 56px |
-| `--inspector-w` | 300px (stats panel) |
-| `--content-max` | 1240px |
-| `--control-h-sm` / `--control-h` / `--control-h-lg` | 26px / 32px / 38px |
-| `--tap-target` | 44px |
+| Token                                               | Value               |
+| --------------------------------------------------- | ------------------- |
+| `--sidebar-w` / `--sidebar-collapsed-w`             | 236px / 56px        |
+| `--inspector-w`                                     | 300px (stats panel) |
+| `--content-max`                                     | 1240px              |
+| `--control-h-sm` / `--control-h` / `--control-h-lg` | 26px / 32px / 38px  |
+| `--tap-target`                                      | 44px                |
 
 ### Radius
 
-| Token | Value | Use |
-|---|---|---|
-| `--radius-xs` | 3px | Pips, chips, tags, toggles, swatches, inset row marks |
-| `--radius-sm` | 5px | The workhorse: buttons, inputs, cards, popovers, tiles |
-| `--radius-md` | 6px | Panels |
-| `--radius-lg` | 8px | Dialog only |
+| Token         | Value | Use                                                    |
+| ------------- | ----- | ------------------------------------------------------ |
+| `--radius-xs` | 3px   | Pips, chips, tags, toggles, swatches, inset row marks  |
+| `--radius-sm` | 5px   | The workhorse: buttons, inputs, cards, popovers, tiles |
+| `--radius-md` | 6px   | Panels                                                 |
+| `--radius-lg` | 8px   | Dialog only                                            |
 
 ### Elevation
 
-| Token | Use |
-|---|---|
-| `--shadow-hairline` | 1px hairline ring |
-| `--shadow-popover` | Menus, hover cards, hints, popovers |
-| `--shadow-dialog` | Modal dialog |
-| `--shadow-drag` | Drag ghosts |
-| `--inset-top` | Raised chrome highlight (character card, table header strip) |
-| `--inset-sunken` | Input wells, segmented-control tracks |
-| `--glow-accent` | Accent ring + soft glow for the one element that must attract the eye |
-| `--ring-focus` | Opt-in box-shadow ring for elements no container clips; the default focus style is the 2px inset `outline` |
+| Token               | Use                                                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `--shadow-hairline` | 1px hairline ring                                                                                          |
+| `--shadow-popover`  | Menus, hover cards, hints, popovers                                                                        |
+| `--shadow-dialog`   | Modal dialog                                                                                               |
+| `--shadow-drag`     | Drag ghosts                                                                                                |
+| `--inset-top`       | Raised chrome highlight (character card, table header strip)                                               |
+| `--inset-sunken`    | Input wells, segmented-control tracks                                                                      |
+| `--glow-accent`     | Accent ring + soft glow for the one element that must attract the eye                                      |
+| `--ring-focus`      | Opt-in box-shadow ring for elements no container clips; the default focus style is the 2px inset `outline` |
 
 ### Motion
 
-| Token | Value |
-|---|---|
-| `--dur-instant` / `--dur-fast` / `--dur-base` / `--dur-slow` | 80 / 120 / 180 / 260ms |
-| `--ease-standard` / `--ease-out` / `--ease-in` | flat cubic-beziers |
-| `--transition-control` | background, border-color and color at `--dur-fast` |
+| Token                                                        | Value                                              |
+| ------------------------------------------------------------ | -------------------------------------------------- |
+| `--dur-instant` / `--dur-fast` / `--dur-base` / `--dur-slow` | 80 / 120 / 180 / 260ms                             |
+| `--ease-standard` / `--ease-out` / `--ease-in`               | flat cubic-beziers                                 |
+| `--transition-control`                                       | background, border-color and color at `--dur-fast` |
 
 ### Stacking (z-index)
 
-| Token | Value | Usage |
-|---|---|---|
-| `--z-local` | 1 | Positional offsets within a component |
-| `--z-panel` | 10 | Stats panel |
-| `--z-nav` | 20 | Rail |
-| `--z-overlay` | 40 | Mobile fullscreen rail, modal backdrops |
-| `--z-modal` | 100 | Dialogs, drawers, popovers; hover cards stack above it by depth |
+| Token         | Value | Usage                                                           |
+| ------------- | ----- | --------------------------------------------------------------- |
+| `--z-local`   | 1     | Positional offsets within a component                           |
+| `--z-panel`   | 10    | Stats panel                                                     |
+| `--z-nav`     | 20    | Rail                                                            |
+| `--z-overlay` | 40    | Mobile fullscreen rail, modal backdrops                         |
+| `--z-modal`   | 100   | Dialogs, drawers, popovers; hover cards stack above it by depth |
 
 ## Component recipes
 
@@ -175,7 +175,7 @@ Shared classes in `src/index.css`; shared components in `src/components/`.
 - **Combobox** (`Combobox`): the one searchable picker, single or multi. 268px on `--surface-raised`, `--border-default`, radius `--radius-sm` (the design's 5px), `--shadow-popover`; a search field in an 8px block over a hairline (28px, sunken, `--border-focus`); 28px option rows (`padding: 0 10px 0 12px`, 13px) with a 14px check square (accent fill when selected, sunken with `--border-strong` otherwise); the highlighted row is `--surface-active` with a 2px gold inset bar; an optional faint 11px caption after the label. Opening a multi picker snapshots its selection: those options come first in their normal order and keep their rows while the popover is open, with a `--border-hairline` divider (3px padding and margin) under the last of them when unselected options follow; the search filters both groups. No footer; an `extraControl` slot for a checkbox such as "Include set bonuses". Roles: combobox on the input, listbox and option on the list.
 - **Ledger row** (stats panel, enchantments): 24–26px, hairline bottom border, label `--text-muted`, value mono `--text-body`, bonus type 11px `--text-faint` right-aligned.
 - **Table header strip**: `--surface-raised`, `--inset-top`, eyebrow labels, `--border-default` bottom (the clicky-item picker).
-- **Ledger table** (`LedgerTable`, the Resources list and the detail's enchantment table): no card; a `--border-strong` rule above and below, a header row of eyebrows closed by a `3px double var(--border-strong)` rule, rows 32px (30px `dense`) with `1px dotted var(--border-default)` dividers, selected row `--surface-selected` with the name cell in `--text-accent` at 600, highlighted rows (a filter match) tinted. Rows never carry a border, outline or inset bar for selection, keyboard highlight or focus (fills and text only; the global focus ring excludes `.ledger-row`); an accent border on a row means one thing, the anchor of a pinned hover card. The header is one Tab stop, a roving-focus composite: Tab lands on the current column header (the last focused, else the first); Left / Right move between visible headers, Home / End to the ends; Enter or Space sorts a sortable header (its first direction, then flips; a column with `isSortable: false`, such as Raid and Rare whose fields the API cannot order by, ignores them and has no `aria-sort`); Shift+Left / Shift+Right move the column one step with a live-region announcement; `M` picks the column up for dnd-kit's keyboard drag (arrows move, `M`, Enter or Space drop, Escape cancels). The header cell carries `aria-sort`, the column label as its name and the key hints in its description; there are no separate Sort or Move buttons. Pointer: pressing anywhere on the header cell and moving past the activation distance drags it (translation only, so the dragged cell keeps its width), a plain click sorts, and the full-height grip at the cell's left edge (14px hit area, 1px × 14px visual) resizes and never starts a reorder; columns can hide below a width (`hiddenBelowPx`). The body is virtualized (react-window) for long lists or plain for short ones; a virtualized body takes `onNearEnd` and calls it once per approach to the loaded end, which is how the Resources list pages; heading rows (`rowKind` 'heading') and subheading rows ('subheading', the eyebrow kind) group what follows them and stay put under sorting. The detail's set block uses them in the design's banded style: a heading band on `--bg-panel` (34px, `padding: 10px 8px 5px`, 10px above, `--border-default` below, radius 3px 3px 0 0) with the set name as a link and a far-right "Set" eyebrow, 24px tier eyebrow rows ("2 pieces"), and the tier's bonus rows on the band; no description text in the ledger (it lives in the set hover card). Keyboard: the scrolling body is the table's one tab stop (native PageDown and arrows scroll it); Enter on it moves focus inside, to the selected row or else the first. A ledger that names a `navigationInputRef` (the Resources search) also hands focus to the rows on ArrowDown / ArrowUp from that input. From a row, ArrowDown / ArrowUp / Home / End move focus between rows (clamped; heading and tier rows skipped; the virtualized body scrolls the row into view). A keyboard-focused row is a hovered row: it takes the hover treatment, its hover card opens after the pointer delay, `T` pins it. Enter on a row does what a click does and keeps focus on the row (in the narrow layout the detail replaces the list and takes focus). Escape closes the row's open card first, pinned or not, keeping focus on the row (the card stays closed until focus leaves and returns); the next Escape returns focus to the table's body; Escape never closes the detail pane. There is no separate keyboard-highlight state and no `aria-activedescendant`; the input's `aria-controls` names the body. With focus anywhere other than the input or a row, arrow keys leave the list alone.
+- **Ledger table** (`LedgerTable`, the Resources list and the detail's enchantment table): no card; a `--border-strong` rule above and below, a header row of eyebrows closed by a `3px double var(--border-strong)` rule, rows 32px (30px `dense`) with `1px dotted var(--border-default)` dividers, selected row `--surface-selected` with the name cell in `--text-accent` at 600, highlighted rows (a filter match) tinted. Rows never carry a border, outline or inset bar for selection, keyboard highlight or focus (fills and text only; the global focus ring excludes `.ledger-row`); an accent border on a row means one thing, the anchor of a pinned hover card. The header is one Tab stop, a roving-focus composite: Tab lands on the current column header (the last focused, else the first); Left / Right move between visible headers, Home / End to the ends; Enter or Space sorts a sortable header (its first direction, then flips; a column with `isSortable: false`, such as Raid and Rare whose fields the API cannot order by, ignores them and has no `aria-sort`); Shift+Left / Shift+Right move the column one step with a live-region announcement; `M` picks the column up for dnd-kit's keyboard drag (arrows move, `M`, Enter or Space drop, Escape cancels). The header cell carries `aria-sort`, the column label as its name and the key hints in its description; there are no separate Sort or Move buttons. A focused header shows the standard focus ring (the same gold ring as the filter chips), unlike rows, which show focus as a fill. A short `data-tip` hint on each header ("Enter sorts · Shift+← → moves · M picks up to drag") opens on focus or hover so the keyboard commands are discoverable without the old Move button. Pointer: pressing anywhere on the header cell and moving past the activation distance drags it (translation only, so the dragged cell keeps its width), a plain click sorts, and the full-height grip at the cell's left edge (14px hit area, 1px × 14px visual) resizes and never starts a reorder; columns can hide below a width (`hiddenBelowPx`). The body is virtualized (react-window) for long lists or plain for short ones; a virtualized body takes `onNearEnd` and calls it once per approach to the loaded end, which is how the Resources list pages; heading rows (`rowKind` 'heading') and subheading rows ('subheading', the eyebrow kind) group what follows them and stay put under sorting. The detail's set block uses them in the design's banded style: a heading band on `--bg-panel` (34px, `padding: 10px 8px 5px`, 10px above, `--border-default` below, radius 3px 3px 0 0) with the set name as a link and a far-right "Set" eyebrow, 24px tier eyebrow rows ("2 pieces"), and the tier's bonus rows on the band; no description text in the ledger (it lives in the set hover card). Keyboard: the scrolling body is the table's one tab stop (native PageDown and arrows scroll it); Enter on it moves focus inside, to the selected row or else the first. A ledger that names a `navigationInputRef` (the Resources search) also hands focus to the rows on ArrowDown / ArrowUp from that input. From a row, ArrowDown / ArrowUp / Home / End move focus between rows (clamped; heading and tier rows skipped; the virtualized body scrolls the row into view). A keyboard-focused row is a hovered row: it takes the hover treatment, its hover card opens after the pointer delay, `T` pins it. Enter on a row does what a click does and keeps focus on the row (in the narrow layout the detail replaces the list and takes focus). Escape closes the row's open card first, pinned or not, keeping focus on the row (the card stays closed until focus leaves and returns); the next Escape returns focus to the table's body; Escape never closes the detail pane. There is no separate keyboard-highlight state and no `aria-activedescendant`; the input's `aria-controls` names the body. With focus anywhere other than the input or a row, arrow keys leave the list alone.
 - **Hover card** (`HoverCardProvider` in the shell, `useHoverCard` on an anchor, `HintAnchor` or `data-tip` for hints): 300px on `--surface-raised`, `--border-default` (→ `--border-accent` when pinned), `--shadow-popover`, max-height 70vh, stacked at `--z-modal` plus depth. Header: an eyebrow kicker and "T to pin" (pinned: "Pinned · Esc"); then a 15px/700 title, facts, value rows (`DetailValueRow`: a label, a mono number or dice expression in the accent hue, an optional bonus type as plain `--text-muted` text (an augment card still shows it as a hued tag); "From <item>" for the hovered source's own bonus, "Damage" for dice and damage from structured modifier fields; never parsed out of description text), a definition, sections whose rows open nested cards one depth deeper and open an item when they name one, "+N more", a footer. 260ms to open from a row, 120ms from a row inside a card; an unpinned card ignores the pointer, closes only when the pointer leaves its anchor or the anchor unmounts, and survives clicks elsewhere; `T` pins the top card and moves focus into it (so the keystroke never reveals a focus ring on whatever else held focus; closing returns focus to the anchor), `Esc` pops it, and over any focused anchor, a ledger row included, `Esc` closes an open unpinned card with focus staying on the anchor and no reopen until focus leaves and returns (WCAG 1.4.13), a mousedown inside a card (each carries `data-depth`) closes every card deeper than it and keeps that card and its ancestors as they were, and a mousedown outside every card clears the pinned cards. Placed below the anchor, above when there is no room, clamped to the viewport. Hints are 260px max, never pinned, never consume Escape; they open on focus as well as on hover (focusin after the hint delay, focusout closes), and a focus-opened hint or card closes on Escape with focus staying on its anchor and stays closed until focus leaves and returns. Each card entry records whether the pointer or focus opened it.
 - **Detail card** (`DetailCard`, `DetailCardHeader`, `DetailFact`, `DetailCardSection`, `DetailMore`, `DetailCardFooter`): the shell both the Resources detail pane and the item hover card render into. Header strip (the raised title bar) with kicker, 18px name, a row of controls and, under the name, the wrapping facts row (`gap: 10px 28px`: ML, Gear slot, Raid, Rare, Set, and on an item the Augments sockets last); then the body. An open socket's ledger of fitting augments is a full-width block that is the title bar's next sibling, above the description, so the title bar never reflows; then the description, the detail stats (`DetailStats`: the important ones as fact cells in a `repeat(auto-fill, minmax(132px, 1fr))` grid, each an 11px uppercase `--text-faint` eyebrow over a mono `--text-numeric` number or 13px body text; a weapon shows Damage, Crit range, Crit multiplier and Enhancement, armor and shields their bonus, Max Dex and Enhancement), the rest as 24px tags behind "More … details" (label part on `--surface-raised` at `--fs-detail-tag-label`, value part beside it, `--border-default` outline, radius 3; damage-reduction bypasses are one "Bypasses" tag each), the enchantment ledger and the sections with an 11px eyebrow. The pane variant paints no border, background or radius of its own: the pane (`.resources-detail-pane`) is the one card around it, while the hover variant keeps the card chrome. The Resources item card adds augment slots as hex gems (`clip-path: polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)`; Blue `--arcane-400`, Red `--rust-400`, Yellow `--amber-400`, Green `--moss-400`, Purple `--violet-400`, Colorless bordered). Enchantment bonus types are plain `--text-muted` text in the pane and the item hover card; only the augment hover card keeps the hued type tags (Insight `--arcane-300`, Quality `--moss-400`, Artifact `--violet-400`, Exceptional `--amber-400`).
 - **List and detail** (`.resources-body`, the Resources page): `display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: var(--space-3); align-items: start`, so the list column and the detail pane sit side by side when the content area has room for two 480px columns; nothing is modal. The pane shows the detail card, or a dashed "Select an item" placeholder with no selection. Below that width a selected item's pane takes the list's place, full width and in flow: selecting a row pushes a history entry, so the breadcrumb's Back and the browser's Back both restore the list with its filters and scroll offset; the card's header stacks its actions under the name below 600px.
@@ -208,12 +208,12 @@ Reasoning that used to live in CSS comments (the repo bans comments; Stylelint's
 
 Grid columns are controlled by JS-toggled classes on `.app`:
 
-| Class | Grid columns |
-|---|---|
-| (default) | `var(--sidebar-w) 1fr var(--inspector-w)` |
-| `.app--nav-bar-collapsed` | `var(--sidebar-collapsed-w) 1fr var(--inspector-w)` |
-| `.app--no-stats` | `var(--sidebar-w) 1fr` |
-| `.app--nav-bar-collapsed.app--no-stats` | `var(--sidebar-collapsed-w) 1fr` |
+| Class                                   | Grid columns                                        |
+| --------------------------------------- | --------------------------------------------------- |
+| (default)                               | `var(--sidebar-w) 1fr var(--inspector-w)`           |
+| `.app--nav-bar-collapsed`               | `var(--sidebar-collapsed-w) 1fr var(--inspector-w)` |
+| `.app--no-stats`                        | `var(--sidebar-w) 1fr`                              |
+| `.app--nav-bar-collapsed.app--no-stats` | `var(--sidebar-collapsed-w) 1fr`                    |
 
 - **Rail** (`AppNavBar`): 236px expanded, 56px collapsed. Top to bottom: wordmark, character card (switcher, compare picker, swap), Roster / Build / Tools groups (Build plan sub-items appear only on `/build-plan`), spacer, Warnings row with popover, Collapse, hairline, Settings, Report a bug, GitHub. Eyebrows collapse to hairlines.
 - **Stats panel** (`StatsPanel`): 300px, shown on routes whose `staticData.shouldShowStatsPanel` is true (`/build-plan`, `/overview`, `/gear`). Stats / Buffs tabs; Stats holds drag-and-drop pinned groups over a divider, then All stats.
@@ -225,13 +225,14 @@ Grid columns are controlled by JS-toggled classes on `.app`:
 
 The rail is always in the grid flow (never fixed-position) except at `<600px` when expanded.
 
-| Width | Rail default | Expanded behavior | Notes |
-|---|---|---|---|
-| **>=900px** | Stored preference (localStorage) | Inline, pushes content (236px) | Desktop layout |
-| **600–899px** | Auto-collapsed (icons only, 56px) | Inline, pushes content (236px) | Re-expands when resizing back above 900px |
-| **<600px** | Auto-collapsed (icons only, 56px) | **Full-screen overlay** (`position: fixed; inset: 0`) | Behaves as a modal: closes on navigate or Escape, background goes `inert` |
+| Width         | Rail default                      | Expanded behavior                                     | Notes                                                                     |
+| ------------- | --------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| **>=900px**   | Stored preference (localStorage)  | Inline, pushes content (236px)                        | Desktop layout                                                            |
+| **600–899px** | Auto-collapsed (icons only, 56px) | Inline, pushes content (236px)                        | Re-expands when resizing back above 900px                                 |
+| **<600px**    | Auto-collapsed (icons only, 56px) | **Full-screen overlay** (`position: fixed; inset: 0`) | Behaves as a modal: closes on navigate or Escape, background goes `inert` |
 
 Key rules:
+
 - **No media queries in App.css** — grid columns are controlled by JS-toggled classes.
 - **One media query in AppNavBar.css** — `@media (max-width: 599px)` makes `.app-nav-bar.expanded` full-viewport. `AppLayout` mirrors the same query in JS (`useMediaQuery('(max-width: 599px)')`); the two must move together.
 - **One media query in Modal.css** — `@media (max-width: 899px)` makes the `drawer-right` variant full-screen and hides its backdrop.

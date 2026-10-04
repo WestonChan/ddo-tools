@@ -44,10 +44,6 @@
   &:is(:hover, :focus-visible):not(.ledger-header-cell--dragging) {
     background: var(--surface-hover);
   }
-
-  &:focus-visible {
-    outline: 2px solid transparent;
-  }
 }
 
 .ledger-header-cell--dragging {

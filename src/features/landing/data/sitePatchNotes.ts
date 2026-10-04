@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-04',
     changes: [
+      'A list column header shows the focus ring when you tab to it and a hint of its keys (Enter sorts, Shift+arrows move, M picks up to drag)',
       'A list header is one Tab stop: Left and Right move between columns, Enter or Space sorts, Shift+Left or Shift+Right moves the column',
       'In a list, the first Escape closes the hover card and the second steps back out of the list',
       'Escape closes a hover card that opened from keyboard focus on a link or hotbar slot, without moving focus',

@@ -252,6 +252,7 @@ function HeaderCell<Row>({
     [setNodeRef, setActivatorNodeRef],
   )
   const isSortable = column.isSortable !== false
+  const keyHintTip = (isSortable ? 'Enter sorts · ' : '') + 'Shift+← → moves · M picks up to drag'
   const keyHints =
     (isSortable ? 'Enter or Space sorts. ' : '') +
     'Left or Right changes column; Home or End jumps to an edge. Shift plus Left or Right moves this column one place. Press M to pick up; arrows move it; M, Enter, or Space drops it; Escape cancels.'
@@ -309,6 +310,7 @@ function HeaderCell<Row>({
       role="columnheader"
       aria-label={column.label}
       aria-description={keyHints}
+      data-tip={keyHintTip}
       aria-describedby={attributes['aria-describedby']}
       onFocus={onFocusColumn}
       onKeyDown={onHeaderKeyDown}
