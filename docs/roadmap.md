@@ -1221,6 +1221,21 @@ Deferred from the original scope, each with a home: to-hit and to-damage by stat
 
 #### Phase 4e — Enchantment lines (the stat DB rework), spec decided 2026-10-03
 
+**Naming (decided 2026-10-04, applied in the API chunk before anything ships).** The model below was written with
+"enchantment" for the named thing; it is renamed so the words match DDO's and stay right once feats,
+enhancements and buffs share the tables. A **stat** is what a number lands on (`stats`: Constitution, Air
+Lore). A **bonus** is a typed amount to a stat, as the game says it ("+4 Insight bonus to Constitution"):
+`bonus_types`, and `effect_bonuses` (stat, bonus type or from the link, amount source, constant, scale,
+rounding), which this entry calls `enchantment_stats`. An **effect** is the named line that grants zero or
+more bonuses plus its prose (Firestorm Lore, Hallowed, a feat's passive): `effects` with `effect_ladders`,
+which this entry calls `enchantments`. Owner links are `item_effects`, `augment_effects`,
+`set_bonus_tier_effects`, `feat_effects`, `item_augment_slot_option_effects`. The API follows: detail carries
+`effects: [{ …, bonuses: [{ stat, bonus_type, value }] }]`; the vocabulary is `/v1/effects` (stats and effects
+with `kind`); `/v1/effects/{id}` and `/v1/stats/{id}` are the detail pages. User-facing: the filter chip is
+**Bonuses** (pick a stat, optionally narrowed to a bonus type, or a named effect); Resources has one **Stats**
+tab (see 4f), and effect pages open from item, feat and stat pages. Where the text below says enchantment,
+read effect.
+
 Detail: [docs/notes/Stat DB Rework.md](notes/Stat%20DB%20Rework.md). A `ddo-data` schema change first, then the
 frontend's enchantment table and filter vocabulary follow it. Decided with the maintainer on 2026-10-03 after
 the Dread Isle's Curse case: the wiki's one line "+2 Profane bonus to all Ability Scores" had to become six
@@ -1343,8 +1358,13 @@ durations and stacks stay prose for the Phase 6 engine. Nothing else earns a col
    first amount (valueless upstream buffs, value corrections from the wiki). Engine note for Phase 6:
    `Tactics` is the generic tactical bucket and sits beside the individual Trip, Sunder, Stun and Assassinate
    DC rows on Combat Mastery, the Dolorous Invigorators and the Past Life feats; it is not added to each DC.
-5. `bonus_alias` for Phase 5b's selectors; `modifiers` consumers onto the enchantment tables; the
-   `derive_bonuses` path for feats, enhancements and sets fully through the family resolver.
+5. Every other source onto effect links (decided 2026-10-04): enhancements and their selections (~6,500
+   `modifiers` rows), filigrees (865), optional and guild buffs (271), spells and clickies (~200) gain owner
+   link tables like `feat_effects`, written through the shared effect writer and resolver, so a stat's page
+   lists everything that grants it from one query and the Phase 6 engine reads one table. `modifiers` stays
+   for what is not a bonus (conditions, procs, mechanic flags) until the damage, saves and conditions chunks
+   absorb it. Ahead of Phase 6.
+6. `bonus_alias` for Phase 5b's selectors.
 
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
 `routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
@@ -1354,7 +1374,7 @@ first-class stats category.
 
 #### Phase 4f — Categories
 - **Crafting systems** becomes a Resources category (`/resources/crafting-systems`), not a top-level view: an info page per system (38 systems; where, materials, mechanics). Decided in the D1 navigation review — its interactive halves already live elsewhere (craftable options inline on item detail; materials summing in the Farm checklist), so what remains is reference content. Scope is large; plan it with the rest of this phase.
-- Wire feats, enhancements, a new bonuses category, and a new stats category into the picker. Each gets its own query layer + detail component. Bonuses category surfaces backlinks to items/augments/enhancements/sets that apply them. Once stats are a first-class category, swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushResource({ category: 'stats', id })` so the inspector navigates *inside* our app — keeps users in the same view, builds the same cross-link affordance bonuses already have between items/feats/etc.
+- Wire feats, enhancements and a **Stats** tab into the picker (decided 2026-10-04: one Stats tab replaces the separate Stats and Enchantments tabs). A stat page lists everything that grants it (gear effects, feats, enhancements, set tiers, buffs once 4e's deferred item 5 lands), grouped by bonus type so stacking is visible; effect pages (`/v1/effects/{id}`: what it does, its ladder, where to get it) open from item, feat and stat pages rather than a tab of their own. Needs from `ddo-data`: stat descriptions and wiki links, and `q` with counts on `/v1/stats`. Each tab gets its own query layer + detail component. Swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushResource({ category: 'stats', id })` so the inspector navigates *inside* our app.
 
 #### Phase 4g — Polish
 - Filter persistence per category via `useLocalStorage`, together with the ledger's column widths, order and sort (all component state since 4d).
