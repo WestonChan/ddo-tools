@@ -123,6 +123,26 @@ it('shows hover variant enchantment columns without a section heading', () => {
   expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
 })
 
+it('shows a dash for the type and value of a named effect that has neither, in the pane and the hover card', () => {
+  const namedEffect = effect({ id: 7, name: 'Keen', target: null, value: null })
+  for (const variant of ['pane', 'hover'] as const) {
+    render(
+      <HoverCardProvider>
+        <EnchantmentList bonuses={[bonus()]} effects={[namedEffect]} variant={variant} />
+      </HoverCardProvider>,
+    )
+    const row = screen.getByText('Keen').closest('[role="row"]') as HTMLElement
+    const cells = within(row).getAllByRole('cell')
+    expect(cells.map((cell) => cell.textContent)).toEqual(['\u2014', 'Keen', '\u2014'])
+    expect(within(cells[0]).getByText('\u2014')).toHaveClass('resources-bonus-empty')
+    expect(within(cells[2]).getByText('\u2014')).toHaveClass('resources-bonus-empty')
+    expect(screen.getByText('Charisma').closest('[role="row"]')).toHaveTextContent(
+      'EnhancementCharisma+5',
+    )
+    cleanup()
+  }
+})
+
 describe('EnchantmentList', () => {
   it('puts the enhancement bonus in the first sortable row without filter tint', () => {
     render(

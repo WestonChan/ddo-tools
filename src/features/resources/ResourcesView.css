@@ -1110,3 +1110,8 @@ button.resources-hover-row:hover {
   padding-bottom: var(--space-1);
   border-bottom: 1px solid var(--border-hairline);
 }
+
+.resources-bonus-empty {
+  color: var(--text-faint);
+  font-family: var(--font-ui);
+}

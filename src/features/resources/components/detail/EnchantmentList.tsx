@@ -103,6 +103,10 @@ function setRows(setDetail: SetDetail, matchingNames: ReadonlySet<string>): Ench
   return rows
 }
 
+function EmptyBonusCell(): JSX.Element {
+  return <span className="resources-bonus-empty">—</span>
+}
+
 const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
   {
     key: 'type',
@@ -127,7 +131,9 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
         <span className="resources-set-tier-heading">{row.name}</span>
       ) : row.type ? (
         <span className="resources-bonus-type">{row.type}</span>
-      ) : null,
+      ) : (
+        <EmptyBonusCell />
+      ),
   },
   {
     key: 'name',
@@ -147,7 +153,12 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
     align: 'right',
     isMonospaced: true,
     sortValue: (row) => Number.parseFloat(row.value) || 0,
-    render: (row) => <span className="resources-bonus-value num">{row.value}</span>,
+    render: (row) =>
+      row.headingKind ? null : row.value ? (
+        <span className="resources-bonus-value num">{row.value}</span>
+      ) : (
+        <EmptyBonusCell />
+      ),
   },
 ]
 
@@ -344,13 +355,13 @@ function EnchantmentHoverRow({
       {...anchor}
     >
       <span role="cell" className="resources-bonus-type">
-        {row.type}
+        {row.type || <EmptyBonusCell />}
       </span>
       <span role="cell" className="resources-bonus-name">
         {row.name}
       </span>
       <span role="cell" className="resources-bonus-value num">
-        {row.value || row.hoverValue}
+        {row.value || row.hoverValue || <EmptyBonusCell />}
       </span>
     </div>
   )

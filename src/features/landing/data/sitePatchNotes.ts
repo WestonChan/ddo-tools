@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-05',
     changes: [
+      'Named effects without a bonus type or value show a dash in those columns instead of a blank',
       'Each resource list remembers its filters, search, sort and scroll when you leave and come back, for each tab separately',
       'The item list opens sorted by ML, highest first',
       'The result count reads in the normal font with only the number monospaced',
