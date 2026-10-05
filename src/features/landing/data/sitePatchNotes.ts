@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-04',
     changes: [
+      "An item's Obtained from rows put the quest, its chest, Raid and Rare on the left and the level and pack › patron on the right, without chips",
       'Escape pressed right after pinning a hover card with T closes it, however quickly the keys follow',
       'Tab lands on the active row, chip, column or tab and the arrow keys move within the group, the same way everywhere; PageDown and PageUp page through a long list',
       'A list column header shows the focus ring when you tab to it and a hint of its keys (Enter sorts, Shift+arrows move, M picks up to drag)',

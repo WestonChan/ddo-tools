@@ -15,6 +15,7 @@ interface WikiLinkIconProps {
   label?: string
   icon?: 'book' | 'external'
   className?: string
+  hintText?: string
 }
 
 export function WikiLinkIcon({
@@ -24,6 +25,7 @@ export function WikiLinkIcon({
   label,
   icon = 'book',
   className,
+  hintText = 'Open in DDO Wiki (compare window)',
 }: WikiLinkIconProps): JSX.Element | null {
   const wikiPageUrl = href ?? (pageName ? wikiPageUrlFor(pageName) : null)
   if (!wikiPageUrl) return null
@@ -31,7 +33,7 @@ export function WikiLinkIcon({
   const ariaLabel = pageName ? `Open ${pageName} on DDO Wiki` : 'Open on DDO Wiki'
 
   return (
-    <HintAnchor text="Open in DDO Wiki (compare window)">
+    <HintAnchor text={hintText}>
       <a
         href={wikiPageUrl}
         target={WIKI_COMPARE_WINDOW_NAME}

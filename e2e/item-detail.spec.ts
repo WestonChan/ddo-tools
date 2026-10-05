@@ -1,7 +1,85 @@
 import { expect, test } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/item487.json' with { type: 'json' }
 import capturedArmor from '../src/features/resources/queries/fixtures/item831.json' with { type: 'json' }
+import capturedNecklace from '../src/features/resources/queries/fixtures/item7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/set93.json' with { type: 'json' }
+
+test('obtained-from rows keep source details left and quest metadata right at wide and narrow widths', async ({
+  page,
+}) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response =
+      path === '/v1/items/7631'
+        ? capturedNecklace
+        : path === '/v1/items'
+          ? { total: 0, limit: 200, offset: 0, items: [] }
+          : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.goto('/resources/items/7631')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const questRow = pane
+    .locator('.resources-item-source-row')
+    .filter({ hasText: 'Friends in Low Places' })
+  const leftColumn = questRow.locator('.resources-item-source-left')
+  const rightColumn = questRow.locator('.resources-item-source-right')
+  const sourceRowGeometry = (
+    row: Element,
+  ): {
+    rowRight: number
+    leftRight: number
+    leftTop: number
+    leftWidth: number
+    rightLeft: number
+    rightRight: number
+    rightTop: number
+  } => {
+    const left = row.querySelector('.resources-item-source-left')
+    const right = row.querySelector('.resources-item-source-right')
+    if (!left || !right) throw new Error('Source row is missing a column')
+    const rowBounds = row.getBoundingClientRect()
+    const leftBounds = left.getBoundingClientRect()
+    const rightBounds = right.getBoundingClientRect()
+    return {
+      rowRight: rowBounds.right,
+      leftRight: leftBounds.right,
+      leftTop: leftBounds.top,
+      leftWidth: leftBounds.width,
+      rightLeft: rightBounds.left,
+      rightRight: rightBounds.right,
+      rightTop: rightBounds.top,
+    }
+  }
+  await expect(leftColumn.locator('.resources-item-source-title')).toHaveText(
+    'Friends in Low Places',
+  )
+  await expect(rightColumn.locator('.resources-item-source-level')).toHaveText('Level 16 / 26')
+  const wideGeometry = await questRow.evaluate(sourceRowGeometry)
+  expect(wideGeometry.rightLeft).toBeGreaterThanOrEqual(wideGeometry.leftRight)
+  expect(Math.abs(wideGeometry.leftTop - wideGeometry.rightTop)).toBeLessThan(2)
+
+  await page.setViewportSize({ width: 375, height: 800 })
+  await page.goto('/resources/items/7631')
+  await expect(
+    pane.getByRole('heading', { name: capturedNecklace.name, exact: true }),
+  ).toBeVisible()
+  await expect(page.locator('.resources-picker')).toHaveCount(0)
+  await expect(questRow).toBeVisible()
+  await page.evaluate(async () => {
+    await document.fonts.ready
+  })
+  const narrowGeometry = await questRow.evaluate(sourceRowGeometry)
+  expect(narrowGeometry.leftWidth).toBeGreaterThanOrEqual(120)
+  expect(narrowGeometry.rightTop).toBeGreaterThan(narrowGeometry.leftTop)
+  expect(Math.abs(narrowGeometry.rightRight - narrowGeometry.rowRight)).toBeLessThan(1)
+})
 
 test('search keyboard navigation scrolls a virtualized result into view and opens its detail', async ({
   page,

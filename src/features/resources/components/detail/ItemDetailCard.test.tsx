@@ -59,6 +59,7 @@ function quest(overrides: Partial<LootQuest> = {}): LootQuest {
     patron: null,
     pack: null,
     level: 8,
+    epicLevel: null,
     isRaid: false,
     isRareLoot: false,
     isFreeToPlay: false,
@@ -478,6 +479,129 @@ describe('ItemDetailCard details', () => {
   })
 })
 
+describe('ItemDetailCard obtained-from layout', () => {
+  it('places mapped quest details and raid and rare words in two columns without chips', () => {
+    const apiItem = capturedNecklace as ApiItemDetail
+    const { container } = renderItemDetailCard(
+      toItem({
+        ...apiItem,
+        quests: apiItem.quests.map((lootQuest) => ({
+          ...lootQuest,
+          is_raid: true,
+          is_rare: true,
+        })),
+      }),
+    )
+    const row = container.querySelector('.resources-item-source-row')!
+    expect(
+      row.querySelector('.resources-item-source-left .resources-item-source-name'),
+    ).toHaveTextContent('Friends in Low Places')
+    expect(row.querySelector('.resources-item-source-details')).toHaveTextContent(
+      /End chest\s*·\s*Raid\s*·\s*Rare/,
+    )
+    expect(
+      row.querySelector('.resources-item-source-right .resources-item-source-level'),
+    ).toHaveTextContent('Level 16 / 26')
+    expect(row.querySelector('.resources-item-source-level')).toHaveAttribute(
+      'data-tip',
+      'Heroic 16, epic 26',
+    )
+    expect(row.querySelector('.resources-item-source-location')).toHaveTextContent(
+      'Shadowfell Conspiracy › Purple Dragon Knights',
+    )
+    expect(row.querySelector('.resources-chip')).toBeNull()
+  })
+
+  it('places mapped adventure-pack and chain descriptors beneath their names', () => {
+    const { container } = renderItemDetailCard(toItem(capturedArmor as ApiItemDetail))
+    const rows = Array.from(container.querySelectorAll('.resources-item-source-row'))
+    const packRow = rows.find(
+      (row) =>
+        row.querySelector('.resources-item-source-title')?.textContent === 'Reign of Madness',
+    )!
+    const chainRow = rows.find(
+      (row) =>
+        row.querySelector('.resources-item-source-descriptor')?.textContent === 'Chain end reward',
+    )!
+    expect(
+      packRow.querySelector('.resources-item-source-left .resources-item-source-details'),
+    ).toHaveTextContent(/Anywhere in the pack\s*·\s*Opuloxx chest/)
+    expect(packRow.querySelector('.resources-item-source-right')).toBeNull()
+    expect(
+      chainRow.querySelector('.resources-item-source-left .resources-item-source-details'),
+    ).toHaveTextContent('Chain end reward')
+    expect(chainRow.querySelector('.resources-item-source-right')).toBeNull()
+    expect(container.querySelector('.resources-item-source-list .resources-chip')).toBeNull()
+  })
+
+  it('separates each pack descriptor and Rare with the same faint dot', () => {
+    const apiItem = capturedArmor as ApiItemDetail
+    const { container } = renderItemDetailCard(
+      toItem({
+        ...apiItem,
+        adventure_packs: apiItem.adventure_packs.map((adventurePack) => ({
+          ...adventurePack,
+          is_rare: true,
+        })),
+      }),
+    )
+    const packRow = Array.from(container.querySelectorAll('.resources-item-source-row')).find(
+      (row) =>
+        row.querySelector('.resources-item-source-title')?.textContent === 'Reign of Madness',
+    )!
+    const details = packRow.querySelector('.resources-item-source-details')!
+    expect(Array.from(details.children).map((part) => part.className)).toEqual([
+      'resources-item-source-descriptor',
+      'resources-item-source-separator',
+      'resources-item-source-descriptor',
+      'resources-item-source-separator',
+      'resources-item-source-rare',
+    ])
+    expect(Array.from(details.children).map((part) => part.textContent)).toEqual([
+      'Anywhere in the pack',
+      '·',
+      'Opuloxx chest',
+      '·',
+      'Rare',
+    ])
+  })
+
+  it('shows an epic-only level and omits missing pack and patron details', () => {
+    const apiItem = capturedNecklace as ApiItemDetail
+    const { container } = renderItemDetailCard(
+      toItem({
+        ...apiItem,
+        quests: apiItem.quests.map((lootQuest) => ({
+          ...lootQuest,
+          level: null,
+          pack: null,
+          patron: null,
+        })),
+      }),
+    )
+    expect(container.querySelector('.resources-item-source-level')).toHaveTextContent('Level 26')
+    expect(container.querySelector('.resources-item-source-level')).not.toHaveAttribute('data-tip')
+    expect(container.querySelector('.resources-item-source-location')).toBeNull()
+  })
+
+  it('omits the right column when both quest levels and location are absent', () => {
+    const apiItem = capturedNecklace as ApiItemDetail
+    const { container } = renderItemDetailCard(
+      toItem({
+        ...apiItem,
+        quests: apiItem.quests.map((lootQuest) => ({
+          ...lootQuest,
+          level: null,
+          epic_level: null,
+          pack: null,
+          patron: null,
+        })),
+      }),
+    )
+    expect(container.querySelector('.resources-item-source-right')).toBeNull()
+  })
+})
+
 describe('ItemDetailCard drop locations', () => {
   it('shows a weapon’s primary rows with facts, enchantments, and drops for hover', () => {
     render(
@@ -510,33 +634,35 @@ describe('ItemDetailCard drop locations', () => {
     renderItemDetailCard({ ...plainItem, quests: [quest()] })
     const link = screen.getByRole('link', { name: "Open Delera's Tomb on DDO Wiki" })
     expect(link).toHaveAttribute('href', "https://ddowiki.com/page/Delera's_Tomb")
+    expect(link.parentElement).toHaveAttribute('data-tip', 'Open on ddowiki')
   })
 
-  it('marks a raid drop location with a chip on the quest name, not in the meta line', () => {
+  it('marks a raid drop beneath the quest name', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ patron: 'The Free Agents', isRaid: true })],
     })
-    const chip = container.querySelector('.resources-quest-name .resources-chip[data-kind="raid"]')
-    expect(chip).toHaveTextContent('Raid')
-    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
-      'The Free Agents · Level 8',
+    expect(
+      container.querySelector('.resources-item-source-details .resources-item-source-raid'),
+    ).toHaveTextContent('Raid')
+    expect(container.querySelector('.resources-item-source-level')).toHaveTextContent('Level 8')
+    expect(container.querySelector('.resources-item-source-location')).toHaveTextContent(
+      'The Free Agents',
     )
   })
 
-  it('marks a rare drop location with a chip on the quest name after the raid chip', () => {
+  it('marks a rare drop after the raid word', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ isRaid: true, isRareLoot: true })],
     })
-    const kinds = Array.from(
-      container.querySelectorAll('.resources-quest-name .resources-chip'),
-    ).map((c) => c.getAttribute('data-kind'))
-    expect(kinds).toEqual(['raid', 'rare'])
-    expect(container.querySelector('.resources-quest-meta .resources-chip')).toBeNull()
+    expect(container.querySelector('.resources-item-source-details')).toHaveTextContent(
+      /Raid\s*·\s*Rare/,
+    )
+    expect(container.querySelector('.resources-item-source-list .resources-chip')).toBeNull()
   })
 
-  it('shows the Rare chip only on the quests where the item is rare', () => {
+  it('shows Rare only on the quests where the item is rare', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [
@@ -544,20 +670,20 @@ describe('ItemDetailCard drop locations', () => {
         quest({ id: 2, name: 'The Pit' }),
       ],
     })
-    const rows = container.querySelectorAll('.resources-quest-row')
-    expect(rows[0].querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
-    expect(rows[1].querySelector('.resources-chip')).toBeNull()
+    const rows = container.querySelectorAll('.resources-item-source-row')
+    expect(rows[0].querySelector('.resources-item-source-rare')).toHaveTextContent('Rare')
+    expect(rows[1].querySelector('.resources-item-source-rare')).toBeNull()
   })
 
-  it('labels end rewards in the meta line', () => {
+  it('labels an end reward beneath the name when there is no chest', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest({ isEndReward: true })],
     })
-    expect(container.querySelector('.resources-chip')).toBeNull()
-    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
-      'Level 8 · End reward',
+    expect(container.querySelector('.resources-item-source-details')).toHaveTextContent(
+      /^End reward$/,
     )
+    expect(container.querySelector('.resources-item-source-level')).toHaveTextContent('Level 8')
   })
 
   it('names the chest after the quest name in sentence case', () => {
@@ -566,7 +692,7 @@ describe('ItemDetailCard drop locations', () => {
       quests: [quest({ chests: ["althea's chest"] })],
     })
     expect(
-      container.querySelector('.resources-quest-name .resources-quest-chest'),
+      container.querySelector('.resources-item-source-details .resources-item-source-chest'),
     ).toHaveTextContent("Althea's chest")
   })
 
@@ -576,26 +702,32 @@ describe('ItemDetailCard drop locations', () => {
       ...plainItem,
       quests: [quest({ chests: ['end chest'], isEndReward: true, isRareLoot: true })],
     })
-    const rows = container.querySelectorAll('.resources-quest-row')
+    const rows = container.querySelectorAll('.resources-item-source-row')
     expect(rows).toHaveLength(1)
-    expect(rows[0].querySelector('.resources-quest-chest')).toHaveTextContent('End chest')
-    expect(rows[0].querySelector('.resources-quest-meta')).toHaveTextContent('Level 8 · End reward')
-    expect(rows[0].querySelectorAll('.resources-chip[data-kind="rare"]')).toHaveLength(1)
+    expect(rows[0].querySelector('.resources-item-source-chest')).toHaveTextContent('End chest')
+    expect(rows[0].querySelector('.resources-item-source-details')).toHaveTextContent(
+      /End chest\s*·\s*End reward\s*·\s*Rare/,
+    )
+    expect(rows[0].querySelector('.resources-item-source-level')).toHaveTextContent('Level 8')
     expect(consoleError).not.toHaveBeenCalled()
     consoleError.mockRestore()
   })
 
-  it('lists a quest chain end reward after the quest rows with a Rare chip and wiki link', () => {
+  it('lists a quest chain end reward after the quest rows with Rare and a wiki link', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest()],
       questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: true, wikiUrl: null }],
     })
-    const rows = container.querySelectorAll('.resources-quest-row')
+    const rows = container.querySelectorAll('.resources-item-source-row')
     expect(rows).toHaveLength(2)
-    expect(rows[1].querySelector('.resources-quest-title')).toHaveTextContent('The Lost Seekers')
-    expect(rows[1].querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
-    expect(rows[1].querySelector('.resources-quest-meta')).toHaveTextContent('Chain end reward')
+    expect(rows[1].querySelector('.resources-item-source-title')).toHaveTextContent(
+      'The Lost Seekers',
+    )
+    expect(rows[1].querySelector('.resources-item-source-rare')).toHaveTextContent('Rare')
+    expect(rows[1].querySelector('.resources-item-source-descriptor')).toHaveTextContent(
+      'Chain end reward',
+    )
     expect(
       screen.getByRole('link', { name: 'Open The Lost Seekers on DDO Wiki' }),
     ).toBeInTheDocument()
@@ -616,12 +748,19 @@ describe('ItemDetailCard drop locations', () => {
       ],
     })
     expect(screen.getByText('Obtained from')).toBeInTheDocument()
-    const rows = container.querySelectorAll('.resources-quest-row')
+    const rows = container.querySelectorAll('.resources-item-source-row')
     expect(
-      Array.from(rows).map((r) => r.querySelector('.resources-quest-meta')?.textContent),
-    ).toEqual(['Saga reward · Epic', 'Saga reward · Legendary'])
-    expect(rows[0].querySelector('.resources-chip')).toBeNull()
-    expect(rows[1].querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+      Array.from(rows).map((r) =>
+        Array.from(r.querySelectorAll('.resources-item-source-descriptor')).map(
+          (descriptor) => descriptor.textContent,
+        ),
+      ),
+    ).toEqual([
+      ['Saga reward', 'Epic'],
+      ['Saga reward', 'Legendary'],
+    ])
+    expect(rows[0].querySelector('.resources-item-source-rare')).toBeNull()
+    expect(rows[1].querySelector('.resources-item-source-rare')).toHaveTextContent('Rare')
     expect(
       screen.getAllByRole('link', { name: 'Open Masterminds of Sharn on DDO Wiki' }),
     ).toHaveLength(2)
@@ -634,20 +773,26 @@ describe('ItemDetailCard drop locations', () => {
         { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
       ],
     })
-    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(/^Saga reward$/)
+    expect(container.querySelector('.resources-item-source-descriptor')).toHaveTextContent(
+      /^Saga reward$/,
+    )
   })
 
-  it('lists an adventure pack drop as Anywhere in the pack with the chest, Rare chip and wiki link', () => {
+  it('lists an adventure pack drop as Anywhere in the pack with the chest, Rare and wiki link', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       adventurePackDrops: [packDrop({ isRareLoot: true })],
     })
     expect(screen.getByText('Obtained from')).toBeInTheDocument()
-    expect(container.querySelector('.resources-quest-title')).toHaveTextContent('The Isle of Dread')
-    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
-      /^Anywhere in the pack · Any legendary chest$/,
+    expect(container.querySelector('.resources-item-source-title')).toHaveTextContent(
+      'The Isle of Dread',
     )
-    expect(container.querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+    expect(
+      Array.from(container.querySelectorAll('.resources-item-source-descriptor')).map(
+        (descriptor) => descriptor.textContent,
+      ),
+    ).toEqual(['Anywhere in the pack', 'Any legendary chest'])
+    expect(container.querySelector('.resources-item-source-rare')).toHaveTextContent('Rare')
     expect(
       screen.getByRole('link', { name: 'Open The Isle of Dread on DDO Wiki' }),
     ).toHaveAttribute('href', 'https://ddowiki.com/page/The_Isle_of_Dread')
@@ -658,7 +803,7 @@ describe('ItemDetailCard drop locations', () => {
       ...plainItem,
       adventurePackDrops: [packDrop({ chest: null })],
     })
-    expect(container.querySelector('.resources-quest-meta')).toHaveTextContent(
+    expect(container.querySelector('.resources-item-source-descriptor')).toHaveTextContent(
       /^Anywhere in the pack$/,
     )
   })
@@ -712,7 +857,7 @@ describe('ItemDetailCard drop locations', () => {
 
   it('shows no chest when the drop text names none', () => {
     const { container } = renderItemDetailCard({ ...plainItem, quests: [quest()] })
-    expect(container.querySelector('.resources-quest-chest')).toBeNull()
+    expect(container.querySelector('.resources-item-source-chest')).toBeNull()
   })
 
   it('falls back to the free-text drop location when no quests are linked', () => {
@@ -729,9 +874,11 @@ describe('ItemDetailCard drop locations', () => {
 })
 
 describe('ItemDetailCard sources beyond quests', () => {
-  function rowMeta(container: HTMLElement): string[] {
-    return Array.from(container.querySelectorAll('.resources-quest-row')).map(
-      (r) => r.querySelector('.resources-quest-meta')?.textContent ?? '',
+  function rowDescriptorText(container: HTMLElement): string[] {
+    return Array.from(container.querySelectorAll('.resources-item-source-row')).map((row) =>
+      Array.from(row.querySelectorAll('.resources-item-source-descriptor'))
+        .map((descriptor) => descriptor.textContent)
+        .join(' · '),
     )
   }
 
@@ -741,15 +888,17 @@ describe('ItemDetailCard sources beyond quests', () => {
       sourcesBeyondQuests: [itemSource()],
     })
     expect(screen.getByText('Obtained from')).toBeInTheDocument()
-    expect(container.querySelector('.resources-quest-title')).toHaveTextContent('Thunder-Forged')
-    expect(rowMeta(container)).toEqual(['Crafted at'])
+    expect(container.querySelector('.resources-item-source-title')).toHaveTextContent(
+      'Thunder-Forged',
+    )
+    expect(rowDescriptorText(container)).toEqual(['Crafted at'])
     expect(screen.getByRole('link', { name: 'Open Thunder-Forged on DDO Wiki' })).toHaveAttribute(
       'href',
       'https://ddowiki.com/page/Thunder-Forged',
     )
   })
 
-  it('lists a challenge pack as Challenge rewards with its Rare chip', () => {
+  it('lists a challenge pack as Challenge rewards with Rare', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [
@@ -762,8 +911,8 @@ describe('ItemDetailCard sources beyond quests', () => {
         }),
       ],
     })
-    expect(rowMeta(container)).toEqual(['Challenge rewards'])
-    expect(container.querySelector('.resources-chip[data-kind="rare"]')).toHaveTextContent('Rare')
+    expect(rowDescriptorText(container)).toEqual(['Challenge rewards'])
+    expect(container.querySelector('.resources-item-source-rare')).toHaveTextContent('Rare')
   })
 
   it('lists a vendor as Sold by with its location and cost', () => {
@@ -779,7 +928,7 @@ describe('ItemDetailCard sources beyond quests', () => {
         }),
       ],
     })
-    expect(rowMeta(container)).toEqual(['Sold by · The Harbor · 50 Tokens'])
+    expect(rowDescriptorText(container)).toEqual(['Sold by · The Harbor · 50 Tokens'])
   })
 
   it('lists a vendor with no location or cost as Sold by alone', () => {
@@ -787,7 +936,7 @@ describe('ItemDetailCard sources beyond quests', () => {
       ...plainItem,
       sourcesBeyondQuests: [itemSource({ kind: 'vendor', key: 'vendor-1', name: 'Morten' })],
     })
-    expect(rowMeta(container)).toEqual(['Sold by'])
+    expect(rowDescriptorText(container)).toEqual(['Sold by'])
   })
 
   it('lists an event as Event reward', () => {
@@ -797,7 +946,7 @@ describe('ItemDetailCard sources beyond quests', () => {
         itemSource({ kind: 'event', key: 'event-4', name: 'The Night Revels' }),
       ],
     })
-    expect(rowMeta(container)).toEqual(['Event reward'])
+    expect(rowDescriptorText(container)).toEqual(['Event reward'])
   })
 
   it('names starter gear by its level and shows no wiki link when the API gives no page', () => {
@@ -813,10 +962,10 @@ describe('ItemDetailCard sources beyond quests', () => {
         }),
       ],
     })
-    expect(container.querySelector('.resources-quest-title')).toHaveTextContent(
+    expect(container.querySelector('.resources-item-source-title')).toHaveTextContent(
       'Starter gear at level 15',
     )
-    expect(container.querySelector('.resources-quest-row .wiki-link-icon')).toBeNull()
+    expect(container.querySelector('.resources-item-source-row .wiki-link-icon')).toBeNull()
   })
 
   it('lists adventure pack drops after the quests and sources beyond quests after the chain and saga rows', () => {
@@ -831,7 +980,9 @@ describe('ItemDetailCard sources beyond quests', () => {
       sourcesBeyondQuests: [itemSource()],
     })
     expect(
-      Array.from(container.querySelectorAll('.resources-quest-title')).map((t) => t.textContent),
+      Array.from(container.querySelectorAll('.resources-item-source-title')).map(
+        (t) => t.textContent,
+      ),
     ).toEqual([
       "Delera's Tomb",
       'The Isle of Dread',

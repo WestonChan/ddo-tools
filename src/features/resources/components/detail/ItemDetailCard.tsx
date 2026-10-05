@@ -1,4 +1,4 @@
-import { useId, useState, type JSX } from 'react'
+import { Fragment, useId, useState, type JSX, type ReactNode } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   DetailCard,
@@ -12,7 +12,6 @@ import {
   WikiLinkIcon,
   type DetailStat,
 } from '../../../../components'
-import { DropTagChip } from '../DropTagChip'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import { DetailHeader } from './DetailHeader'
 import { EnchantmentList } from './EnchantmentList'
@@ -44,20 +43,103 @@ const ITEM_SOURCE_LABELS: Record<ItemSourceKind, string | null> = {
   starter: null,
 }
 
-function itemSourceMetaLine(itemSource: ItemSource): string {
+function itemSourceDescriptorParts(itemSource: ItemSource): string[] {
   return [
     ITEM_SOURCE_LABELS[itemSource.kind],
     itemSource.vendorLocation,
     itemSource.cost,
     itemSource.chest ? sentenceCased(itemSource.chest) : null,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  ].filter((descriptorPart): descriptorPart is string => Boolean(descriptorPart))
 }
 
 const SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE: ReadonlySet<ItemSourceKind> = new Set([
   'adventurePack',
 ])
+
+function ObtainedFromRow({
+  children,
+  wikiPageName,
+  wikiUrl,
+  descriptorParts,
+  isRaid = false,
+  isRareLoot = false,
+  level = null,
+  epicLevel = null,
+  pack = null,
+  patron = null,
+}: {
+  children: ReactNode
+  wikiPageName?: string
+  wikiUrl?: string | null
+  descriptorParts: ReactNode[]
+  isRaid?: boolean
+  isRareLoot?: boolean
+  level?: number | null
+  epicLevel?: number | null
+  pack?: string | null
+  patron?: string | null
+}): JSX.Element {
+  const levelNumbers = [level, epicLevel].filter(
+    (questLevel): questLevel is number => questLevel !== null,
+  )
+  const levelText = levelNumbers.length > 0 ? `Level ${levelNumbers.join(' / ')}` : null
+  const locationText = [pack, patron].filter(Boolean).join(' › ')
+  const levelHint =
+    level !== null && epicLevel !== null ? `Heroic ${level}, epic ${epicLevel}` : undefined
+  return (
+    <li className="resources-item-source-row">
+      <div className="resources-item-source-left">
+        <div className="resources-item-source-name">
+          <span className="resources-item-source-title">{children}</span>
+          {wikiPageName && (
+            <WikiLinkIcon
+              href={wikiUrl ?? undefined}
+              pageName={wikiPageName}
+              icon="external"
+              hintText="Open on ddowiki"
+            />
+          )}
+        </div>
+        {(descriptorParts.length > 0 || isRaid || isRareLoot) && (
+          <div className="resources-item-source-details">
+            {descriptorParts.map((descriptorPart, index) => (
+              <Fragment key={index}>
+                {index > 0 && <span className="resources-item-source-separator">·</span>}
+                <span className="resources-item-source-descriptor">{descriptorPart}</span>
+              </Fragment>
+            ))}
+            {isRaid && (
+              <>
+                {descriptorParts.length > 0 && (
+                  <span className="resources-item-source-separator">·</span>
+                )}
+                <span className="resources-item-source-raid">Raid</span>
+              </>
+            )}
+            {isRareLoot && (
+              <>
+                {(descriptorParts.length > 0 || isRaid) && (
+                  <span className="resources-item-source-separator">·</span>
+                )}
+                <span className="resources-item-source-rare">Rare</span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+      {(levelText || locationText) && (
+        <div className="resources-item-source-right">
+          {levelText && (
+            <span className="resources-item-source-level" data-tip={levelHint}>
+              {levelText}
+            </span>
+          )}
+          {locationText && <span className="resources-item-source-location">{locationText}</span>}
+        </div>
+      )}
+    </li>
+  )
+}
 
 function ItemSourceRow({
   itemSource,
@@ -66,29 +148,26 @@ function ItemSourceRow({
   itemSource: ItemSource
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element {
-  const metaLine = itemSourceMetaLine(itemSource)
   const hasWikiPage =
     itemSource.wikiUrl !== null ||
     SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE.has(itemSource.kind)
   return (
-    <li className="resources-quest-row">
-      <span className="resources-quest-name">
-        <SourceHoverAnchor
-          kind={itemSource.kind}
-          id={itemSource.id}
-          name={itemSource.name}
-          wikiUrl={itemSource.wikiUrl}
-          onOpenItem={onOpenItem}
-        >
-          <span className="resources-quest-title">{itemSource.name}</span>
-        </SourceHoverAnchor>
-        {itemSource.isRareLoot && <DropTagChip kind="rare" />}
-        {hasWikiPage && (
-          <WikiLinkIcon href={itemSource.wikiUrl ?? undefined} pageName={itemSource.name} />
-        )}
-      </span>
-      {metaLine && <span className="resources-quest-meta">{metaLine}</span>}
-    </li>
+    <ObtainedFromRow
+      wikiPageName={hasWikiPage ? itemSource.name : undefined}
+      wikiUrl={itemSource.wikiUrl}
+      descriptorParts={itemSourceDescriptorParts(itemSource)}
+      isRareLoot={itemSource.isRareLoot}
+    >
+      <SourceHoverAnchor
+        kind={itemSource.kind}
+        id={itemSource.id}
+        name={itemSource.name}
+        wikiUrl={itemSource.wikiUrl}
+        onOpenItem={onOpenItem}
+      >
+        {itemSource.name}
+      </SourceHoverAnchor>
+    </ObtainedFromRow>
   )
 }
 
@@ -526,79 +605,74 @@ export function ItemDetailCard({
             {variant === 'hover' ? (
               <HoverSourceSummary item={item} onOpenItem={onOpenItem} />
             ) : (
-              <ul className="resources-quest-list">
+              <ul className="resources-item-source-list">
                 {item.quests.map((quest: LootQuest) => (
-                  <li key={quest.id} className="resources-quest-row">
-                    <span className="resources-quest-name">
-                      <QuestHoverAnchor questId={quest.id} onOpenItem={onOpenItem}>
-                        <span className="resources-quest-title">{quest.name}</span>
-                      </QuestHoverAnchor>
-                      {quest.isRaid && <DropTagChip kind="raid" />}
-                      {quest.isRareLoot && <DropTagChip kind="rare" />}
-                      {quest.chests.map((chest) => (
-                        <span key={chest} className="resources-quest-chest">
+                  <ObtainedFromRow
+                    key={quest.id}
+                    wikiPageName={quest.name}
+                    descriptorParts={[
+                      ...quest.chests.map((chest) => (
+                        <span key={chest} className="resources-item-source-chest">
                           {sentenceCased(chest)}
                         </span>
-                      ))}
-                      <WikiLinkIcon pageName={quest.name} />
-                    </span>
-                    <span className="resources-quest-meta">
-                      {[
-                        quest.patron,
-                        quest.pack,
-                        quest.level !== null ? `Level ${quest.level}` : null,
-                        quest.isEndReward ? 'End reward' : null,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </li>
+                      )),
+                      ...(quest.isEndReward ? ['End reward'] : []),
+                    ]}
+                    isRaid={quest.isRaid}
+                    isRareLoot={quest.isRareLoot}
+                    level={quest.level}
+                    epicLevel={quest.epicLevel}
+                    pack={quest.pack}
+                    patron={quest.patron}
+                  >
+                    <QuestHoverAnchor questId={quest.id} onOpenItem={onOpenItem}>
+                      {quest.name}
+                    </QuestHoverAnchor>
+                  </ObtainedFromRow>
                 ))}
                 {item.adventurePackDrops.map((packDrop) => (
                   <ItemSourceRow key={packDrop.key} itemSource={packDrop} onOpenItem={onOpenItem} />
                 ))}
                 {item.questChains.map((questChain) => (
-                  <li key={`chain-${questChain.id}`} className="resources-quest-row">
-                    <span className="resources-quest-name">
-                      <SourceHoverAnchor
-                        kind="questChain"
-                        id={questChain.id}
-                        name={questChain.name}
-                        wikiUrl={questChain.wikiUrl}
-                        onOpenItem={onOpenItem}
-                      >
-                        <span className="resources-quest-title">{questChain.name}</span>
-                      </SourceHoverAnchor>
-                      {questChain.isRareLoot && <DropTagChip kind="rare" />}
-                      <WikiLinkIcon
-                        href={questChain.wikiUrl ?? undefined}
-                        pageName={questChain.name}
-                      />
-                    </span>
-                    <span className="resources-quest-meta">Chain end reward</span>
-                  </li>
+                  <ObtainedFromRow
+                    key={`chain-${questChain.id}`}
+                    wikiPageName={questChain.name}
+                    wikiUrl={questChain.wikiUrl}
+                    descriptorParts={['Chain end reward']}
+                    isRareLoot={questChain.isRareLoot}
+                  >
+                    <SourceHoverAnchor
+                      kind="questChain"
+                      id={questChain.id}
+                      name={questChain.name}
+                      wikiUrl={questChain.wikiUrl}
+                      onOpenItem={onOpenItem}
+                    >
+                      {questChain.name}
+                    </SourceHoverAnchor>
+                  </ObtainedFromRow>
                 ))}
                 {item.sagas.map((saga) => (
-                  <li key={`saga-${saga.id}-${saga.tier}`} className="resources-quest-row">
-                    <span className="resources-quest-name">
-                      <SourceHoverAnchor
-                        kind="saga"
-                        id={saga.id}
-                        name={saga.name}
-                        wikiUrl={saga.wikiUrl}
-                        onOpenItem={onOpenItem}
-                      >
-                        <span className="resources-quest-title">{saga.name}</span>
-                      </SourceHoverAnchor>
-                      {saga.isRareLoot && <DropTagChip kind="rare" />}
-                      <WikiLinkIcon href={saga.wikiUrl ?? undefined} pageName={saga.name} />
-                    </span>
-                    <span className="resources-quest-meta">
-                      {['Saga reward', saga.tier ? sentenceCased(saga.tier) : null]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </li>
+                  <ObtainedFromRow
+                    key={`saga-${saga.id}-${saga.tier}`}
+                    wikiPageName={saga.name}
+                    wikiUrl={saga.wikiUrl}
+                    descriptorParts={[
+                      'Saga reward',
+                      ...(saga.tier ? [sentenceCased(saga.tier)] : []),
+                    ]}
+                    isRareLoot={saga.isRareLoot}
+                  >
+                    <SourceHoverAnchor
+                      kind="saga"
+                      id={saga.id}
+                      name={saga.name}
+                      wikiUrl={saga.wikiUrl}
+                      onOpenItem={onOpenItem}
+                    >
+                      {saga.name}
+                    </SourceHoverAnchor>
+                  </ObtainedFromRow>
                 ))}
                 {item.sourcesBeyondQuests.map((itemSource) => (
                   <ItemSourceRow

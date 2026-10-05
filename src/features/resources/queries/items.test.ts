@@ -230,6 +230,7 @@ describe('mappers', () => {
       id: 11,
       name: 'Caught in the Web',
       level: 20,
+      epicLevel: null,
       pack: 'Web of Chaos',
       patron: 'The Twelve',
       isEndReward: false,
@@ -237,6 +238,13 @@ describe('mappers', () => {
       isRareLoot: true,
       isFreeToPlay: false,
       chests: ['raid warded chest'],
+    })
+  })
+
+  it('carries heroic and epic quest levels from a captured item response', () => {
+    expect(toItem(capturedItem as ApiItemDetail).quests[0]).toMatchObject({
+      level: 16,
+      epicLevel: 26,
     })
   })
 

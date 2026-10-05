@@ -202,6 +202,7 @@ export interface LootQuest {
   id: number
   name: string
   level: number | null
+  epicLevel: number | null
   pack: string | null
   patron: string | null
   isEndReward: boolean
@@ -430,6 +431,7 @@ function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
       id: apiLootQuest.id,
       name: apiLootQuest.name,
       level: apiLootQuest.level,
+      epicLevel: apiLootQuest.epic_level,
       pack: apiLootQuest.pack,
       patron: apiLootQuest.patron,
       isEndReward: false,
