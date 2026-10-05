@@ -28,7 +28,6 @@ import {
   useItemPage,
   useRaidQuests,
 } from '../queries/useItems'
-import { DropTagChip } from './DropTagChip'
 import { itemFilterDefinitions } from './itemFilterDefinitions'
 import { StatusPlaceholder } from './StatusPlaceholder'
 import { ItemHoverContent } from './detail/ResourceHoverCards'
@@ -66,13 +65,7 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
     isPrimary: true,
     minWidth: 120,
     sortValue: (item) => item.name,
-    render: (item) => (
-      <span className="resources-ledger-name">
-        <span>{item.name}</span>
-        {item.isRaidLoot && <DropTagChip kind="raid" />}
-        {item.isRareLoot && <DropTagChip kind="rare" />}
-      </span>
-    ),
+    render: (item) => item.name,
   },
   {
     key: 'ml',
@@ -110,7 +103,15 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
     hiddenBelowPx: 600,
     isSortable: false,
     sortValue: (item) => (item.isRaidLoot ? 0 : 1),
-    render: (item) => (item.isRaidLoot ? 'Yes' : '—'),
+    render: (item) => (
+      <span
+        className={
+          'resources-ledger-loot' + (item.isRaidLoot ? ' resources-ledger-loot--raid' : '')
+        }
+      >
+        {item.isRaidLoot ? 'Yes' : '—'}
+      </span>
+    ),
   },
   {
     key: 'rare',
@@ -120,7 +121,15 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
     hiddenBelowPx: 600,
     isSortable: false,
     sortValue: (item) => (item.isRareLoot ? 0 : 1),
-    render: (item) => (item.isRareLoot ? 'Yes' : '—'),
+    render: (item) => (
+      <span
+        className={
+          'resources-ledger-loot' + (item.isRareLoot ? ' resources-ledger-loot--rare' : '')
+        }
+      >
+        {item.isRareLoot ? 'Yes' : '—'}
+      </span>
+    ),
   },
 ]
 
@@ -311,6 +320,17 @@ export function ItemPicker({
         values={filters}
         onChange={onFiltersChange}
         onClearAll={clearAll}
+        resultCount={
+          <span className="resources-result-count" id={resultCountId} aria-live="polite">
+            {itemPageQuery.error && !itemPageQuery.isFetchNextPageError
+              ? null
+              : (itemPageQuery.isFetching && !itemPageQuery.isFetchingNextPage) ||
+                  itemPageQuery.isPlaceholderData ||
+                  (itemPageQuery.fetchStatus === 'paused' && !itemPageQuery.isFetchingNextPage)
+                ? 'Loading…'
+                : `${itemPageQuery.data?.pages[0]?.total ?? 0}${itemPageQuery.data?.pages[0]?.total === 1 ? ' result' : ' results'}`}
+          </span>
+        }
         hasSearchTerm={!!searchQuery}
         focusFallbackRef={effectiveSearchInputRef}
         onPickerOpen={(key) => setOpenedPickers((previous) => new Set(previous).add(String(key)))}
@@ -351,15 +371,6 @@ export function ItemPicker({
           ),
         }}
       />
-      <div className="resources-result-count" id={resultCountId} aria-live="polite">
-        {itemPageQuery.error && !itemPageQuery.isFetchNextPageError
-          ? null
-          : (itemPageQuery.isFetching && !itemPageQuery.isFetchingNextPage) ||
-              itemPageQuery.isPlaceholderData ||
-              (itemPageQuery.fetchStatus === 'paused' && !itemPageQuery.isFetchingNextPage)
-            ? 'Loading…'
-            : `${itemPageQuery.data?.pages[0]?.total ?? 0}${itemPageQuery.data?.pages[0]?.total === 1 ? ' result' : ' results'}`}
-      </div>
       <LedgerTable
         columns={ITEM_COLUMNS}
         rowCount={

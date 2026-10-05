@@ -115,6 +115,82 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
+test('shows loot status in its columns and keeps the count on the applied line', async ({
+  page,
+}) => {
+  await page.route(/\/v1\/items\?/, async (route) => {
+    const isRareOnly = new URL(route.request().url()).searchParams.get('rare') === 'true'
+    const listedItems = isRareOnly ? items.filter((item) => item.is_rare) : items
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        total: listedItems.length,
+        limit: 200,
+        offset: 0,
+        items: listedItems,
+      }),
+    })
+  })
+  await page.goto('/resources/items')
+  const table = page.getByRole('table', { name: 'items list', exact: true })
+  await expect(table).toBeVisible()
+  for (const [name, raid, rare] of [
+    ['Bloodstone', 'Yes', '—'],
+    ['Cloak of Night', '—', '—'],
+    ['Ring of Spell Storing', '—', 'Yes'],
+  ]) {
+    const cells = table.getByRole('row', { name: new RegExp(name) }).getByRole('cell')
+    await expect(cells.nth(0)).toHaveText(name)
+    await expect(cells.nth(0).locator('.resources-chip')).toHaveCount(0)
+    await expect(cells.nth(4)).toHaveText(raid)
+    await expect(cells.nth(5)).toHaveText(rare)
+  }
+  const colors = await page.evaluate(() => {
+    const sample = document.createElement('span')
+    document.body.append(sample)
+    const resolved = ['--text-accent', '--text-body', '--text-faint'].map((token) => {
+      sample.style.color = `var(${token})`
+      return getComputedStyle(sample).color
+    })
+    sample.remove()
+    return resolved
+  })
+  const bloodstoneCells = table.getByRole('row', { name: /Bloodstone/ }).getByRole('cell')
+  const ringCells = table.getByRole('row', { name: /Ring of Spell Storing/ }).getByRole('cell')
+  await expect(bloodstoneCells.nth(4).locator('span')).toHaveCSS('color', colors[0])
+  await expect(bloodstoneCells.nth(5).locator('span')).toHaveCSS('color', colors[2])
+  await expect(ringCells.nth(4).locator('span')).toHaveCSS('color', colors[2])
+  await expect(ringCells.nth(5).locator('span')).toHaveCSS('color', colors[1])
+  await expect(ringCells.nth(5).locator('span')).toHaveCSS('font-size', '12.5px')
+  const appliedLine = page.locator('.filter-applied-toggle-row')
+  const resultCount = appliedLine.locator('.resources-result-count')
+  await expect(appliedLine).toHaveText('3 results')
+  await expect(appliedLine).toHaveCSS('justify-content', 'space-between')
+  await expect(appliedLine).toHaveCSS('gap', '12px')
+  await expect(appliedLine).toHaveCSS('min-height', '20px')
+  await expect(resultCount).toHaveAttribute('aria-live', 'polite')
+  await expect(resultCount).toHaveCSS('font-size', '11.5px')
+  await expect(resultCount).toHaveCSS('color', colors[2])
+  const countRightGap = async (): Promise<number> =>
+    appliedLine.evaluate((line) => {
+      const count = line.querySelector('.resources-result-count')
+      if (!count) return Number.NaN
+      return Math.round(line.getBoundingClientRect().right - count.getBoundingClientRect().right)
+    })
+  await expect.poll(countRightGap).toBe(0)
+  await expect(page.getByRole('searchbox', { name: 'Search items', exact: true })).toHaveAttribute(
+    'aria-describedby',
+    await resultCount.evaluate((count) => count.id),
+  )
+  await page.getByRole('button', { name: 'Rare only', exact: true }).click()
+  await expect(
+    appliedLine.getByRole('button', { name: 'Show applied · 1', exact: true }),
+  ).toBeVisible()
+  await expect(resultCount).toHaveText('1 result')
+  await expect.poll(countRightGap).toBe(0)
+})
+
 test('filter chips keep their label width when values are selected', async ({ page }) => {
   await page.goto('/resources/items')
   await expect(page.getByRole('table', { name: 'items list', exact: true })).toBeVisible()

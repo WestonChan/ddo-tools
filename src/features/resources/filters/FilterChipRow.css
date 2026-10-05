@@ -131,6 +131,9 @@
 }
 
 .filter-applied-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
   min-height: 20px;
 }
 

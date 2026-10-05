@@ -38,6 +38,7 @@ interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue
   focusFallbackRef?: RefObject<HTMLElement | null>
   onPickerOpen?: (key: keyof Values) => void
   loadingPickers?: ReadonlySet<string>
+  resultCount?: ReactNode
 }
 
 interface FilterChipProps {
@@ -277,6 +278,7 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   focusFallbackRef,
   onPickerOpen,
   loadingPickers,
+  resultCount,
 }: FilterChipRowProps<Values>): JSX.Element {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [isAppliedOpen, setIsAppliedOpen] = useState(false)
@@ -409,20 +411,23 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
           </button>
         )}
       </div>
-      {appliedValues.length > 0 && (
+      {(appliedValues.length > 0 || resultCount) && (
         <div className="filter-applied-toggle-row">
-          <button
-            type="button"
-            className="filter-applied-toggle"
-            onClick={() => setIsAppliedOpen(!isAppliedOpen)}
-          >
-            {isAppliedOpen ? 'Hide applied' : 'Show applied · ' + appliedValues.length}
-            <ChevronDown
-              size={12}
-              className={isAppliedOpen ? 'filter-applied-chevron--open' : ''}
-              aria-hidden
-            />
-          </button>
+          {appliedValues.length > 0 && (
+            <button
+              type="button"
+              className="filter-applied-toggle"
+              onClick={() => setIsAppliedOpen(!isAppliedOpen)}
+            >
+              {isAppliedOpen ? 'Hide applied' : 'Show applied · ' + appliedValues.length}
+              <ChevronDown
+                size={12}
+                className={isAppliedOpen ? 'filter-applied-chevron--open' : ''}
+                aria-hidden
+              />
+            </button>
+          )}
+          {resultCount}
         </div>
       )}
       {isAppliedOpen && appliedValues.length > 0 && (

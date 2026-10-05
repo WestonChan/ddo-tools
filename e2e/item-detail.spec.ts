@@ -157,7 +157,7 @@ test('search keyboard navigation scrolls a virtualized result into view and open
   await expect(lastRow).toHaveClass(/ledger-row--selected/)
   const selectedRowStyle = await lastRow.evaluate((row) => {
     const rowStyle = getComputedStyle(row)
-    const name = row.querySelector('.resources-ledger-name')
+    const name = row.querySelector('.ledger-cell--primary')
     if (!name) throw new Error('Selected row has no name')
     const colorSample = document.createElement('span')
     colorSample.style.color = 'var(--text-accent)'

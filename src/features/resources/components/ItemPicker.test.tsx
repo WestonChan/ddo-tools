@@ -25,8 +25,20 @@ function itemRow(overrides: Partial<ItemSummary> = {}): ItemSummary {
 
 const SAMPLE_ITEMS = [
   itemRow(),
-  itemRow({ id: 2, name: 'Cloak of Night', equipmentSlot: 'Back', pack: 'Shadowfell' }),
-  itemRow({ id: 3, name: 'Ring of Spell Storing', equipmentSlot: 'Ring', isRareLoot: true }),
+  itemRow({
+    id: 2,
+    name: 'Cloak of Night',
+    equipmentSlot: 'Back',
+    pack: 'Shadowfell',
+    isRaidLoot: false,
+  }),
+  itemRow({
+    id: 3,
+    name: 'Ring of Spell Storing',
+    equipmentSlot: 'Ring',
+    isRaidLoot: false,
+    isRareLoot: true,
+  }),
 ]
 let pageState: {
   data: { total: number; items: ItemSummary[] } | undefined
@@ -116,6 +128,48 @@ describe('ItemPicker server-backed filters', () => {
     ).toEqual(['ML range', 'Gear slot', 'Enchantments', 'Pack', 'Raid', 'Rare only', 'Raid only'])
     expect(screen.getByText('93 results')).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'items list' })).toBeInTheDocument()
+  })
+
+  it('shows loot status only in the Raid and Rare cells', () => {
+    renderItemPicker()
+    for (const [name, raid, rare] of [
+      ['Bloodstone', 'Yes', '—'],
+      ['Cloak of Night', '—', '—'],
+      ['Ring of Spell Storing', '—', 'Yes'],
+    ]) {
+      const cells = within(screen.getByRole('row', { name: new RegExp(name) })).getAllByRole('cell')
+      expect(cells[0]).toHaveTextContent(name)
+      expect(cells[0]).not.toHaveTextContent(/Raid|Rare/)
+      expect(cells[0].querySelector('.resources-chip')).toBeNull()
+      expect(cells[4]).toHaveTextContent(raid)
+      expect(cells[5]).toHaveTextContent(rare)
+    }
+  })
+
+  it('keeps the result count on the applied line with and without filters', async () => {
+    const view = render(<ItemPickerHarness />)
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    const count = screen.getByText('93 results')
+    const appliedLine = count.closest('.filter-applied-toggle-row')
+    expect(appliedLine).not.toBeNull()
+    expect(appliedLine).not.toHaveTextContent('Show applied')
+    expect(count).toHaveAttribute('aria-live', 'polite')
+    expect(search).toHaveAttribute('aria-describedby', count.id)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
+    pageState = {
+      data: { total: 1, items: [SAMPLE_ITEMS[2]] },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    view.rerender(<ItemPickerHarness />)
+    const singularCount = screen.getByText('1 result')
+    expect(singularCount.closest('.filter-applied-toggle-row')).toBe(appliedLine)
+    expect(
+      within(appliedLine as HTMLElement).getByRole('button', { name: 'Show applied · 1' }),
+    ).toBeInTheDocument()
+    expect(search).toHaveAttribute('aria-describedby', singularCount.id)
   })
 
   it('shows a large response total without grouping separators', () => {
