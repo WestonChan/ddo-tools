@@ -153,20 +153,19 @@ describe('ItemDetailCard details', () => {
       'Crit range19–20',
       'Crit multiplier×2',
       'Enhancement+5',
+      'BypassesChaotic, Evil, Good, Lawful, Magic, Slash',
       'TypeGreat Sword',
       'ProficiencyMartial',
       'HandednessTwo-handed',
       'MaterialSteel',
-      'BypassesChaotic',
-      'BypassesEvil',
-      'BypassesGood',
-      'BypassesLawful',
-      'BypassesMagic',
-      'BypassesSlash',
     ])
     expect(container.querySelector('.detail-extras')).not.toBeNull()
-    expect(container.querySelectorAll('.detail-extras__entry')).toHaveLength(10)
-    expect(container.querySelector('.detail-extras')).not.toHaveAttribute('data-layout')
+    expect(container.querySelectorAll('.detail-extras__entry')).toHaveLength(5)
+    expect(container.querySelector('.detail-extras__entry')).toHaveClass(
+      'detail-extras__entry--wide',
+    )
+    expect(container.querySelector('.detail-extras__entry')).toHaveTextContent('Bypasses')
+    expect(button.parentElement?.nextElementSibling).toHaveClass('detail-extras')
     expect(container.querySelector('.detail-extras')).not.toHaveTextContent('Enhancement')
     expect(screen.getAllByText('Material')).toHaveLength(1)
     expect(screen.queryByText('Damage type')).toBeNull()
@@ -194,12 +193,14 @@ describe('ItemDetailCard details', () => {
       'Armor bonus16',
       'Max Dex bonus1',
       'Enhancement+5',
-      'Arcane spell failure35%',
-      'Armor check penalty-5',
+      'Spell failure35%',
+      'Check penalty-5',
       'MaterialMagesteel',
     ])
     expect(screen.queryByText('Shield bonus')).toBeNull()
     expect(screen.queryByText('Damage reduction')).toBeNull()
+    expect(screen.getByText('Spell failure')).toHaveAttribute('title', 'Arcane spell failure')
+    expect(screen.getByText('Check penalty')).toHaveAttribute('title', 'Armor check penalty')
     const values = Array.from(
       container.querySelectorAll('.detail-fact-grid__value, .detail-extras__value'),
     )
@@ -221,7 +222,8 @@ describe('ItemDetailCard details', () => {
     })
     const { container } = renderItemDetailCard(item)
     await userEvent.click(screen.getByRole('button', { name: 'More armor details' }))
-    expect(detailStatText(container)).toContain('Damage reduction5')
+    expect(detailStatText(container)).toContain('DR5')
+    expect(screen.getByText('DR')).toHaveAttribute('title', 'Damage reduction')
   })
 
   it('keeps an unsplittable critical in one row and omits blank stats', async () => {
@@ -352,7 +354,9 @@ describe('ItemDetailCard details', () => {
       Array.from(facts.children).map((fact) => fact.querySelector('.section-label')?.textContent)
     const originalLabels = factLabels()
     expect(originalLabels).toEqual(['ML', 'Gear slot', 'Raid', 'Rare', 'Set', 'Augments'])
-    expect(originalFacts.at(-1)?.querySelector('.resources-augment-gem')).not.toBeNull()
+    expect(originalFacts.at(-1)?.querySelector('.resources-augment-word')).toHaveTextContent(
+      'Yellow',
+    )
     await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
     const ledger = container.querySelector('.resources-augment-candidates')!
     expect(ledger).not.toBeNull()
@@ -376,12 +380,47 @@ describe('ItemDetailCard details', () => {
     ).toEqual(originalPositions)
   })
 
-  it('omits the Augments fact for items without sockets', () => {
-    const { container } = renderItemDetailCard(plainItem)
+  it('keeps every title fact in order and marks missing values consistently', () => {
+    const { container, rerender } = renderItemDetailCard({
+      ...plainItem,
+      minimumLevel: null,
+      equipmentSlot: '',
+    })
     const header = container.querySelector('.detail-card__header')!
-    expect(header.querySelector('.detail-card__facts')).not.toBeNull()
+    const facts = Array.from(header.querySelectorAll('.detail-card__fact'))
+    expect(facts.map((fact) => fact.querySelector('.section-label')?.textContent)).toEqual([
+      'ML',
+      'Gear slot',
+      'Raid',
+      'Rare',
+      'Set',
+      'Augments',
+    ])
+    expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual(Array(6).fill('—'))
+    expect(facts.every((fact) => fact.querySelector('.detail-card__fact-empty'))).toBe(true)
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
-    expect(screen.queryByText('Augments')).toBeNull()
+    rerender(<ItemDetailCard item={plainItem} />)
+    expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual([
+      '5',
+      'Trinket',
+      '—',
+      '—',
+      '—',
+      '—',
+    ])
+    rerender(
+      <ItemDetailCard
+        item={{ ...plainItem, minimumLevel: 0, equipmentSlot: '  ', setName: '  ' }}
+      />,
+    )
+    expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual([
+      '0',
+      '—',
+      '—',
+      '—',
+      '—',
+      '—',
+    ])
   })
 
   it('keeps hover card sockets last in the header facts', () => {
@@ -391,7 +430,9 @@ describe('ItemDetailCard details', () => {
     const header = container.querySelector('.detail-card--hover .detail-card__header')!
     const facts = header.querySelector('.detail-card__facts')!
     expect(facts.lastElementChild?.querySelector('.section-label')).toHaveTextContent('Augments')
-    expect(facts.lastElementChild?.querySelector('.resources-augment-gem')).not.toBeNull()
+    expect(facts.lastElementChild?.querySelector('.resources-augment-word')).toHaveTextContent(
+      'Yellow',
+    )
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
   })
 
@@ -410,9 +451,9 @@ describe('ItemDetailCard details', () => {
       'Shield bonus17',
       'Max Dex bonus2',
       'Enhancement+5',
-      'Arcane spell failure50%',
-      'Armor check penalty-9',
-      'Damage reduction13',
+      'Spell failure50%',
+      'Check penalty-9',
+      'DR13',
       'MaterialSteel',
     ])
     rerender(<></>)
@@ -452,22 +493,17 @@ describe('ItemDetailCard details', () => {
     ).toHaveClass('hover-card-row')
   })
 
-  it('uses the same tags and ordering for pane and hover extras', async () => {
+  it('uses the same pairs and ordering for pane and hover extras', async () => {
     const item = weaponItem()
     const pane = render(<ItemDetailCard item={item} />)
     await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
     expect(pane.container.querySelector('.detail-extras')).not.toBeNull()
     expect(detailStatText(pane.container).slice(4)).toEqual([
+      'BypassesChaotic, Evil, Good, Lawful, Magic, Slash',
       'TypeGreat Sword',
       'ProficiencyMartial',
       'HandednessTwo-handed',
       'MaterialSteel',
-      'BypassesChaotic',
-      'BypassesEvil',
-      'BypassesGood',
-      'BypassesLawful',
-      'BypassesMagic',
-      'BypassesSlash',
     ])
     const paneExtraText = detailStatText(pane.container).slice(4)
     pane.unmount()
@@ -476,6 +512,19 @@ describe('ItemDetailCard details', () => {
     await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
     expect(hover.container.querySelector('.detail-extras')).not.toBeNull()
     expect(detailStatText(hover.container).slice(4)).toEqual(paneExtraText)
+  })
+
+  it('spans long values across the extras grid but keeps 22-character values in one column', async () => {
+    const item = weaponItem({
+      weapon_type: '1234567890123456789012',
+      proficiency: '12345678901234567890123',
+      dr_bypass: [],
+    })
+    const { container } = renderItemDetailCard(item)
+    await userEvent.click(screen.getByRole('button', { name: 'More weapon details' }))
+    const entries = Array.from(container.querySelectorAll('.detail-extras__entry'))
+    expect(entries[0]).not.toHaveClass('detail-extras__entry--wide')
+    expect(entries[1]).toHaveClass('detail-extras__entry--wide')
   })
 })
 

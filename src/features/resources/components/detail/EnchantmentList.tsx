@@ -1,4 +1,5 @@
 import type { JSX } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   DetailCardSection,
   DetailMore,
@@ -22,6 +23,7 @@ interface EnchantmentRow {
   hoverValue: string
   description: string | null
   headingKind: 'set' | 'tier' | null
+  bonusCount?: number
   isMatch: boolean
 }
 
@@ -68,6 +70,7 @@ function setRows(setDetail: SetDetail, matchingNames: ReadonlySet<string>): Ench
       hoverValue: '',
       description: null,
       headingKind: 'set',
+      bonusCount: setDetail.tiers.reduce((count, tier) => count + tier.bonuses.length, 0),
       isMatch: false,
     },
   ]
@@ -107,11 +110,18 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
     isFlexible: true,
     minWidth: 120,
     sortValue: (row) => row.name,
-    render: (row) =>
+    render: (row, heading) =>
       row.headingKind === 'set' ? (
         <span className="resources-set-heading">
           <span className="resources-set-name">{row.name}</span>
           <span className="resources-set-eyebrow">Set</span>
+          <span className="resources-set-spacer" />
+          <span className="resources-set-toggle">
+            {heading?.isExpanded
+              ? 'Hide'
+              : `${row.bonusCount} ${row.bonusCount === 1 ? 'bonus' : 'bonuses'}`}
+            {heading?.isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </span>
         </span>
       ) : row.headingKind === 'tier' ? (
         <span className="resources-set-tier-heading">{row.name}</span>
@@ -199,7 +209,7 @@ export function EnchantmentList({
           rowKey={(row) => row.key}
           rowKind={(row) =>
             row.headingKind === 'set'
-              ? 'heading'
+              ? 'collapsibleHeading'
               : row.headingKind === 'tier'
                 ? 'subheading'
                 : 'row'

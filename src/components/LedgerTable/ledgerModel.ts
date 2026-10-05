@@ -14,7 +14,7 @@ export interface LedgerColumn<Row> {
   defaultSortDirection?: 'asc' | 'desc'
   isSortable?: boolean
   sortValue: (row: Row) => string | number | boolean | null
-  render: (row: Row) => ReactNode
+  render: (row: Row, heading?: { isExpanded: boolean }) => ReactNode
 }
 
 export interface LedgerSort {
@@ -22,7 +22,7 @@ export interface LedgerSort {
   direction: 'asc' | 'desc'
 }
 
-export type LedgerRowKind = 'row' | 'heading' | 'subheading'
+export type LedgerRowKind = 'row' | 'heading' | 'subheading' | 'collapsibleHeading'
 
 const textCollator = new Intl.Collator(undefined, { sensitivity: 'base' })
 
@@ -70,6 +70,23 @@ export function sortedLedgerRows<Row>(
     } else segment.push(row)
   }
   return sortedRows.concat(segment.sort(compare))
+}
+
+export function visibleLedgerRows<Row>(
+  rows: Row[],
+  rowKind: (row: Row) => LedgerRowKind,
+  rowKey: (row: Row) => string | number,
+  expandedHeadingKeys: ReadonlySet<string | number>,
+): Row[] {
+  let isCollapsed = false
+  return rows.filter((row) => {
+    const kind = rowKind(row)
+    if (kind === 'heading' || kind === 'collapsibleHeading') {
+      isCollapsed = kind === 'collapsibleHeading' && !expandedHeadingKeys.has(rowKey(row))
+      return true
+    }
+    return !isCollapsed
+  })
 }
 
 export function reorderedColumnKeys(keys: string[], activeKey: string, overKey: string): string[] {

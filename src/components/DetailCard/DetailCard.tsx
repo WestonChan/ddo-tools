@@ -60,12 +60,12 @@ export function DetailFact({
   children,
 }: {
   label: string
-  children: ReactNode
+  children?: ReactNode
 }): JSX.Element {
   return (
     <div className="detail-card__fact">
       <span className="section-label">{label}</span>
-      <div>{children}</div>
+      <div>{children ?? <span className="detail-card__fact-empty">—</span>}</div>
     </div>
   )
 }

@@ -7,6 +7,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-04',
     changes: [
+      'Quest levels in Obtained from read "Level" in the normal font with only the numbers monospaced',
+      "An item's augment sockets read as coloured words (Yellow, Red, Blue) in its title and hover card, set bonuses start folded to one row per set that opens on click, every title fact is always shown at one size with a dash when empty, and More details opens two columns with damage-reduction bypasses on top",
       'The item list shows Raid and Rare only in their columns, without chips beside the name, and the result count sits on the Show applied line',
       "An item's Obtained from rows put the quest, its chest, Raid and Rare on the left and the level and pack › patron on the right, without chips",
       'Escape pressed right after pinning a hover card with T closes it, however quickly the keys follow',

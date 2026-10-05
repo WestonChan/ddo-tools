@@ -200,7 +200,7 @@ test('search keyboard navigation scrolls a virtualized result into view and open
   await expect(search).toBeFocused()
 })
 
-test('item detail fact cells and tags render in pane and hover', async ({ page }) => {
+test('item detail fact cells and pairs render in pane and hover', async ({ page }) => {
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
@@ -252,20 +252,43 @@ test('item detail fact cells and tags render in pane and hover', async ({ page }
       return [style.display, style.columnGap, style.rowGap, style.padding]
     }),
   ).toEqual(['grid', '16px', '10px', '2px 12px 4px'])
-  await detailPane.getByRole('button', { name: 'More armor details', exact: true }).click()
-  const tags = detailPane.locator('.detail-extras')
-  await expect(tags.locator('.detail-extras__entry')).toHaveText([
-    'Arcane spell failure35%',
-    'Armor check penalty-5',
+  const moreButton = detailPane.getByRole('button', { name: 'More armor details', exact: true })
+  expect(
+    await moreButton.evaluate((button) => button.parentElement?.previousElementSibling?.className),
+  ).toBe('detail-fact-grid')
+  await moreButton.click()
+  const extras = detailPane.locator('.detail-extras')
+  await expect(extras.locator('.detail-extras__entry')).toHaveText([
+    'Spell failure35%',
+    'Check penalty-5',
     'MaterialMagesteel',
   ])
-  await expect(tags).not.toHaveAttribute('data-layout')
   expect(
-    await tags.evaluate((element) => {
+    await detailPane
+      .getByRole('button', { name: 'Less', exact: true })
+      .evaluate((button) => button.parentElement?.nextElementSibling?.className),
+  ).toBe('detail-extras')
+  expect(
+    await extras.evaluate((element) => {
       const style = getComputedStyle(element)
-      return [style.display, style.flexWrap, style.gap]
+      return [style.display, style.columnGap, style.marginTop, style.borderTopStyle]
     }),
-  ).toEqual(['flex', 'wrap', '6px'])
+  ).toEqual(['grid', '24px', '8px', 'dotted'])
+  expect(
+    await extras
+      .locator('.detail-extras__entry')
+      .first()
+      .evaluate((entry) => {
+        const style = getComputedStyle(entry)
+        return [
+          style.display,
+          style.minHeight,
+          style.alignItems,
+          style.justifyContent,
+          style.padding,
+        ]
+      }),
+  ).toEqual(['flex', '30px', 'baseline', 'space-between', '5px 12px'])
   const itemRow = page.getByRole('row', { name: /Beholder Plate Armor/ })
   await itemRow.hover()
   await itemRow.press('t')
@@ -285,8 +308,8 @@ test('item detail fact cells and tags render in pane and hover', async ({ page }
   ])
   await hoverCard.getByRole('button', { name: 'More armor details', exact: true }).click()
   await expect(hoverCard.locator('.detail-extras__entry')).toHaveText([
-    'Arcane spell failure35%',
-    'Armor check penalty-5',
+    'Spell failure35%',
+    'Check penalty-5',
     'MaterialMagesteel',
   ])
 })
@@ -337,6 +360,12 @@ test('set band heights and opening an augment socket preserve the item detail la
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
   const setHeading = detailPane.locator('.resources-enchantment-ledger .ledger-row--heading')
   const tierEyebrow = detailPane.locator('.resources-enchantment-ledger .ledger-row--subheading')
+  await expect(setHeading).toHaveAttribute('aria-expanded', 'false')
+  await expect(setHeading).toContainText('7 bonuses')
+  await expect(tierEyebrow).toHaveCount(0)
+  await setHeading.click()
+  await page.mouse.move(0, 0)
+  await expect(setHeading).toHaveAttribute('aria-expanded', 'true')
   await expect(tierEyebrow).toHaveText('5 pieces')
   await page.evaluate(() => document.fonts.ready)
   expect((await setHeading.boundingBox())?.height).toBe(34)
@@ -345,9 +374,7 @@ test('set band heights and opening an augment socket preserve the item detail la
   await expect(enchantmentBody).not.toHaveAttribute('tabindex')
   await detailPane.locator('.resources-enchantment-ledger .ledger-header-cell').first().focus()
   await page.keyboard.press('Tab')
-  await expect(
-    detailPane.locator('.resources-enchantment-ledger .ledger-row').first(),
-  ).toBeFocused()
+  await expect(setHeading).toBeFocused()
   await page.keyboard.press('End')
   const tierBonus = detailPane.locator('.resources-enchantment-ledger .ledger-row').last()
   await expect(tierBonus).toBeFocused()
@@ -382,6 +409,18 @@ test('set band heights and opening an augment socket preserve the item detail la
     'Set',
     'Augments',
   ])
+  const factValueStyles = (grid: Element): Array<{ fontSize: string; fontWeight: string }> =>
+    Array.from(grid.querySelectorAll('.detail-card__fact')).map((fact) => {
+      const value =
+        fact.querySelector(
+          '.resources-augment-word, .num, .resources-hover-anchor, .detail-card__fact-empty',
+        ) ?? fact.lastElementChild!
+      const style = getComputedStyle(value)
+      return { fontSize: style.fontSize, fontWeight: style.fontWeight }
+    })
+  expect(await facts.evaluate(factValueStyles)).toEqual(
+    Array(6).fill({ fontSize: '15px', fontWeight: '600' }),
+  )
   expect(await facts.evaluate((row) => getComputedStyle(row).columnGap)).toBe('28px')
   expect(await facts.evaluate((row) => getComputedStyle(row).rowGap)).toBe('10px')
   const factPositions = (): Promise<
@@ -416,7 +455,10 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.getByRole('row', { name: /Adversion/ }).hover()
   const hoverCard = page.locator('[data-hover-card]')
   await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
-  await expect(hoverCard.locator('.detail-card__facts .resources-augment-gem')).toBeVisible()
+  await expect(hoverCard.locator('.detail-card__facts .resources-augment-word')).toBeVisible()
+  expect(await hoverCard.locator('.detail-card__facts').evaluate(factValueStyles)).toEqual(
+    Array(6).fill({ fontSize: '12.5px', fontWeight: '600' }),
+  )
   await page.keyboard.press('Escape')
   await expect(hoverCard).toBeVisible()
   await page.mouse.move(0, 0)
@@ -515,7 +557,7 @@ test('the detail pane displays the item name once beside the list and takes over
   const hoverCard = page.locator('[data-hover-card]')
   await expect(hoverCard).toBeVisible()
   await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
-  await expect(hoverCard.locator('.detail-card__facts .resources-augment-control')).toBeVisible()
+  await expect(hoverCard.locator('.detail-card__facts .resources-augment-word')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(hoverCard).toBeVisible()
   await page.mouse.move(0, 0)
@@ -534,7 +576,7 @@ test('the detail pane displays the item name once beside the list and takes over
   await expect(picker).toHaveCount(0)
   await expect(detailPane).toBeInViewport()
   await expect(detailPane.locator('.detail-card__header .detail-card__facts')).toBeInViewport()
-  await expect(detailPane.locator('.detail-card__facts .resources-augment-control')).toBeVisible()
+  await expect(detailPane.locator('.detail-card__facts .resources-augment-word')).toBeVisible()
   const mobileName = await detailPane.locator('.detail-card__name').boundingBox()
   const mobileActions = await detailPane.locator('.detail-card__actions').boundingBox()
   expect((mobileActions?.y ?? 0) >= (mobileName?.y ?? 0) + (mobileName?.height ?? 0)).toBe(true)

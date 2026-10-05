@@ -48,6 +48,53 @@ const columns: LedgerColumn<(typeof rows)[number]>[] = [
 afterEach(cleanup)
 
 describe('LedgerTable', () => {
+  it('collapses each heading independently and navigates through visible rows', async () => {
+    const groupedRows = [
+      { id: 1, name: 'First set', ml: 0 },
+      { id: 2, name: 'First tier', ml: 0 },
+      { id: 3, name: 'First bonus', ml: 3 },
+      { id: 4, name: 'Second set', ml: 0 },
+      { id: 5, name: 'Second tier', ml: 0 },
+      { id: 6, name: 'Second bonus', ml: 6 },
+    ]
+    render(
+      <LedgerTable
+        columns={columns}
+        rowCount={groupedRows.length}
+        rowAt={(index) => groupedRows[index]}
+        rowKey={(row) => row.id}
+        rowKind={(row) =>
+          row.name.endsWith('set')
+            ? 'collapsibleHeading'
+            : row.name.endsWith('tier')
+              ? 'subheading'
+              : 'row'
+        }
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+      />,
+    )
+    const firstHeading = screen.getByRole('row', { name: /First set/ })
+    const secondHeading = screen.getByRole('row', { name: /Second set/ })
+    expect(firstHeading).toHaveAttribute('aria-expanded', 'false')
+    expect(secondHeading).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('row', { name: /First bonus/ })).toBeNull()
+    expect(screen.queryByRole('row', { name: /Second bonus/ })).toBeNull()
+    act(() => firstHeading.focus())
+    await userEvent.keyboard('{Enter}')
+    expect(firstHeading).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('row', { name: /First tier/ })).toHaveAttribute('tabindex', '-1')
+    expect(screen.getByRole('row', { name: /First bonus/ })).toBeInTheDocument()
+    expect(screen.queryByRole('row', { name: /Second bonus/ })).toBeNull()
+    await userEvent.keyboard('{End} ')
+    expect(secondHeading).toHaveFocus()
+    expect(secondHeading).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('row', { name: /Second bonus/ })).toBeInTheDocument()
+    await userEvent.click(firstHeading)
+    expect(firstHeading).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('row', { name: /First bonus/ })).toBeNull()
+    expect(screen.getByRole('row', { name: /Second bonus/ })).toBeInTheDocument()
+  })
   it('uses fills and selected name text without inset marks or row focus outlines', () => {
     const rowStyle = [...ledgerStyles.matchAll(/^\.ledger-row\s*\{([\s\S]*?)\n\}/gm)].find(
       ([, style]) => style.includes('cursor: pointer'),

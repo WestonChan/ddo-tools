@@ -1,5 +1,4 @@
 import type { JSX } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
 import { LedgerTable, type LedgerColumn } from '../../../../components'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { useFittingAugmentsBySlotLabel } from '../../queries/useItems'
@@ -70,16 +69,13 @@ export function AugmentSlotList({
             <li key={slot.sortOrder} className="resources-augment-slot" data-color={slot.label}>
               <button
                 type="button"
-                className="resources-augment-pill resources-augment-control hoverable"
+                className="resources-augment-word hoverable"
                 aria-expanded={isExpanded}
                 aria-controls={isExpanded ? ledgerId : undefined}
+                data-tip={`${displayedLabel} slot`}
                 onClick={() => onToggleSlot(slot.sortOrder)}
               >
-                {slot.family === 'standard' && (
-                  <span className="resources-augment-gem" aria-hidden />
-                )}
-                <span className="resources-augment-label">{displayedLabel}</span>
-                {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {displayedLabel}
               </button>
             </li>
           )

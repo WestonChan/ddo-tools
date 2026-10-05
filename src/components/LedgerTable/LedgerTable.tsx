@@ -38,6 +38,7 @@ import {
   reorderedColumnKeys,
   resizedDividerWidths,
   sortedLedgerRows,
+  visibleLedgerRows,
   visibleLedgerColumns,
   type LedgerColumn,
   type LedgerRowKind,
@@ -85,6 +86,8 @@ interface LedgerRowProps<Row> {
   bodyId: string
   selectedRowKey: string | number | null
   rowKind?: (row: Row) => LedgerRowKind
+  expandedHeadingKeys: ReadonlySet<string | number>
+  onToggleHeading: (key: string | number) => void
   hoverCard?: (row: Row) => HoverCardOptions | null
   isHighlighted?: (row: Row) => boolean
 }
@@ -114,6 +117,8 @@ function LedgerRow<Row>({
   bodyId,
   selectedRowKey,
   rowKind,
+  expandedHeadingKeys,
+  onToggleHeading,
   hoverCard,
   isHighlighted,
 }: LedgerRowProps<Row> & {
@@ -126,6 +131,9 @@ function LedgerRow<Row>({
   if (!row) return null
   const kind = rowKind?.(row) ?? 'row'
   const isHeading = kind !== 'row'
+  const isCollapsibleHeading = kind === 'collapsibleHeading'
+  const isNavigable = kind === 'row' || isCollapsibleHeading
+  const isExpanded = expandedHeadingKeys.has(rowKey(row))
   const isSelected = rowKey(row) === selectedRowKey
   return (
     <div
@@ -137,28 +145,34 @@ function LedgerRow<Row>({
         'ledger-row' +
         (isSelected ? ' ledger-row--selected' : '') +
         (isHighlighted?.(row) ? ' ledger-row--highlighted' : '') +
-        (isHeading ? ` ledger-row--${kind}` : '')
+        (isHeading
+          ? ` ledger-row--${isCollapsibleHeading ? 'heading ledger-row--collapsible' : kind}`
+          : '')
       }
       style={style}
-      tabIndex={!isHeading && index === tabStopIndex ? 0 : -1}
+      tabIndex={isNavigable && index === tabStopIndex ? 0 : -1}
+      aria-expanded={isCollapsibleHeading ? isExpanded : undefined}
       aria-current={isSelected || undefined}
       data-hover-card-pinned={hoverOptions ? hoverAnchor['data-hover-card-pinned'] : undefined}
       onFocus={(event) => {
-        if (event.target !== event.currentTarget || isHeading) return
+        if (event.target !== event.currentTarget || !isNavigable) return
         if (onTabStopFocus(index)) return
         onFocusedIndexChange(index)
         if (hoverOptions) hoverAnchor.onFocus(event)
       }}
       onBlur={hoverOptions ? hoverAnchor.onBlur : undefined}
-      onClick={() => !isHeading && onRowActivate(row, 'pointer')}
-      onKeyDown={(event) => !isHeading && onRowKeyDown(event, index)}
+      onClick={() => {
+        if (isCollapsibleHeading) onToggleHeading(rowKey(row))
+        else if (!isHeading) onRowActivate(row, 'pointer')
+      }}
+      onKeyDown={(event) => isNavigable && onRowKeyDown(event, index)}
       onMouseEnter={hoverOptions ? hoverAnchor.onMouseEnter : undefined}
       onMouseLeave={hoverOptions ? hoverAnchor.onMouseLeave : undefined}
       onKeyDownCapture={hoverOptions ? hoverAnchor.onKeyDown : undefined}
     >
       {isHeading ? (
         <div role="cell" className="ledger-heading-cell">
-          {columns[0]?.render(row)}
+          {columns[0]?.render(row, isCollapsibleHeading ? { isExpanded } : undefined)}
         </div>
       ) : (
         columns.map((column) => (
@@ -380,6 +394,9 @@ export function LedgerTable<Row>({
     columns.map((column) => column.key),
   )
   const [uncontrolledWidths, setUncontrolledWidths] = useState<Record<string, number>>({})
+  const [expandedHeadingKeys, setExpandedHeadingKeys] = useState<ReadonlySet<string | number>>(
+    () => new Set(),
+  )
   const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
   const [focusedIndex, setFocusedIndex] = useState(0)
   const [currentFocusedRowKey, setCurrentFocusedRowKey] = useState<string | number | null>(null)
@@ -407,12 +424,23 @@ export function LedgerTable<Row>({
     () => Array.from({ length: rowCount }, (_, index) => rowAt(index)),
     [rowCount, rowAt],
   )
-  const sortedRows = useMemo(
+  const allSortedRows = useMemo(
     () => (isSortedExternally ? rows : sortedLedgerRows(rows, columns, sort, rowKind)),
     [rows, columns, sort, rowKind, isSortedExternally],
   )
+  const sortedRows = useMemo(
+    () =>
+      rowKind
+        ? visibleLedgerRows(allSortedRows, rowKind, rowKey, expandedHeadingKeys)
+        : allSortedRows,
+    [allSortedRows, rowKind, rowKey, expandedHeadingKeys],
+  )
   const navigableRowIndices = useMemo(
-    () => sortedRows.flatMap((row, index) => ((rowKind?.(row) ?? 'row') === 'row' ? [index] : [])),
+    () =>
+      sortedRows.flatMap((row, index) => {
+        const kind = rowKind?.(row) ?? 'row'
+        return kind === 'row' || kind === 'collapsibleHeading' ? [index] : []
+      }),
     [sortedRows, rowKind],
   )
   const navigableRowKeys = navigableRowIndices.map((index) => rowKey(sortedRows[index]))
@@ -558,13 +586,24 @@ export function LedgerTable<Row>({
     }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      onRowActivate(sortedRows[index], 'keyboard')
+      const row = sortedRows[index]
+      if (rowKind?.(row) === 'collapsibleHeading') toggleHeading(rowKey(row))
+      else onRowActivate(row, 'keyboard')
     }
   }
 
   function clearFocusedRowOnBodyBlur(event: FocusEvent<HTMLDivElement>): void {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null))
       setCurrentFocusedRowKey(null)
+  }
+
+  function toggleHeading(key: string | number): void {
+    setExpandedHeadingKeys((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
   }
 
   function sortBy(column: LedgerColumn<Row>): void {
@@ -689,6 +728,8 @@ export function LedgerTable<Row>({
     bodyId,
     selectedRowKey,
     rowKind,
+    expandedHeadingKeys,
+    onToggleHeading: toggleHeading,
     hoverCard,
     isHighlighted,
   }

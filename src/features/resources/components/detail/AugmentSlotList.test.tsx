@@ -83,6 +83,30 @@ it('makes every socket a button, including empty colour and crafting sockets', (
   )
   expect(screen.getAllByRole('button')).toHaveLength(3)
   expect(screen.getByRole('button', { name: /Red/ })).toHaveAttribute('aria-expanded', 'false')
+  expect(screen.getByRole('button', { name: 'Red' })).toHaveAttribute('data-tip', 'Red slot')
+  expect(document.querySelector('.resources-augment-gem')).toBeNull()
+  expect(document.querySelector('.resources-augment-label')).toBeNull()
+  expect(screen.getByRole('button', { name: 'Red' })).toHaveClass('resources-augment-word')
+})
+
+it('shows each standard socket as its colour word in source order', () => {
+  const colors = ['blue', 'red', 'yellow', 'green', 'purple', 'orange', 'colorless']
+  render(<AugmentSlotPicker augmentSlots={colors.map((color, index) => slot(index, color))} />)
+  expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+    'Blue',
+    'Red',
+    'Yellow',
+    'Green',
+    'Purple',
+    'Orange',
+    'Colorless',
+  ])
+  for (const color of colors) {
+    expect(screen.getByRole('button', { name: new RegExp(`^${color}$`, 'i') })).toHaveAttribute(
+      'data-tip',
+      `${color[0].toUpperCase()}${color.slice(1)} slot`,
+    )
+  }
 })
 
 it('opens a plain ledger of fitting augments with name, level and slots but no selection roles', async () => {

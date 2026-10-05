@@ -116,7 +116,7 @@ it('shows hover variant enchantment rows without a section heading', () => {
 })
 
 describe('EnchantmentList', () => {
-  it('focuses its first row, skips set headings and tiers, and returns from a pinned bonus card', () => {
+  it('focuses its first row, includes set headings, skips tiers, and returns from a pinned bonus card', () => {
     vi.useFakeTimers()
     const item = toItem(capturedRing as ApiItemDetail)
     const set = toSetDetail(capturedSet)
@@ -146,9 +146,14 @@ describe('EnchantmentList', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(rows[0]).toHaveFocus()
     fireEvent.keyDown(rows[0], { key: 'End' })
-    const lastBonus = rows.at(-1)!
+    const setHeading = screen.getByText(set.name).closest('[role="row"]')!
+    expect(setHeading).toHaveFocus()
+    expect(setHeading).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.keyDown(setHeading, { key: 'Enter' })
+    expect(setHeading).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.keyDown(setHeading, { key: 'End' })
+    const lastBonus = screen.getAllByRole('row').at(-1)!
     expect(lastBonus).toHaveFocus()
-    expect(lastBonus).not.toHaveClass('ledger-row--heading')
     expect(lastBonus).not.toHaveClass('ledger-row--subheading')
     fireEvent.keyDown(lastBonus, { key: 'Enter' })
     expect(onOpenItem).not.toHaveBeenCalled()
@@ -195,6 +200,12 @@ describe('EnchantmentList', () => {
     const setHeading = screen.getByText('Storm Set').closest('[role="row"]')
     expect(setHeading).toHaveClass('ledger-row--heading')
     expect(setHeading).toHaveTextContent('Set')
+    expect(setHeading).toHaveTextContent('1 bonus')
+    expect(setHeading).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText('2 pieces')).toBeNull()
+    fireEvent.click(setHeading!)
+    expect(setHeading).toHaveTextContent('Hide')
+    expect(setHeading).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('2 pieces').closest('[role="row"]')).toHaveClass(
       'ledger-row--subheading',
     )
@@ -221,11 +232,15 @@ describe('EnchantmentList', () => {
       expect(headingIndex).toBe(item.bonuses.length + item.effects.length)
       expect(rows[headingIndex]).toHaveClass('ledger-row--heading')
       expect(rows[headingIndex]).toHaveTextContent('Set')
-      expect(rows[headingIndex + 1]).toHaveClass('ledger-row--subheading')
-      expect(rows[headingIndex + 1]).toHaveTextContent('5 pieces')
-      expect(rows[headingIndex + 2]).toHaveTextContent('Physical Resistance RatingProfane+5')
+      expect(rows[headingIndex]).toHaveTextContent('7 bonuses')
+      expect(rows.slice(headingIndex + 1)).toHaveLength(0)
+      fireEvent.click(rows[headingIndex])
+      const expandedRows = screen.getAllByRole('row').slice(headingIndex + 2)
+      expect(expandedRows[0]).toHaveClass('ledger-row--subheading')
+      expect(expandedRows[0]).toHaveTextContent('5 pieces')
+      expect(expandedRows[1]).toHaveTextContent('Physical Resistance RatingProfane+5')
       expect(screen.queryByText(set.tiers[0].description!)).toBeNull()
-      expect(rows.slice(headingIndex + 2)).toHaveLength(set.tiers[0].bonuses.length)
+      expect(expandedRows.slice(1)).toHaveLength(7)
     },
   )
   it('renders nothing when there are no bonuses or effects', () => {
@@ -303,6 +318,13 @@ describe('EnchantmentList', () => {
       expect.stringContaining('Strength'),
       expect.stringContaining('Dexterity'),
       expect.stringContaining('Storm Set'),
+    ])
+    expect(screen.getByText('Storm Set').closest('[role="row"]')).toHaveTextContent('3 bonuses')
+    fireEvent.click(screen.getByText('Storm Set').closest('[role="row"]')!)
+    expect(rowTexts()).toEqual([
+      expect.stringContaining('Strength'),
+      expect.stringContaining('Dexterity'),
+      expect.stringContaining('Storm Set'),
       expect.stringContaining('2 pieces'),
       expect.stringContaining('Melee Power'),
       expect.stringContaining('Healing Amplification'),
@@ -359,6 +381,7 @@ describe('EnchantmentList', () => {
     ).toBeInTheDocument()
     expect(fetchSet).toHaveBeenCalledWith(expect.stringContaining('/v1/sets/93'), expect.anything())
     fireEvent.mouseLeave(heading)
+    fireEvent.click(heading)
     fireEvent.mouseEnter(
       screen.getByRole('row', { name: /Physical Resistance Rating Profane \+5/ }),
     )

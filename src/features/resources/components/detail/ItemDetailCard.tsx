@@ -82,7 +82,7 @@ function ObtainedFromRow({
   const levelNumbers = [level, epicLevel].filter(
     (questLevel): questLevel is number => questLevel !== null,
   )
-  const levelText = levelNumbers.length > 0 ? `Level ${levelNumbers.join(' / ')}` : null
+  const levelNumbersText = levelNumbers.length > 0 ? levelNumbers.join(' / ') : null
   const locationText = [pack, patron].filter(Boolean).join(' › ')
   const levelHint =
     level !== null && epicLevel !== null ? `Heroic ${level}, epic ${epicLevel}` : undefined
@@ -127,11 +127,11 @@ function ObtainedFromRow({
           </div>
         )}
       </div>
-      {(levelText || locationText) && (
+      {(levelNumbersText || locationText) && (
         <div className="resources-item-source-right">
-          {levelText && (
+          {levelNumbersText && (
             <span className="resources-item-source-level" data-tip={levelHint}>
-              {levelText}
+              Level <span className="num">{levelNumbersText}</span>
             </span>
           )}
           {locationText && <span className="resources-item-source-location">{locationText}</span>}
@@ -286,15 +286,17 @@ function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): 
     ]
     moreLabel = isShield ? 'More shield details' : 'More armor details'
   } else if (kind === 'weapon' && item.weaponStats) {
-    const bypassStats: DetailStat[] = item.weaponStats.damageReductionBypasses
+    const bypasses = item.weaponStats.damageReductionBypasses
       .map((bypass) => bypass.trim())
       .filter(Boolean)
-      .map((bypass) => ({ label: 'Bypasses', value: bypass, isNumeric: false }))
+    const bypassStats: DetailStat[] = bypasses.length
+      ? [{ label: 'Bypasses', value: bypasses.join(', '), isNumeric: false, isFullWidth: true }]
+      : []
     primaryStats = [
       ...toPrimaryWeaponStats(item.weaponStats, item.enhancementBonus),
       ...enhancementStats,
     ]
-    extraStats = [...toExtraWeaponStats(item.weaponStats), ...materialStats, ...bypassStats]
+    extraStats = [...bypassStats, ...toExtraWeaponStats(item.weaponStats), ...materialStats]
     moreLabel = 'More weapon details'
   }
   if (primaryStats.length === 0 && extraStats.length === 0) return null
@@ -302,7 +304,6 @@ function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): 
   return (
     <div className="resources-item-details">
       <DetailFactGrid stats={primaryStats} />
-      {isExpanded && <DetailExtras stats={extraStats} />}
       {extraStats.length > 0 && (
         <div className="resources-item-details__toggle-row">
           <button
@@ -320,6 +321,7 @@ function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): 
           </button>
         </div>
       )}
+      {isExpanded && <DetailExtras stats={extraStats} />}
     </div>
   )
 }
@@ -347,18 +349,21 @@ function toLabeledArmorStats(armorStats: ItemArmorStats): DetailStat[] {
   if (armorStats.arcaneSpellFailurePercent !== null)
     labeledStats.push({
       label: 'Arcane spell failure',
+      displayLabel: 'Spell failure',
       value: `${armorStats.arcaneSpellFailurePercent}%`,
       isNumeric: true,
     })
   if (armorStats.armorCheckPenalty !== null)
     labeledStats.push({
       label: 'Armor check penalty',
+      displayLabel: 'Check penalty',
       value: armorStats.armorCheckPenalty,
       isNumeric: true,
     })
   if (armorStats.damageReduction !== null)
     labeledStats.push({
       label: 'Damage reduction',
+      displayLabel: 'DR',
       value: armorStats.damageReduction,
       isNumeric: true,
     })
@@ -474,6 +479,7 @@ export function ItemDetailCard({
   const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
   const augmentLedgerId = useId()
   const expandedSlot = item.augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
+  const displayedSetName = item.setName?.trim() || null
   const detailKind = itemDetailKind(item)
   const hasLinkedSource =
     item.quests.length > 0 ||
@@ -502,11 +508,13 @@ export function ItemDetailCard({
             facts={
               <>
                 <DetailFact label="ML">
-                  <span className="num">{item.minimumLevel ?? '—'}</span>
+                  {item.minimumLevel === null ? null : (
+                    <span className="num">{item.minimumLevel}</span>
+                  )}
                 </DetailFact>
-                <DetailFact label="Gear slot">{item.equipmentSlot}</DetailFact>
+                <DetailFact label="Gear slot">{item.equipmentSlot.trim() || null}</DetailFact>
                 <DetailFact label="Raid">
-                  {item.quests.some((quest) => quest.isRaid) ? 'Yes' : '—'}
+                  {item.quests.some((quest) => quest.isRaid) ? 'Yes' : null}
                 </DetailFact>
                 <DetailFact label="Rare">
                   {item.quests.some((quest) => quest.isRareLoot) ||
@@ -515,23 +523,23 @@ export function ItemDetailCard({
                   item.questChains.some((chain) => chain.isRareLoot) ||
                   item.sagas.some((saga) => saga.isRareLoot)
                     ? 'Yes'
-                    : '—'}
+                    : null}
                 </DetailFact>
-                {item.setName && (
-                  <DetailFact label="Set">
-                    {item.setId ? (
+                <DetailFact label="Set">
+                  {displayedSetName ? (
+                    item.setId ? (
                       <SetHoverAnchor
                         setId={item.setId}
-                        name={item.setName}
+                        name={displayedSetName}
                         onOpenItem={onOpenItem}
                       />
                     ) : (
-                      item.setName
-                    )}
-                  </DetailFact>
-                )}
-                {item.augmentSlots.length > 0 && (
-                  <DetailFact label="Augments">
+                      displayedSetName
+                    )
+                  ) : null}
+                </DetailFact>
+                <DetailFact label="Augments">
+                  {item.augmentSlots.length > 0 ? (
                     <AugmentSlotList
                       augmentSlots={item.augmentSlots}
                       expandedSlotSortOrder={expandedSlotSortOrder}
@@ -543,8 +551,8 @@ export function ItemDetailCard({
                       }
                       onClose={() => setExpandedSlotSortOrder(null)}
                     />
-                  </DetailFact>
-                )}
+                  ) : null}
+                </DetailFact>
               </>
             }
           />
@@ -579,6 +587,7 @@ export function ItemDetailCard({
               : []
           })}
         <EnchantmentList
+          key={`enchantments-${item.id}`}
           itemName={item.name}
           bonuses={item.bonuses}
           modifiers={item.modifiers}

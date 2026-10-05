@@ -144,6 +144,11 @@
   cursor: default;
 }
 
+.ledger-row--collapsible {
+  cursor: pointer;
+  user-select: none;
+}
+
 .ledger-cell {
   min-width: 0;
   overflow: hidden;
