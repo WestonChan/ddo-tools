@@ -13,8 +13,8 @@ Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see
 	- Bonus rows can link to other resource detail views (depends on Phase 4f Categories cross-linking).
 
 📋 Phase 5+ — Submit + override flow:
-- Submitting opens a pre-filled GitHub issue with the changed item. Before opening, search existing items in the DB for an exact match to avoid duplicate reports.
-- If the editable view isn't sufficient, suggest the bottom-bar "Report a bug" button instead.
+- Submitting sends the changed item as a report. Whether that is a pre-filled GitHub issue or Sentry feedback is open; see roadmap Phase 5b. Before sending, search existing items in the DB for an exact match to avoid duplicate reports.
+- If the editable view isn't sufficient, suggest the rail's "Report a bug" row instead (the Sentry feedback form after Phase 3b).
 - After submission: show a confirmation toast — "Updated locally + report submitted."
 - Store the changed item as a local override in `user.db`. Subsequent reads use the override.
 - When the canonical DB updates to match the override, drop the override automatically.
