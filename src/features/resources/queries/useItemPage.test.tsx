@@ -107,7 +107,7 @@ describe('useItemPage', () => {
     rerender({ sort: { key: 'ml', direction: 'desc' } })
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
     const sortedParams = new URL(String(fetchMock.mock.calls[2][0])).searchParams
-    expect(sortedParams.getAll('sort')).toEqual(['-minimum_level'])
+    expect(sortedParams.getAll('sort')).toEqual(['-minimum_level', 'name'])
     expect(sortedParams.has('order')).toBe(false)
     expect(sortedParams.get('offset')).toBe('0')
   })

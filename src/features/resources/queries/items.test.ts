@@ -573,7 +573,9 @@ describe('fetchers', () => {
       const parameters = new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams
       expect(parameters.get('limit')).toBe('200')
       expect(parameters.get('offset')).toBe('200')
-      expect(parameters.getAll('sort')).toEqual([apiField])
+      expect(parameters.getAll('sort')).toEqual(
+        apiField === 'name' ? [apiField] : [apiField, 'name'],
+      )
       expect(parameters.has('order')).toBe(false)
     },
   )

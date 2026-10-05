@@ -20,6 +20,8 @@ each fitting a different shape of "state":
 
 ---
 
+Example of #3 with session persistence: `features/resources/resourceListSessions.ts` keeps each resource category's list session (filters, match mode, set-bonus option, search, sort, scroll) in one module store keyed by category, written through to `sessionStorage` under a versioned key, so the list restores synchronously after navigating away and back or reloading the tab, but a new tab starts clean. Filters in the URL are a separate, later item.
+
 ## Pattern: `useSyncExternalStore` for shared/async state
 
 ### When to use it

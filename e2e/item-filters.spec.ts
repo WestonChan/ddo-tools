@@ -170,8 +170,13 @@ test('shows loot status in its columns and keeps the count on the applied line',
   await expect(appliedLine).toHaveCSS('gap', '12px')
   await expect(appliedLine).toHaveCSS('min-height', '20px')
   await expect(resultCount).toHaveAttribute('aria-live', 'polite')
-  await expect(resultCount).toHaveCSS('font-size', '11.5px')
+  await expect(resultCount).toHaveCSS('font-family', /Source Sans 3/)
+  await expect(resultCount).toHaveCSS('font-size', '12px')
   await expect(resultCount).toHaveCSS('color', colors[2])
+  const resultNumber = resultCount.locator('.num')
+  await expect(resultNumber).toHaveText('3')
+  await expect(resultNumber).toHaveCSS('font-family', /JetBrains Mono/)
+  await expect(resultNumber).toHaveCSS('font-size', '11.5px')
   const countRightGap = async (): Promise<number> =>
     appliedLine.evaluate((line) => {
       const count = line.querySelector('.resources-result-count')
@@ -267,7 +272,6 @@ for (const theme of ['dark', 'light']) {
     await expect(page.getByRole('table', { name: 'items list', exact: true })).toBeVisible()
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
     await expect(page.getByRole('columnheader', { name: /Pack/ })).toBeVisible()
-    await page.getByRole('columnheader', { name: 'ML', exact: true }).click()
     await expect
       .poll(() =>
         page.locator('.ledger-header-cell[data-column-key="ml"]').getAttribute('aria-sort'),
@@ -317,6 +321,13 @@ test('sorts with the signed sort field and keeps Raid and Rare headers static', 
     if (url.pathname === '/v1/items') itemRequests.push(url)
   })
   await page.goto('/resources/items')
+  await expect(page.getByRole('columnheader', { name: 'ML', exact: true })).toHaveAttribute(
+    'aria-sort',
+    'descending',
+  )
+  await expect
+    .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
+    .toEqual(['-minimum_level', 'name'])
   for (const label of ['Raid', 'Rare']) {
     const header = page.locator(`.ledger-header-cell[data-column-key="${label.toLowerCase()}"]`)
     await expect(header).toBeVisible()
@@ -327,13 +338,53 @@ test('sorts with the signed sort field and keeps Raid and Rare headers static', 
   await page.getByRole('columnheader', { name: 'ML', exact: true }).click()
   await expect
     .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
-    .toEqual(['-minimum_level'])
+    .toEqual(['minimum_level', 'name'])
   expect(itemRequests.at(-1)?.searchParams.has('order')).toBe(false)
   await page.getByRole('columnheader', { name: 'ML', exact: true }).click()
-  await expect
-    .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
-    .toEqual(['minimum_level'])
-  expect(itemRequests.at(-1)?.searchParams.has('order')).toBe(false)
+  await expect(page.getByRole('columnheader', { name: 'ML', exact: true })).toHaveAttribute(
+    'aria-sort',
+    'descending',
+  )
+  await expect(
+    page.getByRole('table', { name: 'items list', exact: true }).getByRole('row').nth(1),
+  ).toContainText('Cloak of Night')
+})
+
+test('keeps a filter and its results after visiting Build overview', async ({ page }) => {
+  const itemRequests: URL[] = []
+  page.on('request', (request) => {
+    const url = new URL(request.url())
+    if (url.pathname === '/v1/items') itemRequests.push(url)
+  })
+  await page.route('**/v1/items?*', async (route) => {
+    const parameters = new URL(route.request().url()).searchParams
+    const listedItems =
+      parameters.get('rare') === 'true' ? items.filter((item) => item.is_rare) : items
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        total: listedItems.length,
+        limit: 200,
+        offset: 0,
+        items: listedItems,
+      }),
+    })
+  })
+  await page.goto('/resources/items')
+  await page.getByRole('button', { name: 'Rare only', exact: true }).click()
+  await expect(page.locator('.resources-result-count')).toHaveText('1 result')
+  await expect(page.getByRole('row', { name: /Ring of Spell Storing/ })).toBeVisible()
+  const parametersBeforeLeaving = itemRequests.at(-1)?.searchParams.toString()
+
+  await page.getByRole('link', { name: 'Build overview', exact: true }).click()
+  await expect(page).toHaveURL(/\/overview$/)
+  await page.getByRole('link', { name: 'Resources', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Rare only', exact: true })).toHaveClass(/selected/)
+  await expect(page.locator('.resources-result-count')).toHaveText('1 result')
+  await expect(page.getByRole('row', { name: /Ring of Spell Storing/ })).toBeVisible()
+  await expect(page.getByRole('row', { name: /Bloodstone/ })).toHaveCount(0)
+  expect(itemRequests.at(-1)?.searchParams.toString()).toBe(parametersBeforeLeaving)
 })
 
 test('dragging a header label reorders while clicking sorts and dragging its full-height grip resizes', async ({
@@ -408,9 +459,9 @@ test('the header is one keyboard stop for sorting and moving columns', async ({ 
   await page.keyboard.press('ArrowRight')
   await expect(ml).toBeFocused()
   await page.keyboard.press('Enter')
-  await expect(ml).toHaveAttribute('aria-sort', 'descending')
-  await page.keyboard.press('Space')
   await expect(ml).toHaveAttribute('aria-sort', 'ascending')
+  await page.keyboard.press('Space')
+  await expect(ml).toHaveAttribute('aria-sort', 'descending')
   await page.keyboard.press('Tab')
   await expect(table.getByRole('row').nth(1)).toBeFocused()
   await page.keyboard.press('Shift+Tab')
@@ -549,7 +600,7 @@ test('loads the next 200 items near the virtual list end without resetting scrol
     })
   })
   await page.goto('/resources/items')
-  await expect(page.getByText('201 results')).toBeVisible()
+  await expect(page.locator('.resources-result-count')).toHaveText('201 results')
   expect(offsets).toEqual([0])
   const ledgerBody = page.locator('.ledger-body')
   await ledgerBody.evaluate((element) => element.scrollTo(0, element.scrollHeight))

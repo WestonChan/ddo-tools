@@ -14,7 +14,11 @@ import { Check, Search } from 'lucide-react'
 import { ApiGate, LedgerTable, type LedgerColumn, type LedgerSort } from '../../../components'
 import { useDebouncedValue } from '../../../hooks'
 import { FilterChipRow } from '../filters/FilterChipRow'
-import type { ResourceCategory } from '../resourceCategories'
+import {
+  RESOURCE_LIST_CONFIGURATION,
+  setResourceListSession,
+  useResourceListSession,
+} from '../resourceListSessions'
 import {
   EMPTY_ITEM_FILTERS,
   type ItemListFilters,
@@ -33,29 +37,17 @@ import { StatusPlaceholder } from './StatusPlaceholder'
 import { ItemHoverContent } from './detail/ResourceHoverCards'
 
 interface ItemPickerProps {
-  category: ResourceCategory
+  category: 'items'
   selectedItemId: number | null
   searchInputRef?: RefObject<HTMLInputElement | null>
-  filters: ItemListFilters
-  onFiltersChange: (filters: ItemListFilters) => void
   onOpenItemFromHover?: (id: number, name: string) => void
   onOpenItem?: (id: number, activationSource: 'pointer' | 'keyboard') => void
   rowToFocusId?: number | null
   onRowFocused?: () => void
-  session?: ItemPickerSession
-  onSessionChange?: (change: Partial<ItemPickerSession>) => void
-}
-export interface ItemPickerSession {
-  searchQuery: string
-  selectedSort: LedgerSort | null
-  includesSetBonuses: boolean
-  hasResolvedFirstPage: boolean
-  scrollTop: number
 }
 const EMPTY_NAMES: string[] = []
 const EMPTY_RAID_QUESTS: RaidQuest[] = []
 const EMPTY_ITEMS: ItemSummary[] = []
-const ITEM_INITIAL_SORT: LedgerSort = { key: 'name', direction: 'asc' }
 
 const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
   {
@@ -137,50 +129,54 @@ export function ItemPicker({
   category,
   selectedItemId,
   searchInputRef,
-  filters,
-  onFiltersChange,
   onOpenItemFromHover,
   onOpenItem,
   rowToFocusId = null,
   onRowFocused,
-  session,
-  onSessionChange,
 }: ItemPickerProps): JSX.Element {
   const navigate = useNavigate()
+  const { filters, searchQuery, selectedSort, includesSetBonuses, scrollTop } =
+    useResourceListSession(category)
+  const onFiltersChange = (filters: ItemListFilters): void => {
+    setResourceListSession(category, { filters })
+  }
+  const setSearchQuery = (searchQuery: string): void => {
+    setResourceListSession(category, { searchQuery })
+  }
+  const setSelectedSort = (selectedSort: LedgerSort | null): void => {
+    setResourceListSession(category, { selectedSort })
+  }
+  const setIncludesSetBonuses = (includesSetBonuses: boolean): void => {
+    setResourceListSession(category, { includesSetBonuses })
+  }
   const pickerRootRef = useRef<HTMLDivElement>(null)
   const ownSearchInputRef = useRef<HTMLInputElement>(null)
   const effectiveSearchInputRef = searchInputRef ?? ownSearchInputRef
-  const [searchQuery, setSearchQuery] = useState(session?.searchQuery ?? '')
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 250)
   const activeSearchQuery = searchQuery ? debouncedSearchQuery : ''
-  const [selectedSort, setSelectedSort] = useState<LedgerSort | null>(session?.selectedSort ?? null)
   const [openedPickers, setOpenedPickers] = useState<ReadonlySet<string>>(() => new Set())
-  const [includesSetBonuses, setIncludesSetBonuses] = useState(session?.includesSetBonuses ?? false)
-  const [hasResolvedFirstPage, setHasResolvedFirstPage] = useState(
-    session?.hasResolvedFirstPage ?? false,
-  )
-  const [initialScrollTop] = useState(session?.scrollTop ?? 0)
+  const [hasResolvedFirstPage, setHasResolvedFirstPage] = useState(false)
+  const [initialScrollTop] = useState(scrollTop)
   const hasRestoredScrollRef = useRef(false)
   const lastRequestedPage = useRef<{ query: string; loadedCount: number } | null>(null)
   const resultCountId = useId()
-  const itemPageQuery = useItemPage(filters, activeSearchQuery, includesSetBonuses, selectedSort)
-  useEffect(() => {
-    onSessionChange?.({ searchQuery, selectedSort, includesSetBonuses, hasResolvedFirstPage })
-  }, [onSessionChange, searchQuery, selectedSort, includesSetBonuses, hasResolvedFirstPage])
+  const effectiveSort =
+    selectedSort ?? (activeSearchQuery ? null : RESOURCE_LIST_CONFIGURATION[category].initialSort)
+  const itemPageQuery = useItemPage(filters, activeSearchQuery, includesSetBonuses, effectiveSort)
 
   useLayoutEffect(() => {
     const body = pickerRootRef.current?.querySelector<HTMLElement>('.ledger-body')
-    if (!body || !onSessionChange) return
-    if (!hasRestoredScrollRef.current) {
+    if (!body) return
+    if (!hasRestoredScrollRef.current && itemPageQuery.data && !itemPageQuery.isPlaceholderData) {
       body.scrollTop = initialScrollTop
       hasRestoredScrollRef.current = true
     }
     const rememberScroll = (): void => {
-      onSessionChange({ scrollTop: body.scrollTop })
+      setResourceListSession(category, { scrollTop: body.scrollTop })
     }
     body.addEventListener('scroll', rememberScroll)
     return () => body.removeEventListener('scroll', rememberScroll)
-  }, [initialScrollTop, onSessionChange, itemPageQuery.data])
+  }, [category, initialScrollTop, itemPageQuery.data, itemPageQuery.isPlaceholderData])
   useEffect(() => {
     if (
       hasResolvedFirstPage ||
@@ -200,6 +196,7 @@ export function ItemPicker({
     () => itemPageQuery.data?.pages.flatMap((page) => page.items) ?? EMPTY_ITEMS,
     [itemPageQuery.data],
   )
+  const resultCount = itemPageQuery.data?.pages[0]?.total ?? 0
   const equipmentSlotQuery = useEquipmentSlotNames(openedPickers.has('slot'))
   const enchantmentQuery = useEnchantmentNames(openedPickers.has('enchantments'))
   const packQuery = useAdventurePackNames(openedPickers.has('pack'))
@@ -223,7 +220,7 @@ export function ItemPicker({
     filters,
     activeSearchQuery,
     includesSetBonuses,
-    selectedSort,
+    effectiveSort,
   ])
   const fetchNextPageNearEnd = useCallback(() => {
     if (
@@ -322,13 +319,18 @@ export function ItemPicker({
         onClearAll={clearAll}
         resultCount={
           <span className="resources-result-count" id={resultCountId} aria-live="polite">
-            {itemPageQuery.error && !itemPageQuery.isFetchNextPageError
-              ? null
-              : (itemPageQuery.isFetching && !itemPageQuery.isFetchingNextPage) ||
-                  itemPageQuery.isPlaceholderData ||
-                  (itemPageQuery.fetchStatus === 'paused' && !itemPageQuery.isFetchingNextPage)
-                ? 'Loading…'
-                : `${itemPageQuery.data?.pages[0]?.total ?? 0}${itemPageQuery.data?.pages[0]?.total === 1 ? ' result' : ' results'}`}
+            {itemPageQuery.error &&
+            !itemPageQuery.isFetchNextPageError ? null : (itemPageQuery.isFetching &&
+                !itemPageQuery.isFetchingNextPage) ||
+              itemPageQuery.isPlaceholderData ||
+              (itemPageQuery.fetchStatus === 'paused' && !itemPageQuery.isFetchingNextPage) ? (
+              'Loading…'
+            ) : (
+              <>
+                <span className="num">{resultCount}</span>
+                {resultCount === 1 ? ' result' : ' results'}
+              </>
+            )}
           </span>
         }
         hasSearchTerm={!!searchQuery}
@@ -388,7 +390,7 @@ export function ItemPicker({
         selectedRowKey={selectedItemId}
         isSortedExternally
         onNearEnd={fetchNextPageNearEnd}
-        sort={selectedSort ?? (activeSearchQuery ? null : ITEM_INITIAL_SORT)}
+        sort={effectiveSort}
         onSortChange={setSelectedSort}
         label={category + ' list'}
         emptyState={

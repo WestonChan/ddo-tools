@@ -1,10 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState } from 'react'
 import { ItemPicker } from './ItemPicker'
-import { EMPTY_ITEM_FILTERS, type ItemListFilters } from '../queries/items'
+import { resetResourceListSessionsForTests } from '../resourceListSessions'
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
 
@@ -12,6 +11,15 @@ afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
 })
+
+beforeEach(() => {
+  sessionStorage.clear()
+  resetResourceListSessionsForTests()
+})
+
+function resourceResultCount(): HTMLElement {
+  return document.querySelector<HTMLElement>('.resources-result-count')!
+}
 
 describe('ItemPicker page errors', () => {
   it('requests only items on mount and loads each vocabulary when its picker opens', async () => {
@@ -51,10 +59,18 @@ describe('ItemPicker page errors', () => {
         <ItemPickerHarness />
       </QueryClientProvider>,
     )
-    expect(await screen.findByText('0 results')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
     expect(fetchMock.mock.calls.map(([request]) => new URL(String(request)).pathname)).toEqual([
       '/v1/items',
     ])
+    expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.getAll('sort')).toEqual([
+      '-minimum_level',
+      'name',
+    ])
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    )
     await userEvent.click(screen.getByRole('button', { name: 'Gear slot' }))
     expect(screen.getByText('Loading options…')).toHaveAttribute('role', 'status')
     expect(fetchMock.mock.calls.map(([request]) => new URL(String(request)).pathname)).toEqual([
@@ -150,7 +166,7 @@ describe('ItemPicker page errors', () => {
         <ItemPickerHarness />
       </QueryClientProvider>,
     )
-    expect(await screen.findByText('1 result')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
     await user.click(screen.getByRole('button', { name: 'Enchantments' }))
     await user.click(screen.getByRole('option', { name: 'Bad Filter' }))
     expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
@@ -159,10 +175,10 @@ describe('ItemPicker page errors', () => {
     expect(screen.getByRole('button', { name: 'Show applied · 1' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
-    expect(screen.queryByText('1 result')).toBeNull()
+    expect(resourceResultCount()).toBeEmptyDOMElement()
     expect(screen.queryByText('The game data API returned 400')).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Clear filters' }))
-    expect(await screen.findByText('1 result')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.filter(
@@ -207,7 +223,7 @@ describe('ItemPicker page errors', () => {
         <ItemPickerHarness />
       </QueryClientProvider>,
     )
-    expect(await screen.findByText('0 results')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
     await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
     await userEvent.click(screen.getByRole('button', { name: 'All' }))
     expect(itemRequests).toHaveLength(1)
@@ -220,7 +236,7 @@ describe('ItemPicker page errors', () => {
     expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reset match' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Reset match' }))
-    expect(await screen.findByText('0 results')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
     expect(screen.queryByRole('button', { name: 'Reset match' })).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
     expect(screen.getByRole('button', { name: 'Any' })).toHaveAttribute('aria-pressed', 'true')
@@ -232,7 +248,7 @@ describe('ItemPicker page errors', () => {
   it('keeps the headers and offers Reset sort after a sorted request returns 400', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
       const parameters = new URL(String(request)).searchParams
-      if (parameters.has('sort')) {
+      if (parameters.get('sort') === 'minimum_level') {
         return Promise.resolve(new Response('Unknown sort', { status: 400 }))
       }
       return Promise.resolve(
@@ -267,7 +283,7 @@ describe('ItemPicker page errors', () => {
         <ItemPickerHarness />
       </QueryClientProvider>,
     )
-    expect(await screen.findByText('1 result')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
     await userEvent.click(screen.getByRole('columnheader', { name: 'ML' }))
     expect(await screen.findByText('Could not load sorted items.')).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /ML/ })).toBeInTheDocument()
@@ -275,9 +291,19 @@ describe('ItemPicker page errors', () => {
     expect(screen.getByRole('button', { name: 'Gear slot' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Reset sort' }))
-    expect(await screen.findByText('1 result')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
+    expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.getAll('sort')).toEqual([
+      '-minimum_level',
+      'name',
+    ])
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    )
     expect(
-      fetchMock.mock.calls.filter(([request]) => new URL(String(request)).searchParams.has('sort')),
+      fetchMock.mock.calls.filter(
+        ([request]) => new URL(String(request)).searchParams.get('sort') === 'minimum_level',
+      ),
     ).toHaveLength(1)
   })
 
@@ -301,19 +327,11 @@ describe('ItemPicker page errors', () => {
     expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
-    expect(await screen.findByText('0 results')).toBeInTheDocument()
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
     expect(listRequests).toBe(2)
   })
 })
 
 function ItemPickerHarness(): React.JSX.Element {
-  const [filters, setFilters] = useState<ItemListFilters>(EMPTY_ITEM_FILTERS)
-  return (
-    <ItemPicker
-      category="items"
-      selectedItemId={null}
-      filters={filters}
-      onFiltersChange={setFilters}
-    />
-  )
+  return <ItemPicker category="items" selectedItemId={null} />
 }

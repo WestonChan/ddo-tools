@@ -1,10 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { act, render, screen, cleanup, fireEvent, within } from '@testing-library/react'
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  cleanup,
+  fireEvent,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
 import type { Item, ItemSummary } from './queries/items'
 import type { SetDetail } from './queries/sets'
+import {
+  resetResourceListSessionsForTests,
+  setResourceListSession,
+  useResourceListSession,
+} from './resourceListSessions'
 
 let mockRouteParams: Record<string, string> = { category: 'items' }
 const navigateMock = vi.fn()
@@ -74,15 +88,19 @@ let itemPageQueryState: {
 let isItemDetailLoaded = true
 let stackedSet: SetDetail | null = null
 const refetchMock = vi.fn()
+const itemPageRequests = vi.fn()
 
 vi.mock('./queries/useItems', () => ({
-  useItemPage: () => ({
-    ...itemPageQueryState,
-    data: itemPageQueryState.data
-      ? { pages: [itemPageQueryState.data], pageParams: [0] }
-      : undefined,
-    refetch: refetchMock,
-  }),
+  useItemPage: (...request: unknown[]) => {
+    itemPageRequests(...request)
+    return {
+      ...itemPageQueryState,
+      data: itemPageQueryState.data
+        ? { pages: [itemPageQueryState.data], pageParams: [0] }
+        : undefined,
+      refetch: refetchMock,
+    }
+  },
   useItem: (id: number | null) => {
     const selectedItem = itemPageQueryState.data?.items.find((item) => item.id === id)
     return {
@@ -113,6 +131,8 @@ vi.mock('./queries/useItems', () => ({
 }))
 
 beforeEach(() => {
+  sessionStorage.clear()
+  resetResourceListSessionsForTests()
   isItemDetailLoaded = true
   stackedSet = null
   mockRouteParams = { category: 'items' }
@@ -124,11 +144,65 @@ beforeEach(() => {
   }
   navigateMock.mockReset()
   refetchMock.mockClear()
+  itemPageRequests.mockClear()
 })
 
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+})
+
+describe('resource list sessions', () => {
+  it('restores filters, match mode, set bonuses, search, sort, and scroll after leaving the view', async () => {
+    const user = userEvent.setup()
+    const view = render(<ResourcesView />)
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('option', { name: 'Charisma' }))
+    await user.click(screen.getByRole('button', { name: 'All' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Include set bonuses' }))
+    await user.type(screen.getByRole('searchbox', { name: 'Search items' }), 'stone')
+    await user.click(screen.getByRole('columnheader', { name: 'Name' }))
+    const body = view.container.querySelector<HTMLElement>('.ledger-body')!
+    body.scrollTop = 48
+    fireEvent.scroll(body)
+    await waitFor(() => expect(itemPageRequests.mock.lastCall?.[1]).toBe('stone'))
+    const requestBeforeLeaving = itemPageRequests.mock.lastCall
+    expect(requestBeforeLeaving?.[0]).toMatchObject({
+      enchantments: ['Charisma'],
+      enchantmentMatch: 'all',
+    })
+    expect(requestBeforeLeaving?.[2]).toBe(true)
+    expect(requestBeforeLeaving?.[3]).toEqual({ key: 'name', direction: 'asc' })
+
+    view.unmount()
+    const restoredView = render(<ResourcesView />)
+    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('stone')
+    expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    )
+    expect(screen.getByRole('button', { name: 'Show applied · 1' })).toBeInTheDocument()
+    expect(restoredView.container.querySelector('.ledger-body')).toHaveProperty('scrollTop', 48)
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.getByRole('checkbox', { name: 'Include set bonuses' })).toBeChecked()
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
+    expect(itemPageRequests.mock.lastCall).toEqual(requestBeforeLeaving)
+
+    act(() => setResourceListSession('sets', { searchQuery: 'wild' }))
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'Show applied · 1' })).toBeNull()
+    expect(itemPageRequests.mock.lastCall?.[0]).toMatchObject({ enchantments: [] })
+    expect(itemPageRequests.mock.lastCall?.[1]).toBe('')
+    expect(renderHook(() => useResourceListSession('sets')).result.current.searchQuery).toBe('wild')
+    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.getByRole('checkbox', { name: 'Include set bonuses' })).not.toBeChecked()
+    restoredView.unmount()
+    resetResourceListSessionsForTests()
+    render(<ResourcesView />)
+    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'Show applied · 1' })).toBeNull()
+  })
 })
 
 const STACK_ITEMS = [

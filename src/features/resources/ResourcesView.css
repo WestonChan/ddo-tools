@@ -133,8 +133,12 @@
 .resources-result-count {
   margin-left: auto;
   color: var(--text-faint);
-  font-family: var(--font-mono);
-  font-size: var(--fs-detail-tag-label);
+  font-family: var(--font-ui);
+  font-size: var(--fs-label);
+
+  & .num {
+    font-size: var(--fs-detail-tag-label);
+  }
 }
 
 .resources-picker-inner .ledger-empty {

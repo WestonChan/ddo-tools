@@ -1,9 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState } from 'react'
 import { ItemPicker } from './ItemPicker'
-import { EMPTY_ITEM_FILTERS, type ItemListFilters, type ItemSummary } from '../queries/items'
+import { type ItemListFilters, type ItemSummary } from '../queries/items'
+import { resetResourceListSessionsForTests, useResourceListSession } from '../resourceListSessions'
 
 const navigateMock = vi.fn()
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
@@ -82,6 +91,8 @@ vi.mock('../queries/useItems', () => ({
 }))
 
 beforeEach(() => {
+  sessionStorage.clear()
+  resetResourceListSessionsForTests()
   vi.clearAllMocks()
   useItemPageMock.mockImplementation((...request) => {
     void request
@@ -102,19 +113,15 @@ function renderItemPicker(): void {
 }
 
 function ItemPickerHarness(): React.JSX.Element {
-  const [filters, setFilters] = useState<ItemListFilters>(EMPTY_ITEM_FILTERS)
-  return (
-    <ItemPicker
-      category="items"
-      selectedItemId={null}
-      filters={filters}
-      onFiltersChange={setFilters}
-    />
-  )
+  return <ItemPicker category="items" selectedItemId={null} />
 }
 
 function latestFilters(): ItemListFilters {
   return useItemPageMock.mock.lastCall![0]
+}
+
+function resourceResultCount(): HTMLElement {
+  return document.querySelector<HTMLElement>('.resources-result-count')!
 }
 
 describe('ItemPicker server-backed filters', () => {
@@ -126,7 +133,7 @@ describe('ItemPicker server-backed filters', () => {
         .getAllByRole('button')
         .map((button) => button.getAttribute('data-tip')),
     ).toEqual(['ML range', 'Gear slot', 'Enchantments', 'Pack', 'Raid', 'Rare only', 'Raid only'])
-    expect(screen.getByText('93 results')).toBeInTheDocument()
+    expect(resourceResultCount()).toHaveTextContent(/^93 results$/)
     expect(screen.getByRole('table', { name: 'items list' })).toBeInTheDocument()
   })
 
@@ -149,7 +156,8 @@ describe('ItemPicker server-backed filters', () => {
   it('keeps the result count on the applied line with and without filters', async () => {
     const view = render(<ItemPickerHarness />)
     const search = screen.getByRole('searchbox', { name: 'Search items' })
-    const count = screen.getByText('93 results')
+    const count = resourceResultCount()
+    expect(count).toHaveTextContent(/^93 results$/)
     const appliedLine = count.closest('.filter-applied-toggle-row')
     expect(appliedLine).not.toBeNull()
     expect(appliedLine).not.toHaveTextContent('Show applied')
@@ -164,7 +172,8 @@ describe('ItemPicker server-backed filters', () => {
       error: null,
     }
     view.rerender(<ItemPickerHarness />)
-    const singularCount = screen.getByText('1 result')
+    const singularCount = resourceResultCount()
+    expect(singularCount).toHaveTextContent(/^1 result$/)
     expect(singularCount.closest('.filter-applied-toggle-row')).toBe(appliedLine)
     expect(
       within(appliedLine as HTMLElement).getByRole('button', { name: 'Show applied · 1' }),
@@ -180,7 +189,8 @@ describe('ItemPicker server-backed filters', () => {
       error: null,
     }
     renderItemPicker()
-    expect(screen.getByText('8084 results')).toBeInTheDocument()
+    expect(resourceResultCount()).toHaveTextContent(/^8084 results$/)
+    expect(resourceResultCount().querySelector('.num')).toHaveTextContent('8084')
   })
 
   it('renders Raid and Rare as static headers that can still be focused and moved', () => {
@@ -191,7 +201,10 @@ describe('ItemPicker server-backed filters', () => {
       expect(header).toHaveAttribute('aria-description', expect.stringContaining('M'))
     }
     expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('tabindex', '0')
-    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute('aria-sort', 'none')
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    )
   })
 
   it('does not label previous rows as results while a filtered retry is paused', async () => {
@@ -207,7 +220,39 @@ describe('ItemPicker server-backed filters', () => {
     }
     view.rerender(<ItemPickerHarness />)
     expect(screen.getByText('Loading…')).toBeInTheDocument()
-    expect(screen.queryByText('93 results')).toBeNull()
+    expect(resourceResultCount()).toHaveTextContent('Loading…')
+  })
+
+  it('remembers scrolling while the next result set shows placeholder rows', async () => {
+    const view = render(<ItemPickerHarness />)
+    const session = renderHook(() => useResourceListSession('items'))
+    const initialBody = view.container.querySelector<HTMLElement>('.ledger-body')!
+    initialBody.scrollTop = 340
+    fireEvent.scroll(initialBody)
+    expect(session.result.current.scrollTop).toBe(340)
+
+    pageState = {
+      data: { total: 93, items: SAMPLE_ITEMS },
+      isPending: false,
+      isFetching: true,
+      isPlaceholderData: true,
+      error: null,
+    }
+    await userEvent.click(screen.getByRole('button', { name: 'Rare only' }))
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+    const placeholderBody = view.container.querySelector<HTMLElement>('.ledger-body')!
+    placeholderBody.scrollTop = 224
+    fireEvent.scroll(placeholderBody)
+    expect(session.result.current.scrollTop).toBe(224)
+
+    pageState = {
+      data: { total: 1, items: [SAMPLE_ITEMS[2]] },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    view.rerender(<ItemPickerHarness />)
+    expect(session.result.current.scrollTop).toBe(224)
   })
 
   it('passes slot, two enchantments, set bonuses, raid, range, rare and search to one page hook', async () => {
@@ -232,6 +277,8 @@ describe('ItemPicker server-backed filters', () => {
       target: { value: 'torc' },
     })
     await waitFor(() => expect(useItemPageMock.mock.lastCall?.[1]).toBe('torc'))
+    expect(useItemPageMock.mock.lastCall?.[3]).toBeNull()
+    expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute('aria-sort', 'none')
     expect(latestFilters()).toEqual({
       ml: { min: '20', max: '32' },
       slot: ['Back', 'Ring'],
@@ -381,7 +428,7 @@ describe('ItemPicker server-backed filters', () => {
       isFetchNextPageError: true,
     }
     view.rerender(<ItemPickerHarness />)
-    expect(screen.getByText('201 results')).toBeInTheDocument()
+    expect(resourceResultCount()).toHaveTextContent(/^201 results$/)
     expect(screen.getByRole('row', { name: /Bloodstone/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
     expect(fetchNextPageMock).toHaveBeenCalledOnce()
@@ -397,7 +444,7 @@ describe('ItemPicker server-backed filters', () => {
       error: null,
     }
     view.rerender(<ItemPickerHarness />)
-    expect(screen.getByText('201 results')).toBeInTheDocument()
+    expect(resourceResultCount()).toHaveTextContent(/^201 results$/)
     expect(screen.getByRole('row', { name: /Bloodstone/ })).toBeInTheDocument()
   })
 
@@ -408,11 +455,11 @@ describe('ItemPicker server-backed filters', () => {
         : pageState,
     )
     renderItemPicker()
-    expect(screen.getByText('93 results')).toBeInTheDocument()
+    expect(resourceResultCount()).toHaveTextContent(/^93 results$/)
     await userEvent.click(screen.getByRole('button', { name: 'Raid' }))
     await userEvent.click(screen.getByRole('option', { name: /Empty Raid/ }))
     expect(latestFilters().raid).toEqual(['8'])
-    expect(screen.getByText('0 results')).toBeInTheDocument()
+    expect(resourceResultCount()).toHaveTextContent(/^0 results$/)
     expect(screen.getByText('No items match your filters.')).toBeInTheDocument()
     expect(
       within(document.querySelector('.ledger-empty') as HTMLElement).getByRole('button', {

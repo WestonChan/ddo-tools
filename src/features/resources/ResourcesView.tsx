@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { CategoryTabs } from './components/CategoryTabs'
-import { ItemPicker, type ItemPickerSession } from './components/ItemPicker'
+import { ItemPicker } from './components/ItemPicker'
 import { ResourceDetailPane } from './components/ResourceDetailPane'
 import { WireframePlaceholder } from '../../components'
 import {
@@ -19,7 +19,7 @@ import {
   type ResourceCategory,
 } from './resourceCategories'
 import './ResourcesView.css'
-import { EMPTY_ITEM_FILTERS, type ItemListFilters } from './queries/items'
+import { useResourceListSession } from './resourceListSessions'
 
 const COMING_SOON_PLACEHOLDER_MIN_HEIGHT_PX = 420
 const RESOURCE_COLUMN_MINIMUM_PX = 480
@@ -41,26 +41,15 @@ function ResourcesView(): JSX.Element {
   const navigate = useNavigate()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const categoryPanelId = useId()
-  const [pickerSession, setPickerSession] = useState<ItemPickerSession>({
-    searchQuery: '',
-    selectedSort: null,
-    includesSetBonuses: false,
-    hasResolvedFirstPage: false,
-    scrollTop: 0,
-  })
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const detailPaneRef = useRef<HTMLElement | null>(null)
   const lastSelectedItemId = useRef<number | null>(null)
   const wasOpenedFromList = useRef(false)
-  const [filters, setFilters] = useState<ItemListFilters>(EMPTY_ITEM_FILTERS)
+  const { filters } = useResourceListSession('items')
   const [itemToFocus, setItemToFocus] = useState<number | null>(null)
   const [rowToFocusId, setRowToFocusId] = useState<number | null>(null)
   const [isSingleColumn, setIsSingleColumn] = useState(true)
   const [listSelectionCount, setListSelectionCount] = useState(0)
-
-  const rememberPickerSession = useCallback((change: Partial<ItemPickerSession>): void => {
-    setPickerSession((previous) => ({ ...previous, ...change }))
-  }, [])
 
   useLayoutEffect(() => {
     const body = bodyRef.current
@@ -182,14 +171,10 @@ function ResourcesView(): JSX.Element {
                 category={category}
                 selectedItemId={selectedResourceId}
                 searchInputRef={searchInputRef}
-                filters={filters}
-                onFiltersChange={setFilters}
                 onOpenItemFromHover={openItemFromHover}
                 onOpenItem={openItemFromList}
                 rowToFocusId={rowToFocusId}
                 onRowFocused={() => setRowToFocusId(null)}
-                session={pickerSession}
-                onSessionChange={rememberPickerSession}
               />
             ) : (
               <div className="resources-picker-inner">

@@ -28,6 +28,10 @@ const ITEM_SORT_FIELD_BY_COLUMN: Record<string, string> = {
   pack: 'pack',
 }
 
+export function isItemSortColumn(columnKey: string): boolean {
+  return Object.hasOwn(ITEM_SORT_FIELD_BY_COLUMN, columnKey)
+}
+
 export interface ItemSummary {
   id: number
   name: string
@@ -534,7 +538,12 @@ export function itemListParameters(
     include_set_bonuses: filters.enchantments.length > 0 && includesSetBonuses,
     rare: filters.isRareOnly,
     raid: filters.isRaidOnly,
-    sort: sortField ? `${sort?.direction === 'desc' ? '-' : ''}${sortField}` : undefined,
+    sort: sortField
+      ? [
+          `${sort?.direction === 'desc' ? '-' : ''}${sortField}`,
+          ...(sortField === 'name' ? [] : ['name']),
+        ]
+      : undefined,
     limit: ITEM_PAGE_SIZE,
     offset,
   }
