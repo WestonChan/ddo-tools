@@ -103,6 +103,8 @@ export interface ItemWeaponStats {
   weaponType: string
   proficiency: string | null
   handedness: string | null
+  attackModifier: string | null
+  damageModifier: string | null
   damageReductionBypasses: string[]
 }
 
@@ -309,6 +311,8 @@ export function toItem(apiItemDetail: ApiItemDetail): Item {
           weaponType: apiItemDetail.weapon.weapon_type,
           proficiency: apiItemDetail.weapon.proficiency,
           handedness: apiItemDetail.weapon.handedness,
+          attackModifier: apiItemDetail.weapon.attack_modifier,
+          damageModifier: apiItemDetail.weapon.damage_modifier,
           damageReductionBypasses: apiItemDetail.weapon.dr_bypass,
         }
       : null,

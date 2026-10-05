@@ -653,6 +653,49 @@
   flex-direction: column;
 }
 
+.resources-hover-enchantment-table {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.resources-hover-enchantment-heading,
+.resources-hover-enchantment-row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 48px;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: 30px;
+}
+
+.resources-hover-enchantment-heading {
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  border-bottom: 3px double var(--border-strong);
+}
+
+.resources-hover-enchantment-row {
+  border-bottom: 1px dotted var(--border-default);
+  font-size: var(--fs-detail-numeric);
+}
+
+.resources-hover-enchantment-row:last-child {
+  border-bottom: 0;
+}
+
+.resources-hover-enchantment-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.resources-hover-enchantment-row > span:last-child,
+.resources-hover-enchantment-heading > span:last-child {
+  text-align: right;
+}
+
 .resources-hover-row {
   display: flex;
   align-items: center;
@@ -791,35 +834,13 @@ button.resources-hover-row:hover {
 }
 
 .detail-card__body > .resources-detail-description {
-  padding: 0 var(--space-1-5);
+  padding: 0;
   text-wrap: pretty;
-}
-
-.resources-item-details {
-  display: flex;
-  flex-direction: column;
 }
 
 .resources-detail-body--weapon .detail-card--pane .detail-card__body {
   gap: calc(var(--space-4) + var(--space-0-5));
-  padding: var(--space-3-5);
-}
-
-.resources-item-details__toggle-row {
-  display: flex;
-  padding: var(--space-2) var(--space-3) 0;
-}
-
-.resources-item-details__toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-0-5);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-link);
-  font-size: var(--fs-detail-tag-label);
-  cursor: pointer;
+  padding: var(--space-3);
 }
 
 .resources-bonus-list,

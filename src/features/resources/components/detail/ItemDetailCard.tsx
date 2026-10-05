@@ -1,12 +1,10 @@
 import { Fragment, useId, useState, type JSX, type ReactNode } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   DetailCard,
   DetailCardFooter,
   DetailCardSection,
   DetailFact,
-  DetailFactGrid,
-  DetailExtras,
+  DetailStats,
   DetailMore,
   DetailValueRow,
   WikiLinkIcon,
@@ -15,7 +13,6 @@ import {
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import { DetailHeader } from './DetailHeader'
 import { EnchantmentList } from './EnchantmentList'
-import { numberWithPlusSign } from './numberWithPlusSign'
 import type { SetDetail } from '../../queries/sets'
 import { sentenceCased } from './sentenceCased'
 import {
@@ -183,17 +180,19 @@ function itemDetailKind(item: Item): ItemDetailKind {
 
 function toItemAttributeStats(item: Item): DetailStat[] {
   const attributes: DetailStat[] = []
-  if (item.enhancementBonus !== null) {
-    attributes.push({
-      label: 'Enhancement',
-      value: numberWithPlusSign(item.enhancementBonus),
-      isNumeric: true,
-    })
-  }
   if (item.material) attributes.push({ label: 'Material', value: item.material, isNumeric: false })
   if (item.requiredRace)
     attributes.push({ label: 'Race', value: item.requiredRace, isNumeric: false })
   return attributes
+}
+
+const ABILITY_ABBREVIATION_BY_NAME: Readonly<Record<string, string>> = {
+  Strength: 'STR',
+  Dexterity: 'DEX',
+  Constitution: 'CON',
+  Intelligence: 'INT',
+  Wisdom: 'WIS',
+  Charisma: 'CHA',
 }
 
 function toPrimaryWeaponStats(
@@ -244,6 +243,20 @@ function toPrimaryWeaponStats(
   if (!range && !multiplier && critical) {
     primaryStats.push({ label: 'Critical', value: critical, isNumeric: false })
   }
+  for (const [label, modifier] of [
+    ['Attack mod', weaponStats.attackModifier],
+    ['Damage mod', weaponStats.damageModifier],
+  ] as const) {
+    const ability = modifier?.trim()
+    if (ability && ABILITY_ABBREVIATION_BY_NAME[ability]) {
+      primaryStats.push({
+        label,
+        value: ABILITY_ABBREVIATION_BY_NAME[ability],
+        isNumeric: false,
+        hint: ability,
+      })
+    }
+  }
   return primaryStats
 }
 
@@ -262,15 +275,13 @@ function toExtraWeaponStats(weaponStats: ItemWeaponStats): DetailStat[] {
 }
 
 function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): JSX.Element | null {
-  const [isExpanded, setIsExpanded] = useState(false)
   const itemAttributes = toItemAttributeStats(item)
-  const enhancementStats = itemAttributes.filter((stat) => stat.label === 'Enhancement')
   const materialStats = itemAttributes.filter((stat) => stat.label === 'Material')
   const labeledArmorStats = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
   const isShield = kind === 'shield'
-  let primaryStats: DetailStat[] = enhancementStats
-  let extraStats: DetailStat[] = itemAttributes.filter((stat) => stat.label !== 'Enhancement')
-  let moreLabel = 'More details'
+  let primaryStats: DetailStat[] = []
+  let extraStats: DetailStat[] = itemAttributes
+  const damageReductionBypasses = item.weaponStats?.damageReductionBypasses ?? []
   if (kind === 'armor' || kind === 'shield') {
     const primaryLabels = isShield
       ? ['Shield bonus', 'Max Dex bonus']
@@ -278,51 +289,21 @@ function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): 
     const extraLabels = ['Arcane spell failure', 'Armor check penalty', 'Damage reduction']
     primaryStats = [
       ...primaryLabels.flatMap((label) => labeledArmorStats.filter((stat) => stat.label === label)),
-      ...enhancementStats,
     ]
     extraStats = [
       ...extraLabels.flatMap((label) => labeledArmorStats.filter((stat) => stat.label === label)),
       ...materialStats,
     ]
-    moreLabel = isShield ? 'More shield details' : 'More armor details'
   } else if (kind === 'weapon' && item.weaponStats) {
-    const bypasses = item.weaponStats.damageReductionBypasses
-      .map((bypass) => bypass.trim())
-      .filter(Boolean)
-    const bypassStats: DetailStat[] = bypasses.length
-      ? [{ label: 'Bypasses', value: bypasses.join(', '), isNumeric: false, isFullWidth: true }]
-      : []
-    primaryStats = [
-      ...toPrimaryWeaponStats(item.weaponStats, item.enhancementBonus),
-      ...enhancementStats,
-    ]
-    extraStats = [...bypassStats, ...toExtraWeaponStats(item.weaponStats), ...materialStats]
-    moreLabel = 'More weapon details'
+    primaryStats = toPrimaryWeaponStats(item.weaponStats, item.enhancementBonus)
+    extraStats = [...toExtraWeaponStats(item.weaponStats), ...materialStats]
   }
-  if (primaryStats.length === 0 && extraStats.length === 0) return null
-
   return (
-    <div className="resources-item-details">
-      <DetailFactGrid stats={primaryStats} />
-      {extraStats.length > 0 && (
-        <div className="resources-item-details__toggle-row">
-          <button
-            type="button"
-            className="resources-item-details__toggle"
-            aria-expanded={isExpanded}
-            onClick={() => setIsExpanded((wasExpanded) => !wasExpanded)}
-          >
-            {isExpanded ? 'Less' : moreLabel}
-            {isExpanded ? (
-              <ChevronUp size={12} aria-hidden="true" />
-            ) : (
-              <ChevronDown size={12} aria-hidden="true" />
-            )}
-          </button>
-        </div>
-      )}
-      {isExpanded && <DetailExtras stats={extraStats} />}
-    </div>
+    <DetailStats
+      primaryStats={primaryStats}
+      extraStats={extraStats}
+      damageReductionBypasses={damageReductionBypasses}
+    />
   )
 }
 
@@ -592,6 +573,7 @@ export function ItemDetailCard({
           bonuses={item.bonuses}
           modifiers={item.modifiers}
           effects={item.effects}
+          enhancementBonus={item.enhancementBonus}
           setDetail={setDetail}
           variant={variant}
           matchingEnchantments={matchingEnchantments}

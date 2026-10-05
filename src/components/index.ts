@@ -9,8 +9,7 @@ export {
   DetailCardSection,
   DetailMore,
   DetailValueRow,
-  DetailFactGrid,
-  DetailExtras,
+  DetailStats,
   type DetailStat,
 } from './DetailCard'
 export { WikiLinkIcon } from './WikiLinkIcon'

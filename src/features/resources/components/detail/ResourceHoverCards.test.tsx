@@ -97,8 +97,8 @@ vi.mock('../../queries/useItems', () => ({
 it('keeps item facts and shows its captured bonus with a plain type', () => {
   render(<ItemHoverContent itemId={7631} />)
   expect(screen.getByText('Stolen Necklace (Level 25)')).toBeInTheDocument()
-  expect(screen.getByText('+8')).toHaveClass('detail-value-row__value')
-  expect(screen.getByText('Enhancement')).toHaveClass('detail-value-row__type')
+  expect(screen.getByText('+8')).toHaveClass('resources-bonus-value')
+  expect(screen.getByText('Enhancement')).toHaveClass('resources-bonus-type')
 })
 
 it('shows a damage row when an item detail carries a captured dice modifier', () => {

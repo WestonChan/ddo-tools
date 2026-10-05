@@ -103,19 +103,47 @@ it('shows a second value and API-shaped damage modifier in separate rows', () =>
   expect(within(card).getByText('1d6 Electric')).toHaveClass('detail-value-row__value')
 })
 
-it('shows hover variant enchantment rows without a section heading', () => {
+it('shows hover variant enchantment columns without a section heading', () => {
   render(
     <HoverCardProvider>
       <EnchantmentList bonuses={[bonus()]} effects={[]} variant="hover" />
     </HoverCardProvider>,
   )
   expect(screen.getByText('Charisma')).toBeInTheDocument()
-  expect(screen.getByText('Enhancement')).toHaveClass('detail-value-row__type')
+  expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+    'Type',
+    'Enchantment',
+    'Value',
+  ])
+  expect(screen.getByText('Charisma').closest('[role="row"]')).toHaveTextContent(
+    'EnhancementCharisma+5',
+  )
+  expect(screen.getByText('Enhancement')).toHaveClass('resources-bonus-type')
   expect(screen.getByText('Enhancement')).not.toHaveClass('detail-type-tag')
   expect(screen.queryByRole('heading', { name: 'Enchantments' })).toBeNull()
 })
 
 describe('EnchantmentList', () => {
+  it('puts the enhancement bonus in the first sortable row without filter tint', () => {
+    render(
+      <EnchantmentList
+        bonuses={[]}
+        effects={[]}
+        enhancementBonus={5}
+        matchingEnchantments={['Enhancement Bonus']}
+      />,
+    )
+    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+      'Type',
+      'Enchantment',
+      'Value',
+    ])
+    const row = screen.getByRole('row', { name: /Enhancement Bonus/ })
+    expect(row).toHaveTextContent('Enhancement')
+    expect(row).toHaveTextContent('+5')
+    expect(row).not.toHaveClass('ledger-row--highlighted')
+  })
+
   it('focuses its first row, includes set headings, skips tiers, and returns from a pinned bonus card', () => {
     vi.useFakeTimers()
     const item = toItem(capturedRing as ApiItemDetail)
@@ -213,7 +241,7 @@ describe('EnchantmentList', () => {
       screen
         .getAllByText('Fire Spell Power', { selector: '.resources-bonus-name' })[1]
         .closest('[role="row"]'),
-    ).toHaveTextContent('Artifact+20')
+    ).toHaveTextContent('ArtifactFire Spell Power+20')
     expect(screen.queryByText('Storm tier unlock')).toBeNull()
     expect(screen.queryByText('Fire damage boost')).toBeNull()
     expect(screen.getByRole('table', { name: 'Enchantments' })).toBeInTheDocument()
@@ -238,7 +266,7 @@ describe('EnchantmentList', () => {
       const expandedRows = screen.getAllByRole('row').slice(headingIndex + 2)
       expect(expandedRows[0]).toHaveClass('ledger-row--subheading')
       expect(expandedRows[0]).toHaveTextContent('5 pieces')
-      expect(expandedRows[1]).toHaveTextContent('Physical Resistance RatingProfane+5')
+      expect(expandedRows[1]).toHaveTextContent('ProfanePhysical Resistance Rating+5')
       expect(screen.queryByText(set.tiers[0].description!)).toBeNull()
       expect(expandedRows.slice(1)).toHaveLength(7)
     },
@@ -383,7 +411,7 @@ describe('EnchantmentList', () => {
     fireEvent.mouseLeave(heading)
     fireEvent.click(heading)
     fireEvent.mouseEnter(
-      screen.getByRole('row', { name: /Physical Resistance Rating Profane \+5/ }),
+      screen.getByRole('row', { name: /Profane Physical Resistance Rating \+5/ }),
     )
     expect(
       within(await screen.findByRole('dialog')).getByText('Physical Resistance Rating'),

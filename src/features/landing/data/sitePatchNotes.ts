@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-05',
+    changes: [
+      "A weapon's attack and damage modifiers are cells beside its damage and crit, the DR bypass sits on its own line under them, More details opens in columns, the enhancement bonus is the first row of the enchantment table with Type first, and every part of the detail lines up on one edge",
+    ],
+  },
+  {
     date: '2026-10-04',
     changes: [
       'Clicking through several items in the list no longer stacks them in history, so Back returns to the list even after the window narrows',

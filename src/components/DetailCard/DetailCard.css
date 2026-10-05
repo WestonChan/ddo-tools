@@ -100,12 +100,17 @@
   font-size: var(--fs-label);
 }
 
+.detail-stats {
+  display: flex;
+  flex-direction: column;
+}
+
 .detail-fact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   column-gap: var(--space-4);
   row-gap: var(--space-2-5);
-  padding: var(--space-0-5) var(--space-3) var(--space-1);
+  padding: var(--space-0-5) 0 var(--space-1);
 }
 
 .detail-fact-grid__cell {
@@ -135,32 +140,69 @@
   white-space: nowrap;
 }
 
+.detail-dr-bypass {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  line-height: 24px;
+  padding-top: var(--space-1);
+}
+
+.detail-dr-bypass__label,
+.detail-extras__label {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: var(--fs-detail-numeric);
+}
+
+.detail-dr-bypass__value {
+  min-width: 0;
+  color: var(--text-body);
+  font-size: var(--fs-body-sm);
+  text-wrap: pretty;
+}
+
+.detail-stats__toggle-row {
+  display: flex;
+  padding: var(--space-2) 0 0;
+}
+
+.detail-stats__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-link);
+  font-size: var(--fs-detail-tag-label);
+  cursor: pointer;
+}
+
+.detail-stats__toggle-label {
+  display: inline-grid;
+}
+
+.detail-stats__toggle-label > span {
+  grid-area: 1 / 1;
+}
+
+.detail-stats__toggle-label > span[aria-hidden='true'] {
+  visibility: hidden;
+}
+
 .detail-extras {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  column-width: 210px;
   column-gap: var(--space-6);
-  margin-top: var(--space-2);
-  border-top: 1px dotted var(--border-default);
+  margin: var(--space-2-5) 0 0;
 }
 
 .detail-extras__entry {
+  break-inside: avoid;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-height: 30px;
-  padding: calc(var(--space-1) + var(--space-px)) var(--space-3);
-  border-bottom: 1px dotted var(--border-default);
-}
-
-.detail-extras__entry--wide {
-  grid-column: 1 / -1;
-}
-
-.detail-extras__label {
-  flex: 0 0 auto;
-  color: var(--text-body);
-  font-size: var(--fs-body-sm);
+  gap: var(--space-2);
+  line-height: 24px;
 }
 
 .detail-extras__value {
@@ -168,7 +210,7 @@
   color: var(--text-body);
   font-size: var(--fs-body-sm);
   overflow-wrap: anywhere;
-  text-align: right;
+  text-wrap: pretty;
 }
 
 .detail-extras__value.num {

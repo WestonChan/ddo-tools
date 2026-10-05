@@ -256,6 +256,8 @@ describe('mappers', () => {
       damageMultiplier: 1.6,
       criticalThreatRange: 2,
       criticalMultiplier: 2,
+      attackModifier: 'Strength',
+      damageModifier: 'Strength',
       damageReductionBypasses: ['Chaotic', 'Evil', 'Good', 'Lawful', 'Magic', 'Slash'],
     })
   })

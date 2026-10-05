@@ -105,11 +105,11 @@ function setRows(setDetail: SetDetail, matchingNames: ReadonlySet<string>): Ench
 
 const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
   {
-    key: 'name',
-    label: 'Enchantment',
-    isFlexible: true,
-    minWidth: 120,
-    sortValue: (row) => row.name,
+    key: 'type',
+    label: 'Type',
+    width: 96,
+    minWidth: 96,
+    sortValue: (row) => row.type ?? '',
     render: (row, heading) =>
       row.headingKind === 'set' ? (
         <span className="resources-set-heading">
@@ -125,17 +125,18 @@ const COLUMNS: LedgerColumn<EnchantmentRow>[] = [
         </span>
       ) : row.headingKind === 'tier' ? (
         <span className="resources-set-tier-heading">{row.name}</span>
-      ) : (
-        <span className="resources-bonus-name">{row.name}</span>
-      ),
+      ) : row.type ? (
+        <span className="resources-bonus-type">{row.type}</span>
+      ) : null,
   },
   {
-    key: 'type',
-    label: 'Type',
-    width: 120,
+    key: 'name',
+    label: 'Enchantment',
+    isFlexible: true,
     minWidth: 120,
-    sortValue: (row) => row.type ?? '',
-    render: (row) => (row.type ? <span className="resources-bonus-type">{row.type}</span> : null),
+    sortValue: (row) => row.name,
+    render: (row) =>
+      row.headingKind ? null : <span className="resources-bonus-name">{row.name}</span>,
   },
   {
     key: 'value',
@@ -155,6 +156,7 @@ export function EnchantmentList({
   bonuses,
   modifiers = [],
   effects,
+  enhancementBonus = null,
   setDetail,
   matchingEnchantments = [],
   variant = 'pane',
@@ -164,14 +166,30 @@ export function EnchantmentList({
   bonuses: ItemBonus[]
   modifiers?: ResourceModifier[]
   effects: ItemEffect[]
+  enhancementBonus?: number | null
   setDetail?: SetDetail | null
   matchingEnchantments?: string[]
   variant?: 'pane' | 'hover'
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element | null {
-  if (!bonuses.length && !effects.length && !setDetail) return null
+  if (enhancementBonus === null && !bonuses.length && !effects.length && !setDetail) return null
   const matchingNames = new Set(matchingEnchantments.map((name) => name.toLowerCase()))
   const itemRows = [
+    ...(enhancementBonus === null
+      ? []
+      : [
+          {
+            key: 'enhancement-bonus',
+            name: 'Enhancement Bonus',
+            sourceName: 'Enhancement Bonus',
+            type: 'Enhancement',
+            value: numberWithPlusSign(enhancementBonus),
+            hoverValue: numberWithPlusSign(enhancementBonus),
+            description: null,
+            headingKind: null,
+            isMatch: false,
+          } satisfies EnchantmentRow,
+        ]),
     ...bonuses.map((bonus) => toBonusRow(bonus, matchingNames)),
     ...effects.map((effect) => toEffectRow(effect, matchingNames)),
   ]
@@ -179,7 +197,12 @@ export function EnchantmentList({
   if (variant === 'hover') {
     return (
       <DetailCardSection>
-        <div className="resources-hover-rows">
+        <div className="resources-hover-enchantment-table" role="table" aria-label="Enchantments">
+          <div className="resources-hover-enchantment-heading" role="row">
+            <span role="columnheader">Type</span>
+            <span role="columnheader">Enchantment</span>
+            <span role="columnheader">Value</span>
+          </div>
           {itemRows.slice(0, 5).map((row) => (
             <EnchantmentHoverRow
               key={row.key}
@@ -314,20 +337,21 @@ function EnchantmentHoverRow({
     render: () => <EnchantmentHoverContent row={row} itemName={itemName} modifiers={modifiers} />,
   })
   return (
-    <div className="resources-hover-enchantment-row" tabIndex={0} {...anchor}>
-      {row.hoverValue ? (
-        <DetailValueRow
-          label={row.name}
-          value={row.hoverValue}
-          type={row.type}
-          className="hover-card-row"
-        />
-      ) : (
-        <div className="resources-hover-row hover-card-row">
-          <span>{row.name}</span>
-          <span>{row.type}</span>
-        </div>
-      )}
+    <div
+      className="resources-hover-enchantment-row hover-card-row"
+      role="row"
+      tabIndex={0}
+      {...anchor}
+    >
+      <span role="cell" className="resources-bonus-type">
+        {row.type}
+      </span>
+      <span role="cell" className="resources-bonus-name">
+        {row.name}
+      </span>
+      <span role="cell" className="resources-bonus-value num">
+        {row.value || row.hoverValue}
+      </span>
     </div>
   )
 }

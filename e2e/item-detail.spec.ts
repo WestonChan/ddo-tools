@@ -2,8 +2,91 @@ import { expect, test } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/item487.json' with { type: 'json' }
 import capturedRunearm from '../src/features/resources/queries/fixtures/item924.json' with { type: 'json' }
 import capturedArmor from '../src/features/resources/queries/fixtures/item831.json' with { type: 'json' }
+import capturedWeapon from '../src/features/resources/queries/fixtures/item3479.json' with { type: 'json' }
+import capturedShield from '../src/features/resources/queries/fixtures/item8203.json' with { type: 'json' }
 import capturedNecklace from '../src/features/resources/queries/fixtures/item7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/set93.json' with { type: 'json' }
+
+test('detail sections share the title facts left edge at desktop and mobile widths', async ({
+  page,
+}) => {
+  const items = [capturedWeapon, capturedArmor, capturedShield, capturedRing]
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = items.find((candidate) => path === `/v1/items/${candidate.id}`)
+    const response =
+      path === '/v1/items'
+        ? {
+            total: items.length,
+            limit: 200,
+            offset: 0,
+            items: items.map((candidate) => ({
+              id: candidate.id,
+              name: candidate.name,
+              slot: candidate.slot,
+              category: candidate.category,
+              item_type: candidate.item_type,
+              minimum_level: candidate.minimum_level,
+              enhancement_bonus: candidate.enhancement_bonus,
+              icon: candidate.icon,
+              pack: null,
+              is_raid: false,
+              is_rare: false,
+              is_legacy: candidate.is_legacy,
+            })),
+          }
+        : path === '/v1/sets/93'
+          ? capturedSet
+          : (item ?? [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 800 })
+    for (const item of items) {
+      await page.goto(`/resources/items/${item.id}`)
+      const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
+      await expect(detailPane.getByRole('heading', { name: item.name, exact: true })).toBeVisible()
+      const moreButton = detailPane.getByRole('button', { name: 'More details', exact: true })
+      if (await moreButton.count()) await moreButton.click()
+      const leftEdges = await detailPane.evaluate((pane) => {
+        const selectors = {
+          titleFact: '.detail-card__header .detail-card__fact',
+          factGrid: '.detail-fact-grid',
+          firstFactCell: '.detail-fact-grid__cell',
+          drBypass: '.detail-dr-bypass',
+          toggle: '.detail-stats__toggle-row',
+          extras: '.detail-extras',
+          description: '.resources-detail-description',
+          enchantments: '.resources-enchantment-ledger',
+        }
+        return Object.fromEntries(
+          Object.entries(selectors).flatMap(([name, selector]) => {
+            const element = pane.querySelector(selector)
+            return element ? [[name, Number(element.getBoundingClientRect().left.toFixed(2))]] : []
+          }),
+        )
+      })
+      expect(leftEdges.titleFact).toBeDefined()
+      for (const name of ['toggle', 'extras', 'description', 'enchantments']) {
+        expect(leftEdges[name], `${item.name} at ${width}px is missing ${name}`).toBeDefined()
+      }
+      if (item.id !== capturedRing.id) expect(leftEdges.firstFactCell).toBeDefined()
+      if (item.id === capturedWeapon.id || item.id === capturedShield.id) {
+        expect(leftEdges.drBypass).toBeDefined()
+      }
+      expect(
+        Object.entries(leftEdges).every(([, left]) => Math.abs(left - leftEdges.titleFact) <= 0.5),
+        `${item.name} at ${width}px: ${JSON.stringify(leftEdges)}`,
+      ).toBe(true)
+      console.info(`${item.name} at ${width}px: ${JSON.stringify(leftEdges)}`)
+    }
+  }
+})
 
 test('list selections share one history entry across a reload-free resize', async ({ page }) => {
   const items = [capturedRing, capturedArmor, capturedNecklace]
@@ -393,7 +476,7 @@ test('search keyboard navigation scrolls a virtualized result into view and open
   await expect(search).toBeFocused()
 })
 
-test('item detail fact cells and pairs render in pane and hover', async ({ page }) => {
+test('item detail fact cells and columns render in pane and hover', async ({ page }) => {
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
@@ -437,15 +520,14 @@ test('item detail fact cells and pairs render in pane and hover', async ({ page 
   await expect(grid.locator('.detail-fact-grid__cell')).toHaveText([
     'Armor bonus16',
     'Max Dex bonus1',
-    'Enhancement+5',
   ])
   expect(
     await grid.evaluate((element) => {
       const style = getComputedStyle(element)
       return [style.display, style.columnGap, style.rowGap, style.padding]
     }),
-  ).toEqual(['grid', '16px', '10px', '2px 12px 4px'])
-  const moreButton = detailPane.getByRole('button', { name: 'More armor details', exact: true })
+  ).toEqual(['grid', '16px', '10px', '2px 0px 4px'])
+  const moreButton = detailPane.getByRole('button', { name: 'More details', exact: true })
   expect(
     await moreButton.evaluate((button) => button.parentElement?.previousElementSibling?.className),
   ).toBe('detail-fact-grid')
@@ -458,30 +540,24 @@ test('item detail fact cells and pairs render in pane and hover', async ({ page 
   ])
   expect(
     await detailPane
-      .getByRole('button', { name: 'Less', exact: true })
+      .getByRole('button', { name: 'Less details', exact: true })
       .evaluate((button) => button.parentElement?.nextElementSibling?.className),
   ).toBe('detail-extras')
   expect(
     await extras.evaluate((element) => {
       const style = getComputedStyle(element)
-      return [style.display, style.columnGap, style.marginTop, style.borderTopStyle]
+      return [style.columnWidth, style.columnGap, style.marginTop, style.borderTopStyle]
     }),
-  ).toEqual(['grid', '24px', '8px', 'dotted'])
+  ).toEqual(['210px', '24px', '10px', 'none'])
   expect(
     await extras
       .locator('.detail-extras__entry')
       .first()
       .evaluate((entry) => {
         const style = getComputedStyle(entry)
-        return [
-          style.display,
-          style.minHeight,
-          style.alignItems,
-          style.justifyContent,
-          style.padding,
-        ]
+        return [style.display, style.breakInside, style.alignItems, style.gap, style.padding]
       }),
-  ).toEqual(['flex', '30px', 'baseline', 'space-between', '5px 12px'])
+  ).toEqual(['flex', 'avoid', 'baseline', '8px', '0px'])
   const itemRow = page.getByRole('row', { name: /Beholder Plate Armor/ })
   await itemRow.hover()
   await itemRow.press('t')
@@ -497,9 +573,8 @@ test('item detail fact cells and pairs render in pane and hover', async ({ page 
   await expect(hoverCard.locator('.detail-fact-grid__cell')).toHaveText([
     'Armor bonus16',
     'Max Dex bonus1',
-    'Enhancement+5',
   ])
-  await hoverCard.getByRole('button', { name: 'More armor details', exact: true }).click()
+  await hoverCard.getByRole('button', { name: 'More details', exact: true }).click()
   await expect(hoverCard.locator('.detail-extras__entry')).toHaveText([
     'Spell failure35%',
     'Check penalty-5',

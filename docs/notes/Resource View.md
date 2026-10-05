@@ -31,6 +31,7 @@ entry in [[roadmap]].
 - 📋 Phase 4f — Add attack/damage mod to item
 - 📋 Phase 4f — Recursive related-stat linking (bonuses that apply other bonuses) once the bonuses category exists
 - 📋 Phase 4g — Make filters sticky per list view so they stick around when you leave the page and come back
+- 🐛 Phase 4g — At 375 the pane's enchantment table (Type 96 + Enchantment 120 + Value 64 px) is wider than the 237px card body, so it scrolls sideways and hides the Value column, now including the Enhancement Bonus row's "+N". Use the hover card's 76px Type column or a smaller Enchantment minimum below 480px; add an e2e check that the Value header sits inside the table at 375. Reviewer finding on detail-v9, 2026-10-05.
 - 📋 Phase 4g — List view URL should include the active filters (shareable filtered views)
 - 📋 Phase 4g — List view should have columns for ml, item slot, and quest pack/expansion so users can order by them
 - ✅ Raid indicator visual pass (2026-10-04): no chips anywhere. The item list shows Raid and Rare only in their columns ("Yes" in the accent / body colour, "—" faint); the detail's Obtained from rows use coloured words; `DropTagChip` is deleted.
