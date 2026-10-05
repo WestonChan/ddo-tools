@@ -35,7 +35,7 @@ Optionally, set `SENTRY_ORG` to your org slug (the part before `.sentry.io` in y
 
 ### 3. Configure production builds
 
-The variable names are the ones [Vercel's Sentry integration](https://vercel.com/integrations/sentry) injects, so on Vercel you install the integration, pick the project, scope it to **Production**, and you're done. Vite only exposes `VITE_`-prefixed variables to client code, so [`vite.config.ts`](../vite.config.ts) inlines `SENTRY_DSN` and `SENTRY_ORG` explicitly with `define`; the token and project slug stay build-side.
+On Vercel, add the four variables below by hand under Project → Settings → Environment Variables, scoped to **Production**, with **Sensitive** turned on for `SENTRY_AUTH_TOKEN`. Don't use [Vercel's Sentry integration](https://vercel.com/integrations/sentry): Vercel won't let a variable an integration manages be made sensitive, so its auth token stays readable to everyone on the Vercel team, and its log drain and traces only serve server functions this static site doesn't have. Vercel only rebuilds when something deploys, so redeploy after changing them. Vite only exposes `VITE_`-prefixed variables to client code, so [`vite.config.ts`](../vite.config.ts) inlines `SENTRY_DSN` and `SENTRY_ORG` explicitly with `define`; the token and project slug stay build-side.
 
 For the GitHub Actions build check, add the same four as repo secrets (Settings → Secrets and variables → Actions):
 
