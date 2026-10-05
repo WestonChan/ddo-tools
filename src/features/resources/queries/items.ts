@@ -1,4 +1,9 @@
-import { fetchApiJson, fetchApiPage, WHOLE_LIST_PAGE_LIMIT } from '../../../lib/api'
+import {
+  assertApiResponseFields,
+  fetchApiJson,
+  fetchApiPage,
+  WHOLE_LIST_PAGE_LIMIT,
+} from '../../../lib/api'
 import type {
   ApiAdventurePack,
   ApiAugment,
@@ -270,7 +275,23 @@ export interface Item extends ItemAttributes {
   sourcesBeyondQuests: ItemSource[]
 }
 
-export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
+export function toItemSummary(apiItemRow: ApiItemRow, rowIndex = 0): ItemSummary {
+  assertApiResponseFields(
+    apiItemRow,
+    '/v1/items',
+    {
+      id: 'number',
+      name: 'string',
+      slot: 'string',
+      category: 'string',
+      minimum_level: 'nullable-number',
+      pack: 'nullable-string',
+      is_raid: 'boolean',
+      is_rare: 'boolean',
+      is_legacy: 'boolean',
+    },
+    `items[${rowIndex}].`,
+  )
   return {
     id: apiItemRow.id,
     name: apiItemRow.name,
@@ -284,7 +305,50 @@ export function toItemSummary(apiItemRow: ApiItemRow): ItemSummary {
   }
 }
 
-export function toItem(apiItemDetail: ApiItemDetail): Item {
+export function toItem(
+  apiItemDetail: ApiItemDetail,
+  path = `/v1/items/${apiItemDetail?.id ?? 'unknown'}`,
+): Item {
+  assertApiResponseFields(apiItemDetail, path, {
+    augment_slots: 'array',
+    bonuses: 'array',
+    modifiers: 'array',
+    effects: 'array',
+    clickies: 'array',
+    quests: 'array',
+    quest_chains: 'array',
+    sagas: 'array',
+    adventure_packs: 'array',
+    crafting_systems: 'array',
+    challenge_packs: 'array',
+    vendors: 'array',
+    events: 'array',
+    starter_rewards: 'array',
+    id: 'number',
+    name: 'string',
+    slot: 'string',
+    category: 'string',
+    item_type: 'nullable-string',
+    minimum_level: 'nullable-number',
+    enhancement_bonus: 'nullable-number',
+    material: 'nullable-string',
+    race_required: 'nullable-string',
+    description: 'nullable-string',
+    drop_location: 'nullable-string',
+    set_name: 'nullable-string',
+    accepts_sentience: 'boolean',
+    is_minor_artifact: 'boolean',
+    wiki_url: 'nullable-string',
+    is_legacy: 'boolean',
+    weapon: 'nullable-object',
+    armor: 'nullable-object',
+    set: 'nullable-object',
+  })
+  if (apiItemDetail.weapon)
+    assertApiResponseFields(apiItemDetail.weapon, path, { dr_bypass: 'array' }, 'weapon.')
+  apiItemDetail.augment_slots.forEach((slot, index) => {
+    assertApiResponseFields(slot, path, { options: 'array' }, `augment_slots[${index}].`)
+  })
   return {
     id: apiItemDetail.id,
     name: apiItemDetail.name,
@@ -459,6 +523,14 @@ function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
 }
 
 export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
+  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.id ?? 'unknown'}`, {
+    id: 'number',
+    name: 'string',
+    min_level: 'nullable-number',
+    bonuses: 'array',
+    crafting: 'array',
+    slots: 'array',
+  })
   return {
     id: apiAugment.id,
     name: apiAugment.name,
@@ -488,6 +560,9 @@ function toResourceModifier(modifier: ApiModifier): ResourceModifier {
 }
 
 export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
+  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.id ?? 'unknown'}`, {
+    modifiers: 'array',
+  })
   return {
     ...toAugmentSummary(apiAugment),
     description: apiAugment.description,
@@ -507,6 +582,11 @@ export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
 }
 
 function toCraftingRecipe(apiRecipe: ApiCraftingRecipe): CraftingRecipe {
+  assertApiResponseFields(apiRecipe, '/v1/augments', {
+    system: 'string',
+    tier: 'string',
+    cost: 'array',
+  })
   return {
     system: apiRecipe.system,
     tier: apiRecipe.tier,
@@ -561,11 +641,12 @@ export async function fetchItemPage(
     'items',
     itemListParameters(filters, searchQuery, includesSetBonuses, offset, sort),
   )
-  return { total: page.total, items: page.rows.map(toItemSummary) }
+  return { total: page.total, items: page.rows.map((row, index) => toItemSummary(row, index)) }
 }
 
 export async function fetchItem(id: number): Promise<Item> {
-  return toItem(await fetchApiJson<ApiItemDetail>(`/v1/items/${id}`))
+  const path = `/v1/items/${id}`
+  return toItem(await fetchApiJson<ApiItemDetail>(path), path)
 }
 
 export async function fetchAdventurePackNames(): Promise<string[]> {
@@ -574,7 +655,15 @@ export async function fetchAdventurePackNames(): Promise<string[]> {
     'adventure_packs',
     { limit: WHOLE_LIST_PAGE_LIMIT },
   )
-  return page.rows.map((pack) => pack.name)
+  return page.rows.map((pack, index) => {
+    assertApiResponseFields(
+      pack,
+      '/v1/adventure-packs',
+      { name: 'string' },
+      `adventure_packs[${index}].`,
+    )
+    return pack.name
+  })
 }
 
 export async function fetchEquipmentSlotNames(): Promise<string[]> {
@@ -583,7 +672,15 @@ export async function fetchEquipmentSlotNames(): Promise<string[]> {
     'equipment_slots',
     { limit: WHOLE_LIST_PAGE_LIMIT },
   )
-  return page.rows.map((slot) => slot.name)
+  return page.rows.map((slot, index) => {
+    assertApiResponseFields(
+      slot,
+      '/v1/equipment-slots',
+      { name: 'string' },
+      `equipment_slots[${index}].`,
+    )
+    return slot.name
+  })
 }
 
 export async function fetchEnchantmentNames(): Promise<string[]> {
@@ -592,7 +689,19 @@ export async function fetchEnchantmentNames(): Promise<string[]> {
     'enchantments',
     { limit: WHOLE_LIST_PAGE_LIMIT },
   )
-  return [...new Set(page.rows.map(({ name }) => name))]
+  return [
+    ...new Set(
+      page.rows.map((enchantment, index) => {
+        assertApiResponseFields(
+          enchantment,
+          '/v1/enchantments',
+          { name: 'string' },
+          `enchantments[${index}].`,
+        )
+        return enchantment.name
+      }),
+    ),
+  ]
 }
 
 export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<AugmentSummary[]> {
@@ -617,6 +726,14 @@ export async function fetchRaidQuests(): Promise<RaidQuest[]> {
     limit: WHOLE_LIST_PAGE_LIMIT,
   })
   return page.rows
-    .filter((quest) => quest.is_raid)
+    .filter((quest, index) => {
+      assertApiResponseFields(
+        quest,
+        '/v1/quests',
+        { id: 'number', name: 'string', is_raid: 'boolean', pack: 'nullable-string' },
+        `quests[${index}].`,
+      )
+      return quest.is_raid
+    })
     .map((quest) => ({ id: quest.id, name: quest.name, pack: quest.pack }))
 }

@@ -38,6 +38,7 @@ interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue
   focusFallbackRef?: RefObject<HTMLElement | null>
   onPickerOpen?: (key: keyof Values) => void
   loadingPickers?: ReadonlySet<string>
+  pickerErrors?: Record<string, ReactNode>
   resultCount?: ReactNode
 }
 
@@ -53,6 +54,7 @@ interface FilterChipProps {
   searchControl?: ReactNode
   rangeCommitRef: RefObject<(() => void) | null>
   isLoading?: boolean
+  errorContent?: ReactNode
   tabIndex: number
   onFocusChip: () => void
   onNavigateChip: (event: KeyboardEvent<HTMLButtonElement>) => void
@@ -156,6 +158,7 @@ function FilterChip({
   searchControl,
   rangeCommitRef,
   isLoading = false,
+  errorContent,
   tabIndex,
   onFocusChip,
   onNavigateChip,
@@ -247,6 +250,7 @@ function FilterChip({
           extraControl={extraControl}
           searchControl={searchControl}
           isLoading={isLoading}
+          errorContent={errorContent}
         />
       )}
       {isOpen && definition.kind === 'multi' && (
@@ -261,6 +265,7 @@ function FilterChip({
           extraControl={extraControl}
           searchControl={searchControl}
           isLoading={isLoading}
+          errorContent={errorContent}
         />
       )}
     </div>
@@ -278,6 +283,7 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   focusFallbackRef,
   onPickerOpen,
   loadingPickers,
+  pickerErrors,
   resultCount,
 }: FilterChipRowProps<Values>): JSX.Element {
   const [openKey, setOpenKey] = useState<string | null>(null)
@@ -383,6 +389,7 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
                 searchControl={searchControls?.[definition.key]}
                 rangeCommitRef={rangeCommitRef}
                 isLoading={loadingPickers?.has(String(definition.key))}
+                errorContent={pickerErrors?.[String(definition.key)]}
                 tabIndex={chipGroup.tabStopKey === String(definition.key) ? 0 : -1}
                 onFocusChip={() => chipGroup.rememberFocus(String(definition.key))}
                 onNavigateChip={(event) => {

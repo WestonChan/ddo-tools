@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { API_HTTP_ERROR, ApiError } from '../../../lib/api'
 import { StatusPlaceholder } from './StatusPlaceholder'
 
 describe('StatusPlaceholder', () => {
@@ -33,5 +34,29 @@ describe('StatusPlaceholder', () => {
   it('not-found without id falls back to a generic message', () => {
     render(<StatusPlaceholder reason="not-found" />)
     expect(screen.getByText(/^not found\.$/i)).toBeInTheDocument()
+  })
+
+  it('makes Retry primary and Report secondary for a server error', () => {
+    render(
+      <StatusPlaceholder
+        error={new ApiError(API_HTTP_ERROR, 500, '500 for /v1/items')}
+        path="/v1/items"
+        onRetry={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Retry' })).toHaveClass('btn-primary-sm')
+    expect(screen.getByRole('link', { name: 'Report a bug' })).toHaveClass('btn-ghost-sm')
+  })
+
+  it('makes Report primary for an error on our side', () => {
+    render(
+      <StatusPlaceholder
+        error={new ApiError(API_HTTP_ERROR, 400, '400 for /v1/items')}
+        path="/v1/items"
+        onRetry={vi.fn()}
+      />,
+    )
+    expect(screen.getByRole('link', { name: 'Report a bug' })).toHaveClass('btn-primary-sm')
+    expect(screen.getByRole('button', { name: 'Retry' })).toHaveClass('btn-ghost-sm')
   })
 })

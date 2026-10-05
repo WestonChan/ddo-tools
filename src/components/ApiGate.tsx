@@ -1,32 +1,12 @@
 import type { JSX, ReactNode } from 'react'
-import { apiErrorDescription } from '../lib/api'
-import { ErrorScreen } from './ErrorScreen'
 import './ApiGate.css'
 
 interface ApiGateProps {
   isPending: boolean
-  error: unknown
-  onRetry: () => void
   children: ReactNode
 }
 
-export function ApiGate({ isPending, error, onRetry, children }: ApiGateProps): JSX.Element {
-  if (error) {
-    const { heading, hint } = apiErrorDescription(error)
-    return (
-      <ErrorScreen
-        heading={heading}
-        hint={hint ?? undefined}
-        error={error}
-        issueLabels="data"
-        actions={
-          <button type="button" className="btn-primary" onClick={onRetry}>
-            Retry
-          </button>
-        }
-      />
-    )
-  }
+export function ApiGate({ isPending, children }: ApiGateProps): JSX.Element {
   if (isPending) {
     return (
       <div

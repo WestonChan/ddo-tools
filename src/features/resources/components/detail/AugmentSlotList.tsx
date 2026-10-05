@@ -1,5 +1,5 @@
 import type { JSX } from 'react'
-import { LedgerTable, type LedgerColumn } from '../../../../components'
+import { ApiErrorNotice, LedgerTable, type LedgerColumn } from '../../../../components'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { useFittingAugmentsBySlotLabel } from '../../queries/useItems'
 import { AugmentHoverContent } from './ResourceHoverCards'
@@ -122,11 +122,17 @@ export function AugmentCandidateLedger({
         isDense
         label={`Augments that fit the ${socketName} slot`}
         emptyState={
-          fittingAugmentsQuery.isPending
-            ? 'Loading augments…'
-            : fittingAugmentsQuery.error
-              ? 'Could not load augments'
-              : 'No augments found'
+          fittingAugmentsQuery.isPending ? (
+            'Loading augments…'
+          ) : fittingAugmentsQuery.error ? (
+            <ApiErrorNotice
+              error={fittingAugmentsQuery.error}
+              path="/v1/augments"
+              onRetry={() => void fittingAugmentsQuery.refetch()}
+            />
+          ) : (
+            'No augments found'
+          )
         }
         hoverCard={(augment) => ({
           kind: 'augment',

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ResourceDetailPane } from './ResourceDetailPane'
-import { ApiError, API_HTTP_ERROR } from '../../../lib/api'
+import { ApiError, API_HTTP_ERROR, API_NETWORK_ERROR } from '../../../lib/api'
 import type { Item } from '../queries/items'
 
 const navigateMock = vi.fn()
@@ -68,10 +68,20 @@ vi.mock('../queries/useItems', () => ({
   useItem: (id: number | null) => {
     if (id === null) return { data: undefined, isPending: false, error: null }
     if (id === 404) {
-      return { data: undefined, isPending: false, error: new ApiError(API_HTTP_ERROR, 404, 'no') }
+      return {
+        data: undefined,
+        isPending: false,
+        error: new ApiError(API_HTTP_ERROR, 404, 'no'),
+        refetch: vi.fn(),
+      }
     }
     if (id === 500) {
-      return { data: undefined, isPending: false, error: new TypeError('Failed to fetch') }
+      return {
+        data: undefined,
+        isPending: false,
+        error: new ApiError(API_NETWORK_ERROR, 0, 'Failed to fetch'),
+        refetch: vi.fn(),
+      }
     }
     return { data: itemDetailFor(id), isPending: false, error: null }
   },
@@ -130,14 +140,16 @@ describe('ResourceDetailPane', () => {
     render(
       <ResourceDetailPane resourceInUrl={{ category: 'items', id: 404 }} pickerCategory="items" />,
     )
-    expect(screen.getByRole('status')).toHaveTextContent('No item with id 404.')
+    expect(screen.getByRole('status')).toHaveTextContent('This item no longer exists.')
   })
 
   it('renders an error state for a transport failure', () => {
     render(
       <ResourceDetailPane resourceInUrl={{ category: 'items', id: 500 }} pickerCategory="items" />,
     )
-    expect(screen.getByRole('status')).toHaveTextContent(/could not load this item/i)
+    expect(screen.getByRole('status')).toHaveTextContent('Could not reach the game-data service.')
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Report a bug' })).toBeNull()
   })
 
   it('renders the DetailBreadcrumbBar with breadcrumb at depth 1 (no back arrow)', () => {

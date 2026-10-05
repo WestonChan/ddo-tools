@@ -5,12 +5,16 @@ import { useId, useState, type JSX } from 'react'
 import { HoverCardProvider } from '../../../../components'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
+import { ApiError, API_HTTP_ERROR } from '../../../../lib/api'
 
 let augmentsBySlotLabel: Record<string, AugmentSummary[]> = {}
+let augmentError: ApiError | null = null
+const refetchAugments = vi.fn()
 const fittingAugmentsHookMock = vi.fn((label: string | null) => ({
-  data: label === null ? undefined : (augmentsBySlotLabel[label] ?? []),
+  data: label === null || augmentError ? undefined : (augmentsBySlotLabel[label] ?? []),
   isPending: false,
-  error: null,
+  error: augmentError,
+  refetch: refetchAugments,
 }))
 vi.mock('../../queries/useItems', () => ({
   useAugment: () => ({ isPending: true }),
@@ -19,6 +23,7 @@ vi.mock('../../queries/useItems', () => ({
 
 beforeEach(() => {
   fittingAugmentsHookMock.mockClear()
+  augmentError = null
   augmentsBySlotLabel = {
     red: RED_AUGMENTS,
     sun: [{ ...RED_AUGMENTS[0], id: 3, name: 'Solar Gem', slots: ['sun'] }],
@@ -124,6 +129,16 @@ it('opens a plain ledger of fitting augments with name, level and slots but no s
   expect(screen.queryByRole('option')).toBeNull()
   await userEvent.click(screen.getByRole('row', { name: /Ruby of Flame/ }))
   expect(document.querySelector('[aria-selected]')).toBeNull()
+})
+
+it('reports an API-rejected augment search with a retry action', async () => {
+  augmentError = new ApiError(API_HTTP_ERROR, 400, 'Unknown slot parameter')
+  render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
+  await userEvent.click(screen.getByRole('button', { name: /Red/ }))
+  expect(screen.getByText('Something went wrong on our side.')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Report a bug' })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+  expect(refetchAugments).toHaveBeenCalledOnce()
 })
 
 it('tabs into the augment ledger and keeps row focus on Escape', async () => {

@@ -9,6 +9,7 @@ import {
   fetchAugmentsFittingSlot,
   fetchEnchantmentNames,
   fetchEquipmentSlotNames,
+  fetchItem,
   fetchItemPage,
   fetchRaidQuests,
   EMPTY_ITEM_FILTERS,
@@ -156,6 +157,52 @@ const API_ITEM_DETAIL: ApiItemDetail = {
 }
 
 describe('mappers', () => {
+  it('reports a missing item field with the item path', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ...capturedItem, augment_slots: undefined })),
+    )
+    await expect(fetchItem(7631)).rejects.toMatchObject({
+      kind: 'api-response',
+      message: expect.stringContaining('/v1/items/7631: augment_slots'),
+    })
+  })
+
+  it('reports a missing item scalar instead of showing an incomplete detail', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ...capturedItem, slot: undefined })),
+    )
+    await expect(fetchItem(7631)).rejects.toMatchObject({
+      kind: 'api-response',
+      message: expect.stringContaining('/v1/items/7631: slot'),
+    })
+  })
+
+  it('reports a malformed list row with the list path and field', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ total: 1, limit: 200, offset: 0, items: [{ id: 1 }] })),
+    )
+    await expect(fetchItemPage(EMPTY_ITEM_FILTERS, '', false)).rejects.toMatchObject({
+      kind: 'api-response',
+      message: expect.stringContaining('/v1/items: items[0].name'),
+    })
+  })
+
+  it('reports a malformed filter vocabulary row with its path and field', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          total: 1,
+          limit: 10000,
+          offset: 0,
+          adventure_packs: [{ id: 1, is_free_to_play: false }],
+        }),
+      ),
+    )
+    await expect(fetchAdventurePackNames()).rejects.toMatchObject({
+      kind: 'api-response',
+      message: expect.stringContaining('/v1/adventure-packs: adventure_packs[0].name'),
+    })
+  })
   it('maps captured item values and modifier fields from the API response', () => {
     const item = toItem(capturedItem as ApiItemDetail)
     expect(item.bonuses[0]).toMatchObject({ statName: 'Charisma', value: 8, value2: null })

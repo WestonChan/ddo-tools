@@ -70,20 +70,7 @@
 }
 
 .resources-page-error {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  color: var(--text-muted);
-  font-size: var(--fs-body-sm);
-}
-
-.resources-page-error button {
-  color: var(--text-link);
-  background: none;
-  border: 0;
-  cursor: pointer;
 }
 
 .resources-list-error {
@@ -91,20 +78,6 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-}
-
-.resources-list-error-actions {
-  display: flex;
-  gap: var(--space-2);
-  justify-content: center;
-  padding: var(--space-2);
-}
-
-.resources-list-error-actions button {
-  color: var(--text-link);
-  background: none;
-  border: 0;
-  cursor: pointer;
 }
 
 .resources-search {

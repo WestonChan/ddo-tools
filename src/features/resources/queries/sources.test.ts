@@ -23,6 +23,15 @@ import {
 afterEach(() => vi.restoreAllMocks())
 
 describe('captured source detail responses', () => {
+  it('reports a malformed source list with its path and field', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ...adventurePack, items: null })),
+    )
+    await expect(fetchAdventurePack(2)).rejects.toMatchObject({
+      kind: 'api-response',
+      message: expect.stringContaining('/v1/adventure-packs/2: items'),
+    })
+  })
   it('maps a pack and its yielded items', () => {
     const pack = toAdventurePack(adventurePack)
     expect(pack).toMatchObject({

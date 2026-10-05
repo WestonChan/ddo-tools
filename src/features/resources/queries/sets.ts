@@ -1,4 +1,9 @@
-import { fetchApiJson, type ApiSetDetail, type ApiSetModifier } from '../../../lib/api'
+import {
+  assertApiResponseFields,
+  fetchApiJson,
+  type ApiSetDetail,
+  type ApiSetModifier,
+} from '../../../lib/api'
 
 export interface SetBonus {
   key: string
@@ -64,7 +69,19 @@ function modifierIsRepresented(
   })
 }
 
-export function toSetDetail(apiSet: ApiSetDetail): SetDetail {
+export function toSetDetail(
+  apiSet: ApiSetDetail,
+  path = `/v1/sets/${apiSet?.id ?? 'unknown'}`,
+): SetDetail {
+  assertApiResponseFields(apiSet, path, {
+    id: 'number',
+    name: 'string',
+    items: 'array',
+    tiers: 'array',
+  })
+  apiSet.tiers.forEach((tier, index) => {
+    assertApiResponseFields(tier, path, { modifiers: 'array' }, `tiers[${index}].`)
+  })
   return {
     id: apiSet.id,
     name: apiSet.name,
@@ -105,5 +122,6 @@ export function toSetDetail(apiSet: ApiSetDetail): SetDetail {
 }
 
 export async function fetchSet(id: number): Promise<SetDetail> {
-  return toSetDetail(await fetchApiJson<ApiSetDetail>(`/v1/sets/${id}`))
+  const path = `/v1/sets/${id}`
+  return toSetDetail(await fetchApiJson<ApiSetDetail>(path), path)
 }

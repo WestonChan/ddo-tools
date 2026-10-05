@@ -11,7 +11,13 @@ import {
 } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Check, Search } from 'lucide-react'
-import { ApiGate, LedgerTable, type LedgerColumn, type LedgerSort } from '../../../components'
+import {
+  ApiErrorNotice,
+  ApiGate,
+  LedgerTable,
+  type LedgerColumn,
+  type LedgerSort,
+} from '../../../components'
 import { useDebouncedValue } from '../../../hooks'
 import { FilterChipRow } from '../filters/FilterChipRow'
 import {
@@ -201,6 +207,31 @@ export function ItemPicker({
   const enchantmentQuery = useEnchantmentNames(openedPickers.has('enchantments'))
   const packQuery = useAdventurePackNames(openedPickers.has('pack'))
   const raidQuery = useRaidQuests(openedPickers.has('raid'))
+  const pickerErrors = Object.fromEntries(
+    [
+      { key: 'slot', label: 'Gear slot', path: '/v1/equipment-slots', query: equipmentSlotQuery },
+      {
+        key: 'enchantments',
+        label: 'Enchantments',
+        path: '/v1/enchantments',
+        query: enchantmentQuery,
+      },
+      { key: 'pack', label: 'Pack', path: '/v1/adventure-packs', query: packQuery },
+      { key: 'raid', label: 'Raid', path: '/v1/quests', query: raidQuery },
+    ]
+      .filter(({ query }) => query.error)
+      .map(({ key, label, path, query }) => [
+        key,
+        <ApiErrorNotice
+          key={key}
+          error={query.error}
+          path={path}
+          heading={`Could not load ${label} options.`}
+          isCompact
+          onRetry={() => void query.refetch()}
+        />,
+      ]),
+  )
   const equipmentSlots = equipmentSlotQuery.data ?? EMPTY_NAMES
   const enchantmentNames = enchantmentQuery.data ?? EMPTY_NAMES
   const packNames = packQuery.data ?? EMPTY_NAMES
@@ -274,11 +305,7 @@ export function ItemPicker({
 
   if (!hasResolvedFirstPage && !itemPageQuery.data && !itemPageQuery.error) {
     return (
-      <ApiGate
-        isPending={itemPageQuery.isPending}
-        error={itemPageQuery.error}
-        onRetry={() => void itemPageQuery.refetch()}
-      >
+      <ApiGate isPending={itemPageQuery.isPending}>
         <StatusPlaceholder reason="loading" />
       </ApiGate>
     )
@@ -337,6 +364,7 @@ export function ItemPicker({
         focusFallbackRef={effectiveSearchInputRef}
         onPickerOpen={(key) => setOpenedPickers((previous) => new Set(previous).add(String(key)))}
         loadingPickers={loadingPickers}
+        pickerErrors={pickerErrors}
         searchControls={{
           enchantments: (
             <span className="resources-enchantment-match" aria-label="Enchantment match mode">
@@ -396,25 +424,33 @@ export function ItemPicker({
         emptyState={
           itemPageQuery.error && !itemPageQuery.isFetchNextPageError ? (
             <div className="resources-list-error">
-              <StatusPlaceholder reason={selectedSort ? 'sort-error' : 'filter-error'} />
-              <div className="resources-list-error-actions">
-                <button type="button" onClick={() => void itemPageQuery.refetch()}>
-                  Retry
-                </button>
-                {selectedSort && (
-                  <button type="button" onClick={() => setSelectedSort(null)}>
-                    Reset sort
-                  </button>
-                )}
-                {filters.enchantments.length > 0 && filters.enchantmentMatch === 'all' && (
-                  <button
-                    type="button"
-                    onClick={() => onFiltersChange({ ...filters, enchantmentMatch: 'any' })}
-                  >
-                    Reset match
-                  </button>
-                )}
-              </div>
+              <StatusPlaceholder
+                error={itemPageQuery.error}
+                path="/v1/items"
+                onRetry={() => void itemPageQuery.refetch()}
+                additionalActions={
+                  <>
+                    {selectedSort && (
+                      <button
+                        type="button"
+                        className="btn-ghost-sm"
+                        onClick={() => setSelectedSort(null)}
+                      >
+                        Reset sort
+                      </button>
+                    )}
+                    {filters.enchantments.length > 0 && filters.enchantmentMatch === 'all' && (
+                      <button
+                        type="button"
+                        className="btn-ghost-sm"
+                        onClick={() => onFiltersChange({ ...filters, enchantmentMatch: 'any' })}
+                      >
+                        Reset match
+                      </button>
+                    )}
+                  </>
+                }
+              />
             </div>
           ) : itemPageQuery.isPending ? (
             <StatusPlaceholder reason="loading" />
@@ -429,11 +465,12 @@ export function ItemPicker({
         }
       />
       {itemPageQuery.isFetchNextPageError && (
-        <div className="resources-page-error" role="alert">
-          Could not load more items.
-          <button type="button" onClick={() => void itemPageQuery.fetchNextPage()}>
-            Retry
-          </button>
+        <div className="resources-page-error">
+          <ApiErrorNotice
+            error={itemPageQuery.error}
+            path="/v1/items"
+            onRetry={() => void itemPageQuery.fetchNextPage()}
+          />
         </div>
       )}
     </div>

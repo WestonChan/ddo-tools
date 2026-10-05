@@ -1,4 +1,5 @@
 import {
+  assertApiResponseFields,
   fetchApiJson,
   type ApiSourceItem,
   type ApiSourceQuest,
@@ -67,7 +68,11 @@ function sourceQuests(quests: ApiSourceQuest[]): SourceQuest[] {
   return quests.map(({ id, name, level }) => ({ id, name, level }))
 }
 
-export function toAdventurePack(response: ApiAdventurePackDetail): SourceDetail {
+export function toAdventurePack(
+  response: ApiAdventurePackDetail,
+  path = `/v1/adventure-packs/${response?.id ?? 'unknown'}`,
+): SourceDetail {
+  assertApiResponseFields(response, path, { id: 'number', name: 'string', items: 'array' })
   return {
     ...sourceDetail('adventurePack', response.id, response.name),
     isFreeToPlay: response.is_free_to_play,
@@ -75,7 +80,16 @@ export function toAdventurePack(response: ApiAdventurePackDetail): SourceDetail 
   }
 }
 
-export function toQuestChain(response: ApiQuestSeriesDetail): SourceDetail {
+export function toQuestChain(
+  response: ApiQuestSeriesDetail,
+  path = `/v1/quest-chains/${response?.id ?? 'unknown'}`,
+): SourceDetail {
+  assertApiResponseFields(response, path, {
+    id: 'number',
+    name: 'string',
+    quests: 'array',
+    rewards: 'array',
+  })
   return {
     ...sourceDetail('questChain', response.id, response.name),
     pack: response.pack,
@@ -84,7 +98,16 @@ export function toQuestChain(response: ApiQuestSeriesDetail): SourceDetail {
   }
 }
 
-export function toSaga(response: ApiQuestSeriesDetail): SourceDetail {
+export function toSaga(
+  response: ApiQuestSeriesDetail,
+  path = `/v1/sagas/${response?.id ?? 'unknown'}`,
+): SourceDetail {
+  assertApiResponseFields(response, path, {
+    id: 'number',
+    name: 'string',
+    quests: 'array',
+    rewards: 'array',
+  })
   return {
     ...sourceDetail('saga', response.id, response.name),
     pack: response.pack,
@@ -93,7 +116,14 @@ export function toSaga(response: ApiQuestSeriesDetail): SourceDetail {
   }
 }
 
-export function toCraftingSystem(response: ApiCraftingSystemDetail): SourceDetail {
+export function toCraftingSystem(
+  response: ApiCraftingSystemDetail,
+  path = `/v1/crafting-systems/${response?.id ?? 'unknown'}`,
+): SourceDetail {
+  assertApiResponseFields(response, path, { id: 'number', name: 'string', recipes: 'array' })
+  response.recipes.forEach((recipe, index) => {
+    assertApiResponseFields(recipe, path, { augments: 'array' }, `recipes[${index}].`)
+  })
   return {
     ...sourceDetail('craftingSystem', response.id, response.name),
     pack: response.pack,
@@ -106,7 +136,11 @@ export function toCraftingSystem(response: ApiCraftingSystemDetail): SourceDetai
   }
 }
 
-export function toVendor(response: ApiVendorDetail): SourceDetail {
+export function toVendor(
+  response: ApiVendorDetail,
+  path = `/v1/vendors/${response?.id ?? 'unknown'}`,
+): SourceDetail {
+  assertApiResponseFields(response, path, { id: 'number', name: 'string', items: 'array' })
   return {
     ...sourceDetail('vendor', response.id, response.name),
     pack: response.pack,
@@ -115,7 +149,11 @@ export function toVendor(response: ApiVendorDetail): SourceDetail {
   }
 }
 
-export function toEvent(response: ApiEventDetail): SourceDetail {
+export function toEvent(
+  response: ApiEventDetail,
+  path = `/v1/events/${response?.id ?? 'unknown'}`,
+): SourceDetail {
+  assertApiResponseFields(response, path, { id: 'number', name: 'string', items: 'array' })
   return {
     ...sourceDetail('event', response.id, response.name),
     items: sourceItems(response.items),
@@ -123,25 +161,31 @@ export function toEvent(response: ApiEventDetail): SourceDetail {
 }
 
 export async function fetchAdventurePack(id: number): Promise<SourceDetail> {
-  return toAdventurePack(await fetchApiJson<ApiAdventurePackDetail>(`/v1/adventure-packs/${id}`))
+  const path = `/v1/adventure-packs/${id}`
+  return toAdventurePack(await fetchApiJson<ApiAdventurePackDetail>(path), path)
 }
 
 export async function fetchQuestChain(id: number): Promise<SourceDetail> {
-  return toQuestChain(await fetchApiJson<ApiQuestSeriesDetail>(`/v1/quest-chains/${id}`))
+  const path = `/v1/quest-chains/${id}`
+  return toQuestChain(await fetchApiJson<ApiQuestSeriesDetail>(path), path)
 }
 
 export async function fetchSaga(id: number): Promise<SourceDetail> {
-  return toSaga(await fetchApiJson<ApiQuestSeriesDetail>(`/v1/sagas/${id}`))
+  const path = `/v1/sagas/${id}`
+  return toSaga(await fetchApiJson<ApiQuestSeriesDetail>(path), path)
 }
 
 export async function fetchCraftingSystem(id: number): Promise<SourceDetail> {
-  return toCraftingSystem(await fetchApiJson<ApiCraftingSystemDetail>(`/v1/crafting-systems/${id}`))
+  const path = `/v1/crafting-systems/${id}`
+  return toCraftingSystem(await fetchApiJson<ApiCraftingSystemDetail>(path), path)
 }
 
 export async function fetchVendor(id: number): Promise<SourceDetail> {
-  return toVendor(await fetchApiJson<ApiVendorDetail>(`/v1/vendors/${id}`))
+  const path = `/v1/vendors/${id}`
+  return toVendor(await fetchApiJson<ApiVendorDetail>(path), path)
 }
 
 export async function fetchEvent(id: number): Promise<SourceDetail> {
-  return toEvent(await fetchApiJson<ApiEventDetail>(`/v1/events/${id}`))
+  const path = `/v1/events/${id}`
+  return toEvent(await fetchApiJson<ApiEventDetail>(path), path)
 }

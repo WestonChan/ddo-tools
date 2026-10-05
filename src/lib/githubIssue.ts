@@ -1,6 +1,8 @@
 import type { SentryEventReference } from './sentry'
 
 export const REPOSITORY_URL = 'https://github.com/WestonChan/ddo-tools'
+const MAX_NEW_ISSUE_URL_LENGTH = 7999
+const MAX_ISSUE_TITLE_LENGTH = 200
 
 export interface IssueUrls {
   searchUrl: string
@@ -41,6 +43,7 @@ export function githubIssueUrls(
   labels?: string | string[],
   preferredTitle?: string,
   sentryEventReference?: SentryEventReference,
+  additionalBodySections: string[] = [],
 ): IssueUrls {
   const issueLabels = toLabelList(labels)
   const labelsQueryParameter = issueLabels.length
@@ -51,12 +54,38 @@ export function githubIssueUrls(
     : ''
   const searchUrl = `${REPOSITORY_URL}/issues?q=is%3Aopen${labelSearchTerms}`
 
-  const title = issueTitle(error, preferredTitle)
-  const body = issueBody(error, sentryEventReference)
-
-  const newIssueUrl =
+  const issueTitleCharacters = Array.from(issueTitle(error, preferredTitle))
+  const title =
+    issueTitleCharacters.length > MAX_ISSUE_TITLE_LENGTH
+      ? issueTitleCharacters.slice(0, MAX_ISSUE_TITLE_LENGTH - 1).join('') + '…'
+      : issueTitleCharacters.join('')
+  const body = issueBody(error, sentryEventReference, additionalBodySections)
+  const issueUrlPrefix =
     `${REPOSITORY_URL}/issues/new?${labelsQueryParameter}` +
-    `title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`
+    `title=${encodeURIComponent(title)}&body=`
+  const bodyCharacters = Array.from(body)
+  let maximumBodyLength = bodyCharacters.length
+  if (issueUrlPrefix.length + encodeURIComponent(body).length > MAX_NEW_ISSUE_URL_LENGTH) {
+    let minimumBodyLength = 0
+    while (minimumBodyLength < maximumBodyLength) {
+      const candidateLength = Math.ceil((minimumBodyLength + maximumBodyLength) / 2)
+      const candidateBody = bodyCharacters.slice(0, candidateLength).join('') + '…'
+      if (
+        issueUrlPrefix.length + encodeURIComponent(candidateBody).length <=
+        MAX_NEW_ISSUE_URL_LENGTH
+      ) {
+        minimumBodyLength = candidateLength
+      } else {
+        maximumBodyLength = candidateLength - 1
+      }
+    }
+    maximumBodyLength = minimumBodyLength
+  }
+  const boundedBody =
+    maximumBodyLength === bodyCharacters.length
+      ? body
+      : bodyCharacters.slice(0, maximumBodyLength).join('') + '…'
+  const newIssueUrl = issueUrlPrefix + encodeURIComponent(boundedBody)
 
   return { searchUrl, newIssueUrl }
 }
@@ -81,14 +110,12 @@ function issueTitle(error: Error | undefined, preferredTitle: string | undefined
 function issueBody(
   error: Error | undefined,
   sentryEventReference: SentryEventReference | undefined,
+  additionalBodySections: string[],
 ): string {
   const bodySections: string[] = []
 
   if (error) {
     bodySections.push(`**Error:** ${error.message || 'Untitled error'}`)
-    if (error.stack) {
-      bodySections.push('**Stack trace:**\n```\n' + error.stack + '\n```')
-    }
   } else {
     bodySections.push(USER_REPORT_BODY_TEMPLATE)
   }
@@ -105,6 +132,11 @@ function issueBody(
   }
   if (sentryEventReference?.replayUrl) {
     bodySections.push(`**Replay:** ${sentryEventReference.replayUrl}`)
+  }
+
+  bodySections.push(...additionalBodySections)
+  if (error?.stack) {
+    bodySections.push('**Stack trace:**\n```\n' + error.stack + '\n```')
   }
 
   return bodySections.join('\n\n')

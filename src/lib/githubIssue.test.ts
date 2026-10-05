@@ -24,6 +24,32 @@ describe('urlWithoutQueryOrFragment', () => {
 })
 
 describe('githubIssueUrls', () => {
+  it('truncates an oversized body to keep the complete new-issue URL below 8000 characters', () => {
+    const error = new Error('Long diagnostic')
+    error.stack = 'x'.repeat(10_000)
+    const { newIssueUrl } = githubIssueUrls(error, 'bug', 'Game data error')
+    expect(newIssueUrl.length).toBeLessThan(8000)
+    expect(new URL(newIssueUrl).searchParams.get('body')).toContain('**Error:** Long diagnostic')
+  })
+
+  it('also bounds a title derived from an oversized error message', () => {
+    const { newIssueUrl } = githubIssueUrls(new Error('x'.repeat(10_000)), 'bug')
+    expect(newIssueUrl.length).toBeLessThan(8000)
+    expect(new URL(newIssueUrl).searchParams.get('title')?.length).toBeLessThanOrEqual(200)
+  })
+  it('includes extra issue context without changing existing error and page details', () => {
+    const { newIssueUrl } = githubIssueUrls(
+      new Error('Invalid response'),
+      'bug',
+      'Game data error',
+      undefined,
+      ['**API path:** /v1/items/7', '**Site version:** 0.0.60'],
+    )
+    const issueUrl = new URL(newIssueUrl)
+    expect(issueUrl.searchParams.get('body')).toContain('**Error:** Invalid response')
+    expect(issueUrl.searchParams.get('body')).toContain('**API path:** /v1/items/7')
+    expect(issueUrl.searchParams.get('body')).toContain('**Site version:** 0.0.60')
+  })
   it('points at the ddo-tools repo, not ddo-builder', () => {
     expect(REPOSITORY_URL).toBe('https://github.com/WestonChan/ddo-tools')
     const { searchUrl, newIssueUrl } = githubIssueUrls()

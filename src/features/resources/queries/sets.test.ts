@@ -1,7 +1,18 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import type { ApiSetDetail } from '../../../lib/api'
 import capturedSet93 from './fixtures/set93.json'
-import { toSetDetail } from './sets'
+import { fetchSet, toSetDetail } from './sets'
+
+it('reports a malformed set tier with its path and field', async () => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(JSON.stringify({ ...capturedSet93, tiers: [{ modifiers: null }] })),
+  )
+  await expect(fetchSet(93)).rejects.toMatchObject({
+    kind: 'api-response',
+    message: expect.stringContaining('/v1/sets/93: tiers[0].modifiers'),
+  })
+  vi.restoreAllMocks()
+})
 
 it('maps the captured set 93 response with its omitted bonuses and extra modifier types', () => {
   const set = toSetDetail(capturedSet93)

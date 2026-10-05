@@ -17,6 +17,7 @@ import vendor from '../../queries/fixtures/vendors.json'
 import event from '../../queries/fixtures/events.json'
 import augment from '../../queries/fixtures/augment77.json'
 import type { ApiAugmentDetail, ApiItemDetail } from '../../../../lib/api'
+import { ApiError, API_RESPONSE_ERROR } from '../../../../lib/api'
 import { toAugmentDetail, toItem } from '../../queries/items'
 import {
   toAdventurePack,
@@ -29,6 +30,7 @@ import {
 
 const navigateMock = vi.fn()
 let hasItemDamage = false
+let failedHoverKind: 'set' | 'quest' | 'source' | null = null
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 vi.mock('../../queries/useItems', () => ({
   useItem: () => ({
@@ -40,7 +42,15 @@ vi.mock('../../queries/useItems', () => ({
   }),
   useAugment: () => ({ isPending: false, data: toAugmentDetail(augment as ApiAugmentDetail) }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
-  useAdventurePack: () => ({ isPending: false, data: toAdventurePack(adventurePack) }),
+  useAdventurePack: () => ({
+    isPending: false,
+    data: failedHoverKind === 'source' ? undefined : toAdventurePack(adventurePack),
+    error:
+      failedHoverKind === 'source'
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/adventure-packs/2: items')
+        : null,
+    refetch: vi.fn(),
+  }),
   useQuestChain: () => ({ isPending: false, data: toQuestChain(questChain) }),
   useSaga: () => ({ isPending: false, data: toSaga(saga) }),
   useCraftingSystem: () => ({ isPending: false, data: toCraftingSystem(craftingSystem) }),
@@ -48,49 +58,65 @@ vi.mock('../../queries/useItems', () => ({
   useEvent: () => ({ isPending: false, data: toEvent(event) }),
   useQuest: () => ({
     isPending: false,
-    data: {
-      id: 7,
-      name: 'The Storm',
-      pack: 'Storm Pack',
-      isRaid: true,
-      items: [
-        {
-          id: 11,
-          name: 'Storm Blade',
-          slot: 'Main Hand',
-          minimumLevel: 20,
-        },
-        {
-          id: 11,
-          name: 'Storm Blade',
-          slot: 'Main Hand',
-          minimumLevel: 20,
-        },
-      ],
-    },
+    error:
+      failedHoverKind === 'quest'
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/quests/7: items')
+        : null,
+    refetch: vi.fn(),
+    data:
+      failedHoverKind === 'quest'
+        ? undefined
+        : {
+            id: 7,
+            name: 'The Storm',
+            pack: 'Storm Pack',
+            isRaid: true,
+            items: [
+              {
+                id: 11,
+                name: 'Storm Blade',
+                slot: 'Main Hand',
+                minimumLevel: 20,
+              },
+              {
+                id: 11,
+                name: 'Storm Blade',
+                slot: 'Main Hand',
+                minimumLevel: 20,
+              },
+            ],
+          },
   }),
   useSet: () => ({
     isPending: false,
-    data: {
-      id: 3,
-      name: 'Storm Set',
-      items: [{ id: 11, name: 'Storm Blade', slot: 'Main Hand', minimumLevel: 20 }],
-      tiers: [
-        {
-          equippedCount: 2,
-          description: 'Storm tier unlock',
-          bonuses: [
-            {
-              key: 'bonus-1',
-              name: 'Fire Spell Power',
-              description: 'Fire damage boost',
-              type: 'Artifact',
-              value: 20,
-            },
-          ],
-        },
-      ],
-    },
+    error:
+      failedHoverKind === 'set'
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/sets/3: tiers')
+        : null,
+    refetch: vi.fn(),
+    data:
+      failedHoverKind === 'set'
+        ? undefined
+        : {
+            id: 3,
+            name: 'Storm Set',
+            items: [{ id: 11, name: 'Storm Blade', slot: 'Main Hand', minimumLevel: 20 }],
+            tiers: [
+              {
+                equippedCount: 2,
+                description: 'Storm tier unlock',
+                bonuses: [
+                  {
+                    key: 'bonus-1',
+                    name: 'Fire Spell Power',
+                    description: 'Fire damage boost',
+                    type: 'Artifact',
+                    value: 20,
+                  },
+                ],
+              },
+            ],
+          },
   }),
 }))
 
@@ -194,6 +220,7 @@ it.each([
 afterEach(() => {
   cleanup()
   hasItemDamage = false
+  failedHoverKind = null
   vi.useRealTimers()
 })
 
@@ -247,3 +274,32 @@ it('shows set pieces and tier bonuses', () => {
   expect(setAnchor).toHaveFocus()
   expect(screen.queryByRole('dialog')).toBeNull()
 })
+
+it.each(['set', 'quest', 'source'] as const)(
+  'shows an actionable error in a failed %s hover card',
+  (kind) => {
+    vi.useFakeTimers()
+    failedHoverKind = kind
+    render(
+      <HoverCardProvider>
+        {kind === 'set' ? (
+          <SetHoverAnchor setId={3} name="Storm Set" />
+        ) : kind === 'quest' ? (
+          <QuestHoverAnchor questId={7}>Quest</QuestHoverAnchor>
+        ) : (
+          <SourceHoverAnchor kind="adventurePack" id={2} name="Magic of Myth Drannor">
+            Source
+          </SourceHoverAnchor>
+        )}
+      </HoverCardProvider>,
+    )
+    fireEvent.mouseEnter(
+      screen.getByText(kind === 'set' ? 'Storm Set' : kind === 'quest' ? 'Quest' : 'Source'),
+    )
+    act(() => vi.advanceTimersByTime(120))
+    const card = within(screen.getByRole('dialog'))
+    expect(card.getByText('Something went wrong on our side.')).toBeInTheDocument()
+    expect(card.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(card.getByRole('link', { name: 'Report a bug' })).toBeInTheDocument()
+  },
+)

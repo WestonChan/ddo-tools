@@ -8,6 +8,7 @@ export const API_BASE_URL: string = (import.meta.env.VITE_API_URL || PUBLIC_API_
 )
 
 const API_TIMEOUT_MS = 30_000
+const HTTP_ERROR_BODY_MAX_LENGTH = 300
 export const WHOLE_LIST_PAGE_LIMIT = 10_000
 
 export const API_HTTP_ERROR = 'api-http' as const
@@ -66,13 +67,25 @@ export async function fetchApiJson<T>(
     })
     if (!response.ok) {
       const errorBodyText = await response.text().catch(() => '')
+      const errorBodyCharacters = Array.from(errorBodyText)
+      const errorBodyPreview =
+        errorBodyCharacters.length > HTTP_ERROR_BODY_MAX_LENGTH
+          ? `${errorBodyCharacters.slice(0, HTTP_ERROR_BODY_MAX_LENGTH).join('')}…`
+          : errorBodyText
+      const statusDescription = [response.status, response.statusText].filter(Boolean).join(' ')
       throw new ApiError(
         API_HTTP_ERROR,
         response.status,
-        `${response.status} ${response.statusText} for ${path}${errorBodyText ? `: ${errorBodyText}` : ''}`,
+        `${statusDescription} for ${path}${errorBodyPreview ? `: ${errorBodyPreview}` : ''}`,
       )
     }
-    return (await response.json()) as T
+    try {
+      return (await response.json()) as T
+    } catch (error) {
+      throw new ApiError(API_RESPONSE_ERROR, 0, `Invalid response for ${path}: body is not JSON`, {
+        cause: error,
+      })
+    }
   } catch (err) {
     if (err instanceof ApiError) throw err
     if (err instanceof DOMException && err.name === 'AbortError') {
@@ -96,52 +109,144 @@ export async function fetchApiPage<T, K extends string>(
   queryParameters?: ApiQueryParameters,
 ): Promise<ApiPage<T, 'rows'>> {
   const page = await fetchApiJson<ApiPage<T, K>>(path, queryParameters)
-  if (
-    !page ||
-    typeof page !== 'object' ||
-    !Array.isArray(page[rowsKey]) ||
-    !Number.isSafeInteger(page.total) ||
-    page.total < 0 ||
-    !Number.isSafeInteger(page.limit) ||
-    page.limit < 1 ||
-    !Number.isSafeInteger(page.offset) ||
-    page.offset < 0
-  ) {
+  const invalidField =
+    !page || typeof page !== 'object' || Array.isArray(page)
+      ? 'body'
+      : !Array.isArray(page[rowsKey])
+        ? rowsKey
+        : !Number.isSafeInteger(page.total) || page.total < 0
+          ? 'total'
+          : !Number.isSafeInteger(page.limit) || page.limit < 1
+            ? 'limit'
+            : !Number.isSafeInteger(page.offset) || page.offset < 0
+              ? 'offset'
+              : null
+  if (invalidField) {
     throw new ApiError(
       API_RESPONSE_ERROR,
       0,
-      `Invalid list response for ${path}: expected ${rowsKey} rows and total, limit, offset`,
+      `Invalid list response for ${path} (${rowsKey}): ${invalidField}`,
     )
   }
   return { rows: page[rowsKey], total: page.total, limit: page.limit, offset: page.offset }
 }
 
-export function apiErrorDescription(error: unknown): { heading: string; hint: string | null } {
-  if (!isApiError(error)) return { heading: 'Something went wrong loading game data', hint: null }
+export type ApiErrorDescriptionKind =
+  'connection' | 'slow' | 'busy' | 'server' | 'not-found' | 'our-bug'
+
+export interface ApiErrorDescription {
+  kind: ApiErrorDescriptionKind
+  heading: string
+  hint: string
+  canRetry: boolean
+  canReport: boolean
+}
+
+const OUR_BUG_DESCRIPTION: ApiErrorDescription = {
+  kind: 'our-bug',
+  heading: 'Something went wrong on our side.',
+  hint: "This isn't something you can fix. Please report it so we can.",
+  canRetry: true,
+  canReport: true,
+}
+
+export function apiErrorDescription(
+  error: unknown,
+  options: { missingResourceName?: string } = {},
+): ApiErrorDescription {
+  if (!isApiError(error)) return OUR_BUG_DESCRIPTION
   switch (error.kind) {
-    case API_RESPONSE_ERROR:
-      return {
-        heading: 'The game data API returned an unexpected response',
-        hint: 'Report this response mismatch.',
-      }
     case API_NETWORK_ERROR:
       return {
-        heading: 'Could not reach the game data API',
+        kind: 'connection',
+        heading: 'Could not reach the game-data service.',
         hint: 'Check your connection, then retry.',
+        canRetry: true,
+        canReport: false,
       }
     case API_TIMEOUT_ERROR:
       return {
-        heading: 'The game data API is taking too long',
+        kind: 'slow',
+        heading: 'The game-data service is taking too long.',
         hint: 'It may be waking up. Retry in a moment.',
+        canRetry: true,
+        canReport: false,
       }
     case API_HTTP_ERROR:
-      return error.httpStatus === 404
-        ? { heading: 'Not found', hint: null }
-        : error.httpStatus === 429
-          ? { heading: 'Too many requests', hint: 'Wait a few seconds, then retry.' }
-          : {
-              heading: `The game data API returned ${error.httpStatus}`,
-              hint: 'Retry in a moment. If it persists, report it.',
-            }
+      if (error.httpStatus === 429) {
+        return {
+          kind: 'busy',
+          heading: 'Too many requests.',
+          hint: 'Wait a few seconds, then retry.',
+          canRetry: true,
+          canReport: false,
+        }
+      }
+      if (error.httpStatus >= 500 && error.httpStatus < 600) {
+        return {
+          kind: 'server',
+          heading: 'The game-data service had a problem.',
+          hint: 'Retry in a moment. If it keeps happening, report it.',
+          canRetry: true,
+          canReport: true,
+        }
+      }
+      if (error.httpStatus === 404 && options.missingResourceName) {
+        return {
+          kind: 'not-found',
+          heading: `This ${options.missingResourceName} no longer exists.`,
+          hint: 'Pick another row from the list.',
+          canRetry: false,
+          canReport: false,
+        }
+      }
+      return OUR_BUG_DESCRIPTION
+    case API_RESPONSE_ERROR:
+      return OUR_BUG_DESCRIPTION
+  }
+}
+
+type ApiResponseFieldType =
+  | 'array'
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'nullable-string'
+  | 'nullable-number'
+  | 'nullable-object'
+
+export function assertApiResponseFields(
+  response: unknown,
+  path: string,
+  fields: Record<string, ApiResponseFieldType>,
+  fieldPrefix = '',
+): void {
+  if (response === null || typeof response !== 'object' || Array.isArray(response)) {
+    throw new ApiError(
+      API_RESPONSE_ERROR,
+      0,
+      `Invalid response for ${path}: ${fieldPrefix || 'body'}`,
+    )
+  }
+  const responseFields = response as Record<string, unknown>
+  for (const [field, expectedType] of Object.entries(fields)) {
+    const value = responseFields[field]
+    const isValid =
+      expectedType === 'array'
+        ? Array.isArray(value)
+        : expectedType === 'nullable-string'
+          ? value === null || typeof value === 'string'
+          : expectedType === 'nullable-number'
+            ? value === null || typeof value === 'number'
+            : expectedType === 'nullable-object'
+              ? value === null || (typeof value === 'object' && !Array.isArray(value))
+              : typeof value === expectedType
+    if (!isValid) {
+      throw new ApiError(
+        API_RESPONSE_ERROR,
+        0,
+        `Invalid response for ${path}: ${fieldPrefix}${field}`,
+      )
+    }
   }
 }

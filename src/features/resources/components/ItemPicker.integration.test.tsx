@@ -22,6 +22,61 @@ function resourceResultCount(): HTMLElement {
 }
 
 describe('ItemPicker page errors', () => {
+  it('shows a failed filter vocabulary inside its picker instead of No matches', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+      const path = new URL(String(request)).pathname
+      return Promise.resolve(
+        path === '/v1/equipment-slots'
+          ? new Response('Unknown endpoint', { status: 400 })
+          : new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] })),
+      )
+    })
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent('0 results'))
+    await userEvent.click(screen.getByRole('button', { name: 'Gear slot' }))
+    expect(await screen.findByText('Could not load Gear slot options.')).toBeInTheDocument()
+    expect(screen.queryByText('No matches.')).toBeNull()
+    expect(document.querySelectorAll('.api-error-notice')).toHaveLength(1)
+    expect(screen.getByRole('group', { name: 'Gear slot picker' })).toContainElement(
+      screen.getByText('Could not load Gear slot options.'),
+    )
+    const report = screen.getByRole('link', { name: 'Report a bug' })
+    expect(new URL(report.getAttribute('href') ?? '').searchParams.get('title')).toContain(
+      '/v1/equipment-slots',
+    )
+  })
+
+  it('names the failed Pack vocabulary in its open picker', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+      const path = new URL(String(request)).pathname
+      return Promise.resolve(
+        path === '/v1/adventure-packs' || path === '/v1/equipment-slots'
+          ? new Response('Unknown endpoint', { status: 400 })
+          : new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] })),
+      )
+    })
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent('0 results'))
+    await userEvent.click(screen.getByRole('button', { name: 'Gear slot' }))
+    expect(await screen.findByText('Could not load Gear slot options.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Pack' }))
+    expect(await screen.findByText('Could not load Pack options.')).toBeInTheDocument()
+    expect(screen.queryByText('Could not load Gear slot options.')).toBeNull()
+    expect(screen.queryByText('No matches.')).toBeNull()
+    expect(document.querySelectorAll('.api-error-notice')).toHaveLength(1)
+  })
   it('requests only items on mount and loads each vocabulary when its picker opens', async () => {
     let finishSlots: ((response: Response) => void) | undefined
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
@@ -169,7 +224,11 @@ describe('ItemPicker page errors', () => {
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
     await user.click(screen.getByRole('button', { name: 'Enchantments' }))
     await user.click(screen.getByRole('option', { name: 'Bad Filter' }))
-    expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
+    expect(await screen.findByText('Something went wrong on our side.')).toBeInTheDocument()
+    const report = screen.getByRole('link', { name: 'Report a bug' })
+    expect(new URL(report.getAttribute('href') ?? '').searchParams.get('body')).toContain(
+      'Unknown enchantment',
+    )
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enchantments' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Show applied · 1' })).toBeInTheDocument()
@@ -233,7 +292,7 @@ describe('ItemPicker page errors', () => {
     await userEvent.click(screen.getByRole('option', { name: 'Vorpal' }))
     expect(itemRequests.at(-1)?.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
     expect(itemRequests.at(-1)?.searchParams.get('enchantment_match')).toBe('all')
-    expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
+    expect(await screen.findByText('Something went wrong on our side.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reset match' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Reset match' }))
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
@@ -285,7 +344,7 @@ describe('ItemPicker page errors', () => {
     )
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
     await userEvent.click(screen.getByRole('columnheader', { name: 'ML' }))
-    expect(await screen.findByText('Could not load sorted items.')).toBeInTheDocument()
+    expect(await screen.findByText('Something went wrong on our side.')).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /ML/ })).toBeInTheDocument()
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Gear slot' })).toBeInTheDocument()
@@ -324,7 +383,7 @@ describe('ItemPicker page errors', () => {
         <ItemPickerHarness />
       </QueryClientProvider>,
     )
-    expect(await screen.findByText('Could not load filters.')).toBeInTheDocument()
+    expect(await screen.findByText('Something went wrong on our side.')).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))

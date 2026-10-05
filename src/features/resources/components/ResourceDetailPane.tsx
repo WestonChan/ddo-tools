@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type JSX } from 'react'
+import { ApiErrorNotice } from '../../../components'
 import { DetailNavigationProvider } from '../contexts/DetailNavigationContext'
 import { useDetailStack, type ResourceReference } from '../hooks/useDetailStack'
-import { isApiError } from '../../../lib/api'
 import type { Item } from '../queries/items'
 import { useItem, useSet } from '../queries/useItems'
 import { DETAIL_TITLE_ID, type ResourceCategory } from '../resourceCategories'
@@ -97,7 +97,10 @@ export function ResourceDetailPane({
             itemDetailQuery.data ?? null,
             itemDetailQuery.isPending,
             itemDetailQuery.error,
+            () => void itemDetailQuery.refetch(),
             setDetailQuery.data ?? null,
+            setDetailQuery.error,
+            () => void setDetailQuery.refetch(),
             matchingEnchantments,
             (id, name) => pushResource({ category: 'items', id, name }),
           )}
@@ -112,7 +115,10 @@ function renderedDetailBody(
   itemDetail: Item | null,
   isPending: boolean,
   error: unknown,
+  onRetry: () => void,
   setDetail: ReturnType<typeof useSet>['data'] | null,
+  setError: unknown,
+  onRetrySet: () => void,
   matchingEnchantments: string[],
   onOpenItem: (id: number, name: string) => void,
 ): JSX.Element {
@@ -120,19 +126,35 @@ function renderedDetailBody(
   if (topEntry.category === 'items') {
     if (itemDetail) {
       return (
-        <ItemDetailCard
-          key={`${topEntry.category}-${topEntry.id}`}
-          item={itemDetail}
-          setDetail={setDetail}
-          matchingEnchantments={matchingEnchantments}
-          onOpenItem={onOpenItem}
-        />
+        <>
+          <ItemDetailCard
+            key={`${topEntry.category}-${topEntry.id}`}
+            item={itemDetail}
+            setDetail={setDetail}
+            matchingEnchantments={matchingEnchantments}
+            onOpenItem={onOpenItem}
+          />
+          {setError && (
+            <ApiErrorNotice
+              error={setError}
+              path={`/v1/sets/${itemDetail.setId}`}
+              missingResourceName="set"
+              onRetry={onRetrySet}
+            />
+          )}
+        </>
       )
     }
     if (isPending && !error) return <StatusPlaceholder reason="loading" />
-    if (error && !(isApiError(error) && error.httpStatus === 404)) {
-      return <StatusPlaceholder reason="error" />
-    }
+    if (error)
+      return (
+        <StatusPlaceholder
+          error={error}
+          path={`/v1/items/${topEntry.id}`}
+          missingResourceName="item"
+          onRetry={onRetry}
+        />
+      )
     return <StatusPlaceholder reason="not-found" missingItemId={topEntry.id} />
   }
   return <StatusPlaceholder reason="empty-table" category={topEntry.category} />

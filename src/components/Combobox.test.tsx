@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useRef, useState } from 'react'
+import { useRef, useState, type JSX } from 'react'
 import { Combobox } from './Combobox'
 
 const options = [
@@ -66,9 +66,70 @@ function MultiPicker({
   )
 }
 
+function FailedPicker(): React.JSX.Element {
+  const anchorRef = useRef<HTMLButtonElement>(null)
+  const [value, setValue] = useState('')
+  return (
+    <>
+      <button ref={anchorRef}>Slot</button>
+      <output>{value}</output>
+      <Combobox
+        label="Slot"
+        anchorRef={anchorRef}
+        options={options}
+        value={value}
+        onChange={setValue}
+        searchPlaceholder="Find a slot…"
+        onRequestClose={() => {}}
+        errorContent={<p>Could not load options</p>}
+      />
+    </>
+  )
+}
+
+function RecoveringPicker(): JSX.Element {
+  const anchorRef = useRef<HTMLButtonElement>(null)
+  const [hasFailed, setHasFailed] = useState(true)
+  return (
+    <>
+      <button ref={anchorRef}>Slot</button>
+      <Combobox
+        label="Slot"
+        anchorRef={anchorRef}
+        options={options}
+        value=""
+        onChange={() => {}}
+        searchPlaceholder="Find a slot…"
+        onRequestClose={() => {}}
+        errorContent={
+          hasFailed ? (
+            <button type="button" onClick={() => setHasFailed(false)}>
+              Retry
+            </button>
+          ) : undefined
+        }
+      />
+    </>
+  )
+}
+
 afterEach(cleanup)
 
 describe('Combobox', () => {
+  it('returns focus to its search input when a failed vocabulary recovers after Retry', async () => {
+    render(<RecoveringPicker />)
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
+    expect(screen.getByRole('combobox', { name: 'Slot' })).toHaveFocus()
+  })
+  it('does not activate cached options while showing a failed vocabulary', async () => {
+    render(<FailedPicker />)
+    const search = screen.getByRole('combobox', { name: 'Slot' })
+    expect(search).not.toHaveAttribute('aria-activedescendant')
+    expect(screen.queryAllByRole('option')).toHaveLength(0)
+    await userEvent.keyboard('{Enter}')
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+  })
   it('filters without case sensitivity, wraps the highlight, and closes after a single pick', async () => {
     render(<SinglePicker />)
     const search = screen.getByRole('combobox', { name: 'Slot' })

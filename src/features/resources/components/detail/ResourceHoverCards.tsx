@@ -1,6 +1,7 @@
 import type { JSX, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import {
+  ApiErrorNotice,
   DetailCardSection,
   DetailMore,
   DetailValueRow,
@@ -46,20 +47,48 @@ export function ItemHoverContent({
   const openItem = useOpenItemFromCard(onOpenItem)
   const itemQuery = useItem(itemId)
   const setQuery = useSet(itemQuery.data?.setId ?? null)
+  if (itemQuery.error)
+    return (
+      <ApiErrorNotice
+        error={itemQuery.error}
+        path={`/v1/items/${itemId}`}
+        missingResourceName="item"
+        onRetry={() => void itemQuery.refetch()}
+      />
+    )
   if (itemQuery.isPending) return <span>Loading item…</span>
   if (!itemQuery.data) return <span>Item unavailable</span>
   return (
-    <ItemDetailCard
-      item={itemQuery.data}
-      setDetail={setQuery.data}
-      variant="hover"
-      onOpenItem={openItem}
-    />
+    <>
+      <ItemDetailCard
+        item={itemQuery.data}
+        setDetail={setQuery.data}
+        variant="hover"
+        onOpenItem={openItem}
+      />
+      {setQuery.error && (
+        <ApiErrorNotice
+          error={setQuery.error}
+          path={`/v1/sets/${itemQuery.data.setId}`}
+          missingResourceName="set"
+          onRetry={() => void setQuery.refetch()}
+        />
+      )}
+    </>
   )
 }
 
 export function AugmentHoverContent({ augmentId }: { augmentId: number }): JSX.Element {
   const augmentQuery = useAugment(augmentId)
+  if (augmentQuery.error)
+    return (
+      <ApiErrorNotice
+        error={augmentQuery.error}
+        path={`/v1/augments/${augmentId}`}
+        missingResourceName="augment"
+        onRetry={() => void augmentQuery.refetch()}
+      />
+    )
   if (augmentQuery.isPending) return <span>Loading augment…</span>
   if (!augmentQuery.data) return <span>Augment unavailable</span>
   const augment = augmentQuery.data
@@ -137,6 +166,15 @@ function QuestHoverContent({
 }): JSX.Element {
   const openItem = useOpenItemFromCard(onOpenItem)
   const questQuery = useQuest(questId)
+  if (questQuery.error)
+    return (
+      <ApiErrorNotice
+        error={questQuery.error}
+        path={`/v1/quests/${questId}`}
+        missingResourceName="quest"
+        onRetry={() => void questQuery.refetch()}
+      />
+    )
   if (questQuery.isPending) return <span>Loading quest…</span>
   if (!questQuery.data) return <span>Quest unavailable</span>
   const quest = questQuery.data
@@ -268,16 +306,31 @@ function SourceHoverContent({
 }
 
 function LoadedSourceCard({
-  source,
-  isPending,
+  query,
+  path,
   onOpenItem,
 }: {
-  source: SourceDetail | undefined
-  isPending: boolean
+  query: {
+    data: SourceDetail | undefined
+    isPending: boolean
+    error: unknown
+    refetch: () => unknown
+  }
+  path: string
   onOpenItem?: OpenItem
 }): JSX.Element {
   const openItem = useOpenItemFromCard(onOpenItem)
-  if (isPending) return <span>Loading source…</span>
+  if (query.error)
+    return (
+      <ApiErrorNotice
+        error={query.error}
+        path={path}
+        missingResourceName="source"
+        onRetry={() => void query.refetch()}
+      />
+    )
+  if (query.isPending) return <span>Loading source…</span>
+  const source = query.data
   if (!source) return <span>Source unavailable</span>
   const facts = [
     source.pack,
@@ -347,7 +400,7 @@ function AdventurePackHoverContent({
 }): JSX.Element {
   const query = useAdventurePack(id)
   return (
-    <LoadedSourceCard source={query.data} isPending={query.isPending} onOpenItem={onOpenItem} />
+    <LoadedSourceCard query={query} path={`/v1/adventure-packs/${id}`} onOpenItem={onOpenItem} />
   )
 }
 
@@ -359,16 +412,12 @@ function QuestChainHoverContent({
   onOpenItem?: OpenItem
 }): JSX.Element {
   const query = useQuestChain(id)
-  return (
-    <LoadedSourceCard source={query.data} isPending={query.isPending} onOpenItem={onOpenItem} />
-  )
+  return <LoadedSourceCard query={query} path={`/v1/quest-chains/${id}`} onOpenItem={onOpenItem} />
 }
 
 function SagaHoverContent({ id, onOpenItem }: { id: number; onOpenItem?: OpenItem }): JSX.Element {
   const query = useSaga(id)
-  return (
-    <LoadedSourceCard source={query.data} isPending={query.isPending} onOpenItem={onOpenItem} />
-  )
+  return <LoadedSourceCard query={query} path={`/v1/sagas/${id}`} onOpenItem={onOpenItem} />
 }
 
 function CraftingSystemHoverContent({
@@ -380,7 +429,7 @@ function CraftingSystemHoverContent({
 }): JSX.Element {
   const query = useCraftingSystem(id)
   return (
-    <LoadedSourceCard source={query.data} isPending={query.isPending} onOpenItem={onOpenItem} />
+    <LoadedSourceCard query={query} path={`/v1/crafting-systems/${id}`} onOpenItem={onOpenItem} />
   )
 }
 
@@ -392,16 +441,12 @@ function VendorHoverContent({
   onOpenItem?: OpenItem
 }): JSX.Element {
   const query = useVendor(id)
-  return (
-    <LoadedSourceCard source={query.data} isPending={query.isPending} onOpenItem={onOpenItem} />
-  )
+  return <LoadedSourceCard query={query} path={`/v1/vendors/${id}`} onOpenItem={onOpenItem} />
 }
 
 function EventHoverContent({ id, onOpenItem }: { id: number; onOpenItem?: OpenItem }): JSX.Element {
   const query = useEvent(id)
-  return (
-    <LoadedSourceCard source={query.data} isPending={query.isPending} onOpenItem={onOpenItem} />
-  )
+  return <LoadedSourceCard query={query} path={`/v1/events/${id}`} onOpenItem={onOpenItem} />
 }
 
 export function SetHoverAnchor({
@@ -434,6 +479,15 @@ export function SetHoverContent({
 }): JSX.Element {
   const openItem = useOpenItemFromCard(onOpenItem)
   const setQuery = useSet(setId)
+  if (setQuery.error)
+    return (
+      <ApiErrorNotice
+        error={setQuery.error}
+        path={`/v1/sets/${setId}`}
+        missingResourceName="set"
+        onRetry={() => void setQuery.refetch()}
+      />
+    )
   if (setQuery.isPending) return <span>Loading set…</span>
   if (!setQuery.data) return <span>Set unavailable</span>
   const set = setQuery.data
