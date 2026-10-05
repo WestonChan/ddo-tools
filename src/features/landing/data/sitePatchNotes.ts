@@ -7,6 +7,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-04',
     changes: [
+      'Clicking through several items in the list no longer stacks them in history, so Back returns to the list even after the window narrows',
+      'The item breadcrumb shows every item you opened from inside the detail, and opening one already in the trail steps back to it instead of repeating it',
       'Quest levels in Obtained from read "Level" in the normal font with only the numbers monospaced',
       "An item's augment sockets read as coloured words (Yellow, Red, Blue) in its title and hover card, set bonuses start folded to one row per set that opens on click, every title fact is always shown at one size with a dash when empty, and More details opens two columns with damage-reduction bypasses on top",
       'The item list shows Raid and Rare only in their columns, without chips beside the name, and the result count sits on the Show applied line',

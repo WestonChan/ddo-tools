@@ -60,6 +60,8 @@ export function useDetailStack({
       setStack((previousStack) => {
         const top = previousStack[previousStack.length - 1]
         if (top && isSameResource(top, resource)) return previousStack
+        const existingIndex = previousStack.findIndex((entry) => isSameResource(entry, resource))
+        if (existingIndex >= 0) return previousStack.slice(0, existingIndex + 1)
         return [...previousStack, resource]
       })
     },

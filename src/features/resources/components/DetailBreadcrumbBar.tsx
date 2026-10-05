@@ -55,6 +55,7 @@ export function DetailBreadcrumbBar({
           </span>
           {detailStack.map((entry, index) => {
             const isLast = index === lastEntryIndex
+            const label = crumbLabel(entry)
             const separator = (
               <ChevronRight size={12} className="resources-detail-breadcrumb-sep" aria-hidden />
             )
@@ -65,7 +66,9 @@ export function DetailBreadcrumbBar({
                   className="resources-detail-breadcrumb-current"
                 >
                   {separator}
-                  <span>{crumbLabel(entry)}</span>
+                  <span className="resources-detail-breadcrumb-label" data-tip={label}>
+                    {label}
+                  </span>
                 </span>
               )
             }
@@ -79,8 +82,9 @@ export function DetailBreadcrumbBar({
                   type="button"
                   className="resources-detail-breadcrumb-link"
                   onClick={() => onJumpToCrumb(index)}
+                  data-tip={label}
                 >
-                  {crumbLabel(entry)}
+                  {label}
                 </button>
               </span>
             )

@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { act, render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { act, render, screen, cleanup, fireEvent, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
 import type { Item, ItemSummary } from './queries/items'
+import type { SetDetail } from './queries/sets'
 
 let mockRouteParams: Record<string, string> = { category: 'items' }
 const navigateMock = vi.fn()
@@ -70,6 +72,7 @@ let itemPageQueryState: {
   error: null,
 }
 let isItemDetailLoaded = true
+let stackedSet: SetDetail | null = null
 const refetchMock = vi.fn()
 
 vi.mock('./queries/useItems', () => ({
@@ -80,21 +83,38 @@ vi.mock('./queries/useItems', () => ({
       : undefined,
     refetch: refetchMock,
   }),
-  useItem: (id: number | null) => ({
-    data: id === 42 && isItemDetailLoaded ? BLOODSTONE_ITEM : undefined,
-    isPending: !isItemDetailLoaded,
-    error: null,
-  }),
+  useItem: (id: number | null) => {
+    const selectedItem = itemPageQueryState.data?.items.find((item) => item.id === id)
+    return {
+      data:
+        selectedItem && isItemDetailLoaded
+          ? {
+              ...BLOODSTONE_ITEM,
+              id: selectedItem.id,
+              name: selectedItem.name,
+              setId: stackedSet?.id ?? null,
+              setName: stackedSet?.name ?? null,
+            }
+          : undefined,
+      isPending: !isItemDetailLoaded,
+      error: null,
+    }
+  },
   useAdventurePackNames: () => ({ data: ['Vault of Night'] }),
   useEquipmentSlotNames: () => ({ data: ['Trinket'] }),
   useEnchantmentNames: () => ({ data: ['Charisma'] }),
   useRaidQuests: () => ({ data: [] }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
-  useSet: () => ({ data: undefined, isPending: false, error: null }),
+  useSet: (id: number | null) => ({
+    data: id === stackedSet?.id ? stackedSet : undefined,
+    isPending: false,
+    error: null,
+  }),
 }))
 
 beforeEach(() => {
   isItemDetailLoaded = true
+  stackedSet = null
   mockRouteParams = { category: 'items' }
   itemPageQueryState = {
     data: { total: 1, items: ITEM_SUMMARIES },
@@ -102,13 +122,69 @@ beforeEach(() => {
     isFetching: false,
     error: null,
   }
-  navigateMock.mockClear()
+  navigateMock.mockReset()
   refetchMock.mockClear()
 })
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
 })
+
+const STACK_ITEMS = [
+  ITEM_SUMMARIES[0],
+  { ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' },
+  { ...ITEM_SUMMARIES[0], id: 44, name: 'Moonstone' },
+]
+
+function renderStackedResourcesView(): ReturnType<typeof render> {
+  stackedSet = {
+    id: 93,
+    name: 'Stone Set',
+    items: STACK_ITEMS.map((item) => ({
+      id: item.id,
+      name: item.name,
+      slot: item.equipmentSlot,
+      minimumLevel: item.minimumLevel,
+    })),
+    tiers: [],
+  }
+  itemPageQueryState = {
+    data: { total: STACK_ITEMS.length, items: STACK_ITEMS },
+    isPending: false,
+    isFetching: false,
+    error: null,
+  }
+  navigateMock.mockImplementation((navigation: { to: string }) => {
+    mockRouteParams = { category: 'items', id: navigation.to.split('/').at(-1) ?? '' }
+  })
+  return render(
+    <HoverCardProvider>
+      <ResourcesView />
+    </HoverCardProvider>,
+  )
+}
+
+function openSetPieceFromPane(name: string): void {
+  const pane = screen.getByRole('region', { name: 'Item details' })
+  const setAnchor = pane.querySelector<HTMLElement>('.resources-hover-anchor')
+  expect(setAnchor).not.toBeNull()
+  fireEvent.mouseEnter(setAnchor!)
+  act(() => vi.advanceTimersByTime(120))
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', { name: new RegExp(name) }),
+  )
+}
+
+function openFirstItemFromList(view: ReturnType<typeof render>): void {
+  fireEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+  view.rerender(
+    <HoverCardProvider>
+      <ResourcesView />
+    </HoverCardProvider>,
+  )
+  expect(screen.getByRole('heading', { name: 'Bloodstone' })).toBeInTheDocument()
+}
 
 describe('ResourcesView data gate', () => {
   it('shows the loading skeleton instead of the picker while rows load', () => {
@@ -294,6 +370,214 @@ describe('ResourcesView keyboard shortcuts', () => {
 })
 
 describe('ResourcesView detail pane', () => {
+  it('shows three pane-opened items in the breadcrumb and pops one level', () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    vi.useFakeTimers()
+    try {
+      const view = renderStackedResourcesView()
+      openFirstItemFromList(view)
+      openSetPieceFromPane('Heartstone')
+      openSetPieceFromPane('Moonstone')
+
+      const breadcrumb = screen.getByRole('navigation', { name: 'Detail breadcrumb' })
+      expect(within(breadcrumb).getByRole('button', { name: 'Bloodstone' })).toBeInTheDocument()
+      expect(within(breadcrumb).getByRole('button', { name: 'Heartstone' })).toBeInTheDocument()
+      expect(within(breadcrumb).getByText('Moonstone')).toBeInTheDocument()
+      expect(within(breadcrumb).queryByRole('button', { name: 'Moonstone' })).toBeNull()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Back one level' }))
+      expect(within(breadcrumb).getByText('Heartstone')).toBeInTheDocument()
+      expect(within(breadcrumb).queryByText('Moonstone')).toBeNull()
+      expect(screen.getByRole('heading', { name: 'Heartstone' })).toBeInTheDocument()
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('starts a new one-item stack when a list row selects the URL item again', () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    vi.useFakeTimers()
+    try {
+      const view = renderStackedResourcesView()
+      openFirstItemFromList(view)
+      openSetPieceFromPane('Heartstone')
+      expect(screen.getByRole('button', { name: 'Back one level' })).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+      view.rerender(
+        <HoverCardProvider>
+          <ResourcesView />
+        </HoverCardProvider>,
+      )
+      const breadcrumb = screen.getByRole('navigation', { name: 'Detail breadcrumb' })
+      expect(within(breadcrumb).getByText('Bloodstone')).toBeInTheDocument()
+      expect(within(breadcrumb).queryByText('Heartstone')).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Back one level' })).toBeNull()
+      expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items/42', replace: true })
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('starts a new one-item stack from a list row hover card', () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    vi.useFakeTimers()
+    try {
+      const view = renderStackedResourcesView()
+      openFirstItemFromList(view)
+      openSetPieceFromPane('Heartstone')
+
+      fireEvent.mouseEnter(screen.getByRole('row', { name: /Bloodstone/ }))
+      act(() => vi.advanceTimersByTime(260))
+      const listItemCard = screen.getByRole('dialog')
+      fireEvent.mouseEnter(within(listItemCard).getByText('Stone Set'))
+      act(() => vi.advanceTimersByTime(120))
+      const setCard = screen
+        .getAllByRole('dialog')
+        .find((card) => within(card).queryByRole('button', { name: /Moonstone/ }))
+      expect(setCard).toBeDefined()
+      fireEvent.click(within(setCard!).getByRole('button', { name: /Moonstone/ }))
+      view.rerender(
+        <HoverCardProvider>
+          <ResourcesView />
+        </HoverCardProvider>,
+      )
+
+      const breadcrumb = screen.getByRole('navigation', { name: 'Detail breadcrumb' })
+      expect(within(breadcrumb).getByText('Moonstone')).toBeInTheDocument()
+      expect(within(breadcrumb).queryByText('Bloodstone')).toBeNull()
+      expect(within(breadcrumb).queryByText('Heartstone')).toBeNull()
+      expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items/44', replace: true })
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('returns to the list after three wide row clicks and a narrow Back', async () => {
+    const previousWidth = window.innerWidth
+    const previousResizeObserver = globalThis.ResizeObserver
+    const visitedPaths = ['/resources/items']
+    let onResize: ResizeObserverCallback | undefined
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private callback: ResizeObserverCallback
+        constructor(callback: ResizeObserverCallback) {
+          this.callback = callback
+        }
+        observe(element: Element): void {
+          if (element.classList.contains('resources-body')) onResize = this.callback
+        }
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    )
+    const items = [
+      ITEM_SUMMARIES[0],
+      { ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' },
+      { ...ITEM_SUMMARIES[0], id: 44, name: 'Moonstone' },
+    ]
+    itemPageQueryState = {
+      data: { total: items.length, items },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    navigateMock.mockImplementation((navigation: { to: string } & Record<string, unknown>) => {
+      if (navigation.replace === true) visitedPaths[visitedPaths.length - 1] = navigation.to
+      else visitedPaths.push(navigation.to)
+      mockRouteParams = { category: 'items', id: navigation.to.split('/').at(-1) ?? '' }
+    })
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {
+      visitedPaths.pop()
+      mockRouteParams = { category: 'items' }
+    })
+    try {
+      const view = render(<ResourcesView />)
+      for (const item of items) {
+        await userEvent.click(screen.getByRole('row', { name: new RegExp(item.name) }))
+        view.rerender(<ResourcesView />)
+        expect(screen.getByRole('heading', { name: item.name })).toBeInTheDocument()
+      }
+      expect(navigateMock.mock.calls.map(([options]) => options)).toEqual([
+        { to: '/resources/items/42' },
+        { to: '/resources/items/43', replace: true },
+        { to: '/resources/items/44', replace: true },
+      ])
+      expect(visitedPaths).toEqual(['/resources/items', '/resources/items/44'])
+
+      act(() =>
+        onResize?.([{ contentRect: { width: 375 } } as ResizeObserverEntry], {} as ResizeObserver),
+      )
+      expect(screen.queryByRole('searchbox')).toBeNull()
+      await userEvent.click(screen.getByRole('button', { name: 'Back to items' }))
+      expect(back).toHaveBeenCalledOnce()
+      view.rerender(<ResourcesView />)
+      expect(visitedPaths).toEqual(['/resources/items'])
+      expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()
+      expect(screen.queryByRole('region', { name: 'Item details' })).toBeNull()
+    } finally {
+      back.mockRestore()
+      navigateMock.mockReset()
+      vi.stubGlobal('ResizeObserver', previousResizeObserver)
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('keeps deep-link closing behavior after selecting a list row', async () => {
+    const previousWidth = window.innerWidth
+    const previousResizeObserver = globalThis.ResizeObserver
+    let onResize: ResizeObserverCallback | undefined
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private callback: ResizeObserverCallback
+        constructor(callback: ResizeObserverCallback) {
+          this.callback = callback
+        }
+        observe(element: Element): void {
+          if (element.classList.contains('resources-body')) onResize = this.callback
+        }
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    )
+    itemPageQueryState = {
+      data: {
+        total: 2,
+        items: [ITEM_SUMMARIES[0], { ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' }],
+      },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    mockRouteParams = { category: 'items', id: '42' }
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {})
+    try {
+      const view = render(<ResourcesView />)
+      await userEvent.click(screen.getByRole('row', { name: /Heartstone/ }))
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/43', replace: true })
+      mockRouteParams = { category: 'items', id: '43' }
+      view.rerender(<ResourcesView />)
+      act(() =>
+        onResize?.([{ contentRect: { width: 375 } } as ResizeObserverEntry], {} as ResizeObserver),
+      )
+      expect(screen.queryByRole('searchbox')).toBeNull()
+      await userEvent.click(screen.getByRole('button', { name: 'Back to items' }))
+      expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
+      expect(back).not.toHaveBeenCalled()
+    } finally {
+      back.mockRestore()
+      vi.stubGlobal('ResizeObserver', previousResizeObserver)
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
   it('shows only the detail after narrow navigation and restores the list on Back', async () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })

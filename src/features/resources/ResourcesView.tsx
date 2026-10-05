@@ -56,6 +56,7 @@ function ResourcesView(): JSX.Element {
   const [itemToFocus, setItemToFocus] = useState<number | null>(null)
   const [rowToFocusId, setRowToFocusId] = useState<number | null>(null)
   const [isSingleColumn, setIsSingleColumn] = useState(true)
+  const [listSelectionCount, setListSelectionCount] = useState(0)
 
   const rememberPickerSession = useCallback((change: Partial<ItemPickerSession>): void => {
     setPickerSession((previous) => ({ ...previous, ...change }))
@@ -135,16 +136,24 @@ function ResourcesView(): JSX.Element {
 
   const resourceInUrl = selectedResourceId !== null ? { category, id: selectedResourceId } : null
 
+  function selectItemFromList(id: number): void {
+    const isReplacingSelectedItem = selectedResourceId !== null
+    if (!isReplacingSelectedItem) wasOpenedFromList.current = true
+    setListSelectionCount((count) => count + 1)
+    navigate({
+      to: `/resources/items/${id}`,
+      ...(isReplacingSelectedItem ? { replace: true } : {}),
+    })
+  }
+
   function openItemFromHover(id: number): void {
-    if (selectedResourceId === null) wasOpenedFromList.current = true
     setItemToFocus(id)
-    navigate({ to: `/resources/items/${id}` })
+    selectItemFromList(id)
   }
 
   function openItemFromList(id: number, activationSource: 'pointer' | 'keyboard'): void {
-    wasOpenedFromList.current = true
     if (activationSource === 'keyboard' && isSingleColumn) setItemToFocus(id)
-    navigate({ to: `/resources/items/${id}` })
+    selectItemFromList(id)
   }
 
   return (
@@ -199,6 +208,7 @@ function ResourcesView(): JSX.Element {
             aria-label="Item details"
           >
             <ResourceDetailPane
+              key={listSelectionCount}
               resourceInUrl={resourceInUrl}
               pickerCategory={category}
               matchingEnchantments={filters.enchantments}

@@ -337,6 +337,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
+  width: 100%;
   min-width: 0;
   font-size: var(--fs-body-sm);
 }
@@ -347,6 +348,7 @@
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
+  max-width: 100%;
 }
 
 .resources-detail-breadcrumb-sep {
@@ -356,6 +358,7 @@
 
 .resources-detail-breadcrumb-link {
   max-width: 14em;
+  min-width: 0;
   padding: var(--space-0-5) var(--space-1);
   background: none;
   border: none;
@@ -389,6 +392,12 @@
 .resources-detail-breadcrumb-current {
   color: var(--text-heading);
   font-weight: var(--fw-semibold);
+}
+
+.resources-detail-breadcrumb-label {
+  display: block;
+  min-width: 0;
+  max-width: 14em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

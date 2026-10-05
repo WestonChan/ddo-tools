@@ -97,6 +97,13 @@ describe('DetailBreadcrumbBar', () => {
     expect(screen.getByText('Gamma')).toBeInTheDocument()
   })
 
+  it('keeps a full-name hint on each item crumb', () => {
+    renderBreadcrumbBar({ stack: [alphaEntry, betaEntry, gammaEntry] })
+    expect(screen.getByRole('button', { name: 'Alpha' })).toHaveAttribute('data-tip', 'Alpha')
+    expect(screen.getByRole('button', { name: 'Beta' })).toHaveAttribute('data-tip', 'Beta')
+    expect(screen.getByText('Gamma')).toHaveAttribute('data-tip', 'Gamma')
+  })
+
   it('clicking a non-final crumb fires onJumpToCrumb with its index', async () => {
     const user = userEvent.setup()
     const { onJumpToCrumb } = renderBreadcrumbBar({ stack: [alphaEntry, betaEntry, gammaEntry] })

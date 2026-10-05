@@ -1,8 +1,201 @@
 import { expect, test } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/item487.json' with { type: 'json' }
+import capturedRunearm from '../src/features/resources/queries/fixtures/item924.json' with { type: 'json' }
 import capturedArmor from '../src/features/resources/queries/fixtures/item831.json' with { type: 'json' }
 import capturedNecklace from '../src/features/resources/queries/fixtures/item7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/set93.json' with { type: 'json' }
+
+test('list selections share one history entry across a reload-free resize', async ({ page }) => {
+  const items = [capturedRing, capturedArmor, capturedNecklace]
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = items.find((candidate) => path === `/v1/items/${candidate.id}`)
+    const response =
+      path === '/v1/items'
+        ? {
+            total: items.length,
+            limit: 200,
+            offset: 0,
+            items: items.map((candidate) => ({
+              id: candidate.id,
+              name: candidate.name,
+              slot: candidate.slot,
+              category: candidate.category,
+              item_type: candidate.item_type,
+              minimum_level: candidate.minimum_level,
+              enhancement_bonus: candidate.enhancement_bonus,
+              icon: candidate.icon,
+              pack: null,
+              is_raid: false,
+              is_rare: false,
+              is_legacy: candidate.is_legacy,
+            })),
+          }
+        : path === '/v1/sets/93'
+          ? capturedSet
+          : (item ?? [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.goto('/')
+  await page.goto('/resources/items')
+  const picker = page.locator('.resources-picker')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  await expect(picker).toBeVisible()
+  const search = picker.getByRole('searchbox', { name: 'Search items', exact: true })
+  await search.fill('e')
+  const initialHistoryLength = await page.evaluate(() => window.history.length)
+
+  for (const item of items) {
+    await picker.getByRole('row', { name: item.name, exact: false }).click()
+    await expect(pane.getByRole('heading', { name: item.name, exact: true })).toBeVisible()
+  }
+  expect(await page.evaluate(() => window.history.length)).toBe(initialHistoryLength + 1)
+  await page.setViewportSize({ width: 375, height: 800 })
+  await expect(picker).toHaveCount(0)
+  await expect(pane).toBeVisible()
+  await page.getByRole('button', { name: 'Back to items', exact: true }).click()
+  await expect(page).toHaveURL(/\/resources\/items$/)
+  await expect(picker).toBeVisible()
+  await expect(search).toHaveValue('e')
+  await expect(pane).toHaveCount(0)
+
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await expect(picker).toBeVisible()
+  for (const item of items) {
+    await picker.getByRole('row', { name: item.name, exact: false }).click()
+    await expect(pane.getByRole('heading', { name: item.name, exact: true })).toBeVisible()
+  }
+  await page.setViewportSize({ width: 375, height: 800 })
+  await expect(picker).toHaveCount(0)
+  await page.goBack()
+  await expect(page).toHaveURL(/\/resources\/items$/)
+  await expect(picker).toBeVisible()
+  await page.goBack()
+  await expect(page).toHaveURL(/\/$/)
+})
+
+test('the full pane breadcrumb survives a three-deep stack and a narrow resize', async ({
+  page,
+}) => {
+  const thirdSetPiece = capturedSet.items.find((item) => item.id === 1036)
+  if (!thirdSetPiece) throw new Error('Expected the third captured set piece')
+  const thirdItem = {
+    ...capturedRing,
+    id: thirdSetPiece.id,
+    name: thirdSetPiece.name,
+    slot: thirdSetPiece.slot,
+    minimum_level: thirdSetPiece.minimum_level,
+    wiki_url: null,
+  }
+  const items = [capturedRing, capturedRunearm, thirdItem]
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = items.find((candidate) => path === `/v1/items/${candidate.id}`)
+    const response =
+      path === '/v1/items'
+        ? {
+            total: 1,
+            limit: 200,
+            offset: 0,
+            items: [
+              {
+                id: capturedRing.id,
+                name: capturedRing.name,
+                slot: capturedRing.slot,
+                category: capturedRing.category,
+                item_type: capturedRing.item_type,
+                minimum_level: capturedRing.minimum_level,
+                enhancement_bonus: capturedRing.enhancement_bonus,
+                icon: capturedRing.icon,
+                pack: null,
+                is_raid: false,
+                is_rare: false,
+                is_legacy: capturedRing.is_legacy,
+              },
+            ],
+          }
+        : path === '/v1/sets/93'
+          ? capturedSet
+          : (item ?? [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.goto('/resources/items')
+  const picker = page.locator('.resources-picker')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const breadcrumb = page.getByRole('navigation', { name: 'Detail breadcrumb', exact: true })
+  await expect(picker.getByRole('row', { name: /Adversion/ })).toBeVisible()
+  await picker.getByRole('row', { name: /Adversion/ }).click()
+  await expect(pane.getByRole('heading', { name: capturedRing.name, exact: true })).toBeVisible()
+
+  const openSetPiece = async (name: string): Promise<void> => {
+    const setAnchor = pane
+      .locator('.detail-card__facts .resources-hover-anchor')
+      .filter({ hasText: capturedSet.name })
+    await page.mouse.move(0, 0)
+    await setAnchor.hover()
+    const setCard = page.getByRole('dialog').filter({ hasText: capturedSet.name })
+    await expect(setCard).toBeVisible()
+    await page.keyboard.press('t')
+    await expect(setCard).toHaveClass(/hover-card--pinned/)
+    await setCard.getByRole('button', { name, exact: false }).click()
+    await expect(pane.getByRole('heading', { name, exact: true })).toBeVisible()
+  }
+
+  await openSetPiece(capturedRunearm.name)
+  await openSetPiece(thirdSetPiece.name)
+  await expect(breadcrumb.getByRole('button', { name: 'Back to items', exact: true })).toBeVisible()
+  await expect(breadcrumb.getByRole('button', { name: capturedRing.name })).toBeVisible()
+  await expect(breadcrumb.getByRole('button', { name: capturedRunearm.name })).toBeVisible()
+  await expect(breadcrumb.getByText(thirdSetPiece.name, { exact: true })).toBeVisible()
+  await expect(breadcrumb.getByRole('button', { name: thirdSetPiece.name })).toHaveCount(0)
+  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+
+  await page.setViewportSize({ width: 375, height: 800 })
+  await expect(picker).toHaveCount(0)
+  await expect(breadcrumb.getByRole('button', { name: capturedRing.name })).toBeVisible()
+  await expect(breadcrumb.getByRole('button', { name: capturedRunearm.name })).toBeVisible()
+  const currentCrumb = breadcrumb.getByText(thirdSetPiece.name, { exact: true })
+  await expect(currentCrumb).toBeVisible()
+  await expect(currentCrumb).toHaveAttribute('data-tip', thirdSetPiece.name)
+  await page.evaluate(() => document.fonts.ready)
+  expect(
+    await breadcrumb
+      .locator('.resources-detail-breadcrumb-link-wrap, .resources-detail-breadcrumb-current')
+      .evaluateAll(
+        (crumbs) => new Set(crumbs.map((crumb) => crumb.getBoundingClientRect().top)).size,
+      ),
+  ).toBeGreaterThan(1)
+  await expect(currentCrumb).toHaveCSS('text-overflow', 'ellipsis')
+  await expect
+    .poll(() =>
+      breadcrumb.evaluate((nav) =>
+        [...nav.querySelectorAll('*')].every(
+          (crumb) => crumb.getBoundingClientRect().right <= nav.getBoundingClientRect().right + 0.5,
+        ),
+      ),
+    )
+    .toBe(true)
+
+  await page.getByRole('button', { name: 'Back one level', exact: true }).click()
+  await expect(pane.getByRole('heading', { name: capturedRunearm.name, exact: true })).toBeVisible()
+  await expect(breadcrumb.getByText(thirdSetPiece.name, { exact: true })).toHaveCount(0)
+  await openSetPiece(thirdSetPiece.name)
+  await page.goBack()
+  await expect(page).toHaveURL(/\/resources\/items$/)
+  await expect(picker).toBeVisible()
+})
 
 test('obtained-from rows keep source details left and quest metadata right at wide and narrow widths', async ({
   page,

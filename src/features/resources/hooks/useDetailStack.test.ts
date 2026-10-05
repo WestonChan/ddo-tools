@@ -96,7 +96,7 @@ describe('useDetailStack — pushResource', () => {
     expect(result.current.stack).toEqual([itemA, itemB])
   })
 
-  it('still allows revisiting an entry deeper in the stack', () => {
+  it('truncates to an entry already deeper in the stack', () => {
     const { result } = renderHook(() =>
       useDetailStack({ resourceInUrl: itemA, pickerCategory: 'items' }),
     )
@@ -106,7 +106,7 @@ describe('useDetailStack — pushResource', () => {
     act(() => {
       result.current.pushResource(itemA)
     })
-    expect(result.current.stack).toEqual([itemA, itemB, itemA])
+    expect(result.current.stack).toEqual([itemA])
   })
 })
 
