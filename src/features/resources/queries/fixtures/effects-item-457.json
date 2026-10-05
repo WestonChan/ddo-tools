@@ -1,0 +1,239 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": "end chest",
+      "id": 55,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "The Soul Splitter",
+      "wiki_url": "https://ddowiki.com/page/The_Soul_Splitter"
+    }
+  ],
+  "armor": null,
+  "augment_slots": [
+    {
+      "family": "standard",
+      "label": "red",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 9,
+      "sort_order": 0,
+      "variant": "red"
+    }
+  ],
+  "category": "Weapon",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "Only a mad scientist deals in absolutes.",
+  "drop_location": "The Underlane Assignment, End chest",
+  "effects": [
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This weapon is wielded by the pure to smite the wicked, dealing an additional 4d6 good damage on each hit. This effect makes the weapon good aligned. Evil characters wielding this weapon will suffer one negative level.",
+      "effect_id": 332,
+      "name": "Holy 4",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Holy 4"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This weapon is righteous and wielded by those who stand against chaos, dealing an additional 4d6 law damage on each hit. This effect makes the weapon lawfully aligned. Chaotic characters wielding this weapon will suffer one negative level.",
+      "effect_id": 333,
+      "name": "Axiomatic 4",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Axiomatic 4"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This weapon is attuned specifically to hunt monsters that bring ill intent from other planes, dealing an additional 4d10 bane damage vs. Evil Outsiders.",
+      "effect_id": 334,
+      "name": "Evil Outsider Bane 4",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Evil Outsider Bane 4"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Bluff",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Diplomacy",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Haggle",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Penalty",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Hide",
+          "stat_category": "skill",
+          "value": -6
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Intimidate",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Perform",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Use Magic Device",
+          "stat_category": "skill",
+          "value": 5
+        }
+      ],
+      "damage": [],
+      "description": "Passive: 5 Insightful bonus on Charisma based skill checks. Command armor and command shields make their owners very noticeable, imposing a -6 penalty on Hide checks.",
+      "effect_id": 335,
+      "name": "Command",
+      "tier": null,
+      "value": 5,
+      "value2": -6,
+      "verbose_name": "Command 5"
+    }
+  ],
+  "enhancement_bonus": 5,
+  "events": [],
+  "icon": "Maul_1d",
+  "id": 457,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": "Maul",
+  "material": "Steel",
+  "minimum_level": 17,
+  "modifiers": [],
+  "name": "Absolute Judgement",
+  "quest_chains": [],
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": [
+        "normal",
+        "hard",
+        "elite",
+        "reaper"
+      ],
+      "epic_level": 32,
+      "id": 463,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 17,
+      "loot_type": "chest",
+      "name": "The Underlane Assignment",
+      "pack": "The Soul Splitter",
+      "patron": "Sharn City Council"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Main Hand",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 463,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "The Underlane Assignment",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/The_Underlane_Assignment"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": {
+    "attack_modifier": "Strength",
+    "base_dice_bonus": null,
+    "base_dice_count": 1,
+    "base_dice_sides": 10,
+    "critical": "20 / x3",
+    "critical_multiplier": 3,
+    "critical_threat_range": 1,
+    "damage": "2.4[1d10] + 5 Bludgeon, Good, Lawful, Magic",
+    "damage_modifier": "Strength",
+    "damage_multiplier": 2.4,
+    "dr_bypass": [
+      "Bludgeon",
+      "Good",
+      "Lawful",
+      "Magic"
+    ],
+    "handedness": "Two-handed",
+    "proficiency": "Martial",
+    "weapon_type": "Maul"
+  },
+  "wiki_url": "https://ddowiki.com/page/Item:Absolute_Judgement"
+}

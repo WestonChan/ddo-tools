@@ -7,18 +7,30 @@ import {
   SourceHoverAnchor,
   AugmentHoverContent,
   ItemHoverContent,
+  EffectVocabularyHoverContent,
+  SetHoverContent,
 } from './ResourceHoverCards'
-import capturedItem from '../../queries/fixtures/item7631.json'
+import capturedItem from '../../queries/fixtures/effects-item.json'
 import adventurePack from '../../queries/fixtures/adventure-packs.json'
 import questChain from '../../queries/fixtures/quest-chains.json'
 import saga from '../../queries/fixtures/sagas.json'
 import craftingSystem from '../../queries/fixtures/crafting-systems.json'
 import vendor from '../../queries/fixtures/vendors.json'
 import event from '../../queries/fixtures/events.json'
-import augment from '../../queries/fixtures/augment77.json'
-import type { ApiAugmentDetail, ApiItemDetail } from '../../../../lib/api'
-import { ApiError, API_RESPONSE_ERROR } from '../../../../lib/api'
+import augment from '../../queries/fixtures/effects-augment-77.json'
+import capturedAugment from '../../queries/fixtures/effects-augment.json'
+import capturedSet from '../../queries/fixtures/effects-set.json'
+import riposteDetail from '../../queries/fixtures/effect-detail-384.json'
+import groupDetail from '../../queries/fixtures/effect-detail-336.json'
+import {
+  ApiError,
+  API_RESPONSE_ERROR,
+  type ApiAugmentDetail,
+  type ApiItemDetail,
+  type ApiSetDetail,
+} from '../../../../lib/api'
 import { toAugmentDetail, toItem } from '../../queries/items'
+import { toSetDetail } from '../../queries/sets'
 import {
   toAdventurePack,
   toQuestChain,
@@ -30,7 +42,8 @@ import {
 
 const navigateMock = vi.fn()
 let hasItemDamage = false
-let failedHoverKind: 'set' | 'quest' | 'source' | null = null
+let failedHoverKind: 'set' | 'quest' | 'source' | 'effect' | null = null
+let effectVocabularyDetail: typeof riposteDetail | typeof groupDetail = riposteDetail
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 vi.mock('../../queries/useItems', () => ({
   useItem: () => ({
@@ -40,7 +53,13 @@ vi.mock('../../queries/useItems', () => ({
       modifiers: hasItemDamage ? [augment.modifiers[0]] : [],
     }),
   }),
-  useAugment: () => ({ isPending: false, data: toAugmentDetail(augment as ApiAugmentDetail) }),
+  useAugment: () => ({
+    isPending: false,
+    data: toAugmentDetail({
+      ...(capturedAugment as ApiAugmentDetail),
+      modifiers: augment.modifiers,
+    }),
+  }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
   useAdventurePack: () => ({
     isPending: false,
@@ -87,44 +106,52 @@ vi.mock('../../queries/useItems', () => ({
             ],
           },
   }),
+  useEffectDetail: () => ({
+    isPending: false,
+    error:
+      failedHoverKind === 'effect'
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid response for /v1/effects/384: body')
+        : null,
+    refetch: vi.fn(),
+    data: failedHoverKind === 'effect' ? undefined : effectVocabularyDetail,
+  }),
   useSet: () => ({
     isPending: false,
     error:
       failedHoverKind === 'set'
-        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/sets/3: tiers')
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid response for /v1/sets/3: tiers[0].effects')
         : null,
     refetch: vi.fn(),
-    data:
-      failedHoverKind === 'set'
-        ? undefined
-        : {
-            id: 3,
-            name: 'Storm Set',
-            items: [{ id: 11, name: 'Storm Blade', slot: 'Main Hand', minimumLevel: 20 }],
-            tiers: [
-              {
-                equippedCount: 2,
-                description: 'Storm tier unlock',
-                bonuses: [
-                  {
-                    key: 'bonus-1',
-                    name: 'Fire Spell Power',
-                    description: 'Fire damage boost',
-                    type: 'Artifact',
-                    value: 20,
-                  },
-                ],
-              },
-            ],
-          },
+    data: failedHoverKind === 'set' ? undefined : toSetDetail(capturedSet as ApiSetDetail),
   }),
 }))
 
-it('keeps item facts and shows its captured bonus with a plain type', () => {
+it('renders each effect stat in its own hover row', () => {
+  render(<EffectVocabularyHoverContent detailPath="/v1/effects/384" />)
+  const armorRow = screen.getByText('Armor Class').closest('.hover-card-row')
+  const savesRow = screen.getByText('Saving Throws').closest('.hover-card-row')
+  expect(armorRow).not.toBeNull()
+  expect(savesRow).not.toBeNull()
+  expect(armorRow).not.toBe(savesRow)
+})
+
+it('labels a group and lists its member stats in separate hover rows', () => {
+  effectVocabularyDetail = groupDetail
+  render(<EffectVocabularyHoverContent detailPath="/v1/effects/336" />)
+  expect(screen.getByText('Group')).toBeInTheDocument()
+  const bluffRow = screen.getByText('Bluff').closest('.hover-card-row')
+  const diplomacyRow = screen.getByText('Diplomacy').closest('.hover-card-row')
+  expect(bluffRow).not.toBeNull()
+  expect(diplomacyRow).not.toBeNull()
+  expect(bluffRow).not.toBe(diplomacyRow)
+})
+
+it('keeps item facts and shows its captured effect name with a plain type', () => {
   render(<ItemHoverContent itemId={7631} />)
   expect(screen.getByText('Stolen Necklace (Level 25)')).toBeInTheDocument()
-  expect(screen.getByText('+8')).toHaveClass('resources-bonus-value')
-  expect(screen.getByText('Enhancement')).toHaveClass('resources-bonus-type')
+  expect(screen.getByText('Charisma')).toBeInTheDocument()
+  expect(screen.getByText('+8')).toHaveClass('detail-value-row__value')
+  expect(screen.getByText('Enhancement')).toHaveClass('detail-value-row__type')
 })
 
 it('shows a damage row when an item detail carries a captured dice modifier', () => {
@@ -133,13 +160,53 @@ it('shows a damage row when an item detail carries a captured dice modifier', ()
   expect(screen.getByText('1d6 Electric')).toHaveClass('detail-value-row__value')
 })
 
-it('shows the captured augment bonuses and dice as separate rows', () => {
+it('shows the captured augment effect and dice as separate rows', () => {
   render(<AugmentHoverContent augmentId={77} />)
-  expect(screen.getByText(/Martial: Shocking Burst/)).toBeInTheDocument()
-  expect(screen.getByText('Insight')).toHaveClass('detail-type-tag')
+  expect(screen.getByText(/Solar Gem of Physical Resistance Rating/)).toBeInTheDocument()
+  expect(screen.getByText('Artifact')).toHaveClass('detail-type-tag')
   expect(screen.getByText('1d6 Electric')).toHaveClass('detail-value-row__value')
   expect(screen.queryByText('1d10 Electric')).toBeNull()
-  expect(screen.getByText(/crafting: alchemical tier 1/)).toBeInTheDocument()
+  expect(screen.getByText(/sun/)).toBeInTheDocument()
+})
+
+it('shows an augment effect verbose name before its stat rows on nested hover', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <AugmentHoverContent augmentId={77} />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(
+    screen.getByText('Physical Resistance Rating').closest('.resources-hover-effect-row')!,
+  )
+  act(() => vi.advanceTimersByTime(120))
+  const card = screen.getByRole('dialog')
+  const verboseName = within(card).getByText('Artifact Physical Resistance Rating +10')
+  const statRow = card.querySelector('.detail-value-row__label')!
+  expect(
+    card.querySelector('.resources-hover-title')!.compareDocumentPosition(verboseName) & 4,
+  ).toBe(4)
+  expect(verboseName.compareDocumentPosition(statRow) & 4).toBe(4)
+})
+
+it('shows a captured set effect verbose name before its stat rows on nested hover', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <SetHoverContent setId={6} />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(
+    screen.getByText('Positive Spell Power').closest('.resources-hover-effect-row')!,
+  )
+  act(() => vi.advanceTimersByTime(120))
+  const card = screen.getByRole('dialog')
+  const verboseName = within(card).getByText('Equipment Positive Spell Power +36')
+  const statRow = card.querySelector('.resources-hover-fact.hover-card-row')!
+  expect(
+    card.querySelector('.resources-hover-title')!.compareDocumentPosition(verboseName) & 4,
+  ).toBe(4)
+  expect(verboseName.compareDocumentPosition(statRow) & 4).toBe(4)
 })
 
 it.each([
@@ -221,6 +288,7 @@ afterEach(() => {
   cleanup()
   hasItemDamage = false
   failedHoverKind = null
+  effectVocabularyDetail = riposteDetail
   vi.useRealTimers()
 })
 
@@ -246,27 +314,25 @@ it('shows a quest’s pack, raid flag, and unique loot item, then opens that ite
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
-it('shows set pieces and tier bonuses', () => {
+it('shows captured set pieces and tier bonuses', () => {
   vi.useFakeTimers()
   const openItem = vi.fn()
   render(
     <HoverCardProvider>
-      <SetHoverAnchor setId={3} name="Storm Set" onOpenItem={openItem} />
+      <SetHoverAnchor setId={6} name="Devoted Heart" onOpenItem={openItem} />
     </HoverCardProvider>,
   )
-  fireEvent.mouseEnter(screen.getByText('Storm Set'))
+  fireEvent.mouseEnter(screen.getByText('Devoted Heart'))
   act(() => vi.advanceTimersByTime(120))
   const card = screen.getByRole('dialog')
-  expect(card).toHaveTextContent('1 piece')
   expect(card).toHaveTextContent('2 pieces')
-  expect(card).toHaveTextContent('Fire Spell Power')
-  expect(card).toHaveTextContent('Storm tier unlock')
+  expect(card).toHaveTextContent('Positive Spell Power')
   expect(card.querySelector('.resources-set-tier')).toHaveClass('hover-card-row')
-  fireEvent.click(within(card).getByRole('button', { name: /Storm Blade/ }))
-  expect(openItem).toHaveBeenCalledWith(11, 'Storm Blade')
+  fireEvent.click(within(card).getByRole('button', { name: /Devoted Goggles/ }))
+  expect(openItem).toHaveBeenCalledWith(1815, 'Devoted Goggles')
   expect(screen.queryByRole('dialog')).toBeNull()
 
-  const setAnchor = screen.getByText('Storm Set')
+  const setAnchor = screen.getByText('Devoted Heart')
   act(() => setAnchor.focus())
   act(() => vi.advanceTimersByTime(120))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -303,3 +369,12 @@ it.each(['set', 'quest', 'source'] as const)(
     expect(card.getByRole('link', { name: 'Report a bug' })).toBeInTheDocument()
   },
 )
+
+it('shows an actionable error in a failed bonus hover card', () => {
+  failedHoverKind = 'effect'
+  render(<EffectVocabularyHoverContent detailPath="/v1/effects/384" />)
+  expect(screen.getByText('Something went wrong on our side.')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Report a bug' })).toBeInTheDocument()
+  expect(screen.queryByText('Bonus unavailable')).toBeNull()
+})

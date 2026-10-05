@@ -44,6 +44,16 @@ const AUGMENT_COLUMNS: LedgerColumn<AugmentSummary>[] = [
   },
 ]
 
+const AUGMENT_SLOT_LETTER_BY_COLOR = new Map([
+  ['blue', 'B'],
+  ['red', 'R'],
+  ['yellow', 'Y'],
+  ['green', 'G'],
+  ['purple', 'P'],
+  ['orange', 'O'],
+  ['colorless', 'C'],
+])
+
 export function AugmentSlotList({
   augmentSlots,
   expandedSlotSortOrder,
@@ -67,18 +77,29 @@ export function AugmentSlotList({
         {augmentSlots.map((slot) => {
           const isExpanded = expandedSlotSortOrder === slot.sortOrder
           const displayedLabel = titleCasedSlotLabel(slot.label)
+          const slotColor = slot.label.toLowerCase()
+          const slotLetter = AUGMENT_SLOT_LETTER_BY_COLOR.get(slotColor)
           return (
-            <li key={slot.sortOrder} className="resources-augment-slot" data-color={slot.label}>
+            <li key={slot.sortOrder} className="resources-augment-slot" data-color={slotColor}>
               <button
                 ref={isExpanded ? expandedSocketButtonRef : undefined}
                 type="button"
-                className="resources-augment-word hoverable"
+                className={
+                  slotLetter === undefined
+                    ? 'resources-augment-word hoverable'
+                    : 'resources-augment-symbol'
+                }
+                aria-label={slotLetter === undefined ? undefined : `${displayedLabel} slot`}
                 aria-expanded={isExpanded}
                 aria-controls={isExpanded ? ledgerId : undefined}
                 data-tip={`${displayedLabel} slot`}
                 onClick={() => onToggleSlot(slot.sortOrder)}
               >
-                {displayedLabel}
+                {slotLetter === undefined ? (
+                  displayedLabel
+                ) : (
+                  <span aria-hidden="true">{slotLetter}</span>
+                )}
               </button>
             </li>
           )

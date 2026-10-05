@@ -218,7 +218,7 @@ function ResourcesView(): JSX.Element {
               key={listSelectionCount}
               resourceInUrl={resourceInUrl}
               pickerCategory={category}
-              matchingEnchantments={filters.enchantments}
+              matchingBonuses={filters.bonuses}
               focusItemId={itemToFocus}
               onFocusItem={() => setItemToFocus(null)}
               onDetailRendered={scrollRenderedDetailIntoView}

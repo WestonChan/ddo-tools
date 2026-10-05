@@ -41,7 +41,6 @@ const RED_AUGMENTS: AugmentSummary[] = [
     name: 'Ruby of Flame',
     minimumLevel: 8,
     slots: ['red', 'colorless'],
-    bonusNames: ['Fire Spell Power +5'],
     recipes: [],
   },
   {
@@ -49,7 +48,6 @@ const RED_AUGMENTS: AugmentSummary[] = [
     name: 'Prismatic Ruby',
     minimumLevel: null,
     slots: ['red', 'blue', 'yellow'],
-    bonusNames: [],
     recipes: [],
   },
 ]
@@ -86,44 +84,57 @@ function AugmentSlotPicker({ augmentSlots }: { augmentSlots: ItemAugmentSlot[] }
   )
 }
 
-it('makes every socket a button, including empty colour and crafting sockets', () => {
+it('makes colour symbols and unchanged named sockets buttons', () => {
   render(
     <AugmentSlotPicker
-      augmentSlots={[slot(0, 'red'), slot(1, 'sun'), slot(2, "slaver's: prefix", 'slavers')]}
+      augmentSlots={[
+        slot(0, 'red'),
+        slot(1, 'sun'),
+        slot(2, "slaver's: prefix", 'slavers'),
+        slot(3, 'constructor', 'crafting'),
+      ]}
     />,
   )
-  expect(screen.getAllByRole('button')).toHaveLength(3)
-  expect(screen.getByRole('button', { name: /Red/ })).toHaveAttribute('aria-expanded', 'false')
-  expect(screen.getByRole('button', { name: 'Red' })).toHaveAttribute('data-tip', 'Red slot')
+  expect(screen.getAllByRole('button')).toHaveLength(4)
+  expect(screen.getByRole('button', { name: 'Red slot' })).toHaveAttribute('aria-expanded', 'false')
+  expect(screen.getByRole('button', { name: 'Red slot' })).toHaveAttribute('data-tip', 'Red slot')
   expect(document.querySelector('.resources-augment-gem')).toBeNull()
   expect(document.querySelector('.resources-augment-label')).toBeNull()
-  expect(screen.getByRole('button', { name: 'Red' })).toHaveClass('resources-augment-word')
+  expect(screen.getByRole('button', { name: 'Red slot' })).toHaveClass('resources-augment-symbol')
+  expect(screen.getByRole('button', { name: 'Sun' })).toHaveClass('resources-augment-word')
+  expect(screen.getByRole('button', { name: 'Sun' })).toHaveTextContent('Sun')
+  expect(screen.getByRole('button', { name: "Slaver's: Prefix" })).toHaveClass(
+    'resources-augment-word',
+  )
+  expect(screen.getByRole('button', { name: 'Constructor' })).toHaveClass('resources-augment-word')
 })
 
-it('shows each standard socket as its colour word in source order', () => {
+it('shows each standard socket as a labelled letter in source order', () => {
   const colors = ['blue', 'red', 'yellow', 'green', 'purple', 'orange', 'colorless']
   render(<AugmentSlotPicker augmentSlots={colors.map((color, index) => slot(index, color))} />)
   expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
-    'Blue',
-    'Red',
-    'Yellow',
-    'Green',
-    'Purple',
-    'Orange',
-    'Colorless',
+    'B',
+    'R',
+    'Y',
+    'G',
+    'P',
+    'O',
+    'C',
   ])
   for (const color of colors) {
-    expect(screen.getByRole('button', { name: new RegExp(`^${color}$`, 'i') })).toHaveAttribute(
-      'data-tip',
-      `${color[0].toUpperCase()}${color.slice(1)} slot`,
-    )
+    const symbol = screen.getByRole('button', {
+      name: `${color[0].toUpperCase()}${color.slice(1)} slot`,
+    })
+    expect(symbol).toHaveClass('resources-augment-symbol')
+    expect(symbol.firstElementChild).toHaveAttribute('aria-hidden', 'true')
+    expect(symbol).toHaveAttribute('data-tip', `${color[0].toUpperCase()}${color.slice(1)} slot`)
   }
 })
 
 it('opens a plain ledger of fitting augments with name, level and slots but no selection roles', async () => {
   render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
   expect(fittingAugmentsHookMock).not.toHaveBeenCalled()
-  await userEvent.click(screen.getByRole('button', { name: /Red/ }))
+  await userEvent.click(screen.getByRole('button', { name: /Red slot/ }))
   expect(fittingAugmentsHookMock).toHaveBeenLastCalledWith('red')
   expect(screen.getByText('Red socket · 2 augments')).toBeInTheDocument()
   expect(screen.getByRole('table', { name: /Augments that fit the Red slot/ })).toBeInTheDocument()
@@ -140,7 +151,7 @@ it('opens a plain ledger of fitting augments with name, level and slots but no s
 it('reports an API-rejected augment search with a retry action', async () => {
   augmentError = new ApiError(API_HTTP_ERROR, 400, 'Unknown slot parameter')
   render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
-  await userEvent.click(screen.getByRole('button', { name: /Red/ }))
+  await userEvent.click(screen.getByRole('button', { name: /Red slot/ }))
   expect(screen.getByText('Something went wrong on our side.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Report a bug' })).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
@@ -149,7 +160,7 @@ it('reports an API-rejected augment search with a retry action', async () => {
 
 it('tabs into the augment ledger and closes its socket from a row on Escape', async () => {
   render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
-  const button = screen.getByRole('button', { name: /Red/ })
+  const button = screen.getByRole('button', { name: /Red slot/ })
   button.focus()
   await userEvent.keyboard('{Enter}')
   const rows = screen.getAllByRole('row').filter((row) => row.classList.contains('ledger-row'))
@@ -176,7 +187,7 @@ it('closes a socket from a row while its hover card is still pending inside a de
       </section>
     </HoverCardProvider>,
   )
-  const redSocket = screen.getByRole('button', { name: 'Red' })
+  const redSocket = screen.getByRole('button', { name: 'Red slot' })
   await userEvent.click(redSocket)
   screen.getByRole('columnheader', { name: 'Name' }).focus()
   await userEvent.tab()
@@ -191,7 +202,7 @@ it('closes a socket from a row while its hover card is still pending inside a de
 
 it('closes the first table when another socket opens and closes on a second click', async () => {
   render(<AugmentSlotPicker augmentSlots={[slot(0, 'red'), slot(1, 'sun')]} />)
-  const red = screen.getByRole('button', { name: /Red/ })
+  const red = screen.getByRole('button', { name: /Red slot/ })
   const sun = screen.getByRole('button', { name: /Sun/ })
   await userEvent.click(red)
   expect(screen.getByText('Ruby of Flame')).toBeInTheDocument()
@@ -209,7 +220,7 @@ it('closes an unpinned augment card before leaving the row and pops a pinned car
       <AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />
     </HoverCardProvider>,
   )
-  await userEvent.click(screen.getByRole('button', { name: /Red/ }))
+  await userEvent.click(screen.getByRole('button', { name: /Red slot/ }))
   screen.getByRole('columnheader', { name: 'Name' }).focus()
   await userEvent.tab()
   const row = screen.getByRole('row', { name: /Ruby of Flame/ })
@@ -221,7 +232,7 @@ it('closes an unpinned augment card before leaving the row and pops a pinned car
   expect(screen.getByRole('table')).toBeInTheDocument()
   await userEvent.keyboard('{Escape}')
   expect(screen.queryByRole('table')).toBeNull()
-  await userEvent.click(screen.getByRole('button', { name: /Red/ }))
+  await userEvent.click(screen.getByRole('button', { name: /Red slot/ }))
   screen.getByRole('columnheader', { name: 'Name' }).focus()
   await userEvent.tab()
   const reopenedRow = screen.getByRole('row', { name: /Ruby of Flame/ })

@@ -40,7 +40,6 @@
       "variant": "trace of madness"
     }
   ],
-  "bonuses": [],
   "category": "Armor",
   "challenge_packs": [],
   "clickies": [],
@@ -49,25 +48,40 @@
   "drop_location": "The Lord of Eyes, Opuloxx chest; \n Harbinger of Madness, Quest chain end reward",
   "effects": [
     {
-      "description": "Antimagic Spike: This item was made from powerful antimagic materials. When scoring a critical hit on an enemy with your ranged or melee weapons, the target must make a DC 28 Fortitude save or be unable to cast spells for a brief duration.",
-      "id": 189,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This item was made from powerful antimagic materials. When scoring a critical hit on an enemy with your ranged or melee weapons, the target must make a DC 28 Fortitude save or be unable to cast spells for a brief duration.",
+      "effect_id": 547,
       "name": "Antimagic Spike",
-      "target": null,
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Antimagic Spike"
     },
     {
-      "description": "Telekinesis Guard: When enemies hit you, they may be assaulted by these psychic forces, falling to the ground unless they make a DC 35 Reflex save.",
-      "id": 190,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "When enemies hit you, they may be assaulted by these psychic forces, falling to the ground unless they make a DC 35 Reflex save.",
+      "effect_id": 548,
       "name": "Telekinesis Guard",
-      "target": null,
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Telekinesis Guard"
     },
     {
-      "description": "Metal Fatigue: The metal plates of this armor sometimes tire you out. When you are damaged there is a small chance that you will become Exhausted.",
-      "id": 191,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "The metal plates of this armor sometimes tire you out. When you are damaged there is a small chance that you will become Exhausted.",
+      "effect_id": 549,
       "name": "Metal Fatigue",
-      "target": null,
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Metal Fatigue"
     }
   ],
   "enhancement_bonus": 5,
@@ -92,7 +106,12 @@
   "quests": [
     {
       "chest": "opuloxx chest",
-      "difficulties": ["normal", "hard", "elite", "reaper"],
+      "difficulties": [
+        "normal",
+        "hard",
+        "elite",
+        "reaper"
+      ],
       "epic_level": null,
       "id": 449,
       "is_free_to_play": false,

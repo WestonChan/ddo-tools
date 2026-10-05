@@ -1,105 +1,126 @@
-import { expect, it, vi } from 'vitest'
-import type { ApiSetDetail } from '../../../lib/api'
-import capturedSet93 from './fixtures/set93.json'
-import { fetchSet, toSetDetail } from './sets'
+import { afterEach, expect, it, vi } from 'vitest'
+import { apiErrorDescription, type ApiSetDetail } from '../../../lib/api'
+import capturedSet from './fixtures/effects-set.json'
+import capturedSetPage from './fixtures/sets-page.json'
+import { fetchSet, fetchSetVocabulary, toSetDetail } from './sets'
+
+afterEach(() => vi.unstubAllGlobals())
+
+it('fetches all pages of matching set names in API order', async () => {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ ...capturedSetPage, limit: 1, sets: [capturedSetPage.sets[0]] }),
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ...capturedSetPage,
+          limit: 1,
+          offset: 1,
+          sets: [capturedSetPage.sets[1]],
+        }),
+      ),
+    )
+  vi.stubGlobal('fetch', fetchMock)
+  expect(await fetchSetVocabulary('  Adherent  ')).toEqual({
+    rows: capturedSetPage.sets.map((set) => set.name),
+    total: 2,
+  })
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+  const urls = fetchMock.mock.calls.map(([url]) => new URL(url as string))
+  expect(urls.map((url) => url.searchParams.get('q'))).toEqual(['Adherent', 'Adherent'])
+  expect(urls.map((url) => url.searchParams.get('offset'))).toEqual(['0', '1'])
+})
+
+it('rejects a set vocabulary page that ends before its declared total', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ ...capturedSetPage, sets: [] }))),
+      ),
+  )
+  await expect(fetchSetVocabulary()).rejects.toMatchObject({ kind: 'api-response' })
+})
+
+it('reloads an incomplete set vocabulary page before treating it as a contract error', async () => {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify({ ...capturedSetPage, sets: [] })))
+    .mockResolvedValueOnce(new Response(JSON.stringify(capturedSetPage)))
+  vi.stubGlobal('fetch', fetchMock)
+  expect(await fetchSetVocabulary()).toEqual({
+    rows: capturedSetPage.sets.map((set) => set.name),
+    total: capturedSetPage.total,
+  })
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+  expect(fetchMock.mock.calls[1][1]).toHaveProperty('cache', 'reload')
+})
+
+it('keeps captured set tier effects in owner order with their stat bonuses', () => {
+  const set = toSetDetail(capturedSet as ApiSetDetail)
+  expect(set.name).toBe('Devoted Heart')
+  expect(set.tiers[0].equippedCount).toBe(2)
+  expect(set.tiers[0].effects[0]).toMatchObject({
+    name: 'Positive Spell Power',
+    verboseName: 'Equipment Positive Spell Power +36',
+    bonuses: [{ statName: 'Positive Spell Power', bonusType: 'Equipment', value: 36 }],
+  })
+})
+
+it('fetches the set detail and rejects a missing effect list', async () => {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify(capturedSet)))
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ...capturedSet,
+          tiers: [{ ...capturedSet.tiers[0], effects: undefined }],
+        }),
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ...capturedSet,
+          tiers: [{ ...capturedSet.tiers[0], effects: undefined }],
+        }),
+      ),
+    )
+  vi.stubGlobal('fetch', fetchMock)
+  expect((await fetchSet(capturedSet.id)).tiers[0].effects).toHaveLength(1)
+  await expect(fetchSet(capturedSet.id)).rejects.toMatchObject({ kind: 'api-response' })
+})
 
 it('reports a malformed set tier with its path and field', async () => {
-  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-    new Response(JSON.stringify({ ...capturedSet93, tiers: [{ modifiers: null }] })),
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            ...capturedSet,
+            tiers: [capturedSet.tiers[0], { ...capturedSet.tiers[0], effects: null }],
+          }),
+        ),
+      ),
+    ),
   )
-  await expect(fetchSet(93)).rejects.toMatchObject({
+  const error = await fetchSet(capturedSet.id).catch((caught: unknown) => caught)
+  expect(error).toMatchObject({
     kind: 'api-response',
-    message: expect.stringContaining('/v1/sets/93: tiers[0].modifiers'),
+    message: expect.stringContaining(`/v1/sets/${capturedSet.id}: tiers[1].effects`),
   })
-  vi.restoreAllMocks()
+  expect(apiErrorDescription(error).kind).toBe('our-bug')
 })
 
-it('maps the captured set 93 response with its omitted bonuses and extra modifier types', () => {
-  const set = toSetDetail(capturedSet93)
-  expect(set.name).toBe('Adherent of the Mists Set (Heroic)')
-  expect(set.items[0]).toEqual({ id: 487, name: 'Adversion', slot: 'Ring', minimumLevel: 10 })
-  expect(set.tiers[0].equippedCount).toBe(5)
-  expect(set.tiers[0].description).toBe('+5 Profane Bonus to Physical Resistance Rating.')
-  expect(set.tiers[0].bonuses.map((bonus) => bonus.name)).toEqual([
-    'Physical Resistance Rating',
-    'Healing Amplification',
-    'Negative Healing Amplification',
-    'Repair Amplification',
-    'Melee Power',
-    'Ranged Power',
-    'Universal Spell Power',
-  ])
-  expect(set.tiers[0].bonuses.every((bonus) => bonus.description === null)).toBe(true)
-})
-
-it('uses derived bonuses once and keeps only modifier effects they do not cover', () => {
-  const apiSet: ApiSetDetail = {
-    ...capturedSet93,
-    tiers: [
-      {
-        ...capturedSet93.tiers[0],
-        bonuses: [
-          {
-            id: 1,
-            name: 'Physical Resistance Rating +5',
-            stat: 'Physical Resistance Rating',
-            stat_category: 'defensive',
-            bonus_type: 'Profane',
-            value: 5,
-            value2: null,
-            description: '+5 Profane Bonus to Physical Resistance Rating.',
-          },
-          {
-            id: 2,
-            name: 'Universal Spell Power +10',
-            stat: 'Universal Spell Power',
-            stat_category: 'magical',
-            bonus_type: 'Profane',
-            value: 10,
-            value2: null,
-            description: 'Profane bonus to Universal Spell Power.',
-          },
-          {
-            id: 3,
-            name: 'Healing Amplification +10',
-            stat: 'Healing Amplification',
-            stat_category: 'defensive',
-            bonus_type: 'Profane',
-            value: 10,
-            value2: null,
-            description: 'Profane bonus to Healing Amplification.',
-          },
-          {
-            id: 4,
-            name: 'Melee Power +5',
-            stat: 'Melee Power',
-            stat_category: 'offensive',
-            bonus_type: 'Profane',
-            value: 5,
-            value2: null,
-            description: 'Profane bonus to Melee Power.',
-          },
-        ],
-      },
-    ],
-  }
-  const bonuses = toSetDetail(apiSet).tiers[0].bonuses
-  expect(bonuses.map((bonus) => bonus.name)).toEqual([
-    'Physical Resistance Rating',
-    'Universal Spell Power',
-    'Healing Amplification',
-    'Melee Power',
-    'Negative Healing Amplification',
-    'Repair Amplification',
-    'Ranged Power',
-  ])
-  expect(bonuses.map((bonus) => bonus.description)).toEqual([
-    '+5 Profane Bonus to Physical Resistance Rating.',
-    'Profane bonus to Universal Spell Power.',
-    'Profane bonus to Healing Amplification.',
-    'Profane bonus to Melee Power.',
-    null,
-    null,
-    null,
-  ])
+it('names the set tier field when a tier reaches the mapper without effects', () => {
+  expect(() =>
+    toSetDetail({ ...capturedSet, tiers: [{ ...capturedSet.tiers[0], effects: null }] } as never),
+  ).toThrow(`/v1/sets/${capturedSet.id}: tiers[0].effects`)
 })

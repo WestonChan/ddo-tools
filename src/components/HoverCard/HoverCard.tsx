@@ -25,6 +25,7 @@ interface CardEntry {
   anchorRect: DOMRect
   pointerX: number | null
   openedBy: 'pointer' | 'focus'
+  placement?: 'beside'
   render: () => ReactNode
   isPinned: boolean
 }
@@ -34,6 +35,7 @@ export interface HoverCardOptions {
   label?: string
   delayMs: number
   render: () => ReactNode
+  placement?: 'beside'
 }
 
 interface CardController {
@@ -41,6 +43,8 @@ interface CardController {
   closeFrom: (depth: number) => void
   removeAnchor: (anchorId: string) => void
   clear: () => void
+  dismiss: (anchorId: string) => boolean
+  setLabel: (cardId: number, label: string) => void
   restoreAnchorFocus: (anchor: HTMLElement) => void
   isRestoringAnchorFocus: (anchor: HTMLElement) => boolean
   pinnedAnchorIds: ReadonlySet<string>
@@ -48,6 +52,7 @@ interface CardController {
 
 const ControllerContext = createContext<CardController | null>(null)
 const DepthContext = createContext(0)
+const CardLabelContext = createContext<((label: string) => void) | null>(null)
 
 export function positionedCard(
   anchor: DOMRect,
@@ -68,36 +73,45 @@ export function positionedCard(
   return { left, top: Math.max(margin, Math.min(preferredTop, viewportHeight - height - margin)) }
 }
 
+export function positionedCardBeside(
+  menu: DOMRect,
+  width: number,
+  height: number,
+  viewportWidth: number,
+  viewportHeight: number,
+): { left: number; top: number } | null {
+  const margin = 8
+  const right = menu.right + margin
+  const left = menu.left - width - margin
+  const cardLeft = right + width + margin <= viewportWidth ? right : left >= margin ? left : null
+  if (cardLeft === null) return null
+  return {
+    left: cardLeft,
+    top: Math.max(margin, Math.min(menu.top, viewportHeight - height - margin)),
+  }
+}
+
 function CardLayer({ card }: { card: CardEntry }): JSX.Element {
   const elementRef = useRef<HTMLDivElement>(null)
   const hasFocusedPinnedCard = useRef(false)
   const restoreAnchorFocus = useContext(ControllerContext)?.restoreAnchorFocus
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(null)
-  const positionElement = useCallback(
-    (element: HTMLDivElement | null) => {
-      elementRef.current = element
-      if (!element) return
-      const rect = element.getBoundingClientRect()
-      setPosition(
-        positionedCard(
-          card.anchorRect,
-          card.pointerX,
-          rect.width,
-          rect.height,
-          window.innerWidth,
-          window.innerHeight,
-        ),
-      )
-    },
-    [card.anchorRect, card.pointerX],
+  const setCardLabel = useContext(ControllerContext)?.setLabel
+  const setLabel = useCallback(
+    (label: string) => setCardLabel?.(card.id, label),
+    [card.id, setCardLabel],
   )
-  useEffect(() => {
-    if (!elementRef.current || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => {
-      const rect = elementRef.current?.getBoundingClientRect()
-      if (rect)
-        setPosition(
-          positionedCard(
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null)
+  const cardPosition = useCallback(
+    (rect: DOMRect) =>
+      card.placement === 'beside'
+        ? positionedCardBeside(
+            card.anchorRect,
+            rect.width,
+            rect.height,
+            window.innerWidth,
+            window.innerHeight,
+          )
+        : positionedCard(
             card.anchorRect,
             card.pointerX,
             rect.width,
@@ -105,11 +119,26 @@ function CardLayer({ card }: { card: CardEntry }): JSX.Element {
             window.innerWidth,
             window.innerHeight,
           ),
-        )
+    [card.anchorRect, card.placement, card.pointerX],
+  )
+  const positionElement = useCallback(
+    (element: HTMLDivElement | null) => {
+      elementRef.current = element
+      if (!element) return
+      const rect = element.getBoundingClientRect()
+      setPosition(cardPosition(rect))
+    },
+    [cardPosition],
+  )
+  useEffect(() => {
+    if (!elementRef.current || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      const rect = elementRef.current?.getBoundingClientRect()
+      if (rect) setPosition(cardPosition(rect))
     })
     observer.observe(elementRef.current)
     return () => observer.disconnect()
-  }, [card.anchorRect, card.pointerX])
+  }, [cardPosition])
   useLayoutEffect(() => {
     if (!card.isPinned || !position || hasFocusedPinnedCard.current) return
     const cardElement = elementRef.current
@@ -143,7 +172,7 @@ function CardLayer({ card }: { card: CardEntry }): JSX.Element {
             <span>{card.isPinned ? 'Pinned · Esc' : 'T to pin'}</span>
           </div>
         )}
-        {card.render()}
+        <CardLabelContext.Provider value={setLabel}>{card.render()}</CardLabelContext.Provider>
       </div>
     </DepthContext.Provider>
   )
@@ -213,6 +242,26 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     cancelPending()
     setCards([])
   }, [cancelPending])
+  const dismiss = useCallback(
+    (anchorId: string): boolean => {
+      const index = cards.findIndex((card) => card.anchorId === anchorId)
+      if (index < 0) return false
+      const card = cards[index]
+      cancelPending()
+      dismissedFocusAnchor.current = card.openedBy === 'focus' ? card.anchorElement : null
+      setCards((current) => current.slice(0, index))
+      if (card.isPinned && card.anchorElement?.isConnected) restoreAnchorFocus(card.anchorElement)
+      return true
+    },
+    [cards, cancelPending, restoreAnchorFocus],
+  )
+  const setLabel = useCallback((cardId: number, label: string) => {
+    setCards((current) => {
+      const index = current.findIndex((card) => card.id === cardId)
+      if (index < 0 || current[index].label === label) return current
+      return current.map((card, cardIndex) => (cardIndex === index ? { ...card, label } : card))
+    })
+  }, [])
 
   useLayoutEffect(() => {
     cardToPin.current = null
@@ -360,8 +409,15 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       )
     }
     function closeHint(anchor: HTMLElement): void {
-      const parentCard = anchor.closest<HTMLElement>('[data-hover-card]')
-      closeFrom(parentCard ? Number(parentCard.dataset.depth) + 1 : 0)
+      if (pendingAnchorElement.current === anchor) cancelPending()
+      setCards((current) => {
+        const index = current.findIndex(
+          (card) => card.kind === 'hint' && card.anchorElement === anchor,
+        )
+        return index < 0
+          ? current
+          : current.filter((card, cardIndex) => cardIndex < index || card.isPinned)
+      })
     }
     function onMouseOver(event: globalThis.MouseEvent): void {
       const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
@@ -395,7 +451,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       document.removeEventListener('focusin', onFocusIn)
       document.removeEventListener('focusout', onFocusOut)
     }
-  }, [open, closeFrom])
+  }, [open, cancelPending])
 
   return (
     <ControllerContext.Provider
@@ -404,6 +460,8 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         closeFrom,
         removeAnchor,
         clear,
+        dismiss,
+        setLabel,
         restoreAnchorFocus,
         isRestoringAnchorFocus,
         pinnedAnchorIds: new Set(
@@ -417,7 +475,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   )
 }
 
-export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions): {
+export function useHoverCard({ kind, label, delayMs, render, placement }: HoverCardOptions): {
   'data-hover-card-pinned': '' | undefined
   onMouseEnter: (event: React.MouseEvent<HTMLElement>) => void
   onMouseLeave: () => void
@@ -450,6 +508,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: event.clientX,
           openedBy: event.currentTarget.contains(document.activeElement) ? 'focus' : 'pointer',
+          placement,
           render,
         },
         delayMs,
@@ -469,6 +528,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: null,
           openedBy: 'focus',
+          placement,
           render,
         },
         delayMs,
@@ -490,6 +550,7 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
           anchorRect: event.currentTarget.getBoundingClientRect(),
           pointerX: null,
           openedBy: 'focus',
+          placement,
           render,
         },
         0,
@@ -499,9 +560,65 @@ export function useHoverCard({ kind, label, delayMs, render }: HoverCardOptions)
   }
 }
 
+export function useHoverCardControl({
+  kind,
+  label,
+  delayMs,
+  render,
+  placement,
+}: HoverCardOptions): {
+  show: (
+    anchor: HTMLElement,
+    options: { rect?: DOMRect; statusLabel?: string; openedBy: CardEntry['openedBy'] },
+  ) => void
+  hide: () => void
+  dismiss: () => boolean
+} {
+  const controller = useContext(ControllerContext)
+  const depth = useContext(DepthContext)
+  const anchorId = useId()
+  const anchorElement = useRef<HTMLElement | null>(null)
+  const removeAnchor = controller?.removeAnchor
+  useEffect(
+    () => () => {
+      if (anchorElement.current && !anchorElement.current.isConnected) removeAnchor?.(anchorId)
+    },
+    [removeAnchor, anchorId],
+  )
+  return {
+    show: (anchor, options) => {
+      anchorElement.current = anchor
+      controller?.open(
+        {
+          kind,
+          label: options.statusLabel ?? label,
+          anchorId,
+          anchorElement: anchor,
+          depth,
+          anchorRect: options.rect ?? anchor.getBoundingClientRect(),
+          pointerX: null,
+          openedBy: options.openedBy,
+          placement,
+          render,
+        },
+        delayMs,
+      )
+    },
+    hide: () => controller?.closeFrom(depth),
+    dismiss: () => controller?.dismiss(anchorId) ?? false,
+  }
+}
+
 export function useClearHoverCards(): () => void {
   const controller = useContext(ControllerContext)
   return controller?.clear ?? (() => {})
+}
+
+export function useHoverCardLabel(label: string | null): void {
+  const setLabel = useContext(CardLabelContext)
+  useEffect(() => {
+    if (label) setLabel?.(label)
+  }, [label, setLabel])
 }
 
 export function HintAnchor({ text, children }: { text: string; children: ReactNode }): JSX.Element {

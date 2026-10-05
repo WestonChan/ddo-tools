@@ -1,0 +1,131 @@
+{
+  "augments": {
+    "augments": [],
+    "limit": 1,
+    "offset": 0,
+    "total": 0
+  },
+  "bonuses": [
+    {
+      "amount_from": 0,
+      "bonus_type": null,
+      "constant": -1,
+      "rounding": "down",
+      "scale": 1.0,
+      "target": "Strength",
+      "target_kind": "stat"
+    }
+  ],
+  "category": null,
+  "damage": [],
+  "default_value": null,
+  "default_value2": null,
+  "description_template": "Passive -1 Penalty to Strength. The minimum level required to equip this item is lower than normal due to this curse.",
+  "id": 329,
+  "items": {
+    "items": [
+      {
+        "amount_source": null,
+        "bonus_type": "Penalty",
+        "bonuses": [
+          {
+            "amount_source": "constant",
+            "bonus_type": "Penalty",
+            "group": null,
+            "scale": 1.0,
+            "stat": "Strength",
+            "stat_category": "ability",
+            "value": -1
+          }
+        ],
+        "effect": null,
+        "effect_id": null,
+        "id": 454,
+        "line": {
+          "bonus_type": "Penalty",
+          "bonuses": [
+            {
+              "amount_source": "constant",
+              "bonus_type": "Penalty",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Strength",
+              "stat_category": "ability",
+              "value": -1
+            }
+          ],
+          "damage": [],
+          "description": "Passive -1 Penalty to Strength. The minimum level required to equip this item is lower than normal due to this curse.",
+          "effect_id": 329,
+          "name": "Curse of Weakness",
+          "tier": null,
+          "value": -1,
+          "value2": null,
+          "verbose_name": "Curse of Weakness"
+        },
+        "lines": [
+          {
+            "amount_source": null,
+            "bonus_type": "Penalty",
+            "bonuses": [
+              {
+                "amount_source": "constant",
+                "bonus_type": "Penalty",
+                "group": null,
+                "scale": 1.0,
+                "stat": "Strength",
+                "stat_category": "ability",
+                "value": -1
+              }
+            ],
+            "effect": null,
+            "effect_id": null,
+            "line": {
+              "bonus_type": "Penalty",
+              "bonuses": [
+                {
+                  "amount_source": "constant",
+                  "bonus_type": "Penalty",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Strength",
+                  "stat_category": "ability",
+                  "value": -1
+                }
+              ],
+              "damage": [],
+              "description": "Passive -1 Penalty to Strength. The minimum level required to equip this item is lower than normal due to this curse.",
+              "effect_id": 329,
+              "name": "Curse of Weakness",
+              "tier": null,
+              "value": -1,
+              "value2": null,
+              "verbose_name": "Curse of Weakness"
+            },
+            "scale": null,
+            "value": null,
+            "value2": null
+          }
+        ],
+        "name": "-1 Quarterstaff of Lesser Halfling Bane",
+        "scale": null,
+        "value": null,
+        "value2": null
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 1
+  },
+  "kind": "effect",
+  "name": "Curse of Weakness",
+  "set_tiers": {
+    "limit": 1,
+    "offset": 0,
+    "set_tiers": [],
+    "total": 0
+  },
+  "tier": null,
+  "verbose_name_template": "Curse of Weakness -1",
+  "wiki_url": null
+}

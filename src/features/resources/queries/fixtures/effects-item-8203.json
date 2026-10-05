@@ -32,38 +32,6 @@
       "variant": "red"
     }
   ],
-  "bonuses": [
-    {
-      "bonus_type": "Insight",
-      "description": "Insight Incite 27%: 27% Insight bonus to increased threat generation from melee damage",
-      "id": 2746,
-      "name": "Melee Threat Generation +27",
-      "stat": "Melee Threat Generation",
-      "stat_category": "martial",
-      "value": 27,
-      "value2": null
-    },
-    {
-      "bonus_type": "Primal",
-      "description": "Primal Rough Hide 7: This item fuses with your body and toughens your skin, providing a 7 Primal bonus to your natural armor.",
-      "id": 1284,
-      "name": "Armor Class +7",
-      "stat": "Armor Class",
-      "stat_category": "defensive",
-      "value": 7,
-      "value2": null
-    },
-    {
-      "bonus_type": "Profane",
-      "description": "Profane Lifeforce 23: 23 Profane bonus to Hit Points.",
-      "id": 2631,
-      "name": "Hit Points +23",
-      "stat": "Hit Points",
-      "stat_category": "martial",
-      "value": 23,
-      "value2": null
-    }
-  ],
   "category": "Shield",
   "challenge_packs": [],
   "clickies": [],
@@ -72,11 +40,88 @@
   "drop_location": "Portal to Below, end chest",
   "effects": [
     {
-      "description": "Legendary Conditioning %v1%: You have a %v1% %b1 bonus to Maximum Hit Points.",
-      "id": 149,
+      "bonus_type": "Insight",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "scale": 1.0,
+          "stat": "Melee Threat Generation",
+          "stat_category": "martial",
+          "value": 27
+        }
+      ],
+      "damage": [],
+      "description": "27% Insight bonus to increased threat generation from melee damage",
+      "effect_id": 361,
+      "name": "Incite",
+      "tier": null,
+      "value": 27,
+      "value2": null,
+      "verbose_name": "Insight Incite 27%"
+    },
+    {
+      "bonus_type": "Primal",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Primal",
+          "scale": 1.0,
+          "stat": "Armor Class",
+          "stat_category": "defensive",
+          "value": 7
+        }
+      ],
+      "damage": [],
+      "description": "This item fuses with your body and toughens your skin, providing a 7 Primal bonus to your natural armor.",
+      "effect_id": 728,
+      "name": "Rough Hide",
+      "tier": null,
+      "value": 7,
+      "value2": null,
+      "verbose_name": "Primal Rough Hide 7"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Profane",
+          "scale": 1.0,
+          "stat": "Hit Points",
+          "stat_category": "martial",
+          "value": 23
+        }
+      ],
+      "damage": [],
+      "description": "23 Profane bonus to Hit Points.",
+      "effect_id": 423,
+      "name": "Profane Lifeforce",
+      "tier": null,
+      "value": 23,
+      "value2": null,
+      "verbose_name": "Profane Lifeforce 23"
+    },
+    {
+      "bonus_type": "Legendary",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Legendary",
+          "scale": 1.0,
+          "stat": "Maximum Hit Points",
+          "stat_category": "defensive",
+          "value": 20
+        }
+      ],
+      "damage": [],
+      "description": "You have a 20% Legendary bonus to Maximum Hit Points.",
+      "effect_id": 507,
       "name": "Legendary Conditioning",
-      "target": null,
-      "value": 20
+      "tier": null,
+      "value": 20,
+      "value2": null,
+      "verbose_name": "Legendary Conditioning 20%"
     }
   ],
   "enhancement_bonus": 5,
@@ -94,7 +139,12 @@
   "quests": [
     {
       "chest": "end chest",
-      "difficulties": ["normal", "hard", "elite", "reaper"],
+      "difficulties": [
+        "normal",
+        "hard",
+        "elite",
+        "reaper"
+      ],
       "epic_level": 35,
       "id": 367,
       "is_free_to_play": false,
@@ -139,7 +189,10 @@
     "damage": "1.6[1d12] + 5 Bludgeon, Magic",
     "damage_modifier": "Strength",
     "damage_multiplier": 1.6,
-    "dr_bypass": ["Bludgeon", "Magic"],
+    "dr_bypass": [
+      "Bludgeon",
+      "Magic"
+    ],
     "handedness": "Off-hand",
     "proficiency": null,
     "weapon_type": "Tower Shield"

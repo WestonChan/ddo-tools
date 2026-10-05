@@ -3,7 +3,13 @@ import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useState } from 'react'
-import { HintAnchor, HoverCardProvider, positionedCard, useHoverCard } from './HoverCard'
+import {
+  HintAnchor,
+  HoverCardProvider,
+  positionedCard,
+  positionedCardBeside,
+  useHoverCard,
+} from './HoverCard'
 import { LedgerTable } from '../LedgerTable'
 
 afterEach(() => {
@@ -721,6 +727,21 @@ it('places cards above crowded anchors and clamps them to the viewport', () => {
   const tallCard = positionedCard(bottomAnchor, null, 300, 300, 375, 320)
   expect(tallCard.left).toBe(67)
   expect(tallCard.top).toBe(8)
+})
+
+it('places a menu card beside its edge, flips left, and omits it when neither side fits', () => {
+  const rightMenu = DOMRect.fromRect({ x: 400, y: 32, width: 268, height: 320 })
+  const leftMenu = DOMRect.fromRect({ x: 650, y: 32, width: 268, height: 320 })
+  const narrowMenu = DOMRect.fromRect({ x: 4, y: 32, width: 268, height: 320 })
+  expect(positionedCardBeside(rightMenu, 300, 180, 1024, 768)).toEqual({
+    left: 676,
+    top: 32,
+  })
+  expect(positionedCardBeside(leftMenu, 300, 180, 1024, 768)).toEqual({
+    left: 342,
+    top: 32,
+  })
+  expect(positionedCardBeside(narrowMenu, 300, 180, 375, 768)).toBeNull()
 })
 
 it('closes an unpinned card when its anchor unmounts', () => {

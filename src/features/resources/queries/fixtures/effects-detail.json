@@ -1,0 +1,236 @@
+{
+  "augments": {
+    "augments": [
+      {
+        "amount_source": "owner",
+        "bonus_type": "Quality",
+        "effect": "Strength",
+        "effect_id": 1,
+        "id": 1460,
+        "line": {
+          "bonus_type": "Quality",
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Quality",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Strength",
+              "stat_category": "ability",
+              "value": 1
+            }
+          ],
+          "damage": [],
+          "description": "Passive: +1 Quality bonus to Strength.",
+          "effect_id": 1,
+          "name": "Strength",
+          "tier": null,
+          "value": 1,
+          "value2": null,
+          "verbose_name": "Quality Strength +1"
+        },
+        "lines": [
+          {
+            "amount_source": "owner",
+            "bonus_type": "Quality",
+            "effect": "Strength",
+            "effect_id": 1,
+            "line": {
+              "bonus_type": "Quality",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Quality",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Strength",
+                  "stat_category": "ability",
+                  "value": 1
+                }
+              ],
+              "damage": [],
+              "description": "Passive: +1 Quality bonus to Strength.",
+              "effect_id": 1,
+              "name": "Strength",
+              "tier": null,
+              "value": 1,
+              "value2": null,
+              "verbose_name": "Quality Strength +1"
+            },
+            "scale": 1.0,
+            "value": 1,
+            "value2": null
+          }
+        ],
+        "name": "+1 Quality Strength",
+        "scale": 1.0,
+        "value": 1,
+        "value2": null
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 51
+  },
+  "bonuses": [],
+  "category": "ability",
+  "damage": [],
+  "default_value": null,
+  "default_value2": null,
+  "description_template": "Passive: {1} %b1 bonus to Strength.",
+  "id": 1,
+  "items": {
+    "items": [
+      {
+        "amount_source": "constant",
+        "bonus_type": "Penalty",
+        "effect": "Curse of Weakness",
+        "effect_id": 329,
+        "id": 454,
+        "line": {
+          "bonus_type": "Penalty",
+          "bonuses": [
+            {
+              "amount_source": "constant",
+              "bonus_type": "Penalty",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Strength",
+              "stat_category": "ability",
+              "value": -1
+            }
+          ],
+          "damage": [],
+          "description": "Passive -1 Penalty to Strength. The minimum level required to equip this item is lower than normal due to this curse.",
+          "effect_id": 329,
+          "name": "Curse of Weakness",
+          "tier": null,
+          "value": -1,
+          "value2": null,
+          "verbose_name": "Curse of Weakness"
+        },
+        "lines": [
+          {
+            "amount_source": "constant",
+            "bonus_type": "Penalty",
+            "effect": "Curse of Weakness",
+            "effect_id": 329,
+            "line": {
+              "bonus_type": "Penalty",
+              "bonuses": [
+                {
+                  "amount_source": "constant",
+                  "bonus_type": "Penalty",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Strength",
+                  "stat_category": "ability",
+                  "value": -1
+                }
+              ],
+              "damage": [],
+              "description": "Passive -1 Penalty to Strength. The minimum level required to equip this item is lower than normal due to this curse.",
+              "effect_id": 329,
+              "name": "Curse of Weakness",
+              "tier": null,
+              "value": -1,
+              "value2": null,
+              "verbose_name": "Curse of Weakness"
+            },
+            "scale": 1.0,
+            "value": -1,
+            "value2": null
+          }
+        ],
+        "name": "-1 Quarterstaff of Lesser Halfling Bane",
+        "scale": 1.0,
+        "value": -1,
+        "value2": null
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 213
+  },
+  "kind": "stat",
+  "name": "Strength",
+  "set_tiers": {
+    "limit": 1,
+    "offset": 0,
+    "set_tiers": [
+      {
+        "amount_source": "owner",
+        "bonus_type": "Artifact",
+        "effect": "Strength",
+        "effect_id": 1,
+        "equipped_count": 3,
+        "id": 250,
+        "line": {
+          "bonus_type": "Artifact",
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Artifact",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Strength",
+              "stat_category": "ability",
+              "value": 3
+            }
+          ],
+          "damage": [],
+          "description": "Passive: +3 Artifact bonus to Strength.",
+          "effect_id": 1,
+          "name": "Strength",
+          "tier": null,
+          "value": 3,
+          "value2": null,
+          "verbose_name": "+3 Artifact Bonus to Strength"
+        },
+        "lines": [
+          {
+            "amount_source": "owner",
+            "bonus_type": "Artifact",
+            "effect": "Strength",
+            "effect_id": 1,
+            "line": {
+              "bonus_type": "Artifact",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Artifact",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Strength",
+                  "stat_category": "ability",
+                  "value": 3
+                }
+              ],
+              "damage": [],
+              "description": "Passive: +3 Artifact bonus to Strength.",
+              "effect_id": 1,
+              "name": "Strength",
+              "tier": null,
+              "value": 3,
+              "value2": null,
+              "verbose_name": "+3 Artifact Bonus to Strength"
+            },
+            "scale": 1.0,
+            "value": 3,
+            "value2": null
+          }
+        ],
+        "name": "Brutal Blows (3)",
+        "scale": 1.0,
+        "set_id": 211,
+        "set_name": "Brutal Blows",
+        "value": 3,
+        "value2": null
+      }
+    ],
+    "total": 37
+  },
+  "tier": null,
+  "verbose_name_template": "%b1 Strength +{1}",
+  "wiki_url": null
+}

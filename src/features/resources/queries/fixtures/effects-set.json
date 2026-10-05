@@ -1,0 +1,84 @@
+{
+  "augments": [],
+  "filigrees": [],
+  "icon": "Devoted Heart",
+  "id": 6,
+  "is_filigree_set": false,
+  "items": [
+    {
+      "id": 1815,
+      "minimum_level": 1,
+      "name": "Devoted Goggles",
+      "slot": "Goggles"
+    },
+    {
+      "id": 1816,
+      "minimum_level": 1,
+      "name": "Devoted Necklace",
+      "slot": "Neck"
+    }
+  ],
+  "name": "Devoted Heart",
+  "tiers": [
+    {
+      "effects": [
+        {
+          "bonus_type": "Equipment",
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Equipment",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Positive Spell Power",
+              "stat_category": "magical",
+              "value": 36
+            }
+          ],
+          "damage": [],
+          "description": null,
+          "effect_id": 33,
+          "name": "Positive Spell Power",
+          "tier": null,
+          "value": 36,
+          "value2": null,
+          "verbose_name": "Equipment Positive Spell Power +36"
+        }
+      ],
+      "equipped_count": 2,
+      "id": 6,
+      "modifiers": [
+        {
+          "amount_type": "Simple",
+          "amounts": [
+            24
+          ],
+          "apply_as_item_effect": false,
+          "bonus": "Equipment",
+          "bonus_type": "Equipment",
+          "cap": null,
+          "damage": null,
+          "dice_bonus": null,
+          "dice_damage": null,
+          "dice_number": null,
+          "dice_sides": null,
+          "display_name": null,
+          "effect_type": "SpellPower",
+          "extra_types": null,
+          "id": 15553,
+          "is_item_specific": false,
+          "is_rare": false,
+          "percent": false,
+          "rank": null,
+          "requirements": [],
+          "sort_order": 0,
+          "stack_source": null,
+          "targets": [
+            "Positive"
+          ],
+          "value": null
+        }
+      ]
+    }
+  ]
+}

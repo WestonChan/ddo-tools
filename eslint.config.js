@@ -65,6 +65,10 @@ const exactRoleNameRestriction = {
         message:
           'getByRole with a string name needs exact: true — a second link or button containing the same text breaks the lookup.',
       },
+      {
+        selector: 'ImportDeclaration[source.value=/\\.json$/][attributes.length=0]',
+        message: 'JSON imports in e2e specs need with { type: "json" }.',
+      },
     ],
   },
 }

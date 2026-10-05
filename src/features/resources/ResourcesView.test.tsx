@@ -12,8 +12,9 @@ import {
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
-import type { Item, ItemAugmentSlot, ItemBonus, ItemSummary } from './queries/items'
+import type { Effect, Item, ItemAugmentSlot, ItemSummary } from './queries/items'
 import type { SetDetail } from './queries/sets'
+import capturedEffectsPage from './queries/fixtures/effects-page.json'
 import {
   resetResourceListSessionsForTests,
   setResourceListSession,
@@ -63,7 +64,6 @@ const BLOODSTONE_ITEM: Item = {
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],
-  bonuses: [],
   modifiers: [],
   effects: [],
   clickies: [],
@@ -86,7 +86,20 @@ let itemPageQueryState: {
   error: null,
 }
 let isItemDetailLoaded = true
-let itemBonuses: ItemBonus[] = []
+let itemEffects: Effect[] = []
+const STRENGTH_EFFECT: Effect = {
+  id: 1,
+  name: 'Strength',
+  verboseName: 'Strength +2',
+  description: null,
+  bonusType: 'Enhancement',
+  value: 2,
+  value2: null,
+  tier: null,
+  bonuses: [],
+  damage: [],
+  sortOrder: 0,
+}
 let itemAugmentSlots: ItemAugmentSlot[] = []
 let stackedSet: SetDetail | null = null
 const refetchMock = vi.fn()
@@ -112,7 +125,7 @@ vi.mock('./queries/useItems', () => ({
               ...BLOODSTONE_ITEM,
               id: selectedItem.id,
               name: selectedItem.name,
-              bonuses: itemBonuses,
+              effects: itemEffects,
               augmentSlots: itemAugmentSlots,
               setId: stackedSet?.id ?? null,
               setName: stackedSet?.name ?? null,
@@ -124,7 +137,12 @@ vi.mock('./queries/useItems', () => ({
   },
   useAdventurePackNames: () => ({ data: ['Vault of Night'] }),
   useEquipmentSlotNames: () => ({ data: ['Trinket'] }),
-  useEnchantmentNames: () => ({ data: ['Charisma'] }),
+  useEffectVocabulary: () => ({
+    data: { rows: [capturedEffectsPage.effects[0]], total: capturedEffectsPage.total },
+    isPending: false,
+  }),
+  useSetVocabulary: () => ({ data: { rows: [], total: 0 }, isPending: false }),
+  useEffectDetail: () => ({ data: undefined, isPending: false }),
   useRaidQuests: () => ({ data: [] }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
   useSet: (id: number | null) => ({
@@ -138,7 +156,7 @@ beforeEach(() => {
   sessionStorage.clear()
   resetResourceListSessionsForTests()
   isItemDetailLoaded = true
-  itemBonuses = []
+  itemEffects = []
   itemAugmentSlots = []
   stackedSet = null
   mockRouteParams = { category: 'items' }
@@ -162,8 +180,8 @@ describe('resource list sessions', () => {
   it('restores filters, match mode, set bonuses, search, sort, and scroll after leaving the view', async () => {
     const user = userEvent.setup()
     const view = render(<ResourcesView />)
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
-    await user.click(screen.getByRole('option', { name: 'Charisma' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('option', { name: /Acid Absorption.*Stat/ }))
     await user.click(screen.getByRole('button', { name: 'All' }))
     await user.click(screen.getByRole('checkbox', { name: 'Include set bonuses' }))
     await user.type(screen.getByRole('searchbox', { name: 'Search items' }), 'stone')
@@ -174,8 +192,8 @@ describe('resource list sessions', () => {
     await waitFor(() => expect(itemPageRequests.mock.lastCall?.[1]).toBe('stone'))
     const requestBeforeLeaving = itemPageRequests.mock.lastCall
     expect(requestBeforeLeaving?.[0]).toMatchObject({
-      enchantments: ['Charisma'],
-      enchantmentMatch: 'all',
+      bonuses: ['Acid Absorption'],
+      bonusMatch: 'all',
     })
     expect(requestBeforeLeaving?.[2]).toBe(true)
     expect(requestBeforeLeaving?.[3]).toEqual({ key: 'name', direction: 'asc' })
@@ -189,24 +207,24 @@ describe('resource list sessions', () => {
     )
     expect(screen.getByRole('button', { name: 'Show applied · 1' })).toBeInTheDocument()
     expect(restoredView.container.querySelector('.ledger-body')).toHaveProperty('scrollTop', 48)
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('checkbox', { name: 'Include set bonuses' })).toBeChecked()
     expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
     expect(itemPageRequests.mock.lastCall).toEqual(requestBeforeLeaving)
 
     act(() => setResourceListSession('sets', { searchQuery: 'wild' }))
     await user.click(screen.getByRole('button', { name: 'Clear filters' }))
-    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('')
+    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('stone')
     expect(screen.queryByRole('button', { name: 'Show applied · 1' })).toBeNull()
-    expect(itemPageRequests.mock.lastCall?.[0]).toMatchObject({ enchantments: [] })
-    expect(itemPageRequests.mock.lastCall?.[1]).toBe('')
+    expect(itemPageRequests.mock.lastCall?.[0]).toMatchObject({ bonuses: [] })
+    expect(itemPageRequests.mock.lastCall?.[1]).toBe('stone')
     expect(renderHook(() => useResourceListSession('sets')).result.current.searchQuery).toBe('wild')
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('checkbox', { name: 'Include set bonuses' })).not.toBeChecked()
     restoredView.unmount()
     resetResourceListSessionsForTests()
     render(<ResourcesView />)
-    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('')
+    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('stone')
     expect(screen.queryByRole('button', { name: 'Show applied · 1' })).toBeNull()
   })
 })
@@ -306,18 +324,7 @@ describe('ResourcesView keyboard shortcuts', () => {
   })
 
   it('closes a detail from an enchantment row and returns focus to the open item', async () => {
-    itemBonuses = [
-      {
-        id: 1,
-        name: 'Strength +2',
-        description: null,
-        bonusType: 'Enhancement',
-        statName: 'Strength',
-        value: 2,
-        value2: null,
-        sortOrder: 0,
-      },
-    ]
+    itemEffects = [STRENGTH_EFFECT]
     navigateMock.mockImplementation(({ to }: { to: string }) => {
       mockRouteParams = to.endsWith('/42') ? { category: 'items', id: '42' } : { category: 'items' }
     })
@@ -526,18 +533,7 @@ describe('ResourcesView detail pane', () => {
   })
 
   it('cancels a keyboard column move in the pane ledger without closing the detail', async () => {
-    itemBonuses = [
-      {
-        id: 1,
-        name: 'Strength +2',
-        description: null,
-        bonusType: 'Enhancement',
-        statName: 'Strength',
-        value: 2,
-        value2: null,
-        sortOrder: 0,
-      },
-    ]
+    itemEffects = [STRENGTH_EFFECT]
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
     const pane = screen.getByRole('region', { name: 'Item details' })
@@ -591,7 +587,7 @@ describe('ResourcesView detail pane', () => {
     ]
     mockRouteParams = { category: 'items', id: '42' }
     render(<ResourcesView />)
-    const slotButton = screen.getByRole('button', { name: 'Red' })
+    const slotButton = screen.getByRole('button', { name: 'Red slot' })
     await userEvent.click(slotButton)
     expect(slotButton).toHaveAttribute('aria-expanded', 'true')
 

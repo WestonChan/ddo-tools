@@ -1,0 +1,1035 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": null,
+      "id": 48,
+      "is_rare": false,
+      "loot_type": null,
+      "name": "Shadowfell Conspiracy",
+      "wiki_url": "https://ddowiki.com/page/Shadowfell_Conspiracy"
+    },
+    {
+      "chest": "end chest",
+      "id": 48,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Shadowfell Conspiracy",
+      "wiki_url": "https://ddowiki.com/page/Shadowfell_Conspiracy"
+    }
+  ],
+  "armor": null,
+  "augment_slots": [
+    {
+      "family": "crafting",
+      "label": "crafting: variant",
+      "options": [
+        {
+          "description": "Accuracy IX: Passive: +9 Competence bonus to attack rolls",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Attack Bonus",
+                  "stat_category": "martial",
+                  "value": 9
+                }
+              ],
+              "damage": [],
+              "description": "Provides a 9 Competence bonus to your attack rolls.",
+              "effect_id": 9,
+              "name": "Attack Bonus",
+              "tier": null,
+              "value": 9,
+              "value2": null,
+              "verbose_name": "Competence Attack Bonus 9"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3491,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                9
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "Weapon_Attack",
+              "extra_types": null,
+              "id": 12813,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": null,
+              "value": null
+            }
+          ],
+          "name": "Accuracy IX",
+          "sets": []
+        },
+        {
+          "description": "Natural Armor +9: Passive: +9 Natural Armor Bonus to Armor Class.",
+          "effects": [
+            {
+              "bonus_type": "Resistance",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Resistance",
+                  "scale": 1.0,
+                  "stat": "Armor Class",
+                  "stat_category": "defensive",
+                  "value": 9
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 9 Natural Armor Bonus to Armor Class.",
+              "effect_id": 414,
+              "name": "Natural Armor",
+              "tier": null,
+              "value": 9,
+              "value2": null,
+              "verbose_name": "Resistance Natural Armor 9"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3492,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                9
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Resistance",
+              "bonus_type": "Resistance",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "NaturalArmor",
+              "extra_types": null,
+              "id": 12814,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": null,
+              "value": null
+            }
+          ],
+          "name": "Natural Armor +9",
+          "sets": []
+        },
+        {
+          "description": "Resistance +9: Passive: +9 Resistance bonus to Fortitude, Reflex, and Will Saving Throws.",
+          "effects": [
+            {
+              "bonus_type": "Resistance",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Resistance",
+                  "scale": 1.0,
+                  "stat": "Saving Throws",
+                  "stat_category": "defensive",
+                  "value": 9
+                }
+              ],
+              "damage": [],
+              "description": null,
+              "effect_id": 161,
+              "name": "Saving Throws",
+              "tier": null,
+              "value": 9,
+              "value2": null,
+              "verbose_name": "Resistance Saving Throws +9"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3493,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                9
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Resistance",
+              "bonus_type": "Resistance",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SaveBonus",
+              "extra_types": null,
+              "id": 12815,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": null,
+              "value": null
+            }
+          ],
+          "name": "Resistance +9",
+          "sets": []
+        },
+        {
+          "description": "Wizardry IX: This item grants the wearer +225 maximum spell points. Sorcerers and Favored Souls gain up to double spell points from items",
+          "effects": [
+            {
+              "bonus_type": "Enhancement",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Enhancement",
+                  "scale": 1.0,
+                  "stat": "Spell Points",
+                  "stat_category": "magical",
+                  "value": 225
+                }
+              ],
+              "damage": [],
+              "description": null,
+              "effect_id": 22,
+              "name": "Spell Points",
+              "tier": null,
+              "value": 225,
+              "value2": null,
+              "verbose_name": "Enhancement Spell Points +225"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3494,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                225
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Enhancement",
+              "bonus_type": "Enhancement",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SpellPoints",
+              "extra_types": null,
+              "id": 12816,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": null,
+              "value": null
+            }
+          ],
+          "name": "Wizardry IX",
+          "sets": []
+        },
+        {
+          "description": "Bluff +19: Passive: +19 Competence bonus to the Bluff skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Bluff",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Bluff skill.",
+              "effect_id": 42,
+              "name": "Bluff",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Bluff 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3495,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12817,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Bluff"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Bluff +19",
+          "sets": []
+        },
+        {
+          "description": "Concentration +19: Passive: +19 Competence bonus to the Concentration skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Concentration",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Concentration skill.",
+              "effect_id": 43,
+              "name": "Concentration",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Concentration 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3496,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12818,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Concentration"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Concentration +19",
+          "sets": []
+        },
+        {
+          "description": "Diplomacy +19: Passive: +19 Competence bonus to the Diplomacy skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Diplomacy",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Diplomacy skill.",
+              "effect_id": 44,
+              "name": "Diplomacy",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Diplomacy 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3497,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12819,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Diplomacy"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Diplomacy +19",
+          "sets": []
+        },
+        {
+          "description": "Haggle +19: Passive: +19 Competence bonus to the Haggle skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Haggle",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Haggle skill.",
+              "effect_id": 46,
+              "name": "Haggle",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Haggle 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3498,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12820,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Haggle"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Haggle +19",
+          "sets": []
+        },
+        {
+          "description": "Heal +19: Passive: +19 Competence bonus to the Heal skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Heal",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Heal skill.",
+              "effect_id": 47,
+              "name": "Heal",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Heal 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3499,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12821,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Heal"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Heal +19",
+          "sets": []
+        },
+        {
+          "description": "Intimidate +19: Passive: +19 Competence bonus to the Intimidate skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Intimidate",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Intimidate skill.",
+              "effect_id": 49,
+              "name": "Intimidate",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Intimidate 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3500,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12822,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Intimidate"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Intimidate +19",
+          "sets": []
+        },
+        {
+          "description": "Listen +19: Passive: +19 Competence bonus to the Listen skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Listen",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Listen skill.",
+              "effect_id": 51,
+              "name": "Listen",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Listen 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3501,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12823,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Listen"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Listen +19",
+          "sets": []
+        },
+        {
+          "description": "Search +19: Passive: +19 Competence bonus to the Search skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Search",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Search skill.",
+              "effect_id": 56,
+              "name": "Search",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Search 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3502,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12824,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Search"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Search +19",
+          "sets": []
+        },
+        {
+          "description": "Spellcraft +19: Passive: +19 Competence bonus to the Spellcraft skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Spellcraft",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Spellcraft skill.",
+              "effect_id": 57,
+              "name": "Spellcraft",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Spellcraft 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3503,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12825,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Spellcraft"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Spellcraft +19",
+          "sets": []
+        },
+        {
+          "description": "Spot +19: Passive: +19 Competence bonus to the Spot skill.",
+          "effects": [
+            {
+              "bonus_type": "Competence",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "scale": 1.0,
+                  "stat": "Spot",
+                  "stat_category": "skill",
+                  "value": 19
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 19 Competence bonus to the Spot skill.",
+              "effect_id": 58,
+              "name": "Spot",
+              "tier": null,
+              "value": 19,
+              "value2": null,
+              "verbose_name": "Competence Spot 19"
+            }
+          ],
+          "grants_slot": null,
+          "icon": null,
+          "id": 3504,
+          "min_level": 25,
+          "modifiers": [
+            {
+              "amount_type": "Simple",
+              "amounts": [
+                19
+              ],
+              "apply_as_item_effect": false,
+              "bonus": "Competence",
+              "bonus_type": "Competence",
+              "cap": null,
+              "damage": null,
+              "dice_bonus": null,
+              "dice_damage": null,
+              "dice_number": null,
+              "dice_sides": null,
+              "display_name": null,
+              "effect_type": "SkillBonus",
+              "extra_types": null,
+              "id": 12826,
+              "is_item_specific": false,
+              "is_rare": false,
+              "percent": false,
+              "rank": null,
+              "requirements": [],
+              "sort_order": 0,
+              "stack_source": null,
+              "targets": [
+                "Spot"
+              ],
+              "value": null
+            }
+          ],
+          "name": "Spot +19",
+          "sets": []
+        }
+      ],
+      "qualifier": null,
+      "slot_type_id": 48,
+      "sort_order": 0,
+      "variant": "variant"
+    },
+    {
+      "family": "standard",
+      "label": "yellow",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 7,
+      "sort_order": 1,
+      "variant": "yellow"
+    }
+  ],
+  "category": "Jewelry",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "Lost to a pocket, away from it's locket, the gem was precious indeed.\nOnce fit for a king, of whom bards did sing, the necklace is now in need.",
+  "drop_location": "Friends in Low Places, end chest (Epic Normal); Shadow Over Wheloon, quest chain end reward (Epic)",
+  "effects": [
+    {
+      "bonus_type": "Enhancement",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Enhancement",
+          "scale": 1.0,
+          "stat": "Charisma",
+          "stat_category": "ability",
+          "value": 8
+        }
+      ],
+      "damage": [],
+      "description": "Passive: 8 Enhancement bonus to Charisma.",
+      "effect_id": 6,
+      "name": "Charisma",
+      "tier": null,
+      "value": 8,
+      "value2": null,
+      "verbose_name": "Enhancement Charisma 8"
+    }
+  ],
+  "enhancement_bonus": null,
+  "events": [],
+  "icon": "Necklace_17b",
+  "id": 7631,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": null,
+  "material": "Gold",
+  "minimum_level": 25,
+  "modifiers": [],
+  "name": "Stolen Necklace (Level 25)",
+  "quest_chains": [
+    {
+      "id": 22,
+      "is_rare": false,
+      "name": "Shadow Over Wheloon",
+      "wiki_url": "https://ddowiki.com/page/Shadow_Over_Wheloon"
+    }
+  ],
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": [
+        "normal",
+        "hard",
+        "elite",
+        "reaper"
+      ],
+      "epic_level": 26,
+      "id": 423,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 16,
+      "loot_type": "chest",
+      "name": "Friends in Low Places",
+      "pack": "Shadowfell Conspiracy",
+      "patron": "Purple Dragon Knights"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Neck",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 423,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "Friends in Low Places",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Friends_in_Low_Places"
+    },
+    {
+      "character_level": null,
+      "chest": null,
+      "cost": null,
+      "id": 22,
+      "is_rare": false,
+      "kind": "quest_chain",
+      "loot_type": null,
+      "name": "Shadow Over Wheloon",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Shadow_Over_Wheloon"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": null,
+  "wiki_url": "https://ddowiki.com/page/Item:Stolen_Necklace_(Level_25)"
+}

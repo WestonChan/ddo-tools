@@ -79,8 +79,10 @@ function isItemListFilters(value: unknown): value is ItemListFilters {
     isRecord(value) &&
     isRange(value.ml) &&
     isStringArray(value.slot) &&
-    isStringArray(value.enchantments) &&
-    (value.enchantmentMatch === 'any' || value.enchantmentMatch === 'all') &&
+    isStringArray(value.bonuses) &&
+    (value.bonusMatch === 'any' || value.bonusMatch === 'all') &&
+    isStringArray(value.set) &&
+    (value.setMatch === 'any' || value.setMatch === 'all') &&
     isStringArray(value.pack) &&
     isStringArray(value.raid) &&
     typeof value.isRareOnly === 'boolean' &&

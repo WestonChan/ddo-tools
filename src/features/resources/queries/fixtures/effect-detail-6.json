@@ -1,0 +1,236 @@
+{
+  "augments": {
+    "augments": [
+      {
+        "amount_source": "owner",
+        "bonus_type": "Quality",
+        "effect": "Charisma",
+        "effect_id": 6,
+        "id": 1465,
+        "line": {
+          "bonus_type": "Quality",
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Quality",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Charisma",
+              "stat_category": "ability",
+              "value": 1
+            }
+          ],
+          "damage": [],
+          "description": "Passive: +1 Quality bonus to Charisma.",
+          "effect_id": 6,
+          "name": "Charisma",
+          "tier": null,
+          "value": 1,
+          "value2": null,
+          "verbose_name": "Quality Charisma +1"
+        },
+        "lines": [
+          {
+            "amount_source": "owner",
+            "bonus_type": "Quality",
+            "effect": "Charisma",
+            "effect_id": 6,
+            "line": {
+              "bonus_type": "Quality",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Quality",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Charisma",
+                  "stat_category": "ability",
+                  "value": 1
+                }
+              ],
+              "damage": [],
+              "description": "Passive: +1 Quality bonus to Charisma.",
+              "effect_id": 6,
+              "name": "Charisma",
+              "tier": null,
+              "value": 1,
+              "value2": null,
+              "verbose_name": "Quality Charisma +1"
+            },
+            "scale": 1.0,
+            "value": 1,
+            "value2": null
+          }
+        ],
+        "name": "+1 Quality Charisma",
+        "scale": 1.0,
+        "value": 1,
+        "value2": null
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 49
+  },
+  "bonuses": [],
+  "category": "ability",
+  "damage": [],
+  "default_value": null,
+  "default_value2": null,
+  "description_template": "Passive: {1} %b1 bonus to Charisma.",
+  "id": 6,
+  "items": {
+    "items": [
+      {
+        "amount_source": "constant",
+        "bonus_type": "Penalty",
+        "effect": "Curse of Repulsiveness",
+        "effect_id": 346,
+        "id": 461,
+        "line": {
+          "bonus_type": "Penalty",
+          "bonuses": [
+            {
+              "amount_source": "constant",
+              "bonus_type": "Penalty",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Charisma",
+              "stat_category": "ability",
+              "value": -1
+            }
+          ],
+          "damage": [],
+          "description": "Passive -1 Penalty to Charisma. The minimum level required to equip this item is lower than normal due to this curse.",
+          "effect_id": 346,
+          "name": "Curse of Repulsiveness",
+          "tier": null,
+          "value": -1,
+          "value2": null,
+          "verbose_name": "Curse of Repulsiveness"
+        },
+        "lines": [
+          {
+            "amount_source": "constant",
+            "bonus_type": "Penalty",
+            "effect": "Curse of Repulsiveness",
+            "effect_id": 346,
+            "line": {
+              "bonus_type": "Penalty",
+              "bonuses": [
+                {
+                  "amount_source": "constant",
+                  "bonus_type": "Penalty",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Charisma",
+                  "stat_category": "ability",
+                  "value": -1
+                }
+              ],
+              "damage": [],
+              "description": "Passive -1 Penalty to Charisma. The minimum level required to equip this item is lower than normal due to this curse.",
+              "effect_id": 346,
+              "name": "Curse of Repulsiveness",
+              "tier": null,
+              "value": -1,
+              "value2": null,
+              "verbose_name": "Curse of Repulsiveness"
+            },
+            "scale": 1.0,
+            "value": -1,
+            "value2": null
+          }
+        ],
+        "name": "Accomplice",
+        "scale": 1.0,
+        "value": -1,
+        "value2": null
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 246
+  },
+  "kind": "stat",
+  "name": "Charisma",
+  "set_tiers": {
+    "limit": 1,
+    "offset": 0,
+    "set_tiers": [
+      {
+        "amount_source": "owner",
+        "bonus_type": "Artifact",
+        "effect": "Charisma",
+        "effect_id": 6,
+        "equipped_count": 3,
+        "id": 242,
+        "line": {
+          "bonus_type": "Artifact",
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Artifact",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Charisma",
+              "stat_category": "ability",
+              "value": 3
+            }
+          ],
+          "damage": [],
+          "description": "Passive: +3 Artifact bonus to Charisma.",
+          "effect_id": 6,
+          "name": "Charisma",
+          "tier": null,
+          "value": 3,
+          "value2": null,
+          "verbose_name": "+3 Artifact Bonus to Charisma"
+        },
+        "lines": [
+          {
+            "amount_source": "owner",
+            "bonus_type": "Artifact",
+            "effect": "Charisma",
+            "effect_id": 6,
+            "line": {
+              "bonus_type": "Artifact",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Artifact",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Charisma",
+                  "stat_category": "ability",
+                  "value": 3
+                }
+              ],
+              "damage": [],
+              "description": "Passive: +3 Artifact bonus to Charisma.",
+              "effect_id": 6,
+              "name": "Charisma",
+              "tier": null,
+              "value": 3,
+              "value2": null,
+              "verbose_name": "+3 Artifact Bonus to Charisma"
+            },
+            "scale": 1.0,
+            "value": 3,
+            "value2": null
+          }
+        ],
+        "name": "Alluring Elocution (3)",
+        "scale": 1.0,
+        "set_id": 203,
+        "set_name": "Alluring Elocution",
+        "value": 3,
+        "value2": null
+      }
+    ],
+    "total": 36
+  },
+  "tier": null,
+  "verbose_name_template": "%b1 Charisma +{1}",
+  "wiki_url": null
+}

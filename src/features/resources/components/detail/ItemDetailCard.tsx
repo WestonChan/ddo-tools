@@ -13,7 +13,7 @@ import {
 } from '../../../../components'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import { DetailHeader } from './DetailHeader'
-import { EnchantmentList } from './EnchantmentList'
+import { EffectList } from './EffectList'
 import type { SetDetail } from '../../queries/sets'
 import { sentenceCased } from './sentenceCased'
 import {
@@ -448,13 +448,13 @@ function HoverSourceSummary({
 export function ItemDetailCard({
   item,
   variant = 'pane',
-  matchingEnchantments = [],
+  matchingBonuses = [],
   setDetail,
   onOpenItem,
 }: {
   item: Item
   variant?: 'pane' | 'hover'
-  matchingEnchantments?: string[]
+  matchingBonuses?: string[]
   setDetail?: SetDetail | null
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element {
@@ -577,16 +577,15 @@ export function ItemDetailCard({
                 ]
               : []
           })}
-        <EnchantmentList
-          key={`enchantments-${item.id}`}
+        <EffectList
+          key={`effects-${item.id}`}
+          item={item}
           itemName={item.name}
-          bonuses={item.bonuses}
           modifiers={item.modifiers}
           effects={item.effects}
-          enhancementBonus={item.enhancementBonus}
           setDetail={setDetail}
           variant={variant}
-          matchingEnchantments={matchingEnchantments}
+          matchingBonuses={matchingBonuses}
           onOpenItem={onOpenItem}
         />
         {variant === 'pane' && item.clickies.length > 0 && (

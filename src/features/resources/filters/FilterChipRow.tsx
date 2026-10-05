@@ -9,7 +9,12 @@ import {
   type RefObject,
 } from 'react'
 import { ChevronDown, X } from 'lucide-react'
-import { AnchoredMenu, Combobox, type AnchoredMenuCloseReason } from '../../../components'
+import {
+  AnchoredMenu,
+  Combobox,
+  type AnchoredMenuCloseReason,
+  type FilterOption,
+} from '../../../components'
 import { useRovingGroup } from '../../../hooks'
 import {
   appliedFilterValues,
@@ -34,12 +39,13 @@ interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue
   onClearAll: () => void
   extraControls?: Record<string, ReactNode>
   searchControls?: Record<string, ReactNode>
-  hasSearchTerm?: boolean
   focusFallbackRef?: RefObject<HTMLElement | null>
   onPickerOpen?: (key: keyof Values) => void
   loadingPickers?: ReadonlySet<string>
   pickerErrors?: Record<string, ReactNode>
   resultCount?: ReactNode
+  onPickerSearch?: (key: keyof Values, searchQuery: string) => void
+  renderPickerHover?: (key: keyof Values, option: FilterOption) => ReactNode
 }
 
 interface FilterChipProps {
@@ -59,6 +65,8 @@ interface FilterChipProps {
   onFocusChip: () => void
   onNavigateChip: (event: KeyboardEvent<HTMLButtonElement>) => void
   onAnchorChange: (button: HTMLButtonElement | null) => void
+  onSearchChange?: (searchQuery: string) => void
+  renderHoverCard?: (option: FilterOption) => ReactNode
 }
 
 function RangePopover({
@@ -163,11 +171,18 @@ function FilterChip({
   onFocusChip,
   onNavigateChip,
   onAnchorChange,
+  onSearchChange,
+  renderHoverCard,
 }: FilterChipProps): JSX.Element {
   const anchorRef = useRef<HTMLButtonElement>(null)
   const isSelected = isFilterSet(definition, value)
   const isToggle = definition.kind === 'toggle'
   const chipText = filterChipText(definition, value)
+  const accessibleName = definition.accessibleName
+    ? isSelected && definition.kind === 'range'
+      ? `${definition.accessibleName}: ${chipText}`
+      : definition.accessibleName
+    : undefined
   const badgeCount =
     definition.kind === 'multi' && Array.isArray(value)
       ? value.length
@@ -189,6 +204,7 @@ function FilterChip({
           (isOpen ? ' filter-chip--open' : '')
         }
         aria-haspopup={isToggle ? undefined : 'listbox'}
+        aria-label={accessibleName}
         aria-expanded={isToggle ? undefined : isOpen}
         aria-pressed={isToggle ? Boolean(value) : undefined}
         data-tip={filterChipHint(definition, value)}
@@ -251,6 +267,12 @@ function FilterChip({
           searchControl={searchControl}
           isLoading={isLoading}
           errorContent={errorContent}
+          onSearchChange={onSearchChange}
+          shouldFilterLocally={!definition.isServerSearched}
+          shouldPreserveOptionOrder={definition.shouldPreserveOptionOrder}
+          optionCount={definition.optionCount}
+          renderHoverCard={renderHoverCard}
+          hoverKind={definition.hoverKind}
         />
       )}
       {isOpen && definition.kind === 'multi' && (
@@ -266,6 +288,12 @@ function FilterChip({
           searchControl={searchControl}
           isLoading={isLoading}
           errorContent={errorContent}
+          onSearchChange={onSearchChange}
+          shouldFilterLocally={!definition.isServerSearched}
+          shouldPreserveOptionOrder={definition.shouldPreserveOptionOrder}
+          optionCount={definition.optionCount}
+          renderHoverCard={renderHoverCard}
+          hoverKind={definition.hoverKind}
         />
       )}
     </div>
@@ -279,12 +307,13 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   onClearAll,
   extraControls,
   searchControls,
-  hasSearchTerm = false,
   focusFallbackRef,
   onPickerOpen,
   loadingPickers,
   pickerErrors,
   resultCount,
+  onPickerSearch,
+  renderPickerHover,
 }: FilterChipRowProps<Values>): JSX.Element {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [isAppliedOpen, setIsAppliedOpen] = useState(false)
@@ -296,7 +325,7 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
     focusItem: (key) => chipButtonsByKey.current.get(key)?.focus(),
   })
   const appliedValues = appliedFilterValues(definitions, values)
-  const hasActiveFilters = appliedValues.length > 0 || hasSearchTerm
+  const hasActiveFilters = appliedValues.length > 0
   const appliedGroups = definitions.reduce<
     {
       label: string
@@ -390,6 +419,16 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
                 rangeCommitRef={rangeCommitRef}
                 isLoading={loadingPickers?.has(String(definition.key))}
                 errorContent={pickerErrors?.[String(definition.key)]}
+                onSearchChange={
+                  definition.kind === 'multi' && definition.isServerSearched
+                    ? (searchQuery) => onPickerSearch?.(definition.key, searchQuery)
+                    : undefined
+                }
+                renderHoverCard={
+                  renderPickerHover
+                    ? (option) => renderPickerHover(definition.key, option)
+                    : undefined
+                }
                 tabIndex={chipGroup.tabStopKey === String(definition.key) ? 0 : -1}
                 onFocusChip={() => chipGroup.rememberFocus(String(definition.key))}
                 onNavigateChip={(event) => {

@@ -1,16 +1,29 @@
 {
   "adds_augment": null,
-  "adventure_packs": [],
-  "bonuses": [
+  "adventure_packs": [
     {
-      "bonus_type": "Artifact",
-      "description": null,
-      "id": 4719,
-      "name": "Physical Resistance Rating +10",
-      "stat": "Physical Resistance Rating",
-      "stat_category": "defensive",
-      "value": 10,
-      "value2": null
+      "chest": "end chest",
+      "id": 15,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Fall of the Night Brigade",
+      "wiki_url": "https://ddowiki.com/page/Fall_of_the_Night_Brigade"
+    },
+    {
+      "chest": "end chest",
+      "id": 2,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Magic of Myth Drannor",
+      "wiki_url": "https://ddowiki.com/page/Magic_of_Myth_Drannor"
+    },
+    {
+      "chest": "optional chest",
+      "id": 13,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Tavern Tales",
+      "wiki_url": "https://ddowiki.com/page/Tavern_Tales"
     }
   ],
   "choose_level": false,
@@ -18,6 +31,30 @@
   "description": "+10 Artifact Bonus to Physical Resistance Rating.\nDrops in: Secrets of the Red Wizards, end chest\nThe Darkness and the Light, end chest\nThe Covered Culvert, optional chest\nZoo Creeper, end chest",
   "dual_values": false,
   "effect_description": null,
+  "effects": [
+    {
+      "bonus_type": "Artifact",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Artifact",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Physical Resistance Rating",
+          "stat_category": "defensive",
+          "value": 10
+        }
+      ],
+      "damage": [],
+      "description": null,
+      "effect_id": 14,
+      "name": "Physical Resistance Rating",
+      "tier": null,
+      "value": 10,
+      "value2": null,
+      "verbose_name": "Artifact Physical Resistance Rating +10"
+    }
+  ],
   "enter_value": false,
   "family": "SunAndMoon",
   "grants_augment": null,

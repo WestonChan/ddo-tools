@@ -82,6 +82,10 @@ describe('filter model', () => {
   })
 
   it('keeps single and multi chip labels while hints expose the selected values', () => {
+    expect(filterChipText(definitions[0], { min: '', max: '' })).toBe('ML')
+    expect(filterChipText(definitions[0], { min: '20', max: '32' })).toBe('20–32')
+    expect(filterChipText(definitions[0], { min: '20', max: '' })).toBe('≥ 20')
+    expect(filterChipText(definitions[0], { min: '', max: '32' })).toBe('≤ 32')
     expect(filterChipText(definitions[1], 'Back')).toBe('Slot')
     expect(filterChipHint(definitions[1], 'Back')).toBe('Slot: Back')
     expect(filterChipText(definitions[2], ['Strength'])).toBe('Bonuses')

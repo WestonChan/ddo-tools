@@ -1,0 +1,125 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [],
+  "armor": {
+    "adamantine_body": null,
+    "arcane_spell_failure": 15,
+    "armor_bonus": null,
+    "armor_check_penalty": -1,
+    "armor_type": "Shield",
+    "damage_reduction": 9,
+    "max_dex_bonus": 0,
+    "mithral_body": null,
+    "shield_bonus": 9
+  },
+  "augment_slots": [],
+  "category": "Shield",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "This item cannot be fed to sentient jewels .",
+  "drop_location": "Advance to level 15, End reward",
+  "effects": [
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "On Shield Bash: +2d4 Bludgeoning damage. On Melee Hit: +4% Chance to automatically hit your enemy with a Shield Bash attack.",
+      "effect_id": 383,
+      "name": "Bashing IV",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Bashing IV"
+    },
+    {
+      "bonus_type": "Insight",
+      "bonuses": [
+        {
+          "amount_source": "default",
+          "bonus_type": "Insight",
+          "group": null,
+          "scale": 0.5,
+          "stat": "Armor Class",
+          "stat_category": "defensive",
+          "value": 1
+        },
+        {
+          "amount_source": "default",
+          "bonus_type": "Insight",
+          "group": null,
+          "scale": 0.5,
+          "stat": "Saving Throws",
+          "stat_category": "defensive",
+          "value": 1
+        }
+      ],
+      "damage": [],
+      "description": "This item enchants its user with incredible awareness and speed, granting a 2 Insight bonus to AC and to Saves.",
+      "effect_id": 384,
+      "name": "Riposte",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Riposte 2"
+    }
+  ],
+  "enhancement_bonus": 4,
+  "events": [],
+  "icon": "Shield_4l",
+  "id": 490,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": "Large Shield",
+  "material": "Dwarven Iron",
+  "minimum_level": 15,
+  "modifiers": [],
+  "name": "Aegis of the Deep",
+  "quest_chains": [],
+  "quests": [],
+  "race_required": "Duergar Mindcleaver",
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Off Hand",
+  "sources": [
+    {
+      "character_level": 15,
+      "chest": null,
+      "cost": null,
+      "id": null,
+      "is_rare": false,
+      "kind": "starter",
+      "loot_type": null,
+      "name": "Advance to level 15",
+      "tier": null,
+      "wiki_url": null
+    }
+  ],
+  "starter_rewards": [
+    {
+      "character_level": 15
+    }
+  ],
+  "vendors": [],
+  "weapon": {
+    "attack_modifier": "Strength",
+    "base_dice_bonus": null,
+    "base_dice_count": 1,
+    "base_dice_sides": 8,
+    "critical": "20 / x2",
+    "critical_multiplier": 2,
+    "critical_threat_range": 1,
+    "damage": "1[1d8] + 4 Bludgeon, Magic",
+    "damage_modifier": "Strength",
+    "damage_multiplier": 1.0,
+    "dr_bypass": [
+      "Bludgeon",
+      "Magic"
+    ],
+    "handedness": "Off-hand",
+    "proficiency": null,
+    "weapon_type": "Large Shield"
+  },
+  "wiki_url": "https://ddowiki.com/page/Item:Aegis_of_the_Deep"
+}

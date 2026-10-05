@@ -939,8 +939,8 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | V7 | done | Wiki gap-fill -- quest loot rarity, quest facts, all 37 crafting systems and blank descriptions read from ddowiki into ETL overrides; the unread parts of Maetrim's files; per-table ledger in `docs/notes/Data Verification.md` |
 | V7b | done | Item sources -- every item has a structured source: vendors, events, crafting outputs, challenges and starter gear join quests, chains, sagas and packs; `drops` becomes `sources` and provenance becomes `provenance`; the "every item has a source" integrity check turns hard |
 | 4d | done | Filter UX overhaul -- chip-row filters sent as `/v1/items` parameters, shared `Combobox`, `LedgerTable` (sort, resize, reorder, arrow keys), `HoverCard` system with pinning, the designed item detail card |
-| **4e** | **→ NEXT** | Enchantment lines (the stat DB rework) -- kinds, lines and stat rows replace `bonuses`/`effects`; `bonus_alias`; spec decided 2026-10-03, see the phase entry |
-| 3b | planned | Sentry in production, then bug reports through it -- the production deploy gets the Sentry variables it has never had and the build fails without them; Sentry's User Feedback widget replaces every pre-filled GitHub issue link; a same-origin tunnel so ad blockers don't drop reports |
+| 4e | done | Effects and bonuses (the stat DB rework) -- stats, named effects and stat groups in one `effects` table, bonuses through `owner_bonuses`, `/v1/effects` and the `bonus=` filter, the site on the new shape; deferred chunks listed in the phase entry |
+| **3b** | **→ NEXT** | Sentry in production, then bug reports through it -- the production deploy gets the Sentry variables it has never had and the build fails without them; Sentry's User Feedback widget replaces every pre-filled GitHub issue link; a same-origin tunnel so ad blockers don't drop reports |
 | 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
 | 4g | planned | Polish -- filter persistence, sortable picker table |
 | 5 | planned | Characters view & build context -- `user.db`, Zustand stores |
@@ -949,6 +949,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 7 | planned | Build Plan (single scrollable page) |
 | 8 | planned | Gear |
 | V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button. Moved after Phase 8 on 2026-10-01: ships once builds and gear are real |
+| V9 | planned | Editable source tree -- the dataset as human-readable files (one per item, quest, set, effect; quests and their loot under their pack), edited by hand or PR, built into SQLite; Maetrim's weekly updates arrive as reviewable diffs. Proposed 2026-10-05; decisions open, see the phase entry |
 | 9 | planned | Comparison mode |
 | 10 | planned | Farm checklist |
 | 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
@@ -1360,6 +1361,26 @@ when missed, scaling by the value) get a later `enchantment_damage` table with a
 texts; the 45/117 heroic and legendary pairs) get `enchantment_saves` in the DC/CC capture step; conditions,
 durations and stacks stay prose for the Phase 6 engine. Nothing else earns a column.
 
+**Shipped 2026-10-05 (ddo-data `enchantment-map`, ddo-tools `effects-api`, landed together).** `effects` holds stats
+(`is_stat`, seed ids kept), named effects and stat groups (one level of stats: the six ability skill groups,
+All Ability Scores, Sheltering, Doublestrike and Doubleshot); `effect_bonuses` (stat or group, amount from a
+link slot or a constant, `scale` and `rounding`, a nullable trigger) holds rows only for named effects; owner
+links carry the values and, where the definition leaves it open, the type; `owner_bonuses` is the one read
+path, with `amount_source`, `scale` and the group per bonus; `effect_tier_groups`, `triggers` and
+`effect_damage` (Acid II first) are in. The API serves `/v1/effects` (stats, effects and groups with `kind`,
+one-directional search), `/v1/effects/{id}` (carriers per link), item detail `effects[].bonuses[]` with
+`damage[]` and `tier`, and `bonus=` with `Stat:Type`, repeated keys and `_match`; every list column sorts;
+response schemas are typed and `cargo xtask validate-api` checks a full build's real responses before deploy.
+Speed, Deception and Command are effects; Melee and Ranged Attack Speed replaced Attack Speed; the wiki read
+filled 16 missing values and merged four Docent of Shadow duplicates. The site renders the lines, marks
+derived numbers, groups a line's bonuses on hover, and the Bonuses picker follows the Item Filters design.
+Each line carries `name` (no bonus type or value, since the table has columns for both), `verbose_name` (the
+full line) and `description`; identifier-like effect names ("Wizardry Number") were renamed and a WARN keeps
+them out. `/v1/items` gained `set=` (repeated keys, `set_match`) with a Set chip on the site, and item detail
+lists each drop location once (`adventure_packs` holds pack-wide drops only; a UNIQUE index on `sources` and a
+HARD check keep duplicates out).
+Corrections: 430 applied, 0 stale (392 set-tier adds retired as our writer's own gaps).
+
 **Deferred, each its own small chunk after the three land (decided 2026-10-03).**
 1. `enchantment_damage`: procs with damage (755 of Maetrim's texts): dice or a min–max range, damage type,
    `trigger` (on hit, on critical, on vorpal, when missed in melee), scaling by the link value (Riposte's
@@ -1391,6 +1412,45 @@ durations and stacks stay prose for the Phase 6 engine. Nothing else earns a col
    for what is not a bonus (conditions, procs, mechanic flags) until the damage, saves and conditions chunks
    absorb it. Ahead of Phase 6.
 6. `bonus_alias` for Phase 5b's selectors.
+7. **Stable ids across builds (before Phase 8 / V8).** Item and effect ids renumber whenever upstream or a
+   wiki file adds or removes a row (49 item ids moved when two wiki duplicates went), so a page cached under
+   the API's `max-age=300, stale-while-revalidate=3600` can pair an old item response with a new effect id for
+   up to an hour after a deploy, and saved builds (V8) must not store ids that move. Fix: a committed
+   name → id registry in `ddo-data` that the ETL reads and appends to, so an entity keeps its id for life.
+8. **Cleanup data decisions found during 4e:** the Melee/Thrown feats whose attack speed is a Stacks list
+   (Adept, Grandmaster and Master of Forms, Wind Stance); Shadow Striker's ranged speed (15 versus its text's
+   20%); Maetrim's "Charisma/Strength/Wisdom Skills - Exceptional" typed Competence while their text says
+   Exceptional; further prefixed-name wiki duplicates (Cloak of Night, Robe of Shadow); 43 more stat-group
+   candidates (multi-element Lore and Spell Power lines, absorption lines, Parrying, Speed numerals); typed
+   serialized handlers so `response_schemas.rs` is derived rather than maintained beside the handlers. The
+   "Skills - Exceptional" typing was fixed during 4e. The effect-name review list (716 rows: 475 names carrying
+   a value such as "Holy 6", 54 template mismatches, duplicates and prose names) is this cleanup's work list.
+   Found by the wiki golden set: `Combat Mastery` (144 items) is probably a group of Trip, Sunder and Stun DC and
+   Tactics, which the Dolorous augments grant one by one; `Spell DCs` and `Spell Focus Mastery` look like one
+   stat under two names; the Heroic Dolorous Quality Combat Mastery augment repeats its Stun DC row. Each
+   changes resolved bonuses, so each needs its own decision.
+   From the landing reviews (2026-10-06), data: Radiance Lore grants only Light Spell Lore (Maetrim lists the
+   alignments too); Permanent Efficacy ("+20 Alchemical bonus to each Spell Power") grants Universal Spell
+   Power; Quality Kinetic Intensity grants nothing though Force Spell Critical Damage exists; the "Epic X"
+   challenge rows at levels 15–20 duplicate the "X - EPIC" rows, and challenges are not flagged free to play;
+   Sun-and-Moon gems get no source from their Cerulean Hills drop text; Nether Orb's Orb Bonus grants only
+   Spell DCs; set 239 carries an empty "+4 Profane bonus to Attack and Damage" line beside its two stat lines;
+   Shadow Striker grants Ranged Attack Speed +15 where its description says 20%; item 5480's description has
+   a garbled character; many set and option lines have no description. Site: the ≈ mark also flags fixed
+   amounts (`isCalculatedEffectBonus` treats constants as calculated); bonus types with zero items can be
+   picked; the rejected-filter notice says "not something you can fix" beside its reset button and drops
+   focus after the reset; the carrier guard checks fields the app never reads; `setRows`, `COLUMNS` and
+   `setVocabularySearchQuery` read ambiguously; a socket row with many sockets does not wrap (also on main).
+9. **Description text from the game, through the wiki.** `verbose_name` matches DDO's lines on every ordinary
+   item line of the golden set (`cargo xtask wiki-tooltips`), but `description` is Maetrim's paraphrase:
+   about 57 of the golden set's tooltips differ in wording ("Negative (Necrotic) and Poison Spell Power" versus
+   his "Negative and Poison spell power"). Reading each effect's standard tooltip from the wiki into a
+   description template, with the golden check widened to every read, would make the hover text the game's.
+10. **After Update 81.4 (2026-10-07) and Update 82 (2026-10-14).** From the Lamannia preview notes and staff forum posts, read 2026-10-05 (forums.ddo.com, "U82 Preview 2 - Monster DR Rework" and Cordovan's update-timing note). The numbers can still move before release.
+   - **Monster DR becomes a damage penalty.** An unbroken DR type cuts weapon damage by 25% for Bludgeoning, Slashing, Piercing and DR/-, and by 50% for other types; the largest unbroken penalty applies, as its own layer. Player DR and item `DR N/type` lines are unchanged. Weapon bypass lists stay the input that matters, for the Phase 6–8 engine and `docs/stacking-rules.md`.
+   - **Item tooltips** gain section headers, condensed set and filigree text, and a new order. Set bonuses that say "Universal" spell power, crit or crit damage are reworded per spell power. Several bonuses change type (Shintao loses Exceptional; some doublestrike and crit bonuses become Morale or Competence).
+   - **Planner data that changes upstream:** Master of X feats consolidated; enhancement actives cut to one rank; Morningstar and Warhammer become hand-and-a-half; doublestrike is uncapped, with past 200% at half value; Lahar's DR augments get new minimum levels, plus new bypass augments.
+   - **Then:** Maetrim's files catch up through the weekly deploy. Re-read the golden set with `cargo xtask golden-sample` (sets and modern items first) and merge it. Check `wiki-tooltips` failures against the new tooltip text before recording any as differences.
 
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
 `routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
@@ -2342,6 +2402,26 @@ free-area vendors (Squire Rale, Champion Hunter, Chirugeon Laj'amal).
 4. Integrity: `cargo xtask check-db`'s `items_without_a_source` turns from WARN to HARD once the
    heads are covered; `is_legacy` can then be recomputed as "no obtainable source" for items that
    are not old versions by name.
+5. **Found 2026-10-05: about 500 items have no pack but do belong to content** (counted on that day's build; 1,420 non-legacy items reach no pack):
+   - **365 Epic and Legendary versions** whose drop text is "Epic version of X" or "Legendary version of Epic X". Following that chain reaches a pack for every one of them, but today they carry no source, so item detail shows none. Fix: a version link that inherits the base item's sources, marked with the tier.
+   - **97 from crafting systems with no pack:** Dragonscale, Dragoncraft, Elfcraft and Giantcraft Armor, Nebula Fragment, Stone of Change. Read where each station is.
+   - **18 from vendors with no location:** Squire Rale, Champion Hunter, Chirugeon Laj'amal.
+   - **12 Nugget end rewards:** Silver Flame Nugget, Emerald Claw Nugget.
+   - **9 patron favor rewards**, a source kind tied to the patron.
+   - **3 whose drop text lost its quest name** (", end chest").
+   - The rest really have no pack: events 557, starter gear 174, the DDO Store 36, special event items 22, world drops 33. Each gets its own folder in the V9 layout; special event items are events or store items (below).
+   - **Each fix lands with its integrity check** in `cargo xtask check-db`, HARD once its backlog is empty:
+     - every "version of X" item has the sources of X;
+     - every crafting system has a pack or a recorded reason it has none;
+     - every vendor has a location;
+     - every "Special event items" drop is an event or store source;
+     - every patron favor reward is a favor source.
+     The pack-name, prerequisite-clause, multi-pack, multi-patron and quest-loot checks land with the 4e source fixes.
+   - **World drops (33).** These are fixed named items, not DDO's generated prefix and suffix loot, which we do not model and should not; "Lucky Loot" affixes are generated too. Examples: Pearl of Power I–X, Periapt of Wisdom, Boots of Speed, Gauntlets of Ogre Power. All drop from any chest in a level range and are minimum level 9 or lower. Keep them as a "world drop" source kind with the level range. "Lesser Anti-Beholder Crystal" says "Random, DDO Store" and is a store item.
+   - **Special event items (22) are events, plus purchase bonuses.**
+     - 15 come from one-time live events, all retired: developer-run contests (a "DM unique prize", trivia, Hide and Seek, the theater event, Talk Like a Pirate Day, the Festival of Olladra contest, an item-finding reward, Caypenne Drop-axe) and the 2009 Emerald Claw Conspiracy. Each becomes an event, flagged retired through `legacy_drop_sources.toml`, so its items are legacy.
+     - 2 are Festivult's gold coin rewards (Green Steel Greatclub and Light Hammer). Festivult still runs every year.
+     - 5 are purchase bonuses (pre-order, Collector's Edition, a special purchase, the Founder's account, a Steam pack). They go to the store.
 
 #### V8 — Build sharing with a server
 Moved after Phase 8 on 2026-10-01: sharing a build needs the build to exist first, so this waits for Phase 5 (`user.db` builds), 6 (stats), 7 (build plan) and 8 (gear); the server half could still be built earlier if the ddo-data side wants it.
@@ -2358,6 +2438,57 @@ a shared link opens read-only with "Import to my builds". Requires Phase 5's bui
 versioned build JSON is also what Phase 15's `.DDOBuild` import targets.
 
 ---
+
+#### V9 — Editable source tree (proposed 2026-10-05, decisions open)
+The maintainer's idea: build the database from files people can read and edit, laid out so a person can browse them (patron, then pack, then quest), and rebuild when they change. Today the base is Maetrim's XML, flat by type (8,779 `Items/*.item` files plus one file each for quests, patrons, sets and buffs), with our ~40 TOML override and correction files laid over it. Edits mean a correction that cites his current value.
+
+**Format.** TOML, one file per entity: comments, unambiguous types, already the repo's override format, and editor validation through a JSON Schema (Taplo). Alternatives considered:
+- **YAML:** more compact for nested lists, but indentation and implicit typing cause silent errors.
+- **JSON:** no comments, noisy to hand-edit.
+- **XML:** Maetrim's format, but verbose to edit and diff.
+- **Markdown with front matter:** good for prose-heavy entities, a candidate for descriptions only.
+
+Precedent for "unpack to files, pack into a database": Foundry VTT's compendium CLI, and the Pathfinder 2e system's per-entity JSON packs. Dolt (git-versioned SQL) keeps the data as a database, not as readable files.
+
+**Layout: by pack, so one edit stays in one folder.** Counted on the 2026-10-05 build:
+- 6,676 items drop in exactly one pack and only 17 in several. A wiki check on 2026-10-05 shows only 3 of the 17 really span packs:
+  - Beholder Plate Armor and Docent (Reign of Madness, and the Harbinger of Madness chain);
+  - Xachosian Eardweller (The Dreaming Dark and The Path of Inspiration).
+  Ten Masterminds of Sharn saga rewards reach "Free to Play" only through Lost at Sea, the saga's free quest, so they file under Masterminds of Sharn. Four were data errors: a duplicate "Isle of Dread" pack name, and Spider's Bite's mis-attributed drop text.
+- 4,447 drop in one quest, and 219 in several quests (mostly of the same pack).
+- 1,420 have no pack today. About 500 of those belong to content once their version chains, crafting stations and vendors are linked (V7b item 5). The rest are events, starter gear, the store, DM prizes and random loot.
+- An Epic or Legendary version files beside its base item.
+- Every quest has a pack. 58 packs have a single patron, 7 have two or three, and Free to Play has many.
+
+So an item lives with its loot source, under its pack:
+```
+packs/<pack>/pack.toml
+packs/<pack>/<quest>/quest.toml
+packs/<pack>/<quest>/<item>.toml          items from that one quest
+packs/<pack>/items/<item>.toml            pack-wide drops, or several of its quests
+packs/<pack>/sets/<set>.toml              sets whose pieces drop there
+packs/free-to-play/<patron>/<quest>/…     the 122 free quests, split by patron
+crafting/<system>/…, vendors/<vendor>/…, events/<event>/…, challenges/…, starter/…, store/…, world-drops/…
+favor/<patron>/<item>.toml                patron favor rewards
+shared/items/<item>.toml                  the 3 items that really span packs
+effects/…, stats/…, classes/…, feats/…    vocabulary, edited rarely
+```
+- **Packs, not patrons, are the folders.** There are 67 packs, a median of 5 quests each, and they fit one screen of a file browser. Patrons cross packs: 7 real packs have quests for two or three patrons.
+- **Patron is a field on each `quest.toml`.** A generated `patrons/` index lists each patron's packs and quests, for browsing by patron.
+- **Free to Play** is the one oversized "pack" (122 quests). It splits by patron, which mostly follows the free areas: The Coin Lords 26, The Free Agents 23, House Kundarak 12, House Jorasco 12, House Deneith 10, The Silver Flame 7, House Phiarlan 7, and smaller ones; 9 have no patron.
+- Relations are recorded once: an item's file lists its sources, which are usually its own folder's quest.
+- A WARN names any file whose sources no longer match its folder, with the move command. When an upstream update adds a drop elsewhere, the layout stays honest.
+- Fixing an item's values, its drop or its quest's facts touches files in one folder. Only changing an enchantment's definition (an effect file) reaches outside it.
+- File slugs are stable ids, which settles deferred item 7.
+
+**Source of truth: the main decision.**
+- **(A) Overlay, today's model reorganised:** his XML stays the base, and our per-entity files hold only what we change.
+- **(B) Canonical tree:** a one-time export of everything (his data, wiki rows, corrections) into our files. His weekly update is imported as a three-way diff (his last-imported value, his new value, ours). Clean changes apply, and a field both sides changed is listed for review.
+Recommendation: (B), since the wiki is already treated as right over his data and corrections keep growing. Land the importer first, so his updates stay cheap.
+
+**Rebuild.** A full build takes 7–10 s, so a watch command that validates the changed file at once and then rebuilds everything is simpler than per-table incremental rebuilds. Incremental builds need a dependency graph between tables; revisit only if the build passes about a minute.
+
+**Checks.** Schema validation per file, generated from the Rust types; the existing `check-db`, `validate-api` and `wiki-tooltips` run on every PR. A PR summary lists the served responses that changed. Phase 5b's inline corrections could later write these files as PRs.
 
 ## D-series: Design system
 

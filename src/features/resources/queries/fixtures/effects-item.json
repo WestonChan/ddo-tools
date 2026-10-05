@@ -1,6 +1,23 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [],
+  "adventure_packs": [
+    {
+      "chest": null,
+      "id": 48,
+      "is_rare": false,
+      "loot_type": null,
+      "name": "Shadowfell Conspiracy",
+      "wiki_url": "https://ddowiki.com/page/Shadowfell_Conspiracy"
+    },
+    {
+      "chest": "end chest",
+      "id": 48,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "Shadowfell Conspiracy",
+      "wiki_url": "https://ddowiki.com/page/Shadowfell_Conspiracy"
+    }
+  ],
   "armor": null,
   "augment_slots": [
     {
@@ -8,19 +25,31 @@
       "label": "crafting: variant",
       "options": [
         {
-          "bonuses": [
+          "description": "Accuracy IX: Passive: +9 Competence bonus to attack rolls",
+          "effects": [
             {
               "bonus_type": "Competence",
-              "description": null,
-              "id": 3851,
-              "name": "Attack Bonus +9",
-              "stat": "Attack Bonus",
-              "stat_category": "martial",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Competence",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Attack Bonus",
+                  "stat_category": "martial",
+                  "value": 9
+                }
+              ],
+              "damage": [],
+              "description": "Provides a 9 Competence bonus to your attack rolls.",
+              "effect_id": 9,
+              "name": "Attack Bonus",
+              "tier": null,
               "value": 9,
-              "value2": null
+              "value2": null,
+              "verbose_name": "Competence Attack Bonus 9"
             }
           ],
-          "description": "Accuracy IX: Passive: +9 Competence bonus to attack rolls",
           "grants_slot": null,
           "icon": null,
           "id": 3491,
@@ -59,19 +88,31 @@
           "sets": []
         },
         {
-          "bonuses": [
+          "description": "Natural Armor +9: Passive: +9 Natural Armor Bonus to Armor Class.",
+          "effects": [
             {
               "bonus_type": "Resistance",
-              "description": null,
-              "id": 3852,
-              "name": "Armor Class +9",
-              "stat": "Armor Class",
-              "stat_category": "defensive",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Resistance",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Armor Class",
+                  "stat_category": "defensive",
+                  "value": 9
+                }
+              ],
+              "damage": [],
+              "description": "Passive: 9 Natural Armor Bonus to Armor Class.",
+              "effect_id": 415,
+              "name": "Natural Armor",
+              "tier": null,
               "value": 9,
-              "value2": null
+              "value2": null,
+              "verbose_name": "Resistance Natural Armor 9"
             }
           ],
-          "description": "Natural Armor +9: Passive: +9 Natural Armor Bonus to Armor Class.",
           "grants_slot": null,
           "icon": null,
           "id": 3492,
@@ -110,19 +151,31 @@
           "sets": []
         },
         {
-          "bonuses": [
+          "description": "Resistance +9: Passive: +9 Resistance bonus to Fortitude, Reflex, and Will Saving Throws.",
+          "effects": [
             {
               "bonus_type": "Resistance",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Resistance",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Saving Throws",
+                  "stat_category": "defensive",
+                  "value": 9
+                }
+              ],
+              "damage": [],
               "description": null,
-              "id": 2259,
-              "name": "Saving Throws +9",
-              "stat": "Saving Throws",
-              "stat_category": "defensive",
+              "effect_id": 161,
+              "name": "Saving Throws",
+              "tier": null,
               "value": 9,
-              "value2": null
+              "value2": null,
+              "verbose_name": "Resistance Saving Throws +9"
             }
           ],
-          "description": "Resistance +9: Passive: +9 Resistance bonus to Fortitude, Reflex, and Will Saving Throws.",
           "grants_slot": null,
           "icon": null,
           "id": 3493,
@@ -176,25 +229,36 @@
       "variant": "yellow"
     }
   ],
-  "bonuses": [
-    {
-      "bonus_type": "Enhancement",
-      "description": null,
-      "id": 1347,
-      "name": "Charisma +8",
-      "stat": "Charisma",
-      "stat_category": "ability",
-      "value": 8,
-      "value2": null
-    }
-  ],
   "category": "Jewelry",
   "challenge_packs": [],
   "clickies": [],
   "crafting_systems": [],
   "description": "Lost to a pocket, away from it's locket, the gem was precious indeed.\nOnce fit for a king, of whom bards did sing, the necklace is now in need.",
   "drop_location": "Friends in Low Places, end chest (Epic Normal); Shadow Over Wheloon, quest chain end reward (Epic)",
-  "effects": [],
+  "effects": [
+    {
+      "bonus_type": "Enhancement",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Enhancement",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Charisma",
+          "stat_category": "ability",
+          "value": 8
+        }
+      ],
+      "damage": [],
+      "description": "Passive: 8 Enhancement bonus to Charisma.",
+      "effect_id": 6,
+      "name": "Charisma",
+      "tier": null,
+      "value": 8,
+      "value2": null,
+      "verbose_name": "Enhancement Charisma 8"
+    }
+  ],
   "enhancement_bonus": null,
   "events": [],
   "icon": "Necklace_17b",

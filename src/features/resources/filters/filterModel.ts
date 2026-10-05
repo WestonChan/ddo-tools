@@ -21,9 +21,11 @@ interface FilterDefinitionBase<Key extends string> {
   key: Key
   label: string
   shortLabel?: string
+  accessibleName?: string
   appliedGroupLabel?: string
   group?: string
   formatValue?: (value: FilterValue) => string
+  selectedOptionLabels?: ReadonlyMap<string, string>
 }
 
 export type AnyFilterDefinition =
@@ -31,6 +33,10 @@ export type AnyFilterDefinition =
       kind: 'single' | 'multi'
       options?: FilterOption[]
       searchPlaceholder?: string
+      isServerSearched?: boolean
+      shouldPreserveOptionOrder?: boolean
+      optionCount?: number
+      hoverKind?: string
     })
   | (FilterDefinitionBase<string> & { kind: 'range'; range: RangeDefinition })
   | (FilterDefinitionBase<string> & { kind: 'toggle' })
@@ -43,6 +49,10 @@ export type FilterDefinition<Values extends { [Key in keyof Values]: FilterValue
           kind: 'multi'
           options?: FilterOption[]
           searchPlaceholder?: string
+          isServerSearched?: boolean
+          shouldPreserveOptionOrder?: boolean
+          optionCount?: number
+          hoverKind?: string
         }
       : Values[Key] extends boolean
         ? FilterDefinitionBase<Key> & { kind: 'toggle' }
@@ -51,6 +61,10 @@ export type FilterDefinition<Values extends { [Key in keyof Values]: FilterValue
               kind: 'single'
               options?: FilterOption[]
               searchPlaceholder?: string
+              isServerSearched?: boolean
+              shouldPreserveOptionOrder?: boolean
+              optionCount?: number
+              hoverKind?: string
             }
           : never
 }[keyof Values & string]
@@ -66,8 +80,15 @@ function isNumericRange(value: FilterValue | undefined): value is NumericRange {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function filterOptionLabel(options: FilterOption[] | undefined, value: string): string {
-  return options?.find((option) => option.value === value)?.label ?? value
+function filterOptionLabel(definition: AnyFilterDefinition, value: string): string {
+  const options = 'options' in definition ? definition.options : undefined
+  return (
+    options
+      ?.flatMap((option) => [option, ...(option.children ?? [])])
+      .find((option) => option.value === value)?.label ??
+    definition.selectedOptionLabels?.get(value) ??
+    value
+  )
 }
 
 export function appliedFilterValues<Values extends { [Key in keyof Values]: FilterValue }>(
@@ -94,7 +115,7 @@ export function appliedFilterValues<Values extends { [Key in keyof Values]: Filt
         key: definition.key,
         groupLabel,
         value: selected,
-        text: filterOptionLabel(definition.options, selected),
+        text: filterOptionLabel(definition, selected),
       }))
     }
     if (typeof selectedValue !== 'string' && typeof selectedValue !== 'boolean') return []
@@ -107,7 +128,7 @@ export function appliedFilterValues<Values extends { [Key in keyof Values]: Filt
         text:
           definition.kind === 'toggle'
             ? definition.label
-            : filterOptionLabel(definition.options, String(selectedValue)),
+            : filterOptionLabel(definition, String(selectedValue)),
       },
     ]
   })
@@ -180,7 +201,7 @@ export function filterChipText(
   definition: AnyFilterDefinition,
   value: FilterValue | undefined,
 ): string {
-  if (!isFilterSet(definition, value)) return definition.label
+  if (!isFilterSet(definition, value)) return definition.shortLabel ?? definition.label
   if (definition.kind === 'range' && isNumericRange(value)) {
     if (definition.formatValue) return definition.formatValue(value)
     return value.min && value.max
@@ -201,10 +222,10 @@ export function filterChipHint(
     return `${definition.shortLabel ?? definition.label} ${filterChipText(definition, value)}`
   }
   if (definition.kind === 'multi' && Array.isArray(value)) {
-    return `${definition.label}: ${value.map((selected) => filterOptionLabel(definition.options, selected)).join(', ')}`
+    return `${definition.label}: ${value.map((selected) => filterOptionLabel(definition, selected)).join(', ')}`
   }
   if (definition.kind === 'single')
-    return `${definition.label}: ${filterOptionLabel(definition.options, String(value))}`
+    return `${definition.label}: ${filterOptionLabel(definition, String(value))}`
   if (definition.kind === 'toggle') return `${definition.label}: on`
   return definition.label
 }

@@ -76,6 +76,41 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Epic-only quests carry `level` equal to their epic level; `level` should probably be null for them.
 - 📋 Dampened Shatterbow: the wiki's own item page agrees with his "Scorpions optional chest"; only the Dampened crafting page says end chests, so nothing is corrected.
 
+## Effect values (wiki read 2026-10-04)
+
+- 🩹 📋 Docent of Shadow (levels 4–24) — his Void Lore line carries no value; the wiki's tier tooltips give 12, 13, 14, 15, 16 and 16 (Equipment) for levels 4, 8, 12, 16, 20 and 24. The wiki titles the level 20 and 24 items "Epic Docent of Shadow". Source: https://ddowiki.com/page/Item:Docent_of_Shadow_(level_4) and its siblings. Corrected: values, type and the two renames.
+- 🩹 📋 Livewood Core (levels 15, 16, 17, 22, 23, 24) — his second Fortification line has no value and looks like a duplicate; the wiki's second line is Exceptional Fortification +10, +10, +25, +25, +25 and +50%. Source: https://ddowiki.com/page/Item:Livewood_Core_(level_15) and its siblings. Corrected.
+- 🩹 📋 Implement of Stone Magic — Acid Lore has no value; the wiki's tier V tooltip gives 15% Equipment. Source: https://ddowiki.com/page/Item:Implement_of_Stone_Magic. Corrected.
+- 🩹 📋 Stoneworker's Hammer — Deadly has no value; the wiki gives Deadly IV, +4 Competence. Its Acid II line is "On Hit: 2 to 8 Acid Damage", now an `effect_damage` row (1d7+1). Source: https://ddowiki.com/page/Item:Stoneworker%27s_Hammer. Corrected.
+- 🩹 📋 Epic Flamekeep Docent — his untyped Repair skill line is not on the wiki, which lists Repair Lore +18% (Equipment); Repair Amplification is Enhancement, not Competence; Command is Insight. Source: https://ddowiki.com/page/Item:Epic_Flamekeep_Docent. Corrected.
+- 🩹 📋 Robe of Arcane Power — his Potency line reads as modern spell power; the wiki's Potency IV is the old "+20% damage to 4th level and lower spells", stored as a text line with value 20 and no stat. The item is legacy (replaced by Robe of Arcane Puissance). Source: https://ddowiki.com/page/Item:Robe_of_Arcane_Power. Corrected.
+- 📋 Astute Skills Bonus — the effect his buff type names Astute renders the display text "Alluring Skills Bonus". To verify against an item page before reporting.
+- 🩹 📋 Legendary Staff of Arcane Power — Spell Focus Mastery is +7 on the wiki, Equipment 5 in his file; the page's Efficient Metamagic - Maximize II tooltip reduces the cost by 4 SP where his template says 2. Source: https://ddowiki.com/page/Item:Legendary_Staff_of_Arcane_Power (read 2026-10-05, tooltip golden set).
+- 🩹 📋 Legendary Demogorgon's Sinew — Paralyzing is "Paralyzing 117" (DC 117) on the wiki; his effect is a fixed sentence with DC 17. Source: https://ddowiki.com/page/Item:Legendary_Demogorgon%27s_Sinew.
+- 🩹 📋 Legendary Madness of the Demon Lords — his effect name "Wind Frenzy" is a typo for Wild Frenzy (his own template says "Wild Frenzy +122"). Source: https://ddowiki.com/page/Item:Legendary_Madness_of_the_Demon_Lords.
+- 🩹 📋 Dolorous Quality Combat Mastery (Legendary) — "Stun DC" is listed twice; the wiki's single Combat Mastery line covers Trip, Sunder and Stun DC and Tactics once each. Source: https://ddowiki.com/page/Item:Dolorous_Quality_Combat_Mastery_(legendary).
+- 🩹 📋 Nimbleness — his Greater, Superior and Epic Nimbleness all carry +4; the wiki's tooltips give maximum Dexterity bonus +2, +4 and +6, each with armor check penalty -4.
+- 🩹 📋 Doctor Lifestone's Hunting Horn — his effect is named "Spell"; the wiki line is "Spell: Summon Raptor".
+- 🩹 📋 Marro, the Bone of Demons — the wiki lists Planar Searing, which his item lacks.
+- 🩹 📋 Display templates that contradict their own effect (copy-paste in `ItemBuffs.xml`), read 2026-10-05:
+  - "DR 30/Good" renders 15/Good (Legendary Infested Armor, Legendary Marilith Chain).
+  - Bastion's DR 10 and 15/Piercing and Wall of Wood's DR 10/Slashing render 5.
+  - Ironweave Tunic's line is DR 3/Bludgeoning on the wiki; his name and template say 15.
+  - "Solar IX" renders Solar VI (Shimmering), and "Fire Guard VIII" renders Fire Guard II (Guardian's Bracers level 26).
+  - Astute Skills Bonus renders "Alluring Skills Bonus" (Treasure Hunter's Spyglass, Tiara of Madness).
+  - Earthen Guard's text is "Take a trip into the past!" where the wiki gives the Stone Skin proc.
+  - "Feat: Quick Draw" was split at its colon into "Feat".
+  - About 40 DR effects read "DR Damage Reduction X/Y".
+  Corrected from the item pages.
+- 🩹 📋 Efficient Metamagic - Maximize I — reduces the cost by 2 SP on the wiki (1 SP per magnitude, doubled for Maximize; Vizeran's Band, Dusk Lenses), 1 in his file. Maximize II is 4 by the same rule. Source: https://ddowiki.com/page/Efficient_Metamagic.
+- 🩹 📋 Potency — his buff grants Universal Spell Power; the wiki's Potency is "+N Equipment bonus to each Spell Power", and Universal Spell Power is a separate source that stacks on top. Sources: https://ddowiki.com/page/Potency and https://ddowiki.com/page/Spell_Power.
+- 🩹 📋 Void Intensity on Legendary Cracked Symbol of Lolth — the tooltip says Enhancement, his item says Equipment. Source: https://ddowiki.com/page/Item:Legendary_Cracked_Symbol_of_Lolth.
+- 🩹 📋 Spider's Bite and Legendary Spider's Bite — his drop text "Stealing from Sorcere, Romira and Juvian's chest (requires completion of Sleeping with the Fishes…)" belongs to Stitched Great Forge Shroud. The wiki drops both only from Flocked Together, The Decomposter's chest. Source: https://ddowiki.com/page/Flocked_Together.
+- 🩹 📋 Isle of Dread — his quests name the pack both "Isle of Dread" (the wilderness) and "The Isle of Dread"; the wiki's pack is "The Isle of Dread", and "Isle of Dread" is the saga. The non-legendary Powder-Packed Barrel drops only from All Hail the King. Sources: https://ddowiki.com/page/All_Hail_the_King, https://ddowiki.com/page/Item:Powder-Packed_Barrel.
+- 🩹 📋 Epic Cannith Challenges — his six epic challenge entries (Extraplanar Mining, Kobold Island Short Cuts, The Lava Caves) have pack "Free to Play" and no patron; the wiki gives Vaults of the Artificers and House Cannith, as for the heroic ones, and spells "The Dragon's Hoard". Source: https://ddowiki.com/page/Vaults_of_the_Artificers.
+- 🩹 📋 Ritual Table — recorded as a quest in Magic of Myth Drannor; it is a crafting device in a side room of Threats Old and New. Source: https://ddowiki.com/page/Ritual_Table.
+- 📋 Brightbane Emerald — the wiki line is "Insightful Command +4", his item carries Charisma Skills Insight 5 (the legendary version agrees at 7). Source: https://ddowiki.com/page/Item:Brightbane_Emerald.
+
 ## Item buffs
 
 - 📋 Hallowed — his `ItemBuffs.xml` types the buff's effect `TurnDiceBonus` (turn undead dice) while its own text and the wiki say "maximum Hit Dice of undead turned" (`TurnMaxDice`); `buff_map.toml` maps it to Turn Undead Max Dice per the text. Source: https://ddowiki.com/page/Hallowed.

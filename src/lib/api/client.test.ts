@@ -27,19 +27,16 @@ describe('apiUrl', () => {
     expect(apiUrl('/v1/version')).toBe(`${API_BASE_URL}/v1/version`)
   })
 
-  it('appends repeated enchantments and sort keys in order, preserving commas and dropping empty values', () => {
+  it('appends repeated bonuses and sort keys in order, preserving commas and dropping empty values', () => {
     const url = new URL(
       apiUrl('/v1/items', {
-        enchantment: ['Strength', '', 'Constitution Poison, Lesser'],
+        bonus: ['Strength', '', 'Constitution:Insightful'],
         sort: ['-name', 'minimum_level'],
       }),
     )
-    expect(url.searchParams.getAll('enchantment')).toEqual([
-      'Strength',
-      'Constitution Poison, Lesser',
-    ])
+    expect(url.searchParams.getAll('bonus')).toEqual(['Strength', 'Constitution:Insightful'])
     expect(url.searchParams.getAll('sort')).toEqual(['-name', 'minimum_level'])
-    expect(apiUrl('/v1/items', { enchantment: [], sort: [''] })).toBe(`${API_BASE_URL}/v1/items`)
+    expect(apiUrl('/v1/items', { bonus: [], sort: [''] })).toBe(`${API_BASE_URL}/v1/items`)
   })
 
   it('always has an origin, so an unset VITE_API_URL still reaches the public API', () => {
@@ -49,6 +46,58 @@ describe('apiUrl', () => {
 })
 
 describe('fetchApiPage', () => {
+  it('reloads a stale envelope once at the same URL and accepts the current response', async () => {
+    const currentPage = { total: 1, limit: 200, offset: 0, items: [{ id: 9 }] }
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...currentPage, items: undefined })))
+      .mockResolvedValueOnce(new Response(JSON.stringify(currentPage)))
+    await expect(fetchApiPage('/v1/items', 'items', { limit: 200 })).resolves.toEqual({
+      total: 1,
+      limit: 200,
+      offset: 0,
+      rows: [{ id: 9 }],
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[0][0]).toBe(fetchMock.mock.calls[1][0])
+    expect(fetchMock.mock.calls[0][1]).not.toHaveProperty('cache', 'reload')
+    expect(fetchMock.mock.calls[1][1]).toHaveProperty('cache', 'reload')
+  })
+
+  it('throws the contract error after one reload of an invalid envelope', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify({ total: 1, limit: 200, offset: 0 }))),
+      )
+    await expect(fetchApiPage('/v1/items', 'items')).rejects.toMatchObject({
+      kind: 'api-response',
+      message: expect.stringContaining('(items): items'),
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[1][1]).toHaveProperty('cache', 'reload')
+  })
+
+  it('classifies rows that still fail the caller validation after one reload as our bug', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ total: 1, limit: 200, offset: 0, items: [{ id: 'x' }] })),
+        ),
+      )
+    const error = await fetchApiPage<{ id: number }, 'items'>('/v1/items', 'items', undefined, {
+      isValidPage: (page) => page.rows.every((row) => typeof row.id === 'number'),
+      responseErrorMessage: 'Invalid item rows for /v1/items',
+    }).catch((caught: unknown) => caught)
+    expect(error).toMatchObject({
+      kind: API_RESPONSE_ERROR,
+      message: 'Invalid item rows for /v1/items',
+    })
+    expect(apiErrorDescription(error).kind).toBe('our-bug')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it.each(['items', 'equipment_slots'] as const)(
     'extracts typed rows and metadata from the %s key',
     async (rowsKey) => {
@@ -141,7 +190,9 @@ describe('fetchApiPage', () => {
     ]),
     { name: 'zero limit', body: { total: 0, limit: 0, offset: 0, items: [] } },
   ])('rejects $name with a tagged response error', async ({ name, body }) => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(body)))
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(body))),
+    )
     const error = await fetchApiPage('/v1/items', 'items').catch((caught: unknown) => caught)
     expect(isApiError(error)).toBe(true)
     expect(error).toMatchObject({ name: 'ApiError', kind: 'api-response' })

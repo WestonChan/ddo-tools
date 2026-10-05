@@ -24,15 +24,42 @@ export interface ApiItemRow {
   is_legacy: boolean
 }
 
-export interface ApiBonus {
+export interface ApiEffectBonusGroup {
   id: number
   name: string
-  description: string | null
+}
+
+export interface ApiEffectBonus {
   stat: string
   stat_category: string
-  bonus_type: string | null
-  value: number | null
-  value2: number | null
+  bonus_type: string
+  value: number
+  amount_source: 'owner' | 'default' | 'constant'
+  scale: number
+  group?: ApiEffectBonusGroup | null
+}
+
+export interface ApiEffectDamage {
+  trigger: string
+  damage_type: string
+  dice_number: number
+  dice_sides: number
+  dice_bonus: number
+  amount_from: number
+  scale: number
+}
+
+export interface ApiEffect {
+  effect_id: number
+  name: string
+  tier?: { group: string; rank: number } | null
+  verbose_name: string
+  description?: string | null
+  value?: number | null
+  value2?: number | null
+  bonus_type?: string | null
+  bonuses: ApiEffectBonus[]
+  damage: ApiEffectDamage[]
 }
 
 export interface ApiModifier {
@@ -49,14 +76,6 @@ export interface ApiModifier {
   damage: string | null
   percent: boolean
   cap: string | null
-}
-
-export interface ApiItemEffect {
-  id: number
-  name: string
-  description: string | null
-  value: number | null
-  target: string | null
 }
 
 export interface ApiAugmentSlotOption {
@@ -229,9 +248,8 @@ export interface ApiItemDetail {
   is_legacy: boolean
   weapon: ApiWeaponStats | null
   armor: ApiArmorStats | null
-  bonuses: ApiBonus[]
+  effects: ApiEffect[]
   modifiers: ApiModifier[]
-  effects: ApiItemEffect[]
   augment_slots: ApiItemAugmentSlot[]
   clickies: ApiItemClickie[]
   set: { id: number; name: string; icon: string | null } | null
@@ -255,7 +273,7 @@ export interface ApiAugment {
   min_level: number | null
   icon: string | null
   slots: string[]
-  bonuses: ApiBonus[]
+  effects: ApiEffect[]
   crafting: ApiCraftingRecipe[]
 }
 
@@ -343,10 +361,74 @@ export interface ApiEquipmentSlot {
   category: string
 }
 
-export interface ApiEnchantment {
+export interface ApiEffectVocabularyRow {
+  id: number
   name: string
-  kind: 'stat' | 'effect'
+  kind: 'stat' | 'effect' | 'group'
+  detail_path: string
   item_count: number
+  augment_count: number
+  set_count: number
+  bonus_types: Array<{ name: string; item_count: number }>
+}
+
+export interface ApiEffectCarrier {
+  id: number
+  name: string
+  line: ApiEffect
+  amount_source?: string | null
+  bonus_type?: string | null
+  effect?: string | null
+  effect_id?: number | null
+  scale?: number | null
+  value?: number | null
+  value2?: number | null
+  bonuses?: ApiEffectBonus[] | null
+  lines?: ApiEffectCarrierLine[]
+}
+
+export interface ApiEffectCarrierLine {
+  line: ApiEffect
+  amount_source?: string | null
+  bonus_type?: string | null
+  effect?: string | null
+  effect_id?: number | null
+  scale?: number | null
+  value?: number | null
+  value2?: number | null
+}
+
+export interface ApiEffectDetail {
+  id: number
+  name: string
+  kind: 'effect' | 'stat' | 'group'
+  category?: string | null
+  verbose_name_template: string | null
+  description_template?: string | null
+  wiki_url?: string | null
+  default_value?: number | null
+  default_value2?: number | null
+  tier?: {
+    group: string
+    rank: number
+    steps: Array<{ id: number; name: string; rank: number }>
+  } | null
+  bonuses: Array<{
+    target: string
+    target_kind: 'stat' | 'group'
+    amount_from: number
+    bonus_type?: string | null
+    constant?: number | null
+    scale: number
+    rounding: string
+  }>
+  damage: ApiEffectDamage[]
+  items: ApiPage<ApiEffectCarrier, 'items'>
+  augments: ApiPage<ApiEffectCarrier, 'augments'>
+  set_tiers: ApiPage<
+    ApiEffectCarrier & { set_id: number; set_name: string; equipped_count: number },
+    'set_tiers'
+  >
 }
 
 export interface ApiQuestSummary {
@@ -367,13 +449,23 @@ export interface ApiSetModifier {
   value: number | null
 }
 
+export interface ApiSetRow {
+  id: number
+  name: string
+  icon: string
+  is_filigree_set: boolean
+  item_count: number
+  augment_count: number
+  tier_count: number
+}
+
 export interface ApiSetDetail {
   id: number
   name: string
   tiers: Array<{
+    id: number
     equipped_count: number
-    description: string | null
-    bonuses?: ApiBonus[]
+    effects: ApiEffect[]
     modifiers: ApiSetModifier[]
   }>
   items: Array<{ id: number; name: string; slot: string; minimum_level: number | null }>

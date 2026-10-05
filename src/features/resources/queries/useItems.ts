@@ -11,7 +11,8 @@ import {
   fetchAugment,
   fetchAdventurePackNames,
   fetchAugmentsFittingSlot,
-  fetchEnchantmentNames,
+  fetchEffectDetail,
+  fetchEffectVocabulary,
   fetchEquipmentSlotNames,
   fetchItem,
   fetchItemPage,
@@ -25,7 +26,7 @@ import {
   type ItemPage,
   ITEM_PAGE_SIZE,
 } from './items'
-import { fetchSet, type SetDetail } from './sets'
+import { fetchSet, fetchSetVocabulary, type SetDetail } from './sets'
 import { fetchQuest, type QuestDetail } from './quests'
 import {
   fetchAdventurePack,
@@ -54,10 +55,12 @@ const resourceQueryKeys = {
   item: (id: number) => ['items', 'detail', id] as const,
   adventurePackNames: ['items', 'packs'] as const,
   equipmentSlotNames: ['items', 'slots'] as const,
-  enchantmentNames: ['items', 'enchantments'] as const,
+  effectVocabulary: (searchQuery: string) => ['effects', 'vocabulary', searchQuery] as const,
+  effectDetail: (detailPath: string) => ['effects', 'detail', detailPath] as const,
   augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
   augment: (id: number) => ['augments', 'detail', id] as const,
   raidQuests: ['quests', 'raids'] as const,
+  setVocabulary: (searchQuery: string) => ['sets', 'vocabulary', searchQuery] as const,
   set: (id: number) => ['sets', 'detail', id] as const,
   quest: (id: number) => ['quests', 'detail', id] as const,
   source: (kind: string, id: number) => ['sources', kind, id] as const,
@@ -109,6 +112,18 @@ export function useSet(id: number | null): UseQueryResult<SetDetail> {
   })
 }
 
+export function useSetVocabulary(
+  searchQuery: string,
+  isEnabled = true,
+): UseQueryResult<Awaited<ReturnType<typeof fetchSetVocabulary>>> {
+  return useQuery({
+    queryKey: resourceQueryKeys.setVocabulary(searchQuery),
+    queryFn: () => fetchSetVocabulary(searchQuery),
+    enabled: isEnabled,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
+}
+
 export function useQuest(id: number | null): UseQueryResult<QuestDetail> {
   return useQuery({
     queryKey: resourceQueryKeys.quest(id ?? -1),
@@ -137,11 +152,25 @@ export function useEquipmentSlotNames(isEnabled = true): UseQueryResult<string[]
   })
 }
 
-export function useEnchantmentNames(isEnabled = true): UseQueryResult<string[]> {
+export function useEffectVocabulary(
+  searchQuery: string,
+  isEnabled = true,
+): UseQueryResult<Awaited<ReturnType<typeof fetchEffectVocabulary>>> {
   return useQuery({
-    queryKey: resourceQueryKeys.enchantmentNames,
-    queryFn: fetchEnchantmentNames,
+    queryKey: resourceQueryKeys.effectVocabulary(searchQuery),
+    queryFn: () => fetchEffectVocabulary(searchQuery),
     enabled: isEnabled,
+    ...NEVER_STALE_QUERY_OPTIONS,
+  })
+}
+
+export function useEffectDetail(
+  detailPath: string,
+): UseQueryResult<Awaited<ReturnType<typeof fetchEffectDetail>>> {
+  return useQuery({
+    queryKey: resourceQueryKeys.effectDetail(detailPath),
+    queryFn: () => fetchEffectDetail(detailPath),
+    retry: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 }

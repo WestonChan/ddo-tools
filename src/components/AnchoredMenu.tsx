@@ -12,6 +12,7 @@ interface AnchoredMenuProps {
   label: string
   className?: string
   onClose: (reason: AnchoredMenuCloseReason) => void
+  onEscape?: () => boolean
   children: ReactNode
 }
 
@@ -64,6 +65,7 @@ export function AnchoredMenu({
   label,
   className,
   onClose,
+  onEscape,
   children,
 }: AnchoredMenuProps): JSX.Element {
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -102,7 +104,12 @@ export function AnchoredMenu({
       if (e.target instanceof Node && !isInsideMenuOrAnchor(e.target)) onClose('outside')
     }
     function closeOnEscape(e: KeyboardEvent): void {
-      if (e.key !== 'Escape' || e.isComposing) return
+      if (e.key !== 'Escape' || e.isComposing || e.defaultPrevented) return
+      if (onEscape?.()) {
+        e.preventDefault()
+        e.stopImmediatePropagation()
+        return
+      }
       e.stopPropagation()
       onClose('escape')
     }
@@ -120,7 +127,7 @@ export function AnchoredMenu({
       menu?.removeEventListener('focusout', closeOnFocusLeaving)
       anchor?.removeEventListener('focusout', closeOnFocusLeaving)
     }
-  }, [anchorRef, onClose])
+  }, [anchorRef, onClose, onEscape])
 
   return (
     <div

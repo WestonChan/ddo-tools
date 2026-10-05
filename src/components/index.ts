@@ -1,6 +1,12 @@
 export { ConfirmModal } from './ConfirmModal'
 export { EditableText } from './EditableText'
-export { HoverCardProvider, HintAnchor, useHoverCard, useClearHoverCards } from './HoverCard'
+export {
+  HoverCardProvider,
+  HintAnchor,
+  useHoverCard,
+  useHoverCardLabel,
+  useClearHoverCards,
+} from './HoverCard'
 export {
   DetailCard,
   DetailCardHeader,

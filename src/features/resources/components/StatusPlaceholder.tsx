@@ -19,6 +19,7 @@ interface ErrorStatusPlaceholderProps {
   onRetry: () => void
   missingResourceName?: string
   additionalActions?: ReactNode
+  heading?: string
 }
 
 type StatusPlaceholderProps = EmptyStatusPlaceholderProps | ErrorStatusPlaceholderProps

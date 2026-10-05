@@ -10,8 +10,10 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import capturedGroups from '../queries/fixtures/effects-page-groups.json'
+import capturedSetPage from '../queries/fixtures/sets-page.json'
 import { ItemPicker } from './ItemPicker'
-import { type ItemListFilters, type ItemSummary } from '../queries/items'
+import { itemListParameters, type ItemListFilters, type ItemSummary } from '../queries/items'
 import { resetResourceListSessionsForTests, useResourceListSession } from '../resourceListSessions'
 
 const navigateMock = vi.fn()
@@ -64,6 +66,62 @@ const useItemPageMock = vi.fn((...request: [ItemListFilters, string, boolean, un
   return pageState
 })
 const fetchNextPageMock = vi.fn()
+const EFFECT_ROWS = [
+  {
+    id: 1,
+    name: 'Charisma',
+    kind: 'stat',
+    detail_path: '/v1/effects/1',
+    item_count: 1,
+    augment_count: 0,
+    set_count: 0,
+    bonus_types: [
+      { name: 'Insightful', item_count: 1 },
+      { name: 'Quality', item_count: 1 },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Strength',
+    kind: 'stat',
+    detail_path: '/v1/effects/2',
+    item_count: 1,
+    augment_count: 0,
+    set_count: 0,
+    bonus_types: [],
+  },
+  {
+    id: 3,
+    name: 'Vorpal',
+    kind: 'effect',
+    detail_path: '/v1/effects/3',
+    item_count: 1,
+    augment_count: 0,
+    set_count: 0,
+    bonus_types: [],
+  },
+]
+function effectVocabularyPage(searchQuery: string): {
+  data: { total: number; rows: typeof EFFECT_ROWS }
+} {
+  return {
+    data: {
+      total: 2162,
+      rows: searchQuery
+        ? EFFECT_ROWS.filter((row) => row.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : EFFECT_ROWS,
+    },
+  }
+}
+const useEffectVocabularyMock = vi.fn(effectVocabularyPage)
+const useSetVocabularyMock = vi.fn((searchQuery: string) => ({
+  data: {
+    rows: capturedSetPage.sets
+      .filter((set) => set.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .map((set) => set.name),
+    total: capturedSetPage.total,
+  },
+}))
 
 vi.mock('../queries/useItems', () => ({
   useItemPage: (
@@ -80,7 +138,8 @@ vi.mock('../queries/useItems', () => ({
     }
   },
   useEquipmentSlotNames: () => ({ data: ['Back', 'Ring', 'Trinket'] }),
-  useEnchantmentNames: () => ({ data: ['Charisma', 'Strength', 'Vorpal'] }),
+  useEffectVocabulary: (searchQuery: string) => useEffectVocabularyMock(searchQuery),
+  useSetVocabulary: (searchQuery: string) => useSetVocabularyMock(searchQuery),
   useAdventurePackNames: () => ({ data: ['Shadowfell', 'Vault of Night'] }),
   useRaidQuests: () => ({
     data: [
@@ -94,6 +153,8 @@ beforeEach(() => {
   sessionStorage.clear()
   resetResourceListSessionsForTests()
   vi.clearAllMocks()
+  useEffectVocabularyMock.mockImplementation(effectVocabularyPage)
+  useSetVocabularyMock.mockClear()
   useItemPageMock.mockImplementation((...request) => {
     void request
     return pageState
@@ -132,8 +193,12 @@ describe('ItemPicker server-backed filters', () => {
       within(chipRow)
         .getAllByRole('button')
         .map((button) => button.getAttribute('data-tip')),
-    ).toEqual(['ML range', 'Gear slot', 'Enchantments', 'Pack', 'Raid', 'Rare only', 'Raid only'])
+    ).toEqual(['ML range', 'Gear slot', 'Bonuses', 'Set', 'Pack', 'Raid', 'Rare only', 'Raid only'])
+    expect(
+      screen.getByRole('button', { name: 'Minimum level' }).querySelector('.filter-chip-text'),
+    ).toHaveTextContent('ML')
     expect(resourceResultCount()).toHaveTextContent(/^93 results$/)
+    expect(resourceResultCount().closest('.filter-applied-toggle-row')).not.toBeNull()
     expect(screen.getByRole('table', { name: 'items list' })).toBeInTheDocument()
   })
 
@@ -193,11 +258,11 @@ describe('ItemPicker server-backed filters', () => {
     expect(resourceResultCount().querySelector('.num')).toHaveTextContent('8084')
   })
 
-  it('renders Raid and Rare as static headers that can still be focused and moved', () => {
+  it('renders Raid and Rare as sortable headers that can still be focused and moved', () => {
     renderItemPicker()
     for (const label of ['Raid', 'Rare']) {
       const header = screen.getByRole('columnheader', { name: new RegExp(label) })
-      expect(header).not.toHaveAttribute('aria-sort')
+      expect(header).toHaveAttribute('aria-sort', 'none')
       expect(header).toHaveAttribute('aria-description', expect.stringContaining('M'))
     }
     expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('tabindex', '0')
@@ -255,23 +320,24 @@ describe('ItemPicker server-backed filters', () => {
     expect(session.result.current.scrollTop).toBe(224)
   })
 
-  it('passes slot, two enchantments, set bonuses, raid, range, rare and search to one page hook', async () => {
+  it('passes slot, two bonuses, set bonuses, raid, range, rare and search to one page hook', async () => {
     const user = userEvent.setup()
     renderItemPicker()
     await user.click(screen.getByRole('button', { name: 'Gear slot' }))
     await user.click(screen.getByRole('option', { name: 'Back' }))
     await user.click(screen.getByRole('option', { name: 'Ring' }))
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
-    await user.click(screen.getByRole('option', { name: 'Strength' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('option', { name: /Strength/ }))
     await user.click(screen.getByRole('option', { name: /Vorpal/ }))
     await user.click(screen.getByRole('checkbox', { name: 'Include set bonuses' }))
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     await user.click(screen.getByRole('button', { name: 'Raid' }))
     await user.click(screen.getByRole('option', { name: /The Raid/ }))
     await user.click(screen.getByRole('button', { name: 'Raid' }))
-    await user.click(screen.getByRole('button', { name: 'ML range' }))
+    await user.click(screen.getByRole('button', { name: 'Minimum level' }))
     await user.type(screen.getByRole('spinbutton', { name: 'Min ML' }), '20')
     await user.type(screen.getByRole('spinbutton', { name: 'Max ML' }), '32{Enter}')
+    expect(screen.getByRole('button', { name: 'Minimum level: 20–32' })).toHaveTextContent('20–32')
     await user.click(screen.getByRole('button', { name: 'Rare only' }))
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search items' }), {
       target: { value: 'torc' },
@@ -282,8 +348,10 @@ describe('ItemPicker server-backed filters', () => {
     expect(latestFilters()).toEqual({
       ml: { min: '20', max: '32' },
       slot: ['Back', 'Ring'],
-      enchantments: ['Strength', 'Vorpal'],
-      enchantmentMatch: 'any',
+      bonuses: ['Strength', 'Vorpal'],
+      bonusMatch: 'any',
+      set: [],
+      setMatch: 'any',
       pack: [],
       raid: ['7'],
       isRareOnly: true,
@@ -293,39 +361,154 @@ describe('ItemPicker server-backed filters', () => {
     await user.click(screen.getByRole('button', { name: 'Show applied · 7' }))
     expect(
       Array.from(document.querySelectorAll('.filter-applied-label'), (label) => label.textContent),
-    ).toEqual(['ML', 'Gear slot', 'Enchantments · any', 'Raid', 'Show'])
+    ).toEqual(['ML', 'Gear slot', 'Bonuses · any', 'Raid', 'Show'])
     await user.click(screen.getByRole('button', { name: 'Remove Gear slot: Back' }))
     expect(latestFilters().slot).toEqual(['Ring'])
   }, 10000)
 
-  it('shows match mode only for enchantments, labels applied values, and resets with Clear filters', async () => {
+  it('shows match mode only for bonuses, labels applied values, and resets with Clear filters', async () => {
     const user = userEvent.setup()
     renderItemPicker()
     await user.click(screen.getByRole('button', { name: 'Gear slot' }))
     expect(screen.queryByRole('button', { name: 'All' })).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('button', { name: 'Any' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'false')
     await user.click(screen.getByRole('button', { name: 'All' }))
-    expect(latestFilters().enchantmentMatch).toBe('all')
-    await user.click(screen.getByRole('option', { name: 'Strength' }))
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(latestFilters().bonusMatch).toBe('all')
+    await user.click(screen.getByRole('option', { name: /Strength/ }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     await user.click(screen.getByRole('button', { name: 'Show applied · 1' }))
-    expect(
-      screen.getByText('Enchantments', { selector: '.filter-applied-label' }),
-    ).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
-    await user.click(screen.getByRole('option', { name: 'Vorpal' }))
-    expect(screen.getByText('Enchantments · all')).toBeInTheDocument()
+    expect(screen.getByText('Bonuses', { selector: '.filter-applied-label' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('option', { name: /Vorpal/ }))
+    expect(screen.getByText('Bonuses · all')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Clear filters' }))
-    expect(latestFilters().enchantmentMatch).toBe('any')
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(latestFilters().bonusMatch).toBe('any')
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('button', { name: 'Any' })).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('does not offer Reset match for an error with no selected enchantments', async () => {
+  it('expands a stat into type choices and replaces Any type with a chosen type', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    expect(screen.getByRole('option', { name: /Charisma.*Stat/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('option', { name: /Charisma.*Stat/ }))
+    expect(latestFilters().bonuses).toEqual(['Charisma'])
+    await user.hover(screen.getByRole('option', { name: /Charisma.*Stat/ }))
+    await user.click(
+      within(screen.getByRole('option', { name: /Charisma.*Stat/ })).getByText('Stat · Any type'),
+    )
+    await user.click(screen.getByRole('option', { name: /Charisma · Insightful/ }))
+    expect(latestFilters().bonuses).toEqual(['Charisma:Insightful'])
+    expect(itemListParameters(latestFilters(), '', false).bonus).toEqual(['Charisma:Insightful'])
+    await user.click(screen.getByRole('option', { name: /Charisma.*Stat/ }))
+    expect(latestFilters().bonuses).toEqual(['Charisma'])
+  })
+
+  it('lists a captured group by kind and sends its name as a bonus filter', async () => {
+    const group = capturedGroups.effects.find((row) => row.kind === 'group')
+    expect(group).toBeDefined()
+    useEffectVocabularyMock.mockImplementation(() => ({
+      data: { total: capturedGroups.total, rows: [group!, ...EFFECT_ROWS] },
+    }))
+    renderItemPicker()
+    await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await userEvent.click(screen.getByRole('option', { name: /Charisma Skills.*Group/ }))
+    expect(itemListParameters(latestFilters(), '', false).bonus).toEqual(['Charisma Skills'])
+  })
+
+  it('chooses Constitution Insight through the pointer caption and sends its typed bonus', async () => {
+    const constitution = {
+      ...EFFECT_ROWS[0],
+      id: 99,
+      name: 'Constitution',
+      detail_path: '/v1/effects/99',
+      bonus_types: [{ name: 'Insight', item_count: 1 }],
+    }
+    useEffectVocabularyMock.mockImplementation((searchQuery) => ({
+      data: {
+        total: 2162,
+        rows: searchQuery ? [] : [constitution, ...EFFECT_ROWS],
+      },
+    }))
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    const constitutionRow = screen.getByRole('option', { name: /Constitution.*Stat/ })
+    await user.hover(constitutionRow)
+    await user.click(within(constitutionRow).getByText('Stat · Any type'))
+    expect(screen.getByRole('option', { name: /Constitution · Insight/ })).toBeInTheDocument()
+    await user.click(within(constitutionRow).getByText('Stat · Any type'))
+    expect(screen.queryByRole('option', { name: /Constitution · Insight/ })).toBeNull()
+    await user.click(within(constitutionRow).getByText('Stat · Any type'))
+    await user.click(screen.getByRole('option', { name: /Constitution · Insight/ }))
+    expect(itemListParameters(latestFilters(), '', false).bonus).toEqual(['Constitution:Insight'])
+  })
+
+  it('keeps selected type labels during remote search and counts the full vocabulary', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    expect(document.querySelector('.combobox-footer')).toHaveTextContent('3 of 2,162')
+    await user.click(
+      within(screen.getByRole('option', { name: /Charisma.*Stat/ })).getByText('Stat · Any type'),
+    )
+    await user.click(screen.getByRole('option', { name: /Charisma · Insightful/ }))
+    await user.type(screen.getByRole('combobox', { name: 'Bonuses' }), 'vorpal')
+    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(1))
+    expect(screen.getByRole('button', { name: 'Bonuses' })).toHaveAttribute(
+      'data-tip',
+      'Bonuses: Charisma · Insightful',
+    )
+    expect(document.querySelector('.combobox-footer')).toHaveTextContent('1 of 2,162')
+    await user.click(screen.getByRole('button', { name: 'Show applied · 1' }))
+    expect(
+      screen.getByRole('button', { name: 'Remove Bonuses: Charisma · Insightful' }),
+    ).toBeInTheDocument()
+  })
+
+  it('pins a selected bonus to the top when reopening its picker', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('option', { name: /Strength/ }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    expect(screen.getAllByRole('option')[0]).toHaveTextContent('Strength')
+  })
+
+  it('shows one type or N types on a selected stat', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('option', { name: /Charisma.*Stat/ }))
+    await user.click(
+      within(screen.getByRole('option', { name: /Charisma.*Stat/ })).getByText('Stat · Any type'),
+    )
+    await user.click(screen.getByRole('option', { name: /Charisma · Insightful/ }))
+    expect(screen.getByRole('option', { name: /Charisma.*Stat.*Insightful/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('option', { name: /Charisma · Quality/ }))
+    expect(latestFilters().bonuses).toEqual(['Charisma:Insightful', 'Charisma:Quality'])
+    expect(screen.getByRole('option', { name: /Charisma.*Stat.*2 types/ })).toBeInTheDocument()
+  })
+
+  it('clears the remote search term when reopening Bonuses', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.type(screen.getByRole('combobox', { name: 'Bonuses' }), 'charisma')
+    await waitFor(() => expect(useEffectVocabularyMock.mock.lastCall?.[0]).toBe('charisma'))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    expect(screen.getByRole('combobox', { name: 'Bonuses' })).toHaveValue('')
+    await waitFor(() => expect(useEffectVocabularyMock.mock.lastCall?.[0]).toBe(''))
+  })
+
+  it('does not offer Reset match for an error with no selected bonuses', async () => {
     const view = render(<ItemPickerHarness />)
-    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
     await userEvent.click(screen.getByRole('button', { name: 'All' }))
     pageState = {
       data: { total: 93, items: SAMPLE_ITEMS },
@@ -359,6 +542,24 @@ describe('ItemPicker server-backed filters', () => {
         screen.getByRole('button', { name: new RegExp(`Remove (Pack|Raid): ${name}`) }),
       ).toBeInTheDocument()
     }
+  })
+
+  it('picks multiple sets by name and sends Set All through the item query', async () => {
+    const user = userEvent.setup()
+    renderItemPicker()
+    await user.click(screen.getByRole('button', { name: 'Set' }))
+    const setNames = capturedSetPage.sets.map((set) => set.name)
+    for (const name of setNames) await user.click(screen.getByRole('option', { name }))
+    await user.click(screen.getByRole('button', { name: 'All' }))
+    expect(latestFilters().set).toEqual(setNames)
+    expect(latestFilters().setMatch).toBe('all')
+    const parameters = itemListParameters(latestFilters(), '', false)
+    expect(parameters.set).toEqual(setNames)
+    expect(parameters.set_match).toBe('all')
+    await user.type(screen.getByRole('combobox', { name: 'Set' }), 'Legendary')
+    await waitFor(() => expect(useSetVocabularyMock.mock.lastCall?.[0]).toBe('Legendary'))
+    expect(screen.getByRole('option', { name: setNames[1] })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: setNames[0] })).toBeNull()
   })
 
   it('keeps API order during search and sends header sorting to the page hook', async () => {
@@ -466,6 +667,14 @@ describe('ItemPicker server-backed filters', () => {
         name: 'Clear filters',
       }),
     ).toHaveClass('btn-ghost-sm')
+  })
+
+  it('calls out a search-only empty result without a Clear filters action', async () => {
+    pageState = { data: { total: 0, items: [] }, isPending: false, isFetching: false, error: null }
+    renderItemPicker()
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Search items' }), 'nothing')
+    expect(screen.getByText('No items match your search.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull()
   })
 
   it('opens the detail route from a ledger row', async () => {

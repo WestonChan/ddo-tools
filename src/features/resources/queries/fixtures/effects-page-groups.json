@@ -1,0 +1,102 @@
+{
+  "effects": [
+    {
+      "augment_count": 12,
+      "bonus_types": [
+        {
+          "item_count": 7,
+          "name": "Competence"
+        },
+        {
+          "item_count": 0,
+          "name": "Exceptional"
+        },
+        {
+          "item_count": 38,
+          "name": "Insight"
+        }
+      ],
+      "detail_path": "/v1/effects/336",
+      "id": 336,
+      "item_count": 45,
+      "kind": "group",
+      "name": "Charisma Skills",
+      "set_count": 0
+    },
+    {
+      "augment_count": 0,
+      "bonus_types": [
+        {
+          "item_count": 3,
+          "name": "Competence"
+        }
+      ],
+      "detail_path": "/v1/effects/1263",
+      "id": 1263,
+      "item_count": 3,
+      "kind": "effect",
+      "name": "Charisma Skills - Exceptional Bonus",
+      "set_count": 0
+    },
+    {
+      "augment_count": 0,
+      "bonus_types": [
+        {
+          "item_count": 38,
+          "name": "Insight"
+        },
+        {
+          "item_count": 38,
+          "name": "Penalty"
+        }
+      ],
+      "detail_path": "/v1/effects/335",
+      "id": 335,
+      "item_count": 38,
+      "kind": "effect",
+      "name": "Command",
+      "set_count": 0
+    },
+    {
+      "augment_count": 0,
+      "bonus_types": [
+        {
+          "item_count": 4,
+          "name": "Competence"
+        }
+      ],
+      "detail_path": "/v1/effects/812",
+      "id": 812,
+      "item_count": 4,
+      "kind": "effect",
+      "name": "Persuasion",
+      "set_count": 0
+    },
+    {
+      "augment_count": 12,
+      "bonus_types": [
+        {
+          "item_count": 0,
+          "name": "Competence"
+        },
+        {
+          "item_count": 0,
+          "name": "Exceptional"
+        },
+        {
+          "item_count": 0,
+          "name": "Insight"
+        }
+      ],
+      "detail_path": "/v1/effects/2039",
+      "id": 2039,
+      "item_count": 0,
+      "kind": "effect",
+      "name": "Skills Charisma",
+      "set_count": 0
+    }
+  ],
+  "limit": 100,
+  "offset": 0,
+  "total": 5
+}

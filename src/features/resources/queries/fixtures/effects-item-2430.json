@@ -1,0 +1,300 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [
+    {
+      "chest": "end chest",
+      "id": 45,
+      "is_rare": false,
+      "loot_type": "chest",
+      "name": "The Necropolis, Part 4",
+      "wiki_url": "https://ddowiki.com/page/The_Necropolis%2C_Part_4"
+    }
+  ],
+  "armor": null,
+  "augment_slots": [
+    {
+      "family": "crafting",
+      "label": "crafting: upgradeable - primary augment",
+      "options": [
+        {
+          "description": "Add a Blue augment slot to this item",
+          "effects": [],
+          "grants_slot": "blue",
+          "icon": "Heroism",
+          "id": 1689,
+          "min_level": 27,
+          "modifiers": [],
+          "name": "Blue Augment Slot",
+          "sets": []
+        },
+        {
+          "description": "Add a Yellow augment slot to this item",
+          "effects": [],
+          "grants_slot": "yellow",
+          "icon": "Heroism",
+          "id": 1690,
+          "min_level": 27,
+          "modifiers": [],
+          "name": "Yellow Augment Slot",
+          "sets": []
+        }
+      ],
+      "qualifier": null,
+      "slot_type_id": 144,
+      "sort_order": 0,
+      "variant": "upgradeable - primary augment"
+    },
+    {
+      "family": "crafting",
+      "label": "crafting: upgradeable - secondary augment",
+      "options": [
+        {
+          "description": "Add a Green augment slot to this item",
+          "effects": [],
+          "grants_slot": "green",
+          "icon": "Heroism",
+          "id": 1691,
+          "min_level": 27,
+          "modifiers": [],
+          "name": "Green Augment Slot",
+          "sets": []
+        }
+      ],
+      "qualifier": null,
+      "slot_type_id": 145,
+      "sort_order": 1,
+      "variant": "upgradeable - secondary augment"
+    }
+  ],
+  "category": "Clothing",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "These bracers seem to be slightly blurry and somewhat translucent. When the\nbracers are equipped these properties are transferred to the wearer's hands\nand weapons allowing incorporeal creatures to be easily hit as well as granting\nsome defensive benefits.",
+  "drop_location": "Ghosts of Perdition (epic), End chest",
+  "effects": [
+    {
+      "bonus_type": "Enhancement",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Enhancement",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Dexterity",
+          "stat_category": "ability",
+          "value": 11
+        }
+      ],
+      "damage": [],
+      "description": "Passive: 11 Enhancement bonus to Dexterity.",
+      "effect_id": 2,
+      "name": "Dexterity",
+      "tier": null,
+      "value": 11,
+      "value2": null,
+      "verbose_name": "Enhancement Dexterity 11"
+    },
+    {
+      "bonus_type": "Insight",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": null,
+          "scale": 0.5,
+          "stat": "Armor Class",
+          "stat_category": "defensive",
+          "value": 3
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": null,
+          "scale": 0.5,
+          "stat": "Saving Throws",
+          "stat_category": "defensive",
+          "value": 2
+        }
+      ],
+      "damage": [],
+      "description": "This item enchants its user with incredible awareness and speed, granting a 5 Insight bonus to AC and to Saves.",
+      "effect_id": 384,
+      "name": "Riposte",
+      "tier": null,
+      "value": 5,
+      "value2": null,
+      "verbose_name": "Riposte 5"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [
+        {
+          "amount_source": "constant",
+          "bonus_type": "Enhancement",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Hide",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "constant",
+          "bonus_type": "Enhancement",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Move Silently",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "constant",
+          "bonus_type": "Equipment",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Incorporeality",
+          "stat_category": "defensive",
+          "value": 10
+        }
+      ],
+      "damage": [],
+      "description": "Equipping this item causes you to become partially incorporeal. Your melee attacks do not roll a miss chance for Incorporeal targets. Enemy attacks have a 10% chance to miss you due to incorporeality. You receive a +5 enhancement bonus to your Hide and Move Silently skills.",
+      "effect_id": 560,
+      "name": "Ghostly",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Ghostly"
+    },
+    {
+      "bonus_type": "Competence",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Competence",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Deadly",
+          "stat_category": "martial",
+          "value": 10
+        }
+      ],
+      "damage": [],
+      "description": "10 Competence bonus to weapon damage.",
+      "effect_id": 64,
+      "name": "Deadly",
+      "tier": null,
+      "value": 10,
+      "value2": null,
+      "verbose_name": "Competence Deadly 10"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Enhancement",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Movement Speed",
+          "stat_category": "other",
+          "value": 30
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Enhancement",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Melee Attack Speed",
+          "stat_category": "martial",
+          "value": 14
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Enhancement",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Ranged Attack Speed",
+          "stat_category": "martial",
+          "value": 14
+        }
+      ],
+      "damage": [],
+      "description": "Passive: 30% Enhancement bonus to movement speed, 14% Enhancement bonus to melee and ranged attack speed.",
+      "effect_id": 1139,
+      "name": "Speed Roman Numeral XIV",
+      "tier": null,
+      "value": 30,
+      "value2": 14,
+      "verbose_name": "Speed XIV"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This item is engraved with feathers and bestows a powerful magical effect. Whenever the wearer begins to fall from any height, this effect slows the descent dramatically, causing the wearer to fall like a feather.",
+      "effect_id": 467,
+      "name": "Feather Falling",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Feather Falling"
+    }
+  ],
+  "enhancement_bonus": null,
+  "events": [],
+  "icon": "Bracers_1",
+  "id": 2430,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": null,
+  "material": "Glass",
+  "minimum_level": 27,
+  "modifiers": [],
+  "name": "Epic Ethereal Bracers",
+  "quest_chains": [],
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": [
+        "normal",
+        "hard",
+        "elite",
+        "reaper"
+      ],
+      "epic_level": 29,
+      "id": 387,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 14,
+      "loot_type": "chest",
+      "name": "Ghosts of Perdition",
+      "pack": "The Necropolis, Part 4",
+      "patron": "The Silver Flame"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Wrists",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 387,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "Ghosts of Perdition",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Ghosts_of_Perdition"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": null,
+  "wiki_url": "https://ddowiki.com/page/Item:Epic_Ethereal_Bracers"
+}

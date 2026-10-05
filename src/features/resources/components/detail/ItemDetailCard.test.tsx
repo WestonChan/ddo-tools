@@ -3,18 +3,20 @@ import { render, screen, cleanup, type RenderResult } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../../../components'
 import type { ApiItemDetail, ApiWeaponStats } from '../../../../lib/api'
-import capturedWeapon from '../../queries/fixtures/item3479.json'
-import capturedRuneArm from '../../queries/fixtures/item924.json'
-import capturedArmor from '../../queries/fixtures/item831.json'
-import capturedShield from '../../queries/fixtures/item8203.json'
-import capturedRing from '../../queries/fixtures/item487.json'
-import capturedNecklace from '../../queries/fixtures/item7631.json'
+import capturedWeapon from '../../queries/fixtures/effects-item-3479.json'
+import capturedRuneArm from '../../queries/fixtures/effects-item-924.json'
+import capturedArmor from '../../queries/fixtures/effects-item-831.json'
+import capturedShield from '../../queries/fixtures/effects-item-8203.json'
+import capturedRing from '../../queries/fixtures/effects-item-487.json'
+import capturedNecklace from '../../queries/fixtures/effects-item.json'
+import capturedBracers from '../../queries/fixtures/effects-item-2430.json'
 import { toItem } from '../../queries/items'
 import { ItemDetailCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
 vi.mock('../../queries/useItems', () => ({
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
+  useEffectDetail: () => ({ data: { kind: 'effect', wiki_url: null, bonuses: [], damage: [] } }),
 }))
 
 afterEach(() => {
@@ -42,7 +44,6 @@ const plainItem: Item = {
   weaponStats: null,
   armorStats: null,
   augmentSlots: [],
-  bonuses: [],
   modifiers: [],
   effects: [],
   clickies: [],
@@ -102,9 +103,13 @@ function renderItemDetailCard(item: Item): RenderResult {
   return render(<ItemDetailCard item={item} />)
 }
 
+function toCapturedItem(apiItem: unknown): Item {
+  return toItem(apiItem as ApiItemDetail)
+}
+
 function weaponItem(weaponOverrides: Partial<ApiWeaponStats> = {}): Item {
   return toItem({
-    ...(capturedWeapon as ApiItemDetail),
+    ...(capturedWeapon as unknown as ApiItemDetail),
     weapon: {
       ...(capturedWeapon.weapon as ApiWeaponStats),
       ...weaponOverrides,
@@ -189,7 +194,7 @@ describe('ItemDetailCard details', () => {
     expect(
       container
         .querySelector('.detail-stats')!
-        .compareDocumentPosition(container.querySelector('.resources-enchantment-ledger')!) &
+        .compareDocumentPosition(container.querySelector('.resources-effect-ledger')!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
     await userEvent.click(button)
@@ -226,7 +231,7 @@ describe('ItemDetailCard details', () => {
   })
 
   it('keeps an armor’s bonuses visible and reveals its remaining stats', async () => {
-    const { container } = renderItemDetailCard(toItem(capturedArmor as ApiItemDetail))
+    const { container } = renderItemDetailCard(toCapturedItem(capturedArmor))
     expect(container.querySelector('.resources-kv-grid')).toBeNull()
     expect(container.querySelector('.resources-stat-list')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Armor' })).toBeNull()
@@ -259,8 +264,8 @@ describe('ItemDetailCard details', () => {
   })
 
   it('reveals damage reduction only when the API supplies it', async () => {
-    const item = toItem({
-      ...(capturedArmor as ApiItemDetail),
+    const item = toCapturedItem({
+      ...capturedArmor,
       armor: { ...capturedArmor.armor, damage_reduction: 5 },
     })
     const { container } = renderItemDetailCard(item)
@@ -345,7 +350,7 @@ describe('ItemDetailCard details', () => {
   })
 
   it('shows a rune arm’s extras after expanding without an empty primary grid', async () => {
-    const item = toItem(capturedRuneArm as ApiItemDetail)
+    const item = toCapturedItem(capturedRuneArm)
     const { container, rerender } = renderItemDetailCard(item)
     expect(detailStatText(container)).toEqual([])
     expect(container.querySelector('.detail-fact-grid')).toBeNull()
@@ -366,7 +371,7 @@ describe('ItemDetailCard details', () => {
   })
 
   it('shows only a toggle for a ring with an attribute row', async () => {
-    const { container } = renderItemDetailCard(toItem(capturedRing as ApiItemDetail))
+    const { container } = renderItemDetailCard(toCapturedItem(capturedRing))
     expect(container.querySelector('.detail-card__header .section-label')).toHaveTextContent(
       'Jewelry',
     )
@@ -376,29 +381,27 @@ describe('ItemDetailCard details', () => {
     expect(detailStatText(container)).toEqual(['MaterialSteel'])
   })
 
-  it('shows a ring’s enhancement only in the enchantment table and keeps material in extras', async () => {
-    const item = toItem({ ...(capturedRing as ApiItemDetail), enhancement_bonus: 2 })
+  it('shows a ring’s enhancement only in the effect table and keeps material in extras', async () => {
+    const item = toCapturedItem({ ...capturedRing, enhancement_bonus: 2 })
     const { container } = renderItemDetailCard(item)
     expect(detailStatText(container)).toEqual([])
     expect(container.querySelectorAll('.detail-fact-grid__cell')).toHaveLength(0)
-    expect(container.querySelector('.resources-enchantment-ledger .ledger-row')).toHaveTextContent(
-      'EnhancementEnhancement Bonus+2',
+    expect(container.querySelector('.resources-effect-ledger .ledger-row')).toHaveTextContent(
+      'Enhancement BonusEnhancement+2',
     )
     await userEvent.click(screen.getByRole('button', { name: 'More details' }))
     expect(detailStatText(container)).toEqual(['MaterialSteel'])
   })
 
-  it('keeps a zero enhancement as an enchantment row', async () => {
-    const item = toItem({ ...(capturedRing as ApiItemDetail), enhancement_bonus: 0 })
+  it('omits a zero enhancement from the effect table', () => {
+    const item = toCapturedItem({ ...capturedRing, enhancement_bonus: 0 })
     const { container } = renderItemDetailCard(item)
     expect(detailStatText(container)).toEqual([])
-    expect(container.querySelector('.resources-enchantment-ledger .ledger-row')).toHaveTextContent(
-      'EnhancementEnhancement Bonus0',
-    )
+    expect(screen.queryByRole('row', { name: /Enhancement Bonus/ })).toBeNull()
   })
 
   it('keeps every header fact in place when its socket opens and puts the ledger below the header', async () => {
-    const { container } = renderItemDetailCard(toItem(capturedRing as ApiItemDetail))
+    const { container } = renderItemDetailCard(toCapturedItem(capturedRing))
     const header = container.querySelector('.detail-card__header')!
     const facts = header.querySelector('.detail-card__facts')!
     const originalFacts = Array.from(facts.children) as HTMLElement[]
@@ -410,10 +413,8 @@ describe('ItemDetailCard details', () => {
       Array.from(facts.children).map((fact) => fact.querySelector('.section-label')?.textContent)
     const originalLabels = factLabels()
     expect(originalLabels).toEqual(['ML', 'Gear slot', 'Raid', 'Rare', 'Set', 'Augments'])
-    expect(originalFacts.at(-1)?.querySelector('.resources-augment-word')).toHaveTextContent(
-      'Yellow',
-    )
-    await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
+    expect(originalFacts.at(-1)?.querySelector('.resources-augment-symbol')).toHaveTextContent('Y')
+    await userEvent.click(screen.getByRole('button', { name: 'Yellow slot' }))
     const ledger = container.querySelector('.resources-augment-candidates')!
     expect(ledger).not.toBeNull()
     expect(facts.contains(ledger)).toBe(false)
@@ -428,9 +429,9 @@ describe('ItemDetailCard details', () => {
       ledger.compareDocumentPosition(container.querySelector('.resources-detail-description')!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
-    await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Yellow slot' }))
     expect(container.querySelector('.resources-augment-candidates')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Yellow' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Yellow slot' })).toHaveFocus()
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
     expect(
       originalFacts.map((fact) => ({ offsetTop: fact.offsetTop, offsetLeft: fact.offsetLeft })),
@@ -439,7 +440,7 @@ describe('ItemDetailCard details', () => {
 
   it('returns focus to the socket word when Escape closes its ledger from a header', async () => {
     renderItemDetailCard(toItem(capturedRing as ApiItemDetail))
-    const yellowSocket = screen.getByRole('button', { name: 'Yellow' })
+    const yellowSocket = screen.getByRole('button', { name: 'Yellow slot' })
     await userEvent.click(yellowSocket)
     const nameHeader = screen.getByRole('columnheader', { name: 'Name' })
     nameHeader.focus()
@@ -465,7 +466,7 @@ describe('ItemDetailCard details', () => {
         </section>
       </HoverCardProvider>,
     )
-    const yellowSocket = screen.getByRole('button', { name: 'Yellow' })
+    const yellowSocket = screen.getByRole('button', { name: 'Yellow slot' })
     await userEvent.click(yellowSocket)
     const nameHeader = screen.getByRole('columnheader', { name: 'Name' })
     nameHeader.focus()
@@ -526,19 +527,19 @@ describe('ItemDetailCard details', () => {
 
   it('keeps hover card sockets last in the header facts', () => {
     const { container } = render(
-      <ItemDetailCard item={toItem(capturedRing as ApiItemDetail)} variant="hover" />,
+      <ItemDetailCard item={toCapturedItem(capturedRing)} variant="hover" />,
     )
     const header = container.querySelector('.detail-card--hover .detail-card__header')!
     const facts = header.querySelector('.detail-card__facts')!
     expect(facts.lastElementChild?.querySelector('.section-label')).toHaveTextContent('Augments')
-    expect(facts.lastElementChild?.querySelector('.resources-augment-word')).toHaveTextContent(
-      'Yellow',
+    expect(facts.lastElementChild?.querySelector('.resources-augment-symbol')).toHaveTextContent(
+      'Y',
     )
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
   })
 
   it('shows shield primary rows and reserves the remaining shield stats for its toggle', async () => {
-    const item = toItem(capturedShield as ApiItemDetail)
+    const item = toCapturedItem(capturedShield)
     const { container, rerender } = renderItemDetailCard(item)
     expect(container.querySelector('.resources-detail-body')).not.toHaveClass(
       'resources-detail-body--weapon',
@@ -574,7 +575,7 @@ describe('ItemDetailCard details', () => {
 
   it('shows armor primary cells without description and leaves extras collapsed in hover', () => {
     const { container } = render(
-      <ItemDetailCard item={toItem(capturedArmor as ApiItemDetail)} variant="hover" />,
+      <ItemDetailCard item={toCapturedItem(capturedArmor)} variant="hover" />,
     )
     expect(detailStatText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1'])
     expect(container.querySelector('.resources-detail-description')).toBeNull()
@@ -590,13 +591,51 @@ describe('ItemDetailCard details', () => {
     expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()
   })
 
-  it('uses the fact grid for weapon stats and keeps the enchantment table in hover', () => {
+  it('uses the fact grid for weapon stats and keeps effect rows in hover', () => {
     const { container, rerender } = render(<ItemDetailCard item={weaponItem()} variant="hover" />)
     expect(container.querySelector('.detail-stats .detail-fact-grid')).not.toBeNull()
     rerender(<ItemDetailCard item={toItem(capturedNecklace as ApiItemDetail)} variant="hover" />)
-    expect(container.querySelector('.resources-hover-enchantment-row')).toHaveClass(
-      'hover-card-row',
+    const effectRow = container.querySelector('.resources-hover-effect-row .detail-value-row')
+    expect(effectRow).toHaveClass('hover-card-row')
+    expect(effectRow?.querySelector('.detail-value-row__label')).toHaveTextContent('Charisma')
+    expect(effectRow?.querySelector('.detail-value-row__type')).toHaveTextContent('Enhancement')
+    expect(effectRow?.querySelector('.detail-value-row__value')).toHaveTextContent('+8')
+  })
+
+  it('keeps each captured effect value in the item hover rows', () => {
+    const { container } = render(
+      <ItemDetailCard item={toItem(capturedBracers as ApiItemDetail)} variant="hover" />,
     )
+    const rows = [...container.querySelectorAll('.resources-hover-effect-row .detail-value-row')]
+    expect(rows[0].querySelector('.detail-value-row__label')).toHaveTextContent('Dexterity')
+    expect(rows[0].querySelector('.detail-value-row__value')).toHaveTextContent('+11')
+    expect(rows[0].querySelector('.detail-value-row__type')).toHaveTextContent('Enhancement')
+    expect(rows[1].querySelector('.detail-value-row__label')).toHaveTextContent('Riposte')
+    expect(rows[1].querySelector('.detail-value-row__value')).toHaveTextContent('+5')
+    expect(rows[1].querySelector('.detail-value-row__type')).toHaveTextContent('Insight')
+  })
+
+  it('shows an armor enhancement first among the item hover rows', () => {
+    const { container } = render(
+      <ItemDetailCard item={toCapturedItem(capturedArmor)} variant="hover" />,
+    )
+    const firstRow = container.querySelector('.resources-hover-effect-row .detail-value-row')
+    expect(firstRow?.querySelector('.detail-value-row__label')).toHaveTextContent(
+      'Enhancement Bonus',
+    )
+    expect(firstRow?.querySelector('.detail-value-row__type')).toHaveTextContent('Enhancement')
+    expect(firstRow?.querySelector('.detail-value-row__value')).toHaveTextContent('+5')
+  })
+
+  it('omits the enchantment enhancement row for zero or missing values', () => {
+    const { rerender } = renderItemDetailCard(
+      toCapturedItem({ ...capturedArmor, enhancement_bonus: 0 }),
+    )
+    expect(screen.queryByRole('row', { name: /Enhancement Bonus/ })).toBeNull()
+    rerender(
+      <ItemDetailCard item={toCapturedItem({ ...capturedArmor, enhancement_bonus: null })} />,
+    )
+    expect(screen.queryByRole('row', { name: /Enhancement Bonus/ })).toBeNull()
   })
 
   it('uses the same columns and ordering for pane and hover extras', async () => {
@@ -761,7 +800,7 @@ describe('ItemDetailCard obtained-from layout', () => {
 })
 
 describe('ItemDetailCard drop locations', () => {
-  it('shows a weapon’s primary rows with facts, enchantments, and drops for hover', () => {
+  it('shows a weapon’s primary rows with facts, effects, and drops for hover', () => {
     render(
       <ItemDetailCard
         item={{
@@ -1174,8 +1213,8 @@ describe('ItemDetailCard header attributes', () => {
       setName: 'Adherent of the Mists',
     })
     expect(container.querySelector('.detail-fact-grid')).toBeNull()
-    expect(container.querySelector('.resources-enchantment-ledger .ledger-row')).toHaveTextContent(
-      'EnhancementEnhancement Bonus+5',
+    expect(container.querySelector('.resources-effect-ledger .ledger-row')).toHaveTextContent(
+      'Enhancement BonusEnhancement+5',
     )
     expect(screen.getByText('Adherent of the Mists')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()

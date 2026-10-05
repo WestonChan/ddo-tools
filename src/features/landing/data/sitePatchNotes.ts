@@ -8,6 +8,15 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     date: '2026-10-06',
     changes: [
       'In an open item, one Escape cancels a keyboard column move, Escape on an augment row closes its socket, and closing a socket keeps focus in the item so the next Escape closes it',
+      'Item detail lists each enchantment as one line with the bonuses it grants; numbers the game derives (Riposte gives half its value to Armor Class) are marked, with how they were worked out on hover',
+      'Lines that grant a group of stats, such as Charisma Skills or All Ability Scores, show as one line with the members on hover',
+      'Damage that triggers on hit or on a critical shows under its enchantment, starting with Acid II',
+      'The Bonuses filter offers stats, groups and named enchantments; a stat can be narrowed to one bonus type, and Any or All decides whether items need every pick',
+      'Pack takes several values, and every list column sorts, including Raid and Rare',
+      'The enchantment table names each line by its enchantment; the type and value stay in their own columns, and the full line shows on hover',
+      'Filter items by set: pick several sets, and Any or All decides whether an item needs every one',
+      'Item detail lists each drop location once; an item dropped in a quest no longer shows again as dropping anywhere in its pack',
+      'Colour augment sockets show as lettered hexagons (R, B, Y, G, P, O, C) in the item title and hover card; named sockets keep their names',
     ],
   },
   {

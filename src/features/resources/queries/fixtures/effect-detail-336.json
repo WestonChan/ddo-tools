@@ -1,0 +1,787 @@
+{
+  "augments": {
+    "augments": [
+      {
+        "amount_source": null,
+        "bonus_type": "Exceptional",
+        "bonuses": [
+          {
+            "amount_source": "owner",
+            "bonus_type": "Exceptional",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Bluff",
+            "stat_category": "skill",
+            "value": 6
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Exceptional",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Diplomacy",
+            "stat_category": "skill",
+            "value": 6
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Exceptional",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Haggle",
+            "stat_category": "skill",
+            "value": 6
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Exceptional",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Intimidate",
+            "stat_category": "skill",
+            "value": 6
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Exceptional",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Perform",
+            "stat_category": "skill",
+            "value": 6
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Exceptional",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Use Magic Device",
+            "stat_category": "skill",
+            "value": 6
+          }
+        ],
+        "effect": null,
+        "effect_id": null,
+        "id": 822,
+        "line": {
+          "bonus_type": "Exceptional",
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Exceptional",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Bluff",
+              "stat_category": "skill",
+              "value": 6
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Exceptional",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Diplomacy",
+              "stat_category": "skill",
+              "value": 6
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Exceptional",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Haggle",
+              "stat_category": "skill",
+              "value": 6
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Exceptional",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Intimidate",
+              "stat_category": "skill",
+              "value": 6
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Exceptional",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Perform",
+              "stat_category": "skill",
+              "value": 6
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Exceptional",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Use Magic Device",
+              "stat_category": "skill",
+              "value": 6
+            }
+          ],
+          "damage": [],
+          "description": "+6 Exceptional bonus to all Charisma based skills.",
+          "effect_id": 338,
+          "name": "Charisma Skills",
+          "tier": null,
+          "value": 6,
+          "value2": null,
+          "verbose_name": "Exceptional Charisma Skills +6"
+        },
+        "lines": [
+          {
+            "amount_source": null,
+            "bonus_type": "Exceptional",
+            "bonuses": [
+              {
+                "amount_source": "owner",
+                "bonus_type": "Exceptional",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Bluff",
+                "stat_category": "skill",
+                "value": 6
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Exceptional",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Diplomacy",
+                "stat_category": "skill",
+                "value": 6
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Exceptional",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Haggle",
+                "stat_category": "skill",
+                "value": 6
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Exceptional",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Intimidate",
+                "stat_category": "skill",
+                "value": 6
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Exceptional",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Perform",
+                "stat_category": "skill",
+                "value": 6
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Exceptional",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Use Magic Device",
+                "stat_category": "skill",
+                "value": 6
+              }
+            ],
+            "effect": null,
+            "effect_id": null,
+            "line": {
+              "bonus_type": "Exceptional",
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Exceptional",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Bluff",
+                  "stat_category": "skill",
+                  "value": 6
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Exceptional",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Diplomacy",
+                  "stat_category": "skill",
+                  "value": 6
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Exceptional",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Haggle",
+                  "stat_category": "skill",
+                  "value": 6
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Exceptional",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Intimidate",
+                  "stat_category": "skill",
+                  "value": 6
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Exceptional",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Perform",
+                  "stat_category": "skill",
+                  "value": 6
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Exceptional",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Use Magic Device",
+                  "stat_category": "skill",
+                  "value": 6
+                }
+              ],
+              "damage": [],
+              "description": "+6 Exceptional bonus to all Charisma based skills.",
+              "effect_id": 338,
+              "name": "Charisma Skills",
+              "tier": null,
+              "value": 6,
+              "value2": null,
+              "verbose_name": "Exceptional Charisma Skills +6"
+            },
+            "scale": null,
+            "value": 6,
+            "value2": null
+          }
+        ],
+        "name": "+100 Spell Points, +6 Exceptional Charisma Skills",
+        "scale": null,
+        "value": 6,
+        "value2": null
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 12
+  },
+  "bonuses": [
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "down",
+      "scale": 1.0,
+      "target": "Bluff",
+      "target_kind": "stat"
+    },
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "down",
+      "scale": 1.0,
+      "target": "Diplomacy",
+      "target_kind": "stat"
+    },
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "down",
+      "scale": 1.0,
+      "target": "Haggle",
+      "target_kind": "stat"
+    },
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "down",
+      "scale": 1.0,
+      "target": "Intimidate",
+      "target_kind": "stat"
+    },
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "down",
+      "scale": 1.0,
+      "target": "Perform",
+      "target_kind": "stat"
+    },
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "down",
+      "scale": 1.0,
+      "target": "Use Magic Device",
+      "target_kind": "stat"
+    }
+  ],
+  "category": null,
+  "damage": [],
+  "default_value": null,
+  "default_value2": null,
+  "description_template": "{1} %b1 bonus to all Charisma based skills.",
+  "id": 338,
+  "items": {
+    "items": [
+      {
+        "amount_source": null,
+        "bonus_type": "Insight",
+        "bonuses": [
+          {
+            "amount_source": "owner",
+            "bonus_type": "Insight",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Bluff",
+            "stat_category": "skill",
+            "value": 5
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Insight",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Diplomacy",
+            "stat_category": "skill",
+            "value": 5
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Insight",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Haggle",
+            "stat_category": "skill",
+            "value": 5
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Insight",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Intimidate",
+            "stat_category": "skill",
+            "value": 5
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Insight",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Perform",
+            "stat_category": "skill",
+            "value": 5
+          },
+          {
+            "amount_source": "owner",
+            "bonus_type": "Insight",
+            "group": {
+              "id": 338,
+              "name": "Charisma Skills"
+            },
+            "scale": 1.0,
+            "stat": "Use Magic Device",
+            "stat_category": "skill",
+            "value": 5
+          }
+        ],
+        "effect": null,
+        "effect_id": null,
+        "id": 457,
+        "line": {
+          "bonus_type": null,
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Insight",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Bluff",
+              "stat_category": "skill",
+              "value": 5
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Insight",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Diplomacy",
+              "stat_category": "skill",
+              "value": 5
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Insight",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Haggle",
+              "stat_category": "skill",
+              "value": 5
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Penalty",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Hide",
+              "stat_category": "skill",
+              "value": -6
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Insight",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Intimidate",
+              "stat_category": "skill",
+              "value": 5
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Insight",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Perform",
+              "stat_category": "skill",
+              "value": 5
+            },
+            {
+              "amount_source": "owner",
+              "bonus_type": "Insight",
+              "group": {
+                "id": 338,
+                "name": "Charisma Skills"
+              },
+              "scale": 1.0,
+              "stat": "Use Magic Device",
+              "stat_category": "skill",
+              "value": 5
+            }
+          ],
+          "damage": [],
+          "description": "Passive: +5 Insightful bonus on Charisma based skill checks. Command armor and command shields make their owners very noticeable, imposing a -6 penalty on Hide checks.",
+          "effect_id": 337,
+          "name": "Command",
+          "tier": null,
+          "value": 5,
+          "value2": -6,
+          "verbose_name": "Insightful Command +5"
+        },
+        "lines": [
+          {
+            "amount_source": null,
+            "bonus_type": "Insight",
+            "bonuses": [
+              {
+                "amount_source": "owner",
+                "bonus_type": "Insight",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Bluff",
+                "stat_category": "skill",
+                "value": 5
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Insight",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Diplomacy",
+                "stat_category": "skill",
+                "value": 5
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Insight",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Haggle",
+                "stat_category": "skill",
+                "value": 5
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Insight",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Intimidate",
+                "stat_category": "skill",
+                "value": 5
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Insight",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Perform",
+                "stat_category": "skill",
+                "value": 5
+              },
+              {
+                "amount_source": "owner",
+                "bonus_type": "Insight",
+                "group": {
+                  "id": 338,
+                  "name": "Charisma Skills"
+                },
+                "scale": 1.0,
+                "stat": "Use Magic Device",
+                "stat_category": "skill",
+                "value": 5
+              }
+            ],
+            "effect": null,
+            "effect_id": null,
+            "line": {
+              "bonus_type": null,
+              "bonuses": [
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Insight",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Bluff",
+                  "stat_category": "skill",
+                  "value": 5
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Insight",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Diplomacy",
+                  "stat_category": "skill",
+                  "value": 5
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Insight",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Haggle",
+                  "stat_category": "skill",
+                  "value": 5
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Penalty",
+                  "group": null,
+                  "scale": 1.0,
+                  "stat": "Hide",
+                  "stat_category": "skill",
+                  "value": -6
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Insight",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Intimidate",
+                  "stat_category": "skill",
+                  "value": 5
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Insight",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Perform",
+                  "stat_category": "skill",
+                  "value": 5
+                },
+                {
+                  "amount_source": "owner",
+                  "bonus_type": "Insight",
+                  "group": {
+                    "id": 338,
+                    "name": "Charisma Skills"
+                  },
+                  "scale": 1.0,
+                  "stat": "Use Magic Device",
+                  "stat_category": "skill",
+                  "value": 5
+                }
+              ],
+              "damage": [],
+              "description": "Passive: +5 Insightful bonus on Charisma based skill checks. Command armor and command shields make their owners very noticeable, imposing a -6 penalty on Hide checks.",
+              "effect_id": 337,
+              "name": "Command",
+              "tier": null,
+              "value": 5,
+              "value2": -6,
+              "verbose_name": "Insightful Command +5"
+            },
+            "scale": null,
+            "value": 5,
+            "value2": -6
+          }
+        ],
+        "name": "Absolute Judgement",
+        "scale": null,
+        "value": 5,
+        "value2": -6
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 45
+  },
+  "kind": "group",
+  "name": "Charisma Skills",
+  "set_tiers": {
+    "limit": 1,
+    "offset": 0,
+    "set_tiers": [],
+    "total": 0
+  },
+  "tier": null,
+  "verbose_name_template": "%b1 Charisma Skills +{1}",
+  "wiki_url": null
+}

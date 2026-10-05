@@ -1,0 +1,159 @@
+{
+  "adds_augment": null,
+  "adventure_packs": [],
+  "choose_level": false,
+  "crafting": [
+    {
+      "cost": [
+        {
+          "ingredient": "Eldritch Rune",
+          "quantity": 1,
+          "tier": "heroic"
+        }
+      ],
+      "option": "Eldritch Rune of Skill:Charisma",
+      "system": "Dragontouched Armor",
+      "tier": "heroic"
+    }
+  ],
+  "description": "Exceptional Charisma Skills +6",
+  "dual_values": false,
+  "effect_description": null,
+  "effects": [
+    {
+      "bonus_type": "Exceptional",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Exceptional",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Bluff",
+          "stat_category": "skill",
+          "value": 6
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Exceptional",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Diplomacy",
+          "stat_category": "skill",
+          "value": 6
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Exceptional",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Haggle",
+          "stat_category": "skill",
+          "value": 6
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Exceptional",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Intimidate",
+          "stat_category": "skill",
+          "value": 6
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Exceptional",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Perform",
+          "stat_category": "skill",
+          "value": 6
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Exceptional",
+          "group": {
+            "id": 336,
+            "name": "Charisma Skills"
+          },
+          "scale": 1.0,
+          "stat": "Use Magic Device",
+          "stat_category": "skill",
+          "value": 6
+        }
+      ],
+      "damage": [],
+      "description": null,
+      "effect_id": 2039,
+      "name": "Skills Charisma",
+      "tier": null,
+      "value": 6,
+      "value2": null,
+      "verbose_name": "Exceptional Skills Charisma +6"
+    }
+  ],
+  "enter_value": false,
+  "family": "Dragontouched_EldritchRune",
+  "grants_augment": null,
+  "icon": "DraconicRune",
+  "id": 633,
+  "level_values": null,
+  "level_values2": null,
+  "levels": null,
+  "min_level": 16,
+  "modifiers": [
+    {
+      "amount_type": "Simple",
+      "amounts": [
+        6
+      ],
+      "apply_as_item_effect": false,
+      "bonus": "Exceptional",
+      "bonus_type": "Exceptional",
+      "cap": null,
+      "damage": null,
+      "dice_bonus": null,
+      "dice_damage": null,
+      "dice_number": null,
+      "dice_sides": null,
+      "display_name": null,
+      "effect_type": "SkillBonusAbility",
+      "extra_types": null,
+      "id": 13816,
+      "is_item_specific": false,
+      "is_rare": false,
+      "percent": false,
+      "rank": null,
+      "requirements": [],
+      "sort_order": 0,
+      "stack_source": null,
+      "targets": [
+        "Charisma"
+      ],
+      "value": null
+    }
+  ],
+  "name": "Eldritch Rune of Skill:Charisma",
+  "quests": [],
+  "set_bonus": null,
+  "slots": [
+    "crafting: eldritch rune"
+  ],
+  "sources": [],
+  "suppress_set_bonus": false,
+  "weapon_class": null
+}

@@ -6,6 +6,7 @@ import {
   useResourceListSession,
 } from './resourceListSessions'
 import type { ResourceCategory } from './resourceCategories'
+import { itemListParameters } from './queries/items'
 
 const STORAGE_KEY = 'ddo-tools:resource-list-sessions:v1'
 
@@ -25,8 +26,12 @@ describe('resource list sessions', () => {
         filters: {
           ...items.result.current.filters,
           ml: { min: '20', max: '32' },
-          enchantments: ['Strength'],
-          enchantmentMatch: 'all',
+          slot: ['Back'],
+          bonuses: ['Constitution:Insightful', 'Sheltering'],
+          bonusMatch: 'all',
+          set: ['Adherent of the Mists', 'Part of the Family'],
+          setMatch: 'all',
+          pack: ['Ravenloft', 'Sharn'],
         },
         searchQuery: 'stone',
         selectedSort: { key: 'name', direction: 'asc' },
@@ -51,13 +56,37 @@ describe('resource list sessions', () => {
     expect(restoredItems.result.current).toMatchObject({
       filters: {
         ml: { min: '20', max: '32' },
-        enchantments: ['Strength'],
-        enchantmentMatch: 'all',
+        slot: ['Back'],
+        bonuses: ['Constitution:Insightful', 'Sheltering'],
+        bonusMatch: 'all',
+        set: ['Adherent of the Mists', 'Part of the Family'],
+        setMatch: 'all',
+        pack: ['Ravenloft', 'Sharn'],
       },
       searchQuery: 'stone',
       selectedSort: { key: 'name', direction: 'asc' },
       includesSetBonuses: true,
       scrollTop: 120,
+    })
+    expect(
+      itemListParameters(
+        restoredItems.result.current.filters,
+        restoredItems.result.current.searchQuery,
+        restoredItems.result.current.includesSetBonuses,
+        0,
+        restoredItems.result.current.selectedSort,
+      ),
+    ).toMatchObject({
+      q: 'stone',
+      min_level: '20',
+      max_level: '32',
+      slot: ['Back'],
+      bonus: ['Constitution:Insightful', 'Sheltering'],
+      bonus_match: 'all',
+      set: ['Adherent of the Mists', 'Part of the Family'],
+      set_match: 'all',
+      pack: ['Ravenloft', 'Sharn'],
+      sort: ['name'],
     })
     expect(restoredSets.result.current).toMatchObject({
       filters: { tier: 'legendary' },
@@ -89,7 +118,7 @@ describe('resource list sessions', () => {
     sessionStorage.setItem(STORAGE_KEY, entry)
     const { result } = renderHook(() => useResourceListSession('items'))
     expect(result.current).toMatchObject({
-      filters: { enchantments: [], enchantmentMatch: 'any' },
+      filters: { bonuses: [], bonusMatch: 'any', set: [], setMatch: 'any' },
       searchQuery: '',
       selectedSort: null,
       includesSetBonuses: false,

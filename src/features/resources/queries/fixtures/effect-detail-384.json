@@ -1,0 +1,176 @@
+{
+  "augments": {
+    "augments": [],
+    "limit": 1,
+    "offset": 0,
+    "total": 0
+  },
+  "bonuses": [
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "up",
+      "scale": 0.5,
+      "target": "Armor Class",
+      "target_kind": "stat"
+    },
+    {
+      "amount_from": 1,
+      "bonus_type": null,
+      "constant": null,
+      "rounding": "down",
+      "scale": 0.5,
+      "target": "Saving Throws",
+      "target_kind": "stat"
+    }
+  ],
+  "category": null,
+  "damage": [],
+  "default_value": 2,
+  "default_value2": null,
+  "description_template": "This item enchants its user with incredible awareness and speed, granting a {1} %b1 bonus to AC and to Saves.",
+  "id": 386,
+  "items": {
+    "items": [
+      {
+        "amount_source": null,
+        "bonus_type": "Insight",
+        "bonuses": [
+          {
+            "amount_source": "default",
+            "bonus_type": "Insight",
+            "group": null,
+            "scale": 0.5,
+            "stat": "Armor Class",
+            "stat_category": "defensive",
+            "value": 1
+          },
+          {
+            "amount_source": "default",
+            "bonus_type": "Insight",
+            "group": null,
+            "scale": 0.5,
+            "stat": "Saving Throws",
+            "stat_category": "defensive",
+            "value": 1
+          }
+        ],
+        "effect": null,
+        "effect_id": null,
+        "id": 490,
+        "line": {
+          "bonus_type": "Insight",
+          "bonuses": [
+            {
+              "amount_source": "default",
+              "bonus_type": "Insight",
+              "group": null,
+              "scale": 0.5,
+              "stat": "Armor Class",
+              "stat_category": "defensive",
+              "value": 1
+            },
+            {
+              "amount_source": "default",
+              "bonus_type": "Insight",
+              "group": null,
+              "scale": 0.5,
+              "stat": "Saving Throws",
+              "stat_category": "defensive",
+              "value": 1
+            }
+          ],
+          "damage": [],
+          "description": "This item enchants its user with incredible awareness and speed, granting a +2 Insight bonus to AC and to Saves.",
+          "effect_id": 386,
+          "name": "Riposte",
+          "tier": null,
+          "value": 2,
+          "value2": null,
+          "verbose_name": "Riposte +2"
+        },
+        "lines": [
+          {
+            "amount_source": null,
+            "bonus_type": "Insight",
+            "bonuses": [
+              {
+                "amount_source": "default",
+                "bonus_type": "Insight",
+                "group": null,
+                "scale": 0.5,
+                "stat": "Armor Class",
+                "stat_category": "defensive",
+                "value": 1
+              },
+              {
+                "amount_source": "default",
+                "bonus_type": "Insight",
+                "group": null,
+                "scale": 0.5,
+                "stat": "Saving Throws",
+                "stat_category": "defensive",
+                "value": 1
+              }
+            ],
+            "effect": null,
+            "effect_id": null,
+            "line": {
+              "bonus_type": "Insight",
+              "bonuses": [
+                {
+                  "amount_source": "default",
+                  "bonus_type": "Insight",
+                  "group": null,
+                  "scale": 0.5,
+                  "stat": "Armor Class",
+                  "stat_category": "defensive",
+                  "value": 1
+                },
+                {
+                  "amount_source": "default",
+                  "bonus_type": "Insight",
+                  "group": null,
+                  "scale": 0.5,
+                  "stat": "Saving Throws",
+                  "stat_category": "defensive",
+                  "value": 1
+                }
+              ],
+              "damage": [],
+              "description": "This item enchants its user with incredible awareness and speed, granting a +2 Insight bonus to AC and to Saves.",
+              "effect_id": 386,
+              "name": "Riposte",
+              "tier": null,
+              "value": 2,
+              "value2": null,
+              "verbose_name": "Riposte +2"
+            },
+            "scale": null,
+            "value": null,
+            "value2": null
+          }
+        ],
+        "name": "Aegis of the Deep",
+        "scale": null,
+        "value": null,
+        "value2": null
+      }
+    ],
+    "limit": 1,
+    "offset": 0,
+    "total": 29
+  },
+  "kind": "effect",
+  "name": "Riposte",
+  "set_tiers": {
+    "limit": 1,
+    "offset": 0,
+    "set_tiers": [],
+    "total": 0
+  },
+  "tier": null,
+  "verbose_name_template": "Riposte +{1}",
+  "wiki_url": null
+}

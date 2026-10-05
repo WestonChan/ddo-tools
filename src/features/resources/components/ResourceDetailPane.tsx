@@ -12,7 +12,7 @@ import { ItemDetailCard } from './detail/ItemDetailCard'
 interface ResourceDetailPaneProps {
   resourceInUrl: ResourceReference | null
   pickerCategory: ResourceCategory
-  matchingEnchantments?: string[]
+  matchingBonuses?: string[]
   focusItemId?: number | null
   onFocusItem?: () => void
   onDetailRendered?: () => void
@@ -22,7 +22,7 @@ interface ResourceDetailPaneProps {
 export function ResourceDetailPane({
   resourceInUrl,
   pickerCategory,
-  matchingEnchantments = [],
+  matchingBonuses = [],
   focusItemId = null,
   onFocusItem,
   onDetailRendered,
@@ -101,7 +101,7 @@ export function ResourceDetailPane({
             setDetailQuery.data ?? null,
             setDetailQuery.error,
             () => void setDetailQuery.refetch(),
-            matchingEnchantments,
+            matchingBonuses,
             (id, name) => pushResource({ category: 'items', id, name }),
           )}
         </section>
@@ -119,7 +119,7 @@ function renderedDetailBody(
   setDetail: ReturnType<typeof useSet>['data'] | null,
   setError: unknown,
   onRetrySet: () => void,
-  matchingEnchantments: string[],
+  matchingBonuses: string[],
   onOpenItem: (id: number, name: string) => void,
 ): JSX.Element {
   if (topEntry === null) return <StatusPlaceholder reason="no-selection" />
@@ -131,7 +131,7 @@ function renderedDetailBody(
             key={`${topEntry.category}-${topEntry.id}`}
             item={itemDetail}
             setDetail={setDetail}
-            matchingEnchantments={matchingEnchantments}
+            matchingBonuses={matchingBonuses}
             onOpenItem={onOpenItem}
           />
           {setError && (

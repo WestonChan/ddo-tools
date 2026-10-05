@@ -4,6 +4,19 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ItemPicker } from './ItemPicker'
 import { resetResourceListSessionsForTests } from '../resourceListSessions'
+import effectPage from '../queries/fixtures/effects-page.json'
+import capturedSetPage from '../queries/fixtures/sets-page.json'
+import type { ApiEffectVocabularyRow } from '../../../lib/api'
+
+function vocabularyRow(name: string, kind: 'effect' | 'stat', id: number): ApiEffectVocabularyRow {
+  return {
+    ...effectPage.effects[0],
+    id,
+    name,
+    kind,
+    detail_path: `/v1/effects/${id}`,
+  }
+}
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
 
@@ -88,11 +101,11 @@ describe('ItemPicker page errors', () => {
       }
       const responses: Record<string, unknown> = {
         '/v1/items': { total: 0, limit: 200, offset: 0, items: [] },
-        '/v1/enchantments': {
+        '/v1/effects': {
           total: 1,
           limit: 10000,
           offset: 0,
-          enchantments: [{ name: 'Strength', kind: 'stat', item_count: 1 }],
+          effects: [vocabularyRow('Strength', 'stat', 1)],
         },
         '/v1/adventure-packs': {
           total: 1,
@@ -145,12 +158,12 @@ describe('ItemPicker page errors', () => {
     )
     expect(await screen.findByRole('option', { name: 'Trinket' })).toBeInTheDocument()
     for (const [picker, endpoint, option] of [
-      ['Enchantments', '/v1/enchantments', 'Strength'],
+      ['Bonuses', '/v1/effects', 'Strength'],
       ['Pack', '/v1/adventure-packs', 'Vault of Night'],
       ['Raid', '/v1/quests', 'The Raid'],
     ]) {
       await userEvent.click(screen.getByRole('button', { name: picker }))
-      expect(await screen.findByRole('option', { name: option })).toBeInTheDocument()
+      expect(await screen.findByRole('option', { name: new RegExp(option) })).toBeInTheDocument()
       expect(new URL(String(fetchMock.mock.lastCall?.[0])).pathname).toBe(endpoint)
     }
   })
@@ -159,8 +172,8 @@ describe('ItemPicker page errors', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
       const url = new URL(String(request))
       if (url.pathname === '/v1/items') {
-        if (url.searchParams.has('enchantment')) {
-          return Promise.resolve(new Response('Unknown enchantment', { status: 400 }))
+        if (url.searchParams.has('bonus')) {
+          return Promise.resolve(new Response('Unknown bonus', { status: 400 }))
         }
         return Promise.resolve(
           new Response(
@@ -190,11 +203,11 @@ describe('ItemPicker page errors', () => {
         )
       }
       const vocabulary: Record<string, unknown> = {
-        '/v1/enchantments': {
+        '/v1/effects': {
           total: 1,
           limit: 10000,
           offset: 0,
-          enchantments: [{ name: 'Bad Filter', kind: 'stat', item_count: 1 }],
+          effects: [vocabularyRow('Bad Filter', 'stat', 2)],
         },
         '/v1/equipment-slots': {
           total: 1,
@@ -222,21 +235,21 @@ describe('ItemPicker page errors', () => {
       </QueryClientProvider>,
     )
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
-    await user.click(screen.getByRole('button', { name: 'Enchantments' }))
-    await user.click(screen.getByRole('option', { name: 'Bad Filter' }))
-    expect(await screen.findByText('Something went wrong on our side.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+    await user.click(screen.getByRole('option', { name: /Bad Filter/ }))
+    expect(await screen.findByText('Could not load Bonuses filter.')).toBeInTheDocument()
     const report = screen.getByRole('link', { name: 'Report a bug' })
     expect(new URL(report.getAttribute('href') ?? '').searchParams.get('body')).toContain(
-      'Unknown enchantment',
+      'Unknown bonus',
     )
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Enchantments' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Bonuses' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Show applied · 1' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
     expect(resourceResultCount()).toBeEmptyDOMElement()
     expect(screen.queryByText('The game data API returned 400')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+    await user.click(screen.getByRole('button', { name: 'Reset Bonuses filter' }))
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
     await waitFor(() =>
       expect(
@@ -247,29 +260,82 @@ describe('ItemPicker page errors', () => {
     )
   })
 
-  it('offers Reset match when the All request returns 400', async () => {
+  it('names and clears a rejected Set value while preserving other filters', async () => {
     const itemRequests: URL[] = []
     vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
       const url = new URL(String(request))
-      if (url.pathname === '/v1/enchantments') {
+      if (url.pathname === '/v1/sets') {
+        return Promise.resolve(new Response(JSON.stringify(capturedSetPage), { status: 200 }))
+      }
+      if (url.pathname === '/v1/adventure-packs') {
         return Promise.resolve(
           new Response(
             JSON.stringify({
-              total: 2,
+              total: 1,
               limit: 10000,
               offset: 0,
-              enchantments: [
-                { name: 'Strength', kind: 'stat', item_count: 1 },
-                { name: 'Vorpal', kind: 'effect', item_count: 1 },
-              ],
+              adventure_packs: [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
             }),
             { status: 200 },
           ),
         )
       }
       itemRequests.push(url)
-      if (url.searchParams.get('enchantment_match') === 'all') {
-        return Promise.resolve(new Response('Unknown enchantment_match', { status: 400 }))
+      if (url.searchParams.has('set')) {
+        return Promise.resolve(new Response('Unknown set value', { status: 400 }))
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ total: 1, limit: 200, offset: 0, items: [] }), {
+          status: 200,
+        }),
+      )
+    })
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
+    await userEvent.click(screen.getByRole('button', { name: 'Pack' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Vault of Night' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Set' }))
+    await userEvent.click(await screen.findByRole('option', { name: capturedSetPage.sets[0].name }))
+    expect(await screen.findByText('Could not load Set filter.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reset Set filter' })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Reset Set filter' }))
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
+    await userEvent.click(screen.getByRole('button', { name: 'Show applied · 1' }))
+    expect(screen.getByRole('button', { name: 'Remove Pack: Vault of Night' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Remove Set:/ })).not.toBeInTheDocument()
+    expect(
+      itemRequests.some(
+        (url) =>
+          !url.searchParams.has('set') &&
+          url.searchParams.getAll('pack').join() === 'Vault of Night',
+      ),
+    ).toBe(true)
+  })
+
+  it('offers Reset match when the All request returns 400', async () => {
+    const itemRequests: URL[] = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+      const url = new URL(String(request))
+      if (url.pathname === '/v1/effects') {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              total: 2,
+              limit: 10000,
+              offset: 0,
+              effects: [vocabularyRow('Strength', 'stat', 1), vocabularyRow('Vorpal', 'effect', 2)],
+            }),
+            { status: 200 },
+          ),
+        )
+      }
+      itemRequests.push(url)
+      if (url.searchParams.get('bonus_match') === 'all') {
+        return Promise.resolve(new Response('Unknown bonus_match', { status: 400 }))
       }
       return Promise.resolve(
         new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] }), {
@@ -283,25 +349,23 @@ describe('ItemPicker page errors', () => {
       </QueryClientProvider>,
     )
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
-    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
     await userEvent.click(screen.getByRole('button', { name: 'All' }))
     expect(itemRequests).toHaveLength(1)
-    expect(itemRequests[0].searchParams.has('enchantment_match')).toBe(false)
+    expect(itemRequests[0].searchParams.has('bonus_match')).toBe(false)
     expect(screen.queryByRole('button', { name: 'Reset match' })).toBeNull()
-    await userEvent.click(await screen.findByRole('option', { name: 'Strength' }))
-    await userEvent.click(screen.getByRole('option', { name: 'Vorpal' }))
-    expect(itemRequests.at(-1)?.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
-    expect(itemRequests.at(-1)?.searchParams.get('enchantment_match')).toBe('all')
+    await userEvent.click(await screen.findByRole('option', { name: /Strength/ }))
+    await userEvent.click(screen.getByRole('option', { name: /Vorpal/ }))
+    expect(itemRequests.at(-1)?.searchParams.getAll('bonus')).toEqual(['Strength', 'Vorpal'])
+    expect(itemRequests.at(-1)?.searchParams.get('bonus_match')).toBe('all')
     expect(await screen.findByText('Something went wrong on our side.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reset match' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Reset match' }))
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
     expect(screen.queryByRole('button', { name: 'Reset match' })).toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('button', { name: 'Any' })).toHaveAttribute('aria-pressed', 'true')
-    expect(itemRequests.some((url) => url.searchParams.get('enchantment_match') === 'all')).toBe(
-      true,
-    )
+    expect(itemRequests.some((url) => url.searchParams.get('bonus_match') === 'all')).toBe(true)
   })
 
   it('keeps the headers and offers Reset sort after a sorted request returns 400', async () => {

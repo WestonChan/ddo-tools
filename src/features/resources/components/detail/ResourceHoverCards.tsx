@@ -8,6 +8,7 @@ import {
   WikiLinkIcon,
   useClearHoverCards,
   useHoverCard,
+  useHoverCardLabel,
 } from '../../../../components'
 import {
   useItem,
@@ -20,10 +21,14 @@ import {
   useCraftingSystem,
   useVendor,
   useEvent,
+  useEffectDetail,
 } from '../../queries/useItems'
 import type { SourceDetail, SourceDetailKind } from '../../queries/sources'
-import { bonusValue, damageExpression } from './structuredRows'
+import { toEffectDamage, type Effect } from '../../queries/items'
+import { effectDamageText, effectHoverCopy, effectValue, damageExpression } from './structuredRows'
 import { ItemDetailCard } from './ItemDetailCard'
+import { effectKindLabel } from '../effectKindLabel'
+import { numberWithPlusSign } from './numberWithPlusSign'
 
 type OpenItem = (id: number, name: string) => void
 
@@ -98,21 +103,9 @@ export function AugmentHoverContent({ augmentId }: { augmentId: number }): JSX.E
       <span className="resources-hover-fact">
         ML {augment.minimumLevel ?? '—'} · {augment.slots.join(' · ')}
       </span>
-      {augment.bonuses.map((bonus) => {
-        const value = bonusValue(bonus)
-        return (
-          value && (
-            <DetailValueRow
-              key={bonus.id}
-              label={bonus.statName}
-              value={value}
-              type={bonus.bonusType}
-              typePresentation="tag"
-              className="hover-card-row"
-            />
-          )
-        )
-      })}
+      {augment.effects.map((effect) => (
+        <AugmentEffectRow key={`${effect.id}-${effect.sortOrder}`} effect={effect} />
+      ))}
       {augment.modifiers.flatMap((modifier) => {
         const damage = damageExpression(modifier)
         return damage
@@ -132,6 +125,132 @@ export function AugmentHoverContent({ augmentId }: { augmentId: number }): JSX.E
           {augment.effectDescription || augment.description}
         </p>
       )}
+    </>
+  )
+}
+
+function AugmentEffectRow({ effect }: { effect: Effect }): JSX.Element {
+  const hoverCopy = effectHoverCopy(effect)
+  const anchor = useHoverCard({
+    kind: 'enchantment',
+    delayMs: 120,
+    render: () => (
+      <>
+        <EffectVocabularyHoverContent
+          detailPath={`/v1/effects/${effect.id}`}
+          verboseName={hoverCopy.verboseName}
+        />
+        {effect.bonuses.map((bonus) => (
+          <DetailValueRow
+            key={`${bonus.statName}-${bonus.bonusType}`}
+            label={bonus.statName}
+            value={numberWithPlusSign(bonus.value)}
+            type={bonus.bonusType}
+            className="hover-card-row"
+          />
+        ))}
+        {hoverCopy.description && (
+          <p className="resources-hover-definition">{hoverCopy.description}</p>
+        )}
+      </>
+    ),
+  })
+  return (
+    <div className="resources-hover-effect-row" tabIndex={0} {...anchor}>
+      <DetailValueRow
+        label={effect.name}
+        value={effectValue(effect) ?? ''}
+        type={effect.bonusType}
+        typePresentation="tag"
+        className="hover-card-row"
+      />
+      {effect.damage.map((damage, index) => (
+        <span key={index} className="resources-effect-damage">
+          {effectDamageText(damage)}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+export function EffectVocabularyHoverContent({
+  detailPath,
+  verboseName,
+}: {
+  detailPath: string
+  verboseName?: string | null
+}): JSX.Element {
+  const detailQuery = useEffectDetail(detailPath)
+  useHoverCardLabel(detailQuery.data ? effectKindLabel(detailQuery.data.kind) : null)
+  if (detailQuery.error)
+    return (
+      <ApiErrorNotice
+        error={detailQuery.error}
+        path={detailPath}
+        missingResourceName="bonus"
+        onRetry={() => void detailQuery.refetch()}
+      />
+    )
+  if (detailQuery.isPending) return <span>Loading bonus…</span>
+  if (!detailQuery.data) return <span>Bonus unavailable</span>
+  const detail = detailQuery.data
+  return (
+    <>
+      <strong className="resources-hover-title">
+        {detail.wiki_url ? (
+          <WikiLinkIcon
+            href={detail.wiki_url}
+            pageName={detail.name}
+            label={detail.name}
+            className="resources-effect-wiki-name"
+          />
+        ) : (
+          detail.name
+        )}
+      </strong>
+      {verboseName && <span className="resources-hover-fact">{verboseName}</span>}
+      <span className="resources-hover-fact">
+        {effectKindLabel(detail.kind)}
+        {detail.category ? ` · ${detail.category}` : ''}
+      </span>
+      {detail.tier && (
+        <span className="resources-hover-fact">
+          {detail.tier.group} · Step {detail.tier.rank} of {detail.tier.steps.length}
+        </span>
+      )}
+      {detail.bonuses.length > 0 && (
+        <DetailCardSection heading="Stats">
+          {detail.bonuses.map((bonus, index) => (
+            <div
+              key={`${bonus.target}-${bonus.bonus_type}-${index}`}
+              className="resources-hover-fact hover-card-row"
+            >
+              {bonus.target}
+              {bonus.bonus_type ? ` · ${bonus.bonus_type}` : ''}
+            </div>
+          ))}
+        </DetailCardSection>
+      )}
+      {detail.damage.map((damage, index) => (
+        <DetailValueRow
+          key={`damage-${index}`}
+          label="Damage"
+          value={effectDamageText(toEffectDamage(damage))}
+          tone="damage"
+          className="hover-card-row"
+        />
+      ))}
+      <DetailValueRow label="Items" value={String(detail.items.total)} className="hover-card-row" />
+      <DetailValueRow
+        label="Augments"
+        value={String(detail.augments.total)}
+        className="hover-card-row"
+      />
+      <DetailValueRow
+        label="Set tiers"
+        value={String(detail.set_tiers.total)}
+        className="hover-card-row"
+      />
     </>
   )
 }
@@ -514,15 +633,9 @@ export function SetHoverContent({
           <div key={tier.equippedCount}>
             <div className="resources-set-tier hover-card-row">
               <span>{tier.equippedCount} pieces</span>
-              {tier.description && <span>{tier.description}</span>}
             </div>
-            {tier.bonuses.map((bonus) => (
-              <SetBonusRow
-                key={bonus.key}
-                name={bonus.name}
-                type={bonus.type}
-                description={bonus.description}
-              />
+            {tier.effects.map((effect) => (
+              <SetEffectRow key={`${effect.id}-${effect.sortOrder}`} effect={effect} />
             ))}
           </div>
         ))}
@@ -531,30 +644,34 @@ export function SetHoverContent({
   )
 }
 
-function SetBonusRow({
-  name,
-  type,
-  description,
-}: {
-  name: string
-  type: string | null
-  description: string | null
-}): JSX.Element {
+function SetEffectRow({ effect }: { effect: Effect }): JSX.Element {
+  const hoverCopy = effectHoverCopy(effect)
   const anchor = useHoverCard({
     kind: 'enchantment',
     delayMs: 120,
     render: () => (
       <>
-        <strong className="resources-hover-title">{name}</strong>
-        {type && <span className="resources-hover-fact">Type · {type}</span>}
-        {description && <p className="resources-hover-definition">{description}</p>}
+        <EffectVocabularyHoverContent
+          detailPath={`/v1/effects/${effect.id}`}
+          verboseName={hoverCopy.verboseName}
+        />
+        {hoverCopy.description && (
+          <p className="resources-hover-definition">{hoverCopy.description}</p>
+        )}
       </>
     ),
   })
   return (
-    <div className="resources-hover-row hover-card-row" tabIndex={0} {...anchor}>
-      <span>{name}</span>
-      <span>{type}</span>
+    <div className="resources-hover-effect-row" tabIndex={0} {...anchor}>
+      <div className="resources-hover-row hover-card-row">
+        <span>{effect.name}</span>
+        <span>{effect.bonusType}</span>
+      </div>
+      {effect.damage.map((damage, index) => (
+        <span key={index} className="resources-effect-damage">
+          {effectDamageText(damage)}
+        </span>
+      ))}
     </div>
   )
 }

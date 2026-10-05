@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
-import capturedItem from './fixtures/item7631.json'
-import capturedWeapon from './fixtures/item3479.json'
-import capturedShield from './fixtures/item8203.json'
-import capturedAugment from './fixtures/augment1902.json'
+import capturedItem from './fixtures/effects-item.json'
+import capturedWeapon from './fixtures/effects-item-3479.json'
+import capturedShield from './fixtures/effects-item-8203.json'
+import capturedAugment from './fixtures/effects-augment.json'
+import effectPage from './fixtures/effects-page.json'
 import {
   fetchAdventurePackNames,
   fetchAugmentsFittingSlot,
-  fetchEnchantmentNames,
+  fetchEffectVocabulary,
   fetchEquipmentSlotNames,
   fetchItem,
   fetchItemPage,
@@ -75,20 +76,21 @@ const API_ITEM_DETAIL: ApiItemDetail = {
     dr_bypass: ['Good', 'Magic', 'Pierce', 'Slash'],
   },
   armor: null,
-  bonuses: [
+  modifiers: [],
+  effects: [
     {
-      id: 3,
-      name: 'Fire Spell Power +54',
-      description: null,
-      stat: 'Fire Spell Power',
-      stat_category: 'magical',
-      bonus_type: 'Enhancement',
-      value: 54,
+      effect_id: 9,
+      name: 'Supreme Good',
+      verbose_name: 'Supreme Good',
+      description: 'Smites.',
+      value: null,
       value2: null,
+      bonus_type: null,
+      tier: null,
+      bonuses: [],
+      damage: [],
     },
   ],
-  modifiers: [],
-  effects: [{ id: 9, name: 'Supreme Good', description: 'Smites.', value: null, target: 'All' }],
   augment_slots: [
     {
       sort_order: 0,
@@ -205,7 +207,7 @@ describe('mappers', () => {
   })
   it('maps captured item values and modifier fields from the API response', () => {
     const item = toItem(capturedItem as ApiItemDetail)
-    expect(item.bonuses[0]).toMatchObject({ statName: 'Charisma', value: 8, value2: null })
+    expect(item.effects[0].bonuses[0]).toMatchObject({ statName: 'Charisma', value: 8 })
     expect(item.modifiers).toEqual([])
     const diceModifier = capturedAugment.modifiers[0]
     const itemWithModifier = toItem({
@@ -253,22 +255,17 @@ describe('mappers', () => {
     expect(item.setName).toBe('Eminence of Winter')
     expect(item.weaponStats?.damageReductionBypasses).toHaveLength(4)
     expect(item.armorStats).toBeNull()
-    expect(item.bonuses[0]).toEqual({
-      id: 3,
-      name: 'Fire Spell Power +54',
-      description: null,
-      bonusType: 'Enhancement',
-      statName: 'Fire Spell Power',
-      value: 54,
-      value2: null,
-      sortOrder: 0,
-    })
     expect(item.effects[0]).toEqual({
       id: 9,
       name: 'Supreme Good',
+      verboseName: 'Supreme Good',
       description: 'Smites.',
-      target: 'All',
+      bonusType: null,
       value: null,
+      value2: null,
+      tier: null,
+      bonuses: [],
+      damage: [],
       sortOrder: 0,
     })
     expect(item.augmentSlots[0].options[0].name).toBe('Planar Conflux')
@@ -296,7 +293,7 @@ describe('mappers', () => {
   })
 
   it('maps the structured weapon fields from an API item detail', () => {
-    expect(toItem(capturedWeapon as ApiItemDetail).weaponStats).toMatchObject({
+    expect(toItem({ ...capturedWeapon, effects: [] } as ApiItemDetail).weaponStats).toMatchObject({
       baseDiceCount: 2,
       baseDiceSides: 6,
       baseDiceBonus: null,
@@ -310,7 +307,7 @@ describe('mappers', () => {
   })
 
   it('maps a captured shield with both armor and weapon blocks as a shield', () => {
-    const item = toItem(capturedShield as ApiItemDetail)
+    const item = toItem({ ...capturedShield, effects: [] } as ApiItemDetail)
     expect(item.category).toBe('Shield')
     expect(item.weaponStats).toMatchObject({ weaponType: 'Tower Shield' })
     expect(item.armorStats).toMatchObject({
@@ -369,7 +366,7 @@ describe('mappers', () => {
       {
         kind: 'adventurePack',
         id: 25,
-        key: 'adventurePack-25',
+        key: 'adventurePack-25-0',
         name: 'The Isle of Dread',
         vendorLocation: null,
         cost: null,
@@ -381,7 +378,7 @@ describe('mappers', () => {
       {
         kind: 'adventurePack',
         id: 40,
-        key: 'adventurePack-40',
+        key: 'adventurePack-40-1',
         name: 'Magic of Myth Drannor',
         vendorLocation: null,
         cost: null,
@@ -532,7 +529,7 @@ describe('mappers', () => {
     })
   })
 
-  it('toAugmentSummary flattens bonus labels', () => {
+  it('toAugmentSummary keeps the augment identity and slots', () => {
     const a: ApiAugment = {
       id: 2,
       name: 'Silverscale',
@@ -541,17 +538,11 @@ describe('mappers', () => {
       min_level: 31,
       icon: null,
       slots: ['isle of dread: scale (armor)'],
-      bonuses: [
+      effects: [
         {
-          id: 1,
-          name: 'Healing Amplification +56',
-          description: null,
-          stat: 'Healing Amplification',
-          stat_category: 'other',
-          bonus_type: 'Competence',
-          value: 56,
-          value2: null,
-        },
+          ...capturedAugment.effects[0],
+          verbose_name: 'Healing Amplification +56',
+        } as ApiAugment['effects'][number],
       ],
       crafting: [],
     }
@@ -560,7 +551,6 @@ describe('mappers', () => {
       name: 'Silverscale',
       minimumLevel: 31,
       slots: ['isle of dread: scale (armor)'],
-      bonusNames: ['Healing Amplification +56'],
       recipes: [],
     })
   })
@@ -574,7 +564,7 @@ describe('mappers', () => {
       min_level: 31,
       icon: null,
       slots: ['lamordia: melancholic (accessory)'],
-      bonuses: [],
+      effects: [],
       crafting: [
         {
           system: 'Viktranium Experiment Crafting',
@@ -602,8 +592,8 @@ describe('mappers', () => {
 
 describe('fetchers', () => {
   function mockFetchResponse(responseBody: unknown): void {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(responseBody), { status: 200 }),
+    vi.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify(responseBody), { status: 200 })),
     )
   }
 
@@ -612,6 +602,8 @@ describe('fetchers', () => {
     ['ml', 'desc', '-minimum_level'],
     ['slot', 'asc', 'slot'],
     ['pack', 'asc', 'pack'],
+    ['raid', 'asc', 'is_raid'],
+    ['rare', 'desc', '-is_rare'],
   ] as const)(
     'sends the %s column sort as %s through the API',
     async (column, direction, apiField) => {
@@ -638,8 +630,10 @@ describe('fetchers', () => {
       {
         ml: { min: '20', max: '32' },
         slot: ['Back', 'Ring'],
-        enchantments: ['Strength', 'Constitution Poison, Lesser'],
-        enchantmentMatch: 'all',
+        bonuses: ['Strength', 'Constitution:Insightful'],
+        bonusMatch: 'all',
+        set: ['Adherent of the Mists Set (Heroic)', 'Adherent of the Mists Set (Legendary)'],
+        setMatch: 'all',
         pack: ['Shadowfell', 'Vault of Night'],
         raid: ['7', '8'],
         isRareOnly: true,
@@ -653,22 +647,24 @@ describe('fetchers', () => {
     expect(
       Object.fromEntries(
         [...url.searchParams].filter(
-          ([key]) => !['slot', 'pack', 'quest', 'enchantment'].includes(key),
+          ([key]) => !['slot', 'pack', 'quest', 'bonus', 'set'].includes(key),
         ),
       ),
     ).toEqual({
       q: 'torc',
       min_level: '20',
       max_level: '32',
-      enchantment_match: 'all',
+      bonus_match: 'all',
+      set_match: 'all',
       include_set_bonuses: 'true',
       rare: 'true',
       limit: '200',
       offset: '200',
     })
-    expect(url.searchParams.getAll('enchantment')).toEqual([
-      'Strength',
-      'Constitution Poison, Lesser',
+    expect(url.searchParams.getAll('bonus')).toEqual(['Strength', 'Constitution:Insightful'])
+    expect(url.searchParams.getAll('set')).toEqual([
+      'Adherent of the Mists Set (Heroic)',
+      'Adherent of the Mists Set (Legendary)',
     ])
     expect(url.searchParams.getAll('slot')).toEqual(['Back', 'Ring'])
     expect(url.searchParams.getAll('pack')).toEqual(['Shadowfell', 'Vault of Night'])
@@ -678,20 +674,15 @@ describe('fetchers', () => {
     expect(page.items.map((item) => item.name)).toEqual(['Torc', 'Bloodstone'])
   })
 
-  it('maps unique stat and effect names from the API vocabulary', async () => {
-    mockFetchResponse({
-      total: 3,
-      limit: 10000,
-      offset: 0,
-      enchantments: [
-        { name: 'Strength', kind: 'stat', item_count: 202 },
-        { name: 'Vorpal', kind: 'effect', item_count: 84 },
-        { name: 'Strength', kind: 'effect', item_count: 2 },
-      ],
+  it('keeps effect and stat vocabulary rows in API order and sends the search query', async () => {
+    mockFetchResponse(effectPage)
+    await expect(fetchEffectVocabulary('acid')).resolves.toMatchObject({
+      rows: effectPage.effects,
+      total: effectPage.total,
     })
-    await expect(fetchEnchantmentNames()).resolves.toEqual(['Strength', 'Vorpal'])
     const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
-    expect(url.pathname).toBe('/v1/enchantments')
+    expect(url.pathname).toBe('/v1/effects')
+    expect(url.searchParams.get('q')).toBe('acid')
     expect(url.searchParams.get('limit')).toBe('10000')
   })
 
@@ -745,23 +736,30 @@ describe('fetchers', () => {
   it.each([
     { rowsKey: 'adventure_packs', fetchVocabulary: fetchAdventurePackNames },
     { rowsKey: 'equipment_slots', fetchVocabulary: fetchEquipmentSlotNames },
-    { rowsKey: 'enchantments', fetchVocabulary: fetchEnchantmentNames },
+    { rowsKey: 'effects', fetchVocabulary: fetchEffectVocabulary },
     { rowsKey: 'quests', fetchVocabulary: fetchRaidQuests },
     { rowsKey: 'augments', fetchVocabulary: () => fetchAugmentsFittingSlot('sun') },
   ])('returns no options for an empty $rowsKey page', async ({ rowsKey, fetchVocabulary }) => {
     mockFetchResponse({ total: 0, limit: 10000, offset: 0, [rowsKey]: [] })
-    await expect(fetchVocabulary()).resolves.toEqual([])
+    await expect(fetchVocabulary()).resolves.toEqual(
+      rowsKey === 'effects' ? { rows: [], total: 0 } : [],
+    )
   })
 
-  it('keeps enchantments beyond the default 100-row page', async () => {
-    const names = Array.from({ length: 101 }, (_, index) => `Effect ${index}`)
+  it('keeps effects beyond the default 100-row page', async () => {
+    const rows = Array.from({ length: 101 }, (_, index) => ({
+      ...effectPage.effects[0],
+      id: index + 1,
+      name: `Effect ${index}`,
+      detail_path: `/v1/effects/${index + 1}`,
+    }))
     mockFetchResponse({
       total: 101,
       limit: 10000,
       offset: 0,
-      enchantments: names.map((name) => ({ name, kind: 'effect', item_count: 1 })),
+      effects: rows,
     })
-    await expect(fetchEnchantmentNames()).resolves.toEqual(names)
+    await expect(fetchEffectVocabulary()).resolves.toMatchObject({ rows, total: 101 })
   })
 
   it('rejects a wrong list key with a tagged API error', async () => {
@@ -783,8 +781,10 @@ describe('fetchers', () => {
       {
         ml: { min: '', max: '' },
         slot: [],
-        enchantments: [],
-        enchantmentMatch: 'any',
+        bonuses: [],
+        bonusMatch: 'any',
+        set: [],
+        setMatch: 'any',
         pack: ['Reign of Madness'],
         raid: [],
         isRareOnly: false,
@@ -803,20 +803,20 @@ describe('fetchers', () => {
     expect(page.items[0].pack).toBe('Vault of Night')
   })
 
-  it('omits the match parameter in Any mode while keeping repeated enchantments', async () => {
+  it('omits the match parameter in Any mode while keeping repeated bonuses', async () => {
     mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
-    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, enchantments: ['Strength', 'Vorpal'] }, '', false)
+    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, bonuses: ['Strength', 'Vorpal'] }, '', false)
     const parameters = new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams
-    expect(parameters.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
-    expect(parameters.has('enchantment_match')).toBe(false)
+    expect(parameters.getAll('bonus')).toEqual(['Strength', 'Vorpal'])
+    expect(parameters.has('bonus_match')).toBe(false)
   })
 
-  it('omits All mode until an enchantment is selected', async () => {
+  it('omits All mode until a bonus is selected', async () => {
     mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
-    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, enchantmentMatch: 'all' }, '', false)
+    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, bonusMatch: 'all' }, '', false)
     const parameters = new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams
-    expect(parameters.has('enchantment_match')).toBe(false)
-    expect(parameters.has('enchantment')).toBe(false)
+    expect(parameters.has('bonus_match')).toBe(false)
+    expect(parameters.has('bonus')).toBe(false)
   })
 
   it('fetchAugmentsFittingSlot orders by level then name', async () => {
@@ -828,7 +828,7 @@ describe('fetchers', () => {
       min_level,
       icon: null,
       slots: ['red'],
-      bonuses: [],
+      effects: [],
       crafting: [],
     })
     mockFetchResponse({

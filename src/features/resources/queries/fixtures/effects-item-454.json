@@ -1,0 +1,100 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [],
+  "armor": null,
+  "augment_slots": [],
+  "category": "Weapon",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "A long, stout staff used as a simple weapon. Often favored by wizards or common\nfolk.",
+  "drop_location": "Cannith Crafting Tutorial, End reward",
+  "effects": [
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This weapon is less well-made than normal, giving a -1 penalty to attack and damage rolls.",
+      "effect_id": 326,
+      "name": "Weapon Enchantment Bad",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "-1 Enhancement Bonus"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "A bane weapon excels at attacking one type or subtype of creature. Against Halflings, this weapon's effective enhancement bonus is +1 better than its normal enhancement bonus. It deals an extra 1 to 6 points of damage against the foe.",
+      "effect_id": 327,
+      "name": "Lesser Halfling Bane",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Lesser Halfling Bane"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [
+        {
+          "amount_source": "constant",
+          "bonus_type": "Penalty",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Strength",
+          "stat_category": "ability",
+          "value": -1
+        }
+      ],
+      "damage": [],
+      "description": "Passive -1 Penalty to Strength. The minimum level required to equip this item is lower than normal due to this curse.",
+      "effect_id": 328,
+      "name": "Curse of Weakness",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Curse of Weakness -1"
+    }
+  ],
+  "enhancement_bonus": null,
+  "events": [],
+  "icon": "Quarterstaff_15",
+  "id": 454,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": "Quarterstaff",
+  "material": "Wood",
+  "minimum_level": 1,
+  "modifiers": [],
+  "name": "-1 Quarterstaff of Lesser Halfling Bane",
+  "quest_chains": [],
+  "quests": [],
+  "race_required": null,
+  "sagas": [],
+  "set": null,
+  "set_name": null,
+  "slot": "Main Hand",
+  "sources": [],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": {
+    "attack_modifier": "Strength",
+    "base_dice_bonus": null,
+    "base_dice_count": 1,
+    "base_dice_sides": 6,
+    "critical": "20 / x2",
+    "critical_multiplier": 2,
+    "critical_threat_range": 1,
+    "damage": "1[1d6] Bludgeon",
+    "damage_modifier": "Strength",
+    "damage_multiplier": 1.0,
+    "dr_bypass": [
+      "Bludgeon"
+    ],
+    "handedness": "Two-handed",
+    "proficiency": "Simple",
+    "weapon_type": "Quarterstaff"
+  },
+  "wiki_url": "https://ddowiki.com/page/Item:-1_Quarterstaff_of_Lesser_Halfling_Bane"
+}

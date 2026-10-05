@@ -18,6 +18,7 @@ import {
   type LedgerColumn,
   type LedgerSort,
 } from '../../../components'
+import { isApiError, type ApiEffectVocabularyRow } from '../../../lib/api'
 import { useDebouncedValue } from '../../../hooks'
 import { FilterChipRow } from '../filters/FilterChipRow'
 import {
@@ -25,6 +26,7 @@ import {
   setResourceListSession,
   useResourceListSession,
 } from '../resourceListSessions'
+import { appliedFilterValues } from '../filters/filterModel'
 import {
   EMPTY_ITEM_FILTERS,
   type ItemListFilters,
@@ -33,14 +35,15 @@ import {
 } from '../queries/items'
 import {
   useAdventurePackNames,
-  useEnchantmentNames,
+  useEffectVocabulary,
   useEquipmentSlotNames,
   useItemPage,
   useRaidQuests,
+  useSetVocabulary,
 } from '../queries/useItems'
 import { itemFilterDefinitions } from './itemFilterDefinitions'
 import { StatusPlaceholder } from './StatusPlaceholder'
-import { ItemHoverContent } from './detail/ResourceHoverCards'
+import { EffectVocabularyHoverContent, ItemHoverContent } from './detail/ResourceHoverCards'
 
 interface ItemPickerProps {
   category: 'items'
@@ -52,8 +55,47 @@ interface ItemPickerProps {
   onRowFocused?: () => void
 }
 const EMPTY_NAMES: string[] = []
+const EMPTY_EFFECT_VOCABULARY: ApiEffectVocabularyRow[] = []
 const EMPTY_RAID_QUESTS: RaidQuest[] = []
 const EMPTY_ITEMS: ItemSummary[] = []
+
+function rejectedItemFilter(error: unknown, filters: ItemListFilters): 'bonuses' | 'set' | null {
+  if (!isApiError(error) || error.httpStatus !== 400) return null
+  const parameter = error.message.match(/\b(?:unknown|invalid|unrecognized)\s+(bonus|set)\b/i)?.[1]
+  if (parameter === 'bonus' && filters.bonuses.length > 0) return 'bonuses'
+  if (parameter === 'set' && filters.set.length > 0) return 'set'
+  return null
+}
+
+function MatchModeControl({
+  subject,
+  value,
+  onChange,
+}: {
+  subject: 'Bonus' | 'Set'
+  value: 'any' | 'all'
+  onChange: (match: 'any' | 'all') => void
+}): JSX.Element {
+  return (
+    <span className="resources-filter-match" aria-label={`${subject} match mode`}>
+      {(['any', 'all'] as const).map((match) => (
+        <button
+          key={match}
+          type="button"
+          aria-pressed={value === match}
+          data-tip={
+            subject === 'Bonus'
+              ? `Match ${match}: item has ${match === 'any' ? 'at least one selected bonus' : 'every selected bonus'}`
+              : `Match ${match}: item belongs to ${match === 'any' ? 'at least one selected set' : 'every selected set'}`
+          }
+          onClick={() => onChange(match)}
+        >
+          {match === 'any' ? 'Any' : 'All'}
+        </button>
+      ))}
+    </span>
+  )
+}
 
 const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
   {
@@ -99,8 +141,8 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
     width: 52,
     minWidth: 48,
     hiddenBelowPx: 600,
-    isSortable: false,
-    sortValue: (item) => (item.isRaidLoot ? 0 : 1),
+    defaultSortDirection: 'desc',
+    sortValue: (item) => (item.isRaidLoot ? 1 : 0),
     render: (item) => (
       <span
         className={
@@ -117,8 +159,8 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
     width: 52,
     minWidth: 48,
     hiddenBelowPx: 600,
-    isSortable: false,
-    sortValue: (item) => (item.isRareLoot ? 0 : 1),
+    defaultSortDirection: 'desc',
+    sortValue: (item) => (item.isRareLoot ? 1 : 0),
     render: (item) => (
       <span
         className={
@@ -161,6 +203,10 @@ export function ItemPicker({
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 250)
   const activeSearchQuery = searchQuery ? debouncedSearchQuery : ''
   const [openedPickers, setOpenedPickers] = useState<ReadonlySet<string>>(() => new Set())
+  const [bonusSearchQuery, setBonusSearchQuery] = useState('')
+  const debouncedBonusSearchQuery = useDebouncedValue(bonusSearchQuery, 150)
+  const [setVocabularySearchQuery, setSetVocabularySearchQuery] = useState('')
+  const debouncedSetSearchQuery = useDebouncedValue(setVocabularySearchQuery, 150)
   const [hasResolvedFirstPage, setHasResolvedFirstPage] = useState(false)
   const [initialScrollTop] = useState(scrollTop)
   const hasRestoredScrollRef = useRef(false)
@@ -204,18 +250,25 @@ export function ItemPicker({
   )
   const resultCount = itemPageQuery.data?.pages[0]?.total ?? 0
   const equipmentSlotQuery = useEquipmentSlotNames(openedPickers.has('slot'))
-  const enchantmentQuery = useEnchantmentNames(openedPickers.has('enchantments'))
+  const allEffectsQuery = useEffectVocabulary('', openedPickers.has('bonuses'))
+  const searchedEffectsQuery = useEffectVocabulary(
+    debouncedBonusSearchQuery,
+    openedPickers.has('bonuses') && Boolean(debouncedBonusSearchQuery),
+  )
   const packQuery = useAdventurePackNames(openedPickers.has('pack'))
+  const allSetsQuery = useSetVocabulary('', openedPickers.has('set'))
+  const searchedSetsQuery = useSetVocabulary(
+    debouncedSetSearchQuery,
+    openedPickers.has('set') && Boolean(debouncedSetSearchQuery),
+  )
   const raidQuery = useRaidQuests(openedPickers.has('raid'))
+  const activeEffectsQuery = debouncedBonusSearchQuery ? searchedEffectsQuery : allEffectsQuery
+  const activeSetsQuery = debouncedSetSearchQuery ? searchedSetsQuery : allSetsQuery
   const pickerErrors = Object.fromEntries(
     [
       { key: 'slot', label: 'Gear slot', path: '/v1/equipment-slots', query: equipmentSlotQuery },
-      {
-        key: 'enchantments',
-        label: 'Enchantments',
-        path: '/v1/enchantments',
-        query: enchantmentQuery,
-      },
+      { key: 'bonuses', label: 'Bonuses', path: '/v1/effects', query: activeEffectsQuery },
+      { key: 'set', label: 'Set', path: '/v1/sets', query: activeSetsQuery },
       { key: 'pack', label: 'Pack', path: '/v1/adventure-packs', query: packQuery },
       { key: 'raid', label: 'Raid', path: '/v1/quests', query: raidQuery },
     ]
@@ -233,18 +286,50 @@ export function ItemPicker({
       ]),
   )
   const equipmentSlots = equipmentSlotQuery.data ?? EMPTY_NAMES
-  const enchantmentNames = enchantmentQuery.data ?? EMPTY_NAMES
+  const allEffectVocabulary = allEffectsQuery.data?.rows ?? EMPTY_EFFECT_VOCABULARY
+  const effectVocabulary = debouncedBonusSearchQuery
+    ? (searchedEffectsQuery.data?.rows ?? EMPTY_EFFECT_VOCABULARY)
+    : allEffectVocabulary
   const packNames = packQuery.data ?? EMPTY_NAMES
+  const setNames = debouncedSetSearchQuery
+    ? (searchedSetsQuery.data?.rows ?? EMPTY_NAMES)
+    : (allSetsQuery.data?.rows ?? EMPTY_NAMES)
   const raidQuests = raidQuery.data ?? EMPTY_RAID_QUESTS
   const loadingPickers = new Set<string>()
   if (equipmentSlotQuery.isPending) loadingPickers.add('slot')
-  if (enchantmentQuery.isPending) loadingPickers.add('enchantments')
+  if (activeEffectsQuery.isPending) loadingPickers.add('bonuses')
   if (packQuery.isPending) loadingPickers.add('pack')
+  if (activeSetsQuery.isPending) loadingPickers.add('set')
   if (raidQuery.isPending) loadingPickers.add('raid')
   const definitions = useMemo(
-    () => itemFilterDefinitions(equipmentSlots, enchantmentNames, packNames, raidQuests, filters),
-    [equipmentSlots, enchantmentNames, packNames, raidQuests, filters],
+    () =>
+      itemFilterDefinitions(
+        equipmentSlots,
+        effectVocabulary,
+        allEffectVocabulary,
+        allEffectsQuery.data?.total ?? effectVocabulary.length,
+        setNames,
+        allSetsQuery.data?.total ?? setNames.length,
+        packNames,
+        raidQuests,
+        filters,
+      ),
+    [
+      equipmentSlots,
+      effectVocabulary,
+      allEffectVocabulary,
+      allEffectsQuery.data?.total,
+      setNames,
+      allSetsQuery.data?.total,
+      packNames,
+      raidQuests,
+      filters,
+    ],
   )
+  const hasActiveFilters = appliedFilterValues(definitions, filters).length > 0
+  const rejectedFilter = rejectedItemFilter(itemPageQuery.error, filters)
+  const rejectedFilterLabel =
+    rejectedFilter === 'bonuses' ? 'Bonuses' : rejectedFilter === 'set' ? 'Set' : null
   const rowAt = useCallback((index: number) => itemsToShow[index], [itemsToShow])
   const rowKey = useCallback((item: ItemSummary) => item.id, [])
   const pageQueryKey = JSON.stringify([
@@ -313,7 +398,6 @@ export function ItemPicker({
 
   function clearAll(): void {
     onFiltersChange(EMPTY_ITEM_FILTERS)
-    setSearchQuery('')
     setIncludesSetBonuses(false)
     queueMicrotask(() => effectiveSearchInputRef.current?.focus())
   }
@@ -375,30 +459,41 @@ export function ItemPicker({
             )}
           </span>
         }
-        hasSearchTerm={!!searchQuery}
         focusFallbackRef={effectiveSearchInputRef}
-        onPickerOpen={(key) => setOpenedPickers((previous) => new Set(previous).add(String(key)))}
+        onPickerOpen={(key) => {
+          setOpenedPickers((previous) => new Set(previous).add(String(key)))
+          if (key === 'bonuses') setBonusSearchQuery('')
+          if (key === 'set') setSetVocabularySearchQuery('')
+        }}
         loadingPickers={loadingPickers}
         pickerErrors={pickerErrors}
+        onPickerSearch={(key, query) => {
+          if (key === 'bonuses') setBonusSearchQuery(query)
+          if (key === 'set') setSetVocabularySearchQuery(query)
+        }}
+        renderPickerHover={(key, option) =>
+          key === 'bonuses' && option.detailPath ? (
+            <EffectVocabularyHoverContent detailPath={option.detailPath} />
+          ) : null
+        }
         searchControls={{
-          enchantments: (
-            <span className="resources-enchantment-match" aria-label="Enchantment match mode">
-              {(['any', 'all'] as const).map((match) => (
-                <button
-                  key={match}
-                  type="button"
-                  aria-pressed={filters.enchantmentMatch === match}
-                  data-tip={`Match ${match}: item has ${match === 'any' ? 'at least one selected bonus' : 'every selected bonus'}`}
-                  onClick={() => onFiltersChange({ ...filters, enchantmentMatch: match })}
-                >
-                  {match === 'any' ? 'Any' : 'All'}
-                </button>
-              ))}
-            </span>
+          bonuses: (
+            <MatchModeControl
+              subject="Bonus"
+              value={filters.bonusMatch}
+              onChange={(match) => onFiltersChange({ ...filters, bonusMatch: match })}
+            />
+          ),
+          set: (
+            <MatchModeControl
+              subject="Set"
+              value={filters.setMatch}
+              onChange={(match) => onFiltersChange({ ...filters, setMatch: match })}
+            />
           ),
         }}
         extraControls={{
-          enchantments: (
+          bonuses: (
             <label
               className="resources-include-sets"
               data-tip="Also match items whose set bonuses grant these"
@@ -442,9 +537,27 @@ export function ItemPicker({
               <StatusPlaceholder
                 error={itemPageQuery.error}
                 path="/v1/items"
+                heading={
+                  rejectedFilterLabel ? `Could not load ${rejectedFilterLabel} filter.` : undefined
+                }
                 onRetry={() => void itemPageQuery.refetch()}
                 additionalActions={
                   <>
+                    {rejectedFilter && (
+                      <button
+                        type="button"
+                        className="btn-ghost-sm"
+                        onClick={() =>
+                          onFiltersChange(
+                            rejectedFilter === 'bonuses'
+                              ? { ...filters, bonuses: [], bonusMatch: 'any' }
+                              : { ...filters, set: [], setMatch: 'any' },
+                          )
+                        }
+                      >
+                        Reset {rejectedFilterLabel} filter
+                      </button>
+                    )}
                     {selectedSort && (
                       <button
                         type="button"
@@ -454,11 +567,11 @@ export function ItemPicker({
                         Reset sort
                       </button>
                     )}
-                    {filters.enchantments.length > 0 && filters.enchantmentMatch === 'all' && (
+                    {filters.bonuses.length > 0 && filters.bonusMatch === 'all' && (
                       <button
                         type="button"
                         className="btn-ghost-sm"
-                        onClick={() => onFiltersChange({ ...filters, enchantmentMatch: 'any' })}
+                        onClick={() => onFiltersChange({ ...filters, bonusMatch: 'any' })}
                       >
                         Reset match
                       </button>
@@ -471,10 +584,18 @@ export function ItemPicker({
             <StatusPlaceholder reason="loading" />
           ) : (
             <>
-              <span>No items match your filters.</span>
-              <button type="button" className="btn-ghost-sm" onClick={clearAll}>
-                Clear filters
-              </button>
+              <span>
+                {hasActiveFilters
+                  ? 'No items match your filters.'
+                  : searchQuery
+                    ? 'No items match your search.'
+                    : 'No items found.'}
+              </span>
+              {hasActiveFilters && (
+                <button type="button" className="btn-ghost-sm" onClick={clearAll}>
+                  Clear filters
+                </button>
+              )}
             </>
           )
         }

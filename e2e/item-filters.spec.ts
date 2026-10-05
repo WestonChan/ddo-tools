@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test'
+import effectPage from '../src/features/resources/queries/fixtures/effects-page.json' with { type: 'json' }
+import capturedSetPage from '../src/features/resources/queries/fixtures/sets-page.json' with { type: 'json' }
 
 const items = [
   {
@@ -85,28 +87,34 @@ test.beforeEach(async ({ page }) => {
               Number(requestedUrl.searchParams.get('offset') ?? 0) + 200,
             ),
           }
-        : path === '/v1/enchantments'
-          ? listPage('enchantments', [
-              { name: 'Strength', kind: 'stat', item_count: 2 },
-              { name: 'Vorpal', kind: 'effect', item_count: 1 },
-            ])
-          : path === '/v1/equipment-slots'
-            ? listPage('equipment_slots', [
-                { id: 1, name: 'Back', sort_order: 1, category: 'Armor' },
-                { id: 2, name: 'Ring', sort_order: 2, category: 'Jewelry' },
-                { id: 3, name: 'Trinket', sort_order: 3, category: 'Jewelry' },
-              ])
-            : path === '/v1/adventure-packs'
-              ? listPage('adventure_packs', [
-                  { id: 1, name: 'Shadowfell', is_free_to_play: false },
-                  { id: 2, name: 'Vault of Night', is_free_to_play: false },
+        : path === '/v1/effects'
+          ? effectPage
+          : path === '/v1/sets'
+            ? listPage(
+                'sets',
+                capturedSetPage.sets.filter((set) =>
+                  set.name
+                    .toLowerCase()
+                    .includes((requestedUrl.searchParams.get('q') ?? '').toLowerCase()),
+                ),
+              )
+            : path === '/v1/equipment-slots'
+              ? listPage('equipment_slots', [
+                  { id: 1, name: 'Back', sort_order: 1, category: 'Armor' },
+                  { id: 2, name: 'Ring', sort_order: 2, category: 'Jewelry' },
+                  { id: 3, name: 'Trinket', sort_order: 3, category: 'Jewelry' },
                 ])
-              : path === '/v1/quests'
-                ? listPage('quests', [
-                    { id: 7, name: 'The Raid', pack: 'Vault of Night', is_raid: true },
-                    { id: 8, name: 'Another Raid', pack: 'Shadowfell', is_raid: true },
+              : path === '/v1/adventure-packs'
+                ? listPage('adventure_packs', [
+                    { id: 1, name: 'Shadowfell', is_free_to_play: false },
+                    { id: 2, name: 'Vault of Night', is_free_to_play: false },
                   ])
-                : listPage('items', [])
+                : path === '/v1/quests'
+                  ? listPage('quests', [
+                      { id: 7, name: 'The Raid', pack: 'Vault of Night', is_raid: true },
+                      { id: 8, name: 'Another Raid', pack: 'Shadowfell', is_raid: true },
+                    ])
+                  : listPage('items', [])
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -196,6 +204,25 @@ test('shows loot status in its columns and keeps the count on the applied line',
   await expect.poll(countRightGap).toBe(0)
 })
 
+test('selects two sets and sends repeated names with All mode', async ({ page }) => {
+  const itemRequests: URL[] = []
+  page.on('request', (request) => {
+    const url = new URL(request.url())
+    if (url.pathname === '/v1/items') itemRequests.push(url)
+  })
+  await page.goto('/resources/items')
+  const setChip = page.getByRole('button', { name: 'Set', exact: true })
+  await setChip.click()
+  const picker = page.getByRole('group', { name: 'Set picker', exact: true })
+  const setNames = capturedSetPage.sets.map((set) => set.name)
+  for (const name of setNames) await picker.getByRole('option', { name }).click()
+  await picker.getByRole('button', { name: 'All', exact: true }).click()
+  await expect.poll(() => itemRequests.at(-1)?.searchParams.getAll('set')).toEqual(setNames)
+  expect(itemRequests.at(-1)?.searchParams.get('set_match')).toBe('all')
+  await setChip.click()
+  await expect(setChip.locator('..').locator('.filter-chip-badge')).toHaveText('2')
+})
+
 test('filter chips keep their label width when values are selected', async ({ page }) => {
   await page.goto('/resources/items')
   await expect(page.getByRole('table', { name: 'items list', exact: true })).toBeVisible()
@@ -203,6 +230,8 @@ test('filter chips keep their label width when values are selected', async ({ pa
     await document.fonts.ready
   })
   const chips = page.locator('.filter-chip-wrap .filter-chip')
+  await expect(chips.nth(0).locator('.filter-chip-text')).toHaveText('ML')
+  await expect(chips.nth(0)).toHaveAttribute('aria-label', 'Minimum level')
   const widths = await Promise.all(
     [0, 1, 2].map((index) =>
       chips.nth(index).evaluate((chip) => (chip as HTMLElement).offsetWidth),
@@ -212,6 +241,7 @@ test('filter chips keep their label width when values are selected', async ({ pa
   await page.getByRole('spinbutton', { name: 'Min ML', exact: true }).fill('20')
   await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).fill('32')
   await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).press('Enter')
+  await expect(chips.nth(0)).toHaveAttribute('aria-label', 'Minimum level: 20–32')
   const slotChip = chips.nth(1)
   await slotChip.click()
   await page.getByRole('option', { name: 'Back', exact: true }).click()
@@ -220,11 +250,11 @@ test('filter chips keep their label width when values are selected', async ({ pa
   await expect(page.locator('.filter-chip-wrap').nth(1).locator('.filter-chip-badge')).toHaveText(
     '1',
   )
-  const enchantmentsChip = chips.nth(2)
-  await enchantmentsChip.click()
-  await page.getByRole('option', { name: 'Strength', exact: true }).click()
-  await page.getByRole('option', { name: 'Vorpal', exact: true }).click()
-  await expect(enchantmentsChip.locator('.filter-chip-text')).toHaveText('Enchantments')
+  const bonusesChip = chips.nth(2)
+  await bonusesChip.click()
+  await page.getByRole('option', { name: /Acid Absorption.*Stat/ }).click()
+  await page.getByRole('option', { name: /Alignment Absorption.*Stat/ }).click()
+  await expect(bonusesChip.locator('.filter-chip-text')).toHaveText('Bonuses')
   await expect(page.locator('.filter-chip-wrap').nth(2).locator('.filter-chip-badge')).toHaveText(
     '2',
   )
@@ -235,7 +265,7 @@ test('filter chips keep their label width when values are selected', async ({ pa
   }
 })
 
-test('selected picker options move to the top only when reopened and have no footer', async ({
+test('selected picker options move to the top only when reopened and show a footer', async ({
   page,
 }) => {
   await page.goto('/resources/items')
@@ -244,7 +274,7 @@ test('selected picker options move to the top only when reopened and have no foo
   await slotChip.click()
   const picker = page.getByRole('group', { name: 'Gear slot picker', exact: true })
   const optionLabels = (): Promise<string[]> => picker.getByRole('option').allTextContents()
-  await expect(picker.locator('.combobox-footer')).toHaveCount(0)
+  await expect(picker.locator('.combobox-footer')).toContainText('3 of 3 · 0 selected')
   await expect(picker.locator('.combobox-option-wrap--divider')).toHaveCount(0)
   expect(await optionLabels()).toEqual(['Back', 'Ring', 'Trinket'])
   await picker.getByRole('option', { name: 'Ring', exact: true }).click()
@@ -298,6 +328,7 @@ for (const theme of ['dark', 'light']) {
     await expect(page.getByRole('columnheader', { name: /Pack/ })).toHaveCount(0)
     await expect(page.getByRole('columnheader', { name: /Raid/ })).toHaveCount(0)
     const chipGroups = page.locator('.filter-chip-group')
+    await expect(chipGroups.first().getByRole('button', { name: 'Set', exact: true })).toBeVisible()
     const firstGroup = await chipGroups.nth(0).boundingBox()
     const secondGroup = await chipGroups.nth(1).boundingBox()
     expect(firstGroup).not.toBeNull()
@@ -312,9 +343,7 @@ for (const theme of ['dark', 'light']) {
   })
 }
 
-test('sorts with the signed sort field and keeps Raid and Rare headers static', async ({
-  page,
-}) => {
+test('sorts every ledger column with the signed sort field', async ({ page }) => {
   const itemRequests: URL[] = []
   page.on('request', (request) => {
     const url = new URL(request.url())
@@ -328,13 +357,6 @@ test('sorts with the signed sort field and keeps Raid and Rare headers static', 
   await expect
     .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
     .toEqual(['-minimum_level', 'name'])
-  for (const label of ['Raid', 'Rare']) {
-    const header = page.locator(`.ledger-header-cell[data-column-key="${label.toLowerCase()}"]`)
-    await expect(header).toBeVisible()
-    expect(await header.getAttribute('aria-sort')).toBeNull()
-    await expect(header).toHaveAttribute('aria-description', /Press M to pick up/)
-    await expect(header.getByRole('button')).toHaveCount(0)
-  }
   await page.getByRole('columnheader', { name: 'ML', exact: true }).click()
   await expect
     .poll(() => itemRequests.at(-1)?.searchParams.getAll('sort'))
@@ -348,6 +370,17 @@ test('sorts with the signed sort field and keeps Raid and Rare headers static', 
   await expect(
     page.getByRole('table', { name: 'items list', exact: true }).getByRole('row').nth(1),
   ).toContainText('Cloak of Night')
+  for (const [label, sortFields] of [
+    ['Name', ['name']],
+    ['Slot', ['slot', 'name']],
+    ['Pack', ['pack', 'name']],
+    ['Raid', ['-is_raid', 'name']],
+    ['Rare', ['-is_rare', 'name']],
+  ] as const) {
+    await page.getByRole('columnheader', { name: label, exact: true }).click()
+    await expect.poll(() => itemRequests.at(-1)?.searchParams.getAll('sort')).toEqual(sortFields)
+    expect(itemRequests.at(-1)?.searchParams.has('order')).toBe(false)
+  }
 })
 
 test('keeps a filter and its results after visiting Build overview', async ({ page }) => {
@@ -511,26 +544,26 @@ test('sends all active filters in one item request and removes cleared parameter
   await page.getByRole('button', { name: 'Gear slot', exact: true }).click()
   await page.getByRole('option', { name: 'Back', exact: true }).click()
   await page.getByRole('option', { name: 'Ring', exact: true }).click()
-  await page.getByRole('button', { name: 'Enchantments', exact: true }).click()
-  const enchantmentPicker = page.getByRole('group', { name: 'Enchantments picker', exact: true })
-  await expect(enchantmentPicker.getByRole('button', { name: 'Any', exact: true })).toHaveAttribute(
+  await page.getByRole('button', { name: 'Bonuses', exact: true }).click()
+  const bonusesPicker = page.getByRole('group', { name: 'Bonuses picker', exact: true })
+  await expect(bonusesPicker.getByRole('button', { name: 'Any', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
   const requestsBeforeMatch = itemRequests.length
   const parametersBeforeMatch = itemRequests.at(-1)?.searchParams.toString()
-  await enchantmentPicker.getByRole('button', { name: 'All', exact: true }).click()
-  await expect(enchantmentPicker.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
+  await bonusesPicker.getByRole('button', { name: 'All', exact: true }).click()
+  await expect(bonusesPicker.getByRole('button', { name: 'All', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   )
   expect(itemRequests).toHaveLength(requestsBeforeMatch)
   expect(itemRequests.at(-1)?.searchParams.toString()).toBe(parametersBeforeMatch)
-  await page.getByRole('option', { name: 'Strength', exact: true }).click()
-  await page.getByRole('option', { name: /Vorpal/ }).click()
-  await expect.poll(() => itemRequests.at(-1)?.searchParams.get('enchantment_match')).toBe('all')
+  await page.getByRole('option', { name: /Acid Absorption.*Stat/ }).click()
+  await page.getByRole('option', { name: /Alignment Absorption.*Stat/ }).click()
+  await expect.poll(() => itemRequests.at(-1)?.searchParams.get('bonus_match')).toBe('all')
   await page.getByRole('checkbox', { name: 'Include set bonuses', exact: true }).check()
-  await page.getByRole('button', { name: 'Enchantments', exact: true }).click()
+  await page.getByRole('button', { name: 'Bonuses', exact: true }).click()
   await page.getByRole('button', { name: 'Pack', exact: true }).click()
   await page.getByRole('option', { name: 'Shadowfell', exact: true }).click()
   await page.getByRole('option', { name: 'Vault of Night', exact: true }).click()
@@ -539,7 +572,7 @@ test('sends all active filters in one item request and removes cleared parameter
   await page.getByRole('option', { name: /The Raid/ }).click()
   await page.getByRole('option', { name: /Another Raid/ }).click()
   await page.getByRole('button', { name: 'Raid', exact: true }).click()
-  await page.getByRole('button', { name: 'ML range', exact: true }).click()
+  await page.getByRole('button', { name: 'Minimum level', exact: true }).click()
   await page.getByRole('spinbutton', { name: 'Min ML', exact: true }).fill('20')
   await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).fill('32')
   await page.getByRole('spinbutton', { name: 'Max ML', exact: true }).press('Enter')
@@ -548,20 +581,23 @@ test('sends all active filters in one item request and removes cleared parameter
   await expect.poll(() => itemRequests.at(-1)?.searchParams.get('q')).toBe('torc')
   const finalParameters = Object.fromEntries(
     [...itemRequests.at(-1)!.searchParams].filter(
-      ([key]) => !['slot', 'pack', 'quest', 'enchantment'].includes(key),
+      ([key]) => !['slot', 'pack', 'quest', 'bonus'].includes(key),
     ),
   )
   expect(finalParameters).toEqual({
     q: 'torc',
     min_level: '20',
     max_level: '32',
-    enchantment_match: 'all',
+    bonus_match: 'all',
     include_set_bonuses: 'true',
     rare: 'true',
     limit: '200',
     offset: '0',
   })
-  expect(itemRequests.at(-1)!.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
+  expect(itemRequests.at(-1)!.searchParams.getAll('bonus')).toEqual([
+    'Acid Absorption',
+    'Alignment Absorption',
+  ])
   expect(itemRequests.at(-1)!.searchParams.getAll('slot')).toEqual(['Back', 'Ring'])
   expect(itemRequests.at(-1)!.searchParams.getAll('pack')).toEqual(['Shadowfell', 'Vault of Night'])
   expect(itemRequests.at(-1)!.searchParams.getAll('quest')).toEqual(['7', '8'])
@@ -571,7 +607,10 @@ test('sends all active filters in one item request and removes cleared parameter
   await page.getByRole('button', { name: 'Show applied · 10', exact: true }).click()
   await page.getByRole('button', { name: 'Remove Gear slot: Back', exact: true }).click()
   await expect.poll(() => itemRequests.at(-1)?.searchParams.getAll('slot')).toEqual(['Ring'])
-  expect(itemRequests.at(-1)?.searchParams.getAll('enchantment')).toEqual(['Strength', 'Vorpal'])
+  expect(itemRequests.at(-1)?.searchParams.getAll('bonus')).toEqual([
+    'Acid Absorption',
+    'Alignment Absorption',
+  ])
   expect(new Set(itemRequests.map((url) => url.search)).size).toBe(itemRequests.length)
 })
 

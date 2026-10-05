@@ -22,7 +22,6 @@
       "variant": "red"
     }
   ],
-  "bonuses": [],
   "category": "Weapon",
   "challenge_packs": [],
   "clickies": [],
@@ -31,39 +30,64 @@
   "drop_location": "Magic of Myth Drannor, any end chest",
   "effects": [
     {
-      "description": "Anarchic Blast 3: This weapon is a chaotic conduit, dealing 3d6 Chaos damage on a successful hit, and an additional 3d6 Chaos damage on a critical hit. This effect makes the weapon chaotically aligned. Lawful characters wielding this weapon will suffer one negative level.",
-      "id": 161,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This weapon is a chaotic conduit, dealing 3d6 Chaos damage on a successful hit, and an additional 3d6 Chaos damage on a critical hit. This effect makes the weapon chaotically aligned. Lawful characters wielding this weapon will suffer one negative level.",
+      "effect_id": 517,
       "name": "Anarchic Blast 3",
-      "target": "All",
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Anarchic Blast 3"
     },
     {
-      "description": "Anarchic 3: This weapon is chaotic and used to undermine the righteous, dealing an additional 3d6 chaos damage on each hit. This effect makes the weapon chaotic aligned. (Lawful characters wielding this weapon will suffer one negative level.)",
-      "id": 162,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This weapon is chaotic and used to undermine the righteous, dealing an additional 3d6 chaos damage on each hit. This effect makes the weapon chaotic aligned. (Lawful characters wielding this weapon will suffer one negative level.)",
+      "effect_id": 518,
       "name": "Anarchic 3",
-      "target": "All",
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Anarchic 3"
     },
     {
-      "description": "Penalty: If equipped by a Lawful user, they receive 1 Negative Level for as long as this item is equipped.",
-      "id": 163,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "If equipped by a Lawful user, they receive 1 Negative Level for as long as this item is equipped.",
+      "effect_id": 519,
       "name": "Penalty Lawful",
-      "target": null,
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Penalty"
     },
     {
-      "description": "Aligned: This weapon transmutes into a form that is able to bypass any alignment based Damage Reduction. (Chaotic, Good, Evil, Lawful)",
-      "id": 164,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "This weapon transmutes into a form that is able to bypass any alignment based Damage Reduction. (Chaotic, Good, Evil, Lawful)",
+      "effect_id": 520,
       "name": "Aligned",
-      "target": null,
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Aligned"
     },
     {
-      "description": "Keen: The base critical threat range of this weapon is doubled. This does not stack with Improved Critical feat. Vorpal Strikes by this weapon also bypass all Fortification.",
-      "id": 53,
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "The base critical threat range of this weapon is doubled. This does not stack with Improved Critical feat. Vorpal Strikes by this weapon also bypass all Fortification.",
+      "effect_id": 388,
       "name": "Keen",
-      "target": null,
-      "value": null
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Keen"
     }
   ],
   "enhancement_bonus": 5,
@@ -111,7 +135,14 @@
     "damage": "1.6[2d6] + 5 Chaotic, Evil, Good, Lawful, Magic, Slash",
     "damage_modifier": "Strength",
     "damage_multiplier": 1.6,
-    "dr_bypass": ["Chaotic", "Evil", "Good", "Lawful", "Magic", "Slash"],
+    "dr_bypass": [
+      "Chaotic",
+      "Evil",
+      "Good",
+      "Lawful",
+      "Magic",
+      "Slash"
+    ],
     "handedness": "Two-handed",
     "proficiency": "Martial",
     "weapon_type": "Great Sword"

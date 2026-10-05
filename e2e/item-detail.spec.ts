@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
-import capturedRing from '../src/features/resources/queries/fixtures/item487.json' with { type: 'json' }
-import capturedRunearm from '../src/features/resources/queries/fixtures/item924.json' with { type: 'json' }
-import capturedArmor from '../src/features/resources/queries/fixtures/item831.json' with { type: 'json' }
-import capturedWeapon from '../src/features/resources/queries/fixtures/item3479.json' with { type: 'json' }
-import capturedShield from '../src/features/resources/queries/fixtures/item8203.json' with { type: 'json' }
-import capturedNecklace from '../src/features/resources/queries/fixtures/item7631.json' with { type: 'json' }
-import capturedSet from '../src/features/resources/queries/fixtures/set93.json' with { type: 'json' }
+import capturedRing from '../src/features/resources/queries/fixtures/effects-item-487.json' with { type: 'json' }
+import capturedRunearm from '../src/features/resources/queries/fixtures/effects-item-924.json' with { type: 'json' }
+import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-831.json' with { type: 'json' }
+import capturedWeapon from '../src/features/resources/queries/fixtures/effects-item-3479.json' with { type: 'json' }
+import capturedShield from '../src/features/resources/queries/fixtures/effects-item-8203.json' with { type: 'json' }
+import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
+import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
 
 test('Escape from a tabbed detail pane returns to its focused list row at wide and narrow widths', async ({
   page,
@@ -111,7 +111,7 @@ test('Escape cancels a keyboard column move in the detail enchantment ledger wit
   await page.setViewportSize({ width: 1440, height: 800 })
   await page.goto('/resources/items/487')
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
-  const headers = pane.locator('.resources-enchantment-ledger .ledger-header-cell')
+  const headers = pane.locator('.resources-effect-ledger .ledger-header-cell')
   const typeHeader = headers.filter({ hasText: 'Type' })
   const firstColumnKey = await headers.first().getAttribute('data-column-key')
   await typeHeader.focus()
@@ -177,7 +177,7 @@ test('Escape closes a socket from its header and keeps focus in the detail', asy
   await row.focus()
   await page.keyboard.press('Enter')
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
-  const yellowSocket = pane.getByRole('button', { name: 'Yellow', exact: true })
+  const yellowSocket = pane.getByRole('button', { name: 'Yellow slot', exact: true })
   await yellowSocket.click()
   const nameHeader = pane.locator('.resources-augment-candidates').getByRole('columnheader', {
     name: 'Name',
@@ -258,7 +258,7 @@ test('detail sections share the title facts left edge at desktop and mobile widt
           toggle: '.detail-stats__toggle-row',
           extras: '.detail-extras',
           description: '.resources-detail-description',
-          enchantments: '.resources-enchantment-ledger',
+          effects: '.resources-effect-ledger',
         }
         return Object.fromEntries(
           Object.entries(selectors).flatMap(([name, selector]) => {
@@ -268,7 +268,7 @@ test('detail sections share the title facts left edge at desktop and mobile widt
         )
       })
       expect(leftEdges.titleFact).toBeDefined()
-      for (const name of ['toggle', 'extras', 'description', 'enchantments']) {
+      for (const name of ['toggle', 'extras', 'description', 'effects']) {
         expect(leftEdges[name], `${item.name} at ${width}px is missing ${name}`).toBeDefined()
       }
       if (item.id !== capturedRing.id) expect(leftEdges.firstFactCell).toBeDefined()
@@ -712,6 +712,10 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
 
   await page.goto('/resources/items/831')
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
+  const enhancementRow = detailPane.locator('.resources-effect-ledger .ledger-row').first()
+  await expect(enhancementRow.locator('.resources-effect-name')).toHaveText('Enhancement Bonus')
+  await expect(enhancementRow.locator('.resources-effect-type')).toHaveText('Enhancement')
+  await expect(enhancementRow.locator('.resources-effect-value')).toHaveText('+5')
   const grid = detailPane.locator('.detail-fact-grid')
   await expect(grid.locator('.detail-fact-grid__cell')).toHaveText([
     'Armor bonus16',
@@ -822,8 +826,8 @@ test('set band heights and opening an augment socket preserve the item detail la
 
   await page.goto('/resources/items/487')
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
-  const setHeading = detailPane.locator('.resources-enchantment-ledger .ledger-row--heading')
-  const tierEyebrow = detailPane.locator('.resources-enchantment-ledger .ledger-row--subheading')
+  const setHeading = detailPane.locator('.resources-effect-ledger .ledger-row--heading')
+  const tierEyebrow = detailPane.locator('.resources-effect-ledger .ledger-row--subheading')
   await expect(setHeading).toHaveAttribute('aria-expanded', 'false')
   await expect(setHeading).toContainText('7 bonuses')
   await expect(tierEyebrow).toHaveCount(0)
@@ -834,13 +838,13 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.evaluate(() => document.fonts.ready)
   expect((await setHeading.boundingBox())?.height).toBe(34)
   expect((await tierEyebrow.boundingBox())?.height).toBe(24)
-  const enchantmentBody = detailPane.locator('.resources-enchantment-ledger .ledger-plain-body')
-  await expect(enchantmentBody).not.toHaveAttribute('tabindex')
-  await detailPane.locator('.resources-enchantment-ledger .ledger-header-cell').first().focus()
+  const effectBody = detailPane.locator('.resources-effect-ledger .ledger-plain-body')
+  await expect(effectBody).not.toHaveAttribute('tabindex')
+  await detailPane.locator('.resources-effect-ledger .ledger-header-cell').first().focus()
   await page.keyboard.press('Tab')
   await expect(setHeading).toBeFocused()
   await page.keyboard.press('End')
-  const tierBonus = detailPane.locator('.resources-enchantment-ledger .ledger-row').last()
+  const tierBonus = detailPane.locator('.resources-effect-ledger .ledger-row').last()
   await expect(tierBonus).toBeFocused()
   await expect(tierEyebrow).not.toBeFocused()
   await expect(page.getByRole('dialog')).toBeVisible()
@@ -850,7 +854,7 @@ test('set band heights and opening an augment socket preserve the item detail la
   await expect(tierBonus).toBeFocused()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page).toHaveURL(/\/resources\/items\/487$/)
-  await detailPane.locator('.resources-enchantment-ledger .ledger-header-cell').first().focus()
+  await detailPane.locator('.resources-effect-ledger .ledger-header-cell').first().focus()
   await page.keyboard.press('Tab')
   await page.keyboard.press('End')
   await expect(tierBonus).toBeFocused()
@@ -861,8 +865,17 @@ test('set band heights and opening an augment socket preserve the item detail la
   await expect(page).toHaveURL(/\/resources\/items\/487$/)
   const header = detailPane.locator('.detail-card__header')
   const facts = header.locator('.detail-card__facts')
-  const socket = facts.getByRole('button', { name: 'Yellow', exact: true })
+  const socket = facts.getByRole('button', { name: 'Yellow slot', exact: true })
   await expect(socket).toBeVisible()
+  const symbolStyle = await socket.evaluate((symbol) => {
+    const style = getComputedStyle(symbol)
+    return { width: style.width, height: style.height, clipPath: style.clipPath }
+  })
+  expect(Number.parseFloat(symbolStyle.width)).toBe(26)
+  expect(Number.parseFloat(symbolStyle.height)).toBeCloseTo(22.52, 1)
+  expect(symbolStyle.clipPath.replaceAll('0px', '0')).toBe(
+    'polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%)',
+  )
   await expect(facts.locator('.detail-card__fact .section-label')).toHaveText([
     'ML',
     'Gear slot',
@@ -875,14 +888,15 @@ test('set band heights and opening an augment socket preserve the item detail la
     Array.from(grid.querySelectorAll('.detail-card__fact')).map((fact) => {
       const value =
         fact.querySelector(
-          '.resources-augment-word, .num, .resources-hover-anchor, .detail-card__fact-empty',
+          '.resources-augment-symbol, .num, .resources-hover-anchor, .detail-card__fact-empty',
         ) ?? fact.lastElementChild!
       const style = getComputedStyle(value)
       return { fontSize: style.fontSize, fontWeight: style.fontWeight }
     })
-  expect(await facts.evaluate(factValueStyles)).toEqual(
-    Array(6).fill({ fontSize: '15px', fontWeight: '600' }),
-  )
+  expect(await facts.evaluate(factValueStyles)).toEqual([
+    ...Array(5).fill({ fontSize: '15px', fontWeight: '600' }),
+    { fontSize: '13px', fontWeight: '700' },
+  ])
   expect(await facts.evaluate((row) => getComputedStyle(row).columnGap)).toBe('28px')
   expect(await facts.evaluate((row) => getComputedStyle(row).rowGap)).toBe('10px')
   const factPositions = (): Promise<
@@ -917,10 +931,11 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.getByRole('row', { name: /Adversion/ }).hover()
   const hoverCard = page.locator('[data-hover-card]')
   await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
-  await expect(hoverCard.locator('.detail-card__facts .resources-augment-word')).toBeVisible()
-  expect(await hoverCard.locator('.detail-card__facts').evaluate(factValueStyles)).toEqual(
-    Array(6).fill({ fontSize: '12.5px', fontWeight: '600' }),
-  )
+  await expect(hoverCard.locator('.detail-card__facts .resources-augment-symbol')).toBeVisible()
+  expect(await hoverCard.locator('.detail-card__facts').evaluate(factValueStyles)).toEqual([
+    ...Array(5).fill({ fontSize: '12.5px', fontWeight: '600' }),
+    { fontSize: '13px', fontWeight: '700' },
+  ])
   await page.keyboard.press('Escape')
   await expect(hoverCard).toHaveCount(0)
   await expect(page).toHaveURL(/\/resources\/items\/487$/)

@@ -1,7 +1,13 @@
 import {
+  ApiError,
+  API_RESPONSE_ERROR,
   assertApiResponseFields,
-  fetchApiJson,
   fetchApiPage,
+  fetchValidatedApiJson,
+  isApiEffectList,
+  isApiEffectDetail,
+  isApiEffectVocabularyRow,
+  multiValueFilterParameters,
   WHOLE_LIST_PAGE_LIMIT,
 } from '../../../lib/api'
 import type {
@@ -10,6 +16,10 @@ import type {
   ApiAugmentDetail,
   ApiCraftingRecipe,
   ApiCraftingTier,
+  ApiEffect,
+  ApiEffectBonusGroup,
+  ApiEffectDetail,
+  ApiEffectVocabularyRow,
   ApiItemAdventurePack,
   ApiItemChallengePack,
   ApiItemCraftingSystem,
@@ -17,12 +27,12 @@ import type {
   ApiItemEvent,
   ApiItemVendor,
   ApiItemRow,
-  ApiEnchantment,
   ApiEquipmentSlot,
   ApiLootQuest,
   ApiModifier,
   ApiQueryParameters,
   ApiQuestSummary,
+  ApiEffectDamage,
 } from '../../../lib/api'
 
 export const ITEM_PAGE_SIZE = 200
@@ -31,6 +41,8 @@ const ITEM_SORT_FIELD_BY_COLUMN: Record<string, string> = {
   ml: 'minimum_level',
   slot: 'slot',
   pack: 'pack',
+  raid: 'is_raid',
+  rare: 'is_rare',
 }
 
 export function isItemSortColumn(columnKey: string): boolean {
@@ -52,8 +64,10 @@ export interface ItemSummary {
 export interface ItemListFilters {
   ml: { min: string; max: string }
   slot: string[]
-  enchantments: string[]
-  enchantmentMatch: 'any' | 'all'
+  bonuses: string[]
+  bonusMatch: 'any' | 'all'
+  set: string[]
+  setMatch: 'any' | 'all'
   pack: string[]
   raid: string[]
   isRareOnly: boolean
@@ -68,8 +82,10 @@ export interface ItemListSort {
 export const EMPTY_ITEM_FILTERS: ItemListFilters = {
   ml: { min: '', max: '' },
   slot: [],
-  enchantments: [],
-  enchantmentMatch: 'any',
+  bonuses: [],
+  bonusMatch: 'any',
+  set: [],
+  setMatch: 'any',
   pack: [],
   raid: [],
   isRareOnly: false,
@@ -157,18 +173,40 @@ export interface AugmentSummary {
   name: string
   minimumLevel: number | null
   slots: string[]
-  bonusNames: string[]
   recipes: CraftingRecipe[]
 }
 
-export interface ItemBonus {
+export interface EffectBonus {
+  statName: string
+  statCategory: string
+  bonusType: string
+  value: number
+  amountSource: 'owner' | 'default' | 'constant'
+  scale: number
+  group: ApiEffectBonusGroup | null
+}
+
+export interface EffectDamage {
+  trigger: string
+  damageType: string
+  diceNumber: number
+  diceSides: number
+  diceBonus: number
+  amountFrom: number
+  scale: number
+}
+
+export interface Effect {
   id: number
   name: string
+  verboseName: string
   description: string | null
   bonusType: string | null
-  statName: string
   value: number | null
   value2: number | null
+  tier: { group: string; rank: number } | null
+  bonuses: EffectBonus[]
+  damage: EffectDamage[]
   sortOrder: number
 }
 
@@ -191,17 +229,8 @@ export interface ResourceModifier {
 export interface AugmentDetail extends AugmentSummary {
   description: string | null
   effectDescription: string | null
-  bonuses: ItemBonus[]
+  effects: Effect[]
   modifiers: ResourceModifier[]
-}
-
-export interface ItemEffect {
-  id: number
-  name: string
-  description: string | null
-  target: string | null
-  value: number | null
-  sortOrder: number
 }
 
 export interface ItemClickie {
@@ -264,9 +293,8 @@ export interface Item extends ItemAttributes {
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
   augmentSlots: ItemAugmentSlot[]
-  bonuses: ItemBonus[]
   modifiers: ResourceModifier[]
-  effects: ItemEffect[]
+  effects: Effect[]
   clickies: ItemClickie[]
   quests: LootQuest[]
   questChains: RewardingQuestChain[]
@@ -311,7 +339,6 @@ export function toItem(
 ): Item {
   assertApiResponseFields(apiItemDetail, path, {
     augment_slots: 'array',
-    bonuses: 'array',
     modifiers: 'array',
     effects: 'array',
     clickies: 'array',
@@ -406,25 +433,8 @@ export function toItem(
         minimumLevel: o.min_level,
       })),
     })),
-    bonuses: apiItemDetail.bonuses.map((b, i) => ({
-      id: b.id,
-      name: b.name,
-      description: b.description,
-      bonusType: b.bonus_type,
-      statName: b.stat,
-      value: b.value,
-      value2: b.value2,
-      sortOrder: i,
-    })),
     modifiers: apiItemDetail.modifiers.map(toResourceModifier),
-    effects: apiItemDetail.effects.map((e, i) => ({
-      id: e.id,
-      name: e.name,
-      description: e.description,
-      target: e.target,
-      value: e.value,
-      sortOrder: i,
-    })),
+    effects: apiItemDetail.effects.map(toEffect),
     clickies: apiItemDetail.clickies.map((c) => ({ name: c.name, description: c.description })),
     quests: toLootQuests(apiItemDetail.quests),
     questChains: apiItemDetail.quest_chains.map((c) => ({
@@ -440,8 +450,9 @@ export function toItem(
       isRareLoot: s.is_rare,
       wikiUrl: s.wiki_url,
     })),
-    adventurePackDrops: apiItemDetail.adventure_packs.map((p) => ({
+    adventurePackDrops: apiItemDetail.adventure_packs.map((p, index) => ({
       ...namedSource('adventurePack', p),
+      key: `adventurePack-${p.id}-${index}`,
       chest: p.chest,
     })),
     sourcesBeyondQuests: toSourcesBeyondQuests(apiItemDetail),
@@ -527,7 +538,6 @@ export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
     id: 'number',
     name: 'string',
     min_level: 'nullable-number',
-    bonuses: 'array',
     crafting: 'array',
     slots: 'array',
   })
@@ -536,7 +546,6 @@ export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
     name: apiAugment.name,
     minimumLevel: apiAugment.min_level,
     slots: apiAugment.slots,
-    bonusNames: apiAugment.bonuses.map((b) => b.name),
     recipes: apiAugment.crafting.map(toCraftingRecipe),
   }
 }
@@ -561,23 +570,51 @@ function toResourceModifier(modifier: ApiModifier): ResourceModifier {
 
 export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
   assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.id ?? 'unknown'}`, {
+    effects: 'array',
     modifiers: 'array',
   })
   return {
     ...toAugmentSummary(apiAugment),
     description: apiAugment.description,
     effectDescription: apiAugment.effect_description,
-    bonuses: apiAugment.bonuses.map((bonus, index) => ({
-      id: bonus.id,
-      name: bonus.name,
-      description: bonus.description,
-      bonusType: bonus.bonus_type,
-      statName: bonus.stat,
-      value: bonus.value,
-      value2: bonus.value2,
-      sortOrder: index,
-    })),
+    effects: apiAugment.effects.map(toEffect),
     modifiers: apiAugment.modifiers.map(toResourceModifier),
+  }
+}
+
+export function toEffect(apiEffect: ApiEffect, sortOrder: number): Effect {
+  return {
+    id: apiEffect.effect_id,
+    name: apiEffect.name,
+    verboseName: apiEffect.verbose_name,
+    description: apiEffect.description ?? null,
+    bonusType: apiEffect.bonus_type ?? null,
+    value: apiEffect.value ?? null,
+    value2: apiEffect.value2 ?? null,
+    tier: apiEffect.tier ?? null,
+    bonuses: apiEffect.bonuses.map((bonus) => ({
+      statName: bonus.stat,
+      statCategory: bonus.stat_category,
+      bonusType: bonus.bonus_type,
+      value: bonus.value,
+      amountSource: bonus.amount_source,
+      scale: bonus.scale,
+      group: bonus.group ?? null,
+    })),
+    damage: apiEffect.damage.map(toEffectDamage),
+    sortOrder,
+  }
+}
+
+export function toEffectDamage(damage: ApiEffectDamage): EffectDamage {
+  return {
+    trigger: damage.trigger,
+    damageType: damage.damage_type,
+    diceNumber: damage.dice_number,
+    diceSides: damage.dice_sides,
+    diceBonus: damage.dice_bonus,
+    amountFrom: damage.amount_from,
+    scale: damage.scale,
   }
 }
 
@@ -607,15 +644,14 @@ export function itemListParameters(
   const sortField = sort ? ITEM_SORT_FIELD_BY_COLUMN[sort.key] : undefined
   return {
     q: searchQuery.trim() || undefined,
-    slot: filters.slot.length ? filters.slot : undefined,
+    ...multiValueFilterParameters('slot', filters.slot),
     min_level: filters.ml.min || undefined,
     max_level: filters.ml.max || undefined,
-    pack: filters.pack.length ? filters.pack : undefined,
-    quest: filters.raid.length ? filters.raid : undefined,
-    enchantment: filters.enchantments.length ? filters.enchantments : undefined,
-    enchantment_match:
-      filters.enchantments.length > 0 && filters.enchantmentMatch === 'all' ? 'all' : undefined,
-    include_set_bonuses: filters.enchantments.length > 0 && includesSetBonuses,
+    ...multiValueFilterParameters('pack', filters.pack),
+    ...multiValueFilterParameters('quest', filters.raid),
+    ...multiValueFilterParameters('bonus', filters.bonuses, filters.bonusMatch),
+    ...multiValueFilterParameters('set', filters.set, filters.setMatch),
+    include_set_bonuses: filters.bonuses.length > 0 && includesSetBonuses,
     rare: filters.isRareOnly,
     raid: filters.isRaidOnly,
     sort: sortField
@@ -646,7 +682,17 @@ export async function fetchItemPage(
 
 export async function fetchItem(id: number): Promise<Item> {
   const path = `/v1/items/${id}`
-  return toItem(await fetchApiJson<ApiItemDetail>(path), path)
+  const response = await fetchValidatedApiJson<ApiItemDetail>(
+    path,
+    undefined,
+    (value): value is ApiItemDetail =>
+      value !== null &&
+      typeof value === 'object' &&
+      'effects' in value &&
+      isApiEffectList(value.effects),
+    `Invalid response for ${path}: effects`,
+  )
+  return toItem(response, path)
 }
 
 export async function fetchAdventurePackNames(): Promise<string[]> {
@@ -683,25 +729,34 @@ export async function fetchEquipmentSlotNames(): Promise<string[]> {
   })
 }
 
-export async function fetchEnchantmentNames(): Promise<string[]> {
-  const page = await fetchApiPage<ApiEnchantment, 'enchantments'>(
-    '/v1/enchantments',
-    'enchantments',
-    { limit: WHOLE_LIST_PAGE_LIMIT },
+export async function fetchEffectVocabulary(
+  searchQuery = '',
+): Promise<{ rows: ApiEffectVocabularyRow[]; total: number }> {
+  const page = await fetchApiPage<ApiEffectVocabularyRow, 'effects'>(
+    '/v1/effects',
+    'effects',
+    {
+      q: searchQuery.trim() || undefined,
+      limit: WHOLE_LIST_PAGE_LIMIT,
+    },
+    {
+      isValidPage: (page) => page.rows.every(isApiEffectVocabularyRow),
+      responseErrorMessage: 'Invalid effect vocabulary rows for /v1/effects',
+    },
   )
-  return [
-    ...new Set(
-      page.rows.map((enchantment, index) => {
-        assertApiResponseFields(
-          enchantment,
-          '/v1/enchantments',
-          { name: 'string' },
-          `enchantments[${index}].`,
-        )
-        return enchantment.name
-      }),
-    ),
-  ]
+  return { rows: page.rows, total: page.total }
+}
+
+export async function fetchEffectDetail(detailPath: string): Promise<ApiEffectDetail> {
+  if (!/^\/v1\/effects\/\d+$/.test(detailPath)) {
+    throw new ApiError(API_RESPONSE_ERROR, 0, `Invalid effect detail path: ${detailPath}`)
+  }
+  return fetchValidatedApiJson(
+    detailPath,
+    { items_limit: 0, augments_limit: 0, set_tiers_limit: 0 },
+    isApiEffectDetail,
+    `Invalid effect detail for ${detailPath}`,
+  )
 }
 
 export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<AugmentSummary[]> {
@@ -718,7 +773,18 @@ export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<Augme
 }
 
 export async function fetchAugment(augmentId: number): Promise<AugmentDetail> {
-  return toAugmentDetail(await fetchApiJson<ApiAugmentDetail>(`/v1/augments/${augmentId}`))
+  const path = `/v1/augments/${augmentId}`
+  const response = await fetchValidatedApiJson<ApiAugmentDetail>(
+    path,
+    undefined,
+    (value): value is ApiAugmentDetail =>
+      value !== null &&
+      typeof value === 'object' &&
+      'effects' in value &&
+      isApiEffectList(value.effects),
+    `Invalid response for ${path}: effects`,
+  )
+  return toAugmentDetail(response)
 }
 
 export async function fetchRaidQuests(): Promise<RaidQuest[]> {

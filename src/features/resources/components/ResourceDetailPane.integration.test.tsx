@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ResourceDetailPane } from './ResourceDetailPane'
-import capturedItem from '../queries/fixtures/item7631.json'
+import capturedItem from '../queries/fixtures/effects-item-7631.json'
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
 
@@ -23,7 +23,7 @@ function renderItemDetail(): void {
 describe('ResourceDetailPane errors from the API path', () => {
   it('shows a report link for a 200 response the item mapper cannot read', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ id: 7631, augment_slots: null })),
+      new Response(JSON.stringify({ ...capturedItem, augment_slots: null })),
     )
     renderItemDetail()
     expect(await screen.findByText('Something went wrong on our side.')).toBeInTheDocument()

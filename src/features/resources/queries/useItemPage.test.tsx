@@ -165,7 +165,7 @@ describe('useItemPage', () => {
     expect(result.current.data?.pages.map((page) => page.items[0].name)).toEqual(['Rare item'])
   })
 
-  it('does not request set bonuses without an enchantment selection', async () => {
+  it('does not request set bonuses without a bonus selection', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(apiPage('One item'))
     const { result, rerender } = renderHook(
       ({ includesSetBonuses }) => useItemPage(EMPTY_ITEM_FILTERS, '', includesSetBonuses),
@@ -177,22 +177,22 @@ describe('useItemPage', () => {
   })
 
   it.each([
-    { name: '400', body: 'Unknown enchantment', status: 400, kind: 'api-http' },
+    { name: '400', body: 'Unknown bonus', status: 400, kind: 'api-http' },
     {
       name: 'invalid envelope',
       body: JSON.stringify({ total: 0, limit: 200, offset: 0, augments: [] }),
       status: 200,
       kind: 'api-response',
     },
-  ])('shows a $name error after one request without retrying', async ({ body, status, kind }) => {
+  ])('shows a $name error without a query retry', async ({ body, status, kind }) => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(new Response(body, { status }))
+      .mockImplementation(() => Promise.resolve(new Response(body, { status })))
     const { result } = renderHook(() => useItemPage(EMPTY_ITEM_FILTERS, '', false), {
       wrapper: QueryWrapper,
     })
     await waitFor(() => expect(result.current.error).toMatchObject({ name: 'ApiError', kind }))
-    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenCalledTimes(kind === 'api-response' ? 2 : 1)
   })
 
   it.each([

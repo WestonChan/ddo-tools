@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import capturedItem from '../src/features/resources/queries/fixtures/item7631.json' with { type: 'json' }
+import capturedItem from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
 
 async function routeItemError(
   page: import('@playwright/test').Page,

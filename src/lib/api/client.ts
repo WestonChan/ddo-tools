@@ -56,6 +56,7 @@ export function apiUrl(path: string, queryParameters?: ApiQueryParameters): stri
 export async function fetchApiJson<T>(
   path: string,
   queryParameters?: ApiQueryParameters,
+  cache?: RequestCache,
 ): Promise<T> {
   const abortController = new AbortController()
   const abortTimer = setTimeout(() => abortController.abort(), API_TIMEOUT_MS)
@@ -64,6 +65,7 @@ export async function fetchApiJson<T>(
     const response = await fetch(url, {
       signal: abortController.signal,
       headers: { accept: 'application/json' },
+      ...(cache ? { cache } : {}),
     })
     if (!response.ok) {
       const errorBodyText = await response.text().catch(() => '')
@@ -103,32 +105,63 @@ export async function fetchApiJson<T>(
   }
 }
 
+export async function fetchValidatedApiJson<T>(
+  path: string,
+  queryParameters: ApiQueryParameters | undefined,
+  isValidResponse: (response: unknown) => response is T,
+  responseErrorMessage: string | ((invalidResponse: unknown) => string),
+): Promise<T> {
+  const response = await fetchApiJson<unknown>(path, queryParameters)
+  if (isValidResponse(response)) return response
+  const reloadedResponse = await fetchApiJson<unknown>(path, queryParameters, 'reload')
+  if (isValidResponse(reloadedResponse)) return reloadedResponse
+  throw new ApiError(
+    API_RESPONSE_ERROR,
+    0,
+    typeof responseErrorMessage === 'function'
+      ? responseErrorMessage(reloadedResponse)
+      : responseErrorMessage,
+  )
+}
+
+function invalidPageField(page: unknown, rowsKey: string): string | null {
+  if (!page || typeof page !== 'object' || Array.isArray(page)) return 'body'
+  const pageFields = page as Record<string, unknown>
+  if (!Array.isArray(pageFields[rowsKey])) return rowsKey
+  if (!Number.isSafeInteger(pageFields.total) || (pageFields.total as number) < 0) return 'total'
+  if (!Number.isSafeInteger(pageFields.limit) || (pageFields.limit as number) < 1) return 'limit'
+  if (!Number.isSafeInteger(pageFields.offset) || (pageFields.offset as number) < 0) return 'offset'
+  return null
+}
+
+function toRowsPage<T, K extends string>(page: ApiPage<T, K>, rowsKey: K): ApiPage<T, 'rows'> {
+  return { rows: page[rowsKey], total: page.total, limit: page.limit, offset: page.offset }
+}
+
 export async function fetchApiPage<T, K extends string>(
   path: string,
   rowsKey: K,
   queryParameters?: ApiQueryParameters,
+  validation?: {
+    isValidPage: (page: ApiPage<T, 'rows'>) => boolean
+    responseErrorMessage: string
+  },
 ): Promise<ApiPage<T, 'rows'>> {
-  const page = await fetchApiJson<ApiPage<T, K>>(path, queryParameters)
-  const invalidField =
-    !page || typeof page !== 'object' || Array.isArray(page)
-      ? 'body'
-      : !Array.isArray(page[rowsKey])
-        ? rowsKey
-        : !Number.isSafeInteger(page.total) || page.total < 0
-          ? 'total'
-          : !Number.isSafeInteger(page.limit) || page.limit < 1
-            ? 'limit'
-            : !Number.isSafeInteger(page.offset) || page.offset < 0
-              ? 'offset'
-              : null
-  if (invalidField) {
-    throw new ApiError(
-      API_RESPONSE_ERROR,
-      0,
-      `Invalid list response for ${path} (${rowsKey}): ${invalidField}`,
-    )
-  }
-  return { rows: page[rowsKey], total: page.total, limit: page.limit, offset: page.offset }
+  const page = await fetchValidatedApiJson<ApiPage<T, K>>(
+    path,
+    queryParameters,
+    (response): response is ApiPage<T, K> =>
+      invalidPageField(response, rowsKey) === null &&
+      (validation?.isValidPage(toRowsPage(response as ApiPage<T, K>, rowsKey)) ?? true),
+    (invalidResponse) => {
+      const invalidField = invalidPageField(invalidResponse, rowsKey)
+      if (invalidField) {
+        return `Invalid list response for ${path} (${rowsKey}): ${invalidField}`
+      }
+      return validation?.responseErrorMessage ?? `Invalid list response for ${path} (${rowsKey})`
+    },
+  )
+  return toRowsPage(page, rowsKey)
 }
 
 export type ApiErrorDescriptionKind =
