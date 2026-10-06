@@ -70,6 +70,7 @@ interface LedgerTableProps<Row> {
   hoverCard?: (row: Row) => HoverCardOptions | null
   isHighlighted?: (row: Row) => boolean
   isSortedExternally?: boolean
+  shouldBubbleEscape?: boolean
   onNearEnd?: () => void
 }
 
@@ -284,6 +285,10 @@ function HeaderCell<Row>({
       listeners?.onKeyDown?.(event)
       return
     }
+    if (event.key === 'Escape' && isDragging) {
+      event.preventDefault()
+      return
+    }
     if (isDragging || event.altKey || event.ctrlKey || event.metaKey) return
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault()
@@ -387,6 +392,7 @@ export function LedgerTable<Row>({
   hoverCard,
   isHighlighted,
   isSortedExternally = false,
+  shouldBubbleEscape = false,
   onNearEnd,
 }: LedgerTableProps<Row>): JSX.Element {
   const [uncontrolledSort, setUncontrolledSort] = useState<LedgerSort | null>(initialSort)
@@ -563,8 +569,10 @@ export function LedgerTable<Row>({
     )
       return
     if (event.key === 'Escape') {
-      event.preventDefault()
-      event.stopPropagation()
+      if (!shouldBubbleEscape) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
       return
     }
     const pageSize = Math.max(

@@ -221,6 +221,21 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         -1,
       )
       if (event.key === 'Escape') {
+        const focusedElement = document.activeElement
+        const isFocusInsideDetailPane =
+          focusedElement instanceof Element && Boolean(focusedElement.closest('[data-detail-pane]'))
+        if (isFocusInsideDetailPane && isTypingTarget(event.target)) return
+        if (!event.defaultPrevented && isFocusInsideDetailPane && cards.length > 0) {
+          const topCard = cards[cards.length - 1]
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          cancelPending()
+          cardToPin.current = null
+          if (topCard.anchorElement?.contains(focusedElement))
+            dismissedFocusAnchor.current = topCard.anchorElement
+          setCards((current) => current.slice(0, -1))
+          return
+        }
         const requestedPinnedCard = cardToPin.current
         const topPinnedCardIndex = cards.reduce(
           (index, card, cardIndex) => (card.isPinned ? cardIndex : index),
@@ -238,7 +253,6 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           })
           if (pinnedCard.anchorElement?.isConnected) restoreAnchorFocus(pinnedCard.anchorElement)
         } else {
-          const focusedElement = document.activeElement
           const focusedCardIndex = cards.reduce(
             (index, card, cardIndex) =>
               card.anchorElement?.contains(focusedElement) &&
@@ -250,10 +264,12 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           if (focusedCardIndex < 0) {
             const pendingAnchor = pendingAnchorElement.current
             if (pendingAnchor?.contains(document.activeElement)) {
-              event.preventDefault()
-              event.stopImmediatePropagation()
               cancelPending()
-              dismissedFocusAnchor.current = pendingAnchor
+              if (!isFocusInsideDetailPane) {
+                event.preventDefault()
+                event.stopImmediatePropagation()
+                dismissedFocusAnchor.current = pendingAnchor
+              }
             }
             return
           }

@@ -7,6 +7,7 @@ import {
   useState,
   type CSSProperties,
   type JSX,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import { CategoryTabs } from './components/CategoryTabs'
@@ -42,6 +43,7 @@ function ResourcesView(): JSX.Element {
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const categoryPanelId = useId()
   const bodyRef = useRef<HTMLDivElement | null>(null)
+  const pickerRef = useRef<HTMLElement | null>(null)
   const detailPaneRef = useRef<HTMLElement | null>(null)
   const lastSelectedItemId = useRef<number | null>(null)
   const wasOpenedFromList = useRef(false)
@@ -106,6 +108,29 @@ function ResourcesView(): JSX.Element {
     navigate({ to: `/resources/${category}`, replace: true })
   }, [navigate, category, isSingleColumn])
 
+  function closeFocusedDetailOnEscape(event: ReactKeyboardEvent<HTMLElement>): void {
+    if (event.key !== 'Escape' || event.defaultPrevented || selectedResourceId === null) return
+    const focusedElement = event.target
+    if (
+      focusedElement instanceof HTMLElement &&
+      (focusedElement.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(focusedElement.tagName))
+    )
+      return
+    event.preventDefault()
+    event.stopPropagation()
+    closeDetail()
+  }
+
+  useEffect(() => {
+    if (
+      rowToFocusId !== null &&
+      selectedResourceId === null &&
+      document.activeElement === document.body
+    )
+      pickerRef.current?.focus()
+  }, [rowToFocusId, selectedResourceId])
+
   useEffect(() => {
     function focusSearchOnSlash(e: KeyboardEvent): void {
       const target = e.target as HTMLElement | null
@@ -165,7 +190,7 @@ function ResourcesView(): JSX.Element {
         }
       >
         {(!isSingleColumn || selectedResourceId === null || category !== 'items') && (
-          <aside className="resources-picker">
+          <aside className="resources-picker" ref={pickerRef} tabIndex={-1}>
             {category === 'items' ? (
               <ItemPicker
                 category={category}
@@ -191,6 +216,8 @@ function ResourcesView(): JSX.Element {
             className={`resources-detail-pane${selectedResourceId === null ? ' resources-detail-pane--empty' : ''}`}
             ref={detailPaneRef}
             aria-label="Item details"
+            data-detail-pane=""
+            onKeyDown={closeFocusedDetailOnEscape}
           >
             <ResourceDetailPane
               key={listSelectionCount}

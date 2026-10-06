@@ -927,6 +927,45 @@ describe('LedgerTable', () => {
     expect(ml).toHaveFocus()
   })
 
+  it('marks Escape from a grabbed header as consumed and lets an idle header pass it up', async () => {
+    const consumedFlags: boolean[] = []
+    render(
+      <div
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') consumedFlags.push(event.defaultPrevented)
+        }}
+      >
+        <LedgerTable
+          columns={columns}
+          rowCount={rows.length}
+          rowAt={(index) => rows[index]}
+          rowKey={(row) => row.id}
+          onRowActivate={vi.fn()}
+          isVirtualized={false}
+          viewportWidth={800}
+          shouldBubbleEscape
+        />
+      </div>,
+    )
+    screen.getAllByRole('columnheader').forEach((header, index) => {
+      vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+      )
+    })
+    const ml = screen.getByRole('columnheader', { name: 'ML' })
+    const liveRegion = document.querySelector<HTMLElement>('[id^="DndLiveRegion-"]')!
+    act(() => ml.focus())
+
+    await userEvent.keyboard('{Escape}')
+    expect(consumedFlags).toEqual([false])
+
+    await userEvent.keyboard('m')
+    await waitFor(() => expect(ml).toHaveClass('ledger-header-cell--dragging'))
+    await userEvent.keyboard('{ArrowRight}{Escape}')
+    await waitFor(() => expect(liveRegion).toHaveTextContent('Move of ML cancelled.'))
+    expect(consumedFlags).toEqual([false, true])
+  })
+
   it('reorders a static column from its label with the pointer', () => {
     const staticColumns = columns.map((column) =>
       column.key === 'pack' ? { ...column, isSortable: false } : column,

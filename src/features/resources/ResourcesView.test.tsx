@@ -12,7 +12,7 @@ import {
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
-import type { Item, ItemSummary } from './queries/items'
+import type { Item, ItemAugmentSlot, ItemBonus, ItemSummary } from './queries/items'
 import type { SetDetail } from './queries/sets'
 import {
   resetResourceListSessionsForTests,
@@ -86,6 +86,8 @@ let itemPageQueryState: {
   error: null,
 }
 let isItemDetailLoaded = true
+let itemBonuses: ItemBonus[] = []
+let itemAugmentSlots: ItemAugmentSlot[] = []
 let stackedSet: SetDetail | null = null
 const refetchMock = vi.fn()
 const itemPageRequests = vi.fn()
@@ -110,6 +112,8 @@ vi.mock('./queries/useItems', () => ({
               ...BLOODSTONE_ITEM,
               id: selectedItem.id,
               name: selectedItem.name,
+              bonuses: itemBonuses,
+              augmentSlots: itemAugmentSlots,
               setId: stackedSet?.id ?? null,
               setName: stackedSet?.name ?? null,
             }
@@ -134,6 +138,8 @@ beforeEach(() => {
   sessionStorage.clear()
   resetResourceListSessionsForTests()
   isItemDetailLoaded = true
+  itemBonuses = []
+  itemAugmentSlots = []
   stackedSet = null
   mockRouteParams = { category: 'items' }
   itemPageQueryState = {
@@ -282,6 +288,53 @@ describe('ResourcesView data gate', () => {
 })
 
 describe('ResourcesView keyboard shortcuts', () => {
+  it('closes a wide detail from a pane control and returns focus to its list row', async () => {
+    navigateMock.mockImplementation(({ to }: { to: string }) => {
+      mockRouteParams = to.endsWith('/42') ? { category: 'items', id: '42' } : { category: 'items' }
+    })
+    const view = render(<ResourcesView />)
+    await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+    view.rerender(<ResourcesView />)
+    const backToItems = screen.getByRole('button', { name: 'Back to items' })
+    backToItems.focus()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
+    view.rerender(<ResourcesView />)
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+  })
+
+  it('closes a detail from an enchantment row and returns focus to the open item', async () => {
+    itemBonuses = [
+      {
+        id: 1,
+        name: 'Strength +2',
+        description: null,
+        bonusType: 'Enhancement',
+        statName: 'Strength',
+        value: 2,
+        value2: null,
+        sortOrder: 0,
+      },
+    ]
+    navigateMock.mockImplementation(({ to }: { to: string }) => {
+      mockRouteParams = to.endsWith('/42') ? { category: 'items', id: '42' } : { category: 'items' }
+    })
+    const view = render(<ResourcesView />)
+    await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+    view.rerender(<ResourcesView />)
+    const pane = screen.getByRole('region', { name: 'Item details' })
+    const enchantmentRow = within(pane).getByRole('row', { name: /Strength/ })
+    enchantmentRow.focus()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
+    view.rerender(<ResourcesView />)
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+  })
+
   it('focuses the search input on "/" when focus is outside the view', async () => {
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: /search items/i })
@@ -444,6 +497,215 @@ describe('ResourcesView keyboard shortcuts', () => {
 })
 
 describe('ResourcesView detail pane', () => {
+  it('closes an open pane card before the detail, including when pinned', () => {
+    vi.useFakeTimers()
+    const view = renderStackedResourcesView()
+    openFirstItemFromList(view)
+    const setAnchor = screen
+      .getByRole('region', { name: 'Item details' })
+      .querySelector<HTMLElement>('.resources-hover-anchor')!
+    setAnchor.focus()
+    act(() => vi.advanceTimersByTime(120))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(setAnchor, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(navigateMock).toHaveBeenCalledTimes(1)
+
+    setAnchor.blur()
+    setAnchor.focus()
+    act(() => vi.advanceTimersByTime(120))
+    fireEvent.keyDown(setAnchor, { key: 't' })
+    expect(screen.getByRole('dialog')).toHaveClass('hover-card--pinned')
+    fireEvent.keyDown(setAnchor, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(navigateMock).toHaveBeenCalledTimes(1)
+
+    fireEvent.keyDown(setAnchor, { key: 'Escape' })
+    expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
+  })
+
+  it('cancels a keyboard column move in the pane ledger without closing the detail', async () => {
+    itemBonuses = [
+      {
+        id: 1,
+        name: 'Strength +2',
+        description: null,
+        bonusType: 'Enhancement',
+        statName: 'Strength',
+        value: 2,
+        value2: null,
+        sortOrder: 0,
+      },
+    ]
+    mockRouteParams = { category: 'items', id: '42' }
+    render(<ResourcesView />)
+    const pane = screen.getByRole('region', { name: 'Item details' })
+    const headers = within(pane)
+      .getAllByRole('columnheader')
+      .filter((header) => header.hasAttribute('data-column-key'))
+    headers.forEach((header, index) => {
+      vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+      )
+    })
+    const typeHeader = within(pane).getByRole('columnheader', { name: 'Type' })
+    act(() => typeHeader.focus())
+    await userEvent.keyboard('m')
+    await waitFor(() => expect(typeHeader).toHaveClass('ledger-header-cell--dragging'))
+
+    await userEvent.keyboard('{ArrowRight}{Escape}')
+
+    await waitFor(() => expect(typeHeader).not.toHaveClass('ledger-header-cell--dragging'))
+    expect(navigateMock).not.toHaveBeenCalled()
+    expect(typeHeader).toHaveFocus()
+
+    await userEvent.keyboard('{Escape}')
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items', replace: true })
+  })
+
+  it('dismisses a pointer-opened pane card before closing the detail', () => {
+    vi.useFakeTimers()
+    const view = renderStackedResourcesView()
+    openFirstItemFromList(view)
+    const pane = screen.getByRole('region', { name: 'Item details' })
+    const backToItems = within(pane).getByRole('button', { name: 'Back to items' })
+    backToItems.focus()
+    const setAnchor = pane.querySelector<HTMLElement>('.resources-hover-anchor')!
+    fireEvent.mouseEnter(setAnchor)
+    act(() => vi.advanceTimersByTime(120))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(backToItems, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(navigateMock).toHaveBeenCalledTimes(1)
+
+    fireEvent.keyDown(backToItems, { key: 'Escape' })
+    expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
+  })
+
+  it('closes an open augment picker before closing the detail', async () => {
+    itemAugmentSlots = [
+      { sortOrder: 0, label: 'red', family: 'standard', qualifier: null, options: [] },
+    ]
+    mockRouteParams = { category: 'items', id: '42' }
+    render(<ResourcesView />)
+    const slotButton = screen.getByRole('button', { name: 'Red' })
+    await userEvent.click(slotButton)
+    expect(slotButton).toHaveAttribute('aria-expanded', 'true')
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(slotButton).toHaveAttribute('aria-expanded', 'false')
+    expect(navigateMock).not.toHaveBeenCalled()
+
+    await userEvent.keyboard('{Escape}')
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items', replace: true })
+  })
+
+  it('closes the whole three-item detail stack on Escape', () => {
+    vi.useFakeTimers()
+    const view = renderStackedResourcesView()
+    openFirstItemFromList(view)
+    openSetPieceFromPane('Heartstone')
+    openSetPieceFromPane('Moonstone')
+    expect(screen.getByRole('heading', { name: 'Moonstone' })).toHaveFocus()
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+
+    expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
+    expect(screen.getByRole('button', { name: 'Back one level' })).toBeInTheDocument()
+  })
+
+  it('uses history back for Escape from a detail opened from the narrow list', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {
+      mockRouteParams = { category: 'items' }
+    })
+    navigateMock.mockImplementation(({ to }: { to: string }) => {
+      mockRouteParams = { category: 'items', id: to.split('/').at(-1) ?? '' }
+    })
+    try {
+      const view = render(<ResourcesView />)
+      await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+      view.rerender(<ResourcesView />)
+      const backToItems = screen.getByRole('button', { name: 'Back to items' })
+      backToItems.focus()
+
+      await userEvent.keyboard('{Escape}')
+
+      expect(back).toHaveBeenCalledOnce()
+      expect(navigateMock).toHaveBeenCalledTimes(1)
+      view.rerender(<ResourcesView />)
+      expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+    } finally {
+      back.mockRestore()
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('focuses the first loaded list row when the closed item is absent', async () => {
+    itemPageQueryState = {
+      data: { total: 1, items: [{ ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' }] },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    mockRouteParams = { category: 'items', id: '42' }
+    navigateMock.mockImplementation(() => {
+      mockRouteParams = { category: 'items' }
+    })
+    const view = render(<ResourcesView />)
+    const backToItems = screen.getByRole('button', { name: 'Back to items' })
+    backToItems.focus()
+
+    await userEvent.keyboard('{Escape}')
+
+    view.rerender(<ResourcesView />)
+    expect(screen.getByRole('row', { name: /Heartstone/ })).toHaveFocus()
+  })
+
+  it('keeps focus in the list search when no rows exist after closing', async () => {
+    itemPageQueryState = {
+      data: { total: 0, items: [] },
+      isPending: false,
+      isFetching: false,
+      error: null,
+    }
+    mockRouteParams = { category: 'items', id: '42' }
+    navigateMock.mockImplementation(() => {
+      mockRouteParams = { category: 'items' }
+    })
+    const view = render(<ResourcesView />)
+    screen.getByRole('button', { name: 'Back to items' }).focus()
+
+    await userEvent.keyboard('{Escape}')
+
+    view.rerender(<ResourcesView />)
+    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveFocus()
+  })
+
+  it('replaces a narrow deep link when Escape closes its detail', async () => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
+    mockRouteParams = { category: 'items', id: '42' }
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {})
+    try {
+      render(<ResourcesView />)
+      screen.getByRole('button', { name: 'Back to items' }).focus()
+
+      await userEvent.keyboard('{Escape}')
+
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items', replace: true })
+      expect(back).not.toHaveBeenCalled()
+    } finally {
+      back.mockRestore()
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
   it('shows three pane-opened items in the breadcrumb and pops one level', () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
@@ -701,7 +963,7 @@ describe('ResourcesView detail pane', () => {
       mockRouteParams = { category: 'items' }
       view.rerender(<ResourcesView />)
       expect(screen.queryByRole('row', { name: /Bloodstone/ })).toBeNull()
-      expect(document.body).toHaveFocus()
+      expect(view.container.querySelector('.resources-picker')).toHaveFocus()
 
       itemPageQueryState = {
         data: { total: 1, items: ITEM_SUMMARIES },

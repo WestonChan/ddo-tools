@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-05',
     changes: [
+      'Escape inside an open item closes it and returns to the list with the row selected; an open hover card closes first',
       'Errors say what went wrong: a connection or slow-service problem asks you to retry, while a problem only the site can fix says so and offers a prefilled bug report',
       'Named effects without a bonus type or value show a dash in those columns instead of a blank',
       'Each resource list remembers its filters, search, sort and scroll when you leave and come back, for each tab separately',

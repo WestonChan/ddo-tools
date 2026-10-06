@@ -7,6 +7,139 @@ import capturedShield from '../src/features/resources/queries/fixtures/item8203.
 import capturedNecklace from '../src/features/resources/queries/fixtures/item7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/set93.json' with { type: 'json' }
 
+test('Escape from a tabbed detail pane returns to its focused list row at wide and narrow widths', async ({
+  page,
+}) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response =
+      path === '/v1/items'
+        ? {
+            total: 1,
+            limit: 200,
+            offset: 0,
+            items: [
+              {
+                id: capturedRing.id,
+                name: capturedRing.name,
+                slot: capturedRing.slot,
+                category: capturedRing.category,
+                item_type: capturedRing.item_type,
+                minimum_level: capturedRing.minimum_level,
+                enhancement_bonus: capturedRing.enhancement_bonus,
+                icon: capturedRing.icon,
+                pack: null,
+                is_raid: false,
+                is_rare: false,
+                is_legacy: capturedRing.is_legacy,
+              },
+            ],
+          }
+        : path === `/v1/items/${capturedRing.id}`
+          ? capturedRing
+          : path === '/v1/sets/93'
+            ? capturedSet
+            : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 800 })
+    await page.goto('/resources/items')
+    const row = page.getByRole('row', { name: /Adversion/ })
+    await expect(row).toBeVisible()
+    const pane = page.getByRole('region', { name: 'Item details', exact: true })
+    const ringHeading = pane.getByRole('heading', { name: capturedRing.name, exact: true })
+    const copyLink = pane.getByRole('button', {
+      name: 'Copy link to this item',
+      exact: true,
+    })
+
+    await row.focus()
+    await page.keyboard.press('Enter')
+    await expect(ringHeading).toBeVisible()
+    await copyLink.focus()
+    await expect(page.getByRole('tooltip')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
+    await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedRing.id}$`))
+    await expect(ringHeading).toBeVisible()
+    await expect(copyLink).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(page).toHaveURL(/\/resources\/items$/)
+    await expect(row).toBeFocused()
+    await expect(row).toBeInViewport()
+    await expect(ringHeading).toHaveCount(0)
+
+    await page.keyboard.press('Enter')
+    await expect(ringHeading).toBeVisible()
+    await page.keyboard.press('Tab')
+    await expect
+      .poll(() => pane.evaluate((element) => element.contains(document.activeElement)))
+      .toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(page).toHaveURL(/\/resources\/items$/)
+    await expect(row).toBeFocused()
+    await expect(row).toBeInViewport()
+    await expect(ringHeading).toHaveCount(0)
+  }
+})
+
+test('Escape cancels a keyboard column move in the detail enchantment ledger without closing the detail', async ({
+  page,
+}) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        path === '/v1/items/487'
+          ? capturedRing
+          : path === '/v1/sets/93'
+            ? capturedSet
+            : path === '/v1/items'
+              ? { total: 0, limit: 200, offset: 0, items: [] }
+              : [],
+      ),
+    })
+  })
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.goto('/resources/items/487')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const headers = pane.locator('.resources-enchantment-ledger .ledger-header-cell')
+  const typeHeader = headers.filter({ hasText: 'Type' })
+  const firstColumnKey = await headers.first().getAttribute('data-column-key')
+  await typeHeader.focus()
+  await page.keyboard.press('m')
+  await expect(typeHeader).toHaveClass(/ledger-header-cell--dragging/)
+  await page.evaluate(() => new Promise<void>((resolve) => setTimeout(resolve, 0)))
+  await page.keyboard.press('ArrowRight')
+  await expect(pane.locator('.ledger-header-cell--over')).toHaveCount(1)
+  await expect(async () => {
+    if (
+      await typeHeader.evaluate((header) =>
+        header.classList.contains('ledger-header-cell--dragging'),
+      )
+    ) {
+      await page.keyboard.press('Escape')
+    }
+    await expect(typeHeader).not.toHaveClass(/ledger-header-cell--dragging/, { timeout: 300 })
+  }).toPass({ timeout: 5000 })
+
+  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+  await expect(headers.first()).toHaveAttribute('data-column-key', firstColumnKey!)
+  await expect(typeHeader).toBeFocused()
+
+  await page.keyboard.press('Escape')
+
+  await expect(page).toHaveURL(/\/resources\/items$/)
+})
+
 test('detail sections share the title facts left edge at desktop and mobile widths', async ({
   page,
 }) => {
@@ -652,8 +785,8 @@ test('set band heights and opening an augment socket preserve the item detail la
   await expect(tierBonus).toHaveAttribute('data-hover-card-pinned')
   await page.keyboard.press('Escape')
   await expect(tierBonus).toBeFocused()
-  await page.keyboard.press('Escape')
-  await expect(tierBonus).toBeFocused()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page).toHaveURL(/\/resources\/items\/487$/)
   await detailPane.locator('.resources-enchantment-ledger .ledger-header-cell').first().focus()
   await page.keyboard.press('Tab')
   await page.keyboard.press('End')
@@ -662,8 +795,6 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.keyboard.press('Escape')
   await expect(tierBonus).toBeFocused()
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await page.keyboard.press('Escape')
-  await expect(tierBonus).toBeFocused()
   await expect(page).toHaveURL(/\/resources\/items\/487$/)
   const header = detailPane.locator('.detail-card__header')
   const facts = header.locator('.detail-card__facts')
@@ -728,9 +859,9 @@ test('set band heights and opening an augment socket preserve the item detail la
     Array(6).fill({ fontSize: '12.5px', fontWeight: '600' }),
   )
   await page.keyboard.press('Escape')
-  await expect(hoverCard).toBeVisible()
-  await page.mouse.move(0, 0)
   await expect(hoverCard).toHaveCount(0)
+  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+  await page.mouse.move(0, 0)
   await page.setViewportSize({ width: 375, height: 800 })
   await page.goto('/resources/items/487')
   await expect(facts).toBeVisible()

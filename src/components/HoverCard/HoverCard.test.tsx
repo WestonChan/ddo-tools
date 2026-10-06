@@ -187,6 +187,112 @@ it('closes a card before leaving a focused ledger row, including pointer-opened 
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
+it('pops pointer-opened cards and hints while focus stays elsewhere in a detail pane', () => {
+  vi.useFakeTimers()
+  const onEscape = vi.fn()
+  render(
+    <HoverCardProvider>
+      <section data-detail-pane="">
+        <button onKeyDown={onEscape}>Pane control</button>
+        <CardHarness />
+      </section>
+    </HoverCardProvider>,
+  )
+  const control = screen.getByRole('button', { name: 'Pane control' })
+  act(() => control.focus())
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Item anchor' }))
+  act(() => vi.advanceTimersByTime(260))
+  const itemCard = screen.getByRole('dialog')
+  fireEvent.mouseOver(screen.getByRole('button', { name: 'Hint anchor' }))
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('tooltip')).toBeInTheDocument()
+
+  fireEvent.keyDown(control, { key: 'Escape' })
+  expect(screen.queryByRole('tooltip')).toBeNull()
+  expect(itemCard).toBeInTheDocument()
+  expect(onEscape).not.toHaveBeenCalled()
+  expect(control).toHaveFocus()
+
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Nested anchor' }))
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getAllByRole('dialog')).toHaveLength(2)
+
+  fireEvent.keyDown(control, { key: 'Escape' })
+  expect(screen.getAllByRole('dialog')).toHaveLength(1)
+  expect(itemCard).toBeInTheDocument()
+  expect(onEscape).not.toHaveBeenCalled()
+
+  fireEvent.keyDown(control, { key: 'Escape' })
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(onEscape).not.toHaveBeenCalled()
+  expect(control).toHaveFocus()
+
+  const itemAnchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.mouseLeave(itemAnchor)
+  fireEvent.mouseEnter(itemAnchor)
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+  fireEvent.mouseLeave(itemAnchor)
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  fireEvent.keyDown(control, { key: 'Escape' })
+  expect(onEscape).toHaveBeenCalledOnce()
+})
+
+it('lets Escape through a detail pane while a focus-opened card is only pending, and swallows it outside', () => {
+  vi.useFakeTimers()
+  const onPaneEscape = vi.fn()
+  const onListEscape = vi.fn()
+  render(
+    <HoverCardProvider>
+      <section data-detail-pane="" onKeyDown={onPaneEscape}>
+        <CardHarness />
+      </section>
+      <section onKeyDown={onListEscape}>
+        <CardHarness />
+      </section>
+    </HoverCardProvider>,
+  )
+  const [paneAnchor, listAnchor] = screen.getAllByRole('button', { name: 'Item anchor' })
+
+  act(() => paneAnchor.focus())
+  act(() => vi.advanceTimersByTime(100))
+  fireEvent.keyDown(paneAnchor, { key: 'Escape' })
+  expect(onPaneEscape).toHaveBeenCalledOnce()
+  act(() => vi.advanceTimersByTime(500))
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  act(() => listAnchor.focus())
+  act(() => vi.advanceTimersByTime(100))
+  fireEvent.keyDown(listAnchor, { key: 'Escape' })
+  expect(onListEscape).not.toHaveBeenCalled()
+  act(() => vi.advanceTimersByTime(500))
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+it('leaves Escape to an input inside a detail pane', () => {
+  vi.useFakeTimers()
+  const onEscape = vi.fn()
+  render(
+    <HoverCardProvider>
+      <section data-detail-pane="">
+        <input aria-label="Pane input" onKeyDown={onEscape} />
+        <CardHarness />
+      </section>
+    </HoverCardProvider>,
+  )
+  const input = screen.getByRole('textbox', { name: 'Pane input' })
+  act(() => input.focus())
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Item anchor' }))
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  fireEvent.keyDown(input, { key: 'Escape' })
+
+  expect(onEscape).toHaveBeenCalledOnce()
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
 it('moves focus from an unrelated link into a pinned card and back to its anchor on Escape', () => {
   vi.useFakeTimers()
   render(

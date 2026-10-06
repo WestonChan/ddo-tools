@@ -43,6 +43,10 @@
   height: min(700px, 70vh);
 }
 
+.resources-picker:focus-visible {
+  outline-color: transparent;
+}
+
 .resources-picker-inner {
   display: flex;
   flex-direction: column;

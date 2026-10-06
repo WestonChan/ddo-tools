@@ -281,20 +281,35 @@ export function ItemPicker({
     if (rowToFocusId === null) return
     const picker = pickerRootRef.current
     if (!picker) return
+    const returnedItemIndex = itemsToShow.findIndex((item) => item.id === rowToFocusId)
+    const itemToFocus = itemsToShow[returnedItemIndex < 0 ? 0 : returnedItemIndex]
+    if (!itemToFocus) {
+      if (!itemPageQuery.isPending) {
+        effectiveSearchInputRef.current?.focus()
+        onRowFocused?.()
+      }
+      return
+    }
     const focusReturnedRow = (): boolean => {
-      const row = picker.querySelector<HTMLElement>(`[data-row-key="${rowToFocusId}"]`)
+      const row = picker.querySelector<HTMLElement>(`[data-row-key="${itemToFocus.id}"]`)
       if (!row) return false
+      row.scrollIntoView?.({ block: 'nearest' })
       row.focus()
       onRowFocused?.()
       return true
     }
     if (focusReturnedRow()) return
+    const body = picker.querySelector<HTMLElement>('.ledger-body')
+    if (body) {
+      const rowHeightPx = body.scrollHeight / itemsToShow.length
+      body.scrollTop = Math.max(0, returnedItemIndex) * rowHeightPx
+    }
     const observer = new MutationObserver(() => {
       if (focusReturnedRow()) observer.disconnect()
     })
     observer.observe(picker, { childList: true, subtree: true })
     return () => observer.disconnect()
-  }, [rowToFocusId, onRowFocused, itemsToShow])
+  }, [rowToFocusId, onRowFocused, itemsToShow, itemPageQuery.isPending, effectiveSearchInputRef])
 
   function clearAll(): void {
     onFiltersChange(EMPTY_ITEM_FILTERS)
