@@ -10,6 +10,7 @@ export function initializeSentry(): void {
   try {
     Sentry.init({
       dsn,
+      environment: import.meta.env.MODE,
       integrations: [
         Sentry.browserTracingIntegration(),
         Sentry.replayIntegration({

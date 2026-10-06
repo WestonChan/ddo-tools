@@ -26,6 +26,13 @@ describe('initializeSentry', () => {
     expect(consoleInfoSpy).toHaveBeenCalled()
   })
 
+  it.each(['development', 'production'])('tags events with the %s Vite mode', (mode) => {
+    vi.stubEnv('SENTRY_DSN', 'https://key@o0.ingest.sentry.io/0')
+    vi.stubEnv('MODE', mode)
+    initializeSentry()
+    expect(sentryInitSpy).toHaveBeenCalledWith(expect.objectContaining({ environment: mode }))
+  })
+
   it('does not crash when Sentry.init throws (e.g. malformed DSN)', () => {
     vi.stubEnv('SENTRY_DSN', 'not-a-real-dsn')
     sentryInitSpy.mockImplementationOnce(() => {

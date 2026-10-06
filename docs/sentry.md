@@ -52,6 +52,10 @@ The CI workflow ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) forw
 - **Replay masks text + inputs.** `replayIntegration({ maskAllText: true, maskAllInputs: true })` means recorded sessions show only structural DOM changes — character names, build descriptions, custom inputs are redacted in the replay viewer.
 - **Errors leave the user's device.** When configured, any caught error is uploaded to Sentry's servers. If that's not acceptable for your deployment, leave the DSN unset — the app falls back to the GitHub-issue flow only.
 
+## Environments
+
+Events carry Vite's mode as their Sentry environment: `development` from `npm run dev`, `production` from `npm run build`. The local `.env` holds the real DSN, so dev sessions report too; filter the Sentry issue list to `environment:production` to see only the live site.
+
 ## Sample rates
 
 Sample rates are env-aware (defined in [src/lib/sentry.ts](../src/lib/sentry.ts)):
