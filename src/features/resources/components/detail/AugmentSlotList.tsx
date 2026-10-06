@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import type { JSX, RefObject } from 'react'
 import { ApiErrorNotice, LedgerTable, type LedgerColumn } from '../../../../components'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { useFittingAugmentsBySlotLabel } from '../../queries/useItems'
@@ -11,6 +11,7 @@ interface AugmentSlotListProps {
   ledgerId: string
   onToggleSlot: (sortOrder: number) => void
   onClose: () => void
+  expandedSocketButtonRef: RefObject<HTMLButtonElement | null>
 }
 
 const AUGMENT_COLUMNS: LedgerColumn<AugmentSummary>[] = [
@@ -49,6 +50,7 @@ export function AugmentSlotList({
   ledgerId,
   onToggleSlot,
   onClose,
+  expandedSocketButtonRef,
 }: AugmentSlotListProps): JSX.Element {
   return (
     <div
@@ -68,6 +70,7 @@ export function AugmentSlotList({
           return (
             <li key={slot.sortOrder} className="resources-augment-slot" data-color={slot.label}>
               <button
+                ref={isExpanded ? expandedSocketButtonRef : undefined}
                 type="button"
                 className="resources-augment-word hoverable"
                 aria-expanded={isExpanded}

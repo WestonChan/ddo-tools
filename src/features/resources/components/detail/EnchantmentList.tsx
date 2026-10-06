@@ -249,7 +249,6 @@ export function EnchantmentList({
                 : 'row'
           }
           onRowActivate={() => {}}
-          shouldBubbleEscape
           isVirtualized={false}
           isDense
           label="Enchantments"

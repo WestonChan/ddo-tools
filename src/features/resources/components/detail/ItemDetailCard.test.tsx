@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { HoverCardProvider } from '../../../../components'
 import type { ApiItemDetail, ApiWeaponStats } from '../../../../lib/api'
 import capturedWeapon from '../../queries/fixtures/item3479.json'
 import capturedRuneArm from '../../queries/fixtures/item924.json'
@@ -429,10 +430,55 @@ describe('ItemDetailCard details', () => {
     ).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: /Yellow/ }))
     expect(container.querySelector('.resources-augment-candidates')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Yellow' })).toHaveFocus()
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
     expect(
       originalFacts.map((fact) => ({ offsetTop: fact.offsetTop, offsetLeft: fact.offsetLeft })),
     ).toEqual(originalPositions)
+  })
+
+  it('returns focus to the socket word when Escape closes its ledger from a header', async () => {
+    renderItemDetailCard(toItem(capturedRing as ApiItemDetail))
+    const yellowSocket = screen.getByRole('button', { name: 'Yellow' })
+    await userEvent.click(yellowSocket)
+    const nameHeader = screen.getByRole('columnheader', { name: 'Name' })
+    nameHeader.focus()
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByRole('table', { name: /Augments that fit the Yellow slot/ })).toBeNull()
+    expect(yellowSocket).toHaveFocus()
+    expect(yellowSocket).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('keeps the next Escape available to the detail after returning focus to a socket word', async () => {
+    const escapeFlags: boolean[] = []
+    render(
+      <HoverCardProvider>
+        <section
+          data-detail-pane=""
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') escapeFlags.push(event.defaultPrevented)
+          }}
+        >
+          <ItemDetailCard item={toItem(capturedRing as ApiItemDetail)} />
+        </section>
+      </HoverCardProvider>,
+    )
+    const yellowSocket = screen.getByRole('button', { name: 'Yellow' })
+    await userEvent.click(yellowSocket)
+    const nameHeader = screen.getByRole('columnheader', { name: 'Name' })
+    nameHeader.focus()
+    expect(await screen.findByRole('tooltip')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    await userEvent.keyboard('{Escape}')
+    expect(yellowSocket).toHaveFocus()
+    await new Promise<void>((resolve) => setTimeout(resolve, 300))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    await userEvent.keyboard('{Escape}')
+    expect(escapeFlags.at(-1)).toBe(false)
   })
 
   it('keeps every title fact in order and marks missing values consistently', () => {

@@ -21,6 +21,7 @@ import {
 } from './resourceCategories'
 import './ResourcesView.css'
 import { useResourceListSession } from './resourceListSessions'
+import { isTypingTarget } from '../../lib/isTypingTarget'
 
 const COMING_SOON_PLACEHOLDER_MIN_HEIGHT_PX = 420
 const RESOURCE_COLUMN_MINIMUM_PX = 480
@@ -110,13 +111,7 @@ function ResourcesView(): JSX.Element {
 
   function closeFocusedDetailOnEscape(event: ReactKeyboardEvent<HTMLElement>): void {
     if (event.key !== 'Escape' || event.defaultPrevented || selectedResourceId === null) return
-    const focusedElement = event.target
-    if (
-      focusedElement instanceof HTMLElement &&
-      (focusedElement.isContentEditable ||
-        ['INPUT', 'TEXTAREA', 'SELECT'].includes(focusedElement.tagName))
-    )
-      return
+    if (isTypingTarget(event.target)) return
     event.preventDefault()
     event.stopPropagation()
     closeDetail()

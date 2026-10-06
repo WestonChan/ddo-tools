@@ -1,7 +1,7 @@
 import { it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useId, useState, type JSX } from 'react'
+import { useId, useRef, useState, type JSX } from 'react'
 import { HoverCardProvider } from '../../../../components'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
@@ -56,24 +56,30 @@ const RED_AUGMENTS: AugmentSummary[] = [
 
 function AugmentSlotPicker({ augmentSlots }: { augmentSlots: ItemAugmentSlot[] }): JSX.Element {
   const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
+  const expandedSocketButtonRef = useRef<HTMLButtonElement | null>(null)
   const ledgerId = useId()
   const expandedSlot = augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
+  function closeExpandedSocket(): void {
+    expandedSocketButtonRef.current?.focus()
+    setExpandedSlotSortOrder(null)
+  }
   return (
     <>
       <AugmentSlotList
         augmentSlots={augmentSlots}
         expandedSlotSortOrder={expandedSlotSortOrder}
         ledgerId={ledgerId}
+        expandedSocketButtonRef={expandedSocketButtonRef}
         onToggleSlot={(sortOrder) =>
           setExpandedSlotSortOrder((current) => (current === sortOrder ? null : sortOrder))
         }
-        onClose={() => setExpandedSlotSortOrder(null)}
+        onClose={closeExpandedSocket}
       />
       {expandedSlot && (
         <AugmentCandidateLedger
           slot={expandedSlot}
           ledgerId={ledgerId}
-          onClose={() => setExpandedSlotSortOrder(null)}
+          onClose={closeExpandedSocket}
         />
       )}
     </>
@@ -141,7 +147,7 @@ it('reports an API-rejected augment search with a retry action', async () => {
   expect(refetchAugments).toHaveBeenCalledOnce()
 })
 
-it('tabs into the augment ledger and keeps row focus on Escape', async () => {
+it('tabs into the augment ledger and closes its socket from a row on Escape', async () => {
   render(<AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />)
   const button = screen.getByRole('button', { name: /Red/ })
   button.focus()
@@ -158,14 +164,29 @@ it('tabs into the augment ledger and keeps row focus on Escape', async () => {
   await userEvent.keyboard('{Enter}')
   expect(rows[1]).toHaveFocus()
   await userEvent.keyboard('{Escape}')
-  expect(rows[1]).toHaveFocus()
-  expect(screen.getByRole('table')).toBeInTheDocument()
-  await userEvent.keyboard('{Escape}')
-  expect(rows[1]).toHaveFocus()
-  button.focus()
-  await userEvent.keyboard('{Escape}')
   expect(screen.queryByRole('table')).toBeNull()
   expect(button).toHaveAttribute('aria-expanded', 'false')
+})
+
+it('closes a socket from a row while its hover card is still pending inside a detail pane', async () => {
+  render(
+    <HoverCardProvider>
+      <section data-detail-pane="">
+        <AugmentSlotPicker augmentSlots={[slot(0, 'red')]} />
+      </section>
+    </HoverCardProvider>,
+  )
+  const redSocket = screen.getByRole('button', { name: 'Red' })
+  await userEvent.click(redSocket)
+  screen.getByRole('columnheader', { name: 'Name' }).focus()
+  await userEvent.tab()
+  expect(screen.getByRole('row', { name: /Ruby of Flame/ })).toHaveFocus()
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  await userEvent.keyboard('{Escape}')
+
+  expect(screen.queryByRole('table')).toBeNull()
+  expect(redSocket).toHaveFocus()
 })
 
 it('closes the first table when another socket opens and closes on a second click', async () => {
@@ -199,18 +220,19 @@ it('closes an unpinned augment card before leaving the row and pops a pinned car
   expect(screen.queryByRole('dialog')).toBeNull()
   expect(screen.getByRole('table')).toBeInTheDocument()
   await userEvent.keyboard('{Escape}')
-  expect(row).toHaveFocus()
+  expect(screen.queryByRole('table')).toBeNull()
+  await userEvent.click(screen.getByRole('button', { name: /Red/ }))
   screen.getByRole('columnheader', { name: 'Name' }).focus()
   await userEvent.tab()
+  const reopenedRow = screen.getByRole('row', { name: /Ruby of Flame/ })
   await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
   await userEvent.keyboard('t')
-  expect(row).toHaveAttribute('data-hover-card-pinned')
+  expect(reopenedRow).toHaveAttribute('data-hover-card-pinned')
   expect(screen.getByRole('dialog')).toHaveFocus()
   await userEvent.keyboard('{Escape}')
   expect(screen.queryByRole('dialog')).toBeNull()
-  expect(row).toHaveFocus()
+  expect(reopenedRow).toHaveFocus()
   expect(screen.getByRole('table')).toBeInTheDocument()
   await userEvent.keyboard('{Escape}')
-  expect(row).toHaveFocus()
-  expect(screen.getByRole('table')).toBeInTheDocument()
+  expect(screen.queryByRole('table')).toBeNull()
 })

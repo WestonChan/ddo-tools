@@ -115,21 +115,15 @@ test('Escape cancels a keyboard column move in the detail enchantment ledger wit
   const typeHeader = headers.filter({ hasText: 'Type' })
   const firstColumnKey = await headers.first().getAttribute('data-column-key')
   await typeHeader.focus()
+  await expect(page.getByRole('tooltip')).toBeVisible()
   await page.keyboard.press('m')
   await expect(typeHeader).toHaveClass(/ledger-header-cell--dragging/)
   await page.evaluate(() => new Promise<void>((resolve) => setTimeout(resolve, 0)))
   await page.keyboard.press('ArrowRight')
   await expect(pane.locator('.ledger-header-cell--over')).toHaveCount(1)
-  await expect(async () => {
-    if (
-      await typeHeader.evaluate((header) =>
-        header.classList.contains('ledger-header-cell--dragging'),
-      )
-    ) {
-      await page.keyboard.press('Escape')
-    }
-    await expect(typeHeader).not.toHaveClass(/ledger-header-cell--dragging/, { timeout: 300 })
-  }).toPass({ timeout: 5000 })
+  await page.keyboard.press('Escape')
+  await expect(typeHeader).not.toHaveClass(/ledger-header-cell--dragging/)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 
   await expect(page).toHaveURL(/\/resources\/items\/487$/)
   await expect(headers.first()).toHaveAttribute('data-column-key', firstColumnKey!)
@@ -138,6 +132,75 @@ test('Escape cancels a keyboard column move in the detail enchantment ledger wit
   await page.keyboard.press('Escape')
 
   await expect(page).toHaveURL(/\/resources\/items$/)
+})
+
+test('Escape closes a socket from its header and keeps focus in the detail', async ({ page }) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        path === '/v1/items/487'
+          ? capturedRing
+          : path === '/v1/sets/93'
+            ? capturedSet
+            : path === '/v1/items'
+              ? {
+                  total: 1,
+                  limit: 200,
+                  offset: 0,
+                  items: [
+                    {
+                      id: capturedRing.id,
+                      name: capturedRing.name,
+                      slot: capturedRing.slot,
+                      category: capturedRing.category,
+                      item_type: capturedRing.item_type,
+                      minimum_level: capturedRing.minimum_level,
+                      enhancement_bonus: capturedRing.enhancement_bonus,
+                      icon: capturedRing.icon,
+                      pack: null,
+                      is_raid: false,
+                      is_rare: false,
+                      is_legacy: capturedRing.is_legacy,
+                    },
+                  ],
+                }
+              : [],
+      ),
+    })
+  })
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.goto('/resources/items')
+  const row = page.getByRole('row', { name: /Adversion/ })
+  await row.focus()
+  await page.keyboard.press('Enter')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const yellowSocket = pane.getByRole('button', { name: 'Yellow', exact: true })
+  await yellowSocket.click()
+  const nameHeader = pane.locator('.resources-augment-candidates').getByRole('columnheader', {
+    name: 'Name',
+    exact: true,
+  })
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Shift+Tab')
+  await expect(nameHeader).toBeFocused()
+  await expect(page.getByRole('tooltip')).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(nameHeader).toBeFocused()
+  await expect(yellowSocket).toHaveAttribute('aria-expanded', 'true')
+  await page.keyboard.press('Escape')
+  await expect(yellowSocket).toHaveAttribute('aria-expanded', 'false')
+  await expect(yellowSocket).toBeFocused()
+  await page.waitForTimeout(300)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(page).toHaveURL(/\/resources\/items$/)
+  await expect(row).toBeFocused()
 })
 
 test('detail sections share the title facts left edge at desktop and mobile widths', async ({

@@ -943,7 +943,6 @@ describe('LedgerTable', () => {
           onRowActivate={vi.fn()}
           isVirtualized={false}
           viewportWidth={800}
-          shouldBubbleEscape
         />
       </div>,
     )

@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { StrictMode, useState } from 'react'
 import { HintAnchor, HoverCardProvider, positionedCard, useHoverCard } from './HoverCard'
 import { LedgerTable } from '../LedgerTable'
@@ -210,7 +211,8 @@ it('pops pointer-opened cards and hints while focus stays elsewhere in a detail 
   fireEvent.keyDown(control, { key: 'Escape' })
   expect(screen.queryByRole('tooltip')).toBeNull()
   expect(itemCard).toBeInTheDocument()
-  expect(onEscape).not.toHaveBeenCalled()
+  expect(onEscape).toHaveBeenCalledOnce()
+  expect(onEscape.mock.calls[0][0].defaultPrevented).toBe(true)
   expect(control).toHaveFocus()
 
   fireEvent.mouseEnter(screen.getByRole('button', { name: 'Nested anchor' }))
@@ -220,11 +222,11 @@ it('pops pointer-opened cards and hints while focus stays elsewhere in a detail 
   fireEvent.keyDown(control, { key: 'Escape' })
   expect(screen.getAllByRole('dialog')).toHaveLength(1)
   expect(itemCard).toBeInTheDocument()
-  expect(onEscape).not.toHaveBeenCalled()
+  expect(onEscape).toHaveBeenCalledOnce()
 
   fireEvent.keyDown(control, { key: 'Escape' })
   expect(screen.queryByRole('dialog')).toBeNull()
-  expect(onEscape).not.toHaveBeenCalled()
+  expect(onEscape).toHaveBeenCalledOnce()
   expect(control).toHaveFocus()
 
   const itemAnchor = screen.getByRole('button', { name: 'Item anchor' })
@@ -236,7 +238,64 @@ it('pops pointer-opened cards and hints while focus stays elsewhere in a detail 
   expect(screen.queryByRole('dialog')).toBeNull()
 
   fireEvent.keyDown(control, { key: 'Escape' })
-  expect(onEscape).toHaveBeenCalledOnce()
+  expect(onEscape).toHaveBeenCalledTimes(2)
+})
+
+it('closes a focused header hint while one Escape cancels its keyboard move', async () => {
+  const escapeFlags: boolean[] = []
+  const rows = [{ id: 1, name: 'Belt' }]
+  render(
+    <HoverCardProvider>
+      <section
+        data-detail-pane=""
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') escapeFlags.push(event.defaultPrevented)
+        }}
+      >
+        <LedgerTable
+          columns={[
+            {
+              key: 'name',
+              label: 'Name',
+              minWidth: 120,
+              sortValue: (row) => row.name,
+              render: (row) => row.name,
+            },
+            {
+              key: 'type',
+              label: 'Type',
+              minWidth: 120,
+              sortValue: (row) => row.name,
+              render: () => 'Equipment',
+            },
+          ]}
+          rowCount={rows.length}
+          rowAt={(index) => rows[index]}
+          rowKey={(row) => row.id}
+          onRowActivate={vi.fn()}
+          isVirtualized={false}
+        />
+      </section>
+    </HoverCardProvider>,
+  )
+  screen.getAllByRole('columnheader').forEach((header, index) => {
+    vi.spyOn(header, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: index * 100, y: 0, width: 100, height: 30 }),
+    )
+  })
+  const typeHeader = screen.getByRole('columnheader', { name: 'Type' })
+  act(() => typeHeader.focus())
+  expect(await screen.findByRole('tooltip')).toBeInTheDocument()
+  await userEvent.keyboard('m')
+  await waitFor(() => expect(typeHeader).toHaveClass('ledger-header-cell--dragging'))
+  await new Promise<void>((resolve) => setTimeout(resolve, 0))
+  await userEvent.keyboard('{ArrowRight}')
+  await userEvent.keyboard('{Escape}')
+  expect(screen.queryByRole('tooltip')).toBeNull()
+  await waitFor(() => expect(typeHeader).not.toHaveClass('ledger-header-cell--dragging'))
+  expect(escapeFlags).toEqual([true])
+  await userEvent.keyboard('{Escape}')
+  expect(escapeFlags).toEqual([true, false])
 })
 
 it('lets Escape through a detail pane while a focus-opened card is only pending, and swallows it outside', () => {

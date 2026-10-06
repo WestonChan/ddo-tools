@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-06',
+    changes: [
+      'In an open item, one Escape cancels a keyboard column move, Escape on an augment row closes its socket, and closing a socket keeps focus in the item so the next Escape closes it',
+    ],
+  },
+  {
     date: '2026-10-05',
     changes: [
       'Escape inside an open item closes it and returns to the list with the row selected; an open hover card closes first',

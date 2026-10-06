@@ -1,4 +1,4 @@
-import { Fragment, useId, useState, type JSX, type ReactNode } from 'react'
+import { Fragment, useId, useRef, useState, type JSX, type ReactNode } from 'react'
 import {
   DetailCard,
   DetailCardFooter,
@@ -7,6 +7,7 @@ import {
   DetailStats,
   DetailMore,
   DetailValueRow,
+  useClearHoverCards,
   WikiLinkIcon,
   type DetailStat,
 } from '../../../../components'
@@ -458,6 +459,8 @@ export function ItemDetailCard({
   onOpenItem?: (id: number, name: string) => void
 }): JSX.Element {
   const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
+  const expandedSocketButtonRef = useRef<HTMLButtonElement | null>(null)
+  const clearHoverCards = useClearHoverCards()
   const augmentLedgerId = useId()
   const expandedSlot = item.augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
   const displayedSetName = item.setName?.trim() || null
@@ -468,6 +471,12 @@ export function ItemDetailCard({
     item.sagas.length > 0 ||
     item.adventurePackDrops.length > 0 ||
     item.sourcesBeyondQuests.length > 0
+
+  function closeExpandedSocket(): void {
+    expandedSocketButtonRef.current?.focus()
+    clearHoverCards()
+    setExpandedSlotSortOrder(null)
+  }
 
   return (
     <div
@@ -525,12 +534,13 @@ export function ItemDetailCard({
                       augmentSlots={item.augmentSlots}
                       expandedSlotSortOrder={expandedSlotSortOrder}
                       ledgerId={augmentLedgerId}
+                      expandedSocketButtonRef={expandedSocketButtonRef}
                       onToggleSlot={(sortOrder) =>
                         setExpandedSlotSortOrder((current) =>
                           current === sortOrder ? null : sortOrder,
                         )
                       }
-                      onClose={() => setExpandedSlotSortOrder(null)}
+                      onClose={closeExpandedSocket}
                     />
                   ) : null}
                 </DetailFact>
@@ -543,7 +553,7 @@ export function ItemDetailCard({
             <AugmentCandidateLedger
               slot={expandedSlot}
               ledgerId={augmentLedgerId}
-              onClose={() => setExpandedSlotSortOrder(null)}
+              onClose={closeExpandedSocket}
             />
           )
         }

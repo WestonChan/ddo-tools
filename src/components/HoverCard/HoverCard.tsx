@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { isTypingTarget } from '../../lib/isTypingTarget'
 import './HoverCard.css'
 
 interface CardEntry {
@@ -228,7 +229,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         if (!event.defaultPrevented && isFocusInsideDetailPane && cards.length > 0) {
           const topCard = cards[cards.length - 1]
           event.preventDefault()
-          event.stopImmediatePropagation()
+          if (topCard.kind !== 'hint') event.stopImmediatePropagation()
           cancelPending()
           cardToPin.current = null
           if (topCard.anchorElement?.contains(focusedElement))
@@ -413,13 +414,6 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       {children}
       {cards.map((card) => createPortal(<CardLayer key={card.id} card={card} />, document.body))}
     </ControllerContext.Provider>
-  )
-}
-
-function isTypingTarget(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
   )
 }
 
