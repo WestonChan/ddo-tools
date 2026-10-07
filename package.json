@@ -30,8 +30,8 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@sentry/react": "^10.50.0",
     "@tanstack/react-query": "^5.104.0",
-    "@tanstack/react-router": "^1.170.39",
-    "lucide-react": "^1.48.0",
+    "@tanstack/react-router": "^1.170.40",
+    "lucide-react": "^1.49.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-error-boundary": "^6.1.6",
@@ -58,7 +58,7 @@
     "prettier": "^3.9.9",
     "stylelint": "^17.15.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.70.1",
+    "typescript-eslint": "^8.71.0",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
   }
