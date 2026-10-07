@@ -19,12 +19,7 @@ import { resourceStatusDefinition } from './resourceStatusDefinition'
 import { ResourceStatusView } from './ResourceStatusView'
 import type { SetDetail } from '../../queries/sets'
 import { sentenceCased } from './sentenceCased'
-import {
-  QuestHoverAnchor,
-  SetHoverAnchor,
-  SourceHoverAnchor,
-  type SourceHoverKind,
-} from './ResourceHoverCards'
+import { QuestHoverAnchor, SourceHoverAnchor, type SourceHoverKind } from './ResourceHoverCards'
 import type {
   Item,
   ItemSource,
@@ -615,7 +610,6 @@ function useItemDetailDefinition({
   const clearHoverCards = useClearHoverCards()
   const augmentLedgerId = useId()
   const expandedSlot = item?.augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
-  const displayedSetName = item?.setName?.trim() || null
 
   function closeExpandedSocket(): void {
     expandedSocketButtonRef.current?.focus()
@@ -640,16 +634,6 @@ function useItemDetailDefinition({
         item?.sagas.some((saga) => saga.isRareLoot)
           ? 'Yes'
           : null,
-    },
-    {
-      label: 'Set',
-      value: displayedSetName ? (
-        item?.setId ? (
-          <SetHoverAnchor setId={item.setId} name={displayedSetName} onOpenItem={onOpenItem} />
-        ) : (
-          displayedSetName
-        )
-      ) : null,
     },
     {
       label: 'Augments',
@@ -710,7 +694,6 @@ function useItemDetailDefinition({
       entries: enchantments,
       FullView: EffectListFullView,
       BriefView: EffectListBriefView,
-      briefEntryLimit: 5,
     }),
     detailCardSection({
       key: 'clickies',

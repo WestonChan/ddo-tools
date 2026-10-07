@@ -1,22 +1,32 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { fireEvent, render, screen, cleanup, type RenderResult } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  cleanup,
+  within,
+  type RenderResult,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../../../components'
-import type { ApiItemDetail, ApiWeaponStats } from '../../../../lib/api'
+import type { ApiItemDetail, ApiSetDetail, ApiWeaponStats } from '../../../../lib/api'
 import capturedWeapon from '../../queries/fixtures/effects-item-3479.json'
 import capturedRuneArm from '../../queries/fixtures/effects-item-924.json'
 import capturedArmor from '../../queries/fixtures/effects-item-831.json'
 import capturedShield from '../../queries/fixtures/effects-item-8203.json'
 import capturedRing from '../../queries/fixtures/effects-item-487.json'
+import capturedSet from '../../queries/fixtures/effects-set-93.json'
 import capturedNecklace from '../../queries/fixtures/effects-item.json'
 import capturedBracers from '../../queries/fixtures/effects-item-2430.json'
 import { toItem } from '../../queries/items'
+import { toSetDetail } from '../../queries/sets'
 import { ItemDetailCard, ItemHoverCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
 vi.mock('../../queries/useItems', () => ({
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
   useEffectDetail: () => ({ data: { kind: 'effect', wiki_url: null, bonuses: [], damage: [] } }),
+  useSet: () => ({ data: null, isPending: true, error: null, refetch: vi.fn() }),
 }))
 
 afterEach(() => {
@@ -412,7 +422,7 @@ describe('ItemDetailCard details', () => {
     const factLabels = (): Array<string | null | undefined> =>
       Array.from(facts.children).map((fact) => fact.querySelector('.section-label')?.textContent)
     const originalLabels = factLabels()
-    expect(originalLabels).toEqual(['ML', 'Gear slot', 'Raid', 'Rare', 'Set', 'Augments'])
+    expect(originalLabels).toEqual(['ML', 'Gear slot', 'Raid', 'Rare', 'Augments'])
     expect(originalFacts.at(-1)?.querySelector('.augment-slot-symbol')).toHaveTextContent('Y')
     await userEvent.click(screen.getByRole('button', { name: 'Yellow slot' }))
     const ledger = container.querySelector('.resources-augment-candidates')!
@@ -496,17 +506,15 @@ describe('ItemDetailCard details', () => {
       'Gear slot',
       'Raid',
       'Rare',
-      'Set',
       'Augments',
     ])
-    expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual(Array(6).fill('—'))
+    expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual(Array(5).fill('—'))
     expect(facts.every((fact) => fact.querySelector('.detail-card__fact-empty'))).toBe(true)
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
     rerender(<ItemDetailCard item={plainItem} />)
     expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual([
       '5',
       'Trinket',
-      '—',
       '—',
       '—',
       '—',
@@ -518,7 +526,6 @@ describe('ItemDetailCard details', () => {
     )
     expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual([
       '0',
-      '—',
       '—',
       '—',
       '—',
@@ -553,6 +560,79 @@ describe('ItemDetailCard details', () => {
       ),
     ).toEqual(['Y', 'S', 'M', 'D'])
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
+  })
+
+  it('keeps the folded set band after hover enchantments across the five-row cap', async () => {
+    const item = toCapturedItem({ ...capturedRing, enhancement_bonus: 2 })
+    const setDetail = toSetDetail(capturedSet as ApiSetDetail)
+    const { container, rerender } = render(
+      <HoverCardProvider>
+        <ItemHoverCard item={item} setDetail={setDetail} />
+      </HoverCardProvider>,
+    )
+    const enchantments = container.querySelector('[data-section-key="enchantments"]')!
+    expect(enchantments.querySelectorAll('.resources-hover-effect-row')).toHaveLength(5)
+    const setBand = within(enchantments as HTMLElement).getByRole('row', {
+      name: /Adherent of the Mists/,
+    })
+    expect(setBand).toHaveAttribute('aria-expanded', 'false')
+    expect(setBand).toHaveTextContent('7 bonuses')
+    expect(enchantments.querySelector('.ledger-header-row')).toBeNull()
+    expect(enchantments.querySelector('.ledger-row--subheading')).toBeNull()
+    expect(enchantments.querySelector('.detail-card__more')).toBeNull()
+    await userEvent.click(setBand)
+    expect(setBand).toHaveAttribute('aria-expanded', 'true')
+    expect(enchantments.querySelector('.ledger-row--subheading')).toHaveTextContent('5 pieces')
+    setBand.focus()
+    await userEvent.keyboard(' ')
+    expect(setBand).toHaveAttribute('aria-expanded', 'false')
+
+    const sixRowItem = toCapturedItem({
+      ...capturedRing,
+      enhancement_bonus: 2,
+      effects: [...capturedRing.effects, capturedWeapon.effects[0]],
+    })
+    rerender(
+      <HoverCardProvider>
+        <ItemHoverCard item={sixRowItem} setDetail={setDetail} />
+      </HoverCardProvider>,
+    )
+    expect(enchantments.querySelectorAll('.resources-hover-effect-row')).toHaveLength(5)
+    expect(setBand).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      within(enchantments as HTMLElement).getByRole('button', { name: '+1 more' }),
+    ).toBeVisible()
+    await userEvent.click(
+      within(enchantments as HTMLElement).getByRole('button', { name: '+1 more' }),
+    )
+    expect(enchantments.querySelectorAll('.resources-hover-effect-row')).toHaveLength(6)
+    expect(setBand).toHaveAttribute('aria-expanded', 'false')
+
+    rerender(
+      <HoverCardProvider>
+        <ItemHoverCard
+          item={toCapturedItem({ ...capturedRing, enhancement_bonus: null, effects: [] })}
+          setDetail={setDetail}
+        />
+      </HoverCardProvider>,
+    )
+    expect(enchantments.querySelectorAll('.resources-hover-effect-row')).toHaveLength(0)
+    expect(setBand).toHaveAttribute('aria-expanded', 'false')
+    expect(enchantments.querySelector('.detail-card__more')).toBeNull()
+  })
+
+  it('does not add the pane bonus-filter legend to the hover set band', () => {
+    const item = toCapturedItem(capturedRing)
+    const setDetail = toSetDetail(capturedSet as ApiSetDetail)
+    const { container } = render(
+      <ItemHoverCard
+        item={item}
+        setDetail={setDetail}
+        matchingBonuses={['Positive Spell Power']}
+      />,
+    )
+    expect(container.querySelector('.resources-effect-ledger .ledger-row--heading')).toBeVisible()
+    expect(container.querySelector('.resources-effect-legend')).toBeNull()
   })
 
   it('shows shield primary rows and reserves the remaining shield stats for its toggle', async () => {
@@ -1220,7 +1300,7 @@ describe('ItemDetailCard sources beyond quests', () => {
 })
 
 describe('ItemDetailCard header attributes', () => {
-  it('shows the signed enhancement in the table and keeps the set name in the header', () => {
+  it('shows the signed enhancement in the table without a Set title fact', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       enhancementBonus: 5,
@@ -1230,7 +1310,7 @@ describe('ItemDetailCard header attributes', () => {
     expect(container.querySelector('.resources-effect-ledger .ledger-row')).toHaveTextContent(
       'Enhancement BonusEnhancement+5',
     )
-    expect(screen.getByText('Adherent of the Mists')).toBeInTheDocument()
+    expect(container.querySelector('.detail-card__header')).not.toHaveTextContent('Set')
     expect(screen.queryByRole('button', { name: 'More details' })).toBeNull()
   })
 

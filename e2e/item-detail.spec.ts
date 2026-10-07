@@ -458,11 +458,11 @@ test('capped list and nested cards keep their height and viewport margin', async
 
   await page.mouse.move(0, 0)
   await expect(listCard).toHaveCount(0)
-  const setAnchor = page
+  const setBand = page
     .getByRole('region', { name: 'Item details', exact: true })
-    .locator('.detail-card__facts .resources-hover-anchor')
+    .locator('.resources-effect-ledger .ledger-row--heading')
     .filter({ hasText: capturedSet.name })
-  await setAnchor.hover()
+  await setBand.hover()
   const setCard = page.getByRole('dialog').filter({ hasText: capturedSet.name })
   await expect(setCard).toBeVisible()
   await page.keyboard.press('t')
@@ -1080,10 +1080,10 @@ test('Tab wraps from the last set card control to its first piece', async ({ pag
 
   await page.goto('/resources/items/487')
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
-  const setAnchor = detailPane
-    .locator('.detail-card__facts .resources-hover-anchor')
+  const setBand = detailPane
+    .locator('.resources-effect-ledger .ledger-row--heading')
     .filter({ hasText: capturedSet.name })
-  await setAnchor.hover()
+  await setBand.hover()
   const setCard = page.getByRole('dialog').filter({ hasText: capturedSet.name })
   await expect(setCard).toBeVisible()
   await page.keyboard.press('t')
@@ -1162,11 +1162,11 @@ test('the full pane breadcrumb survives a three-deep stack and a narrow resize',
   await expect(pane.getByRole('heading', { name: capturedRing.name, exact: true })).toBeVisible()
 
   const openSetPiece = async (name: string): Promise<void> => {
-    const setAnchor = pane
-      .locator('.detail-card__facts .resources-hover-anchor')
+    const setBand = pane
+      .locator('.resources-effect-ledger .ledger-row--heading')
       .filter({ hasText: capturedSet.name })
     await page.mouse.move(0, 0)
-    await setAnchor.hover()
+    await setBand.hover()
     const setCard = page.getByRole('dialog').filter({ hasText: capturedSet.name })
     await expect(setCard).toBeVisible()
     await page.keyboard.press('t')
@@ -1517,6 +1517,53 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
   ])
 })
 
+test('item 4127 keeps its set in the folded enchantment band in the pane and pinned card', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/resources/items/4127')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  await expect(
+    pane.getByRole('heading', {
+      name: "Legendary Bracers of the Demon's Consort",
+      exact: true,
+    }),
+  ).toBeVisible()
+  await expect(pane.locator('.detail-card__fact .section-label')).toHaveText([
+    'ML',
+    'Gear slot',
+    'Raid',
+    'Rare',
+    'Augments',
+  ])
+  const paneSetBand = pane.locator('.resources-effect-ledger .ledger-row--heading')
+  await expect(paneSetBand).toBeVisible()
+  await expect(paneSetBand).toHaveAttribute('aria-expanded', 'false')
+  await expect(paneSetBand).toContainText(/set/i)
+  await expect(paneSetBand).toContainText(/\d+ bonuses/)
+  await expect(pane.locator('.resources-effect-ledger .ledger-row--subheading')).toHaveCount(0)
+
+  await page
+    .getByRole('searchbox', { name: 'Search items', exact: true })
+    .fill("Legendary Bracers of the Demon's Consort")
+  const itemRow = page.getByRole('row', { name: /Legendary Bracers of the Demon's Consort/ })
+  await itemRow.hover()
+  const card = page.locator('.hover-card[data-kind="item"]')
+  await expect(card).toBeVisible()
+  await itemRow.press('t')
+  await expect(card).toHaveClass(/hover-card--pinned/)
+  const enchantments = card.locator('[data-section-key="enchantments"]')
+  const cardSetBand = enchantments.locator('.resources-effect-ledger .ledger-row--heading')
+  await expect(cardSetBand).toBeVisible()
+  await expect(cardSetBand).toHaveAttribute('aria-expanded', 'false')
+  expect(await enchantments.locator('.resources-hover-effect-row').count()).toBeLessThanOrEqual(5)
+  await cardSetBand.click()
+  await expect(cardSetBand).toHaveAttribute('aria-expanded', 'true')
+  await cardSetBand.focus()
+  await page.keyboard.press('Space')
+  await expect(cardSetBand).toHaveAttribute('aria-expanded', 'false')
+})
+
 test('set band heights and opening an augment socket preserve the item detail layout', async ({
   page,
 }) => {
@@ -1616,7 +1663,6 @@ test('set band heights and opening an augment socket preserve the item detail la
     'Gear slot',
     'Raid',
     'Rare',
-    'Set',
     'Augments',
   ])
   const factValueStyles = (grid: Element): Array<{ fontSize: string; fontWeight: string }> =>
@@ -1629,7 +1675,7 @@ test('set band heights and opening an augment socket preserve the item detail la
       return { fontSize: style.fontSize, fontWeight: style.fontWeight }
     })
   expect(await facts.evaluate(factValueStyles)).toEqual([
-    ...Array(5).fill({ fontSize: '15px', fontWeight: '600' }),
+    ...Array(4).fill({ fontSize: '15px', fontWeight: '600' }),
     { fontSize: '13px', fontWeight: '700' },
   ])
   expect(await facts.evaluate((row) => getComputedStyle(row).columnGap)).toBe('28px')
@@ -1668,7 +1714,7 @@ test('set band heights and opening an augment socket preserve the item detail la
   await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
   await expect(hoverCard.locator('.detail-card__facts .augment-slot-symbol')).toBeVisible()
   expect(await hoverCard.locator('.detail-card__facts').evaluate(factValueStyles)).toEqual([
-    ...Array(5).fill({ fontSize: '12.5px', fontWeight: '600' }),
+    ...Array(4).fill({ fontSize: '12.5px', fontWeight: '600' }),
     { fontSize: '13px', fontWeight: '700' },
   ])
   await page.keyboard.press('Escape')

@@ -3,6 +3,7 @@ export { EditableText } from './EditableText'
 export { HoverCardProvider, HintAnchor, useHoverCard, useClearHoverCards } from './HoverCard'
 export {
   StructuredDetailCard,
+  DetailMore,
   DetailMoreButton,
   detailCardSection,
   DetailValueRow,

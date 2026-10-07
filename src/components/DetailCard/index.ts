@@ -1,5 +1,5 @@
 export { StructuredDetailCard } from './DetailCard'
-export { DetailMoreButton } from './DetailMore'
+export { DetailMore, DetailMoreButton } from './DetailMore'
 export { detailCardSection } from './DetailCardSections'
 export type { DetailCardDefinition, DetailCardFact } from './DetailCardSections'
 export { DetailValueRow } from './DetailValueRow'

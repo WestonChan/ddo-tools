@@ -4,7 +4,6 @@ import type { JSX } from 'react'
 import { HoverCardProvider } from '../../../../components'
 import {
   QuestHoverAnchor,
-  SetHoverAnchor,
   SourceHoverAnchor,
   AugmentDetailCard,
   AugmentHoverCard,
@@ -17,6 +16,8 @@ import {
   SourceHoverCard,
 } from './ResourceHoverCards'
 import { BonusDetailCard, BonusHoverCard } from './BonusDetailCard'
+import { EffectListFullView } from './EffectList'
+import { setEffectRows } from './effectRows'
 import capturedItem from '../../queries/fixtures/effects-item.json'
 import capturedRing from '../../queries/fixtures/effects-item-487.json'
 import adventurePack from '../../queries/fixtures/adventure-packs.json'
@@ -185,11 +186,15 @@ vi.mock('../../queries/useItems', () => ({
         ? undefined
         : effectVocabularyDetail,
   }),
-  useSet: () => ({
+  useSet: (setId: number | null) => ({
     isPending: pendingHoverKind === 'set',
     error:
       failedHoverKind === 'set'
-        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid response for /v1/sets/3: tiers[0].effects')
+        ? new ApiError(
+            API_RESPONSE_ERROR,
+            0,
+            `Invalid response for /v1/sets/${setId}: tiers[0].effects`,
+          )
         : null,
     refetch: vi.fn(),
     data:
@@ -303,13 +308,14 @@ const sectionKeysByKind: Record<string, string[]> = {
   event: ['items'],
 }
 
-it('keeps all six item fact values equal when the item belongs to a set', () => {
+it('keeps all five item fact values equal when the item belongs to a set', () => {
   const item = toItem(capturedRing as ApiItemDetail)
   const pane = render(<ItemDetailCard item={item} />)
   const paneValues = [...pane.container.querySelectorAll('.detail-card__fact > div')].map(
     (fact) => fact.textContent,
   )
-  expect(paneValues[4]).toBe('Adherent of the Mists Set (Heroic)')
+  expect(paneValues).toHaveLength(5)
+  expect(paneValues[4]).toBe('Y')
   pane.unmount()
   const hover = render(<ItemHoverCard item={item} />)
   expect(
@@ -449,7 +455,7 @@ it.each([
   [
     'item',
     () => <ItemHoverContent itemId={7631} />,
-    ['ML', 'Gear slot', 'Raid', 'Rare', 'Set', 'Augments'],
+    ['ML', 'Gear slot', 'Raid', 'Rare', 'Augments'],
   ],
   ['augment', () => <AugmentHoverCard augmentId={77} />, ['ML', 'Slots']],
   ['quest', () => <QuestHoverCard questId={7} />, ['Level', 'Pack', 'Patron', 'Raid']],
@@ -539,12 +545,14 @@ it('shows a quest’s pack, raid flag, and unique loot item, then opens that ite
 it('shows captured set pieces and tier bonuses', () => {
   vi.useFakeTimers()
   const openItem = vi.fn()
+  const setDetail = toSetDetail(capturedSet as ApiSetDetail)
   render(
     <HoverCardProvider>
-      <SetHoverAnchor setId={6} name="Devoted Heart" onOpenItem={openItem} />
+      <EffectListFullView entries={setEffectRows(setDetail, [], openItem)} />
     </HoverCardProvider>,
   )
-  fireEvent.mouseEnter(screen.getByText('Devoted Heart'))
+  const setBand = screen.getByRole('row', { name: /Devoted Heart/ })
+  fireEvent.mouseEnter(setBand)
   act(() => vi.advanceTimersByTime(120))
   const card = screen.getByRole('dialog')
   expect(card).toHaveTextContent('2 pieces')
@@ -554,13 +562,12 @@ it('shows captured set pieces and tier bonuses', () => {
   expect(openItem).toHaveBeenCalledWith(1815, 'Devoted Goggles')
   expect(screen.queryByRole('dialog')).toBeNull()
 
-  const setAnchor = screen.getByText('Devoted Heart')
   fireEvent.keyDown(document, { key: 'Tab' })
-  act(() => setAnchor.focus())
+  act(() => setBand.focus())
   act(() => vi.advanceTimersByTime(120))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
-  fireEvent.keyDown(setAnchor, { key: 'Escape' })
-  expect(setAnchor).toHaveFocus()
+  fireEvent.keyDown(setBand, { key: 'Escape' })
+  expect(setBand).toHaveFocus()
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
@@ -572,7 +579,7 @@ it.each(['set', 'quest', 'source'] as const)(
     render(
       <HoverCardProvider>
         {kind === 'set' ? (
-          <SetHoverAnchor setId={3} name="Storm Set" />
+          <EffectListFullView entries={setEffectRows(toSetDetail(capturedSet as ApiSetDetail))} />
         ) : kind === 'quest' ? (
           <QuestHoverAnchor questId={7}>Quest</QuestHoverAnchor>
         ) : (
@@ -583,7 +590,9 @@ it.each(['set', 'quest', 'source'] as const)(
       </HoverCardProvider>,
     )
     fireEvent.mouseEnter(
-      screen.getByText(kind === 'set' ? 'Storm Set' : kind === 'quest' ? 'Quest' : 'Source'),
+      kind === 'set'
+        ? screen.getByRole('row', { name: /Devoted Heart/ })
+        : screen.getByText(kind === 'quest' ? 'Quest' : 'Source'),
     )
     act(() => vi.advanceTimersByTime(120))
     const card = within(screen.getByRole('dialog'))
@@ -614,7 +623,7 @@ it.each([
         <ItemDetailCard item={toItem(capturedItem as ApiItemDetail)} />,
         <ItemHoverCard item={toItem(capturedItem as ApiItemDetail)} />,
       ),
-    ['ML', 'Gear slot', 'Raid', 'Rare', 'Set', 'Augments'],
+    ['ML', 'Gear slot', 'Raid', 'Rare', 'Augments'],
     ['Obtained from'],
   ],
   [

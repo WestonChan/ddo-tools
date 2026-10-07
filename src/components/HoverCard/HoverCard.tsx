@@ -20,11 +20,13 @@ interface CardEntry {
   id: number
   anchorId: string | null
   anchorElement: HTMLElement | null
+  placementElement?: HTMLElement
   kind: string
   depth: number
   anchorRect: DOMRect
   besideRect?: DOMRect
-  pointerX: number | null
+  getBesideElement?: (anchor: HTMLElement) => HTMLElement | null
+  pointerOffsetX: number | null
   isRow: boolean
   openedBy: 'pointer' | 'focus'
   placement?: 'beside'
@@ -38,7 +40,7 @@ export interface HoverCardOptions {
   render: () => ReactNode
   placement?: 'beside'
   isRow?: boolean
-  getBesideRect?: (anchor: HTMLElement) => DOMRect | null
+  getBesideElement?: (anchor: HTMLElement) => HTMLElement | null
 }
 
 interface CardController {
@@ -65,6 +67,7 @@ const NAVIGATION_KEYS = new Set([
   'PageUp',
   'PageDown',
 ])
+const CARD_VIEWPORT_MARGIN = 8
 
 export function positionedCard({
   anchorRect,
@@ -85,7 +88,7 @@ export function positionedCard({
   viewportHeight: number
   isRow?: boolean
 }): { left: number; top: number; maxHeight?: number } {
-  const margin = 8
+  const margin = CARD_VIEWPORT_MARGIN
   const gap = 6
   if (isRow && pointerX === null && besideRect) {
     const beside = positionedCardBeside(
@@ -131,7 +134,7 @@ export function positionedCardBeside(
   viewportHeight: number,
   verticalAnchorRect: DOMRect = horizontalAnchorRect,
 ): { left: number; top: number } | null {
-  const margin = 8
+  const margin = CARD_VIEWPORT_MARGIN
   const right = horizontalAnchorRect.right + margin
   const left = horizontalAnchorRect.left - width - margin
   const cardLeft = right + width + margin <= viewportWidth ? right : left >= margin ? left : null
@@ -144,6 +147,36 @@ export function positionedCardBeside(
       Math.min(verticalAnchorRect.top, viewportHeight - displayedHeight - margin),
     ),
   }
+}
+
+function hasRectChanged(previous: DOMRect, current: DOMRect): boolean {
+  return (
+    previous.left !== current.left ||
+    previous.top !== current.top ||
+    previous.width !== current.width ||
+    previous.height !== current.height
+  )
+}
+
+function viewportCappedPosition(
+  position: { left: number; top: number; maxHeight?: number },
+  viewportHeight: number,
+): { left: number; top: number; maxHeight: number } {
+  return {
+    ...position,
+    maxHeight: Math.min(
+      position.maxHeight ?? Infinity,
+      Math.max(0, viewportHeight - position.top - CARD_VIEWPORT_MARGIN),
+    ),
+  }
+}
+
+function nearestScrollContainer(element: HTMLElement): HTMLElement {
+  for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+    const style = window.getComputedStyle(ancestor)
+    if (/(auto|scroll|overlay)/.test(`${style.overflowX} ${style.overflowY}`)) return ancestor
+  }
+  return document.body
 }
 
 function CardLayer({
@@ -162,11 +195,17 @@ function CardLayer({
     top: number
     maxHeight?: number
   } | null>(null)
+  const placedPosition = useRef<typeof position>(null)
   const cardPosition = useCallback(
     ({ width, height }: { width: number; height: number }) => {
+      const placementElement = card.placementElement ?? card.anchorElement
+      const anchorRect =
+        !card.isPinned && placementElement?.isConnected
+          ? placementElement.getBoundingClientRect()
+          : card.anchorRect
       if (card.placement === 'beside') {
         const beside = positionedCardBeside(
-          card.anchorRect,
+          anchorRect,
           width,
           height,
           window.innerWidth,
@@ -174,10 +213,17 @@ function CardLayer({
         )
         return beside
       }
+      const besideRect =
+        !card.isPinned &&
+        card.isRow &&
+        card.pointerOffsetX === null &&
+        card.anchorElement?.isConnected
+          ? (card.getBesideElement?.(card.anchorElement)?.getBoundingClientRect() ?? anchorRect)
+          : card.besideRect
       return positionedCard({
-        anchorRect: card.anchorRect,
-        besideRect: card.besideRect,
-        pointerX: card.pointerX,
+        anchorRect,
+        besideRect,
+        pointerX: card.pointerOffsetX === null ? null : anchorRect.left + card.pointerOffsetX,
         cardWidth: width,
         cardHeight: height,
         viewportWidth: window.innerWidth,
@@ -185,9 +231,10 @@ function CardLayer({
         isRow: card.isRow,
       })
     },
-    [card.anchorRect, card.besideRect, card.placement, card.pointerX, card.isRow],
+    [card],
   )
   const positionCard = useCallback(() => {
+    if (card.isPinned && placedPosition.current) return
     const element = elementRef.current
     const content = contentRef.current
     if (!element || !content) return
@@ -197,13 +244,17 @@ function CardLayer({
       (Number.parseFloat(style.paddingBottom) || 0) +
       (Number.parseFloat(style.borderTopWidth) || 0) +
       (Number.parseFloat(style.borderBottomWidth) || 0)
-    setPosition(
-      cardPosition({
-        width: element.getBoundingClientRect().width,
-        height: content.getBoundingClientRect().height + verticalChrome,
-      }),
-    )
-  }, [cardPosition])
+    const cardPlacement = cardPosition({
+      width: element.getBoundingClientRect().width,
+      height: content.getBoundingClientRect().height + verticalChrome,
+    })
+    const nextPosition =
+      card.isPinned && cardPlacement
+        ? viewportCappedPosition(cardPlacement, window.innerHeight)
+        : cardPlacement
+    placedPosition.current = nextPosition
+    setPosition(nextPosition)
+  }, [card.isPinned, cardPosition])
   const positionElement = useCallback(
     (element: HTMLDivElement | null) => {
       elementRef.current = element
@@ -211,15 +262,101 @@ function CardLayer({
     },
     [positionCard],
   )
+  useLayoutEffect(() => {
+    if (!placedPosition.current) positionCard()
+  }, [positionCard])
+  useLayoutEffect(() => {
+    if (!card.isPinned || !placedPosition.current) return
+    const cappedPosition = viewportCappedPosition(placedPosition.current, window.innerHeight)
+    placedPosition.current = cappedPosition
+    setPosition(cappedPosition)
+  }, [card.isPinned])
   useEffect(() => {
+    const placementElement = card.placementElement ?? card.anchorElement
     const element = elementRef.current
     const content = contentRef.current
-    if (!element || !content || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(positionCard)
-    observer.observe(element)
-    observer.observe(content)
-    return () => observer.disconnect()
-  }, [positionCard])
+    if (card.isPinned || !placementElement || !element || !content) return
+    const anchorElement = placementElement
+    const besideElement =
+      card.isRow && card.pointerOffsetX === null
+        ? (card.getBesideElement?.(card.anchorElement ?? anchorElement) ?? null)
+        : null
+    let frameId: number | null = null
+    let shouldForcePosition = false
+    let previousAnchorRect = anchorElement.getBoundingClientRect()
+    let previousBesideRect = besideElement?.getBoundingClientRect() ?? null
+    function queuePosition(shouldForce = false): void {
+      shouldForcePosition ||= shouldForce
+      if (frameId !== null) return
+      frameId = window.requestAnimationFrame(() => {
+        frameId = null
+        const isForced = shouldForcePosition
+        shouldForcePosition = false
+        const anchorRect = anchorElement.getBoundingClientRect()
+        const besideRect = besideElement?.getBoundingClientRect() ?? null
+        if (
+          isForced ||
+          hasRectChanged(previousAnchorRect, anchorRect) ||
+          (previousBesideRect !== null && besideRect !== null
+            ? hasRectChanged(previousBesideRect, besideRect)
+            : previousBesideRect !== besideRect)
+        )
+          positionCard()
+        previousAnchorRect = anchorRect
+        previousBesideRect = besideRect
+      })
+    }
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver((entries) => {
+            queuePosition(
+              entries.some((entry) => entry.target === element || entry.target === content),
+            )
+          })
+    if (observer) {
+      observer.observe(element)
+      observer.observe(content)
+      observer.observe(anchorElement)
+      if (besideElement) observer.observe(besideElement)
+      for (let ancestor = anchorElement.parentElement; ancestor; ancestor = ancestor.parentElement)
+        observer.observe(ancestor)
+    }
+    const scrollContainer = nearestScrollContainer(anchorElement)
+    const mutationObserver = new MutationObserver((mutations) => {
+      if (
+        mutations.some((mutation) => {
+          const target =
+            mutation.target instanceof Element ? mutation.target : mutation.target.parentElement
+          const targetCard = target?.closest<HTMLElement>('[data-hover-card]')
+          if (targetCard && !targetCard.contains(anchorElement)) return false
+          if (mutation.type !== 'childList' || target !== document.body) return true
+          const changedNodes = [...mutation.addedNodes, ...mutation.removedNodes]
+          return changedNodes.some(
+            (node) => !(node instanceof HTMLElement && node.matches('[data-hover-card]')),
+          )
+        })
+      )
+        queuePosition()
+    })
+    mutationObserver.observe(scrollContainer, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    })
+    const onScroll = (): void => queuePosition()
+    const onViewportResize = (): void => queuePosition(true)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onViewportResize)
+    return () => {
+      observer?.disconnect()
+      mutationObserver.disconnect()
+      if (frameId !== null) window.cancelAnimationFrame(frameId)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onViewportResize)
+    }
+  }, [card, positionCard])
   useLayoutEffect(() => {
     if (!card.isPinned || !position || hasFocusedPinnedCard.current) return
     const cardElement = elementRef.current
@@ -524,7 +661,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           anchorElement: anchor,
           depth,
           anchorRect: anchor.getBoundingClientRect(),
-          pointerX: null,
+          pointerOffsetX: null,
           isRow: false,
           openedBy,
           render: () => hint,
@@ -618,7 +755,7 @@ export function useHoverCard({
   render,
   placement,
   isRow = false,
-  getBesideRect,
+  getBesideElement,
 }: HoverCardOptions): {
   'data-hover-card-pinned': '' | undefined
   onMouseEnter: (event: React.MouseEvent<HTMLElement>) => void
@@ -642,17 +779,19 @@ export function useHoverCard({
     'data-hover-card-pinned': controller?.pinnedAnchorIds.has(anchorId) ? '' : undefined,
     onMouseEnter: (event) => {
       anchorElement.current = event.currentTarget
+      const anchorRect = event.currentTarget.getBoundingClientRect()
       controller?.open(
         {
           kind,
           anchorId,
           anchorElement: event.currentTarget,
           depth,
-          anchorRect: event.currentTarget.getBoundingClientRect(),
-          pointerX: event.clientX,
+          anchorRect,
+          pointerOffsetX: event.clientX - anchorRect.left,
           isRow,
           openedBy: event.currentTarget.contains(document.activeElement) ? 'focus' : 'pointer',
           placement,
+          getBesideElement,
           render,
         },
         delayMs,
@@ -672,11 +811,14 @@ export function useHoverCard({
           anchorElement: event.currentTarget,
           depth,
           anchorRect,
-          besideRect: isRow ? (getBesideRect?.(event.currentTarget) ?? anchorRect) : undefined,
-          pointerX: null,
+          besideRect: isRow
+            ? (getBesideElement?.(event.currentTarget)?.getBoundingClientRect() ?? anchorRect)
+            : undefined,
+          pointerOffsetX: null,
           isRow,
           openedBy: 'focus',
           placement,
+          getBesideElement,
           render,
         },
         delayMs,
@@ -696,11 +838,14 @@ export function useHoverCard({
           anchorElement: event.currentTarget,
           depth,
           anchorRect,
-          besideRect: isRow ? (getBesideRect?.(event.currentTarget) ?? anchorRect) : undefined,
-          pointerX: null,
+          besideRect: isRow
+            ? (getBesideElement?.(event.currentTarget)?.getBoundingClientRect() ?? anchorRect)
+            : undefined,
+          pointerOffsetX: null,
           isRow,
           openedBy: 'focus',
           placement,
+          getBesideElement,
           render,
         },
         0,
@@ -716,9 +861,12 @@ export function useHoverCardControl({
   render,
   placement,
   isRow = false,
-  getBesideRect,
+  getBesideElement,
 }: HoverCardOptions): {
-  show: (anchor: HTMLElement, options: { rect?: DOMRect; openedBy: CardEntry['openedBy'] }) => void
+  show: (
+    anchor: HTMLElement,
+    options: { placementAnchor?: HTMLElement; openedBy: CardEntry['openedBy'] },
+  ) => void
   hide: () => void
   dismiss: () => boolean
 } {
@@ -736,19 +884,21 @@ export function useHoverCardControl({
   return {
     show: (anchor, options) => {
       anchorElement.current = anchor
-      const anchorRect = options.rect ?? anchor.getBoundingClientRect()
+      const anchorRect = (options.placementAnchor ?? anchor).getBoundingClientRect()
       controller?.open(
         {
           kind,
           anchorId,
           anchorElement: anchor,
+          placementElement: options.placementAnchor,
           depth,
           anchorRect,
           besideRect:
             isRow && options.openedBy === 'focus'
-              ? (getBesideRect?.(anchor) ?? anchorRect)
+              ? (getBesideElement?.(anchor)?.getBoundingClientRect() ?? anchorRect)
               : undefined,
-          pointerX: null,
+          getBesideElement,
+          pointerOffsetX: null,
           isRow,
           openedBy: options.openedBy,
           placement,

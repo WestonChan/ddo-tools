@@ -147,6 +147,16 @@ function focusWithNavigationKey(element: HTMLElement, key = 'Tab'): void {
   act(() => element.focus())
 }
 
+function stubAnimationFrames(): FrameRequestCallback[] {
+  const frames: FrameRequestCallback[] = []
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frames.push(callback)
+    return frames.length
+  })
+  vi.stubGlobal('cancelAnimationFrame', vi.fn())
+  return frames
+}
+
 it.each([
   'Tab',
   'ArrowDown',
@@ -1245,6 +1255,222 @@ it('keeps a pointer row card in place when clicking focuses its row', () => {
   expect(screen.getByRole('dialog').style.left).toBe('676px')
 })
 
+it('follows a pointer row after content shifts it and freezes after pinning', async () => {
+  vi.useFakeTimers()
+  vi.stubGlobal('innerWidth', 1024)
+  vi.stubGlobal('innerHeight', 768)
+  const frames = stubAnimationFrames()
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.matches('.hover-card, .hover-card__content')) return new DOMRect(0, 0, 300, 180)
+    if (this.textContent === 'Moving row') {
+      const isShifted = screen.queryByTestId('inserted-content') !== null
+      return new DOMRect(isShifted ? 420 : 400, isShifted ? 240 : 200, 268, 32)
+    }
+    return new DOMRect(0, 0, 100, 28)
+  })
+  function MovingRow(): React.JSX.Element {
+    const [isShifted, setIsShifted] = useState(false)
+    const hover = useHoverCard({ kind: 'item', delayMs: 0, isRow: true, render: () => 'Row card' })
+    return (
+      <>
+        <button onClick={() => setIsShifted((isCurrentShifted) => !isCurrentShifted)}>
+          Move row
+        </button>
+        {isShifted && <div data-testid="inserted-content">New content above</div>}
+        <button {...hover}>Moving row</button>
+      </>
+    )
+  }
+  render(
+    <HoverCardProvider>
+      <MovingRow />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Moving row' }), { clientX: 475 })
+  act(() => vi.advanceTimersByTime(0))
+  const card = screen.getByRole('dialog')
+  expect(card.style.left).toBe('489px')
+  expect(card.style.top).toBe('238px')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Move row' }))
+  await act(async () => {})
+  fireEvent.scroll(window)
+  fireEvent.scroll(window)
+  expect(frames).toHaveLength(1)
+  const unpinnedFrame = frames.shift()
+  if (!unpinnedFrame) throw new Error('Unpinned card did not watch its anchor')
+  act(() => unpinnedFrame(0))
+  expect(card.style.left).toBe('509px')
+  expect(card.style.top).toBe('278px')
+
+  fireEvent.keyDown(document, { key: 't' })
+  expect(card).toHaveClass('hover-card--pinned')
+  fireEvent.click(screen.getByRole('button', { name: 'Move row' }))
+  const pinnedFrame = frames.shift()
+  if (pinnedFrame) act(() => pinnedFrame(16))
+  expect(card.style.left).toBe('509px')
+  expect(card.style.top).toBe('278px')
+})
+
+it('does not keep measuring an idle unpinned card', () => {
+  vi.useFakeTimers()
+  const frames = stubAnimationFrames()
+  const bounds = vi
+    .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+    .mockImplementation(function (this: HTMLElement) {
+      if (this.matches('.hover-card, .hover-card__content')) return new DOMRect(0, 0, 300, 180)
+      return new DOMRect(100, 200, 160, 32)
+    })
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Item anchor' }), { clientX: 150 })
+  act(() => vi.advanceTimersByTime(260))
+  const initialFrames = frames.splice(0)
+  act(() => initialFrames.forEach((frame) => frame(0)))
+  const measuredCount = bounds.mock.calls.length
+  act(() => vi.advanceTimersByTime(1000))
+  expect(frames).toHaveLength(0)
+  expect(bounds).toHaveBeenCalledTimes(measuredCount)
+})
+
+it('keeps a directly pinned loading card inside the viewport as its content grows', () => {
+  vi.useFakeTimers()
+  vi.stubGlobal('innerWidth', 375)
+  vi.stubGlobal('innerHeight', 900)
+  let notifyResize = (): void => {}
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: ResizeObserverCallback) {
+        notifyResize = (): void => callback([], this as ResizeObserver)
+      }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    },
+  )
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.matches('.hover-card__content'))
+      return new DOMRect(0, 0, 300, this.textContent?.includes('Loaded') ? 600 : 50)
+    if (this.matches('.hover-card')) {
+      const naturalHeight = this.textContent?.includes('Loaded') ? 600 : 50
+      const inlineCap = Number.parseFloat(this.style.maxHeight)
+      return new DOMRect(
+        8,
+        Number.parseFloat(this.style.top) || 0,
+        359,
+        Math.min(naturalHeight, inlineCap || Infinity),
+      )
+    }
+    return new DOMRect(100, 600, 160, 26)
+  })
+  function LoadingCard(): React.JSX.Element {
+    const [isLoaded, setIsLoaded] = useState(false)
+    useEffect(() => {
+      const timer = window.setTimeout(() => setIsLoaded(true), 100)
+      return () => window.clearTimeout(timer)
+    }, [])
+    return <span>{isLoaded ? 'Loaded quest details' : 'Loading quest'}</span>
+  }
+  function QuestAnchor(): React.JSX.Element {
+    const hover = useHoverCard({ kind: 'quest', delayMs: 0, render: () => <LoadingCard /> })
+    return <button {...hover}>Quest link</button>
+  }
+  render(
+    <HoverCardProvider>
+      <QuestAnchor />
+    </HoverCardProvider>,
+  )
+  fireEvent.keyDown(screen.getByRole('button', { name: 'Quest link' }), { key: 't' })
+  act(() => vi.advanceTimersByTime(0))
+  const card = screen.getByRole('dialog')
+  expect(card).toHaveClass('hover-card--pinned')
+  const placedTop = card.style.top
+  expect(placedTop).toBe('632px')
+
+  act(() => vi.advanceTimersByTime(100))
+  act(() => notifyResize())
+  expect(card.style.top).toBe(placedTop)
+  expect(card.getBoundingClientRect().bottom).toBeLessThanOrEqual(892)
+})
+
+it('re-reads the name cell when a keyboard row moves', async () => {
+  vi.useFakeTimers()
+  vi.stubGlobal('innerWidth', 1024)
+  vi.stubGlobal('innerHeight', 768)
+  const frames = stubAnimationFrames()
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.matches('.hover-card, .hover-card__content')) return new DOMRect(0, 0, 300, 180)
+    const isShifted = screen.queryByTestId('inserted-content') !== null
+    if (this.matches('.ledger-cell--primary'))
+      return new DOMRect(
+        isShifted ? 470 : 450,
+        isShifted ? 240 : 200,
+        this.classList.contains('wide-name') ? 200 : 160,
+        32,
+      )
+    if (this.textContent === 'Moving row')
+      return new DOMRect(isShifted ? 420 : 400, isShifted ? 240 : 200, 268, 32)
+    return new DOMRect(0, 0, 100, 28)
+  })
+  function MovingRow(): React.JSX.Element {
+    const [isShifted, setIsShifted] = useState(false)
+    const [isWider, setIsWider] = useState(false)
+    const hover = useHoverCard({
+      kind: 'item',
+      delayMs: 0,
+      isRow: true,
+      getBesideElement: (anchor) => anchor.querySelector<HTMLElement>('.ledger-cell--primary'),
+      render: () => 'Row card',
+    })
+    return (
+      <>
+        <button onClick={() => setIsShifted(true)}>Insert content above</button>
+        <button onClick={() => setIsWider(true)}>Widen name cell</button>
+        {isShifted && <div data-testid="inserted-content">New content above</div>}
+        <button {...hover}>
+          <span className={`ledger-cell--primary${isWider ? ' wide-name' : ''}`}>Moving row</span>
+        </button>
+      </>
+    )
+  }
+  render(
+    <HoverCardProvider>
+      <MovingRow />
+    </HoverCardProvider>,
+  )
+  focusWithNavigationKey(screen.getByRole('button', { name: 'Moving row' }))
+  act(() => vi.advanceTimersByTime(0))
+  const card = screen.getByRole('dialog')
+  expect(card.style.left).toBe('618px')
+  expect(card.style.top).toBe('200px')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Insert content above' }))
+  await act(async () => {})
+  const frame = frames.shift()
+  if (!frame) throw new Error('Unpinned card did not watch its anchor')
+  act(() => frame(0))
+  expect(card.style.left).toBe('638px')
+  expect(card.style.top).toBe('240px')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Widen name cell' }))
+  await act(async () => {})
+  const widthFrame = frames.shift()
+  if (!widthFrame) throw new Error('Unpinned card stopped watching its name cell')
+  act(() => widthFrame(16))
+  expect(card.style.left).toBe('678px')
+  expect(card.style.top).toBe('240px')
+})
+
 it('moves an initially short card above when its loaded content no longer fits below', () => {
   let notifyResize = (): void => {}
   const observedElements: Element[] = []
@@ -1266,7 +1492,13 @@ it('moves an initially short card above when its loaded content no longer fits b
     'ResizeObserver',
     class {
       constructor(callback: ResizeObserverCallback) {
-        notifyResize = (): void => callback([], this as ResizeObserver)
+        notifyResize = (): void => {
+          const content = observedElements.find((element) =>
+            element.matches('.hover-card__content'),
+          )
+          if (!content) throw new Error('Card content was not observed')
+          callback([{ target: content } as ResizeObserverEntry], this as ResizeObserver)
+        }
       }
       observe(element: Element): void {
         observedElements.push(element)
@@ -1286,6 +1518,7 @@ it('moves an initially short card above when its loaded content no longer fits b
     return new DOMRect(800, 600, 140, 26)
   })
   vi.useFakeTimers()
+  const frames = stubAnimationFrames()
   render(
     <HoverCardProvider>
       <AsyncCardAnchor />
@@ -1301,6 +1534,9 @@ it('moves an initially short card above when its loaded content no longer fits b
   act(() => vi.advanceTimersByTime(100))
   expect(card.getBoundingClientRect().height).toBeGreaterThan(initialHeight)
   act(() => notifyResize())
+  const loadedFrame = frames.shift()
+  if (!loadedFrame) throw new Error('Loaded content did not queue a placement')
+  act(() => loadedFrame(0))
 
   expect(card.style.top).toBe('302px')
   expect(card.style.maxHeight).toBe('')
@@ -1308,8 +1544,10 @@ it('moves an initially short card above when its loaded content no longer fits b
 
 it('keeps a too-tall card capped after measuring its displayed box again', () => {
   let notifyResize = (): void => {}
+  vi.useFakeTimers()
   vi.stubGlobal('innerWidth', 1440)
   vi.stubGlobal('innerHeight', 900)
+  const frames = stubAnimationFrames()
   vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -1329,28 +1567,65 @@ it('keeps a too-tall card capped after measuring its displayed box again', () =>
       const inlineCap = Number.parseFloat(this.style.maxHeight)
       return new DOMRect(0, 0, 300, Math.min(600, inlineCap || Infinity))
     }
-    return new DOMRect(100, 323, 200, 32)
+    return new DOMRect(100, screen.queryByTestId('inserted-content') ? 700 : 323, 200, 32)
   })
-  vi.useFakeTimers()
+  function TallCardAnchor(): React.JSX.Element {
+    const [isShifted, setIsShifted] = useState(false)
+    const hover = useHoverCard({ kind: 'item', delayMs: 0, render: () => 'Tall card' })
+    return (
+      <>
+        <button onClick={() => setIsShifted((isCurrentShifted) => !isCurrentShifted)}>
+          Move anchor
+        </button>
+        {isShifted && <div data-testid="inserted-content">New content above</div>}
+        <button {...hover}>Tall anchor</button>
+      </>
+    )
+  }
   render(
     <HoverCardProvider>
-      <CardHarness />
+      <TallCardAnchor />
     </HoverCardProvider>,
   )
-  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Item anchor' }), { clientX: 150 })
-  act(() => vi.advanceTimersByTime(260))
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Tall anchor' }), { clientX: 150 })
+  act(() => vi.advanceTimersByTime(0))
   const card = screen.getByRole('dialog')
   expect(card.style.top).toBe('361px')
   expect(card.style.maxHeight).toBe('531px')
 
   act(() => notifyResize())
+  const measuredFrame = frames.shift()
+  if (!measuredFrame) throw new Error('Card resize did not queue a placement')
+  act(() => measuredFrame(0))
   expect(card.style.maxHeight).toBe('531px')
   expect(card.style.top).toBe('361px')
   act(() => notifyResize())
+  const repeatedFrame = frames.shift()
+  if (!repeatedFrame) throw new Error('Card resize did not queue a placement')
+  act(() => repeatedFrame(16))
   expect(card.style.maxHeight).toBe('531px')
   expect(
     Number.parseFloat(card.style.top) + card.getBoundingClientRect().height,
   ).toBeLessThanOrEqual(892)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Move anchor' }))
+  act(() => notifyResize())
+  const movedFrame = frames.shift()
+  if (!movedFrame) throw new Error('Unpinned card did not watch its anchor')
+  act(() => movedFrame(0))
+  expect(card.style.top).toBe('94px')
+  expect(card.style.maxHeight).toBe('')
+  expect(
+    Number.parseFloat(card.style.top) + card.getBoundingClientRect().height,
+  ).toBeLessThanOrEqual(694)
+
+  fireEvent.click(screen.getByRole('button', { name: 'Move anchor' }))
+  act(() => notifyResize())
+  const restoredFrame = frames.shift()
+  if (!restoredFrame) throw new Error('Unpinned card stopped watching its anchor')
+  act(() => restoredFrame(16))
+  expect(card.style.top).toBe('361px')
+  expect(card.style.maxHeight).toBe('531px')
 })
 
 it('places a menu card beside its edge, flips left, and omits it when neither side fits', () => {

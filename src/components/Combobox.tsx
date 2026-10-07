@@ -275,13 +275,11 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                     onMouseEnter={(event) => {
                       setHighlightedIndex(index)
                       if (!renderHoverCard || !option.detailPath) return
-                      const menuRect = event.currentTarget
-                        .closest<HTMLElement>('.combobox-menu')
-                        ?.getBoundingClientRect()
+                      const menu = event.currentTarget.closest<HTMLElement>('.combobox-menu')
                       if (
-                        !menuRect ||
+                        !menu ||
                         !positionedCardBeside(
-                          menuRect,
+                          menu.getBoundingClientRect(),
                           300,
                           0,
                           window.innerWidth,
@@ -293,7 +291,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                       }
                       hoveredOption.current = option
                       hover.show(event.currentTarget, {
-                        rect: menuRect,
+                        placementAnchor: menu,
                         openedBy: 'pointer',
                       })
                     }}

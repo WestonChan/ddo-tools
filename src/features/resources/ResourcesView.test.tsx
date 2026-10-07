@@ -265,9 +265,9 @@ function renderStackedResourcesView(): ReturnType<typeof render> {
 
 function openSetPieceFromPane(name: string): void {
   const pane = screen.getByRole('region', { name: 'Item details' })
-  const setAnchor = pane.querySelector<HTMLElement>('.resources-hover-anchor')
-  expect(setAnchor).not.toBeNull()
-  fireEvent.mouseEnter(setAnchor!)
+  const setBand = pane.querySelector<HTMLElement>('.resources-effect-ledger .ledger-row--heading')
+  expect(setBand).not.toBeNull()
+  fireEvent.mouseEnter(setBand!)
   act(() => vi.advanceTimersByTime(120))
   fireEvent.click(
     within(screen.getByRole('dialog')).getByRole('button', { name: new RegExp(name) }),
@@ -547,29 +547,29 @@ describe('ResourcesView detail pane', () => {
     vi.useFakeTimers()
     const view = renderStackedResourcesView()
     openFirstItemFromList(view)
-    const setAnchor = screen
+    const setBand = screen
       .getByRole('region', { name: 'Item details' })
-      .querySelector<HTMLElement>('.resources-hover-anchor')!
+      .querySelector<HTMLElement>('.resources-effect-ledger .ledger-row--heading')!
     fireEvent.keyDown(document, { key: 'Tab' })
-    setAnchor.focus()
+    setBand.focus()
     act(() => vi.advanceTimersByTime(120))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
-    fireEvent.keyDown(setAnchor, { key: 'Escape' })
+    fireEvent.keyDown(setBand, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(navigateMock).toHaveBeenCalledTimes(1)
 
-    setAnchor.blur()
+    setBand.blur()
     fireEvent.keyDown(document, { key: 'Tab' })
-    setAnchor.focus()
+    setBand.focus()
     act(() => vi.advanceTimersByTime(120))
-    fireEvent.keyDown(setAnchor, { key: 't' })
+    fireEvent.keyDown(setBand, { key: 't' })
     expect(screen.getByRole('dialog')).toHaveClass('hover-card--pinned')
-    fireEvent.keyDown(setAnchor, { key: 'Escape' })
+    fireEvent.keyDown(setBand, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(navigateMock).toHaveBeenCalledTimes(1)
 
-    fireEvent.keyDown(setAnchor, { key: 'Escape' })
+    fireEvent.keyDown(setBand, { key: 'Escape' })
     expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
   })
 
@@ -608,8 +608,10 @@ describe('ResourcesView detail pane', () => {
     const pane = screen.getByRole('region', { name: 'Item details' })
     const backToItems = within(pane).getByRole('button', { name: 'Back to items' })
     backToItems.focus()
-    const setAnchor = pane.querySelector<HTMLElement>('.resources-hover-anchor')!
-    fireEvent.mouseEnter(setAnchor)
+    const setBand = pane.querySelector<HTMLElement>(
+      '.resources-effect-ledger .ledger-row--heading',
+    )!
+    fireEvent.mouseEnter(setBand)
     act(() => vi.advanceTimersByTime(120))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
@@ -807,7 +809,7 @@ describe('ResourcesView detail pane', () => {
       act(() => vi.advanceTimersByTime(260))
       const listItemCard = screen.getByRole('dialog')
       fireEvent.mouseEnter(
-        within(listItemCard.querySelector('.detail-card__facts')!).getByText('Stone Set'),
+        listItemCard.querySelector('.resources-effect-ledger .ledger-row--heading')!,
       )
       act(() => vi.advanceTimersByTime(120))
       const setCard = screen

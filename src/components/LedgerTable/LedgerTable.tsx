@@ -63,6 +63,7 @@ interface LedgerTableProps<Row> {
   onColumnWidthsChange?: (widths: Record<string, number>) => void
   isVirtualized?: boolean
   isDense?: boolean
+  hasColumnHeaders?: boolean
   viewportWidth?: number
   rowKind?: (row: Row) => LedgerRowKind
   emptyState?: ReactNode
@@ -130,8 +131,7 @@ function LedgerRow<Row>({
   const hoverAnchor = useHoverCard({
     ...(hoverOptions ?? { kind: '', delayMs: 0, render: () => null }),
     isRow: true,
-    getBesideRect: (anchor) =>
-      anchor.querySelector('.ledger-cell--primary')?.getBoundingClientRect() ?? null,
+    getBesideElement: (anchor) => anchor.querySelector<HTMLElement>('.ledger-cell--primary'),
   })
   if (!row) return null
   const kind = rowKind?.(row) ?? 'row'
@@ -391,6 +391,7 @@ export function LedgerTable<Row>({
   onColumnWidthsChange,
   isVirtualized = true,
   isDense = false,
+  hasColumnHeaders = true,
   viewportWidth,
   rowKind,
   emptyState,
@@ -752,52 +753,56 @@ export function LedgerTable<Row>({
       aria-label={label}
       className={'ledger-table' + (isDense ? ' ledger-table--dense' : '')}
     >
-      <DndContext
-        sensors={sensors}
-        onDragStart={() => setHeaderAnnouncement('')}
-        onDragEnd={reorderColumns}
-        accessibility={{
-          announcements,
-          screenReaderInstructions: {
-            draggable:
-              'Press M to pick up a column. Use Left and Right to move it. Press M, Enter, or Space to drop, or Escape to cancel.',
-          },
-        }}
-      >
-        <SortableContext
-          items={visibleColumns.map((column) => column.key)}
-          strategy={horizontalListSortingStrategy}
+      {hasColumnHeaders && (
+        <DndContext
+          sensors={sensors}
+          onDragStart={() => setHeaderAnnouncement('')}
+          onDragEnd={reorderColumns}
+          accessibility={{
+            announcements,
+            screenReaderInstructions: {
+              draggable:
+                'Press M to pick up a column. Use Left and Right to move it. Press M, Enter, or Space to drop, or Escape to cancel.',
+            },
+          }}
         >
-          <div role="rowgroup" className="ledger-head">
-            <div ref={headerRowRef} role="row" className="ledger-header-row">
-              {visibleColumns.map((column, index) => (
-                <HeaderCell
-                  key={column.key}
-                  column={column}
-                  widths={widths}
-                  isFirst={index === 0}
-                  isSorted={sort?.key === column.key}
-                  isFocusedColumn={column.key === headerGroup.tabStopKey}
-                  sortDirection={sort?.key === column.key ? sort.direction : null}
-                  onSort={() => sortBy(column)}
-                  onFocusColumn={() => headerGroup.rememberFocus(column.key)}
-                  onNavigateColumn={navigateColumn}
-                  onMoveColumn={moveColumn}
-                  onResize={resizeColumn}
-                />
-              ))}
+          <SortableContext
+            items={visibleColumns.map((column) => column.key)}
+            strategy={horizontalListSortingStrategy}
+          >
+            <div role="rowgroup" className="ledger-head">
+              <div ref={headerRowRef} role="row" className="ledger-header-row">
+                {visibleColumns.map((column, index) => (
+                  <HeaderCell
+                    key={column.key}
+                    column={column}
+                    widths={widths}
+                    isFirst={index === 0}
+                    isSorted={sort?.key === column.key}
+                    isFocusedColumn={column.key === headerGroup.tabStopKey}
+                    sortDirection={sort?.key === column.key ? sort.direction : null}
+                    onSort={() => sortBy(column)}
+                    onFocusColumn={() => headerGroup.rememberFocus(column.key)}
+                    onNavigateColumn={navigateColumn}
+                    onMoveColumn={moveColumn}
+                    onResize={resizeColumn}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        </SortableContext>
-      </DndContext>
-      <div
-        role="status"
-        aria-live="polite"
-        className="sr-only"
-        data-testid="ledger-header-announcement"
-      >
-        {headerAnnouncement}
-      </div>
+          </SortableContext>
+        </DndContext>
+      )}
+      {hasColumnHeaders && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="sr-only"
+          data-testid="ledger-header-announcement"
+        >
+          {headerAnnouncement}
+        </div>
+      )}
       {sortedRows.length === 0 ? (
         <div className="ledger-empty">{emptyState}</div>
       ) : isVirtualized ? (

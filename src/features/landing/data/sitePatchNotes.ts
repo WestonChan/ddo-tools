@@ -7,6 +7,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-07',
     changes: [
+      "An item's set shows only in its enchantments, as the folded set block, and hover cards always show that block",
+      'An open hover card stays attached to its row when the page shifts underneath it; a pinned card stays where you pinned it',
       "A hover card opened from the keyboard sits right beside the row's name, level with the row, instead of past the end of the list",
       'Keyboard focus shows one rounded ring everywhere, clear of text and softer in dark mode; a row focused with the keyboard looks like a hovered row with a ring, and a pinned anchor looks the same as a focused one',
       "Hover cards follow the detail pane's layout: the same facts as cells, the same sections in the same order, briefer only where a card would grow too tall, and 420px wide",

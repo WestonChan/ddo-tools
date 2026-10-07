@@ -1,6 +1,7 @@
 import type { JSX } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
+  DetailMore,
   DetailValueRow,
   LedgerTable,
   useHoverCard,
@@ -95,6 +96,67 @@ const COLUMNS: LedgerColumn<EffectRow>[] = [
   },
 ]
 
+function EffectLedger({
+  entries,
+  hasColumnHeaders = true,
+}: {
+  entries: readonly EffectRow[]
+  hasColumnHeaders?: boolean
+}): JSX.Element {
+  return (
+    <div className="resources-effect-ledger">
+      <LedgerTable
+        columns={COLUMNS}
+        rowCount={entries.length}
+        rowAt={(index) => entries[index]}
+        rowKey={(row) => row.key}
+        rowKind={(row) =>
+          row.headingKind === 'set'
+            ? 'collapsibleHeading'
+            : row.headingKind === 'tier'
+              ? 'subheading'
+              : 'row'
+        }
+        onRowActivate={() => {}}
+        isVirtualized={false}
+        isDense
+        hasColumnHeaders={hasColumnHeaders}
+        label="Enchantments"
+        isHighlighted={(row) => row.isMatch}
+        hoverCard={(row) =>
+          row.headingKind === 'set'
+            ? {
+                kind: 'set',
+                delayMs: 120,
+                render: () => <SetHoverCard setId={row.setId!} onOpenItem={row.onOpenItem} />,
+              }
+            : row.enhancement
+              ? {
+                  kind: 'enchantment',
+                  delayMs: 120,
+                  render: () => (
+                    <BonusHoverCard enhancement={row.enhancement!} originName={row.itemName} />
+                  ),
+                }
+              : row.effect
+                ? {
+                    kind: 'enchantment',
+                    delayMs: 120,
+                    render: () => (
+                      <BonusHoverCard
+                        effect={row.effect!}
+                        originName={row.itemName}
+                        modifiers={row.modifiers}
+                      />
+                    ),
+                  }
+                : null
+        }
+      />
+    </div>
+  )
+}
+
 export function EffectListFullView({ entries }: { entries: readonly EffectRow[] }): JSX.Element {
   return (
     <>
@@ -104,76 +166,32 @@ export function EffectListFullView({ entries }: { entries: readonly EffectRow[] 
           Matches your Bonuses filter
         </div>
       )}
-      <div className="resources-effect-ledger">
-        <LedgerTable
-          columns={COLUMNS}
-          rowCount={entries.length}
-          rowAt={(index) => entries[index]}
-          rowKey={(row) => row.key}
-          rowKind={(row) =>
-            row.headingKind === 'set'
-              ? 'collapsibleHeading'
-              : row.headingKind === 'tier'
-                ? 'subheading'
-                : 'row'
-          }
-          onRowActivate={() => {}}
-          isVirtualized={false}
-          isDense
-          label="Enchantments"
-          isHighlighted={(row) => row.isMatch}
-          hoverCard={(row) =>
-            row.headingKind === 'set'
-              ? {
-                  kind: 'set',
-                  delayMs: 120,
-                  render: () => <SetHoverCard setId={row.setId!} onOpenItem={row.onOpenItem} />,
-                }
-              : row.enhancement
-                ? {
-                    kind: 'enchantment',
-                    delayMs: 120,
-                    render: () => (
-                      <BonusHoverCard enhancement={row.enhancement!} originName={row.itemName} />
-                    ),
-                  }
-                : row.effect
-                  ? {
-                      kind: 'enchantment',
-                      delayMs: 120,
-                      render: () => (
-                        <BonusHoverCard
-                          effect={row.effect!}
-                          originName={row.itemName}
-                          modifiers={row.modifiers}
-                        />
-                      ),
-                    }
-                  : null
-          }
-        />
-      </div>
+      <EffectLedger entries={entries} />
     </>
   )
 }
 
-export function EffectListBriefView({ entries }: { entries: readonly EffectRow[] }): JSX.Element {
+function EffectListBriefRows({ entries }: { entries: readonly EffectRow[] }): JSX.Element {
   return (
     <div className="resources-hover-rows">
-      {entries.map((row) =>
-        row.headingKind === 'set' ? (
-          <div key={row.key} className="resources-set-tier hover-card-row">
-            {row.name}
-          </div>
-        ) : row.headingKind === 'tier' ? (
-          <div key={row.key} className="resources-set-tier hover-card-row">
-            {row.name}
-          </div>
-        ) : (
-          <EffectHoverRow key={row.key} row={row} />
-        ),
-      )}
+      {entries.map((row) => (
+        <EffectHoverRow key={row.key} row={row} />
+      ))}
     </div>
+  )
+}
+
+export function EffectListBriefView({ entries }: { entries: readonly EffectRow[] }): JSX.Element {
+  const setHeadingIndex = entries.findIndex((row) => row.headingKind === 'set')
+  const itemRows = setHeadingIndex === -1 ? entries : entries.slice(0, setHeadingIndex)
+  const setRows = setHeadingIndex === -1 ? [] : entries.slice(setHeadingIndex)
+  return (
+    <>
+      {itemRows.length > 0 && (
+        <DetailMore entries={itemRows} visibleCount={5} View={EffectListBriefRows} />
+      )}
+      {setRows.length > 0 && <EffectLedger entries={setRows} hasColumnHeaders={false} />}
+    </>
   )
 }
 

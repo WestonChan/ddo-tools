@@ -719,27 +719,6 @@ function EventHoverContent({
   )
 }
 
-export function SetHoverAnchor({
-  setId,
-  name,
-  onOpenItem,
-}: {
-  setId: number
-  name: string
-  onOpenItem?: OpenItem
-}): JSX.Element {
-  const anchor = useHoverCard({
-    kind: 'set',
-    delayMs: 120,
-    render: () => <SetHoverCard setId={setId} onOpenItem={onOpenItem} />,
-  })
-  return (
-    <span className="resources-hover-anchor" tabIndex={0} {...anchor}>
-      {name}
-    </span>
-  )
-}
-
 function useSetDetailDefinition({
   setId,
   onOpenItem,
