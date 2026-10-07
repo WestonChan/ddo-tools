@@ -5,6 +5,13 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-07',
+    changes: [
+      "Hover cards open in a steady place: a link's card lines up with the link, a row's card follows the pointer, and a row reached with the keyboard shows its card beside the list",
+      'A tall hover card never covers what you are pointing at; it opens above when there is room and scrolls when there is none',
+    ],
+  },
+  {
     date: '2026-10-06',
     changes: [
       'Tab stays inside a pinned hover card until you press Escape',

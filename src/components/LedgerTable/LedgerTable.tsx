@@ -127,7 +127,10 @@ function LedgerRow<Row>({
 }): JSX.Element | null {
   const row = rows[index]
   const hoverOptions = row ? hoverCard?.(row) : null
-  const hoverAnchor = useHoverCard(hoverOptions ?? { kind: '', delayMs: 0, render: () => null })
+  const hoverAnchor = useHoverCard({
+    ...(hoverOptions ?? { kind: '', delayMs: 0, render: () => null }),
+    isRow: true,
+  })
   if (!row) return null
   const kind = rowKind?.(row) ?? 'row'
   const isHeading = kind !== 'row'
@@ -168,6 +171,9 @@ function LedgerRow<Row>({
       onKeyDown={(event) => isNavigable && onRowKeyDown(event, index)}
       onMouseEnter={hoverOptions ? hoverAnchor.onMouseEnter : undefined}
       onMouseLeave={hoverOptions ? hoverAnchor.onMouseLeave : undefined}
+      onPointerDown={hoverOptions ? hoverAnchor.onPointerDown : undefined}
+      onPointerUp={hoverOptions ? hoverAnchor.onPointerUp : undefined}
+      onPointerCancel={hoverOptions ? hoverAnchor.onPointerCancel : undefined}
       onKeyDownCapture={hoverOptions ? hoverAnchor.onKeyDown : undefined}
     >
       {isHeading ? (

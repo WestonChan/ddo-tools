@@ -134,6 +134,7 @@ function AugmentEffectRow({ effect }: { effect: Effect }): JSX.Element {
   const anchor = useHoverCard({
     kind: 'enchantment',
     delayMs: 120,
+    isRow: true,
     render: () => (
       <>
         <EffectVocabularyHoverContent
@@ -336,6 +337,7 @@ function LinkedItemRow({
   const anchor = useHoverCard({
     kind: 'item',
     delayMs: 120,
+    isRow: true,
     render: () => <ItemHoverContent itemId={id} onOpenItem={onOpenItem} />,
   })
   return (
@@ -649,6 +651,7 @@ function SetEffectRow({ effect }: { effect: Effect }): JSX.Element {
   const anchor = useHoverCard({
     kind: 'enchantment',
     delayMs: 120,
+    isRow: true,
     render: () => (
       <>
         <EffectVocabularyHoverContent

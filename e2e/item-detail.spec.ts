@@ -7,6 +7,309 @@ import capturedShield from '../src/features/resources/queries/fixtures/effects-i
 import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
 
+test('hover cards align links, leave keyboard rows visible, and clear tall row anchors', async ({
+  page,
+}) => {
+  const armorItems = Array.from({ length: 12 }, (_, index) => ({
+    ...capturedArmor,
+    id: 10000 + index,
+    name: `Beholder Plate Armor ${index + 1}`,
+  }))
+  const listItems = [
+    ...armorItems.slice(0, 5),
+    capturedRunearm,
+    capturedNecklace,
+    ...armorItems.slice(5),
+  ]
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = listItems.find((candidate) => path === `/v1/items/${candidate.id}`)
+    const response =
+      path === '/v1/items'
+        ? {
+            total: listItems.length,
+            limit: 200,
+            offset: 0,
+            items: listItems.map((candidate) => ({
+              id: candidate.id,
+              name: candidate.name,
+              slot: candidate.slot,
+              category: candidate.category,
+              item_type: candidate.item_type,
+              minimum_level: candidate.minimum_level,
+              enhancement_bonus: candidate.enhancement_bonus,
+              icon: candidate.icon,
+              pack: null,
+              is_raid: false,
+              is_rare: false,
+              is_legacy: candidate.is_legacy,
+            })),
+          }
+        : path === '/v1/quests/423'
+          ? { ...capturedNecklace.quests[0], items: [] }
+          : (item ?? [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.goto('/resources/items/7631')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const questAnchor = pane
+    .locator('.resources-item-source-row .resources-hover-anchor')
+    .filter({ hasText: 'Friends in Low Places' })
+  await expect(questAnchor).toBeVisible()
+  const questBounds = await questAnchor.boundingBox()
+  if (!questBounds) throw new Error('Quest anchor has no bounds')
+  const card = page.locator('[data-hover-card]')
+  await questAnchor.hover({ position: { x: 4, y: questBounds.height / 2 } })
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('Friends in Low Places')
+  const firstQuestCardBounds = await card.boundingBox()
+  await page.mouse.move(0, 0)
+  await expect(card).toHaveCount(0)
+  await questAnchor.hover({ position: { x: questBounds.width / 2, y: questBounds.height / 2 } })
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('Friends in Low Places')
+  const secondQuestCardBounds = await card.boundingBox()
+  expect(firstQuestCardBounds?.x).toBeCloseTo(questBounds.x, 0)
+  expect(secondQuestCardBounds?.x).toBeCloseTo(questBounds.x, 0)
+
+  await page.mouse.move(0, 0)
+  const rows = page.locator('.resources-picker .ledger-row')
+  const focusedRow = rows.nth(4)
+  const search = page.getByRole('searchbox', { name: 'Search items', exact: true })
+  await search.focus()
+  await page.keyboard.press('ArrowDown')
+  await expect(rows.nth(0)).toBeFocused()
+  for (let rowIndex = 1; rowIndex <= 4; rowIndex++) {
+    await page.keyboard.press('ArrowDown')
+    await expect(rows.nth(rowIndex)).toBeFocused()
+  }
+  await expect(card).toBeVisible()
+  await expect(card.locator('.detail-card__name')).toHaveText('Beholder Plate Armor 5')
+  const focusedRowBounds = await focusedRow.boundingBox()
+  const keyboardCardBounds = await card.boundingBox()
+  if (!focusedRowBounds || !keyboardCardBounds) throw new Error('Keyboard row has no bounds')
+  expect(
+    keyboardCardBounds.x >= focusedRowBounds.x + focusedRowBounds.width + 8 ||
+      keyboardCardBounds.x + keyboardCardBounds.width <= focusedRowBounds.x - 8,
+  ).toBe(true)
+  for (const nextRowIndex of [5, 6]) {
+    const nextRowBounds = await rows.nth(nextRowIndex).boundingBox()
+    if (!nextRowBounds) throw new Error('Next row has no bounds')
+    expect(
+      keyboardCardBounds.x < nextRowBounds.x + nextRowBounds.width &&
+        keyboardCardBounds.x + keyboardCardBounds.width > nextRowBounds.x &&
+        keyboardCardBounds.y < nextRowBounds.y + nextRowBounds.height &&
+        keyboardCardBounds.y + keyboardCardBounds.height > nextRowBounds.y,
+    ).toBe(false)
+  }
+
+  await search.focus()
+  await expect(card).toHaveCount(0)
+  const lowRow = rows.nth(5)
+  await lowRow.hover({ position: { x: 40, y: 16 } })
+  await expect(card).toBeVisible()
+  await expect(card.locator('.detail-card__name')).toHaveText(capturedRunearm.name)
+  const lowRowBounds = await lowRow.boundingBox()
+  const tallCardBounds = await card.boundingBox()
+  if (!lowRowBounds || !tallCardBounds) throw new Error('Low row has no bounds')
+  expect(
+    tallCardBounds.y >= lowRowBounds.y + lowRowBounds.height + 6 ||
+      tallCardBounds.y + tallCardBounds.height <= lowRowBounds.y - 6,
+  ).toBe(true)
+
+  await lowRow.click({ position: { x: 40, y: 16 } })
+  await expect(pane.getByRole('heading', { name: capturedRunearm.name, exact: true })).toBeVisible()
+  await page.waitForTimeout(350)
+  expect((await card.boundingBox())?.x).toBeCloseTo(tallCardBounds.x, 0)
+  const detailPaneBounds = await pane.boundingBox()
+  if (!detailPaneBounds) throw new Error('Detail pane has no bounds')
+  expect((await card.boundingBox())?.x).toBeLessThan(detailPaneBounds.x)
+})
+
+test('a card re-places above after delayed detail content makes it too tall for below', async ({
+  page,
+}) => {
+  const listItems = Array.from({ length: 20 }, (_, index) => ({
+    ...capturedArmor,
+    id: 11000 + index,
+    name: `Beholder Plate Armor ${index + 1}`,
+  }))
+  let delayedItemId: number | null = null
+  let releaseItemResponse: () => void = () => {}
+  const itemResponseReady = new Promise<void>((resolve) => {
+    releaseItemResponse = resolve
+  })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = listItems.find((candidate) => path === `/v1/items/${candidate.id}`)
+    if (item && item.id === delayedItemId) await itemResponseReady
+    const response =
+      path === '/v1/items'
+        ? {
+            total: listItems.length,
+            limit: 200,
+            offset: 0,
+            items: listItems.map((candidate) => ({
+              id: candidate.id,
+              name: candidate.name,
+              slot: candidate.slot,
+              category: candidate.category,
+              item_type: candidate.item_type,
+              minimum_level: candidate.minimum_level,
+              enhancement_bonus: candidate.enhancement_bonus,
+              icon: candidate.icon,
+              pack: null,
+              is_raid: false,
+              is_rare: false,
+              is_legacy: candidate.is_legacy,
+            })),
+          }
+        : (item ?? [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.goto('/resources/items')
+  const rows = page.locator('.resources-picker .ledger-row')
+  await expect(rows.first()).toBeVisible()
+  const targetRowIndex = await rows.evaluateAll((renderedRows) => {
+    const visibleRows = renderedRows
+      .map((row, index) => ({ index, top: row.getBoundingClientRect().top }))
+      .filter(({ top }) => top >= 620 && top <= 680)
+    return visibleRows[0]?.index ?? -1
+  })
+  expect(targetRowIndex).toBeGreaterThanOrEqual(0)
+  const row = rows.nth(targetRowIndex)
+  const rowBounds = await row.boundingBox()
+  const rowId = await row.getAttribute('data-row-key')
+  if (!rowBounds || !rowId) throw new Error('Delayed item row has no bounds or id')
+  delayedItemId = Number(rowId)
+  await row.hover({ position: { x: 40, y: rowBounds.height / 2 } })
+  const card = page.locator('[data-hover-card]')
+  await expect(card).toContainText('Loading item…')
+  expect((await card.boundingBox())?.y).toBeCloseTo(rowBounds.y + rowBounds.height + 6, 0)
+
+  releaseItemResponse()
+  await expect(card.locator('.detail-card__name')).toHaveText(
+    listItems.find((item) => item.id === delayedItemId)?.name ?? '',
+  )
+  await expect.poll(async () => (await card.boundingBox())?.y ?? 0).toBeLessThan(rowBounds.y - 6)
+  const loadedCardBounds = await card.boundingBox()
+  if (!loadedCardBounds) throw new Error('Loaded card has no bounds')
+  expect(loadedCardBounds.y + loadedCardBounds.height).toBeLessThanOrEqual(rowBounds.y - 6)
+  expect(await card.evaluate((element) => element.style.maxHeight)).toBe('')
+  expect(await card.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(
+    true,
+  )
+})
+
+test('capped list and nested cards keep their height and viewport margin', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 500 })
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response =
+      path === '/v1/items'
+        ? {
+            total: 1,
+            limit: 200,
+            offset: 0,
+            items: [
+              {
+                id: capturedRunearm.id,
+                name: capturedRunearm.name,
+                slot: capturedRunearm.slot,
+                category: capturedRunearm.category,
+                item_type: capturedRunearm.item_type,
+                minimum_level: capturedRunearm.minimum_level,
+                enhancement_bonus: capturedRunearm.enhancement_bonus,
+                icon: capturedRunearm.icon,
+                pack: null,
+                is_raid: false,
+                is_rare: false,
+                is_legacy: capturedRunearm.is_legacy,
+              },
+            ],
+          }
+        : path === '/v1/items/487'
+          ? capturedRing
+          : path === '/v1/items/924'
+            ? capturedRunearm
+            : path === '/v1/sets/93'
+              ? capturedSet
+              : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  const stableCap = async (selector: string): Promise<void> => {
+    const card = page.locator(selector)
+    await expect.poll(async () => card.evaluate((element) => element.style.maxHeight)).not.toBe('')
+    const measurements = await card.evaluate(async (element) => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      const readings: { maxHeight: string; bottom: number }[] = []
+      const record = (): void => {
+        readings.push({
+          maxHeight: element.style.maxHeight,
+          bottom: element.getBoundingClientRect().bottom,
+        })
+      }
+      record()
+      const observer = new MutationObserver(record)
+      observer.observe(element, { attributes: true, attributeFilter: ['style'] })
+      await new Promise((resolve) => window.setTimeout(resolve, 1300))
+      observer.disconnect()
+      record()
+      return readings
+    })
+    expect(measurements[0].maxHeight).not.toBe('')
+    for (const measurement of measurements) {
+      expect(measurement.maxHeight).toBe(measurements[0].maxHeight)
+      expect(measurement.bottom).toBeCloseTo(measurements[0].bottom, 0)
+      expect(measurement.bottom).toBeLessThanOrEqual(492)
+    }
+  }
+
+  await page.goto('/resources/items/487')
+  const listRow = page.locator('.resources-picker .ledger-row').first()
+  await listRow.hover()
+  const listCard = page.locator('[data-hover-card][data-depth="0"]')
+  await expect(listCard.locator('.detail-card__name')).toHaveText(capturedRunearm.name)
+  await stableCap('[data-hover-card][data-depth="0"]')
+
+  await page.mouse.move(0, 0)
+  await expect(listCard).toHaveCount(0)
+  const setAnchor = page
+    .getByRole('region', { name: 'Item details', exact: true })
+    .locator('.detail-card__facts .resources-hover-anchor')
+    .filter({ hasText: capturedSet.name })
+  await setAnchor.hover()
+  const setCard = page.getByRole('dialog').filter({ hasText: capturedSet.name })
+  await expect(setCard).toBeVisible()
+  await page.keyboard.press('t')
+  await expect(setCard).toHaveClass(/hover-card--pinned/)
+  const runearmPiece = setCard.getByRole('button', {
+    name: capturedSet.items[1].name,
+    exact: false,
+  })
+  await runearmPiece.hover()
+  const nestedCard = page.locator('[data-hover-card][data-depth="1"]')
+  await expect(nestedCard.locator('.detail-card__name')).toHaveText(capturedRunearm.name)
+  await stableCap('[data-hover-card][data-depth="1"]')
+})
+
 test('augment symbols keep their shape, focus ring, colour, and mobile bounds', async ({
   page,
 }) => {

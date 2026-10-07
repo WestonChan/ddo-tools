@@ -466,6 +466,7 @@ function EffectHoverRow({
   const anchor = useHoverCard({
     kind: 'enchantment',
     delayMs: 120,
+    isRow: true,
     render: () =>
       row.enhancement ? (
         <EnhancementHoverContent enhancement={row.enhancement} itemName={itemName} />

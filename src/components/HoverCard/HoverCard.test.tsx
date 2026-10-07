@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { StrictMode, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import {
   HintAnchor,
   HoverCardProvider,
@@ -16,6 +16,7 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 function NestedAnchor(): React.JSX.Element {
@@ -824,12 +825,247 @@ it('opens a pinned card from a focused anchor on T', () => {
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
-it('places cards above crowded anchors and clamps them to the viewport', () => {
+it('places pointer rows beside the pointer and inline anchors at their left edge', () => {
+  const anchorRect = DOMRect.fromRect({ x: 120, y: 100, width: 200, height: 24 })
+  const measurements = {
+    anchorRect,
+    cardWidth: 300,
+    cardHeight: 150,
+    viewportWidth: 1024,
+    viewportHeight: 768,
+  }
+  expect(positionedCard({ ...measurements, pointerX: 240, isRow: true }).left).toBe(254)
+  expect(positionedCard({ ...measurements, pointerX: 240, isRow: false }).left).toBe(120)
+  expect(positionedCard({ ...measurements, pointerX: 310, isRow: false }).left).toBe(120)
+  expect(positionedCard({ ...measurements, pointerX: null }).top).toBe(anchorRect.bottom + 6)
+})
+
+it('defaults pointer-opened cards and hints to the anchor edge', () => {
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.matches('.hover-card, .hover-card__content')) return new DOMRect(0, 0, 300, 150)
+    return new DOMRect(120, 100, 200, 24)
+  })
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <button data-tip="Helpful text">Hint anchor</button>
+    </HoverCardProvider>,
+  )
+  const cardAnchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.mouseEnter(cardAnchor, { clientX: 310 })
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog').style.left).toBe('120px')
+  fireEvent.mouseLeave(cardAnchor)
+  fireEvent.mouseOver(screen.getByRole('button', { name: 'Hint anchor' }), { clientX: 310 })
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('tooltip').style.left).toBe('120px')
+})
+
+it('places cards above crowded anchors and caps a too-tall card without covering its anchor', () => {
   const bottomAnchor = DOMRect.fromRect({ x: 355, y: 280, width: 20, height: 24 })
-  expect(positionedCard(bottomAnchor, 355, 300, 150, 375, 320)).toEqual({ left: 67, top: 124 })
-  const tallCard = positionedCard(bottomAnchor, null, 300, 300, 375, 320)
-  expect(tallCard.left).toBe(67)
-  expect(tallCard.top).toBe(8)
+  const bottomMeasurements = {
+    anchorRect: bottomAnchor,
+    cardWidth: 300,
+    viewportWidth: 375,
+    viewportHeight: 320,
+  }
+  const cardThatFitsAbove = positionedCard({
+    ...bottomMeasurements,
+    pointerX: 355,
+    cardHeight: 150,
+    isRow: true,
+  })
+  expect(cardThatFitsAbove).toMatchObject({
+    left: 67,
+    top: 124,
+  })
+  expect(cardThatFitsAbove).not.toHaveProperty('maxHeight')
+  const tallCard = positionedCard({
+    ...bottomMeasurements,
+    pointerX: null,
+    cardHeight: 300,
+  })
+  expect(tallCard).toMatchObject({ left: 67, top: 50, maxHeight: 224 })
+  expect(tallCard.top + (tallCard.maxHeight ?? 0)).toBeLessThanOrEqual(bottomAnchor.top - 6)
+
+  const middleAnchor = DOMRect.fromRect({ x: 100, y: 323, width: 200, height: 32 })
+  const middleCard = positionedCard({
+    anchorRect: middleAnchor,
+    pointerX: null,
+    cardWidth: 300,
+    cardHeight: 534,
+    viewportWidth: 1440,
+    viewportHeight: 900,
+  })
+  expect(middleCard).toMatchObject({ left: 100, top: 361, maxHeight: 531 })
+  expect(middleCard.top).toBeGreaterThanOrEqual(middleAnchor.bottom + 6)
+})
+
+it('keeps a pointer row card in place when clicking focuses its row', () => {
+  vi.stubGlobal('innerWidth', 1024)
+  vi.stubGlobal('innerHeight', 768)
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.matches('.ledger-row')) return new DOMRect(400, 200, 268, 32)
+    if (this.matches('.hover-card, .hover-card__content')) return new DOMRect(0, 0, 300, 180)
+    return new DOMRect(0, 0, 100, 28)
+  })
+  vi.useFakeTimers()
+  const onRowActivate = vi.fn()
+  render(
+    <HoverCardProvider>
+      <LedgerTable
+        columns={[
+          {
+            key: 'name',
+            label: 'Name',
+            minWidth: 120,
+            sortValue: (row) => row.name,
+            render: (row) => row.name,
+          },
+        ]}
+        rowCount={1}
+        rowAt={() => ({ id: 1, name: 'Belt' })}
+        rowKey={(row) => row.id}
+        onRowActivate={onRowActivate}
+        hoverCard={(row) => ({ kind: 'item', delayMs: 0, render: () => row.name })}
+        isVirtualized={false}
+      />
+    </HoverCardProvider>,
+  )
+  const row = screen.getByRole('row', { name: 'Belt' })
+  fireEvent.mouseEnter(row, { clientX: 475 })
+  act(() => vi.runOnlyPendingTimers())
+  expect(screen.getByRole('dialog').style.left).toBe('489px')
+
+  fireEvent.pointerDown(row)
+  act(() => row.focus())
+  fireEvent.pointerUp(row)
+  fireEvent.click(row)
+  act(() => vi.runOnlyPendingTimers())
+
+  expect(onRowActivate).toHaveBeenCalledOnce()
+  expect(screen.getByRole('dialog').style.left).toBe('489px')
+
+  fireEvent.pointerDown(row)
+  fireEvent.mouseLeave(row)
+  fireEvent.pointerUp(document.body)
+  act(() => row.blur())
+  act(() => row.focus())
+  act(() => vi.runOnlyPendingTimers())
+  expect(screen.getByRole('dialog').style.left).toBe('676px')
+})
+
+it('moves an initially short card above when its loaded content no longer fits below', () => {
+  let notifyResize = (): void => {}
+  const observedElements: Element[] = []
+  function AsyncCardContent(): React.JSX.Element {
+    const [isLoaded, setIsLoaded] = useState(false)
+    useEffect(() => {
+      const timer = window.setTimeout(() => setIsLoaded(true), 100)
+      return () => window.clearTimeout(timer)
+    }, [])
+    return <span>{isLoaded ? 'Loaded details' : 'Loading details'}</span>
+  }
+  function AsyncCardAnchor(): React.JSX.Element {
+    const anchor = useHoverCard({ kind: 'item', delayMs: 0, render: () => <AsyncCardContent /> })
+    return <button {...anchor}>Async anchor</button>
+  }
+  vi.stubGlobal('innerWidth', 1440)
+  vi.stubGlobal('innerHeight', 900)
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: ResizeObserverCallback) {
+        notifyResize = (): void => callback([], this as ResizeObserver)
+      }
+      observe(element: Element): void {
+        observedElements.push(element)
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    },
+  )
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.matches('.hover-card, .hover-card__content')) {
+      const naturalHeight = this.textContent?.includes('Loaded details') ? 292 : 50
+      const inlineCap = Number.parseFloat(this.matches('.hover-card') ? this.style.maxHeight : '')
+      return new DOMRect(0, 0, 300, Math.min(naturalHeight, inlineCap || Infinity))
+    }
+    return new DOMRect(800, 600, 140, 26)
+  })
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <AsyncCardAnchor />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Async anchor' }), { clientX: 850 })
+  act(() => vi.advanceTimersByTime(0))
+  const card = screen.getByRole('dialog')
+  expect(observedElements).toContain(card.querySelector('.hover-card__content'))
+  expect(card.style.top).toBe('632px')
+  const initialHeight = card.getBoundingClientRect().height
+
+  act(() => vi.advanceTimersByTime(100))
+  expect(card.getBoundingClientRect().height).toBeGreaterThan(initialHeight)
+  act(() => notifyResize())
+
+  expect(card.style.top).toBe('302px')
+  expect(card.style.maxHeight).toBe('')
+})
+
+it('keeps a too-tall card capped after measuring its displayed box again', () => {
+  let notifyResize = (): void => {}
+  vi.stubGlobal('innerWidth', 1440)
+  vi.stubGlobal('innerHeight', 900)
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: ResizeObserverCallback) {
+        notifyResize = (): void => callback([], this as ResizeObserver)
+      }
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    },
+  )
+  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    if (this.matches('.hover-card__content')) return new DOMRect(0, 0, 300, 600)
+    if (this.matches('.hover-card')) {
+      const inlineCap = Number.parseFloat(this.style.maxHeight)
+      return new DOMRect(0, 0, 300, Math.min(600, inlineCap || Infinity))
+    }
+    return new DOMRect(100, 323, 200, 32)
+  })
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Item anchor' }), { clientX: 150 })
+  act(() => vi.advanceTimersByTime(260))
+  const card = screen.getByRole('dialog')
+  expect(card.style.top).toBe('361px')
+  expect(card.style.maxHeight).toBe('531px')
+
+  act(() => notifyResize())
+  expect(card.style.maxHeight).toBe('531px')
+  expect(card.style.top).toBe('361px')
+  act(() => notifyResize())
+  expect(card.style.maxHeight).toBe('531px')
+  expect(
+    Number.parseFloat(card.style.top) + card.getBoundingClientRect().height,
+  ).toBeLessThanOrEqual(892)
 })
 
 it('places a menu card beside its edge, flips left, and omits it when neither side fits', () => {
@@ -846,6 +1082,60 @@ it('places a menu card beside its edge, flips left, and omits it when neither si
   })
   expect(positionedCardBeside(narrowMenu, 300, 180, 375, 768)).toBeNull()
 })
+
+it.each([
+  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 676, expectedTop: 200, openBy: 'focus' },
+  { viewportWidth: 1024, rowLeft: 650, expectedLeft: 342, expectedTop: 200, openBy: 'focus' },
+  { viewportWidth: 375, rowLeft: 8, expectedLeft: 8, expectedTop: 238, openBy: 'focus' },
+  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 676, expectedTop: 200, openBy: 't' },
+  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 489, expectedTop: 238, openBy: 'pointer' },
+])(
+  'places a $openBy row card beside its list or falls back at $viewportWidth px from $rowLeft',
+  ({ viewportWidth, rowLeft, expectedLeft, expectedTop, openBy }) => {
+    vi.stubGlobal('innerWidth', viewportWidth)
+    vi.stubGlobal('innerHeight', 768)
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.matches('.ledger-row'))
+        return new DOMRect(rowLeft, 200, viewportWidth === 1024 ? 268 : 359, 32)
+      if (this.matches('.hover-card, .hover-card__content')) return new DOMRect(0, 0, 300, 180)
+      return new DOMRect(0, 0, 100, 28)
+    })
+    vi.useFakeTimers()
+    render(
+      <HoverCardProvider>
+        <LedgerTable
+          columns={[
+            {
+              key: 'name',
+              label: 'Name',
+              minWidth: 120,
+              sortValue: (row) => row.name,
+              render: (row) => row.name,
+            },
+          ]}
+          rowCount={1}
+          rowAt={() => ({ id: 1, name: 'Belt' })}
+          rowKey={(row) => row.id}
+          onRowActivate={vi.fn()}
+          hoverCard={(row) => ({ kind: 'item', delayMs: 0, render: () => row.name })}
+          isVirtualized={false}
+        />
+      </HoverCardProvider>,
+    )
+    const row = screen.getByRole('row', { name: 'Belt' })
+    if (openBy === 'pointer') fireEvent.mouseEnter(row, { clientX: 475 })
+    else {
+      act(() => row.focus())
+      if (openBy === 't') fireEvent.keyDown(row, { key: 't' })
+    }
+    act(() => vi.runOnlyPendingTimers())
+    const card = screen.getByRole('dialog')
+    expect(Number.parseFloat(card.style.left)).toBe(expectedLeft)
+    expect(Number.parseFloat(card.style.top)).toBe(expectedTop)
+  },
+)
 
 it('closes an unpinned card when its anchor unmounts', () => {
   vi.useFakeTimers()
