@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/effects-item-487.json' with { type: 'json' }
 import capturedRunearm from '../src/features/resources/queries/fixtures/effects-item-924.json' with { type: 'json' }
 import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-831.json' with { type: 'json' }
@@ -46,6 +46,40 @@ async function routeFocusRestoreItems(page: Page, width = 1440): Promise<void> {
   })
   await page.setViewportSize({ width, height: 900 })
   await page.goto('/resources/items')
+}
+
+async function expectCardBesideNameCell(
+  page: Page,
+  row: Locator,
+  card: Locator,
+  nextRows: Locator[],
+): Promise<void> {
+  const nameCell = row.locator('.ledger-cell--primary')
+  await expect(nameCell).toBeVisible()
+  await expect(card).toBeVisible()
+  const rowBounds = await row.boundingBox()
+  const nameBounds = await nameCell.boundingBox()
+  const cardBounds = await card.boundingBox()
+  const viewport = page.viewportSize()
+  if (!rowBounds || !nameBounds || !cardBounds || !viewport)
+    throw new Error('Card or name cell has no bounds')
+  const canFitRight = nameBounds.x + nameBounds.width + 8 + cardBounds.width + 8 <= viewport.width
+  if (canFitRight) expect(cardBounds.x).toBeCloseTo(nameBounds.x + nameBounds.width + 8, 0)
+  else expect(cardBounds.x + cardBounds.width).toBeCloseTo(nameBounds.x - 8, 0)
+  expect(cardBounds.y).toBeCloseTo(
+    Math.max(8, Math.min(rowBounds.y, viewport.height - cardBounds.height - 8)),
+    0,
+  )
+  for (const nextRow of nextRows) {
+    const nextNameBounds = await nextRow.locator('.ledger-cell--primary').boundingBox()
+    if (!nextNameBounds) throw new Error('Next row name cell has no bounds')
+    expect(
+      cardBounds.x < nextNameBounds.x + nextNameBounds.width &&
+        cardBounds.x + cardBounds.width > nextNameBounds.x &&
+        cardBounds.y < nextNameBounds.y + nextNameBounds.height &&
+        cardBounds.y + cardBounds.height > nextNameBounds.y,
+    ).toBe(false)
+  }
 }
 
 test('clicking a list row focuses its detail without a visible focus ring, then Tab enters its actions', async ({
@@ -190,33 +224,18 @@ test('hover cards align links, leave keyboard rows visible, and clear tall row a
 
   await page.mouse.move(0, 0)
   const rows = page.locator('.resources-picker .ledger-row')
-  const focusedRow = rows.nth(4)
   const search = page.getByRole('searchbox', { name: 'Search items', exact: true })
   await search.focus()
-  await page.keyboard.press('ArrowDown')
-  await expect(rows.nth(0)).toBeFocused()
-  for (let rowIndex = 1; rowIndex <= 4; rowIndex++) {
+  for (let rowIndex = 0; rowIndex <= 4; rowIndex++) {
     await page.keyboard.press('ArrowDown')
     await expect(rows.nth(rowIndex)).toBeFocused()
-  }
-  await expect(card).toBeVisible()
-  await expect(card.locator('.detail-card__name')).toHaveText('Beholder Plate Armor 5')
-  const focusedRowBounds = await focusedRow.boundingBox()
-  const keyboardCardBounds = await card.boundingBox()
-  if (!focusedRowBounds || !keyboardCardBounds) throw new Error('Keyboard row has no bounds')
-  expect(
-    keyboardCardBounds.x >= focusedRowBounds.x + focusedRowBounds.width + 8 ||
-      keyboardCardBounds.x + keyboardCardBounds.width <= focusedRowBounds.x - 8,
-  ).toBe(true)
-  for (const nextRowIndex of [5, 6]) {
-    const nextRowBounds = await rows.nth(nextRowIndex).boundingBox()
-    if (!nextRowBounds) throw new Error('Next row has no bounds')
-    expect(
-      keyboardCardBounds.x < nextRowBounds.x + nextRowBounds.width &&
-        keyboardCardBounds.x + keyboardCardBounds.width > nextRowBounds.x &&
-        keyboardCardBounds.y < nextRowBounds.y + nextRowBounds.height &&
-        keyboardCardBounds.y + keyboardCardBounds.height > nextRowBounds.y,
-    ).toBe(false)
+    await expect(card.locator('.detail-card__name')).toHaveText(
+      `Beholder Plate Armor ${rowIndex + 1}`,
+    )
+    await expectCardBesideNameCell(page, rows.nth(rowIndex), card, [
+      rows.nth(rowIndex + 1),
+      rows.nth(rowIndex + 2),
+    ])
   }
 
   await search.focus()
@@ -240,6 +259,44 @@ test('hover cards align links, leave keyboard rows visible, and clear tall row a
   const detailPaneBounds = await pane.boundingBox()
   if (!detailPaneBounds) throw new Error('Detail pane has no bounds')
   expect((await card.boundingBox())?.x).toBeLessThan(detailPaneBounds.x)
+})
+
+test('keyboard enchantment cards sit beside their name cells', async ({ page }) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        path === '/v1/items/487'
+          ? capturedRing
+          : path === '/v1/sets/93'
+            ? capturedSet
+            : path === '/v1/items'
+              ? { total: 0, limit: 200, offset: 0, items: [] }
+              : [],
+      ),
+    })
+  })
+  await page.setViewportSize({ width: 1440, height: 800 })
+  await page.goto('/resources/items/487')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const rows = pane.locator(
+    '.resources-effect-ledger .ledger-row:not(.ledger-row--heading):not(.ledger-row--subheading)',
+  )
+  const card = page.locator('.hover-card[data-kind="enchantment"]')
+  await pane.locator('.resources-effect-ledger .ledger-header-cell').first().focus()
+  await page.keyboard.press('Tab')
+  for (let rowIndex = 0; rowIndex < 2; rowIndex++) {
+    if (rowIndex > 0) await page.keyboard.press('ArrowDown')
+    await expect(rows.nth(rowIndex)).toBeFocused()
+    await expect(card).toBeVisible()
+    await expect(card).not.toContainText('Loading bonus…')
+    await expectCardBesideNameCell(page, rows.nth(rowIndex), card, [
+      rows.nth(rowIndex + 1),
+      rows.nth(rowIndex + 2),
+    ])
+  }
 })
 
 test('a card re-places above after delayed detail content makes it too tall for below', async ({

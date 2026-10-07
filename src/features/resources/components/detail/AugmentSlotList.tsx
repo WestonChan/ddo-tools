@@ -24,6 +24,7 @@ const AUGMENT_COLUMNS: LedgerColumn<AugmentSummary>[] = [
     key: 'name',
     label: 'Name',
     isFlexible: true,
+    isPrimary: true,
     minWidth: 120,
     sortValue: (augment) => augment.name,
     render: (augment) => augment.name,

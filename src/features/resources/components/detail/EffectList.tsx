@@ -32,6 +32,7 @@ const COLUMNS: LedgerColumn<EffectRow>[] = [
     key: 'name',
     label: 'Enchantment',
     isFlexible: true,
+    isPrimary: true,
     minWidth: 120,
     sortValue: (row) => row.name,
     render: (row, heading) =>

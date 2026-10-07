@@ -130,6 +130,8 @@ function LedgerRow<Row>({
   const hoverAnchor = useHoverCard({
     ...(hoverOptions ?? { kind: '', delayMs: 0, render: () => null }),
     isRow: true,
+    getBesideRect: (anchor) =>
+      anchor.querySelector('.ledger-cell--primary')?.getBoundingClientRect() ?? null,
   })
   if (!row) return null
   const kind = rowKind?.(row) ?? 'row'

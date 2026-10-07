@@ -23,6 +23,7 @@ interface CardEntry {
   kind: string
   depth: number
   anchorRect: DOMRect
+  besideRect?: DOMRect
   pointerX: number | null
   isRow: boolean
   openedBy: 'pointer' | 'focus'
@@ -37,6 +38,7 @@ export interface HoverCardOptions {
   render: () => ReactNode
   placement?: 'beside'
   isRow?: boolean
+  getBesideRect?: (anchor: HTMLElement) => DOMRect | null
 }
 
 interface CardController {
@@ -66,6 +68,7 @@ const NAVIGATION_KEYS = new Set([
 
 export function positionedCard({
   anchorRect,
+  besideRect,
   pointerX,
   cardWidth,
   cardHeight,
@@ -74,6 +77,7 @@ export function positionedCard({
   isRow = false,
 }: {
   anchorRect: DOMRect
+  besideRect?: DOMRect
   pointerX: number | null
   cardWidth: number
   cardHeight: number
@@ -83,6 +87,17 @@ export function positionedCard({
 }): { left: number; top: number; maxHeight?: number } {
   const margin = 8
   const gap = 6
+  if (isRow && pointerX === null && besideRect) {
+    const beside = positionedCardBeside(
+      besideRect,
+      cardWidth,
+      cardHeight,
+      viewportWidth,
+      viewportHeight,
+      anchorRect,
+    )
+    if (beside) return beside
+  }
   const left = Math.max(
     margin,
     Math.min(
@@ -109,20 +124,25 @@ export function positionedCard({
 }
 
 export function positionedCardBeside(
-  menu: DOMRect,
+  horizontalAnchorRect: DOMRect,
   width: number,
   height: number,
   viewportWidth: number,
   viewportHeight: number,
+  verticalAnchorRect: DOMRect = horizontalAnchorRect,
 ): { left: number; top: number } | null {
   const margin = 8
-  const right = menu.right + margin
-  const left = menu.left - width - margin
+  const right = horizontalAnchorRect.right + margin
+  const left = horizontalAnchorRect.left - width - margin
   const cardLeft = right + width + margin <= viewportWidth ? right : left >= margin ? left : null
   if (cardLeft === null) return null
+  const displayedHeight = Math.min(height, viewportHeight * 0.7)
   return {
     left: cardLeft,
-    top: Math.max(margin, Math.min(menu.top, viewportHeight - height - margin)),
+    top: Math.max(
+      margin,
+      Math.min(verticalAnchorRect.top, viewportHeight - displayedHeight - margin),
+    ),
   }
 }
 
@@ -144,10 +164,7 @@ function CardLayer({
   } | null>(null)
   const cardPosition = useCallback(
     ({ width, height }: { width: number; height: number }) => {
-      if (
-        card.placement === 'beside' ||
-        (card.isRow && card.openedBy === 'focus' && card.pointerX === null)
-      ) {
+      if (card.placement === 'beside') {
         const beside = positionedCardBeside(
           card.anchorRect,
           width,
@@ -155,10 +172,11 @@ function CardLayer({
           window.innerWidth,
           window.innerHeight,
         )
-        if (beside || card.placement === 'beside') return beside
+        return beside
       }
       return positionedCard({
         anchorRect: card.anchorRect,
+        besideRect: card.besideRect,
         pointerX: card.pointerX,
         cardWidth: width,
         cardHeight: height,
@@ -167,7 +185,7 @@ function CardLayer({
         isRow: card.isRow,
       })
     },
-    [card.anchorRect, card.placement, card.pointerX, card.isRow, card.openedBy],
+    [card.anchorRect, card.besideRect, card.placement, card.pointerX, card.isRow],
   )
   const positionCard = useCallback(() => {
     const element = elementRef.current
@@ -600,6 +618,7 @@ export function useHoverCard({
   render,
   placement,
   isRow = false,
+  getBesideRect,
 }: HoverCardOptions): {
   'data-hover-card-pinned': '' | undefined
   onMouseEnter: (event: React.MouseEvent<HTMLElement>) => void
@@ -645,13 +664,15 @@ export function useHoverCard({
     onFocus: (event) => {
       anchorElement.current = event.currentTarget
       if (!controller?.isNavigationFocus(event.target)) return
+      const anchorRect = event.currentTarget.getBoundingClientRect()
       controller?.open(
         {
           kind,
           anchorId,
           anchorElement: event.currentTarget,
           depth,
-          anchorRect: event.currentTarget.getBoundingClientRect(),
+          anchorRect,
+          besideRect: isRow ? (getBesideRect?.(event.currentTarget) ?? anchorRect) : undefined,
           pointerX: null,
           isRow,
           openedBy: 'focus',
@@ -667,13 +688,15 @@ export function useHoverCard({
       anchorElement.current = event.currentTarget
       event.preventDefault()
       event.stopPropagation()
+      const anchorRect = event.currentTarget.getBoundingClientRect()
       controller?.open(
         {
           kind,
           anchorId,
           anchorElement: event.currentTarget,
           depth,
-          anchorRect: event.currentTarget.getBoundingClientRect(),
+          anchorRect,
+          besideRect: isRow ? (getBesideRect?.(event.currentTarget) ?? anchorRect) : undefined,
           pointerX: null,
           isRow,
           openedBy: 'focus',
@@ -693,6 +716,7 @@ export function useHoverCardControl({
   render,
   placement,
   isRow = false,
+  getBesideRect,
 }: HoverCardOptions): {
   show: (anchor: HTMLElement, options: { rect?: DOMRect; openedBy: CardEntry['openedBy'] }) => void
   hide: () => void
@@ -712,13 +736,18 @@ export function useHoverCardControl({
   return {
     show: (anchor, options) => {
       anchorElement.current = anchor
+      const anchorRect = options.rect ?? anchor.getBoundingClientRect()
       controller?.open(
         {
           kind,
           anchorId,
           anchorElement: anchor,
           depth,
-          anchorRect: options.rect ?? anchor.getBoundingClientRect(),
+          anchorRect,
+          besideRect:
+            isRow && options.openedBy === 'focus'
+              ? (getBesideRect?.(anchor) ?? anchorRect)
+              : undefined,
           pointerX: null,
           isRow,
           openedBy: options.openedBy,

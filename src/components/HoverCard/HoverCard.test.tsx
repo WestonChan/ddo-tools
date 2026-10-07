@@ -1366,16 +1366,68 @@ it('places a menu card beside its edge, flips left, and omits it when neither si
     top: 32,
   })
   expect(positionedCardBeside(narrowMenu, 300, 180, 375, 768)).toBeNull()
+  expect(
+    positionedCardBeside(
+      DOMRect.fromRect({ x: 400, y: 200, width: 268, height: 32 }),
+      300,
+      800,
+      1024,
+      900,
+    ),
+  ).toEqual({
+    left: 676,
+    top: 200,
+  })
+})
+
+it('places keyboard row cards beside the name cell and falls back below narrow rows', () => {
+  const rowRect = DOMRect.fromRect({ x: 400, y: 200, width: 500, height: 32 })
+  const measurements = {
+    anchorRect: rowRect,
+    pointerX: null,
+    isRow: true,
+    cardWidth: 300,
+    cardHeight: 180,
+    viewportWidth: 1024,
+    viewportHeight: 768,
+  }
+  expect(
+    positionedCard({
+      ...measurements,
+      besideRect: DOMRect.fromRect({ x: 400, y: 205.75, width: 220, height: 20 }),
+    }),
+  ).toMatchObject({ left: 628, top: 200 })
+  expect(
+    positionedCard({
+      ...measurements,
+      besideRect: DOMRect.fromRect({ x: 650, y: 205.75, width: 220, height: 20 }),
+    }),
+  ).toMatchObject({ left: 342, top: 200 })
+  expect(
+    positionedCard({
+      ...measurements,
+      anchorRect: DOMRect.fromRect({ x: 400, y: 700, width: 500, height: 32 }),
+      besideRect: DOMRect.fromRect({ x: 400, y: 705.75, width: 220, height: 20 }),
+    }),
+  ).toMatchObject({ left: 628, top: 580 })
+  expect(
+    positionedCard({
+      ...measurements,
+      anchorRect: DOMRect.fromRect({ x: 8, y: 200, width: 359, height: 32 }),
+      besideRect: DOMRect.fromRect({ x: 8, y: 200, width: 359, height: 32 }),
+      viewportWidth: 375,
+    }),
+  ).toMatchObject({ left: 8, top: 238 })
 })
 
 it.each([
-  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 676, expectedTop: 200, openBy: 'focus' },
+  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 528, expectedTop: 200, openBy: 'focus' },
   { viewportWidth: 1024, rowLeft: 650, expectedLeft: 342, expectedTop: 200, openBy: 'focus' },
   { viewportWidth: 375, rowLeft: 8, expectedLeft: 8, expectedTop: 238, openBy: 'focus' },
-  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 676, expectedTop: 200, openBy: 't' },
+  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 528, expectedTop: 200, openBy: 't' },
   { viewportWidth: 1024, rowLeft: 400, expectedLeft: 489, expectedTop: 238, openBy: 'pointer' },
 ])(
-  'places a $openBy row card beside its list or falls back at $viewportWidth px from $rowLeft',
+  'places a $openBy row card beside its name cell or falls back at $viewportWidth px from $rowLeft',
   ({ viewportWidth, rowLeft, expectedLeft, expectedTop, openBy }) => {
     vi.stubGlobal('innerWidth', viewportWidth)
     vi.stubGlobal('innerHeight', 768)
@@ -1384,6 +1436,8 @@ it.each([
     ) {
       if (this.matches('.ledger-row'))
         return new DOMRect(rowLeft, 200, viewportWidth === 1024 ? 268 : 359, 32)
+      if (this.matches('.ledger-cell--primary'))
+        return new DOMRect(rowLeft, 205.75, viewportWidth === 1024 ? 120 : 359, 20)
       if (this.matches('.hover-card, .hover-card__content')) return new DOMRect(0, 0, 300, 180)
       return new DOMRect(0, 0, 100, 28)
     })
@@ -1395,6 +1449,7 @@ it.each([
             {
               key: 'name',
               label: 'Name',
+              isPrimary: true,
               minWidth: 120,
               sortValue: (row) => row.name,
               render: (row) => row.name,
