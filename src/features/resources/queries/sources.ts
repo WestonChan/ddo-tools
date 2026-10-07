@@ -14,6 +14,12 @@ export interface SourceItem {
   id: number
   name: string
   slot: string
+  minimumLevel: number | null
+  isRareLoot: boolean
+  chest: string | null
+  cost: string | null
+  tier: string | null
+  pack: string | null
 }
 
 export interface SourceQuest {
@@ -61,7 +67,17 @@ function sourceDetail(kind: SourceDetailKind, id: number, name: string): SourceD
 }
 
 function sourceItems(items: ApiSourceItem[]): SourceItem[] {
-  return items.map(({ id, name, slot }) => ({ id, name, slot }))
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    slot: item.slot,
+    minimumLevel: item.minimum_level ?? null,
+    isRareLoot: item.is_rare ?? false,
+    chest: item.chest ?? null,
+    cost: item.cost ?? null,
+    tier: item.tier ?? null,
+    pack: item.pack ?? null,
+  }))
 }
 
 function sourceQuests(quests: ApiSourceQuest[]): SourceQuest[] {

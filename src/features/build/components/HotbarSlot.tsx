@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router'
 import type { PlaceholderAbility } from '../data/placeholderAbilities'
 import type { HotbarSlotAddress } from '../hotbars'
 import { AbilityCode } from './AbilityCode'
+import { AbilityDetailCard } from './AbilityDetailCard'
 import { useHoverCard } from '../../../components'
 import {
   hotbarSlotDragId,
@@ -11,34 +12,6 @@ import {
   type HotbarDropPayload,
 } from './hotbarDragPayloads'
 import './HotbarSlot.css'
-
-interface AbilityStatBlockProps {
-  ability: PlaceholderAbility
-}
-
-function AbilityStatBlock({ ability }: AbilityStatBlockProps): JSX.Element {
-  const rows: readonly [string, string][] = [
-    ['Type', ability.kind],
-    ['Cooldown', ability.cooldown],
-    ['Save', ability.save],
-    ['Damage', ability.damage],
-    ['Cost', ability.cost],
-  ]
-  return (
-    <div className="hotbar-stat-block">
-      <div className="hotbar-stat-block-name">{ability.name}</div>
-      <dl className="hotbar-stat-block-rows">
-        {rows.map(([rowLabel, rowValue]) => (
-          <div key={rowLabel} className="hotbar-stat-block-row">
-            <dt>{rowLabel}</dt>
-            <dd className="num">{rowValue}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="hotbar-stat-block-footer">Click → full breakdown in Damage calc</p>
-    </div>
-  )
-}
 
 interface SlotFocusRequest {
   shouldTakeFocus: boolean
@@ -72,7 +45,7 @@ function FilledHotbarSlot({
   const hoverAnchor = useHoverCard({
     kind: 'ability',
     delayMs: 260,
-    render: () => <AbilityStatBlock ability={ability} />,
+    render: () => <AbilityDetailCard ability={ability} />,
   })
   const lastPointerTypeRef = useRef<string | null>(null)
   const slotNumber = slot.slotIndex + 1
@@ -134,7 +107,8 @@ function FilledHotbarSlot({
         <span className="hotbar-slot-number num">{slotNumber}</span>
       </button>
       <div id={statBlockId} className="sr-only">
-        <AbilityStatBlock ability={ability} />
+        {ability.name} Type {ability.kind} Cooldown {ability.cooldown} Save {ability.save} Damage{' '}
+        {ability.damage} Cost {ability.cost}
       </div>
     </>
   )

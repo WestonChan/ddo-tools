@@ -81,6 +81,8 @@ vi.mock('../queries/useItems', () => ({
         refetch: vi.fn(),
       }
     }
+    if (id === 405) return { data: undefined, isPending: false, error: null }
+    if (id === 406) return { data: undefined, isPending: true, error: null }
     return { data: itemDetailFor(id), isPending: false, error: null }
   },
   useFittingAugmentsBySlotLabel: (label: string | null) => ({
@@ -139,6 +141,22 @@ describe('ResourceDetailPane', () => {
       <ResourceDetailPane resourceInUrl={{ category: 'items', id: 404 }} pickerCategory="items" />,
     )
     expect(screen.getByRole('status')).toHaveTextContent('This item no longer exists.')
+  })
+
+  it('keeps the pane loading placeholder and status role until the item exists', () => {
+    render(
+      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 406 }} pickerCategory="items" />,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Loading…')
+    expect(screen.queryByRole('heading', { name: 'Loading item…' })).toBeNull()
+  })
+
+  it('keeps the pane not-found placeholder and recovery hint', () => {
+    render(
+      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 405 }} pickerCategory="items" />,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('No item with id 405.')
+    expect(screen.getByRole('status')).toHaveTextContent('Pick another row from the list.')
   })
 
   it('renders an error state for a transport failure', () => {

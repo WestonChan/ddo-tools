@@ -1,0 +1,4 @@
+.ability-detail-card__damage-calc {
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+}

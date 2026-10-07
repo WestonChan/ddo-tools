@@ -7,8 +7,8 @@ const RAW_COLOR_PATTERNS = [
 const SHADOW_WITH_OFFSET_OR_BLUR_PATTERN =
   '/(?:^|,)\\s*(?:inset\\s+)?(?!0(?:px)?\\s+0(?:px)?\\s+0(?:px)?\\s)-?[\\d.]/'
 
-const SHADOW_FROM_NON_ELEVATION_TOKEN_PATTERN =
-  '/(?:^|,)\\s*var\\(--(?!(?:shadow|inset|ring|glow)-)[a-z0-9-]+\\)\\s*(?:,|$)/'
+const SHADOW_WITH_UNRECOGNIZED_TOKEN_PATTERN =
+  '/(?:^|,)\\s*var\\(--(?!(?:shadow|inset|ring|glow)-|detail-card-header-shadow\\))[a-z0-9-]+\\)\\s*(?:,|$)/'
 
 const FONT_FAMILY_OTHER_THAN_FONT_TOKEN_PATTERN = '/^(?!var\\(--font-[a-z0-9-]+\\)$)/'
 
@@ -20,8 +20,11 @@ const PILL_RADIUS_PATTERN = '/\\b(?:999|9999)px\\b|\\b100vmax\\b|\\b50%/'
 const HIDDEN_OUTLINE_PATTERN = '/^(?:none|0(?:px)?)(?:\\s|$)/'
 
 const SPACE_TOKEN = 'var\\(--space-[a-z0-9-]+\\)'
+const DETAIL_CARD_SPACING_TOKEN =
+  'var\\(--detail-card-(?:header-padding|body-padding|header-body-gap|pin-reserve)\\)'
+const DETAIL_CARD_FONT_TOKEN = 'var\\(--detail-card-(?:title-size|fact-size)\\)'
 const CALC_OF_SPACE_TOKENS = `calc\\((?:[\\s*+/-]|\\d+(?:\\.\\d+)?|${SPACE_TOKEN})+\\)`
-const SPACING_VALUE_PATTERN = `/^(?:(?:${SPACE_TOKEN}|0|auto|${CALC_OF_SPACE_TOKENS})(?:\\s+|$))+$/`
+const SPACING_VALUE_PATTERN = `/^(?:(?:${SPACE_TOKEN}|${DETAIL_CARD_SPACING_TOKEN}|0|auto|${CALC_OF_SPACE_TOKENS})(?:\\s+|$))+$/`
 
 const RADIUS_VALUE_PATTERN = '/^(?:(?:var\\(--radius-[a-z0-9-]+\\)|0)(?:\\s+|$))+$/'
 
@@ -68,7 +71,7 @@ export default {
     'declaration-property-value-disallowed-list': [
       {
         '/^(?!--)/': RAW_COLOR_PATTERNS,
-        'box-shadow': [SHADOW_WITH_OFFSET_OR_BLUR_PATTERN, SHADOW_FROM_NON_ELEVATION_TOKEN_PATTERN],
+        'box-shadow': [SHADOW_WITH_OFFSET_OR_BLUR_PATTERN, SHADOW_WITH_UNRECOGNIZED_TOKEN_PATTERN],
         'font-family': [FONT_FAMILY_OTHER_THAN_FONT_TOKEN_PATTERN],
         font: [FONT_SHORTHAND_WITH_LITERAL_FAMILY_PATTERN],
         '/radius$/': [PILL_RADIUS_PATTERN],
@@ -81,7 +84,12 @@ export default {
       {
         '/^(?:padding|margin|gap)/': [SPACING_VALUE_PATTERN],
         'letter-spacing': ['/^var\\(--ls-[a-z0-9-]+\\)$/', '0', 'normal'],
-        'font-size': ['/^var\\(--fs-[a-z0-9-]+\\)$/', 'inherit', '/^\\d*\\.?\\d+em$/'],
+        'font-size': [
+          '/^var\\(--fs-[a-z0-9-]+\\)$/',
+          `/^${DETAIL_CARD_FONT_TOKEN}$/`,
+          'inherit',
+          '/^\\d*\\.?\\d+em$/',
+        ],
         '/radius$/': [RADIUS_VALUE_PATTERN, 'inherit'],
         opacity: ['0', '0.42', '1', 'inherit', '/^var\\(/'],
       },

@@ -806,7 +806,9 @@ describe('ResourcesView detail pane', () => {
       fireEvent.mouseEnter(screen.getByRole('row', { name: /Bloodstone/ }))
       act(() => vi.advanceTimersByTime(260))
       const listItemCard = screen.getByRole('dialog')
-      fireEvent.mouseEnter(within(listItemCard).getByText('Stone Set'))
+      fireEvent.mouseEnter(
+        within(listItemCard.querySelector('.detail-card__facts')!).getByText('Stone Set'),
+      )
       act(() => vi.advanceTimersByTime(120))
       const setCard = screen
         .getAllByRole('dialog')

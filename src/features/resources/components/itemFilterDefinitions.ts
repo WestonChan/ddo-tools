@@ -74,7 +74,6 @@ export function itemFilterDefinitions(
         return {
           key: row.detail_path,
           detailPath: row.detail_path,
-          hoverLabel: effectKindLabel(row.kind),
           value: row.name,
           label: row.name,
           caption: row.kind === 'stat' ? `Stat · ${typeLabel}` : effectKindLabel(row.kind),
@@ -85,7 +84,6 @@ export function itemFilterDefinitions(
                   label: `${row.name} · ${bonusType.name}`,
                   caption: `${bonusType.item_count}`,
                   detailPath: row.detail_path,
-                  hoverLabel: 'Stat',
                 }))
               : undefined,
         }

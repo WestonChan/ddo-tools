@@ -7,6 +7,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-07',
     changes: [
+      "Hover cards follow the detail pane's layout: the same facts as cells, the same sections in the same order, briefer only where a card would grow too tall, and 420px wide",
+      'Every "+N more" in a hover card is a Show more / Show less toggle, and augment cards show their sockets as symbols',
       'Opening an item moves focus into its detail, so Tab continues inside it; Escape takes you back to the row',
       'Closing an item with Back or Escape returns you to its row without opening a hover card; cards open on focus only when you move with Tab or the arrow keys',
       "Hover cards open in a steady place: a link's card lines up with the link, a row's card follows the pointer, and a row reached with the keyboard shows its card beside the list",

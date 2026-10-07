@@ -18,6 +18,9 @@ it('maps quest loot to the resource domain shape', () => {
     name: 'The Storm',
     pack: 'Storm Pack',
     is_raid: true,
+    level: 10,
+    epic_level: 30,
+    patron: 'House Storm',
     items: [
       {
         id: 11,
@@ -31,6 +34,9 @@ it('maps quest loot to the resource domain shape', () => {
     ],
   })
   expect(quest.isRaid).toBe(true)
+  expect(quest.level).toBe(10)
+  expect(quest.epicLevel).toBe(30)
+  expect(quest.patron).toBe('House Storm')
   expect(quest.items[0]).toEqual({
     id: 11,
     name: 'Storm Blade',

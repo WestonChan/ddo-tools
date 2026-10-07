@@ -1,19 +1,22 @@
-import { Fragment, useId, useRef, useState, type JSX, type ReactNode } from 'react'
+import { Fragment, useId, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import {
-  DetailCard,
-  DetailCardFooter,
-  DetailCardSection,
-  DetailFact,
+  StructuredDetailCard,
+  DetailMoreButton,
+  detailCardSection,
+  type DetailCardDefinition,
+  type DetailCardFact,
   DetailStats,
-  DetailMore,
-  DetailValueRow,
   useClearHoverCards,
   WikiLinkIcon,
   type DetailStat,
 } from '../../../../components'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
-import { DetailHeader } from './DetailHeader'
-import { EffectList } from './EffectList'
+import { ItemHeaderActions } from './ItemHeaderActions'
+import { DETAIL_TITLE_ID } from '../../resourceCategories'
+import { EffectListBriefView, EffectListFullView } from './EffectList'
+import { itemEffectRows, setEffectRows } from './effectRows'
+import { resourceStatusDefinition } from './resourceStatusDefinition'
+import { ResourceStatusView } from './ResourceStatusView'
 import type { SetDetail } from '../../queries/sets'
 import { sentenceCased } from './sentenceCased'
 import {
@@ -22,12 +25,11 @@ import {
   SourceHoverAnchor,
   type SourceHoverKind,
 } from './ResourceHoverCards'
-import { damageExpression } from './structuredRows'
 import type {
   Item,
   ItemSource,
   ItemSourceKind,
-  LootQuest,
+  ItemClickie,
   ItemWeaponStats,
   ItemArmorStats,
 } from '../../queries/items'
@@ -139,36 +141,6 @@ function ObtainedFromRow({
   )
 }
 
-function ItemSourceRow({
-  itemSource,
-  onOpenItem,
-}: {
-  itemSource: ItemSource
-  onOpenItem?: (id: number, name: string) => void
-}): JSX.Element {
-  const hasWikiPage =
-    itemSource.wikiUrl !== null ||
-    SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE.has(itemSource.kind)
-  return (
-    <ObtainedFromRow
-      wikiPageName={hasWikiPage ? itemSource.name : undefined}
-      wikiUrl={itemSource.wikiUrl}
-      descriptorParts={itemSourceDescriptorParts(itemSource)}
-      isRareLoot={itemSource.isRareLoot}
-    >
-      <SourceHoverAnchor
-        kind={itemSource.kind}
-        id={itemSource.id}
-        name={itemSource.name}
-        wikiUrl={itemSource.wikiUrl}
-        onOpenItem={onOpenItem}
-      >
-        {itemSource.name}
-      </SourceHoverAnchor>
-    </ObtainedFromRow>
-  )
-}
-
 type ItemDetailKind = 'shield' | 'weapon' | 'armor' | 'other'
 
 function itemDetailKind(item: Item): ItemDetailKind {
@@ -275,7 +247,14 @@ function toExtraWeaponStats(weaponStats: ItemWeaponStats): DetailStat[] {
   return rows
 }
 
-function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): JSX.Element | null {
+interface ItemStatSection {
+  itemId: number
+  primaryStats: DetailStat[]
+  extraStats: DetailStat[]
+  damageReductionBypasses: string[]
+}
+
+function itemStatSection(item: Item, kind: ItemDetailKind): ItemStatSection {
   const itemAttributes = toItemAttributeStats(item)
   const materialStats = itemAttributes.filter((stat) => stat.label === 'Material')
   const labeledArmorStats = item.armorStats ? toLabeledArmorStats(item.armorStats) : []
@@ -299,13 +278,7 @@ function ItemDetailStats({ item, kind }: { item: Item; kind: ItemDetailKind }): 
     primaryStats = toPrimaryWeaponStats(item.weaponStats, item.enhancementBonus)
     extraStats = [...toExtraWeaponStats(item.weaponStats), ...materialStats]
   }
-  return (
-    <DetailStats
-      primaryStats={primaryStats}
-      extraStats={extraStats}
-      damageReductionBypasses={damageReductionBypasses}
-    />
-  )
+  return { itemId: item.id, primaryStats, extraStats, damageReductionBypasses }
 }
 
 function toLabeledArmorStats(armorStats: ItemArmorStats): DetailStat[] {
@@ -352,125 +325,295 @@ function toLabeledArmorStats(armorStats: ItemArmorStats): DetailStat[] {
   return labeledStats
 }
 
-function HoverSourceSummary({
-  item,
-  onOpenItem,
-}: {
-  item: Item
+interface ItemSourceEntry {
+  key: string
+  name: string
+  descriptorParts: string[]
+  chests: string[]
+  hasWikiPage: boolean
+  isRaid: boolean
+  isRareLoot: boolean
+  level: number | null
+  epicLevel: number | null
+  pack: string | null
+  patron: string | null
+  questId: number | null
+  sourceKind: SourceHoverKind | null
+  sourceId: number | null
+  wikiUrl: string | null
   onOpenItem?: (id: number, name: string) => void
-}): JSX.Element {
-  const sources: Array<{
-    key: string
-    name: string
-    note: string | null
-    questId: number | null
-    sourceKind: SourceHoverKind | null
-    sourceId: number | null
-    wikiUrl: string | null
-  }> = [
+}
+
+function itemSourceEntries(
+  item: Item,
+  onOpenItem?: (id: number, name: string) => void,
+): ItemSourceEntry[] {
+  const sourceEntry = (source: ItemSource): ItemSourceEntry => ({
+    key: source.key,
+    name: source.name,
+    descriptorParts: itemSourceDescriptorParts(source),
+    chests: [],
+    hasWikiPage:
+      source.wikiUrl !== null || SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE.has(source.kind),
+    isRaid: false,
+    isRareLoot: source.isRareLoot,
+    level: null,
+    epicLevel: null,
+    pack: null,
+    patron: null,
+    questId: null,
+    sourceKind: source.kind,
+    sourceId: source.id,
+    wikiUrl: source.wikiUrl,
+    onOpenItem,
+  })
+  return [
     ...item.quests.map((quest) => ({
       key: `quest-${quest.id}`,
       name: quest.name,
-      note: quest.pack,
+      descriptorParts: [
+        ...quest.chests.map(sentenceCased),
+        ...(quest.isEndReward ? ['End reward'] : []),
+      ],
+      chests: quest.chests.map(sentenceCased),
+      hasWikiPage: true,
+      isRaid: quest.isRaid,
+      isRareLoot: quest.isRareLoot,
+      level: quest.level,
+      epicLevel: quest.epicLevel,
+      pack: quest.pack,
+      patron: quest.patron,
       questId: quest.id,
       sourceKind: null,
       sourceId: null,
       wikiUrl: null,
+      onOpenItem,
     })),
-    ...item.adventurePackDrops.map((source) => ({
-      key: source.key,
-      name: source.name,
-      note: 'Anywhere in the pack',
-      questId: null,
-      sourceKind: source.kind,
-      sourceId: source.id,
-      wikiUrl: source.wikiUrl,
-    })),
+    ...item.adventurePackDrops.map(sourceEntry),
     ...item.questChains.map((chain) => ({
       key: `chain-${chain.id}`,
       name: chain.name,
-      note: 'Chain end reward',
+      descriptorParts: ['Chain end reward'],
+      chests: [],
+      hasWikiPage: true,
+      isRaid: false,
+      isRareLoot: chain.isRareLoot,
+      level: null,
+      epicLevel: null,
+      pack: null,
+      patron: null,
       questId: null,
       sourceKind: 'questChain' as const,
       sourceId: chain.id,
       wikiUrl: chain.wikiUrl,
+      onOpenItem,
     })),
     ...item.sagas.map((saga) => ({
-      key: `saga-${saga.id}`,
+      key: `saga-${saga.id}-${saga.tier}`,
       name: saga.name,
-      note: 'Saga reward',
+      descriptorParts: ['Saga reward', ...(saga.tier ? [sentenceCased(saga.tier)] : [])],
+      chests: [],
+      hasWikiPage: true,
+      isRaid: false,
+      isRareLoot: saga.isRareLoot,
+      level: null,
+      epicLevel: null,
+      pack: null,
+      patron: null,
       questId: null,
       sourceKind: 'saga' as const,
       sourceId: saga.id,
       wikiUrl: saga.wikiUrl,
+      onOpenItem,
     })),
-    ...item.sourcesBeyondQuests.map((source) => ({
-      key: source.key,
-      name: source.name,
-      note: ITEM_SOURCE_LABELS[source.kind],
-      questId: null,
-      sourceKind: source.kind,
-      sourceId: source.id,
-      wikiUrl: source.wikiUrl,
-    })),
+    ...item.sourcesBeyondQuests.map(sourceEntry),
   ]
+}
+
+function ItemSourceName({ entry }: { entry: ItemSourceEntry }): JSX.Element {
+  if (entry.questId !== null)
+    return (
+      <QuestHoverAnchor questId={entry.questId} onOpenItem={entry.onOpenItem}>
+        {entry.name}
+      </QuestHoverAnchor>
+    )
+  if (entry.sourceKind)
+    return (
+      <SourceHoverAnchor
+        kind={entry.sourceKind}
+        id={entry.sourceId}
+        name={entry.name}
+        wikiUrl={entry.wikiUrl}
+        onOpenItem={entry.onOpenItem}
+      >
+        {entry.name}
+      </SourceHoverAnchor>
+    )
+  return <>{entry.name}</>
+}
+
+function ItemSourcesFullView({ entries }: { entries: readonly ItemSourceEntry[] }): JSX.Element {
+  return (
+    <ul className="resources-item-source-list">
+      {entries.map((entry) => (
+        <ObtainedFromRow
+          key={entry.key}
+          wikiPageName={entry.hasWikiPage ? entry.name : undefined}
+          wikiUrl={entry.wikiUrl}
+          descriptorParts={entry.descriptorParts.map((part) =>
+            entry.chests.includes(part) ? (
+              <span key={part} className="resources-item-source-chest">
+                {part}
+              </span>
+            ) : (
+              part
+            ),
+          )}
+          isRaid={entry.isRaid}
+          isRareLoot={entry.isRareLoot}
+          level={entry.level}
+          epicLevel={entry.epicLevel}
+          pack={entry.pack}
+          patron={entry.patron}
+        >
+          <ItemSourceName entry={entry} />
+        </ObtainedFromRow>
+      ))}
+    </ul>
+  )
+}
+
+function ItemSourcesBriefView({ entries }: { entries: readonly ItemSourceEntry[] }): JSX.Element {
   return (
     <div className="resources-hover-rows">
-      {sources.slice(0, 3).map((source) => (
-        <div className="resources-hover-row hover-card-row" key={source.key}>
+      {entries.map((entry) => (
+        <div
+          key={entry.key}
+          className="resources-hover-row resources-item-source-brief-row hover-card-row"
+        >
           <span>
-            {source.questId !== null ? (
-              <QuestHoverAnchor questId={source.questId} onOpenItem={onOpenItem}>
-                {source.name}
-              </QuestHoverAnchor>
-            ) : source.sourceKind ? (
-              <SourceHoverAnchor
-                kind={source.sourceKind}
-                id={source.sourceId}
-                name={source.name}
-                wikiUrl={source.wikiUrl}
-                onOpenItem={onOpenItem}
-              >
-                {source.name}
-              </SourceHoverAnchor>
-            ) : (
-              source.name
-            )}
+            <ItemSourceName entry={entry} />
           </span>
-          <span>{source.note}</span>
+          <span>
+            {[
+              ...entry.descriptorParts,
+              ...(entry.isRaid ? ['Raid'] : []),
+              ...(entry.isRareLoot ? ['Rare'] : []),
+              ...([entry.level, entry.epicLevel].filter((level) => level !== null).length
+                ? [
+                    `Level ${[entry.level, entry.epicLevel].filter((level) => level !== null).join(' / ')}`,
+                  ]
+                : []),
+              entry.pack,
+              entry.patron,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
         </div>
       ))}
-      <DetailMore count={sources.length - 3} />
     </div>
   )
 }
 
-export function ItemDetailCard({
-  item,
-  variant = 'pane',
-  matchingBonuses = [],
-  setDetail,
-  onOpenItem,
-}: {
-  item: Item
-  variant?: 'pane' | 'hover'
+function ItemDescriptionView({ entries }: { entries: readonly string[] }): JSX.Element {
+  return (
+    <>
+      {entries.map((description, index) => (
+        <p key={index} className="resources-detail-description">
+          {description}
+        </p>
+      ))}
+    </>
+  )
+}
+
+function ItemDescriptionBriefView({ entries }: { entries: readonly string[] }): JSX.Element {
+  const descriptionRef = useRef<HTMLParagraphElement | null>(null)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [hasOverflow, setHasOverflow] = useState(false)
+  useLayoutEffect(() => {
+    const description = descriptionRef.current
+    if (!description) return
+    const measureOverflow = (): void => {
+      if (!isExpanded) setHasOverflow(description.scrollHeight > description.clientHeight)
+    }
+    measureOverflow()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measureOverflow)
+    observer.observe(description)
+    return () => observer.disconnect()
+  }, [entries, isExpanded])
+  return (
+    <>
+      <p
+        ref={descriptionRef}
+        className={`resources-detail-description resources-detail-description--brief${isExpanded ? ' resources-detail-description--expanded' : ''}`}
+      >
+        {entries[0]}
+      </p>
+      {(hasOverflow || isExpanded) && (
+        <DetailMoreButton
+          isExpanded={isExpanded}
+          onToggle={() => setIsExpanded((wasExpanded) => !wasExpanded)}
+          collapsedLabel="Show more"
+        />
+      )}
+    </>
+  )
+}
+
+function ItemStatsView({ entries }: { entries: readonly ItemStatSection[] }): JSX.Element {
+  return (
+    <>
+      {entries.map(({ itemId, primaryStats, extraStats, damageReductionBypasses }) => (
+        <DetailStats
+          key={itemId}
+          primaryStats={primaryStats}
+          extraStats={extraStats}
+          damageReductionBypasses={damageReductionBypasses}
+        />
+      ))}
+    </>
+  )
+}
+
+function ItemClickiesView({ entries }: { entries: readonly ItemClickie[] }): JSX.Element {
+  return (
+    <ul className="resources-clicky-list">
+      {entries.map((clickie) => (
+        <li key={clickie.name} className="resources-clicky-row">
+          <span className="resources-clicky-name">{clickie.name}</span>
+          {clickie.description && (
+            <p className="resources-bonus-description">{clickie.description}</p>
+          )}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+interface ItemDetailCardProps {
+  item: Item | null
   matchingBonuses?: string[]
   setDetail?: SetDetail | null
   onOpenItem?: (id: number, name: string) => void
-}): JSX.Element {
+  status?: ReactNode
+}
+
+function useItemDetailDefinition({
+  item,
+  matchingBonuses = [],
+  setDetail,
+  onOpenItem,
+  status,
+}: ItemDetailCardProps): DetailCardDefinition {
   const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
   const expandedSocketButtonRef = useRef<HTMLButtonElement | null>(null)
   const clearHoverCards = useClearHoverCards()
   const augmentLedgerId = useId()
-  const expandedSlot = item.augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
-  const displayedSetName = item.setName?.trim() || null
-  const detailKind = itemDetailKind(item)
-  const hasLinkedSource =
-    item.quests.length > 0 ||
-    item.questChains.length > 0 ||
-    item.sagas.length > 0 ||
-    item.adventurePackDrops.length > 0 ||
-    item.sourcesBeyondQuests.length > 0
+  const expandedSlot = item?.augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
+  const displayedSetName = item?.setName?.trim() || null
 
   function closeExpandedSocket(): void {
     expandedSocketButtonRef.current?.focus()
@@ -478,256 +621,201 @@ export function ItemDetailCard({
     setExpandedSlotSortOrder(null)
   }
 
+  const facts: DetailCardFact[] = [
+    {
+      label: 'ML',
+      value: item?.minimumLevel == null ? null : <span className="num">{item.minimumLevel}</span>,
+    },
+    { label: 'Gear slot', value: item?.equipmentSlot.trim() || null },
+    { label: 'Raid', value: item?.quests.some((quest) => quest.isRaid) ? 'Yes' : null },
+    {
+      label: 'Rare',
+      value:
+        item?.quests.some((quest) => quest.isRareLoot) ||
+        item?.adventurePackDrops.some((source) => source.isRareLoot) ||
+        item?.sourcesBeyondQuests.some((source) => source.isRareLoot) ||
+        item?.questChains.some((chain) => chain.isRareLoot) ||
+        item?.sagas.some((saga) => saga.isRareLoot)
+          ? 'Yes'
+          : null,
+    },
+    {
+      label: 'Set',
+      value: displayedSetName ? (
+        item?.setId ? (
+          <SetHoverAnchor setId={item.setId} name={displayedSetName} onOpenItem={onOpenItem} />
+        ) : (
+          displayedSetName
+        )
+      ) : null,
+    },
+    {
+      label: 'Augments',
+      value: item?.augmentSlots.length ? (
+        <AugmentSlotList
+          augmentSlots={item.augmentSlots}
+          expandedSlotSortOrder={expandedSlotSortOrder}
+          ledgerId={augmentLedgerId}
+          expandedSocketButtonRef={expandedSocketButtonRef}
+          onToggleSlot={(sortOrder) =>
+            setExpandedSlotSortOrder((current) => (current === sortOrder ? null : sortOrder))
+          }
+          onClose={closeExpandedSocket}
+        />
+      ) : null,
+    },
+  ]
+  if (!item)
+    return resourceStatusDefinition({
+      kicker: '',
+      name: 'Item',
+      facts,
+      status: status ?? 'Item unavailable',
+    })
+  const detailKind = itemDetailKind(item)
+  const statSection = itemStatSection(item, detailKind)
+  const enchantments = [
+    ...itemEffectRows({
+      item,
+      effects: item.effects,
+      matchingBonuses,
+      itemName: item.name,
+      modifiers: item.modifiers,
+      onOpenItem,
+    }),
+    ...(setDetail ? setEffectRows(setDetail, matchingBonuses, onOpenItem) : []),
+  ]
+  const sources = itemSourceEntries(item, onOpenItem)
+  const sections = [
+    detailCardSection({
+      key: 'description',
+      entries: item.description ? [item.description] : [],
+      FullView: ItemDescriptionView,
+      BriefView: ItemDescriptionBriefView,
+    }),
+    detailCardSection({
+      key: 'stats',
+      entries:
+        statSection.primaryStats.length ||
+        statSection.extraStats.length ||
+        statSection.damageReductionBypasses.length
+          ? [statSection]
+          : [],
+      FullView: ItemStatsView,
+    }),
+    detailCardSection({
+      key: 'enchantments',
+      entries: enchantments,
+      FullView: EffectListFullView,
+      BriefView: EffectListBriefView,
+      briefEntryLimit: 5,
+    }),
+    detailCardSection({
+      key: 'clickies',
+      heading: 'Clickies',
+      entries: item.clickies,
+      FullView: ItemClickiesView,
+    }),
+    detailCardSection({
+      key: 'sources',
+      heading: 'Obtained from',
+      entries: sources,
+      FullView: ItemSourcesFullView,
+      BriefView: ItemSourcesBriefView,
+      briefEntryLimit: 3,
+    }),
+    detailCardSection({
+      key: 'source-location',
+      heading: 'Obtained from',
+      entries: sources.length === 0 && item.dropLocation ? [item.dropLocation] : [],
+      FullView: ItemDescriptionView,
+    }),
+    detailCardSection({
+      key: 'set-status',
+      entries: status ? [status] : [],
+      FullView: ResourceStatusView,
+    }),
+  ]
+  const badges = (
+    <>
+      {item.isLegacy && (
+        <span className="resources-chip" data-kind="legacy">
+          Legacy
+        </span>
+      )}
+      {item.sourcesBeyondQuests.some((source) => source.kind === 'craftingSystem') && (
+        <span className="resources-chip" data-kind="craftable">
+          Craftable
+        </span>
+      )}
+    </>
+  )
+  const paneFooter = (
+    <footer className="resources-detail-actions">
+      <div className="resources-detail-action-buttons">
+        <button
+          type="button"
+          className="btn-primary"
+          disabled
+          title="Compare list arrives with Phase 8"
+        >
+          Add to compare
+        </button>
+        <button
+          type="button"
+          className="btn-ghost"
+          disabled
+          title="Gear comparison arrives with Phase 8"
+        >
+          Compare in Gear
+        </button>
+        <button
+          type="button"
+          className="btn-ghost"
+          disabled
+          title="Farm checklist arrives with Phase 10"
+        >
+          Add to farm list
+        </button>
+      </div>
+      <p className="resources-detail-actions-note">
+        Actions arrive with the Gear and Farm checklist phases.
+      </p>
+    </footer>
+  )
+  return {
+    kicker: item.type ? `${item.equipmentSlot} · ${item.type}` : item.category,
+    name: item.name,
+    titleId: DETAIL_TITLE_ID,
+    badges,
+    facts,
+    sections,
+    paneActions: (
+      <ItemHeaderActions name={item.name} wikiUrl={item.wikiUrl} wikiPageName={item.name} />
+    ),
+    paneFooter,
+    afterHeader: expandedSlot ? (
+      <AugmentCandidateLedger
+        slot={expandedSlot}
+        ledgerId={augmentLedgerId}
+        onClose={closeExpandedSocket}
+      />
+    ) : null,
+  }
+}
+
+export function ItemDetailCard(props: ItemDetailCardProps): JSX.Element {
+  const definition = useItemDetailDefinition(props)
   return (
     <div
-      className={`resources-detail-body${detailKind === 'weapon' ? ' resources-detail-body--weapon' : ''}`}
+      className={`resources-detail-body${props.item && itemDetailKind(props.item) === 'weapon' ? ' resources-detail-body--weapon' : ''}`}
     >
-      <DetailCard
-        variant={variant}
-        header={
-          <DetailHeader
-            name={item.name}
-            kicker={item.type ? `${item.equipmentSlot} · ${item.type}` : item.category}
-            wikiUrl={item.wikiUrl}
-            wikiPageName={item.name}
-            isLegacy={item.isLegacy}
-            isCraftable={item.sourcesBeyondQuests.some(
-              (source) => source.kind === 'craftingSystem',
-            )}
-            variant={variant}
-            facts={
-              <>
-                <DetailFact label="ML">
-                  {item.minimumLevel === null ? null : (
-                    <span className="num">{item.minimumLevel}</span>
-                  )}
-                </DetailFact>
-                <DetailFact label="Gear slot">{item.equipmentSlot.trim() || null}</DetailFact>
-                <DetailFact label="Raid">
-                  {item.quests.some((quest) => quest.isRaid) ? 'Yes' : null}
-                </DetailFact>
-                <DetailFact label="Rare">
-                  {item.quests.some((quest) => quest.isRareLoot) ||
-                  item.adventurePackDrops.some((source) => source.isRareLoot) ||
-                  item.sourcesBeyondQuests.some((source) => source.isRareLoot) ||
-                  item.questChains.some((chain) => chain.isRareLoot) ||
-                  item.sagas.some((saga) => saga.isRareLoot)
-                    ? 'Yes'
-                    : null}
-                </DetailFact>
-                <DetailFact label="Set">
-                  {displayedSetName ? (
-                    item.setId ? (
-                      <SetHoverAnchor
-                        setId={item.setId}
-                        name={displayedSetName}
-                        onOpenItem={onOpenItem}
-                      />
-                    ) : (
-                      displayedSetName
-                    )
-                  ) : null}
-                </DetailFact>
-                <DetailFact label="Augments">
-                  {item.augmentSlots.length > 0 ? (
-                    <AugmentSlotList
-                      augmentSlots={item.augmentSlots}
-                      expandedSlotSortOrder={expandedSlotSortOrder}
-                      ledgerId={augmentLedgerId}
-                      expandedSocketButtonRef={expandedSocketButtonRef}
-                      onToggleSlot={(sortOrder) =>
-                        setExpandedSlotSortOrder((current) =>
-                          current === sortOrder ? null : sortOrder,
-                        )
-                      }
-                      onClose={closeExpandedSocket}
-                    />
-                  ) : null}
-                </DetailFact>
-              </>
-            }
-          />
-        }
-        afterHeader={
-          expandedSlot && (
-            <AugmentCandidateLedger
-              slot={expandedSlot}
-              ledgerId={augmentLedgerId}
-              onClose={closeExpandedSocket}
-            />
-          )
-        }
-      >
-        {variant === 'pane' && item.description && (
-          <p className="resources-detail-description">{item.description}</p>
-        )}
-        <ItemDetailStats key={item.id} item={item} kind={detailKind} />
-        {variant === 'hover' &&
-          item.modifiers.flatMap((modifier) => {
-            const damage = damageExpression(modifier)
-            return damage
-              ? [
-                  <DetailValueRow
-                    key={modifier.id}
-                    label="Damage"
-                    value={damage}
-                    tone="damage"
-                    className="hover-card-row"
-                  />,
-                ]
-              : []
-          })}
-        <EffectList
-          key={`effects-${item.id}`}
-          item={item}
-          itemName={item.name}
-          modifiers={item.modifiers}
-          effects={item.effects}
-          setDetail={setDetail}
-          variant={variant}
-          matchingBonuses={matchingBonuses}
-          onOpenItem={onOpenItem}
-        />
-        {variant === 'pane' && item.clickies.length > 0 && (
-          <DetailCardSection heading="Clickies">
-            <ul className="resources-clicky-list">
-              {item.clickies.map((c) => (
-                <li key={c.name} className="resources-clicky-row">
-                  <span className="resources-clicky-name">{c.name}</span>
-                  {c.description && <p className="resources-bonus-description">{c.description}</p>}
-                </li>
-              ))}
-            </ul>
-          </DetailCardSection>
-        )}
-        {hasLinkedSource ? (
-          <DetailCardSection heading={variant === 'hover' ? 'Drops from' : 'Obtained from'}>
-            {variant === 'hover' ? (
-              <HoverSourceSummary item={item} onOpenItem={onOpenItem} />
-            ) : (
-              <ul className="resources-item-source-list">
-                {item.quests.map((quest: LootQuest) => (
-                  <ObtainedFromRow
-                    key={quest.id}
-                    wikiPageName={quest.name}
-                    descriptorParts={[
-                      ...quest.chests.map((chest) => (
-                        <span key={chest} className="resources-item-source-chest">
-                          {sentenceCased(chest)}
-                        </span>
-                      )),
-                      ...(quest.isEndReward ? ['End reward'] : []),
-                    ]}
-                    isRaid={quest.isRaid}
-                    isRareLoot={quest.isRareLoot}
-                    level={quest.level}
-                    epicLevel={quest.epicLevel}
-                    pack={quest.pack}
-                    patron={quest.patron}
-                  >
-                    <QuestHoverAnchor questId={quest.id} onOpenItem={onOpenItem}>
-                      {quest.name}
-                    </QuestHoverAnchor>
-                  </ObtainedFromRow>
-                ))}
-                {item.adventurePackDrops.map((packDrop) => (
-                  <ItemSourceRow key={packDrop.key} itemSource={packDrop} onOpenItem={onOpenItem} />
-                ))}
-                {item.questChains.map((questChain) => (
-                  <ObtainedFromRow
-                    key={`chain-${questChain.id}`}
-                    wikiPageName={questChain.name}
-                    wikiUrl={questChain.wikiUrl}
-                    descriptorParts={['Chain end reward']}
-                    isRareLoot={questChain.isRareLoot}
-                  >
-                    <SourceHoverAnchor
-                      kind="questChain"
-                      id={questChain.id}
-                      name={questChain.name}
-                      wikiUrl={questChain.wikiUrl}
-                      onOpenItem={onOpenItem}
-                    >
-                      {questChain.name}
-                    </SourceHoverAnchor>
-                  </ObtainedFromRow>
-                ))}
-                {item.sagas.map((saga) => (
-                  <ObtainedFromRow
-                    key={`saga-${saga.id}-${saga.tier}`}
-                    wikiPageName={saga.name}
-                    wikiUrl={saga.wikiUrl}
-                    descriptorParts={[
-                      'Saga reward',
-                      ...(saga.tier ? [sentenceCased(saga.tier)] : []),
-                    ]}
-                    isRareLoot={saga.isRareLoot}
-                  >
-                    <SourceHoverAnchor
-                      kind="saga"
-                      id={saga.id}
-                      name={saga.name}
-                      wikiUrl={saga.wikiUrl}
-                      onOpenItem={onOpenItem}
-                    >
-                      {saga.name}
-                    </SourceHoverAnchor>
-                  </ObtainedFromRow>
-                ))}
-                {item.sourcesBeyondQuests.map((itemSource) => (
-                  <ItemSourceRow
-                    key={itemSource.key}
-                    itemSource={itemSource}
-                    onOpenItem={onOpenItem}
-                  />
-                ))}
-              </ul>
-            )}
-          </DetailCardSection>
-        ) : (
-          item.dropLocation && (
-            <DetailCardSection heading={variant === 'hover' ? 'Drops from' : 'Obtained from'}>
-              <p className="resources-detail-description">{item.dropLocation}</p>
-            </DetailCardSection>
-          )
-        )}
-        {variant === 'hover' && (
-          <DetailCardFooter>Click a row in the list to open it</DetailCardFooter>
-        )}
-        {variant === 'pane' && (
-          <footer className="resources-detail-actions">
-            <div className="resources-detail-action-buttons">
-              <button
-                type="button"
-                className="btn-primary"
-                disabled
-                title="Compare list arrives with Phase 8"
-              >
-                Add to compare
-              </button>
-              <button
-                type="button"
-                className="btn-ghost"
-                disabled
-                title="Gear comparison arrives with Phase 8"
-              >
-                Compare in Gear
-              </button>
-              <button
-                type="button"
-                className="btn-ghost"
-                disabled
-                title="Farm checklist arrives with Phase 10"
-              >
-                Add to farm list
-              </button>
-            </div>
-            <p className="resources-detail-actions-note">
-              Actions arrive with the Gear and Farm checklist phases.
-            </p>
-          </footer>
-        )}
-      </DetailCard>
+      <StructuredDetailCard variant="pane" {...definition} />
     </div>
   )
+}
+
+export function ItemHoverCard(props: ItemDetailCardProps): JSX.Element {
+  const definition = useItemDetailDefinition(props)
+  return <StructuredDetailCard variant="hover" {...definition} />
 }

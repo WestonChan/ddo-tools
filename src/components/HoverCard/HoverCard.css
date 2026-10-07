@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2-5);
-  width: min(300px, calc(100vw - 16px));
+  width: min(420px, calc(100vw - 16px));
   max-height: 70vh;
   overflow: auto;
   padding: var(--space-3);
@@ -26,6 +26,23 @@
   pointer-events: auto;
 }
 
+.hover-card .detail-card {
+  --detail-card-pin-reserve: calc(var(--space-8) * 3);
+}
+
+.hover-card__pin-status {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-3);
+  color: var(--text-faint);
+  font-size: var(--fs-micro);
+  pointer-events: none;
+}
+
+.hover-card--pinned .hover-card__pin-status {
+  color: var(--text-accent);
+}
+
 .hover-card--pinned:focus-visible {
   outline: 2px solid transparent;
 }
@@ -45,17 +62,4 @@
   column-gap: var(--space-2-5);
   border-bottom: 1px solid var(--border-hairline);
   font-size: var(--fs-hover-copy);
-}
-
-.hover-card__status {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  color: var(--text-faint);
-  font-size: var(--fs-micro);
-}
-
-.hover-card--pinned .hover-card__status > span:last-child {
-  color: var(--text-accent);
 }

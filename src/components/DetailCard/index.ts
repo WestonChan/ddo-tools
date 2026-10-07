@@ -1,11 +1,7 @@
-export {
-  DetailCard,
-  DetailCardHeader,
-  DetailCardFooter,
-  DetailFact,
-  DetailCardSection,
-  DetailMore,
-} from './DetailCard'
+export { StructuredDetailCard } from './DetailCard'
+export { DetailMoreButton } from './DetailMore'
+export { detailCardSection } from './DetailCardSections'
+export type { DetailCardDefinition, DetailCardFact } from './DetailCardSections'
 export { DetailValueRow } from './DetailValueRow'
 export { DetailStats } from './DetailStats'
 export type { DetailStat } from './DetailStats'

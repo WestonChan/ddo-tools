@@ -104,6 +104,11 @@
   --augment-fill: var(--stone-500);
 }
 
+.augment-slot-symbol--display,
+.augment-slot-word--display {
+  cursor: default;
+}
+
 :root[data-theme='light'] .augment-slot-symbol {
   --augment-fill: color-mix(in oklch, var(--augment-color) 62%, #fff);
   --augment-ink: #14110e;
@@ -142,10 +147,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.detail-card--hover .augment-slot-word {
-  font-size: var(--fs-hover-copy);
 }
 
 .augment-slot-word[aria-expanded='true'] {

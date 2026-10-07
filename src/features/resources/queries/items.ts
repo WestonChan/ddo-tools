@@ -199,6 +199,7 @@ export interface EffectDamage {
 export interface Effect {
   id: number
   name: string
+  kind?: ApiEffect['kind']
   verboseName: string
   description: string | null
   bonusType: string | null
@@ -586,6 +587,7 @@ export function toEffect(apiEffect: ApiEffect, sortOrder: number): Effect {
   return {
     id: apiEffect.effect_id,
     name: apiEffect.name,
+    ...(apiEffect.kind ? { kind: apiEffect.kind } : {}),
     verboseName: apiEffect.verbose_name,
     description: apiEffect.description ?? null,
     bonusType: apiEffect.bonus_type ?? null,

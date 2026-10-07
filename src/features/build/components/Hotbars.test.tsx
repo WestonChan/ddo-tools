@@ -275,8 +275,16 @@ describe('Hotbars', () => {
 
     await userEvent.hover(polarRay)
     const statBlock = await screen.findByRole('dialog')
+    expect(statBlock.querySelector('.detail-card')).toBeInTheDocument()
+    expect(within(statBlock).getByText('T to pin').parentElement).toBe(statBlock)
+    expect(within(statBlock).getByText('Ability')).toBeInTheDocument()
+    expect(within(statBlock).queryByRole('heading', { name: 'Damage calc' })).toBeNull()
+    expect(statBlock.querySelector('.ability-detail-card__damage-calc')).toHaveTextContent(
+      'Click → full breakdown in Damage calc',
+    )
     expect(polarRay).toHaveAccessibleDescription(/Polar Ray Type Spell Cooldown 2s/)
     expect(polarRay).toHaveAccessibleDescription(/Cost 45 SP/)
+    expect(document.querySelector('.sr-only h2')).toBeNull()
     expect(within(statBlock).getByText('Polar Ray')).toBeInTheDocument()
     for (const [rowLabel, rowValue] of [
       ['Type', 'Spell'],

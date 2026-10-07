@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { HoverCardProvider } from '../../../../components'
+import { HoverCardProvider, StructuredDetailCard, detailCardSection } from '../../../../components'
 import type { ApiEffect, ApiEffectDetail, ApiItemDetail, ApiSetDetail } from '../../../../lib/api'
 import capturedItem from '../../queries/fixtures/effects-item.json'
 import capturedWeapon from '../../queries/fixtures/effects-item-3479.json'
@@ -17,15 +17,78 @@ import capturedLargerSet from '../../queries/fixtures/effects-set-93.json'
 import capturedTextOnlyItem from '../../queries/fixtures/effects-item-3479.json'
 import capturedGroupAugment from '../../queries/fixtures/effects-augment-633.json'
 import capturedMixedGroupItem from '../../queries/fixtures/effects-item-457.json'
-import { toEffect, toItem, type Effect } from '../../queries/items'
-import { toSetDetail } from '../../queries/sets'
-import { EffectList } from './EffectList'
+import {
+  toEffect,
+  toItem,
+  type Effect,
+  type Item,
+  type ResourceModifier,
+} from '../../queries/items'
+import { toSetDetail, type SetDetail } from '../../queries/sets'
+import { EffectListFullView, EffectListBriefView } from './EffectList'
+import { itemEffectRows, setEffectRows } from './effectRows'
+
+function EffectList({
+  item,
+  itemName = '',
+  effects,
+  modifiers = [],
+  setDetail,
+  matchingBonuses = [],
+  variant = 'pane',
+  onOpenItem,
+}: {
+  item?: Item
+  itemName?: string
+  effects: Effect[]
+  modifiers?: ResourceModifier[]
+  setDetail?: SetDetail | null
+  matchingBonuses?: string[]
+  variant?: 'pane' | 'hover'
+  onOpenItem?: (id: number, name: string) => void
+}): React.JSX.Element {
+  const itemRows = [
+    ...itemEffectRows({ item, effects, itemName, modifiers, matchingBonuses, onOpenItem }),
+    ...(setDetail ? setEffectRows(setDetail, matchingBonuses, onOpenItem) : []),
+  ]
+  const sections = [
+    ...(itemRows.length
+      ? [
+          detailCardSection({
+            key: 'effects',
+            heading: 'Enchantments',
+            entries: itemRows,
+            FullView: EffectListFullView,
+            BriefView: EffectListBriefView,
+            briefEntryLimit: 5,
+          }),
+        ]
+      : []),
+  ]
+  return (
+    <StructuredDetailCard
+      variant={variant}
+      kicker="Item"
+      name="Item"
+      facts={[]}
+      sections={sections}
+    />
+  )
+}
 
 let effectWikiUrl: string | null = null
 let effectDetail: ApiEffectDetail | null = null
 vi.mock('../../queries/useItems', () => ({
-  useEffectDetail: () => ({
-    data: effectDetail ?? { kind: 'effect', wiki_url: effectWikiUrl, bonuses: [] },
+  useEffectDetail: (_path: string, isEnabled = true) => ({
+    data: isEnabled
+      ? (effectDetail ?? {
+          ...capturedCharismaDetail,
+          kind: 'effect',
+          wiki_url: effectWikiUrl,
+          bonuses: [],
+          damage: [],
+        })
+      : undefined,
   }),
   useSet: () => ({ isPending: true }),
 }))
@@ -61,7 +124,7 @@ it('shows the effect name in the sortable cell and its verbose name and descript
   const verbose = within(card).getByText('Enhancement Charisma 8')
   const stat = card.querySelector('.resources-effect-ungrouped-bonus')!
   const description = within(card).getByText('Passive: 8 Enhancement bonus to Charisma.')
-  expect(card.querySelector('.resources-hover-title')!.compareDocumentPosition(verbose) & 4).toBe(4)
+  expect(card.querySelector('.detail-card__name')!.compareDocumentPosition(verbose) & 4).toBe(4)
   expect(verbose.compareDocumentPosition(stat) & 4).toBe(4)
   expect(stat.compareDocumentPosition(description) & 4).toBe(4)
 })
@@ -178,7 +241,8 @@ it('keeps the enhancement value associated with its source item on hover', () =>
   act(() => vi.advanceTimersByTime(120))
   const card = screen.getByRole('dialog')
   expect(card).toHaveTextContent(`From ${item.name}`)
-  expect(within(card).getByText('+5')).toHaveClass('detail-value-row__value')
+  expect(within(card).getByText('+5')).toHaveTextContent('+5')
+  expect(within(card).getByText('+5').closest('.detail-card__fact')).toHaveTextContent('Value')
   expect(card).toHaveTextContent('+5 enhancement bonus to attack and damage rolls.')
 })
 
@@ -295,7 +359,7 @@ it('uses the detail kind for the hover card kicker', () => {
   fireEvent.mouseEnter(screen.getByRole('row', { name: /Charisma Enhancement \+8/ }))
   act(() => vi.advanceTimersByTime(120))
   expect(
-    screen.getByRole('dialog').querySelector('.hover-card__status .section-label'),
+    screen.getByRole('dialog').querySelector('.detail-card__kicker-row .section-label'),
   ).toHaveTextContent('Stat')
 })
 
@@ -438,6 +502,9 @@ it('explains rounded up and rounded down bonuses from a captured Riposte item', 
   expect(card).toHaveTextContent('+3')
   expect(card).toHaveTextContent('+2')
   expect(within(card).getAllByText('Calculated')).toHaveLength(2)
+  cleanup()
+  render(<EffectList effects={[effect]} variant="hover" />)
+  expect(screen.getByText('Riposte').closest('.resources-hover-effect-row')).toHaveTextContent('≈')
 })
 
 it('explains a default amount and a fixed amount from captured effect lines', () => {

@@ -6,6 +6,7 @@ import capturedWeapon from '../src/features/resources/queries/fixtures/effects-i
 import capturedShield from '../src/features/resources/queries/fixtures/effects-item-8203.json' with { type: 'json' }
 import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
+import charismaDetail from '../src/features/resources/queries/fixtures/effect-detail-6.json' with { type: 'json' }
 
 async function routeFocusRestoreItems(page: Page, width = 1440): Promise<void> {
   const items = [
@@ -601,6 +602,44 @@ test('augment symbols keep their shape, focus ring, colour, and mobile bounds', 
     expect(colors.background).toBe(colors.expectedBackground)
     expect(colors.ink).toBe('rgb(20, 17, 14)')
   }
+})
+
+test('the item pane keeps the original kicker and title positions at desktop width', async ({
+  page,
+}) => {
+  const item = { ...capturedArmor, id: 633, name: 'Armor of Sunlight' }
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response = path === '/v1/items/633' ? item : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+  await page.goto('/resources/items/633')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const title = pane.getByRole('heading', {
+    name: 'Armor of Sunlight',
+    level: 2,
+    exact: true,
+  })
+  await expect(title).toBeVisible()
+  const positions = await pane.locator('.detail-card__header').evaluate((header) => {
+    const kicker = header.querySelector<HTMLElement>('.detail-card__kicker-row .section-label')!
+    const title = header.querySelector<HTMLElement>('.detail-card__name')!
+    return {
+      kickerToTitle: title.getBoundingClientRect().y - kicker.getBoundingClientRect().y,
+      titleY: title.getBoundingClientRect().y - header.getBoundingClientRect().y,
+      titleYInPane:
+        title.getBoundingClientRect().y -
+        header.closest('[data-detail-pane]')!.getBoundingClientRect().y,
+    }
+  })
+  expect(Math.round(positions.kickerToTitle)).toBe(18)
+  expect(Math.round(positions.titleY)).toBe(33)
+  expect(Math.round(positions.titleYInPane)).toBe(86)
 })
 
 test('Escape from a tabbed detail pane returns to its focused list row at wide and narrow widths', async ({
@@ -1712,4 +1751,201 @@ test('the detail pane displays the item name once beside the list and takes over
   await expect(page.getByRole('row', { name: /Beholder Plate Armor/ })).toBeFocused()
   await page.goForward()
   await expect(detailPane).toBeVisible()
+})
+
+test('pinned item cards keep one fact row, three weapon stat columns, and expandable rows', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  const slot = capturedArmor.augment_slots[0]
+  const items = [
+    {
+      ...capturedArmor,
+      id: 9001,
+      name: 'Three Socket Armor',
+      set: null,
+      set_name: null,
+      augment_slots: ['blue', 'green', 'colorless'].map((label, sort_order) => ({
+        ...slot,
+        family: 'standard',
+        label,
+        variant: label,
+        sort_order,
+      })),
+    },
+    { ...capturedWeapon, id: 9002, name: 'Five Stat Weapon', set: null, set_name: null },
+  ]
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = items.find((candidate) => path === `/v1/items/${candidate.id}`)
+    const response =
+      item ??
+      (path === '/v1/items'
+        ? {
+            total: items.length,
+            limit: 200,
+            offset: 0,
+            items: items.map((candidate) => ({
+              id: candidate.id,
+              name: candidate.name,
+              slot: candidate.slot,
+              category: candidate.category,
+              item_type: candidate.item_type,
+              minimum_level: candidate.minimum_level,
+              enhancement_bonus: candidate.enhancement_bonus,
+              icon: candidate.icon,
+              pack: null,
+              is_raid: false,
+              is_rare: false,
+              is_legacy: candidate.is_legacy,
+            })),
+          }
+        : path === '/v1/augments'
+          ? { total: 0, limit: 200, offset: 0, augments: [] }
+          : [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+  await page.goto('/resources/items/9001')
+  await page.getByRole('row', { name: /Three Socket Armor/ }).hover()
+  const armorCard = page.locator('.hover-card[data-kind="item"]')
+  await expect(armorCard).toBeVisible()
+  await page.keyboard.press('t')
+  await expect(armorCard).toHaveClass(/hover-card--pinned/)
+  const armorKicker = await armorCard
+    .locator('.detail-card__kicker-row .section-label')
+    .boundingBox()
+  const armorPinStatus = await armorCard.locator('.hover-card__pin-status').boundingBox()
+  expect(armorKicker).not.toBeNull()
+  expect(armorPinStatus).not.toBeNull()
+  expect(armorKicker!.x + armorKicker!.width).toBeLessThanOrEqual(armorPinStatus!.x)
+  const factTops = await armorCard
+    .locator('.detail-card__fact')
+    .evaluateAll((facts) => facts.map((fact) => Math.round(fact.getBoundingClientRect().top)))
+  expect(new Set(factTops).size).toBe(1)
+  const sourceRow = armorCard.locator('.resources-item-source-brief-row').first()
+  await expect(sourceRow).toBeVisible()
+  const sourcePositions = await sourceRow.evaluate((row) => {
+    const rowBounds = row.getBoundingClientRect()
+    const rowStyle = getComputedStyle(row)
+    const inlineStart =
+      Number.parseFloat(rowStyle.borderLeftWidth) + Number.parseFloat(rowStyle.paddingLeft)
+    const inlineEnd =
+      Number.parseFloat(rowStyle.borderRightWidth) + Number.parseFloat(rowStyle.paddingRight)
+    const name = row.firstElementChild!.getBoundingClientRect()
+    const details = row.lastElementChild!.getBoundingClientRect()
+    return {
+      contentLeft: rowBounds.left + inlineStart,
+      contentWidth: rowBounds.width - inlineStart - inlineEnd,
+      nameLeft: name.left,
+      nameWidth: name.width,
+      nameBottom: name.bottom,
+      detailsLeft: details.left,
+      detailsTop: details.top,
+    }
+  })
+  expect(Math.abs(sourcePositions.nameWidth - sourcePositions.contentWidth)).toBeLessThanOrEqual(1)
+  expect(Math.abs(sourcePositions.nameLeft - sourcePositions.contentLeft)).toBeLessThanOrEqual(1)
+  expect(Math.abs(sourcePositions.detailsLeft - sourcePositions.nameLeft)).toBeLessThanOrEqual(1)
+  expect(sourcePositions.detailsTop).toBeGreaterThanOrEqual(sourcePositions.nameBottom)
+  await page.keyboard.press('Escape')
+  await expect(armorCard).toHaveCount(0)
+
+  await page.getByRole('row', { name: /Five Stat Weapon/ }).hover()
+  const weaponCard = page.locator('.hover-card[data-kind="item"]')
+  await expect(weaponCard).toBeVisible()
+  await page.keyboard.press('t')
+  await expect(weaponCard).toHaveClass(/hover-card--pinned/)
+  const statTops = await weaponCard
+    .locator('.detail-fact-grid__cell')
+    .evaluateAll((cells) => cells.map((cell) => Math.round(cell.getBoundingClientRect().top)))
+  expect(statTops.length).toBeGreaterThanOrEqual(5)
+  expect(new Set(statTops.slice(0, 3)).size).toBe(1)
+  expect(statTops[3]).toBeGreaterThan(statTops[0])
+  const more = weaponCard.getByRole('button', { name: /\+\d+ more/ })
+  await expect(more).toBeVisible()
+  await more.click()
+  const showLess = weaponCard.getByRole('button', { name: 'Show less', exact: true })
+  await expect(showLess).toBeVisible()
+  await showLess.focus()
+  await page.keyboard.press('Enter')
+  await expect(weaponCard.getByRole('button', { name: /\+\d+ more/ })).toBeVisible()
+})
+
+test('a loading bonus keeps its kicker line height until the kind arrives', async ({ page }) => {
+  let releaseEffectDetail!: () => void
+  const effectDetailResponse = new Promise<void>((resolve) => {
+    releaseEffectDetail = resolve
+  })
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    if (path === '/v1/effects/6') await effectDetailResponse
+    const response =
+      path === '/v1/items/7631'
+        ? capturedNecklace
+        : path === '/v1/effects/6'
+          ? charismaDetail
+          : path === '/v1/items'
+            ? {
+                total: 1,
+                limit: 200,
+                offset: 0,
+                items: [
+                  {
+                    id: capturedNecklace.id,
+                    name: capturedNecklace.name,
+                    slot: capturedNecklace.slot,
+                    category: capturedNecklace.category,
+                    item_type: capturedNecklace.item_type,
+                    minimum_level: capturedNecklace.minimum_level,
+                    enhancement_bonus: capturedNecklace.enhancement_bonus,
+                    icon: capturedNecklace.icon,
+                    pack: null,
+                    is_raid: false,
+                    is_rare: false,
+                    is_legacy: capturedNecklace.is_legacy,
+                  },
+                ],
+              }
+            : path === '/v1/augments'
+              ? { total: 0, limit: 200, offset: 0, augments: [] }
+              : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+  await page.goto('/resources/items/7631')
+  await page.evaluate(() => document.fonts.ready)
+  const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
+  const charismaRow = detailPane
+    .locator('.resources-effect-ledger .ledger-row')
+    .filter({ hasText: 'Charisma' })
+    .first()
+  await expect(charismaRow).toBeVisible()
+  await expect
+    .poll(async () => {
+      const before = await charismaRow.boundingBox()
+      await page.evaluate(
+        () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+      )
+      const after = await charismaRow.boundingBox()
+      return before !== null && after !== null && Math.abs(before.y - after.y) < 1
+    })
+    .toBe(true)
+  await charismaRow.hover()
+  const card = page.locator('.hover-card[data-kind="enchantment"]')
+  const kicker = card.locator('.detail-card__kicker-row')
+  await expect(card.getByText('T to pin')).toBeVisible()
+  await expect(kicker).toHaveText('')
+  await expect(card.locator('.detail-card__name')).toHaveText('Charisma')
+  await expect(card.locator('.detail-card__facts')).toContainText('Value+8')
+  const loadingHeight = (await kicker.boundingBox())?.height
+  releaseEffectDetail()
+  await expect(kicker).toHaveText('Stat')
+  expect((await kicker.boundingBox())?.height).toBe(loadingHeight)
 })

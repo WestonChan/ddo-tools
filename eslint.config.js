@@ -87,6 +87,33 @@ const popupRoleClaimRestriction = {
   },
 }
 
+const detailVariantComparisonRestriction = {
+  files: [
+    'src/features/resources/components/detail/**/*.{ts,tsx}',
+    'src/components/DetailCard/**/*.{ts,tsx}',
+  ],
+  ignores: ['**/*.test.{ts,tsx}', 'src/components/DetailCard/DetailCard.tsx'],
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector:
+          "BinaryExpression[left.name='variant'], BinaryExpression[right.name='variant'], BinaryExpression[left.property.name='variant'], BinaryExpression[right.property.name='variant']",
+        message: 'Select section views through the shared detail card renderer.',
+      },
+      {
+        selector:
+          "MemberExpression[computed=true][property.name='variant'], MemberExpression[computed=true][property.value='variant'], SwitchStatement[discriminant.name='variant'], SwitchStatement[discriminant.property.name='variant']",
+        message: 'Only the shared detail card renderer reads variant.',
+      },
+      {
+        selector: "Identifier[name='variant']",
+        message: 'Resource card definitions cannot receive or read variant.',
+      },
+    ],
+  },
+}
+
 const apiListResponseRestriction = {
   files: ['src/lib/api/**/*.ts', 'src/features/*/queries/**/*.{ts,tsx}'],
   ignores: ['**/index.ts'],
@@ -205,6 +232,7 @@ export default defineConfig([
   barrelReExportRestriction,
   exactRoleNameRestriction,
   popupRoleClaimRestriction,
+  detailVariantComparisonRestriction,
   apiListResponseRestriction,
   typeNamingRules,
   booleanNamingRules,

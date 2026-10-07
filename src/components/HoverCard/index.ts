@@ -3,7 +3,6 @@ export {
   HintAnchor,
   useHoverCard,
   useHoverCardControl,
-  useHoverCardLabel,
   useClearHoverCards,
   positionedCardBeside,
 } from './HoverCard'

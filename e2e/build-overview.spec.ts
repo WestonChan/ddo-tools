@@ -26,6 +26,19 @@ test('a filled slot shows its code without spilling the full ability name', asyn
   await expect(statBlock).toHaveCSS('clip-path', 'inset(50%)')
 })
 
+test('the ability card uses the shared header without covering its pin hint', async ({ page }) => {
+  const polarRay = page.getByRole('button', { name: 'Slot 4: Polar Ray', exact: true })
+  await polarRay.hover()
+  const card = page.locator('.hover-card[data-kind="ability"]')
+  await expect(card.getByText('T to pin')).toBeVisible()
+  await expect(card.locator('.detail-card__kicker-row .section-label')).toHaveText('Ability')
+  const kicker = await card.locator('.detail-card__kicker-row .section-label').boundingBox()
+  const pinStatus = await card.locator('.hover-card__pin-status').boundingBox()
+  expect(kicker).not.toBeNull()
+  expect(pinStatus).not.toBeNull()
+  expect(kicker!.x + kicker!.width).toBeLessThanOrEqual(pinStatus!.x)
+})
+
 test('dragging a pool ability onto an empty slot places it there and keeps the page', async ({
   page,
 }) => {

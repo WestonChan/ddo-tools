@@ -166,10 +166,12 @@ export function useEffectVocabulary(
 
 export function useEffectDetail(
   detailPath: string,
+  isEnabled = true,
 ): UseQueryResult<Awaited<ReturnType<typeof fetchEffectDetail>>> {
   return useQuery({
     queryKey: resourceQueryKeys.effectDetail(detailPath),
     queryFn: () => fetchEffectDetail(detailPath),
+    enabled: isEnabled,
     retry: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })

@@ -2,16 +2,17 @@ import type { JSX, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import {
   ApiErrorNotice,
-  DetailCardSection,
-  DetailMore,
+  AugmentSlotDisplay,
+  StructuredDetailCard,
+  detailCardSection,
+  type DetailCardDefinition,
+  type DetailCardFact,
   DetailValueRow,
   WikiLinkIcon,
   useClearHoverCards,
   useHoverCard,
-  useHoverCardLabel,
 } from '../../../../components'
 import {
-  useItem,
   useQuest,
   useSet,
   useAugment,
@@ -21,14 +22,22 @@ import {
   useCraftingSystem,
   useVendor,
   useEvent,
-  useEffectDetail,
 } from '../../queries/useItems'
-import type { SourceDetail, SourceDetailKind } from '../../queries/sources'
-import { toEffectDamage, type Effect } from '../../queries/items'
-import { effectDamageText, effectHoverCopy, effectValue, damageExpression } from './structuredRows'
-import { ItemDetailCard } from './ItemDetailCard'
-import { effectKindLabel } from '../effectKindLabel'
-import { numberWithPlusSign } from './numberWithPlusSign'
+import type {
+  SourceDetail,
+  SourceDetailKind,
+  SourceQuest,
+  SourceRecipe,
+} from '../../queries/sources'
+import type { Effect } from '../../queries/items'
+import type { SetTier } from '../../queries/sets'
+import { effectDamageText, effectValue, damageExpression } from './structuredRows'
+import { ItemHoverCard } from './ItemDetailCard'
+import { useItemCardContent } from './useItemCardContent'
+import { titleCasedSlotLabel } from './titleCasedSlotLabel'
+import { BonusHoverCard } from './BonusDetailCard'
+import { resourceStatusDefinition } from './resourceStatusDefinition'
+import { DamageView, DescriptionView } from './ResourceCardViews'
 
 type OpenItem = (id: number, name: string) => void
 
@@ -50,111 +59,122 @@ export function ItemHoverContent({
   onOpenItem?: OpenItem
 }): JSX.Element {
   const openItem = useOpenItemFromCard(onOpenItem)
-  const itemQuery = useItem(itemId)
-  const setQuery = useSet(itemQuery.data?.setId ?? null)
-  if (itemQuery.error)
-    return (
-      <ApiErrorNotice
-        error={itemQuery.error}
-        path={`/v1/items/${itemId}`}
-        missingResourceName="item"
-        onRetry={() => void itemQuery.refetch()}
-      />
-    )
-  if (itemQuery.isPending) return <span>Loading item…</span>
-  if (!itemQuery.data) return <span>Item unavailable</span>
-  return (
-    <>
-      <ItemDetailCard
-        item={itemQuery.data}
-        setDetail={setQuery.data}
-        variant="hover"
-        onOpenItem={openItem}
-      />
-      {setQuery.error && (
-        <ApiErrorNotice
-          error={setQuery.error}
-          path={`/v1/sets/${itemQuery.data.setId}`}
-          missingResourceName="set"
-          onRetry={() => void setQuery.refetch()}
-        />
-      )}
-    </>
-  )
+  const { item, setDetail, status } = useItemCardContent(itemId)
+  return <ItemHoverCard item={item} setDetail={setDetail} onOpenItem={openItem} status={status} />
 }
 
-export function AugmentHoverContent({ augmentId }: { augmentId: number }): JSX.Element {
+function useAugmentDetailDefinition(augmentId: number): DetailCardDefinition {
   const augmentQuery = useAugment(augmentId)
-  if (augmentQuery.error)
-    return (
-      <ApiErrorNotice
-        error={augmentQuery.error}
-        path={`/v1/augments/${augmentId}`}
-        missingResourceName="augment"
-        onRetry={() => void augmentQuery.refetch()}
-      />
-    )
-  if (augmentQuery.isPending) return <span>Loading augment…</span>
-  if (!augmentQuery.data) return <span>Augment unavailable</span>
+  if (augmentQuery.error || !augmentQuery.data)
+    return resourceStatusDefinition({
+      kicker: 'Augment',
+      name: 'Augment',
+      facts: augmentFacts(),
+      status: augmentQuery.error ? (
+        <ApiErrorNotice
+          error={augmentQuery.error}
+          path={`/v1/augments/${augmentId}`}
+          missingResourceName="augment"
+          onRetry={() => void augmentQuery.refetch()}
+        />
+      ) : augmentQuery.isPending ? (
+        'Loading augment…'
+      ) : (
+        'Augment unavailable'
+      ),
+    })
   const augment = augmentQuery.data
+  const facts = augmentFacts(augment)
+  const damage = augment.modifiers.flatMap((modifier) => {
+    const expression = damageExpression(modifier)
+    return expression ? [expression] : []
+  })
+  const description = augment.effectDescription || augment.description
+  const sections = [
+    detailCardSection({
+      key: 'enchantments',
+      heading: 'Enchantments',
+      entries: augment.effects.map((effect) => ({ effect, originName: augment.name })),
+      FullView: AugmentEffectsView,
+    }),
+    detailCardSection({ key: 'damage', heading: 'Damage', entries: damage, FullView: DamageView }),
+    detailCardSection({
+      key: 'description',
+      heading: 'Description',
+      entries: description ? [description] : [],
+      FullView: DescriptionView,
+    }),
+  ]
+  return { kicker: 'Augment', name: augment.name, facts, sections }
+}
+
+function augmentFacts(
+  augment?: NonNullable<ReturnType<typeof useAugment>['data']>,
+): DetailCardFact[] {
+  return [
+    {
+      label: 'ML',
+      value:
+        augment?.minimumLevel == null ? null : <span className="num">{augment.minimumLevel}</span>,
+    },
+    {
+      label: 'Slots',
+      value: augment?.slots.length ? (
+        <span className="resources-augment-slot-display">
+          {augment.slots.map((slot, index) => (
+            <AugmentSlotDisplay
+              key={`${slot}-${index}`}
+              family={slot.toLowerCase().startsWith('isle of dread:') ? 'dino' : 'standard'}
+              label={slot}
+              name={titleCasedSlotLabel(slot)}
+            />
+          ))}
+        </span>
+      ) : null,
+    },
+  ]
+}
+
+export function AugmentDetailCard({ augmentId }: { augmentId: number }): JSX.Element {
+  const definition = useAugmentDetailDefinition(augmentId)
+  return <StructuredDetailCard variant="pane" {...definition} />
+}
+
+export function AugmentHoverCard({ augmentId }: { augmentId: number }): JSX.Element {
+  const definition = useAugmentDetailDefinition(augmentId)
+  return <StructuredDetailCard variant="hover" {...definition} />
+}
+
+function AugmentEffectsView({
+  entries,
+}: {
+  entries: readonly { effect: Effect; originName: string }[]
+}): JSX.Element {
   return (
     <>
-      <strong className="resources-hover-title">{augment.name}</strong>
-      <span className="resources-hover-fact">
-        ML {augment.minimumLevel ?? '—'} · {augment.slots.join(' · ')}
-      </span>
-      {augment.effects.map((effect) => (
-        <AugmentEffectRow key={`${effect.id}-${effect.sortOrder}`} effect={effect} />
+      {entries.map(({ effect, originName }) => (
+        <AugmentEffectRow
+          key={`${effect.id}-${effect.sortOrder}`}
+          effect={effect}
+          originName={originName}
+        />
       ))}
-      {augment.modifiers.flatMap((modifier) => {
-        const damage = damageExpression(modifier)
-        return damage
-          ? [
-              <DetailValueRow
-                key={modifier.id}
-                label="Damage"
-                value={damage}
-                tone="damage"
-                className="hover-card-row"
-              />,
-            ]
-          : []
-      })}
-      {(augment.effectDescription || augment.description) && (
-        <p className="resources-hover-definition">
-          {augment.effectDescription || augment.description}
-        </p>
-      )}
     </>
   )
 }
 
-function AugmentEffectRow({ effect }: { effect: Effect }): JSX.Element {
-  const hoverCopy = effectHoverCopy(effect)
+function AugmentEffectRow({
+  effect,
+  originName,
+}: {
+  effect: Effect
+  originName: string
+}): JSX.Element {
   const anchor = useHoverCard({
     kind: 'enchantment',
     delayMs: 120,
     isRow: true,
-    render: () => (
-      <>
-        <EffectVocabularyHoverContent
-          detailPath={`/v1/effects/${effect.id}`}
-          verboseName={hoverCopy.verboseName}
-        />
-        {effect.bonuses.map((bonus) => (
-          <DetailValueRow
-            key={`${bonus.statName}-${bonus.bonusType}`}
-            label={bonus.statName}
-            value={numberWithPlusSign(bonus.value)}
-            type={bonus.bonusType}
-            className="hover-card-row"
-          />
-        ))}
-        {hoverCopy.description && (
-          <p className="resources-hover-definition">{hoverCopy.description}</p>
-        )}
-      </>
-    ),
+    render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (
     <div className="resources-hover-effect-row" tabIndex={0} {...anchor}>
@@ -174,88 +194,6 @@ function AugmentEffectRow({ effect }: { effect: Effect }): JSX.Element {
   )
 }
 
-export function EffectVocabularyHoverContent({
-  detailPath,
-  verboseName,
-}: {
-  detailPath: string
-  verboseName?: string | null
-}): JSX.Element {
-  const detailQuery = useEffectDetail(detailPath)
-  useHoverCardLabel(detailQuery.data ? effectKindLabel(detailQuery.data.kind) : null)
-  if (detailQuery.error)
-    return (
-      <ApiErrorNotice
-        error={detailQuery.error}
-        path={detailPath}
-        missingResourceName="bonus"
-        onRetry={() => void detailQuery.refetch()}
-      />
-    )
-  if (detailQuery.isPending) return <span>Loading bonus…</span>
-  if (!detailQuery.data) return <span>Bonus unavailable</span>
-  const detail = detailQuery.data
-  return (
-    <>
-      <strong className="resources-hover-title">
-        {detail.wiki_url ? (
-          <WikiLinkIcon
-            href={detail.wiki_url}
-            pageName={detail.name}
-            label={detail.name}
-            className="resources-effect-wiki-name"
-          />
-        ) : (
-          detail.name
-        )}
-      </strong>
-      {verboseName && <span className="resources-hover-fact">{verboseName}</span>}
-      <span className="resources-hover-fact">
-        {effectKindLabel(detail.kind)}
-        {detail.category ? ` · ${detail.category}` : ''}
-      </span>
-      {detail.tier && (
-        <span className="resources-hover-fact">
-          {detail.tier.group} · Step {detail.tier.rank} of {detail.tier.steps.length}
-        </span>
-      )}
-      {detail.bonuses.length > 0 && (
-        <DetailCardSection heading="Stats">
-          {detail.bonuses.map((bonus, index) => (
-            <div
-              key={`${bonus.target}-${bonus.bonus_type}-${index}`}
-              className="resources-hover-fact hover-card-row"
-            >
-              {bonus.target}
-              {bonus.bonus_type ? ` · ${bonus.bonus_type}` : ''}
-            </div>
-          ))}
-        </DetailCardSection>
-      )}
-      {detail.damage.map((damage, index) => (
-        <DetailValueRow
-          key={`damage-${index}`}
-          label="Damage"
-          value={effectDamageText(toEffectDamage(damage))}
-          tone="damage"
-          className="hover-card-row"
-        />
-      ))}
-      <DetailValueRow label="Items" value={String(detail.items.total)} className="hover-card-row" />
-      <DetailValueRow
-        label="Augments"
-        value={String(detail.augments.total)}
-        className="hover-card-row"
-      />
-      <DetailValueRow
-        label="Set tiers"
-        value={String(detail.set_tiers.total)}
-        className="hover-card-row"
-      />
-    </>
-  )
-}
-
 export function QuestHoverAnchor({
   questId,
   onOpenItem,
@@ -268,7 +206,7 @@ export function QuestHoverAnchor({
   const anchor = useHoverCard({
     kind: 'quest',
     delayMs: 120,
-    render: () => <QuestHoverContent questId={questId} onOpenItem={onOpenItem} />,
+    render: () => <QuestHoverCard questId={questId} onOpenItem={onOpenItem} />,
   })
   return (
     <span className="resources-hover-anchor" tabIndex={0} {...anchor}>
@@ -277,49 +215,88 @@ export function QuestHoverAnchor({
   )
 }
 
-function QuestHoverContent({
+function useQuestDetailDefinition({
   questId,
   onOpenItem,
 }: {
   questId: number
   onOpenItem?: OpenItem
-}): JSX.Element {
+}): DetailCardDefinition {
   const openItem = useOpenItemFromCard(onOpenItem)
   const questQuery = useQuest(questId)
-  if (questQuery.error)
-    return (
-      <ApiErrorNotice
-        error={questQuery.error}
-        path={`/v1/quests/${questId}`}
-        missingResourceName="quest"
-        onRetry={() => void questQuery.refetch()}
-      />
-    )
-  if (questQuery.isPending) return <span>Loading quest…</span>
-  if (!questQuery.data) return <span>Quest unavailable</span>
+  if (questQuery.error || !questQuery.data)
+    return resourceStatusDefinition({
+      kicker: 'Quest',
+      name: 'Quest',
+      facts: questFacts(),
+      status: questQuery.error ? (
+        <ApiErrorNotice
+          error={questQuery.error}
+          path={`/v1/quests/${questId}`}
+          missingResourceName="quest"
+          onRetry={() => void questQuery.refetch()}
+        />
+      ) : questQuery.isPending ? (
+        'Loading quest…'
+      ) : (
+        'Quest unavailable'
+      ),
+    })
   const quest = questQuery.data
   const uniqueItems = [...new Map(quest.items.map((item) => [item.id, item])).values()]
+  const facts = questFacts(quest)
+  const sections = [
+    detailCardSection({
+      key: 'drops',
+      heading: 'Drops here',
+      entries: uniqueItems.map((item) => ({ ...item, onOpenItem: openItem })),
+      FullView: LinkedItemsView,
+      briefEntryLimit: 5,
+    }),
+  ]
+  return { kicker: quest.isRaid ? 'Raid' : 'Quest', name: quest.name, facts, sections }
+}
+
+function questFacts(quest?: NonNullable<ReturnType<typeof useQuest>['data']>): DetailCardFact[] {
+  const levels = [quest?.level, quest?.epicLevel].filter((level): level is number => level != null)
+  return [
+    { label: 'Level', value: levels.length > 0 ? levels.join(' / ') : null },
+    { label: 'Pack', value: quest?.pack },
+    { label: 'Patron', value: quest?.patron },
+    { label: 'Raid', value: quest?.isRaid ? 'Yes' : null },
+  ]
+}
+
+export function QuestDetailCard(props: { questId: number; onOpenItem?: OpenItem }): JSX.Element {
+  const definition = useQuestDetailDefinition(props)
+  return <StructuredDetailCard variant="pane" {...definition} />
+}
+
+export function QuestHoverCard(props: { questId: number; onOpenItem?: OpenItem }): JSX.Element {
+  const definition = useQuestDetailDefinition(props)
+  return <StructuredDetailCard variant="hover" {...definition} />
+}
+
+type LinkedItem = {
+  id: number
+  name: string
+  slot: string
+  minimumLevel?: number | null
+  isRareLoot?: boolean
+  chest?: string | null
+  cost?: string | null
+  tier?: string | null
+  pack?: string | null
+  onOpenItem: OpenItem
+}
+
+function LinkedItemsView({ entries }: { entries: readonly LinkedItem[] }): JSX.Element {
   return (
-    <>
-      <strong className="resources-hover-title">{quest.name}</strong>
-      <span className="resources-hover-fact">
-        {[quest.pack, quest.isRaid ? 'Raid' : null].filter(Boolean).join(' · ')}
-      </span>
-      <DetailCardSection heading="Drops here">
-        <div className="resources-hover-rows">
-          {uniqueItems.slice(0, 5).map((item) => (
-            <LinkedItemRow
-              key={item.id}
-              id={item.id}
-              name={item.name}
-              slot={item.slot}
-              onOpenItem={openItem}
-            />
-          ))}
-        </div>
-        <DetailMore count={uniqueItems.length - 5} />
-      </DetailCardSection>
-    </>
+    <div className="resources-hover-rows">
+      {entries.map((item) => (
+        <LinkedItemRow key={item.id} {...item} />
+      ))}
+    </div>
   )
 }
 
@@ -327,13 +304,14 @@ function LinkedItemRow({
   id,
   name,
   slot,
+  minimumLevel,
+  isRareLoot,
+  chest,
+  cost,
+  tier,
+  pack,
   onOpenItem,
-}: {
-  id: number
-  name: string
-  slot: string
-  onOpenItem: OpenItem
-}): JSX.Element {
+}: LinkedItem): JSX.Element {
   const anchor = useHoverCard({
     kind: 'item',
     delayMs: 120,
@@ -349,6 +327,25 @@ function LinkedItemRow({
     >
       <span>{name}</span>
       <span>{slot}</span>
+      {((minimumLevel !== undefined && minimumLevel !== null) ||
+        isRareLoot ||
+        chest ||
+        cost ||
+        tier ||
+        pack) && (
+        <span className="resources-source-item-details">
+          {[
+            minimumLevel !== undefined && minimumLevel !== null ? `ML ${minimumLevel}` : null,
+            chest,
+            isRareLoot ? 'Rare' : null,
+            cost,
+            tier,
+            pack,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </span>
+      )}
     </button>
   )
 }
@@ -382,7 +379,6 @@ export function SourceHoverAnchor({
   const isHint = kind === 'challengePack' || kind === 'starter' || id === null
   const anchor = useHoverCard({
     kind: isHint ? 'hint' : kind,
-    label: isHint ? undefined : SOURCE_CARD_LABELS[kind],
     delayMs: 120,
     render: () =>
       isHint ? (
@@ -391,7 +387,7 @@ export function SourceHoverAnchor({
           <WikiLinkIcon href={wikiUrl ?? undefined} pageName={name} />
         </span>
       ) : (
-        <SourceHoverContent kind={kind} id={id} onOpenItem={onOpenItem} />
+        <SourceHoverContent kind={kind} id={id} name={name} onOpenItem={onOpenItem} />
       ),
   })
   return (
@@ -404,31 +400,35 @@ export function SourceHoverAnchor({
 function SourceHoverContent({
   kind,
   id,
+  name,
   onOpenItem,
 }: {
   kind: SourceDetailKind
   id: number
+  name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
   switch (kind) {
     case 'adventurePack':
-      return <AdventurePackHoverContent id={id} onOpenItem={onOpenItem} />
+      return <AdventurePackHoverContent id={id} name={name} onOpenItem={onOpenItem} />
     case 'questChain':
-      return <QuestChainHoverContent id={id} onOpenItem={onOpenItem} />
+      return <QuestChainHoverContent id={id} name={name} onOpenItem={onOpenItem} />
     case 'saga':
-      return <SagaHoverContent id={id} onOpenItem={onOpenItem} />
+      return <SagaHoverContent id={id} name={name} onOpenItem={onOpenItem} />
     case 'craftingSystem':
-      return <CraftingSystemHoverContent id={id} onOpenItem={onOpenItem} />
+      return <CraftingSystemHoverContent id={id} name={name} onOpenItem={onOpenItem} />
     case 'vendor':
-      return <VendorHoverContent id={id} onOpenItem={onOpenItem} />
+      return <VendorHoverContent id={id} name={name} onOpenItem={onOpenItem} />
     case 'event':
-      return <EventHoverContent id={id} onOpenItem={onOpenItem} />
+      return <EventHoverContent id={id} name={name} onOpenItem={onOpenItem} />
   }
 }
 
 function LoadedSourceCard({
   query,
   path,
+  kind,
+  name,
   onOpenItem,
 }: {
   query: {
@@ -438,136 +438,281 @@ function LoadedSourceCard({
     refetch: () => unknown
   }
   path: string
+  kind: SourceDetailKind
+  name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
-  const openItem = useOpenItemFromCard(onOpenItem)
-  if (query.error)
+  if (query.error || !query.data)
     return (
-      <ApiErrorNotice
-        error={query.error}
-        path={path}
-        missingResourceName="source"
-        onRetry={() => void query.refetch()}
+      <SourceHoverCard
+        source={null}
+        kind={kind}
+        name={name}
+        status={
+          query.error ? (
+            <ApiErrorNotice
+              error={query.error}
+              path={path}
+              missingResourceName="source"
+              onRetry={() => void query.refetch()}
+            />
+          ) : query.isPending ? (
+            'Loading source…'
+          ) : (
+            'Source unavailable'
+          )
+        }
       />
     )
-  if (query.isPending) return <span>Loading source…</span>
   const source = query.data
-  if (!source) return <span>Source unavailable</span>
-  const facts = [
-    source.pack,
-    source.isFreeToPlay === null ? null : source.isFreeToPlay ? 'Free to play' : 'Adventure pack',
-    source.location,
-    source.npc,
-    source.ingredientCount === null ? null : `${source.ingredientCount} ingredients`,
-  ].filter(Boolean)
+  return <SourceHoverCard source={source} onOpenItem={onOpenItem} />
+}
+
+type SourceDetailCardProps =
+  | { source: SourceDetail; onOpenItem?: OpenItem }
+  | {
+      source: null
+      kind: SourceDetailKind
+      name: string
+      status: ReactNode
+      onOpenItem?: OpenItem
+    }
+
+function useSourceDetailDefinition(props: SourceDetailCardProps): DetailCardDefinition {
+  const openItem = useOpenItemFromCard(props.onOpenItem)
+  if (props.source === null)
+    return resourceStatusDefinition({
+      kicker: SOURCE_CARD_LABELS[props.kind],
+      name: props.name,
+      facts: sourceFacts(props.kind),
+      status: props.status,
+    })
+  const source = props.source
+  const sections = [
+    detailCardSection({
+      key: 'quests',
+      heading: 'Quests',
+      entries: source.quests.map((quest) => ({ ...quest, onOpenItem: props.onOpenItem })),
+      FullView: SourceQuestsView,
+      briefEntryLimit: 5,
+    }),
+    detailCardSection({
+      key: 'items',
+      heading: source.kind === 'questChain' || source.kind === 'saga' ? 'Rewards' : 'Items',
+      entries: source.items.map((item) => ({ ...item, onOpenItem: openItem })),
+      FullView: LinkedItemsView,
+      briefEntryLimit: 5,
+    }),
+    detailCardSection({
+      key: 'recipes',
+      heading: 'Recipes',
+      entries: source.recipes,
+      FullView: SourceRecipesView,
+      briefEntryLimit: 5,
+    }),
+  ]
+  return {
+    kicker: SOURCE_CARD_LABELS[source.kind],
+    name: source.name,
+    facts: sourceFacts(source.kind, source),
+    sections,
+  }
+}
+
+export function SourceDetailCard(props: SourceDetailCardProps): JSX.Element {
+  const definition = useSourceDetailDefinition(props)
+  return <StructuredDetailCard variant="pane" {...definition} />
+}
+
+export function SourceHoverCard(props: SourceDetailCardProps): JSX.Element {
+  const definition = useSourceDetailDefinition(props)
+  return <StructuredDetailCard variant="hover" {...definition} />
+}
+
+function sourceFacts(kind: SourceDetailKind, source?: SourceDetail): DetailCardFact[] {
+  switch (kind) {
+    case 'adventurePack':
+      return [
+        {
+          label: 'Free to play',
+          value: source?.isFreeToPlay == null ? null : source.isFreeToPlay ? 'Yes' : 'No',
+        },
+      ]
+    case 'questChain':
+    case 'saga':
+      return [{ label: 'Pack', value: source?.pack }]
+    case 'craftingSystem':
+      return [
+        { label: 'Pack', value: source?.pack },
+        { label: 'NPC', value: source?.npc },
+        { label: 'Ingredients', value: source?.ingredientCount },
+      ]
+    case 'vendor':
+      return [
+        { label: 'Pack', value: source?.pack },
+        { label: 'Location', value: source?.location },
+      ]
+    case 'event':
+      return [{ label: 'Items', value: source?.items.length }]
+  }
+}
+
+function SourceQuestsView({
+  entries,
+}: {
+  entries: readonly (SourceQuest & { onOpenItem?: OpenItem })[]
+}): JSX.Element {
   return (
-    <>
-      <strong className="resources-hover-title">{source.name}</strong>
-      {facts.map((fact) => (
-        <span key={fact} className="resources-hover-fact">
-          {fact}
-        </span>
+    <div className="resources-hover-rows">
+      {entries.map((quest) => (
+        <div key={quest.id} className="resources-hover-row hover-card-row">
+          <QuestHoverAnchor questId={quest.id} onOpenItem={quest.onOpenItem}>
+            {quest.name}
+          </QuestHoverAnchor>
+          <span>{quest.level === null ? '' : `Level ${quest.level}`}</span>
+        </div>
       ))}
-      {source.quests.length > 0 && (
-        <DetailCardSection heading="Quests">
-          <div className="resources-hover-rows">
-            {source.quests.slice(0, 5).map((quest) => (
-              <div key={quest.id} className="resources-hover-row hover-card-row">
-                <QuestHoverAnchor questId={quest.id} onOpenItem={onOpenItem}>
-                  {quest.name}
-                </QuestHoverAnchor>
-                <span>{quest.level === null ? '' : `Level ${quest.level}`}</span>
-              </div>
-            ))}
-          </div>
-          <DetailMore count={source.quests.length - 5} />
-        </DetailCardSection>
-      )}
-      {source.items.length > 0 && (
-        <DetailCardSection
-          heading={source.kind === 'questChain' || source.kind === 'saga' ? 'Rewards' : 'Items'}
-        >
-          <div className="resources-hover-rows">
-            {source.items.slice(0, 5).map((item) => (
-              <LinkedItemRow key={item.id} {...item} onOpenItem={openItem} />
-            ))}
-          </div>
-          <DetailMore count={source.items.length - 5} />
-        </DetailCardSection>
-      )}
-      {source.recipes.length > 0 && (
-        <DetailCardSection heading="Recipes">
-          <div className="resources-hover-rows">
-            {source.recipes.slice(0, 5).map((recipe, index) => (
-              <div key={`${recipe.name}-${index}`} className="resources-hover-row hover-card-row">
-                <span>{recipe.name}</span>
-                <span>{recipe.outputs.join(' · ')}</span>
-              </div>
-            ))}
-          </div>
-          <DetailMore count={source.recipes.length - 5} />
-        </DetailCardSection>
-      )}
-    </>
+    </div>
+  )
+}
+
+function SourceRecipesView({ entries }: { entries: readonly SourceRecipe[] }): JSX.Element {
+  return (
+    <div className="resources-hover-rows">
+      {entries.map((recipe, index) => (
+        <div key={`${recipe.name}-${index}`} className="resources-hover-row hover-card-row">
+          <span>{recipe.name}</span>
+          <span>{recipe.outputs.join(' · ')}</span>
+        </div>
+      ))}
+    </div>
   )
 }
 
 function AdventurePackHoverContent({
   id,
+  name,
   onOpenItem,
 }: {
   id: number
+  name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
   const query = useAdventurePack(id)
   return (
-    <LoadedSourceCard query={query} path={`/v1/adventure-packs/${id}`} onOpenItem={onOpenItem} />
+    <LoadedSourceCard
+      query={query}
+      path={`/v1/adventure-packs/${id}`}
+      kind="adventurePack"
+      name={name}
+      onOpenItem={onOpenItem}
+    />
   )
 }
 
 function QuestChainHoverContent({
   id,
+  name,
   onOpenItem,
 }: {
   id: number
+  name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
   const query = useQuestChain(id)
-  return <LoadedSourceCard query={query} path={`/v1/quest-chains/${id}`} onOpenItem={onOpenItem} />
+  return (
+    <LoadedSourceCard
+      query={query}
+      path={`/v1/quest-chains/${id}`}
+      kind="questChain"
+      name={name}
+      onOpenItem={onOpenItem}
+    />
+  )
 }
 
-function SagaHoverContent({ id, onOpenItem }: { id: number; onOpenItem?: OpenItem }): JSX.Element {
+function SagaHoverContent({
+  id,
+  name,
+  onOpenItem,
+}: {
+  id: number
+  name: string
+  onOpenItem?: OpenItem
+}): JSX.Element {
   const query = useSaga(id)
-  return <LoadedSourceCard query={query} path={`/v1/sagas/${id}`} onOpenItem={onOpenItem} />
+  return (
+    <LoadedSourceCard
+      query={query}
+      path={`/v1/sagas/${id}`}
+      kind="saga"
+      name={name}
+      onOpenItem={onOpenItem}
+    />
+  )
 }
 
 function CraftingSystemHoverContent({
   id,
+  name,
   onOpenItem,
 }: {
   id: number
+  name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
   const query = useCraftingSystem(id)
   return (
-    <LoadedSourceCard query={query} path={`/v1/crafting-systems/${id}`} onOpenItem={onOpenItem} />
+    <LoadedSourceCard
+      query={query}
+      path={`/v1/crafting-systems/${id}`}
+      kind="craftingSystem"
+      name={name}
+      onOpenItem={onOpenItem}
+    />
   )
 }
 
 function VendorHoverContent({
   id,
+  name,
   onOpenItem,
 }: {
   id: number
+  name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
   const query = useVendor(id)
-  return <LoadedSourceCard query={query} path={`/v1/vendors/${id}`} onOpenItem={onOpenItem} />
+  return (
+    <LoadedSourceCard
+      query={query}
+      path={`/v1/vendors/${id}`}
+      kind="vendor"
+      name={name}
+      onOpenItem={onOpenItem}
+    />
+  )
 }
 
-function EventHoverContent({ id, onOpenItem }: { id: number; onOpenItem?: OpenItem }): JSX.Element {
+function EventHoverContent({
+  id,
+  name,
+  onOpenItem,
+}: {
+  id: number
+  name: string
+  onOpenItem?: OpenItem
+}): JSX.Element {
   const query = useEvent(id)
-  return <LoadedSourceCard query={query} path={`/v1/events/${id}`} onOpenItem={onOpenItem} />
+  return (
+    <LoadedSourceCard
+      query={query}
+      path={`/v1/events/${id}`}
+      kind="event"
+      name={name}
+      onOpenItem={onOpenItem}
+    />
+  )
 }
 
 export function SetHoverAnchor({
@@ -582,7 +727,7 @@ export function SetHoverAnchor({
   const anchor = useHoverCard({
     kind: 'set',
     delayMs: 120,
-    render: () => <SetHoverContent setId={setId} onOpenItem={onOpenItem} />,
+    render: () => <SetHoverCard setId={setId} onOpenItem={onOpenItem} />,
   })
   return (
     <span className="resources-hover-anchor" tabIndex={0} {...anchor}>
@@ -591,85 +736,110 @@ export function SetHoverAnchor({
   )
 }
 
-export function SetHoverContent({
+function useSetDetailDefinition({
   setId,
   onOpenItem,
 }: {
   setId: number
   onOpenItem?: OpenItem
-}): JSX.Element {
+}): DetailCardDefinition {
   const openItem = useOpenItemFromCard(onOpenItem)
   const setQuery = useSet(setId)
-  if (setQuery.error)
-    return (
-      <ApiErrorNotice
-        error={setQuery.error}
-        path={`/v1/sets/${setId}`}
-        missingResourceName="set"
-        onRetry={() => void setQuery.refetch()}
-      />
-    )
-  if (setQuery.isPending) return <span>Loading set…</span>
-  if (!setQuery.data) return <span>Set unavailable</span>
+  if (setQuery.error || !setQuery.data)
+    return resourceStatusDefinition({
+      kicker: 'Set',
+      name: 'Set',
+      facts: setFacts(),
+      status: setQuery.error ? (
+        <ApiErrorNotice
+          error={setQuery.error}
+          path={`/v1/sets/${setId}`}
+          missingResourceName="set"
+          onRetry={() => void setQuery.refetch()}
+        />
+      ) : setQuery.isPending ? (
+        'Loading set…'
+      ) : (
+        'Set unavailable'
+      ),
+    })
   const set = setQuery.data
+  const facts = setFacts(set)
+  const sections = [
+    detailCardSection({
+      key: 'pieces',
+      heading: 'Pieces',
+      entries: set.items.map((item) => ({ ...item, onOpenItem: openItem })),
+      FullView: LinkedItemsView,
+      briefEntryLimit: 5,
+    }),
+    detailCardSection({
+      key: 'set-bonuses',
+      heading: 'Set bonuses',
+      entries: set.tiers.map((tier) => ({ ...tier, originName: set.name })),
+      FullView: SetTiersView,
+    }),
+  ]
+  return { kicker: 'Set', name: set.name, facts, sections }
+}
+
+function setFacts(set?: NonNullable<ReturnType<typeof useSet>['data']>): DetailCardFact[] {
+  return [
+    { label: 'Pieces', value: set?.items.length },
+    { label: 'Bonus tiers', value: set?.tiers.length },
+  ]
+}
+
+export function SetDetailCard(props: { setId: number; onOpenItem?: OpenItem }): JSX.Element {
+  const definition = useSetDetailDefinition(props)
+  return <StructuredDetailCard variant="pane" {...definition} />
+}
+
+export function SetHoverCard(props: { setId: number; onOpenItem?: OpenItem }): JSX.Element {
+  const definition = useSetDetailDefinition(props)
+  return <StructuredDetailCard variant="hover" {...definition} />
+}
+
+function SetTiersView({
+  entries,
+}: {
+  entries: readonly (SetTier & { originName: string })[]
+}): JSX.Element {
   return (
     <>
-      <strong className="resources-hover-title">{set.name}</strong>
-      <span className="resources-hover-fact">
-        {set.items.length} {set.items.length === 1 ? 'piece' : 'pieces'}
-      </span>
-      <DetailCardSection heading="Pieces">
-        {set.items.slice(0, 5).map((item) => (
-          <LinkedItemRow
-            key={item.id}
-            id={item.id}
-            name={item.name}
-            slot={item.slot}
-            onOpenItem={openItem}
-          />
-        ))}
-        <DetailMore count={set.items.length - 5} />
-      </DetailCardSection>
-      <DetailCardSection heading="Set bonuses">
-        {set.tiers.map((tier) => (
-          <div key={tier.equippedCount}>
-            <div className="resources-set-tier hover-card-row">
-              <span>{tier.equippedCount} pieces</span>
-            </div>
-            {tier.effects.map((effect) => (
-              <SetEffectRow key={`${effect.id}-${effect.sortOrder}`} effect={effect} />
-            ))}
+      {entries.map((tier) => (
+        <div key={tier.equippedCount}>
+          <div className="resources-set-tier hover-card-row">
+            <span>{tier.equippedCount} pieces</span>
           </div>
-        ))}
-      </DetailCardSection>
+          {tier.effects.map((effect) => (
+            <SetEffectRow
+              key={`${effect.id}-${effect.sortOrder}`}
+              effect={effect}
+              originName={tier.originName}
+            />
+          ))}
+        </div>
+      ))}
     </>
   )
 }
 
-function SetEffectRow({ effect }: { effect: Effect }): JSX.Element {
-  const hoverCopy = effectHoverCopy(effect)
+function SetEffectRow({ effect, originName }: { effect: Effect; originName: string }): JSX.Element {
   const anchor = useHoverCard({
     kind: 'enchantment',
     delayMs: 120,
     isRow: true,
-    render: () => (
-      <>
-        <EffectVocabularyHoverContent
-          detailPath={`/v1/effects/${effect.id}`}
-          verboseName={hoverCopy.verboseName}
-        />
-        {hoverCopy.description && (
-          <p className="resources-hover-definition">{hoverCopy.description}</p>
-        )}
-      </>
-    ),
+    render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (
     <div className="resources-hover-effect-row" tabIndex={0} {...anchor}>
-      <div className="resources-hover-row hover-card-row">
-        <span>{effect.name}</span>
-        <span>{effect.bonusType}</span>
-      </div>
+      <DetailValueRow
+        label={effect.name}
+        value={effectValue(effect) ?? '—'}
+        type={effect.bonusType ?? '—'}
+        className="hover-card-row"
+      />
       {effect.damage.map((damage, index) => (
         <span key={index} className="resources-effect-damage">
           {effectDamageText(damage)}

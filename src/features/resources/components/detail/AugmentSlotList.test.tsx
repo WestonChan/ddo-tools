@@ -202,7 +202,7 @@ it('opens a plain ledger of fitting augments with name, level and slots but no s
   expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
   expect(screen.getByRole('columnheader', { name: /ML/ })).toBeInTheDocument()
   expect(screen.getByRole('columnheader', { name: /Slots/ })).toBeInTheDocument()
-  expect(screen.getByRole('row', { name: /Ruby of Flame/ })).toHaveTextContent('red · colorless')
+  expect(screen.getByRole('row', { name: /Ruby of Flame/ })).toHaveTextContent('Red · Colorless')
   expect(screen.queryByRole('listbox')).toBeNull()
   expect(screen.queryByRole('option')).toBeNull()
   await userEvent.click(screen.getByRole('row', { name: /Ruby of Flame/ }))

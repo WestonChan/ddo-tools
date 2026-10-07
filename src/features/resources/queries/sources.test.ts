@@ -39,10 +39,13 @@ describe('captured source detail responses', () => {
       name: 'Magic of Myth Drannor',
       isFreeToPlay: false,
     })
-    expect(pack.items[0]).toEqual({
+    expect(pack.items[0]).toMatchObject({
       id: 794,
       name: 'Bastard Sword of the Fallen Age',
       slot: 'Main Hand',
+      minimumLevel: 13,
+      chest: 'any end chest',
+      isRareLoot: false,
     })
     expect(pack.items).toHaveLength(adventurePack.items.length)
   })
@@ -51,7 +54,7 @@ describe('captured source detail responses', () => {
     const chain = toQuestChain(questChain)
     expect(chain).toMatchObject({ kind: 'questChain', name: 'The Lost Seekers' })
     expect(chain.quests[0]).toEqual({ id: 47, name: "The Kobold's Den: Clan Gnashtooth", level: 3 })
-    expect(chain.items[0]).toEqual({ id: 468, name: "Acrobat's Ring", slot: 'Ring' })
+    expect(chain.items[0]).toMatchObject({ id: 468, name: "Acrobat's Ring", slot: 'Ring' })
     expect(chain.items).toHaveLength(questChain.rewards.length)
   })
 
@@ -63,7 +66,7 @@ describe('captured source detail responses', () => {
       pack: 'Sinister Secret of Saltmarsh',
     })
     expect(mappedSaga.quests[0]).toEqual({ id: 60, name: 'Back to Basics', level: 3 })
-    expect(mappedSaga.items[0]).toEqual({ id: 891, name: 'Black Pearl Ring', slot: 'Ring' })
+    expect(mappedSaga.items[0]).toMatchObject({ id: 891, name: 'Black Pearl Ring', slot: 'Ring' })
     expect(mappedSaga.items).toHaveLength(saga.rewards.length)
   })
 
@@ -88,10 +91,11 @@ describe('captured source detail responses', () => {
       name: 'Morten Edgewright',
       location: 'The Keep on the Borderlands',
     })
-    expect(mappedVendor.items[0]).toEqual({
+    expect(mappedVendor.items[0]).toMatchObject({
       id: 2428,
       name: 'Epic Ethereal Bastard Sword',
       slot: 'Main Hand',
+      cost: '1 Epic Ethereal Ingot',
     })
     expect(mappedVendor.items).toHaveLength(vendor.items.length)
   })
@@ -99,7 +103,11 @@ describe('captured source detail responses', () => {
   it('maps an event and its items', () => {
     const mappedEvent = toEvent(event)
     expect(mappedEvent).toMatchObject({ kind: 'event', name: 'Treasure of Crystal Cove' })
-    expect(mappedEvent.items[0]).toEqual({ id: 484, name: "Admiral's Tricorne", slot: 'Head' })
+    expect(mappedEvent.items[0]).toMatchObject({
+      id: 484,
+      name: "Admiral's Tricorne",
+      slot: 'Head',
+    })
     expect(mappedEvent.items).toHaveLength(event.items.length)
   })
 })

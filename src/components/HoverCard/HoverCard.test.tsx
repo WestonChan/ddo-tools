@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useEffect, useState } from 'react'
 import {
@@ -11,6 +11,7 @@ import {
   useHoverCard,
 } from './HoverCard'
 import { LedgerTable } from '../LedgerTable'
+import { StructuredDetailCard, detailCardSection } from '../DetailCard'
 
 afterEach(() => {
   cleanup()
@@ -66,6 +67,67 @@ function CardHarness(): React.JSX.Element {
     </button>
   )
 }
+
+const detailCardKinds = [
+  'item',
+  'augment',
+  'enchantment',
+  'quest',
+  'set',
+  'adventurePack',
+  'questChain',
+  'saga',
+  'craftingSystem',
+  'vendor',
+  'event',
+  'ability',
+] as const
+
+function DetailKindHarness({ kind }: { kind: string }): React.JSX.Element {
+  const anchor = useHoverCard({
+    kind,
+    delayMs: 0,
+    render: () => (
+      <StructuredDetailCard
+        variant="hover"
+        kicker="Detail kind"
+        name="A detail card"
+        facts={[]}
+        sections={[]}
+      />
+    ),
+  })
+  return <button {...anchor}>Open {kind}</button>
+}
+
+it.each(detailCardKinds)('keeps the pin hint beside the kicker for %s cards', (kind) => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <DetailKindHarness kind={kind} />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: `Open ${kind}` })
+  fireEvent.mouseEnter(anchor)
+  act(() => vi.runOnlyPendingTimers())
+  const card = screen.getByRole('dialog')
+  const kicker = within(card).getByText('Detail kind')
+  const pinStatus = within(card).getByText('T to pin')
+  expect(pinStatus.parentElement).toBe(card)
+  expect(kicker.closest('.detail-card__kicker-row')).toBeInTheDocument()
+  fireEvent.keyDown(anchor, { key: 't' })
+  expect(within(screen.getByRole('dialog')).getByText('Pinned · Esc').parentElement).toBe(card)
+})
+
+it('reserves the pin hint width on the shared kicker line', () => {
+  const hoverCss = readFileSync('src/components/HoverCard/HoverCard.css', 'utf8')
+  const detailCss = readFileSync('src/components/DetailCard/DetailCard.css', 'utf8')
+  expect(hoverCss).toMatch(/\.hover-card \.detail-card\s*\{\s*--detail-card-pin-reserve:/)
+  expect(hoverCss).toMatch(/\.hover-card__pin-status\s*\{[^}]*position:\s*absolute/)
+  expect(detailCss).toMatch(
+    /\.detail-card__kicker-row\s*\{[^}]*padding-inline-end:\s*var\(--detail-card-pin-reserve\)/,
+  )
+})
 
 function renderOpenItemCard(): HTMLElement {
   vi.useFakeTimers()
@@ -531,7 +593,7 @@ it('keeps Tab and Shift+Tab inside a pinned card with two controls', async () =>
   const anchor = screen.getByRole('button', { name: 'Card anchor' })
   anchor.focus()
   fireEvent.keyDown(anchor, { key: 't' })
-  await screen.findByText('Pinned · Esc')
+  await waitFor(() => expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned'))
   const card = screen.getByRole('dialog')
   const firstLink = screen.getByRole('link', { name: 'First link' })
   const lastAction = screen.getByRole('button', { name: 'Last action' })
@@ -565,13 +627,65 @@ it('keeps focus on a pinned card root when it has no focusable controls', async 
   const anchor = screen.getByRole('button', { name: 'Empty card anchor' })
   anchor.focus()
   fireEvent.keyDown(anchor, { key: 't' })
-  await screen.findByText('Pinned · Esc')
+  await waitFor(() => expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned'))
   const card = screen.getByRole('dialog')
   expect(card).toHaveFocus()
   await userEvent.tab()
   expect(card).toHaveFocus()
   await userEvent.tab({ shift: true })
   expect(card).toHaveFocus()
+})
+
+it('tabs to show-more inside a pinned card and toggles every entry', async () => {
+  function ExpandableCard(): React.JSX.Element {
+    const anchor = useHoverCard({
+      kind: 'item',
+      delayMs: 0,
+      render: () => (
+        <StructuredDetailCard
+          variant="hover"
+          kicker="Item"
+          name="Item"
+          facts={[]}
+          sections={[
+            detailCardSection({
+              key: 'description',
+              heading: 'Enchantments',
+              entries: ['First', 'Second', 'Third'],
+              FullView: ({ entries }) => (
+                <>
+                  {entries.map((entry) => (
+                    <div key={entry}>{entry}</div>
+                  ))}
+                </>
+              ),
+              briefEntryLimit: 1,
+            }),
+          ]}
+        />
+      ),
+    })
+    return <button {...anchor}>Item anchor</button>
+  }
+  render(
+    <HoverCardProvider>
+      <ExpandableCard />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  anchor.focus()
+  fireEvent.keyDown(anchor, { key: 't' })
+  const card = await screen.findByRole('dialog')
+  await waitFor(() => expect(card).toHaveClass('hover-card--pinned'))
+  await waitFor(() => expect(card).toHaveFocus())
+  const more = screen.getByRole('button', { name: '+2 more' })
+  await userEvent.tab()
+  expect(more).toHaveFocus()
+  await userEvent.keyboard('{Enter}')
+  expect(screen.getByText('Third')).toBeInTheDocument()
+  expect(more).toHaveTextContent('Show less')
+  await userEvent.click(more)
+  expect(screen.queryByText('Third')).toBeNull()
 })
 
 it('traps the top pinned card and returns the trap to its parent after Escape', async () => {
@@ -584,7 +698,7 @@ it('traps the top pinned card and returns the trap to its parent after Escape', 
   const outerAnchor = screen.getByRole('button', { name: 'Item anchor' })
   outerAnchor.focus()
   fireEvent.keyDown(outerAnchor, { key: 't' })
-  await screen.findByText('Pinned · Esc')
+  await waitFor(() => expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned'))
   const outerCard = screen.getByRole('dialog')
   await userEvent.tab()
   const nestedAnchor = screen.getByRole('button', { name: 'Nested anchor' })
@@ -671,7 +785,7 @@ it('delays opening, pins the top card, stacks nested cards, and pops with Escape
     'data-hover-card-pinned',
   )
   fireEvent.keyDown(document, { key: 't' })
-  expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
+  expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned')
   expect(screen.getByRole('button', { name: 'Item anchor' })).toHaveAttribute(
     'data-hover-card-pinned',
   )
@@ -680,7 +794,7 @@ it('delays opening, pins the top card, stacks nested cards, and pops with Escape
   act(() => cardAction.focus())
   fireEvent.mouseDown(cardAction)
   fireEvent.click(cardAction)
-  expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
+  expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned')
   fireEvent.mouseLeave(screen.getByText('Item anchor'))
   expect(screen.getByRole('button', { name: 'Item anchor' })).toHaveAttribute(
     'data-hover-card-pinned',
@@ -742,7 +856,7 @@ it('closes only deeper cards on mousedown inside a card and keeps the row click 
   expect(nestedAnchor).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getAllByRole('dialog').map((card) => card.dataset.depth)).toEqual(['0'])
   expect(itemAnchor).toHaveAttribute('data-hover-card-pinned')
-  expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
+  expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned')
 })
 
 it('closes a deeper card when its pinned parent is the first remaining card', () => {
@@ -986,7 +1100,7 @@ it('opens a pinned card from a focused anchor on T', () => {
   anchor.focus()
   fireEvent.keyDown(anchor, { key: 't' })
   act(() => vi.advanceTimersByTime(0))
-  expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
+  expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned')
   expect(anchor).toHaveAttribute('data-hover-card-pinned')
   expect(screen.getByRole('dialog')).toHaveFocus()
   fireEvent.mouseLeave(anchor)
@@ -1337,7 +1451,7 @@ it('keeps a pinned card when its anchor unmounts until Escape closes it', () => 
   fireEvent.mouseEnter(screen.getByText('Item anchor'))
   act(() => vi.advanceTimersByTime(260))
   fireEvent.keyDown(document, { key: 't' })
-  expect(screen.getByText('Pinned · Esc')).toBeInTheDocument()
+  expect(screen.getAllByRole('dialog')[0]).toHaveClass('hover-card--pinned')
   view.rerender(
     <HoverCardProvider>
       <span>Removed</span>

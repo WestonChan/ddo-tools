@@ -11,7 +11,7 @@ import capturedRing from '../../queries/fixtures/effects-item-487.json'
 import capturedNecklace from '../../queries/fixtures/effects-item.json'
 import capturedBracers from '../../queries/fixtures/effects-item-2430.json'
 import { toItem } from '../../queries/items'
-import { ItemDetailCard } from './ItemDetailCard'
+import { ItemDetailCard, ItemHoverCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
 vi.mock('../../queries/useItems', () => ({
@@ -361,7 +361,7 @@ describe('ItemDetailCard details', () => {
       'MaterialForce',
     ])
     rerender(<></>)
-    rerender(<ItemDetailCard item={item} variant="hover" />)
+    rerender(<ItemHoverCard item={item} />)
     expect(detailStatText(container)).toEqual([])
     expect(container.querySelector('.detail-fact-grid')).toBeNull()
     expect(screen.getByRole('button', { name: 'More details' })).toHaveAttribute(
@@ -543,7 +543,7 @@ describe('ItemDetailCard details', () => {
         },
       ],
     } as ApiItemDetail)
-    const { container } = render(<ItemDetailCard item={item} variant="hover" />)
+    const { container } = render(<ItemHoverCard item={item} />)
     const header = container.querySelector('.detail-card--hover .detail-card__header')!
     const facts = header.querySelector('.detail-card__facts')!
     expect(facts.lastElementChild?.querySelector('.section-label')).toHaveTextContent('Augments')
@@ -578,7 +578,7 @@ describe('ItemDetailCard details', () => {
       'MaterialSteel',
     ])
     rerender(<></>)
-    rerender(<ItemDetailCard item={item} variant="hover" />)
+    rerender(<ItemHoverCard item={item} />)
     expect(detailStatText(container)).toEqual(['Shield bonus17', 'Max Dex bonus2'])
     expect(container.querySelector('.detail-dr-bypass')).toHaveTextContent(
       'DR bypassBludgeon, Magic',
@@ -587,15 +587,17 @@ describe('ItemDetailCard details', () => {
       'aria-expanded',
       'false',
     )
-    expect(container.querySelector('.resources-detail-description')).toBeNull()
+    expect(container.querySelector('.resources-detail-description')).toHaveTextContent(
+      item.description!,
+    )
   })
 
-  it('shows armor primary cells without description and leaves extras collapsed in hover', () => {
-    const { container } = render(
-      <ItemDetailCard item={toCapturedItem(capturedArmor)} variant="hover" />,
-    )
+  it('shows armor primary cells and description while leaving extras collapsed in hover', () => {
+    const { container } = render(<ItemHoverCard item={toCapturedItem(capturedArmor)} />)
     expect(detailStatText(container)).toEqual(['Armor bonus16', 'Max Dex bonus1'])
-    expect(container.querySelector('.resources-detail-description')).toBeNull()
+    expect(container.querySelector('.resources-detail-description')).toHaveTextContent(
+      'Some beholders of Xoriat are fitted with resilient metal plates',
+    )
     expect(screen.getByRole('button', { name: 'More details' })).toHaveAttribute(
       'aria-expanded',
       'false',
@@ -609,9 +611,9 @@ describe('ItemDetailCard details', () => {
   })
 
   it('uses the fact grid for weapon stats and keeps effect rows in hover', () => {
-    const { container, rerender } = render(<ItemDetailCard item={weaponItem()} variant="hover" />)
+    const { container, rerender } = render(<ItemHoverCard item={weaponItem()} />)
     expect(container.querySelector('.detail-stats .detail-fact-grid')).not.toBeNull()
-    rerender(<ItemDetailCard item={toItem(capturedNecklace as ApiItemDetail)} variant="hover" />)
+    rerender(<ItemHoverCard item={toItem(capturedNecklace as ApiItemDetail)} />)
     const effectRow = container.querySelector('.resources-hover-effect-row .detail-value-row')
     expect(effectRow).toHaveClass('hover-card-row')
     expect(effectRow?.querySelector('.detail-value-row__label')).toHaveTextContent('Charisma')
@@ -620,9 +622,7 @@ describe('ItemDetailCard details', () => {
   })
 
   it('keeps each captured effect value in the item hover rows', () => {
-    const { container } = render(
-      <ItemDetailCard item={toItem(capturedBracers as ApiItemDetail)} variant="hover" />,
-    )
+    const { container } = render(<ItemHoverCard item={toItem(capturedBracers as ApiItemDetail)} />)
     const rows = [...container.querySelectorAll('.resources-hover-effect-row .detail-value-row')]
     expect(rows[0].querySelector('.detail-value-row__label')).toHaveTextContent('Dexterity')
     expect(rows[0].querySelector('.detail-value-row__value')).toHaveTextContent('+11')
@@ -633,9 +633,7 @@ describe('ItemDetailCard details', () => {
   })
 
   it('shows an armor enhancement first among the item hover rows', () => {
-    const { container } = render(
-      <ItemDetailCard item={toCapturedItem(capturedArmor)} variant="hover" />,
-    )
+    const { container } = render(<ItemHoverCard item={toCapturedItem(capturedArmor)} />)
     const firstRow = container.querySelector('.resources-hover-effect-row .detail-value-row')
     expect(firstRow?.querySelector('.detail-value-row__label')).toHaveTextContent(
       'Enhancement Bonus',
@@ -668,7 +666,7 @@ describe('ItemDetailCard details', () => {
     ])
     const paneExtraText = detailStatText(pane.container).slice(5)
     pane.unmount()
-    const hover = render(<ItemDetailCard item={item} variant="hover" />)
+    const hover = render(<ItemHoverCard item={item} />)
     expect(hover.container.querySelectorAll('.detail-fact-grid__cell')).toHaveLength(5)
     await userEvent.click(screen.getByRole('button', { name: 'More details' }))
     expect(hover.container.querySelector('.detail-extras')).not.toBeNull()
@@ -819,12 +817,11 @@ describe('ItemDetailCard obtained-from layout', () => {
 describe('ItemDetailCard drop locations', () => {
   it('shows a weapon’s primary rows with facts, effects, and drops for hover', () => {
     render(
-      <ItemDetailCard
+      <ItemHoverCard
         item={{
           ...weaponItem({ critical_threat_range: 1, critical: '20/x2' }),
           quests: [quest()],
         }}
-        variant="hover"
       />,
     )
     expect(
@@ -1244,6 +1241,49 @@ describe('ItemDetailCard header attributes', () => {
     })
     expect(screen.getByText('Clickies')).toBeInTheDocument()
     expect(screen.getByText('Haste (3 charges)')).toBeInTheDocument()
+  })
+
+  it('keeps the pane description and clickies in the hover variant', () => {
+    const item = {
+      ...plainItem,
+      description: 'A useful trinket.',
+      clickies: [{ name: 'Haste', description: 'Haste (3 charges)' }],
+    }
+    const { rerender } = renderItemDetailCard(item)
+    expect(screen.getByText('A useful trinket.')).toBeInTheDocument()
+    expect(screen.getByText('Haste (3 charges)')).toBeInTheDocument()
+    rerender(<ItemHoverCard item={item} />)
+    expect(screen.getByText('A useful trinket.')).toBeInTheDocument()
+    expect(screen.getByText('Haste (3 charges)')).toBeInTheDocument()
+  })
+
+  it('reveals and collapses an overflowing hover description without losing its text', async () => {
+    const scrollHeight = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120)
+    const clientHeight = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(48)
+    const description = 'A long description that spans more than three lines in the hover card.'
+    render(<ItemHoverCard item={{ ...plainItem, description }} />)
+    const paragraph = screen.getByText(description)
+    expect(paragraph).toHaveClass('resources-detail-description--brief')
+    expect(paragraph).not.toHaveClass('resources-detail-description--expanded')
+    expect(screen.getByRole('button', { name: 'Show more' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Show more' }))
+    expect(paragraph).toHaveClass('resources-detail-description--expanded')
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Show less' }))
+    expect(paragraph).not.toHaveClass('resources-detail-description--expanded')
+    expect(screen.getByRole('button', { name: 'Show more' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    expect(paragraph).toHaveTextContent(description)
+    scrollHeight.mockRestore()
+    clientHeight.mockRestore()
   })
 })
 

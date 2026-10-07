@@ -134,7 +134,6 @@ function HoverPicker({ isInitiallyOpen = true }: { isInitiallyOpen?: boolean }):
               value: 'Strength',
               label: 'Strength',
               detailPath: '/v1/effects/1',
-              hoverLabel: 'Stat',
               children: [{ value: 'Strength:Insight', label: 'Strength · Insight' }],
             },
           ]}
@@ -217,9 +216,6 @@ describe('Combobox', () => {
     await user.hover(screen.getByRole('option', { name: 'Strength' }))
     expect(await screen.findByRole('dialog')).toHaveTextContent('Strength detail')
     expect(screen.getByRole('dialog')).toHaveAttribute('data-kind', 'stat')
-    expect(
-      screen.getByRole('dialog').querySelector('.hover-card__status .section-label'),
-    ).toHaveTextContent('Stat')
     expect(screen.getByRole('combobox', { name: 'Bonuses' })).toHaveFocus()
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()

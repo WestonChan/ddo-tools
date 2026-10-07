@@ -52,6 +52,7 @@ export interface ApiEffectDamage {
 export interface ApiEffect {
   effect_id: number
   name: string
+  kind?: 'effect' | 'stat' | 'group'
   tier?: { group: string; rank: number } | null
   verbose_name: string
   description?: string | null
@@ -308,6 +309,12 @@ export interface ApiSourceItem {
   id: number
   name: string
   slot: string
+  minimum_level?: number | null
+  is_rare?: boolean
+  chest?: string | null
+  cost?: string | null
+  tier?: string | null
+  pack?: string | null
 }
 
 export interface ApiSourceQuest {
@@ -475,6 +482,9 @@ export interface ApiQuestDetail {
   id: number
   name: string
   pack: string | null
+  patron: string | null
+  level: number | null
+  epic_level: number | null
   is_raid: boolean
   items: Array<{
     id: number

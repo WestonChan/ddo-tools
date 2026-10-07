@@ -43,7 +43,8 @@ import {
 } from '../queries/useItems'
 import { itemFilterDefinitions } from './itemFilterDefinitions'
 import { StatusPlaceholder } from './StatusPlaceholder'
-import { EffectVocabularyHoverContent, ItemHoverContent } from './detail/ResourceHoverCards'
+import { ItemHoverContent } from './detail/ResourceHoverCards'
+import { BonusHoverCard } from './detail/BonusDetailCard'
 
 interface ItemPickerProps {
   category: 'items'
@@ -473,7 +474,7 @@ export function ItemPicker({
         }}
         renderPickerHover={(key, option) =>
           key === 'bonuses' && option.detailPath ? (
-            <EffectVocabularyHoverContent detailPath={option.detailPath} />
+            <BonusHoverCard detailPath={option.detailPath} />
           ) : null
         }
         searchControls={{

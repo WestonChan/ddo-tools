@@ -21,7 +21,6 @@ interface CardEntry {
   anchorId: string | null
   anchorElement: HTMLElement | null
   kind: string
-  label?: string
   depth: number
   anchorRect: DOMRect
   pointerX: number | null
@@ -34,7 +33,6 @@ interface CardEntry {
 
 export interface HoverCardOptions {
   kind: string
-  label?: string
   delayMs: number
   render: () => ReactNode
   placement?: 'beside'
@@ -48,14 +46,12 @@ interface CardController {
   removeAnchor: (anchorId: string) => void
   clear: () => void
   dismiss: (anchorId: string) => boolean
-  setLabel: (cardId: number, label: string) => void
   isNavigationFocus: (target: EventTarget | null) => boolean
   pinnedAnchorIds: ReadonlySet<string>
 }
 
 const ControllerContext = createContext<CardController | null>(null)
 const DepthContext = createContext(0)
-const CardLabelContext = createContext<((label: string) => void) | null>(null)
 const NAVIGATION_KEYS = new Set([
   'Tab',
   'ArrowDown',
@@ -141,11 +137,6 @@ function CardLayer({
   const contentRef = useRef<HTMLDivElement>(null)
   useTabFocusWrap(elementRef, isTopPinnedCard)
   const hasFocusedPinnedCard = useRef(false)
-  const setCardLabel = useContext(ControllerContext)?.setLabel
-  const setLabel = useCallback(
-    (label: string) => setCardLabel?.(card.id, label),
-    [card.id, setCardLabel],
-  )
   const [position, setPosition] = useState<{
     left: number
     top: number
@@ -238,14 +229,13 @@ function CardLayer({
         className={`hover-card${card.kind === 'hint' ? ' hover-card--hint' : ''}${card.isPinned ? ' hover-card--pinned' : ''}`}
         style={{ ...(position ?? { visibility: 'hidden' }), zIndex: 300 + card.depth }}
       >
+        {card.kind !== 'hint' && (
+          <span className="hover-card__pin-status">
+            {card.isPinned ? 'Pinned · Esc' : 'T to pin'}
+          </span>
+        )}
         <div ref={contentRef} className="hover-card__content">
-          {card.kind !== 'hint' && (
-            <div className="hover-card__status">
-              <span className="section-label">{card.label ?? card.kind}</span>
-              <span>{card.isPinned ? 'Pinned · Esc' : 'T to pin'}</span>
-            </div>
-          )}
-          <CardLabelContext.Provider value={setLabel}>{card.render()}</CardLabelContext.Provider>
+          {card.render()}
         </div>
       </div>
     </DepthContext.Provider>
@@ -346,14 +336,6 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     },
     [cards, cancelPending],
   )
-  const setLabel = useCallback((cardId: number, label: string) => {
-    setCards((current) => {
-      const index = current.findIndex((card) => card.id === cardId)
-      if (index < 0 || current[index].label === label) return current
-      return current.map((card, cardIndex) => (cardIndex === index ? { ...card, label } : card))
-    })
-  }, [])
-
   useLayoutEffect(() => {
     cardToPin.current = null
     function onKeyDown(event: KeyboardEvent): void {
@@ -595,7 +577,6 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         removeAnchor,
         clear,
         dismiss,
-        setLabel,
         isNavigationFocus,
         pinnedAnchorIds: new Set(
           cards.flatMap((card) => (card.isPinned && card.anchorId ? [card.anchorId] : [])),
@@ -615,7 +596,6 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
 
 export function useHoverCard({
   kind,
-  label,
   delayMs,
   render,
   placement,
@@ -646,7 +626,6 @@ export function useHoverCard({
       controller?.open(
         {
           kind,
-          label,
           anchorId,
           anchorElement: event.currentTarget,
           depth,
@@ -669,7 +648,6 @@ export function useHoverCard({
       controller?.open(
         {
           kind,
-          label,
           anchorId,
           anchorElement: event.currentTarget,
           depth,
@@ -692,7 +670,6 @@ export function useHoverCard({
       controller?.open(
         {
           kind,
-          label,
           anchorId,
           anchorElement: event.currentTarget,
           depth,
@@ -712,16 +689,12 @@ export function useHoverCard({
 
 export function useHoverCardControl({
   kind,
-  label,
   delayMs,
   render,
   placement,
   isRow = false,
 }: HoverCardOptions): {
-  show: (
-    anchor: HTMLElement,
-    options: { rect?: DOMRect; statusLabel?: string; openedBy: CardEntry['openedBy'] },
-  ) => void
+  show: (anchor: HTMLElement, options: { rect?: DOMRect; openedBy: CardEntry['openedBy'] }) => void
   hide: () => void
   dismiss: () => boolean
 } {
@@ -742,7 +715,6 @@ export function useHoverCardControl({
       controller?.open(
         {
           kind,
-          label: options.statusLabel ?? label,
           anchorId,
           anchorElement: anchor,
           depth,
@@ -764,13 +736,6 @@ export function useHoverCardControl({
 export function useClearHoverCards(): () => void {
   const controller = useContext(ControllerContext)
   return controller?.clear ?? (() => {})
-}
-
-export function useHoverCardLabel(label: string | null): void {
-  const setLabel = useContext(CardLabelContext)
-  useEffect(() => {
-    if (label) setLabel?.(label)
-  }, [label, setLabel])
 }
 
 export function HintAnchor({ text, children }: { text: string; children: ReactNode }): JSX.Element {

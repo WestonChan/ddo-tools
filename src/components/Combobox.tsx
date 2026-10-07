@@ -13,7 +13,6 @@ export interface FilterOption {
   isNested?: boolean
   parentValue?: string
   detailPath?: string
-  hoverLabel?: string
 }
 
 interface ComboboxCommonProps {
@@ -295,7 +294,6 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                       hoveredOption.current = option
                       hover.show(event.currentTarget, {
                         rect: menuRect,
-                        statusLabel: option.hoverLabel,
                         openedBy: 'pointer',
                       })
                     }}

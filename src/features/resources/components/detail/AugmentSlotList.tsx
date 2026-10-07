@@ -7,7 +7,7 @@ import {
 } from '../../../../components'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { useFittingAugmentsBySlotLabel } from '../../queries/useItems'
-import { AugmentHoverContent } from './ResourceHoverCards'
+import { AugmentHoverCard } from './ResourceHoverCards'
 import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 
 interface AugmentSlotListProps {
@@ -45,7 +45,7 @@ const AUGMENT_COLUMNS: LedgerColumn<AugmentSummary>[] = [
     width: 126,
     minWidth: 90,
     sortValue: (augment) => augment.slots.join(', '),
-    render: (augment) => augment.slots.join(' · '),
+    render: (augment) => augment.slots.map(titleCasedSlotLabel).join(' · '),
   },
 ]
 
@@ -143,7 +143,7 @@ export function AugmentCandidateLedger({
         hoverCard={(augment) => ({
           kind: 'augment',
           delayMs: 120,
-          render: () => <AugmentHoverContent augmentId={augment.id} />,
+          render: () => <AugmentHoverCard augmentId={augment.id} />,
         })}
       />
     </section>

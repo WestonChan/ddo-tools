@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, type JSX } from 'react'
-import { ApiErrorNotice } from '../../../components'
 import { DetailNavigationProvider } from '../contexts/DetailNavigationContext'
 import { useDetailStack, type ResourceReference } from '../hooks/useDetailStack'
-import type { Item } from '../queries/items'
-import { useItem, useSet } from '../queries/useItems'
 import { DETAIL_TITLE_ID, type ResourceCategory } from '../resourceCategories'
 import { DetailBreadcrumbBar } from './DetailBreadcrumbBar'
 import { StatusPlaceholder } from './StatusPlaceholder'
 import { ItemDetailCard } from './detail/ItemDetailCard'
+import { useItemCardContent } from './detail/useItemCardContent'
 
 interface ResourceDetailPaneProps {
   resourceInUrl: ResourceReference | null
@@ -46,8 +44,8 @@ export function ResourceDetailPane({
   const topItemId = topEntry !== null && topEntry.category === 'items' ? topEntry.id : null
   const lastFocusedItemId = useRef<number | null>(null)
 
-  const itemDetailQuery = useItem(topItemId)
-  const setDetailQuery = useSet(itemDetailQuery.data?.setId ?? null)
+  const itemCard = useItemCardContent(topItemId)
+  const itemDetailQuery = itemCard.itemQuery
 
   const namedDetailStack = useMemo(() => {
     return stack.map((entry) => {
@@ -92,17 +90,8 @@ export function ResourceDetailPane({
       )}
       <div className="resources-detail-pane-body">
         <section className="resources-detail">
-          {renderedDetailBody(
-            topEntry,
-            itemDetailQuery.data ?? null,
-            itemDetailQuery.isPending,
-            itemDetailQuery.error,
-            () => void itemDetailQuery.refetch(),
-            setDetailQuery.data ?? null,
-            setDetailQuery.error,
-            () => void setDetailQuery.refetch(),
-            matchingBonuses,
-            (id, name) => pushResource({ category: 'items', id, name }),
+          {renderedDetailBody(topEntry, itemCard, matchingBonuses, (id, name) =>
+            pushResource({ category: 'items', id, name }),
           )}
         </section>
       </div>
@@ -112,49 +101,37 @@ export function ResourceDetailPane({
 
 function renderedDetailBody(
   topEntry: ResourceReference | null,
-  itemDetail: Item | null,
-  isPending: boolean,
-  error: unknown,
-  onRetry: () => void,
-  setDetail: ReturnType<typeof useSet>['data'] | null,
-  setError: unknown,
-  onRetrySet: () => void,
+  itemCard: ReturnType<typeof useItemCardContent>,
   matchingBonuses: string[],
   onOpenItem: (id: number, name: string) => void,
 ): JSX.Element {
   if (topEntry === null) return <StatusPlaceholder reason="no-selection" />
   if (topEntry.category === 'items') {
-    if (itemDetail) {
+    if (itemCard.item) {
       return (
-        <>
-          <ItemDetailCard
-            key={`${topEntry.category}-${topEntry.id}`}
-            item={itemDetail}
-            setDetail={setDetail}
-            matchingBonuses={matchingBonuses}
-            onOpenItem={onOpenItem}
-          />
-          {setError && (
-            <ApiErrorNotice
-              error={setError}
-              path={`/v1/sets/${itemDetail.setId}`}
-              missingResourceName="set"
-              onRetry={onRetrySet}
-            />
-          )}
-        </>
-      )
-    }
-    if (isPending && !error) return <StatusPlaceholder reason="loading" />
-    if (error)
-      return (
-        <StatusPlaceholder
-          error={error}
-          path={`/v1/items/${topEntry.id}`}
-          missingResourceName="item"
-          onRetry={onRetry}
+        <ItemDetailCard
+          key={`${topEntry.category}-${topEntry.id}`}
+          item={itemCard.item}
+          setDetail={itemCard.setDetail}
+          status={itemCard.status}
+          matchingBonuses={matchingBonuses}
+          onOpenItem={onOpenItem}
         />
       )
+    }
+    if (itemCard.itemQuery.isPending && !itemCard.itemQuery.error) {
+      return <StatusPlaceholder reason="loading" />
+    }
+    if (itemCard.itemQuery.error) {
+      return (
+        <StatusPlaceholder
+          error={itemCard.itemQuery.error}
+          path={`/v1/items/${topEntry.id}`}
+          missingResourceName="item"
+          onRetry={() => void itemCard.itemQuery.refetch()}
+        />
+      )
+    }
     return <StatusPlaceholder reason="not-found" missingItemId={topEntry.id} />
   }
   return <StatusPlaceholder reason="empty-table" category={topEntry.category} />

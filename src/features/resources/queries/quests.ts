@@ -4,6 +4,9 @@ export interface QuestDetail {
   id: number
   name: string
   pack: string | null
+  patron: string | null
+  level: number | null
+  epicLevel: number | null
   isRaid: boolean
   items: Array<{ id: number; name: string; slot: string; minimumLevel: number | null }>
 }
@@ -17,6 +20,9 @@ export function toQuestDetail(
     id: apiQuest.id,
     name: apiQuest.name,
     pack: apiQuest.pack,
+    patron: apiQuest.patron,
+    level: apiQuest.level,
+    epicLevel: apiQuest.epic_level,
     isRaid: apiQuest.is_raid,
     items: apiQuest.items.map((item) => ({
       id: item.id,
