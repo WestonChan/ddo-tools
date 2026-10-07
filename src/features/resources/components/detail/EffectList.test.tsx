@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { render } from '../../../../test/renderWithQueryClient'
 import { afterEach, expect, it, vi } from 'vitest'
 import { HoverCardProvider, StructuredDetailCard, detailCardSection } from '../../../../components'
 import type { ApiEffect, ApiEffectDetail, ApiItemDetail, ApiSetDetail } from '../../../../lib/api'
@@ -79,6 +80,12 @@ function EffectList({
 let effectWikiUrl: string | null = null
 let effectDetail: ApiEffectDetail | null = null
 vi.mock('../../queries/useItems', () => ({
+  isEffectReady: () => true,
+  isDetailQueryReady: () => false,
+  setDetailQueryOptions: (id: number) => ({
+    queryKey: ['sets', 'detail', id],
+    queryFn: () => new Promise(() => {}),
+  }),
   useEffectDetail: (_path: string, isEnabled = true) => ({
     data: isEnabled
       ? (effectDetail ?? {
@@ -299,7 +306,7 @@ it('keeps the set name hover card on the open heading', () => {
   expect(heading).toHaveTextContent('7 bonuses')
   expect(screen.getAllByRole('row')).toHaveLength(2)
   fireEvent.mouseEnter(heading)
-  act(() => vi.advanceTimersByTime(120))
+  act(() => vi.advanceTimersByTime(720))
   expect(screen.getByRole('dialog')).toHaveTextContent('Loading set…')
 })
 

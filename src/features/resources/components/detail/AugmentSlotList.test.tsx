@@ -1,5 +1,6 @@
 import { it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, cleanup, waitFor } from '@testing-library/react'
+import { act, fireEvent, screen, cleanup, waitFor } from '@testing-library/react'
+import { render } from '../../../../test/renderWithQueryClient'
 import userEvent from '@testing-library/user-event'
 import { useId, useRef, useState, type JSX } from 'react'
 import { HoverCardProvider } from '../../../../components'
@@ -20,6 +21,11 @@ const fittingAugmentsHookMock = vi.fn((label: string | null) => ({
   refetch: refetchAugments,
 }))
 vi.mock('../../queries/useItems', () => ({
+  isDetailQueryReady: () => false,
+  augmentDetailQueryOptions: (id: number) => ({
+    queryKey: ['augments', 'detail', id],
+    queryFn: () => new Promise(() => {}),
+  }),
   useAugment: () => ({ isPending: true }),
   useFittingAugmentsBySlotLabel: (label: string | null) => fittingAugmentsHookMock(label),
 }))
@@ -240,7 +246,7 @@ it('tabs into the augment ledger and closes its socket from a row on Escape', as
   expect(button).toHaveAttribute('aria-expanded', 'false')
 })
 
-it('closes a socket from a row while its hover card is still pending inside a detail pane', async () => {
+it('closes a socket from a row while its hover card is still pending inside a detail pane', () => {
   render(
     <HoverCardProvider>
       <section data-detail-pane="">
@@ -249,13 +255,15 @@ it('closes a socket from a row while its hover card is still pending inside a de
     </HoverCardProvider>,
   )
   const redSocket = screen.getByRole('button', { name: 'Red slot' })
-  await userEvent.click(redSocket)
-  screen.getByRole('columnheader', { name: 'Name' }).focus()
-  await userEvent.tab()
-  expect(screen.getByRole('row', { name: /Ruby of Flame/ })).toHaveFocus()
+  fireEvent.click(redSocket)
+  act(() => screen.getByRole('columnheader', { name: 'Name' }).focus())
+  const row = screen.getByRole('row', { name: /Ruby of Flame/ })
+  fireEvent.keyDown(document, { key: 'Tab' })
+  act(() => row.focus())
+  expect(row).toHaveFocus()
   expect(screen.queryByRole('dialog')).toBeNull()
 
-  await userEvent.keyboard('{Escape}')
+  fireEvent.keyDown(row, { key: 'Escape' })
 
   expect(screen.queryByRole('table')).toBeNull()
   expect(redSocket).toHaveFocus()

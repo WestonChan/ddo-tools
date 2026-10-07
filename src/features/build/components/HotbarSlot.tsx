@@ -5,7 +5,7 @@ import type { PlaceholderAbility } from '../data/placeholderAbilities'
 import type { HotbarSlotAddress } from '../hotbars'
 import { AbilityCode } from './AbilityCode'
 import { AbilityDetailCard } from './AbilityDetailCard'
-import { useHoverCard } from '../../../components'
+import { ROW_CARD_OPEN_DELAY_MS, useHoverCard } from '../../../components'
 import {
   hotbarSlotDragId,
   type HotbarDragPayload,
@@ -44,7 +44,7 @@ function FilledHotbarSlot({
   const statBlockId = useId()
   const hoverAnchor = useHoverCard({
     kind: 'ability',
-    delayMs: 260,
+    delayMs: ROW_CARD_OPEN_DELAY_MS,
     render: () => <AbilityDetailCard ability={ability} />,
   })
   const lastPointerTypeRef = useRef<string | null>(null)

@@ -1,5 +1,6 @@
 import type { JSX, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ApiErrorNotice,
   AugmentSlotDisplay,
@@ -11,6 +12,7 @@ import {
   WikiLinkIcon,
   useClearHoverCards,
   useHoverCard,
+  NESTED_CARD_OPEN_DELAY_MS,
 } from '../../../../components'
 import {
   useQuest,
@@ -22,6 +24,13 @@ import {
   useCraftingSystem,
   useVendor,
   useEvent,
+  prefetchItemCard,
+  isItemCardReady,
+  prefetchEffect,
+  isEffectReady,
+  isDetailQueryReady,
+  questDetailQueryOptions,
+  sourceDetailQueryOptions,
 } from '../../queries/useItems'
 import type {
   SourceDetail,
@@ -170,10 +179,13 @@ function AugmentEffectRow({
   effect: Effect
   originName: string
 }): JSX.Element {
+  const queryClient = useQueryClient()
   const anchor = useHoverCard({
     kind: 'enchantment',
-    delayMs: 120,
+    delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
+    prefetch: () => prefetchEffect(queryClient, effect.id),
+    isReady: () => isEffectReady(queryClient, effect.id),
     render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (
@@ -207,9 +219,12 @@ export function QuestHoverAnchor({
   onOpenItem?: OpenItem
   children: ReactNode
 }): JSX.Element {
+  const queryClient = useQueryClient()
   const anchor = useHoverCard({
     kind: 'quest',
-    delayMs: 120,
+    delayMs: NESTED_CARD_OPEN_DELAY_MS,
+    prefetch: () => queryClient.ensureQueryData(questDetailQueryOptions(questId)),
+    isReady: () => isDetailQueryReady(queryClient, questDetailQueryOptions(questId)),
     render: () => <QuestHoverCard questId={questId} onOpenItem={onOpenItem} />,
   })
   return (
@@ -316,10 +331,13 @@ function LinkedItemRow({
   pack,
   onOpenItem,
 }: LinkedItem): JSX.Element {
+  const queryClient = useQueryClient()
   const anchor = useHoverCard({
     kind: 'item',
-    delayMs: 120,
+    delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
+    prefetch: () => prefetchItemCard(queryClient, id),
+    isReady: () => isItemCardReady(queryClient, id),
     render: () => <ItemHoverContent itemId={id} onOpenItem={onOpenItem} />,
   })
   return (
@@ -380,10 +398,19 @@ export function SourceHoverAnchor({
   onOpenItem?: OpenItem
   children: ReactNode
 }): JSX.Element {
+  const queryClient = useQueryClient()
   const isHint = kind === 'challengePack' || kind === 'starter' || id === null
   const anchor = useHoverCard({
     kind: isHint ? 'hint' : kind,
-    delayMs: 120,
+    delayMs: NESTED_CARD_OPEN_DELAY_MS,
+    prefetch:
+      kind === 'challengePack' || kind === 'starter' || id === null
+        ? undefined
+        : () => queryClient.ensureQueryData(sourceDetailQueryOptions(kind, id)),
+    isReady:
+      kind === 'challengePack' || kind === 'starter' || id === null
+        ? undefined
+        : () => isDetailQueryReady(queryClient, sourceDetailQueryOptions(kind, id)),
     render: () =>
       isHint ? (
         <span className="resources-source-hint">
@@ -809,10 +836,13 @@ function SetTiersView({
 }
 
 function SetEffectRow({ effect, originName }: { effect: Effect; originName: string }): JSX.Element {
+  const queryClient = useQueryClient()
   const anchor = useHoverCard({
     kind: 'enchantment',
-    delayMs: 120,
+    delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
+    prefetch: () => prefetchEffect(queryClient, effect.id),
+    isReady: () => isEffectReady(queryClient, effect.id),
     render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (

@@ -7,6 +7,8 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-07',
     changes: [
+      'Hover cards wait for their data and open once, in their final place; moving straight from one card to the next skips the delay, and a card opened from the keyboard never covers its row',
+      'The site waits briefly for its fonts before showing, so text no longer reflows when they arrive',
       'Focus rings keep clear of the text around them and sit evenly on their lettering; the source name under Obtained from has a little more room above its chest line',
       "An item's set shows only in its enchantments, as the folded set block, and hover cards always show that block",
       'An open hover card stays attached to its row when the page shifts underneath it; a pinned card stays where you pinned it',

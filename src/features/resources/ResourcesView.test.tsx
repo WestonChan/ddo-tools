@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   act,
-  render,
   renderHook,
   screen,
   cleanup,
@@ -9,6 +8,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
+import { render } from '../../test/renderWithQueryClient'
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
@@ -106,6 +106,13 @@ const refetchMock = vi.fn()
 const itemPageRequests = vi.fn()
 
 vi.mock('./queries/useItems', () => ({
+  isItemCardReady: () => isItemDetailLoaded,
+  isDetailQueryReady: () => true,
+  isEffectReady: () => true,
+  effectDetailQueryOptions: (path: string) => ({ queryKey: ['effects', 'detail', path] }),
+  setDetailQueryOptions: (id: number) => ({ queryKey: ['sets', 'detail', id] }),
+  questDetailQueryOptions: (id: number) => ({ queryKey: ['quests', 'detail', id] }),
+  sourceDetailQueryOptions: (kind: string, id: number) => ({ queryKey: ['sources', kind, id] }),
   useItemPage: (...request: unknown[]) => {
     itemPageRequests(...request)
     return {

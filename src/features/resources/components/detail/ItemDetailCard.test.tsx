@@ -1,12 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import {
-  fireEvent,
-  render,
-  screen,
-  cleanup,
-  within,
-  type RenderResult,
-} from '@testing-library/react'
+import { act, fireEvent, screen, cleanup, within, type RenderResult } from '@testing-library/react'
+import { render } from '../../../../test/renderWithQueryClient'
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../../../components'
 import type { ApiItemDetail, ApiSetDetail, ApiWeaponStats } from '../../../../lib/api'
@@ -24,6 +18,13 @@ import { ItemDetailCard, ItemHoverCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
 vi.mock('../../queries/useItems', () => ({
+  isItemCardReady: () => true,
+  isEffectReady: () => true,
+  isDetailQueryReady: () => false,
+  setDetailQueryOptions: (id: number) => ({
+    queryKey: ['sets', 'detail', id],
+    queryFn: () => new Promise(() => {}),
+  }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
   useEffectDetail: () => ({ data: { kind: 'effect', wiki_url: null, bonuses: [], damage: [] } }),
   useSet: () => ({ data: null, isPending: true, error: null, refetch: vi.fn() }),
@@ -1364,6 +1365,70 @@ describe('ItemDetailCard header attributes', () => {
     expect(paragraph).toHaveTextContent(description)
     scrollHeight.mockRestore()
     clientHeight.mockRestore()
+  })
+
+  it('keeps a three-line hover description collapsed when overflow rounds to one pixel', () => {
+    let measuredScrollHeight = 49
+    let notifyResize = (): void => {}
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          notifyResize = (): void => callback([], this as ResizeObserver)
+        }
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    )
+    const scrollHeight = vi
+      .spyOn(HTMLElement.prototype, 'scrollHeight', 'get')
+      .mockImplementation(() => measuredScrollHeight)
+    const clientHeight = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(48)
+    try {
+      const item = toCapturedItem(capturedArmor)
+      const { container } = render(<ItemHoverCard item={item} />)
+      expect(container.querySelector('.resources-detail-description--brief')).toHaveTextContent(
+        'Some beholders of Xoriat',
+      )
+      expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull()
+      measuredScrollHeight = 48
+      act(() => notifyResize())
+      expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull()
+      expect(screen.getByRole('button', { name: 'More details' })).toBeInTheDocument()
+    } finally {
+      scrollHeight.mockRestore()
+      clientHeight.mockRestore()
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('remeasures a clipped description after its font loads without a box resize', () => {
+    let measuredScrollHeight = 78
+    const fontSet = new EventTarget()
+    const previousFontSet = Object.getOwnPropertyDescriptor(document, 'fonts')
+    Object.defineProperty(document, 'fonts', { configurable: true, value: fontSet })
+    const scrollHeight = vi
+      .spyOn(HTMLElement.prototype, 'scrollHeight', 'get')
+      .mockImplementation(() => measuredScrollHeight)
+    const clientHeight = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(59)
+    try {
+      const item = toCapturedItem(capturedArmor)
+      const { container, rerender } = render(<ItemHoverCard item={item} />)
+      expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument()
+      measuredScrollHeight = 59
+      act(() => fontSet.dispatchEvent(new Event('loadingdone')))
+      expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull()
+      expect(container.querySelector('.resources-detail-description--brief')).toBeInTheDocument()
+      measuredScrollHeight = 78
+      rerender(<ItemHoverCard item={{ ...item, description: `${item.description} More text.` }} />)
+      expect(screen.getByRole('button', { name: 'Show more' })).toBeInTheDocument()
+    } finally {
+      scrollHeight.mockRestore()
+      clientHeight.mockRestore()
+      if (previousFontSet) Object.defineProperty(document, 'fonts', previousFontSet)
+      else Reflect.deleteProperty(document, 'fonts')
+    }
   })
 })
 

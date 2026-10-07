@@ -8,11 +8,14 @@ import capturedNecklace from '../src/features/resources/queries/fixtures/effects
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
 import charismaDetail from '../src/features/resources/queries/fixtures/effect-detail-6.json' with { type: 'json' }
 
-async function routeFocusRestoreItems(page: Page, width = 1440): Promise<void> {
-  const items = [
+async function routeFocusRestoreItems(
+  page: Page,
+  width = 1440,
+  items = [
     { ...capturedArmor, id: 11000, name: 'Focus Armor 1' },
     { ...capturedArmor, id: 11001, name: 'Focus Armor 2' },
-  ]
+  ],
+): Promise<void> {
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const item = items.find((candidate) => path === `/v1/items/${candidate.id}`)
@@ -66,10 +69,10 @@ async function expectCardBesideNameCell(
   const canFitRight = nameBounds.x + nameBounds.width + 8 + cardBounds.width + 8 <= viewport.width
   if (canFitRight) expect(cardBounds.x).toBeCloseTo(nameBounds.x + nameBounds.width + 8, 0)
   else expect(cardBounds.x + cardBounds.width).toBeCloseTo(nameBounds.x - 8, 0)
-  expect(cardBounds.y).toBeCloseTo(
-    Math.max(8, Math.min(rowBounds.y, viewport.height - cardBounds.height - 8)),
-    0,
-  )
+  expect(
+    cardBounds.y >= rowBounds.y + rowBounds.height + 6 ||
+      cardBounds.y + cardBounds.height <= rowBounds.y - 6,
+  ).toBe(true)
   for (const nextRow of nextRows) {
     const nextNameBounds = await nextRow.locator('.ledger-cell--primary').boundingBox()
     if (!nextNameBounds) throw new Error('Next row name cell has no bounds')
@@ -81,6 +84,53 @@ async function expectCardBesideNameCell(
     ).toBe(false)
   }
 }
+
+test('startup waits for requested fonts while item data loads and the first hover card uses the final face', async ({
+  page,
+}) => {
+  let releaseFontResponses!: () => void
+  const heldFontResponses = new Promise<void>((resolve) => {
+    releaseFontResponses = resolve
+  })
+  await page.route(
+    (url) => url.hostname === 'fonts.gstatic.com',
+    async (route) => {
+      await heldFontResponses
+      await route.continue()
+    },
+  )
+  const fontRequest = page.waitForRequest(
+    (request) => new URL(request.url()).hostname === 'fonts.gstatic.com',
+  )
+  const itemPageRequest = page.waitForRequest(
+    (request) => new URL(request.url()).pathname === '/v1/items',
+  )
+  const navigation = routeFocusRestoreItems(page)
+  try {
+    await Promise.all([fontRequest, itemPageRequest])
+    await expect(page.getByRole('status', { name: 'Loading game data', exact: true })).toBeVisible()
+    await expect(page.getByRole('row', { name: /Focus Armor 1/ })).toBeHidden()
+  } finally {
+    releaseFontResponses()
+  }
+  await navigation
+  const row = page.getByRole('row', { name: /Focus Armor 1/ })
+  await expect(row).toBeVisible()
+  await row.hover()
+  const card = page.getByRole('dialog').filter({ hasText: 'Focus Armor 1' })
+  await expect(card).toBeVisible()
+  const description = card.locator('.resources-detail-description--brief')
+  await expect(description).toBeVisible()
+  const descriptionFont = await description.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      family: style.fontFamily,
+      isLoaded: document.fonts.check(`${style.fontStyle} ${style.fontWeight} 16px "Source Sans 3"`),
+    }
+  })
+  expect(descriptionFont.family).toContain('Source Sans 3')
+  expect(descriptionFont.isLoaded).toBe(true)
+})
 
 test('clicking a list row focuses its detail without a visible focus ring, then Tab enters its actions', async ({
   page,
@@ -299,114 +349,242 @@ test('keyboard enchantment cards sit beside their name cells', async ({ page }) 
   }
 })
 
-test('a card re-places above and caps only when its delayed content cannot fit', async ({
-  page,
-}) => {
-  const listItems = Array.from({ length: 20 }, (_, index) => ({
-    ...capturedArmor,
-    id: 11000 + index,
-    name: `Beholder Plate Armor ${index + 1}`,
-  }))
-  let delayedItemId: number | null = null
-  let releaseItemResponse: () => void = () => {}
-  const itemResponseReady = new Promise<void>((resolve) => {
-    releaseItemResponse = resolve
+for (const responseDelayMs of [350, 1500]) {
+  test(`a ${responseDelayMs} ms item response keeps its card on one side of a low row`, async ({
+    page,
+  }) => {
+    const listItems = Array.from({ length: 20 }, (_, index) => ({
+      ...capturedArmor,
+      id: 11000 + index,
+      name: `Beholder Plate Armor ${index + 1}`,
+    }))
+    let delayedItemId: number | null = null
+    let releaseItemResponse: () => void = () => {}
+    const itemResponseReady = new Promise<void>((resolve) => {
+      releaseItemResponse = resolve
+    })
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.route('**/v1/**', async (route) => {
+      const path = new URL(route.request().url()).pathname
+      const item = listItems.find((candidate) => path === `/v1/items/${candidate.id}`)
+      if (item && item.id === delayedItemId) await itemResponseReady
+      const response =
+        path === '/v1/items'
+          ? {
+              total: listItems.length,
+              limit: 200,
+              offset: 0,
+              items: listItems.map((candidate) => ({
+                id: candidate.id,
+                name: candidate.name,
+                slot: candidate.slot,
+                category: candidate.category,
+                item_type: candidate.item_type,
+                minimum_level: candidate.minimum_level,
+                enhancement_bonus: candidate.enhancement_bonus,
+                icon: candidate.icon,
+                pack: null,
+                is_raid: false,
+                is_rare: false,
+                is_legacy: candidate.is_legacy,
+              })),
+            }
+          : (item ?? [])
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(response),
+      })
+    })
+
+    await page.goto('/resources/items')
+    const rows = page.locator('.resources-picker .ledger-row')
+    await expect(rows.first()).toBeVisible()
+    const targetRowIndex = await rows.evaluateAll((renderedRows) => {
+      const visibleRows = renderedRows
+        .map((row, index) => ({ index, top: row.getBoundingClientRect().top }))
+        .filter(({ top }) => top >= 620 && top <= 680)
+      return visibleRows[0]?.index ?? -1
+    })
+    expect(targetRowIndex).toBeGreaterThanOrEqual(0)
+    const row = rows.nth(targetRowIndex)
+    const rowBounds = await row.boundingBox()
+    const rowId = await row.getAttribute('data-row-key')
+    if (!rowBounds || !rowId) throw new Error('Delayed item row has no bounds or id')
+    delayedItemId = Number(rowId)
+    await row.hover({ position: { x: 40, y: rowBounds.height / 2 } })
+    const card = page.locator('[data-hover-card]')
+    await expect(card).toHaveCount(0)
+    await page.waitForTimeout(350)
+    await expect(card).toHaveCount(0)
+
+    const cardMountCount = page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          let mountedCards = 0
+          const observer = new MutationObserver((records) => {
+            for (const record of records) {
+              for (const node of record.addedNodes) {
+                if (node instanceof HTMLElement && node.matches('[data-hover-card]')) mountedCards++
+              }
+            }
+          })
+          observer.observe(document.body, { childList: true })
+          window.setTimeout(() => {
+            observer.disconnect()
+            resolve(mountedCards)
+          }, 1500)
+        }),
+    )
+    if (responseDelayMs === 1500) {
+      await page.waitForTimeout(responseDelayMs - 350)
+      await expect(card).toContainText('Loading item…')
+      const loadingCardBounds = await card.boundingBox()
+      if (!loadingCardBounds) throw new Error('Loading card has no bounds')
+      expect(loadingCardBounds.y + loadingCardBounds.height).toBeLessThanOrEqual(rowBounds.y - 6)
+    }
+    releaseItemResponse()
+    await expect(card.locator('.detail-card__name')).toHaveText(
+      listItems.find((item) => item.id === delayedItemId)?.name ?? '',
+    )
+    await expect(card).not.toContainText('Loading item…')
+    const loadedCardBounds = await card.boundingBox()
+    if (!loadedCardBounds) throw new Error('Loaded card has no bounds')
+    expect(loadedCardBounds.y).toBeLessThan(rowBounds.y - 6)
+    expect(loadedCardBounds.y + loadedCardBounds.height).toBeLessThanOrEqual(rowBounds.y - 6)
+    await page.waitForTimeout(100)
+    expect((await card.boundingBox())?.y).toBeCloseTo(loadedCardBounds.y, 0)
+    expect(await cardMountCount).toBe(1)
+    const cardSpace = await card.evaluate(
+      (element, anchor) => {
+        const content = element.querySelector<HTMLElement>('.hover-card__content')!
+        const style = getComputedStyle(element)
+        const verticalChrome =
+          Number.parseFloat(style.paddingTop) +
+          Number.parseFloat(style.paddingBottom) +
+          Number.parseFloat(style.borderTopWidth) +
+          Number.parseFloat(style.borderBottomWidth)
+        return {
+          naturalHeight: content.getBoundingClientRect().height + verticalChrome,
+          availableAbove: anchor.top - 6 - 8,
+          availableBelow: window.innerHeight - 8 - (anchor.bottom + 6),
+          viewportCap: window.innerHeight * 0.7,
+          inlineCap: element.style.maxHeight ? Number.parseFloat(element.style.maxHeight) : null,
+          isOverflowing: element.scrollHeight > element.clientHeight + 1,
+        }
+      },
+      { top: rowBounds.y, bottom: rowBounds.y + rowBounds.height },
+    )
+    expect(cardSpace.availableAbove).toBeGreaterThan(cardSpace.availableBelow)
+    expect(cardSpace.naturalHeight).toBeGreaterThan(cardSpace.availableBelow)
+    if (cardSpace.naturalHeight <= cardSpace.availableAbove) {
+      expect(cardSpace.inlineCap).toBeNull()
+      if (cardSpace.naturalHeight <= cardSpace.viewportCap)
+        expect(cardSpace.isOverflowing).toBe(false)
+    } else {
+      expect(cardSpace.inlineCap).toBeCloseTo(
+        Math.min(cardSpace.availableAbove, cardSpace.viewportCap),
+        0,
+      )
+      expect(cardSpace.isOverflowing).toBe(true)
+    }
   })
-  await page.setViewportSize({ width: 1440, height: 900 })
-  await page.route('**/v1/**', async (route) => {
-    const path = new URL(route.request().url()).pathname
-    const item = listItems.find((candidate) => path === `/v1/items/${candidate.id}`)
-    if (item && item.id === delayedItemId) await itemResponseReady
-    const response =
-      path === '/v1/items'
-        ? {
-            total: listItems.length,
-            limit: 200,
-            offset: 0,
-            items: listItems.map((candidate) => ({
-              id: candidate.id,
-              name: candidate.name,
-              slot: candidate.slot,
-              category: candidate.category,
-              item_type: candidate.item_type,
-              minimum_level: candidate.minimum_level,
-              enhancement_bonus: candidate.enhancement_bonus,
-              icon: candidate.icon,
-              pack: null,
-              is_raid: false,
-              is_rare: false,
-              is_legacy: candidate.is_legacy,
-            })),
-          }
-        : (item ?? [])
+}
+
+test('rapid row navigation only prefetches after a deliberate stop', async ({ page }) => {
+  const rapidItems = Array.from({ length: 40 }, (_, index) => ({
+    ...capturedArmor,
+    id: 12000 + index,
+    name: `Rapid Armor ${index + 1}`,
+  }))
+  const requestedItemIds: number[] = []
+  page.on('request', (request) => {
+    const match = new URL(request.url()).pathname.match(/^\/v1\/items\/(\d+)$/)
+    if (match) requestedItemIds.push(Number(match[1]))
+  })
+  await routeFocusRestoreItems(page, 1440, rapidItems)
+  const search = page.getByRole('searchbox', { name: 'Search items', exact: true })
+  await search.focus()
+  for (let rowIndex = 0; rowIndex < 30; rowIndex++) {
+    await page.keyboard.press('ArrowDown')
+    await page.waitForFunction(
+      (expectedIndex) => document.activeElement?.getAttribute('data-row-index') === expectedIndex,
+      String(rowIndex),
+    )
+  }
+  expect(requestedItemIds.length).toBeLessThanOrEqual(6)
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.hover-card[data-kind="item"]')).toHaveCount(0)
+  await page.waitForTimeout(301)
+  const stoppedRowId = rapidItems[30].id
+  const stoppedRowRequest = page.waitForRequest(
+    (request) => new URL(request.url()).pathname === `/v1/items/${stoppedRowId}`,
+  )
+  await page.keyboard.press('ArrowDown')
+  await expect(page.locator(`[data-row-key="${stoppedRowId}"]`)).toBeFocused()
+  await stoppedRowRequest
+  await expect(page.locator('.hover-card[data-kind="item"]')).toHaveCount(0)
+  await expect(page.locator('.hover-card[data-kind="item"]')).toContainText('Rapid Armor 31')
+})
+
+test('Escape dismisses a pointer card pinned before its item loads', async ({ page }) => {
+  await routeFocusRestoreItems(page)
+  await page.route('**/v1/items/11000', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 3000))
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(response),
+      body: JSON.stringify({ ...capturedArmor, id: 11000, name: 'Focus Armor 1' }),
     })
   })
+  const row = page.getByRole('row', { name: /Focus Armor 1/ })
+  await row.hover()
+  await page.keyboard.press('t')
+  await page.keyboard.press('Escape')
+  await page.mouse.move(0, 0)
+  await page.waitForTimeout(3200)
+  await expect(page.locator('.hover-card[data-kind="item"]')).toHaveCount(0)
+})
 
-  await page.goto('/resources/items')
-  const rows = page.locator('.resources-picker .ledger-row')
-  await expect(rows.first()).toBeVisible()
-  const targetRowIndex = await rows.evaluateAll((renderedRows) => {
-    const visibleRows = renderedRows
-      .map((row, index) => ({ index, top: row.getBoundingClientRect().top }))
-      .filter(({ top }) => top >= 620 && top <= 680)
-    return visibleRows[0]?.index ?? -1
+test('a cached neighboring row card appears within 100 ms of pointer entry', async ({ page }) => {
+  await routeFocusRestoreItems(page)
+  const firstRow = page.getByRole('row', { name: /Focus Armor 1/ })
+  const secondRow = page.getByRole('row', { name: /Focus Armor 2/ })
+  const card = page.locator('.hover-card[data-kind="item"]')
+  await secondRow.hover()
+  await expect(card.locator('.detail-card__name')).toHaveText('Focus Armor 2')
+  await page.mouse.move(0, 0)
+  await expect(card).toHaveCount(0)
+  await page.waitForTimeout(301)
+  await firstRow.hover()
+  await expect(card.locator('.detail-card__name')).toHaveText('Focus Armor 1')
+  const secondRowBounds = await secondRow.boundingBox()
+  if (!secondRowBounds) throw new Error('Second row has no bounds')
+  const swapDuration = page.evaluate(() => {
+    const row = document.querySelector<HTMLElement>('[data-row-key="11001"]')
+    if (!row) throw new Error('Second row is missing')
+    return new Promise<number>((resolve) => {
+      row.addEventListener(
+        'mouseenter',
+        () => {
+          const enteredAt = performance.now()
+          const observer = new MutationObserver(() => {
+            const name = document.querySelector<HTMLElement>(
+              '.hover-card[data-kind="item"] .detail-card__name',
+            )
+            if (name?.textContent !== 'Focus Armor 2') return
+            observer.disconnect()
+            resolve(performance.now() - enteredAt)
+          })
+          observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+        },
+        { once: true },
+      )
+    })
   })
-  expect(targetRowIndex).toBeGreaterThanOrEqual(0)
-  const row = rows.nth(targetRowIndex)
-  const rowBounds = await row.boundingBox()
-  const rowId = await row.getAttribute('data-row-key')
-  if (!rowBounds || !rowId) throw new Error('Delayed item row has no bounds or id')
-  delayedItemId = Number(rowId)
-  await row.hover({ position: { x: 40, y: rowBounds.height / 2 } })
-  const card = page.locator('[data-hover-card]')
-  await expect(card).toContainText('Loading item…')
-  expect((await card.boundingBox())?.y).toBeCloseTo(rowBounds.y + rowBounds.height + 6, 0)
-
-  releaseItemResponse()
-  await expect(card.locator('.detail-card__name')).toHaveText(
-    listItems.find((item) => item.id === delayedItemId)?.name ?? '',
-  )
-  await expect.poll(async () => (await card.boundingBox())?.y ?? 0).toBeLessThan(rowBounds.y - 6)
-  const loadedCardBounds = await card.boundingBox()
-  if (!loadedCardBounds) throw new Error('Loaded card has no bounds')
-  expect(loadedCardBounds.y + loadedCardBounds.height).toBeLessThanOrEqual(rowBounds.y - 6)
-  const cardSpace = await card.evaluate(
-    (element, anchor) => {
-      const content = element.querySelector<HTMLElement>('.hover-card__content')!
-      const style = getComputedStyle(element)
-      const verticalChrome =
-        Number.parseFloat(style.paddingTop) +
-        Number.parseFloat(style.paddingBottom) +
-        Number.parseFloat(style.borderTopWidth) +
-        Number.parseFloat(style.borderBottomWidth)
-      return {
-        naturalHeight: content.getBoundingClientRect().height + verticalChrome,
-        availableAbove: anchor.top - 6 - 8,
-        availableBelow: window.innerHeight - 8 - (anchor.bottom + 6),
-        viewportCap: window.innerHeight * 0.7,
-        inlineCap: element.style.maxHeight ? Number.parseFloat(element.style.maxHeight) : null,
-        isOverflowing: element.scrollHeight > element.clientHeight + 1,
-      }
-    },
-    { top: rowBounds.y, bottom: rowBounds.y + rowBounds.height },
-  )
-  expect(cardSpace.availableAbove).toBeGreaterThan(cardSpace.availableBelow)
-  expect(cardSpace.naturalHeight).toBeGreaterThan(cardSpace.availableBelow)
-  if (cardSpace.naturalHeight <= cardSpace.availableAbove) {
-    expect(cardSpace.inlineCap).toBeNull()
-    if (cardSpace.naturalHeight <= cardSpace.viewportCap)
-      expect(cardSpace.isOverflowing).toBe(false)
-  } else {
-    expect(cardSpace.inlineCap).toBeCloseTo(
-      Math.min(cardSpace.availableAbove, cardSpace.viewportCap),
-      0,
-    )
-    expect(cardSpace.isOverflowing).toBe(true)
-  }
+  await page.mouse.move(secondRowBounds.x + 40, secondRowBounds.y + secondRowBounds.height / 2)
+  expect(await swapDuration).toBeLessThan(100)
+  await expect(card.locator('.detail-card__name')).toHaveText('Focus Armor 2')
 })
 
 test('capped list and nested cards keep their height and viewport margin', async ({ page }) => {

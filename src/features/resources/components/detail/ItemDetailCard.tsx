@@ -527,29 +527,45 @@ function ItemDescriptionView({ entries }: { entries: readonly string[] }): JSX.E
   )
 }
 
+const DESCRIPTION_OVERFLOW_TOLERANCE_PX = 1
+
 function ItemDescriptionBriefView({ entries }: { entries: readonly string[] }): JSX.Element {
+  const descriptionText = entries[0]
   const descriptionRef = useRef<HTMLParagraphElement | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [hasOverflow, setHasOverflow] = useState(false)
   useLayoutEffect(() => {
     const description = descriptionRef.current
     if (!description) return
+    let isActive = true
     const measureOverflow = (): void => {
-      if (!isExpanded) setHasOverflow(description.scrollHeight > description.clientHeight)
+      if (isActive && !isExpanded)
+        setHasOverflow(
+          description.scrollHeight - description.clientHeight > DESCRIPTION_OVERFLOW_TOLERANCE_PX,
+        )
     }
     measureOverflow()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measureOverflow)
-    observer.observe(description)
-    return () => observer.disconnect()
-  }, [entries, isExpanded])
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measureOverflow)
+    observer?.observe(description)
+    const fonts = document.fonts
+    fonts?.addEventListener('loadingdone', measureOverflow)
+    fonts?.addEventListener('loadingerror', measureOverflow)
+    void fonts?.ready?.then(measureOverflow)
+    return () => {
+      isActive = false
+      observer?.disconnect()
+      fonts?.removeEventListener('loadingdone', measureOverflow)
+      fonts?.removeEventListener('loadingerror', measureOverflow)
+    }
+  }, [descriptionText, isExpanded])
   return (
     <>
       <p
         ref={descriptionRef}
         className={`resources-detail-description resources-detail-description--brief${isExpanded ? ' resources-detail-description--expanded' : ''}`}
       >
-        {entries[0]}
+        {descriptionText}
       </p>
       {(hasOverflow || isExpanded) && (
         <DetailMoreButton

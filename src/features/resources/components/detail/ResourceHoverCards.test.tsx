@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { render } from '../../../../test/renderWithQueryClient'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { JSX } from 'react'
 import { HoverCardProvider } from '../../../../components'
@@ -74,6 +75,28 @@ let effectVocabularyDetail: typeof riposteDetail | typeof groupDetail | typeof c
   riposteDetail
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 vi.mock('../../queries/useItems', () => ({
+  isItemCardReady: () => pendingHoverKind !== 'item',
+  isEffectReady: () => pendingHoverKind !== 'effect',
+  isDetailQueryReady: (_queryClient: unknown, detailQuery: { queryKey: string[] }) => {
+    const kind = detailQuery.queryKey[0]
+    return (
+      (kind !== 'sets' || pendingHoverKind !== 'set') &&
+      (kind !== 'quests' || pendingHoverKind !== 'quest') &&
+      (kind !== 'sources' || pendingHoverKind !== 'source')
+    )
+  },
+  setDetailQueryOptions: (id: number) => ({
+    queryKey: ['sets', 'detail', id],
+    queryFn: () => new Promise(() => {}),
+  }),
+  questDetailQueryOptions: (id: number) => ({
+    queryKey: ['quests', 'detail', id],
+    queryFn: () => new Promise(() => {}),
+  }),
+  sourceDetailQueryOptions: (kind: string, id: number) => ({
+    queryKey: ['sources', kind, id],
+    queryFn: () => new Promise(() => {}),
+  }),
   useItem: () => ({
     isPending: pendingHoverKind === 'item',
     error:
@@ -506,7 +529,7 @@ it.each([
     </HoverCardProvider>,
   )
   fireEvent.mouseEnter(screen.getByText(name))
-  act(() => vi.advanceTimersByTime(120))
+  act(() => vi.advanceTimersByTime(720))
   const card = screen.getByRole('dialog')
   expect(card.querySelector('.detail-card__header')).toBeInTheDocument()
   expect(

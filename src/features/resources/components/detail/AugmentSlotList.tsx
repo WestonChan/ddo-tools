@@ -1,12 +1,18 @@
 import type { JSX, RefObject } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ApiErrorNotice,
   AugmentSlotButton,
   LedgerTable,
+  NESTED_CARD_OPEN_DELAY_MS,
   type LedgerColumn,
 } from '../../../../components'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
-import { useFittingAugmentsBySlotLabel } from '../../queries/useItems'
+import {
+  augmentDetailQueryOptions,
+  isDetailQueryReady,
+  useFittingAugmentsBySlotLabel,
+} from '../../queries/useItems'
 import { AugmentHoverCard } from './ResourceHoverCards'
 import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 
@@ -101,6 +107,7 @@ export function AugmentCandidateLedger({
   ledgerId: string
   onClose: () => void
 }): JSX.Element {
+  const queryClient = useQueryClient()
   const fittingAugmentsQuery = useFittingAugmentsBySlotLabel(slot.label)
   const fittingAugments = fittingAugmentsQuery.data ?? []
   const socketName = titleCasedSlotLabel(slot.label)
@@ -143,7 +150,9 @@ export function AugmentCandidateLedger({
         }
         hoverCard={(augment) => ({
           kind: 'augment',
-          delayMs: 120,
+          delayMs: NESTED_CARD_OPEN_DELAY_MS,
+          prefetch: () => queryClient.ensureQueryData(augmentDetailQueryOptions(augment.id)),
+          isReady: () => isDetailQueryReady(queryClient, augmentDetailQueryOptions(augment.id)),
           render: () => <AugmentHoverCard augmentId={augment.id} />,
         })}
       />

@@ -1,9 +1,11 @@
 import type { JSX } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import {
   DetailMore,
   DetailValueRow,
   LedgerTable,
+  NESTED_CARD_OPEN_DELAY_MS,
   useHoverCard,
   type LedgerColumn,
 } from '../../../../components'
@@ -11,6 +13,12 @@ import type { EffectRow } from './effectRows'
 import { effectDamageText, isCalculatedEffectBonus } from './structuredRows'
 import { SetHoverCard } from './ResourceHoverCards'
 import { BonusHoverCard } from './BonusDetailCard'
+import {
+  prefetchEffect,
+  isEffectReady,
+  isDetailQueryReady,
+  setDetailQueryOptions,
+} from '../../queries/useItems'
 
 function EmptyBonusCell(): JSX.Element {
   return <span className="resources-bonus-empty">—</span>
@@ -103,6 +111,7 @@ function EffectLedger({
   entries: readonly EffectRow[]
   hasColumnHeaders?: boolean
 }): JSX.Element {
+  const queryClient = useQueryClient()
   return (
     <div className="resources-effect-ledger">
       <LedgerTable
@@ -127,13 +136,15 @@ function EffectLedger({
           row.headingKind === 'set'
             ? {
                 kind: 'set',
-                delayMs: 120,
+                delayMs: NESTED_CARD_OPEN_DELAY_MS,
+                prefetch: () => queryClient.ensureQueryData(setDetailQueryOptions(row.setId!)),
+                isReady: () => isDetailQueryReady(queryClient, setDetailQueryOptions(row.setId!)),
                 render: () => <SetHoverCard setId={row.setId!} onOpenItem={row.onOpenItem} />,
               }
             : row.enhancement
               ? {
                   kind: 'enchantment',
-                  delayMs: 120,
+                  delayMs: NESTED_CARD_OPEN_DELAY_MS,
                   render: () => (
                     <BonusHoverCard enhancement={row.enhancement!} originName={row.itemName} />
                   ),
@@ -141,7 +152,9 @@ function EffectLedger({
               : row.effect
                 ? {
                     kind: 'enchantment',
-                    delayMs: 120,
+                    delayMs: NESTED_CARD_OPEN_DELAY_MS,
+                    prefetch: () => prefetchEffect(queryClient, row.effect!.id),
+                    isReady: () => isEffectReady(queryClient, row.effect!.id),
                     render: () => (
                       <BonusHoverCard
                         effect={row.effect!}
@@ -196,10 +209,13 @@ export function EffectListBriefView({ entries }: { entries: readonly EffectRow[]
 }
 
 function EffectHoverRow({ row }: { row: EffectRow }): JSX.Element {
+  const queryClient = useQueryClient()
   const anchor = useHoverCard({
     kind: 'enchantment',
-    delayMs: 120,
+    delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
+    prefetch: row.effect ? () => prefetchEffect(queryClient, row.effect!.id) : undefined,
+    isReady: row.effect ? () => isEffectReady(queryClient, row.effect!.id) : undefined,
     render: () =>
       row.enhancement ? (
         <BonusHoverCard enhancement={row.enhancement} originName={row.itemName} />

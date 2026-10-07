@@ -46,6 +46,8 @@ interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue
   resultCount?: ReactNode
   onPickerSearch?: (key: keyof Values, searchQuery: string) => void
   renderPickerHover?: (key: keyof Values, option: FilterOption) => ReactNode
+  prefetchPickerHover?: (key: keyof Values, option: FilterOption) => Promise<unknown>
+  isPickerHoverReady?: (key: keyof Values, option: FilterOption) => boolean
 }
 
 interface FilterChipProps {
@@ -67,6 +69,8 @@ interface FilterChipProps {
   onAnchorChange: (button: HTMLButtonElement | null) => void
   onSearchChange?: (searchQuery: string) => void
   renderHoverCard?: (option: FilterOption) => ReactNode
+  prefetchHoverCard?: (option: FilterOption) => Promise<unknown>
+  isHoverCardReady?: (option: FilterOption) => boolean
 }
 
 function RangePopover({
@@ -173,6 +177,8 @@ function FilterChip({
   onAnchorChange,
   onSearchChange,
   renderHoverCard,
+  prefetchHoverCard,
+  isHoverCardReady,
 }: FilterChipProps): JSX.Element {
   const anchorRef = useRef<HTMLButtonElement>(null)
   const isSelected = isFilterSet(definition, value)
@@ -272,6 +278,8 @@ function FilterChip({
           shouldPreserveOptionOrder={definition.shouldPreserveOptionOrder}
           optionCount={definition.optionCount}
           renderHoverCard={renderHoverCard}
+          prefetchHoverCard={prefetchHoverCard}
+          isHoverCardReady={isHoverCardReady}
           hoverKind={definition.hoverKind}
         />
       )}
@@ -293,6 +301,8 @@ function FilterChip({
           shouldPreserveOptionOrder={definition.shouldPreserveOptionOrder}
           optionCount={definition.optionCount}
           renderHoverCard={renderHoverCard}
+          prefetchHoverCard={prefetchHoverCard}
+          isHoverCardReady={isHoverCardReady}
           hoverKind={definition.hoverKind}
         />
       )}
@@ -314,6 +324,8 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   resultCount,
   onPickerSearch,
   renderPickerHover,
+  prefetchPickerHover,
+  isPickerHoverReady,
 }: FilterChipRowProps<Values>): JSX.Element {
   const [openKey, setOpenKey] = useState<string | null>(null)
   const [isAppliedOpen, setIsAppliedOpen] = useState(false)
@@ -427,6 +439,16 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
                 renderHoverCard={
                   renderPickerHover
                     ? (option) => renderPickerHover(definition.key, option)
+                    : undefined
+                }
+                prefetchHoverCard={
+                  prefetchPickerHover
+                    ? (option) => prefetchPickerHover(definition.key, option)
+                    : undefined
+                }
+                isHoverCardReady={
+                  isPickerHoverReady
+                    ? (option) => isPickerHoverReady(definition.key, option)
                     : undefined
                 }
                 tabIndex={chipGroup.tabStopKey === String(definition.key) ? 0 : -1}

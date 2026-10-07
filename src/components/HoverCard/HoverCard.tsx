@@ -31,20 +31,29 @@ interface CardEntry {
   openedBy: 'pointer' | 'focus'
   placement?: 'beside'
   render: () => ReactNode
+  prefetch?: () => Promise<unknown>
+  isReady?: () => boolean
   isPinned: boolean
+  isLoading: boolean
 }
 
 export interface HoverCardOptions {
   kind: string
   delayMs: number
   render: () => ReactNode
+  prefetch?: () => Promise<unknown>
+  isReady?: () => boolean
   placement?: 'beside'
   isRow?: boolean
   getBesideElement?: (anchor: HTMLElement) => HTMLElement | null
 }
 
 interface CardController {
-  open: (entry: Omit<CardEntry, 'id' | 'isPinned'>, delayMs: number, isPinned?: boolean) => void
+  open: (
+    entry: Omit<CardEntry, 'id' | 'isPinned' | 'isLoading'>,
+    delayMs: number,
+    isPinned?: boolean,
+  ) => void
   closeFrom: (depth: number) => void
   closeFocusOpenedFrom: (anchorId: string, depth: number) => void
   removeAnchor: (anchorId: string) => void
@@ -68,6 +77,27 @@ const NAVIGATION_KEYS = new Set([
   'PageDown',
 ])
 const CARD_VIEWPORT_MARGIN = 8
+const CARD_ANCHOR_GAP = 6
+const CARD_ROW_HORIZONTAL_GAP = 8
+const CARD_LOADING_GRACE_MS = 600
+const CARD_SKIP_DELAY_MS = 300
+const CARD_PREFETCH_INTENT_MS = 80
+const HINT_OPEN_DELAY_MS = 260
+export const ROW_CARD_OPEN_DELAY_MS = 260
+export const NESTED_CARD_OPEN_DELAY_MS = 120
+
+interface PendingCard {
+  entry: Omit<CardEntry, 'id' | 'isPinned' | 'isLoading'>
+  isPinned: boolean
+  isDelayElapsed: boolean
+  isPrefetchSettled: boolean
+  hasLoadingGraceElapsed: boolean
+  isPrefetchStarted: boolean
+  openedCardId: number | null
+  delayTimer: number | null
+  loadingTimer: number | null
+  prefetchTimer: number | null
+}
 
 export function positionedCard({
   anchorRect,
@@ -78,6 +108,7 @@ export function positionedCard({
   viewportWidth,
   viewportHeight,
   isRow = false,
+  shouldPreferRoomierSide = false,
 }: {
   anchorRect: DOMRect
   besideRect?: DOMRect
@@ -87,19 +118,27 @@ export function positionedCard({
   viewportWidth: number
   viewportHeight: number
   isRow?: boolean
+  shouldPreferRoomierSide?: boolean
 }): { left: number; top: number; maxHeight?: number } {
   const margin = CARD_VIEWPORT_MARGIN
-  const gap = 6
+  const gap = CARD_ANCHOR_GAP
   if (isRow && pointerX === null && besideRect) {
-    const beside = positionedCardBeside(
-      besideRect,
-      cardWidth,
-      cardHeight,
-      viewportWidth,
-      viewportHeight,
-      anchorRect,
-    )
-    if (beside) return beside
+    const right = besideRect.right + CARD_ROW_HORIZONTAL_GAP
+    const left = besideRect.left - cardWidth - CARD_ROW_HORIZONTAL_GAP
+    const besideLeft =
+      right + cardWidth + margin <= viewportWidth ? right : left >= margin ? left : null
+    if (besideLeft !== null) {
+      const verticalPosition = positionedCard({
+        anchorRect,
+        pointerX: null,
+        cardWidth,
+        cardHeight,
+        viewportWidth,
+        viewportHeight,
+        shouldPreferRoomierSide,
+      })
+      return { ...verticalPosition, left: besideLeft }
+    }
   }
   const left = Math.max(
     margin,
@@ -113,7 +152,9 @@ export function positionedCard({
   const availableAbove = anchorRect.top - gap - margin
   const canFitBelow = cardHeight <= availableBelow
   const canFitAbove = cardHeight <= availableAbove
-  const isBelow = canFitBelow || (!canFitAbove && availableBelow >= availableAbove)
+  const isBelow = shouldPreferRoomierSide
+    ? availableBelow >= availableAbove
+    : canFitBelow || (!canFitAbove && availableBelow >= availableAbove)
   const maxHeight =
     canFitBelow || canFitAbove
       ? undefined
@@ -229,6 +270,7 @@ function CardLayer({
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
         isRow: card.isRow,
+        shouldPreferRoomierSide: card.isLoading,
       })
     },
     [card],
@@ -248,10 +290,17 @@ function CardLayer({
       width: element.getBoundingClientRect().width,
       height: content.getBoundingClientRect().height + verticalChrome,
     })
-    const nextPosition =
+    const nextPosition: typeof position =
       card.isPinned && cardPlacement
         ? viewportCappedPosition(cardPlacement, window.innerHeight)
         : cardPlacement
+    const previousPosition = placedPosition.current
+    if (
+      previousPosition?.left === nextPosition?.left &&
+      previousPosition?.top === nextPosition?.top &&
+      previousPosition?.maxHeight === nextPosition?.maxHeight
+    )
+      return
     placedPosition.current = nextPosition
     setPosition(nextPosition)
   }, [card.isPinned, cardPosition])
@@ -263,8 +312,8 @@ function CardLayer({
     [positionCard],
   )
   useLayoutEffect(() => {
-    if (!placedPosition.current) positionCard()
-  }, [positionCard])
+    if (!card.isPinned || !placedPosition.current) positionCard()
+  })
   useLayoutEffect(() => {
     if (!card.isPinned || !placedPosition.current) return
     const cappedPosition = viewportCappedPosition(placedPosition.current, window.innerHeight)
@@ -310,9 +359,9 @@ function CardLayer({
       typeof ResizeObserver === 'undefined'
         ? null
         : new ResizeObserver((entries) => {
-            queuePosition(
-              entries.some((entry) => entry.target === element || entry.target === content),
-            )
+            if (entries.some((entry) => entry.target === element || entry.target === content))
+              positionCard()
+            else queuePosition()
           })
     if (observer) {
       observer.observe(element)
@@ -399,7 +448,10 @@ function CardLayer({
 
 export function HoverCardProvider({ children }: { children: ReactNode }): JSX.Element {
   const [cards, setCards] = useState<CardEntry[]>([])
-  const pendingTimer = useRef<number | null>(null)
+  const cardsRef = useRef(cards)
+  const previousCardsRef = useRef(cards)
+  const recentlyClosedAt = useRef(new Map<number, number>())
+  const pendingCard = useRef<PendingCard | null>(null)
   const pendingAnchorId = useRef<string | null>(null)
   const pendingAnchorElement = useRef<HTMLElement | null>(null)
   const pendingOpenedBy = useRef<CardEntry['openedBy'] | null>(null)
@@ -414,43 +466,163 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     [],
   )
   const cancelPending = useCallback(() => {
-    if (pendingTimer.current !== null) window.clearTimeout(pendingTimer.current)
-    pendingTimer.current = null
+    const pending = pendingCard.current
+    if (pending && pending.delayTimer !== null) window.clearTimeout(pending.delayTimer)
+    if (pending && pending.loadingTimer !== null) window.clearTimeout(pending.loadingTimer)
+    if (pending && pending.prefetchTimer !== null) window.clearTimeout(pending.prefetchTimer)
+    pendingCard.current = null
     pendingAnchorId.current = null
     pendingAnchorElement.current = null
     pendingOpenedBy.current = null
   }, [])
+  const showPendingCard = useCallback(
+    (pending: PendingCard) => {
+      if (pendingCard.current !== pending) return
+      if (
+        !pending.isDelayElapsed ||
+        (!pending.isPrefetchSettled && !pending.hasLoadingGraceElapsed)
+      )
+        return
+      if (pending.openedCardId === null) {
+        const cardId = ++nextId.current
+        pending.openedCardId = cardId
+        setCards((current) =>
+          current.some((card) => card.isPinned && card.depth >= pending.entry.depth)
+            ? current
+            : [
+                ...current.slice(0, pending.entry.depth),
+                {
+                  ...pending.entry,
+                  id: cardId,
+                  isPinned: pending.isPinned,
+                  isLoading: !pending.isPrefetchSettled,
+                },
+              ],
+        )
+      } else if (pending.isPrefetchSettled) {
+        setCards((current) =>
+          current.map((card) =>
+            card.id === pending.openedCardId ? { ...card, isLoading: false } : card,
+          ),
+        )
+      }
+      if (pending.isPrefetchSettled) {
+        cancelPending()
+      }
+    },
+    [cancelPending],
+  )
+  const startPendingPrefetch = useCallback(
+    (pending: PendingCard) => {
+      if (pendingCard.current !== pending || pending.isPrefetchStarted || !pending.entry.prefetch)
+        return
+      pending.isPrefetchStarted = true
+      if (pending.prefetchTimer !== null) window.clearTimeout(pending.prefetchTimer)
+      pending.prefetchTimer = null
+      try {
+        Promise.resolve(pending.entry.prefetch()).then(
+          () => {
+            pending.isPrefetchSettled = true
+            showPendingCard(pending)
+          },
+          () => {
+            pending.isPrefetchSettled = true
+            showPendingCard(pending)
+          },
+        )
+      } catch {
+        pending.isPrefetchSettled = true
+        showPendingCard(pending)
+      }
+    },
+    [showPendingCard],
+  )
+  const startPendingLoadingGrace = useCallback(
+    (pending: PendingCard) => {
+      if (pendingCard.current !== pending || pending.isPrefetchSettled) return
+      if (pending.loadingTimer !== null) return
+      pending.loadingTimer = window.setTimeout(() => {
+        pending.hasLoadingGraceElapsed = true
+        showPendingCard(pending)
+      }, CARD_LOADING_GRACE_MS)
+    },
+    [showPendingCard],
+  )
   const open = useCallback(
-    (entry: Omit<CardEntry, 'id' | 'isPinned'>, delayMs: number, isPinned = false) => {
+    (
+      entry: Omit<CardEntry, 'id' | 'isPinned' | 'isLoading'>,
+      delayMs: number,
+      isPinned = false,
+    ) => {
       if (dismissedFocusAnchor.current === entry.anchorElement) return
+      if (pendingCard.current?.isPinned) return
+      const hasVisibleCardAtDepth = cardsRef.current.some(
+        (card) => card.depth === entry.depth && card.kind !== 'hint',
+      )
+      const lastClosedAt = recentlyClosedAt.current.get(entry.depth)
+      const shouldSkipDelay =
+        entry.kind !== 'hint' &&
+        (hasVisibleCardAtDepth ||
+          (lastClosedAt !== undefined && Date.now() - lastClosedAt < CARD_SKIP_DELAY_MS))
       cancelPending()
       pendingAnchorId.current = entry.anchorId
       pendingAnchorElement.current = entry.anchorElement
       pendingOpenedBy.current = entry.openedBy
-      pendingTimer.current = window.setTimeout(() => {
-        setCards((current) =>
-          current.some((card) => card.isPinned && card.depth >= entry.depth)
-            ? current
-            : [...current.slice(0, entry.depth), { ...entry, id: ++nextId.current, isPinned }],
-        )
-        pendingTimer.current = null
-        pendingAnchorId.current = null
-        pendingAnchorElement.current = null
-        pendingOpenedBy.current = null
-      }, delayMs)
+      const pending: PendingCard = {
+        entry,
+        isPinned,
+        isDelayElapsed: false,
+        isPrefetchSettled: !entry.prefetch || Boolean(entry.isReady?.()),
+        hasLoadingGraceElapsed: false,
+        isPrefetchStarted: false,
+        openedCardId: null,
+        delayTimer: null,
+        loadingTimer: null,
+        prefetchTimer: null,
+      }
+      pendingCard.current = pending
+      pending.delayTimer = window.setTimeout(
+        () => {
+          pending.isDelayElapsed = true
+          showPendingCard(pending)
+          startPendingLoadingGrace(pending)
+        },
+        shouldSkipDelay ? 0 : delayMs,
+      )
+      if (entry.prefetch) {
+        if (isPinned) startPendingPrefetch(pending)
+        else
+          pending.prefetchTimer = window.setTimeout(
+            () => startPendingPrefetch(pending),
+            CARD_PREFETCH_INTENT_MS,
+          )
+      }
     },
-    [cancelPending],
+    [cancelPending, showPendingCard, startPendingLoadingGrace, startPendingPrefetch],
   )
+  useLayoutEffect(() => {
+    const previousCards = previousCardsRef.current
+    for (const card of previousCards) {
+      if (card.kind !== 'hint' && !cards.some((current) => current.id === card.id))
+        recentlyClosedAt.current.set(card.depth, Date.now())
+    }
+    previousCardsRef.current = cards
+    cardsRef.current = cards
+  }, [cards])
   const closeFrom = useCallback(
     (depth: number) => {
-      cancelPending()
+      if (!pendingCard.current?.isPinned) cancelPending()
       setCards((current) => current.filter((card) => card.depth < depth || card.isPinned))
     },
     [cancelPending],
   )
   const closeFocusOpenedFrom = useCallback(
     (anchorId: string, depth: number) => {
-      if (pendingAnchorId.current === anchorId && pendingOpenedBy.current === 'focus')
+      if (
+        pendingAnchorId.current === anchorId &&
+        pendingOpenedBy.current === 'focus' &&
+        !pendingCard.current?.isPinned
+      )
         cancelPending()
       setCards((current) => {
         const isFocusOpenedCard = current.some(
@@ -528,6 +700,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           (index, card, cardIndex) => (card.isPinned ? cardIndex : index),
           -1,
         )
+        const pinnedPendingCard = pendingCard.current?.isPinned ? pendingCard.current : null
         if (requestedPinnedCard || topPinnedCardIndex >= 0) {
           const pinnedCard = requestedPinnedCard ?? cards[topPinnedCardIndex]
           event.preventDefault()
@@ -540,6 +713,12 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           })
           if (pinnedCard.anchorElement?.isConnected)
             pinnedCard.anchorElement.focus({ preventScroll: true })
+        } else if (pinnedPendingCard) {
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          cancelPending()
+          if (pinnedPendingCard.entry.openedBy === 'focus')
+            dismissedFocusAnchor.current = pinnedPendingCard.entry.anchorElement
         } else {
           const focusedCardIndex = cards.reduce(
             (index, card, cardIndex) =>
@@ -570,18 +749,28 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           dismissedFocusAnchor.current = focusedCard.anchorElement
           setCards((current) => current.slice(0, focusedCardIndex))
         }
-      } else if (
-        event.key.toLowerCase() === 't' &&
-        topCardIndex >= 0 &&
-        !isTypingTarget(event.target)
-      ) {
-        event.preventDefault()
-        cardToPin.current = cards[topCardIndex]
-        setCards((current) =>
-          current.map((card, index) =>
-            index === topCardIndex ? { ...card, isPinned: true } : card,
-          ),
-        )
+      } else if (event.key.toLowerCase() === 't' && !isTypingTarget(event.target)) {
+        if (topCardIndex >= 0) {
+          event.preventDefault()
+          cardToPin.current = cards[topCardIndex]
+          setCards((current) =>
+            current.map((card, index) =>
+              index === topCardIndex ? { ...card, isPinned: true } : card,
+            ),
+          )
+        } else {
+          const pending = pendingCard.current
+          if (!pending || pending.entry.kind === 'hint') return
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          pending.isPinned = true
+          if (pending.delayTimer !== null) window.clearTimeout(pending.delayTimer)
+          pending.delayTimer = null
+          pending.isDelayElapsed = true
+          startPendingPrefetch(pending)
+          showPendingCard(pending)
+          startPendingLoadingGrace(pending)
+        }
       }
     }
     function onFocusIn(event: FocusEvent): void {
@@ -615,7 +804,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
             ? current.filter((card) => card.depth <= clickedCardDepth)
             : current,
         )
-      } else if (cards.some((card) => card.isPinned)) {
+      } else if (cards.some((card) => card.isPinned) || pendingCard.current?.isPinned) {
         cancelPending()
         setCards((current) => {
           const pinnedIndex = current.findIndex((card) => card.isPinned)
@@ -633,7 +822,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('mousedown', onMouseDown, true)
     }
-  }, [cards, cancelPending])
+  }, [cards, cancelPending, showPendingCard, startPendingLoadingGrace, startPendingPrefetch])
 
   useEffect(() => {
     function onFocusOut(event: FocusEvent): void {
@@ -666,7 +855,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
           openedBy,
           render: () => hint,
         },
-        260,
+        HINT_OPEN_DELAY_MS,
       )
     }
     function closeHint(anchor: HTMLElement): void {
@@ -753,6 +942,8 @@ export function useHoverCard({
   kind,
   delayMs,
   render,
+  prefetch,
+  isReady,
   placement,
   isRow = false,
   getBesideElement,
@@ -793,6 +984,8 @@ export function useHoverCard({
           placement,
           getBesideElement,
           render,
+          prefetch,
+          isReady,
         },
         delayMs,
       )
@@ -820,6 +1013,8 @@ export function useHoverCard({
           placement,
           getBesideElement,
           render,
+          prefetch,
+          isReady,
         },
         delayMs,
       )
@@ -847,6 +1042,8 @@ export function useHoverCard({
           placement,
           getBesideElement,
           render,
+          prefetch,
+          isReady,
         },
         0,
         true,
@@ -859,13 +1056,20 @@ export function useHoverCardControl({
   kind,
   delayMs,
   render,
+  prefetch,
+  isReady,
   placement,
   isRow = false,
   getBesideElement,
 }: HoverCardOptions): {
   show: (
     anchor: HTMLElement,
-    options: { placementAnchor?: HTMLElement; openedBy: CardEntry['openedBy'] },
+    options: {
+      placementAnchor?: HTMLElement
+      openedBy: CardEntry['openedBy']
+      prefetch?: () => Promise<unknown>
+      isReady?: () => boolean
+    },
   ) => void
   hide: () => void
   dismiss: () => boolean
@@ -903,6 +1107,8 @@ export function useHoverCardControl({
           openedBy: options.openedBy,
           placement,
           render,
+          prefetch: options.prefetch ?? prefetch,
+          isReady: options.isReady ?? isReady,
         },
         delayMs,
       )

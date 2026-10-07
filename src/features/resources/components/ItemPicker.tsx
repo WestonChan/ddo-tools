@@ -10,11 +10,13 @@ import {
   type RefObject,
 } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { Check, Search } from 'lucide-react'
 import {
   ApiErrorNotice,
   ApiGate,
   LedgerTable,
+  ROW_CARD_OPEN_DELAY_MS,
   type LedgerColumn,
   type LedgerSort,
 } from '../../../components'
@@ -38,6 +40,10 @@ import {
   useEffectVocabulary,
   useEquipmentSlotNames,
   useItemPage,
+  prefetchItemCard,
+  isItemCardReady,
+  isDetailQueryReady,
+  effectDetailQueryOptions,
   useRaidQuests,
   useSetVocabulary,
 } from '../queries/useItems'
@@ -185,6 +191,7 @@ export function ItemPicker({
   onRowFocused,
 }: ItemPickerProps): JSX.Element {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { filters, searchQuery, selectedSort, includesSetBonuses, scrollTop } =
     useResourceListSession(category)
   const onFiltersChange = (filters: ItemListFilters): void => {
@@ -478,6 +485,16 @@ export function ItemPicker({
             <BonusHoverCard detailPath={option.detailPath} />
           ) : null
         }
+        prefetchPickerHover={(key, option) =>
+          key === 'bonuses' && option.detailPath
+            ? queryClient.ensureQueryData(effectDetailQueryOptions(option.detailPath))
+            : Promise.resolve()
+        }
+        isPickerHoverReady={(key, option) =>
+          key === 'bonuses' && option.detailPath
+            ? isDetailQueryReady(queryClient, effectDetailQueryOptions(option.detailPath))
+            : true
+        }
         searchControls={{
           bonuses: (
             <MatchModeControl
@@ -524,7 +541,9 @@ export function ItemPicker({
         navigationInputRef={effectiveSearchInputRef}
         hoverCard={(item) => ({
           kind: 'item',
-          delayMs: 260,
+          delayMs: ROW_CARD_OPEN_DELAY_MS,
+          prefetch: () => prefetchItemCard(queryClient, item.id),
+          isReady: () => isItemCardReady(queryClient, item.id),
           render: () => <ItemHoverContent itemId={item.id} onOpenItem={onOpenItemFromHover} />,
         })}
         selectedRowKey={selectedItemId}

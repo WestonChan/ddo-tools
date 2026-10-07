@@ -157,6 +157,281 @@ function stubAnimationFrames(): FrameRequestCallback[] {
   return frames
 }
 
+function PrefetchAnchor({
+  name,
+  prefetch,
+  isReady,
+}: {
+  name: string
+  prefetch: () => Promise<unknown>
+  isReady?: () => boolean
+}): React.JSX.Element {
+  const anchor = useHoverCard({
+    kind: 'item',
+    delayMs: 260,
+    prefetch,
+    isReady,
+    render: () => `${name} details`,
+  })
+  return <button {...anchor}>{name}</button>
+}
+
+it('starts prefetch on hover and waits for both data and the open delay', async () => {
+  vi.useFakeTimers()
+  let finishPrefetch!: () => void
+  const prefetch = vi.fn(() => new Promise<void>((resolve) => (finishPrefetch = resolve)))
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="First" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'First' }))
+  expect(prefetch).not.toHaveBeenCalled()
+  await act(async () => vi.advanceTimersByTime(79))
+  expect(prefetch).not.toHaveBeenCalled()
+  await act(async () => vi.advanceTimersByTime(1))
+  expect(prefetch).toHaveBeenCalledOnce()
+  await act(async () => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => finishPrefetch())
+  expect(screen.getByRole('dialog')).toHaveTextContent('First details')
+})
+
+it('cancels prefetch when pointer intent ends before 80 ms', async () => {
+  vi.useFakeTimers()
+  const prefetch = vi.fn(() => Promise.resolve())
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="Brief" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Brief' })
+  fireEvent.mouseEnter(anchor)
+  await act(async () => vi.advanceTimersByTime(79))
+  fireEvent.mouseLeave(anchor)
+  await act(async () => vi.advanceTimersByTime(1000))
+  expect(prefetch).not.toHaveBeenCalled()
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+it.each(['loaded', 'loading'] as const)(
+  'pins a pointer-hovered %s pending card on T',
+  async (state) => {
+    vi.useFakeTimers()
+    let finishPrefetch!: () => void
+    const prefetch = vi.fn(() => new Promise<void>((resolve) => (finishPrefetch = resolve)))
+    render(
+      <HoverCardProvider>
+        <PrefetchAnchor name="Pointer" prefetch={prefetch} />
+        <PrefetchAnchor name="Neighbor" prefetch={() => Promise.resolve()} />
+      </HoverCardProvider>,
+    )
+    const anchor = screen.getByRole('button', { name: 'Pointer' })
+    fireEvent.mouseEnter(anchor)
+    await act(async () => vi.advanceTimersByTime(20))
+    fireEvent.keyDown(document, { key: 't' })
+    expect(prefetch).toHaveBeenCalledOnce()
+    fireEvent.mouseLeave(anchor)
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Neighbor' }))
+    if (state === 'loaded') await act(async () => finishPrefetch())
+    else await act(async () => vi.advanceTimersByTime(600))
+    const card = screen.getByRole('dialog')
+    expect(card).toHaveClass('hover-card--pinned')
+    expect(card).toHaveTextContent('Pointer details')
+    expect(screen.getByRole('dialog')).toBe(card)
+  },
+)
+
+it.each(['Escape', 'outside mousedown', 'anchor removal'] as const)(
+  'dismisses a pointer card pinned during prefetch on %s',
+  async (dismissal) => {
+    vi.useFakeTimers()
+    let finishPrefetch!: () => void
+    const prefetch = vi.fn(() => new Promise<void>((resolve) => (finishPrefetch = resolve)))
+    const view = render(
+      <HoverCardProvider>
+        <PrefetchAnchor name="Pending" prefetch={prefetch} />
+      </HoverCardProvider>,
+    )
+    const anchor = screen.getByRole('button', { name: 'Pending' })
+    fireEvent.mouseEnter(anchor)
+    await act(async () => vi.advanceTimersByTime(20))
+    fireEvent.keyDown(document, { key: 't' })
+    expect(prefetch).toHaveBeenCalledOnce()
+    if (dismissal === 'Escape') {
+      const escape = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      })
+      document.dispatchEvent(escape)
+      expect(escape.defaultPrevented).toBe(true)
+    } else if (dismissal === 'outside mousedown') fireEvent.mouseDown(document.body)
+    else view.rerender(<HoverCardProvider>{null}</HoverCardProvider>)
+    fireEvent.mouseLeave(anchor)
+    await act(async () => finishPrefetch())
+    await act(async () => vi.advanceTimersByTime(1000))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  },
+)
+
+it('opens a slow prefetch in its loading state 600 ms after the delay', async () => {
+  vi.useFakeTimers()
+  const prefetch = (): Promise<void> => new Promise<void>(() => {})
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="Slow" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Slow' }))
+  await act(async () => vi.advanceTimersByTime(859))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => vi.advanceTimersByTime(1))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Slow details')
+})
+
+it('opens an errored prefetch once the delay has elapsed', async () => {
+  vi.useFakeTimers()
+  const prefetch = (): Promise<never> => Promise.reject(new Error('Request failed'))
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="Error" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Error' }))
+  await act(async () => vi.advanceTimersByTime(259))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => vi.advanceTimersByTime(1))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Error details')
+})
+
+it('prefetches related content after intent dwell when the card itself is cached', async () => {
+  vi.useFakeTimers()
+  const prefetch = vi.fn(() => Promise.resolve())
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="Cached item" prefetch={prefetch} isReady={() => true} />
+    </HoverCardProvider>,
+  )
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Cached item' }))
+  await act(async () => vi.advanceTimersByTime(79))
+  expect(prefetch).not.toHaveBeenCalled()
+  await act(async () => vi.advanceTimersByTime(1))
+  expect(prefetch).toHaveBeenCalledOnce()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => vi.advanceTimersByTime(180))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Cached item details')
+})
+
+it('opens cached data at the normal delay and skips that delay for a nearby card', async () => {
+  vi.useFakeTimers()
+  const prefetch = vi.fn(() => Promise.resolve())
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="First" prefetch={prefetch} />
+      <PrefetchAnchor name="Second" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  const first = screen.getByRole('button', { name: 'First' })
+  const second = screen.getByRole('button', { name: 'Second' })
+  fireEvent.mouseEnter(first)
+  await act(async () => vi.advanceTimersByTime(259))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => vi.advanceTimersByTime(1))
+  expect(screen.getByRole('dialog')).toHaveTextContent('First details')
+  fireEvent.mouseLeave(first)
+  fireEvent.mouseEnter(second)
+  await act(async () => vi.advanceTimersByTime(79))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => vi.advanceTimersByTime(1))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Second details')
+  fireEvent.mouseLeave(second)
+  await act(async () => vi.advanceTimersByTime(301))
+  fireEvent.mouseEnter(first)
+  await act(async () => vi.advanceTimersByTime(0))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toHaveTextContent('First details')
+  expect(prefetch).toHaveBeenCalledTimes(3)
+})
+
+it('swaps to an already cached neighbor without a prefetch or intent dwell', async () => {
+  vi.useFakeTimers()
+  const prefetch = vi.fn(() => Promise.resolve())
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="First" prefetch={prefetch} />
+      <PrefetchAnchor name="Cached" prefetch={prefetch} isReady={() => true} />
+    </HoverCardProvider>,
+  )
+  const first = screen.getByRole('button', { name: 'First' })
+  fireEvent.mouseEnter(first)
+  await act(async () => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toHaveTextContent('First details')
+  fireEvent.mouseLeave(first)
+  fireEvent.mouseEnter(screen.getByRole('button', { name: 'Cached' }))
+  await act(async () => vi.advanceTimersByTime(0))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Cached details')
+  expect(prefetch).toHaveBeenCalledOnce()
+})
+
+it('prefetches navigation focus but ignores programmatic focus', async () => {
+  vi.useFakeTimers()
+  const prefetch = vi.fn(() => Promise.resolve())
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="Focused" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Focused' })
+  act(() => anchor.focus())
+  expect(prefetch).not.toHaveBeenCalled()
+  act(() => anchor.blur())
+  focusWithNavigationKey(anchor)
+  await act(async () => vi.advanceTimersByTime(80))
+  expect(prefetch).toHaveBeenCalledOnce()
+  await act(async () => vi.advanceTimersByTime(180))
+  expect(screen.getByRole('dialog')).toHaveTextContent('Focused details')
+})
+
+it('pins a pending prefetched card as soon as its data is ready', async () => {
+  vi.useFakeTimers()
+  let finishPrefetch!: () => void
+  const prefetch = vi.fn(() => new Promise<void>((resolve) => (finishPrefetch = resolve)))
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="Pinned" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Pinned' })
+  act(() => anchor.focus())
+  fireEvent.keyDown(anchor, { key: 't' })
+  await act(async () => vi.advanceTimersByTime(0))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  await act(async () => finishPrefetch())
+  expect(screen.getByRole('dialog')).toHaveClass('hover-card--pinned')
+})
+
+it('ignores a prefetched response after its anchor has been left', async () => {
+  vi.useFakeTimers()
+  let finishPrefetch!: () => void
+  const prefetch = (): Promise<void> => new Promise<void>((resolve) => (finishPrefetch = resolve))
+  render(
+    <HoverCardProvider>
+      <PrefetchAnchor name="Left" prefetch={prefetch} />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Left' })
+  fireEvent.mouseEnter(anchor)
+  await act(async () => vi.advanceTimersByTime(80))
+  fireEvent.mouseLeave(anchor)
+  await act(async () => {
+    finishPrefetch()
+    vi.advanceTimersByTime(1000)
+  })
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
 it.each([
   'Tab',
   'ArrowDown',
@@ -1155,6 +1430,8 @@ it('defaults pointer-opened cards and hints to the anchor edge', () => {
   expect(screen.getByRole('dialog').style.left).toBe('120px')
   fireEvent.mouseLeave(cardAnchor)
   fireEvent.mouseOver(screen.getByRole('button', { name: 'Hint anchor' }), { clientX: 310 })
+  act(() => vi.advanceTimersByTime(0))
+  expect(screen.queryByRole('tooltip')).toBeNull()
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('tooltip').style.left).toBe('120px')
 })
@@ -1197,6 +1474,22 @@ it('places cards above crowded anchors and caps a too-tall card without covering
   })
   expect(middleCard).toMatchObject({ left: 100, top: 361, maxHeight: 531 })
   expect(middleCard.top).toBeGreaterThanOrEqual(middleAnchor.bottom + 6)
+})
+
+it('places a short loading card on the side with more room', () => {
+  const rowRect = DOMRect.fromRect({ x: 400, y: 650, width: 280, height: 32 })
+  const position = positionedCard({
+    anchorRect: rowRect,
+    pointerX: 440,
+    cardWidth: 300,
+    cardHeight: 80,
+    viewportWidth: 1440,
+    viewportHeight: 900,
+    isRow: true,
+    shouldPreferRoomierSide: true,
+  })
+  expect(position.top + 80).toBeLessThanOrEqual(rowRect.top - 6)
+  expect(position).not.toHaveProperty('maxHeight')
 })
 
 it('keeps a pointer row card in place when clicking focuses its row', () => {
@@ -1452,7 +1745,7 @@ it('re-reads the name cell when a keyboard row moves', async () => {
   act(() => vi.advanceTimersByTime(0))
   const card = screen.getByRole('dialog')
   expect(card.style.left).toBe('618px')
-  expect(card.style.top).toBe('200px')
+  expect(card.style.top).toBe('238px')
 
   fireEvent.click(screen.getByRole('button', { name: 'Insert content above' }))
   await act(async () => {})
@@ -1460,7 +1753,7 @@ it('re-reads the name cell when a keyboard row moves', async () => {
   if (!frame) throw new Error('Unpinned card did not watch its anchor')
   act(() => frame(0))
   expect(card.style.left).toBe('638px')
-  expect(card.style.top).toBe('240px')
+  expect(card.style.top).toBe('278px')
 
   fireEvent.click(screen.getByRole('button', { name: 'Widen name cell' }))
   await act(async () => {})
@@ -1468,7 +1761,7 @@ it('re-reads the name cell when a keyboard row moves', async () => {
   if (!widthFrame) throw new Error('Unpinned card stopped watching its name cell')
   act(() => widthFrame(16))
   expect(card.style.left).toBe('678px')
-  expect(card.style.top).toBe('240px')
+  expect(card.style.top).toBe('278px')
 })
 
 it('moves an initially short card above when its loaded content no longer fits below', () => {
@@ -1534,12 +1827,9 @@ it('moves an initially short card above when its loaded content no longer fits b
   act(() => vi.advanceTimersByTime(100))
   expect(card.getBoundingClientRect().height).toBeGreaterThan(initialHeight)
   act(() => notifyResize())
-  const loadedFrame = frames.shift()
-  if (!loadedFrame) throw new Error('Loaded content did not queue a placement')
-  act(() => loadedFrame(0))
-
   expect(card.style.top).toBe('302px')
   expect(card.style.maxHeight).toBe('')
+  expect(frames).toHaveLength(0)
 })
 
 it('keeps a too-tall card capped after measuring its displayed box again', () => {
@@ -1671,20 +1961,20 @@ it('places keyboard row cards beside the name cell and falls back below narrow r
       ...measurements,
       besideRect: DOMRect.fromRect({ x: 400, y: 205.75, width: 220, height: 20 }),
     }),
-  ).toMatchObject({ left: 628, top: 200 })
+  ).toMatchObject({ left: 628, top: 238 })
   expect(
     positionedCard({
       ...measurements,
       besideRect: DOMRect.fromRect({ x: 650, y: 205.75, width: 220, height: 20 }),
     }),
-  ).toMatchObject({ left: 342, top: 200 })
+  ).toMatchObject({ left: 342, top: 238 })
   expect(
     positionedCard({
       ...measurements,
       anchorRect: DOMRect.fromRect({ x: 400, y: 700, width: 500, height: 32 }),
       besideRect: DOMRect.fromRect({ x: 400, y: 705.75, width: 220, height: 20 }),
     }),
-  ).toMatchObject({ left: 628, top: 580 })
+  ).toMatchObject({ left: 628, top: 514 })
   expect(
     positionedCard({
       ...measurements,
@@ -1696,10 +1986,10 @@ it('places keyboard row cards beside the name cell and falls back below narrow r
 })
 
 it.each([
-  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 528, expectedTop: 200, openBy: 'focus' },
-  { viewportWidth: 1024, rowLeft: 650, expectedLeft: 342, expectedTop: 200, openBy: 'focus' },
+  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 528, expectedTop: 238, openBy: 'focus' },
+  { viewportWidth: 1024, rowLeft: 650, expectedLeft: 342, expectedTop: 238, openBy: 'focus' },
   { viewportWidth: 375, rowLeft: 8, expectedLeft: 8, expectedTop: 238, openBy: 'focus' },
-  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 528, expectedTop: 200, openBy: 't' },
+  { viewportWidth: 1024, rowLeft: 400, expectedLeft: 528, expectedTop: 238, openBy: 't' },
   { viewportWidth: 1024, rowLeft: 400, expectedLeft: 489, expectedTop: 238, openBy: 'pointer' },
 ])(
   'places a $openBy row card beside its name cell or falls back at $viewportWidth px from $rowLeft',

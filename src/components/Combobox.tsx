@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type JSX, type ReactNode, type RefObject } from 'react'
 import { Check, ChevronDown, Search } from 'lucide-react'
 import { AnchoredMenu } from './AnchoredMenu'
-import { positionedCardBeside, useHoverCardControl } from './HoverCard'
+import { NESTED_CARD_OPEN_DELAY_MS, positionedCardBeside, useHoverCardControl } from './HoverCard'
 import './Combobox.css'
 
 export interface FilterOption {
@@ -31,6 +31,8 @@ interface ComboboxCommonProps {
   shouldPreserveOptionOrder?: boolean
   optionCount?: number
   renderHoverCard?: (option: FilterOption) => ReactNode
+  prefetchHoverCard?: (option: FilterOption) => Promise<unknown>
+  isHoverCardReady?: (option: FilterOption) => boolean
   hoverKind?: string
 }
 
@@ -57,6 +59,8 @@ export function Combobox(props: ComboboxProps): JSX.Element {
     shouldPreserveOptionOrder = false,
     optionCount,
     renderHoverCard,
+    prefetchHoverCard,
+    isHoverCardReady,
     hoverKind,
   } = props
   const [searchQuery, setSearchQuery] = useState('')
@@ -82,7 +86,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
   const hoveredOption = useRef<FilterOption | null>(null)
   const hover = useHoverCardControl({
     kind: hoverKind ?? 'option',
-    delayMs: 120,
+    delayMs: NESTED_CARD_OPEN_DELAY_MS,
     placement: 'beside',
     render: () => hoveredOption.current && renderHoverCard?.(hoveredOption.current),
   })
@@ -293,6 +297,8 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                       hover.show(event.currentTarget, {
                         placementAnchor: menu,
                         openedBy: 'pointer',
+                        prefetch: prefetchHoverCard ? () => prefetchHoverCard(option) : undefined,
+                        isReady: isHoverCardReady ? () => isHoverCardReady(option) : undefined,
                       })
                     }}
                     onMouseLeave={() => hover.hide()}

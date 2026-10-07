@@ -9,12 +9,15 @@ import { router } from './router'
 import { captureBoundaryError, initializeSentry } from './lib/sentry'
 import { persistNormalizedAccent, restoreAccent } from './lib/accent'
 import { shouldRetryQuery } from './lib/api'
+import { loadAppFonts } from './lib/appFonts'
+import { StartupFontGate } from './app/StartupFontGate'
 import './index.css'
 import './components/SharedControlFocus.css'
 
 initializeSentry()
 restoreAccent()
 persistNormalizedAccent()
+const fontsReady = loadAppFonts()
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,7 +45,9 @@ createRoot(document.getElementById('root')!).render(
     >
       <QueryClientProvider client={queryClient}>
         <CharacterProvider>
-          <RouterProvider router={router} />
+          <StartupFontGate fontsReady={fontsReady}>
+            <RouterProvider router={router} />
+          </StartupFontGate>
         </CharacterProvider>
       </QueryClientProvider>
     </ErrorBoundary>
