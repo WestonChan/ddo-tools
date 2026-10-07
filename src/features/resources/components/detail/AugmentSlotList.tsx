@@ -1,5 +1,10 @@
 import type { JSX, RefObject } from 'react'
-import { ApiErrorNotice, LedgerTable, type LedgerColumn } from '../../../../components'
+import {
+  ApiErrorNotice,
+  AugmentSlotButton,
+  LedgerTable,
+  type LedgerColumn,
+} from '../../../../components'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { useFittingAugmentsBySlotLabel } from '../../queries/useItems'
 import { AugmentHoverContent } from './ResourceHoverCards'
@@ -44,16 +49,6 @@ const AUGMENT_COLUMNS: LedgerColumn<AugmentSummary>[] = [
   },
 ]
 
-const AUGMENT_SLOT_LETTER_BY_COLOR = new Map([
-  ['blue', 'B'],
-  ['red', 'R'],
-  ['yellow', 'Y'],
-  ['green', 'G'],
-  ['purple', 'P'],
-  ['orange', 'O'],
-  ['colorless', 'C'],
-])
-
 export function AugmentSlotList({
   augmentSlots,
   expandedSlotSortOrder,
@@ -77,30 +72,17 @@ export function AugmentSlotList({
         {augmentSlots.map((slot) => {
           const isExpanded = expandedSlotSortOrder === slot.sortOrder
           const displayedLabel = titleCasedSlotLabel(slot.label)
-          const slotColor = slot.label.toLowerCase()
-          const slotLetter = AUGMENT_SLOT_LETTER_BY_COLOR.get(slotColor)
           return (
-            <li key={slot.sortOrder} className="resources-augment-slot" data-color={slotColor}>
-              <button
+            <li key={slot.sortOrder} className="resources-augment-slot">
+              <AugmentSlotButton
+                family={slot.family}
+                label={slot.label}
+                name={displayedLabel}
                 ref={isExpanded ? expandedSocketButtonRef : undefined}
-                type="button"
-                className={
-                  slotLetter === undefined
-                    ? 'resources-augment-word hoverable'
-                    : 'resources-augment-symbol'
-                }
-                aria-label={slotLetter === undefined ? undefined : `${displayedLabel} slot`}
                 aria-expanded={isExpanded}
                 aria-controls={isExpanded ? ledgerId : undefined}
-                data-tip={`${displayedLabel} slot`}
                 onClick={() => onToggleSlot(slot.sortOrder)}
-              >
-                {slotLetter === undefined ? (
-                  displayedLabel
-                ) : (
-                  <span aria-hidden="true">{slotLetter}</span>
-                )}
-              </button>
+              />
             </li>
           )
         })}

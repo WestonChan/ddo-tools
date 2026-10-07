@@ -990,13 +990,18 @@ button.resources-hover-row:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-1-5);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .resources-augment-list {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: calc(var(--space-1) + var(--space-px));
-  height: 22.52px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 22.52px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1005,97 +1010,8 @@ button.resources-hover-row:hover {
 .resources-augment-slot {
   display: inline-flex;
   align-items: center;
-}
-
-.resources-augment-slot[data-color='yellow'] {
-  --augment-color: var(--amber-400);
-}
-
-.resources-augment-slot[data-color='blue'] {
-  --augment-color: var(--arcane-400);
-}
-
-.resources-augment-slot[data-color='red'] {
-  --augment-color: var(--rust-400);
-}
-
-.resources-augment-slot[data-color='purple'] {
-  --augment-color: var(--violet-400);
-}
-
-.resources-augment-slot[data-color='green'] {
-  --augment-color: var(--moss-400);
-}
-
-.resources-augment-slot[data-color='orange'] {
-  --augment-color: color-mix(in oklch, var(--rust-400) 50%, var(--amber-400));
-}
-
-.resources-augment-slot[data-color='colorless'] {
-  --augment-color: var(--stone-400, #8a8378);
-}
-
-.resources-augment-slot[data-color='sun'] {
-  --augment-color: #f0b429;
-}
-
-.resources-augment-slot[data-color='moon'] {
-  --augment-color: #8fa6c0;
-}
-
-.resources-augment-symbol {
-  --augment-fill: color-mix(in oklch, var(--augment-color) 82%, #000);
-  --augment-ink: #fff;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 26px;
-  width: 26px;
-  height: 22.52px;
-  padding: 0;
-  background: var(--augment-fill);
-  border: 0;
-  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
-  color: var(--augment-ink);
-  font-family: var(--font-ui);
-  font-size: var(--fs-body-sm);
-  font-weight: var(--fw-bold);
-  line-height: 1;
-  cursor: pointer;
-}
-
-.resources-augment-slot[data-color='yellow'] .resources-augment-symbol {
-  --augment-fill: color-mix(in oklch, var(--augment-color) 72%, #000);
-}
-
-:root[data-theme='light'] .resources-augment-symbol {
-  --augment-fill: color-mix(in oklch, var(--augment-color) 62%, #fff);
-  --augment-ink: #14110e;
-}
-
-.resources-augment-word {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  height: 22px;
-  padding: 0 var(--space-1) 0 0;
-  background: none;
-  border: 0;
-  color: var(--augment-color, var(--text-muted));
-  font-size: var(--fs-hover-title);
-  font-weight: var(--fw-semibold);
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.detail-card--hover .resources-augment-word {
-  font-size: var(--fs-hover-copy);
-}
-
-.resources-augment-word[aria-expanded='true'] {
-  text-decoration: underline;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .resources-augment-candidates {

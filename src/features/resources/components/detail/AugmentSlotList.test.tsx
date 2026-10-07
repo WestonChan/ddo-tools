@@ -6,6 +6,9 @@ import { HoverCardProvider } from '../../../../components'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { ApiError, API_HTTP_ERROR } from '../../../../lib/api'
+import type { ApiItemDetail } from '../../../../lib/api'
+import { toItem } from '../../queries/items'
+import capturedRing from '../../queries/fixtures/effects-item-487.json'
 
 let augmentsBySlotLabel: Record<string, AugmentSummary[]> = {}
 let augmentError: ApiError | null = null
@@ -100,13 +103,69 @@ it('makes colour symbols and unchanged named sockets buttons', () => {
   expect(screen.getByRole('button', { name: 'Red slot' })).toHaveAttribute('data-tip', 'Red slot')
   expect(document.querySelector('.resources-augment-gem')).toBeNull()
   expect(document.querySelector('.resources-augment-label')).toBeNull()
-  expect(screen.getByRole('button', { name: 'Red slot' })).toHaveClass('resources-augment-symbol')
-  expect(screen.getByRole('button', { name: 'Sun' })).toHaveClass('resources-augment-word')
-  expect(screen.getByRole('button', { name: 'Sun' })).toHaveTextContent('Sun')
-  expect(screen.getByRole('button', { name: "Slaver's: Prefix" })).toHaveClass(
-    'resources-augment-word',
+  expect(screen.getByRole('button', { name: 'Red slot' })).toHaveClass('augment-slot-symbol')
+  expect(screen.getByRole('button', { name: 'Sun slot' })).toHaveClass('augment-slot-symbol')
+  expect(screen.getByRole('button', { name: 'Sun slot' })).toHaveTextContent('S')
+  expect(screen.getByRole('button', { name: "Slaver's: Prefix" })).toHaveClass('augment-slot-word')
+  expect(screen.getByRole('button', { name: 'Constructor' })).toHaveClass('augment-slot-word')
+})
+
+it('maps API socket families and labels to symbols or words without changing the ledger label', async () => {
+  const apiSlot = capturedRing.augment_slots[0]
+  const apiSlots = [
+    ['standard', 'sun', 'S', 'Sun slot', 'augment-slot-symbol--sun'],
+    ['standard', 'moon', 'M', 'Moon slot', 'augment-slot-symbol--moon'],
+    [
+      'dino',
+      'isle of dread: artifact scale (accessory)',
+      'D',
+      'Isle of Dread: Artifact Scale (Accessory) slot',
+      'augment-slot-symbol--dino',
+    ],
+    [
+      'crafting',
+      'crafting: variant',
+      'Crafting: Variant',
+      'Crafting: Variant',
+      'augment-slot-word',
+    ],
+    [
+      'lamordia',
+      'lamordia: melancholic (accessory)',
+      'Lamordia: Melancholic (Accessory)',
+      'Lamordia: Melancholic (Accessory)',
+      'augment-slot-word',
+    ],
+    ['upgrade', 'upgrade: tier 1', 'Upgrade: Tier 1', 'Upgrade: Tier 1', 'augment-slot-word'],
+  ] as const
+  const augmentSlots = toItem({
+    ...capturedRing,
+    augment_slots: apiSlots.map(([family, label], sort_order) => ({
+      ...apiSlot,
+      family,
+      label,
+      variant: label,
+      sort_order,
+    })),
+  } as ApiItemDetail).augmentSlots
+
+  render(<AugmentSlotPicker augmentSlots={augmentSlots} />)
+
+  for (const [, , letterOrWord, accessibleName, className] of apiSlots) {
+    const button = screen.getByRole('button', { name: accessibleName })
+    expect(button).toHaveTextContent(letterOrWord)
+    expect(button).toHaveClass(className)
+    expect(button).toHaveAttribute('data-tip', `${accessibleName.replace(/ slot$/, '')} slot`)
+    if (className.startsWith('augment-slot-symbol')) {
+      expect(button.parentElement?.querySelector('.augment-slot-focus-ring')).not.toBeNull()
+    }
+  }
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Isle of Dread: Artifact Scale (Accessory) slot' }),
   )
-  expect(screen.getByRole('button', { name: 'Constructor' })).toHaveClass('resources-augment-word')
+  expect(fittingAugmentsHookMock).toHaveBeenLastCalledWith(
+    'isle of dread: artifact scale (accessory)',
+  )
 })
 
 it('shows each standard socket as a labelled letter in source order', () => {
@@ -125,7 +184,9 @@ it('shows each standard socket as a labelled letter in source order', () => {
     const symbol = screen.getByRole('button', {
       name: `${color[0].toUpperCase()}${color.slice(1)} slot`,
     })
-    expect(symbol).toHaveClass('resources-augment-symbol')
+    expect(symbol).toHaveClass('augment-slot-symbol')
+    if (color === 'colorless') expect(symbol).toHaveClass('augment-slot-symbol--colorless')
+    expect(symbol.parentElement?.querySelector('.augment-slot-focus-ring')).not.toBeNull()
     expect(symbol.firstElementChild).toHaveAttribute('aria-hidden', 'true')
     expect(symbol).toHaveAttribute('data-tip', `${color[0].toUpperCase()}${color.slice(1)} slot`)
   }
@@ -206,7 +267,9 @@ it('closes the first table when another socket opens and closes on a second clic
   const sun = screen.getByRole('button', { name: /Sun/ })
   await userEvent.click(red)
   expect(screen.getByText('Ruby of Flame')).toBeInTheDocument()
-  await userEvent.click(sun)
+  sun.focus()
+  await userEvent.keyboard('{Enter}')
+  expect(fittingAugmentsHookMock).toHaveBeenLastCalledWith('sun')
   expect(screen.queryByText('Ruby of Flame')).toBeNull()
   expect(screen.getByText('Solar Gem')).toBeInTheDocument()
   expect(screen.getByText('Sun socket · 1 augment')).toBeInTheDocument()

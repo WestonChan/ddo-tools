@@ -7,6 +7,190 @@ import capturedShield from '../src/features/resources/queries/fixtures/effects-i
 import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
 
+test('augment symbols keep their shape, focus ring, colour, and mobile bounds', async ({
+  page,
+}) => {
+  const apiSlot = capturedArmor.augment_slots[0]
+  const itemResponses = [
+    {
+      ...capturedArmor,
+      id: 633,
+      name: 'Armor of Sunlight',
+      augment_slots: ['blue', 'sun'].map((label, sort_order) => ({
+        ...apiSlot,
+        family: 'standard',
+        label,
+        variant: label,
+        sort_order,
+      })),
+    },
+    {
+      ...capturedRing,
+      id: 1831,
+      name: 'Dinosaur Bone Belt',
+      slot: 'Waist',
+      set: null,
+      set_name: null,
+      augment_slots: [
+        'isle of dread: artifact scale (accessory)',
+        'isle of dread: artifact fang (accessory)',
+        'isle of dread: artifact claw (accessory)',
+        'isle of dread: artifact horn (accessory)',
+        'blue',
+        'green',
+        'yellow',
+      ].map((label, sort_order) => ({
+        ...apiSlot,
+        family: sort_order < 4 ? 'dino' : 'standard',
+        label,
+        variant: label,
+        sort_order,
+      })),
+    },
+    {
+      ...capturedRing,
+      id: 4022,
+      name: 'Item 4022',
+      set: null,
+      set_name: null,
+      augment_slots: [
+        'crafting: nearly complete: quality ability score (legendary)',
+        'green',
+        'colorless',
+        'moon',
+      ].map((label, sort_order) => ({
+        ...apiSlot,
+        family: sort_order === 0 ? 'crafting' : 'standard',
+        label,
+        variant: label,
+        sort_order,
+      })),
+    },
+  ]
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = itemResponses.find((response) => path === `/v1/items/${response.id}`)
+    const response =
+      item ??
+      (path === '/v1/items'
+        ? {
+            total: itemResponses.length,
+            limit: 200,
+            offset: 0,
+            items: itemResponses.map((itemResponse) => ({
+              id: itemResponse.id,
+              name: itemResponse.name,
+              slot: itemResponse.slot,
+              category: itemResponse.category,
+              item_type: itemResponse.item_type,
+              minimum_level: itemResponse.minimum_level,
+              enhancement_bonus: itemResponse.enhancement_bonus,
+              icon: itemResponse.icon,
+              pack: null,
+              is_raid: false,
+              is_rare: false,
+              is_legacy: itemResponse.is_legacy,
+            })),
+          }
+        : path === '/v1/augments'
+          ? { total: 0, limit: 200, offset: 0, augments: [] }
+          : [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.goto('/resources/items/633')
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const sun = pane.getByRole('button', { name: 'Sun slot', exact: true })
+  await expect(sun).toHaveText('S')
+  const sunBounds = await sun.boundingBox()
+  expect(sunBounds?.width).toBe(26)
+  expect(sunBounds?.height).toBe(26)
+  await pane.getByRole('button', { name: 'Blue slot', exact: true }).focus()
+  await page.keyboard.press('Tab')
+  await expect(sun).toBeFocused()
+  const focusRing = sun.locator('..').locator('.augment-slot-focus-ring')
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate((chosenTheme) => {
+      document.documentElement.dataset.theme = chosenTheme
+    }, theme)
+    await expect(focusRing).toBeVisible()
+    const clearance = await focusRing.evaluate((ring) => {
+      const symbol = ring.parentElement!.querySelector('button')!
+      const ringBounds = ring.getBoundingClientRect()
+      const symbolBounds = symbol.getBoundingClientRect()
+      return {
+        left: symbolBounds.left - ringBounds.left,
+        top: symbolBounds.top - ringBounds.top,
+        right: ringBounds.right - symbolBounds.right,
+        bottom: ringBounds.bottom - symbolBounds.bottom,
+      }
+    })
+    for (const side of Object.values(clearance)) expect(side).toBeGreaterThan(2)
+    await expect(focusRing).toHaveCSS('border-top-width', '2px')
+  }
+  await sun.click()
+  await expect(pane.locator('.resources-augment-candidates__heading')).toHaveText(
+    'Sun socket · 0 augments',
+  )
+  await page.getByRole('row', { name: /Armor of Sunlight/ }).hover()
+  await expect(page.locator('[data-hover-card] .augment-slot-symbol--sun')).toHaveText('S')
+  await page.mouse.move(0, 0)
+
+  await page.goto('/resources/items/1831')
+  const dinosaurSymbols = pane.locator('.augment-slot-symbol--dino')
+  await expect(dinosaurSymbols).toHaveCount(4)
+  await expect(dinosaurSymbols.first()).toHaveText('D')
+  const dinosaurBounds = await dinosaurSymbols.first().boundingBox()
+  expect(dinosaurBounds?.width).toBe(26)
+  expect(dinosaurBounds?.height).toBeCloseTo(22.52, 1)
+  await expect(pane.locator('.augment-slot-symbol')).toHaveCount(7)
+
+  await page.setViewportSize({ width: 375, height: 800 })
+  await page.goto('/resources/items/4022')
+  const longWord = pane.getByRole('button', {
+    name: 'Crafting: Nearly Complete: Quality Ability Score (Legendary)',
+    exact: true,
+  })
+  await expect(longWord).toHaveAttribute(
+    'data-tip',
+    'Crafting: Nearly Complete: Quality Ability Score (Legendary) slot',
+  )
+  expect(
+    await longWord
+      .locator('.augment-slot-word-label')
+      .evaluate((label) => label.scrollWidth > label.clientWidth),
+  ).toBe(true)
+  await expect(pane.locator('.augment-slot-symbol')).toHaveCount(3)
+  const symbolRightEdges = await pane
+    .locator('.augment-slot-symbol')
+    .evaluateAll((symbols) => symbols.map((symbol) => symbol.getBoundingClientRect().right))
+  expect(Math.max(...symbolRightEdges)).toBeLessThanOrEqual(375)
+  const colorless = pane.getByRole('button', { name: 'Colorless slot', exact: true })
+  for (const [theme, stoneToken] of [
+    ['dark', '--stone-300'],
+    ['light', '--stone-200'],
+  ] as const) {
+    await page.evaluate((chosenTheme) => {
+      document.documentElement.dataset.theme = chosenTheme
+    }, theme)
+    const colors = await colorless.evaluate((button, token) => {
+      const swatch = document.createElement('span')
+      swatch.style.backgroundColor = `var(${token})`
+      document.body.append(swatch)
+      const expectedBackground = getComputedStyle(swatch).backgroundColor
+      swatch.remove()
+      const style = getComputedStyle(button)
+      return { background: style.backgroundColor, expectedBackground, ink: style.color }
+    }, stoneToken)
+    expect(colors.background).toBe(colors.expectedBackground)
+    expect(colors.ink).toBe('rgb(20, 17, 14)')
+  }
+})
+
 test('Escape from a tabbed detail pane returns to its focused list row at wide and narrow widths', async ({
   page,
 }) => {
@@ -183,6 +367,7 @@ test('Escape closes a socket from its header and keeps focus in the detail', asy
     name: 'Name',
     exact: true,
   })
+  await expect(nameHeader).toBeVisible()
   await page.keyboard.press('Tab')
   await page.keyboard.press('Tab')
   await page.keyboard.press('Shift+Tab')
@@ -930,7 +1115,7 @@ test('set band heights and opening an augment socket preserve the item detail la
     Array.from(grid.querySelectorAll('.detail-card__fact')).map((fact) => {
       const value =
         fact.querySelector(
-          '.resources-augment-symbol, .num, .resources-hover-anchor, .detail-card__fact-empty',
+          '.augment-slot-symbol, .num, .resources-hover-anchor, .detail-card__fact-empty',
         ) ?? fact.lastElementChild!
       const style = getComputedStyle(value)
       return { fontSize: style.fontSize, fontWeight: style.fontWeight }
@@ -973,7 +1158,7 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.getByRole('row', { name: /Adversion/ }).hover()
   const hoverCard = page.locator('[data-hover-card]')
   await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
-  await expect(hoverCard.locator('.detail-card__facts .resources-augment-symbol')).toBeVisible()
+  await expect(hoverCard.locator('.detail-card__facts .augment-slot-symbol')).toBeVisible()
   expect(await hoverCard.locator('.detail-card__facts').evaluate(factValueStyles)).toEqual([
     ...Array(5).fill({ fontSize: '12.5px', fontWeight: '600' }),
     { fontSize: '13px', fontWeight: '700' },
@@ -1076,7 +1261,7 @@ test('the detail pane displays the item name once beside the list and takes over
   const hoverCard = page.locator('[data-hover-card]')
   await expect(hoverCard).toBeVisible()
   await expect(hoverCard.locator('.detail-card__header .detail-card__facts')).toBeVisible()
-  await expect(hoverCard.locator('.detail-card__facts .resources-augment-word')).toBeVisible()
+  await expect(hoverCard.locator('.detail-card__facts .augment-slot-word')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(hoverCard).toBeVisible()
   await page.mouse.move(0, 0)
@@ -1095,7 +1280,7 @@ test('the detail pane displays the item name once beside the list and takes over
   await expect(picker).toHaveCount(0)
   await expect(detailPane).toBeInViewport()
   await expect(detailPane.locator('.detail-card__header .detail-card__facts')).toBeInViewport()
-  await expect(detailPane.locator('.detail-card__facts .resources-augment-word')).toBeVisible()
+  await expect(detailPane.locator('.detail-card__facts .augment-slot-word')).toBeVisible()
   const mobileName = await detailPane.locator('.detail-card__name').boundingBox()
   const mobileActions = await detailPane.locator('.detail-card__actions').boundingBox()
   expect((mobileActions?.y ?? 0) >= (mobileName?.y ?? 0) + (mobileName?.height ?? 0)).toBe(true)

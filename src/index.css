@@ -41,6 +41,8 @@
   --rust-600: #7c2e28;
   --violet-400: #8b6cb5;
   --violet-500: #73549c;
+  --augment-sun: #f0b429;
+  --augment-moon: #8fa6c0;
 
   --dmg-physical: #a9a091;
   --dmg-fire: #c4562f;
@@ -215,6 +217,8 @@
 }
 
 :root[data-theme='light'] {
+  --augment-sun: #f0b429;
+  --augment-moon: #8fa6c0;
   --bg-app: var(--stone-25);
   --bg-panel: var(--stone-50);
   --surface-card: var(--stone-0);

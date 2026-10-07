@@ -413,7 +413,7 @@ describe('ItemDetailCard details', () => {
       Array.from(facts.children).map((fact) => fact.querySelector('.section-label')?.textContent)
     const originalLabels = factLabels()
     expect(originalLabels).toEqual(['ML', 'Gear slot', 'Raid', 'Rare', 'Set', 'Augments'])
-    expect(originalFacts.at(-1)?.querySelector('.resources-augment-symbol')).toHaveTextContent('Y')
+    expect(originalFacts.at(-1)?.querySelector('.augment-slot-symbol')).toHaveTextContent('Y')
     await userEvent.click(screen.getByRole('button', { name: 'Yellow slot' }))
     const ledger = container.querySelector('.resources-augment-candidates')!
     expect(ledger).not.toBeNull()
@@ -526,15 +526,31 @@ describe('ItemDetailCard details', () => {
   })
 
   it('keeps hover card sockets last in the header facts', () => {
-    const { container } = render(
-      <ItemDetailCard item={toCapturedItem(capturedRing)} variant="hover" />,
-    )
+    const apiSlot = capturedRing.augment_slots[0]
+    const item = toItem({
+      ...capturedRing,
+      augment_slots: [
+        apiSlot,
+        { ...apiSlot, sort_order: 1, label: 'sun', variant: 'sun' },
+        { ...apiSlot, sort_order: 2, label: 'moon', variant: 'moon' },
+        {
+          ...apiSlot,
+          sort_order: 3,
+          family: 'dino',
+          label: 'isle of dread: artifact scale (accessory)',
+          variant: 'artifact scale (accessory)',
+        },
+      ],
+    } as ApiItemDetail)
+    const { container } = render(<ItemDetailCard item={item} variant="hover" />)
     const header = container.querySelector('.detail-card--hover .detail-card__header')!
     const facts = header.querySelector('.detail-card__facts')!
     expect(facts.lastElementChild?.querySelector('.section-label')).toHaveTextContent('Augments')
-    expect(facts.lastElementChild?.querySelector('.resources-augment-symbol')).toHaveTextContent(
-      'Y',
-    )
+    expect(
+      Array.from(facts.lastElementChild?.querySelectorAll('.augment-slot-symbol') ?? []).map(
+        (symbol) => symbol.textContent,
+      ),
+    ).toEqual(['Y', 'S', 'M', 'D'])
     expect(header.nextElementSibling).toHaveClass('detail-card__body')
   })
 

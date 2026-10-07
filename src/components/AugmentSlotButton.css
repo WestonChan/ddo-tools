@@ -1,0 +1,153 @@
+.augment-slot-control {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.augment-slot-control:focus-within {
+  z-index: 1;
+}
+
+.augment-slot-focus-ring {
+  position: absolute;
+  inset: calc(-1 * var(--space-1));
+  display: none;
+  border: 2px solid var(--border-focus);
+  border-radius: var(--radius-xs);
+  pointer-events: none;
+}
+
+.augment-slot-symbol:focus-visible {
+  outline-color: transparent;
+}
+
+.augment-slot-symbol:focus-visible + .augment-slot-focus-ring {
+  display: block;
+}
+
+.augment-slot-symbol {
+  --augment-color: var(--stone-400);
+  --augment-fill: color-mix(in oklch, var(--augment-color) 82%, #000);
+  --augment-ink: #fff;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 22.52px;
+  padding: 0;
+  background: var(--augment-fill);
+  border: 0;
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  color: var(--augment-ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.augment-slot-symbol--blue {
+  --augment-color: var(--arcane-400);
+}
+
+.augment-slot-symbol--red {
+  --augment-color: var(--rust-400);
+}
+
+.augment-slot-symbol--yellow {
+  --augment-color: var(--amber-400);
+  --augment-fill: color-mix(in oklch, var(--augment-color) 72%, #000);
+}
+
+.augment-slot-symbol--green {
+  --augment-color: var(--moss-400);
+}
+
+.augment-slot-symbol--purple {
+  --augment-color: var(--violet-400);
+}
+
+.augment-slot-symbol--orange {
+  --augment-color: color-mix(in oklch, var(--rust-400) 50%, var(--amber-400));
+}
+
+.augment-slot-symbol--colorless {
+  --augment-fill: var(--stone-300);
+  --augment-ink: #14110e;
+}
+
+.augment-slot-symbol--sun,
+.augment-slot-symbol--moon {
+  height: 26px;
+  clip-path: none;
+  -webkit-mask: var(--augment-mask) center / 100% 100% no-repeat;
+  mask: var(--augment-mask) center / 100% 100% no-repeat;
+}
+
+.augment-slot-symbol--sun {
+  --augment-color: var(--augment-sun);
+  --augment-fill: color-mix(in oklch, var(--augment-color) 72%, #000);
+  --augment-mask: url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpolygon%20points%3D%2712.00%2C0.20%2015.29%2C4.05%2020.34%2C3.66%2019.95%2C8.71%2023.80%2C12.00%2019.95%2C15.29%2020.34%2C20.34%2015.29%2C19.95%2012.00%2C23.80%208.71%2C19.95%203.66%2C20.34%204.05%2C15.29%200.20%2C12.00%204.05%2C8.71%203.66%2C3.66%208.71%2C4.05%27%20fill%3D%27%23000%27%20stroke%3D%27%23000%27%20stroke-width%3D%27.6%27%20stroke-linejoin%3D%27round%27%2F%3E%3C%2Fsvg%3E');
+}
+
+.augment-slot-symbol--moon {
+  --augment-color: var(--augment-moon);
+  --augment-mask: url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M15%202.5a6.5%206.5%200%200%200%206.5%209.5A10%2010%200%201%201%2015%202.5Z%27%20fill%3D%27%23000%27%2F%3E%3C%2Fsvg%3E');
+
+  padding: calc(var(--space-1) - var(--space-px)) var(--space-1) 0 0;
+}
+
+.augment-slot-symbol--dino {
+  --augment-fill: var(--stone-500);
+}
+
+:root[data-theme='light'] .augment-slot-symbol {
+  --augment-fill: color-mix(in oklch, var(--augment-color) 62%, #fff);
+  --augment-ink: #14110e;
+}
+
+:root[data-theme='light'] .augment-slot-symbol--colorless {
+  --augment-fill: var(--stone-200);
+}
+
+:root[data-theme='light'] .augment-slot-symbol--dino {
+  --augment-fill: var(--stone-400);
+  --augment-ink: #fff;
+}
+
+.augment-slot-word {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 var(--space-1) 0 0;
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-hover-title);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.augment-slot-word-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-card--hover .augment-slot-word {
+  font-size: var(--fs-hover-copy);
+}
+
+.augment-slot-word[aria-expanded='true'] {
+  text-decoration: underline;
+}

@@ -8,6 +8,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     date: '2026-10-06',
     changes: [
       'Tab stays inside a pinned hover card until you press Escape',
+      'Sun, Moon and Isle of Dread augment sockets show as lettered symbols like the colour sockets; crafting, Lamordia and upgrade sockets keep their names',
       'In an open item, one Escape cancels a keyboard column move, Escape on an augment row closes its socket, and closing a socket keeps focus in the item so the next Escape closes it',
       'Item detail lists each enchantment as one line with the bonuses it grants; numbers the game derives (Riposte gives half its value to Armor Class) are marked, with how they were worked out on hover',
       'Lines that grant a group of stats, such as Charisma Skills or All Ability Scores, show as one line with the members on hover',
