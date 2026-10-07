@@ -7,7 +7,7 @@ import capturedShield from '../src/features/resources/queries/fixtures/effects-i
 import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
 
-async function routeFocusRestoreItems(page: Page): Promise<void> {
+async function routeFocusRestoreItems(page: Page, width = 1440): Promise<void> {
   const items = [
     { ...capturedArmor, id: 11000, name: 'Focus Armor 1' },
     { ...capturedArmor, id: 11001, name: 'Focus Armor 2' },
@@ -43,9 +43,33 @@ async function routeFocusRestoreItems(page: Page): Promise<void> {
       body: JSON.stringify(response),
     })
   })
-  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.setViewportSize({ width, height: 900 })
   await page.goto('/resources/items')
 }
+
+test('clicking a list row focuses its detail without a visible focus ring, then Tab enters its actions', async ({
+  page,
+}) => {
+  await routeFocusRestoreItems(page)
+  const firstRow = page.getByRole('row', { name: /Focus Armor 1/ })
+  await firstRow.click()
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  const firstTitle = pane.getByRole('heading', { name: 'Focus Armor 1', exact: true })
+  await expect(firstTitle).toBeFocused()
+  await expect(page.locator('.resources-detail-pane .detail-card__name:focus-visible')).toHaveCount(
+    0,
+  )
+  await page.keyboard.press('Tab')
+  await expect(
+    pane.getByRole('button', { name: 'Copy link to this item', exact: true }),
+  ).toBeFocused()
+
+  await page.getByRole('row', { name: /Focus Armor 2/ }).click()
+  await expect(pane.getByRole('heading', { name: 'Focus Armor 2', exact: true })).toBeFocused()
+  await expect(page.locator('.resources-detail-pane .detail-card__name:focus-visible')).toHaveCount(
+    0,
+  )
+})
 
 test('clicking Back restores the item row without opening its card', async ({ page }) => {
   await routeFocusRestoreItems(page)
@@ -59,25 +83,38 @@ test('clicking Back restores the item row without opening its card', async ({ pa
   await expect(page.locator('[data-hover-card]')).toHaveCount(0)
 })
 
-test('Escape restores the item row without a card, then ArrowDown opens the next card', async ({
-  page,
-}) => {
-  await routeFocusRestoreItems(page)
-  const firstRow = page.getByRole('row', { name: /Focus Armor 1/ })
-  const nextRow = page.getByRole('row', { name: /Focus Armor 2/ })
-  await firstRow.click()
-  await page.mouse.move(0, 0)
-  const pane = page.getByRole('region', { name: 'Item details', exact: true })
-  await pane.getByRole('button', { name: 'Back to items', exact: true }).focus()
-  await page.keyboard.press('Escape')
-  await expect(page).toHaveURL(/\/resources\/items$/)
-  await expect(firstRow).toBeFocused()
-  await page.waitForTimeout(300)
-  await expect(page.locator('[data-hover-card]')).toHaveCount(0)
-  await page.keyboard.press('ArrowDown')
-  await expect(nextRow).toBeFocused()
-  await expect(page.locator('[data-hover-card]')).toContainText('Focus Armor 2')
-})
+for (const width of [1440, 375]) {
+  test(`Enter opens the detail, Escape restores the row, and ArrowDown opens the next card at ${width}px`, async ({
+    page,
+  }) => {
+    await routeFocusRestoreItems(page, width)
+    const firstRow = page.getByRole('row', { name: /Focus Armor 1/ })
+    const nextRow = page.getByRole('row', { name: /Focus Armor 2/ })
+    const search = page.getByRole('searchbox', { name: 'Search items', exact: true })
+    await search.focus()
+    await page.keyboard.press('ArrowDown')
+    await expect(firstRow).toBeFocused()
+    await expect(page).toHaveURL(/\/resources\/items$/)
+    await page.keyboard.press('Enter')
+    const title = page
+      .getByRole('region', { name: 'Item details', exact: true })
+      .getByRole('heading', { name: 'Focus Armor 1', exact: true })
+    await expect(title).toBeFocused()
+    await expect(title).toHaveAttribute('tabindex', '-1')
+    await expect(
+      page.locator('.resources-detail-pane .detail-card__name:focus-visible'),
+    ).toHaveCount(1)
+    await expect(page.locator('[data-hover-card]')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(page).toHaveURL(/\/resources\/items$/)
+    await expect(firstRow).toBeFocused()
+    await page.waitForTimeout(300)
+    await expect(page.locator('[data-hover-card]')).toHaveCount(0)
+    await page.keyboard.press('ArrowDown')
+    await expect(nextRow).toBeFocused()
+    await expect(page.locator('[data-hover-card]')).toContainText('Focus Armor 2')
+  })
+}
 
 test('hover cards align links, leave keyboard rows visible, and clear tall row anchors', async ({
   page,
@@ -1233,7 +1270,8 @@ test('search keyboard navigation scrolls a virtualized result into view and open
   await expect(lastRow).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/resources\/items\/9119$/)
-  await expect(lastRow).toBeFocused()
+  const title = page.getByRole('heading', { name: 'Armor 120', exact: true })
+  await expect(title).toBeFocused()
   await expect(lastRow).toHaveClass(/ledger-row--selected/)
   const selectedRowStyle = await lastRow.evaluate((row) => {
     const rowStyle = getComputedStyle(row)
@@ -1248,8 +1286,6 @@ test('search keyboard navigation scrolls a virtualized result into view and open
     colorSample.remove()
     return {
       boxShadow: rowStyle.boxShadow,
-      outlineStyle: rowStyle.outlineStyle,
-      outlineColor: rowStyle.outlineColor,
       backgroundColor: rowStyle.backgroundColor,
       activeFill,
       nameColor: getComputedStyle(name).color,
@@ -1258,22 +1294,17 @@ test('search keyboard navigation scrolls a virtualized result into view and open
     }
   })
   expect(selectedRowStyle.boxShadow).toBe('none')
-  expect(selectedRowStyle.outlineStyle).toBe('solid')
-  expect(selectedRowStyle.outlineColor).toBe('rgba(0, 0, 0, 0)')
   expect(selectedRowStyle.backgroundColor).toBe(selectedRowStyle.activeFill)
   expect(selectedRowStyle.nameColor).toBe(selectedRowStyle.accentColor)
   expect(selectedRowStyle.nameWeight).toBe('600')
-  await expect(page.getByRole('heading', { name: 'Armor 120', exact: true })).not.toBeFocused()
   await expect(search).not.toBeFocused()
-  await expect(page.getByRole('dialog')).toBeVisible()
-  await page.keyboard.press('Escape')
-  await expect(lastRow).toBeFocused()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(lastRow).toBeFocused()
-  await expect(page).toHaveURL(/\/resources\/items\/9119$/)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page).toHaveURL(/\/resources\/items$/)
   await page.keyboard.press('Enter')
-  await expect(lastRow).toBeFocused()
+  await expect(title).toBeFocused()
   await page.keyboard.press('/')
   await expect(search).toBeFocused()
   await page.keyboard.press('Escape')

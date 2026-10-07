@@ -50,7 +50,7 @@ interface ItemPickerProps {
   selectedItemId: number | null
   searchInputRef?: RefObject<HTMLInputElement | null>
   onOpenItemFromHover?: (id: number, name: string) => void
-  onOpenItem?: (id: number, activationSource: 'pointer' | 'keyboard') => void
+  onOpenItem?: (id: number) => void
   rowToFocusId?: number | null
   onRowFocused?: () => void
 }
@@ -355,8 +355,8 @@ export function ItemPicker({
     }
   }, [itemPageQuery, pageQueryKey, itemsToShow.length])
   const openItemDetail = useCallback(
-    (item: ItemSummary, activationSource: 'pointer' | 'keyboard') => {
-      if (onOpenItem) onOpenItem(item.id, activationSource)
+    (item: ItemSummary) => {
+      if (onOpenItem) onOpenItem(item.id)
       else void navigate({ to: '/resources/' + category + '/' + item.id })
     },
     [navigate, category, onOpenItem],

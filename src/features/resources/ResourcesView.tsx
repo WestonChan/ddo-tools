@@ -148,21 +148,12 @@ function ResourcesView(): JSX.Element {
   function selectItemFromList(id: number): void {
     const isReplacingSelectedItem = selectedResourceId !== null
     if (!isReplacingSelectedItem) wasOpenedFromList.current = true
+    setItemToFocus(id)
     setListSelectionCount((count) => count + 1)
     navigate({
       to: `/resources/items/${id}`,
       ...(isReplacingSelectedItem ? { replace: true } : {}),
     })
-  }
-
-  function openItemFromHover(id: number): void {
-    setItemToFocus(id)
-    selectItemFromList(id)
-  }
-
-  function openItemFromList(id: number, activationSource: 'pointer' | 'keyboard'): void {
-    if (activationSource === 'keyboard' && isSingleColumn) setItemToFocus(id)
-    selectItemFromList(id)
   }
 
   return (
@@ -191,8 +182,8 @@ function ResourcesView(): JSX.Element {
                 category={category}
                 selectedItemId={selectedResourceId}
                 searchInputRef={searchInputRef}
-                onOpenItemFromHover={openItemFromHover}
-                onOpenItem={openItemFromList}
+                onOpenItemFromHover={selectItemFromList}
+                onOpenItem={selectItemFromList}
                 rowToFocusId={rowToFocusId}
                 onRowFocused={() => setRowToFocusId(null)}
               />

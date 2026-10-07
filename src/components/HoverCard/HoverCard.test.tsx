@@ -815,6 +815,56 @@ it('keeps an unpinned card through clicks on its anchor and elsewhere until mous
   expect(anchor).not.toHaveAttribute('data-hover-card-pinned')
 })
 
+it('keeps a pointer-opened card when its anchor blurs after a click', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <button>Detail control</button>
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.mouseEnter(anchor, { clientX: 48 })
+  act(() => vi.advanceTimersByTime(260))
+  const card = screen.getByRole('dialog')
+  const pointerLeft = card.style.left
+
+  fireEvent.pointerDown(anchor)
+  act(() => anchor.focus())
+  fireEvent.click(anchor)
+  act(() => screen.getByRole('button', { name: 'Detail control' }).focus())
+
+  expect(anchor).not.toHaveFocus()
+  expect(card).toBeInTheDocument()
+  expect(card.style.left).toBe(pointerLeft)
+  fireEvent.mouseLeave(anchor)
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
+it('closes a focus-opened card when its anchor blurs', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <button>Next control</button>
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  const nextControl = screen.getByRole('button', { name: 'Next control' })
+  focusWithNavigationKey(anchor)
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+  act(() => nextControl.focus())
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(nextControl).toHaveFocus()
+
+  focusWithNavigationKey(anchor)
+  act(() => nextControl.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
 it('clears a pinned card and its nested card on outside mousedown', () => {
   const anchor = renderOpenItemCard()
   fireEvent.keyDown(document, { key: 't' })

@@ -44,6 +44,7 @@ export interface HoverCardOptions {
 interface CardController {
   open: (entry: Omit<CardEntry, 'id' | 'isPinned'>, delayMs: number, isPinned?: boolean) => void
   closeFrom: (depth: number) => void
+  closeFocusOpenedFrom: (anchorId: string, depth: number) => void
   removeAnchor: (anchorId: string) => void
   clear: () => void
   dismiss: (anchorId: string) => boolean
@@ -256,6 +257,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   const pendingTimer = useRef<number | null>(null)
   const pendingAnchorId = useRef<string | null>(null)
   const pendingAnchorElement = useRef<HTMLElement | null>(null)
+  const pendingOpenedBy = useRef<CardEntry['openedBy'] | null>(null)
   const isNavigationKeyPending = useRef(false)
   const navigationFocusedElement = useRef<EventTarget | null>(null)
   const navigationKeyTimer = useRef<number | null>(null)
@@ -271,6 +273,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     pendingTimer.current = null
     pendingAnchorId.current = null
     pendingAnchorElement.current = null
+    pendingOpenedBy.current = null
   }, [])
   const open = useCallback(
     (entry: Omit<CardEntry, 'id' | 'isPinned'>, delayMs: number, isPinned = false) => {
@@ -278,6 +281,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       cancelPending()
       pendingAnchorId.current = entry.anchorId
       pendingAnchorElement.current = entry.anchorElement
+      pendingOpenedBy.current = entry.openedBy
       pendingTimer.current = window.setTimeout(() => {
         setCards((current) =>
           current.some((card) => card.isPinned && card.depth >= entry.depth)
@@ -287,6 +291,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         pendingTimer.current = null
         pendingAnchorId.current = null
         pendingAnchorElement.current = null
+        pendingOpenedBy.current = null
       }, delayMs)
     },
     [cancelPending],
@@ -295,6 +300,21 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     (depth: number) => {
       cancelPending()
       setCards((current) => current.filter((card) => card.depth < depth || card.isPinned))
+    },
+    [cancelPending],
+  )
+  const closeFocusOpenedFrom = useCallback(
+    (anchorId: string, depth: number) => {
+      if (pendingAnchorId.current === anchorId && pendingOpenedBy.current === 'focus')
+        cancelPending()
+      setCards((current) => {
+        const isFocusOpenedCard = current.some(
+          (card) => card.anchorId === anchorId && card.depth === depth && card.openedBy === 'focus',
+        )
+        return isFocusOpenedCard
+          ? current.filter((card) => card.depth < depth || card.isPinned)
+          : current
+      })
     },
     [cancelPending],
   )
@@ -571,6 +591,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       value={{
         open,
         closeFrom,
+        closeFocusOpenedFrom,
         removeAnchor,
         clear,
         dismiss,
@@ -662,7 +683,7 @@ export function useHoverCard({
         delayMs,
       )
     },
-    onBlur: () => controller?.closeFrom(depth),
+    onBlur: () => controller?.closeFocusOpenedFrom(anchorId, depth),
     onKeyDown: (event) => {
       if (event.key.toLowerCase() !== 't' || isTypingTarget(event.target)) return
       anchorElement.current = event.currentTarget

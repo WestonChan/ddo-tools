@@ -464,7 +464,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     }
   })
 
-  it('keeps focus on the opened row after Enter beside the detail', async () => {
+  it('moves focus from the opened row to the detail after Enter beside it', async () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1440 })
     try {
@@ -476,11 +476,50 @@ describe('ResourcesView keyboard shortcuts', () => {
 
       mockRouteParams = { category: 'items', id: '42' }
       view.rerender(<ResourcesView />)
-      expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
-      expect(screen.getByRole('heading', { name: 'Bloodstone' })).not.toHaveFocus()
+      const title = screen.getByRole('heading', { name: 'Bloodstone' })
+      expect(title).toHaveFocus()
+      await userEvent.tab()
+      expect(screen.getByRole('button', { name: 'Copy link to this item' })).toHaveFocus()
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
     }
+  })
+
+  it.each([375, 1440])('focuses the detail after clicking a row at %ipx', async (width) => {
+    const previousWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
+    try {
+      const view = render(<ResourcesView />)
+      await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+      mockRouteParams = { category: 'items', id: '42' }
+      view.rerender(<ResourcesView />)
+      expect(screen.getByRole('heading', { name: 'Bloodstone' })).toHaveFocus()
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
+    }
+  })
+
+  it('waits for the opened item to render before focusing its title', async () => {
+    isItemDetailLoaded = false
+    const view = render(<ResourcesView />)
+    await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
+    mockRouteParams = { category: 'items', id: '42' }
+    view.rerender(<ResourcesView />)
+    expect(screen.queryByRole('heading', { name: 'Bloodstone' })).toBeNull()
+
+    isItemDetailLoaded = true
+    view.rerender(<ResourcesView />)
+    expect(screen.getByRole('heading', { name: 'Bloodstone' })).toHaveFocus()
+  })
+
+  it('keeps focus in the list while arrowing without opening a detail', async () => {
+    const view = render(<ResourcesView />)
+    const search = screen.getByRole('searchbox', { name: 'Search items' })
+    search.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
+    expect(navigateMock).not.toHaveBeenCalled()
+    expect(view.container.querySelector('.resources-detail-pane--empty')).toBeInTheDocument()
   })
 
   it('keeps focus on a row on Escape without closing the selected detail', async () => {
@@ -780,6 +819,7 @@ describe('ResourcesView detail pane', () => {
         </HoverCardProvider>,
       )
 
+      expect(screen.getByRole('heading', { name: 'Moonstone' })).toHaveFocus()
       const breadcrumb = screen.getByRole('navigation', { name: 'Detail breadcrumb' })
       expect(within(breadcrumb).getByText('Moonstone')).toBeInTheDocument()
       expect(within(breadcrumb).queryByText('Bloodstone')).toBeNull()
@@ -835,7 +875,7 @@ describe('ResourcesView detail pane', () => {
       for (const item of items) {
         await userEvent.click(screen.getByRole('row', { name: new RegExp(item.name) }))
         view.rerender(<ResourcesView />)
-        expect(screen.getByRole('heading', { name: item.name })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: item.name })).toHaveFocus()
       }
       expect(navigateMock.mock.calls.map(([options]) => options)).toEqual([
         { to: '/resources/items/42' },
