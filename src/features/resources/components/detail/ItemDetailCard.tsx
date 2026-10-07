@@ -489,7 +489,9 @@ function ItemSourcesBriefView({ entries }: { entries: readonly ItemSourceEntry[]
           className="resources-hover-row resources-item-source-brief-row hover-card-row"
         >
           <span>
-            <ItemSourceName entry={entry} />
+            <span className="resources-item-source-brief-title focus-ring-proxy focus-ring-proxy--container">
+              <ItemSourceName entry={entry} />
+            </span>
           </span>
           <span>
             {[

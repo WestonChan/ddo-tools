@@ -12,6 +12,11 @@
 }
 
 .nav-bar-brand {
+  --focus-ring-proxy-top: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-right: calc(-1 * var(--space-1));
+  --focus-ring-proxy-bottom: calc(-1 * var(--space-1));
+  --focus-ring-proxy-left: var(--space-1-5);
+
   flex-shrink: 0;
   padding: calc(var(--space-2) + var(--space-0-5)) calc(var(--space-2-5) + var(--space-0-5))
     calc(var(--space-1) + var(--space-0-5));
@@ -64,7 +69,10 @@
 }
 
 .nav-bar-row {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
+  --focus-ring-proxy-top: calc(-1 * var(--space-1));
+  --focus-ring-proxy-right: calc(-1 * var(--space-1));
+  --focus-ring-proxy-bottom: calc(-1 * var(--space-1));
+  --focus-ring-proxy-left: calc(-1 * var(--space-1));
 
   display: flex;
   flex-shrink: 0;
@@ -191,6 +199,8 @@
 
 .app-nav-bar:not(.expanded) {
   & .nav-bar-brand {
+    --focus-ring-proxy-left: calc(var(--space-1-5) - var(--space-px));
+
     padding-right: calc(var(--space-2-5) + var(--space-0-5) + var(--space-px));
     padding-left: calc(var(--space-2-5) + var(--space-0-5) - var(--space-px));
   }

@@ -1,3 +1,5 @@
+import stylelint from 'stylelint'
+
 const RAW_COLOR_PATTERNS = [
   '/#[0-9a-fA-F]{3,8}\\b/',
   '/\\b(rgb|rgba|hsl|hsla)\\((?!\\s*from\\s+var\\()/',
@@ -23,8 +25,45 @@ const SPACE_TOKEN = 'var\\(--space-[a-z0-9-]+\\)'
 const DETAIL_CARD_SPACING_TOKEN =
   'var\\(--detail-card-(?:header-padding|body-padding|header-body-gap|pin-reserve)\\)'
 const DETAIL_CARD_FONT_TOKEN = 'var\\(--detail-card-(?:title-size|fact-size)\\)'
-const CALC_OF_SPACE_TOKENS = `calc\\((?:[\\s*+/-]|\\d+(?:\\.\\d+)?|${SPACE_TOKEN})+\\)`
+const SPACE_CALCULATION_TERMS = `(?:[\\s*+()/\\-]|\\d+(?:\\.\\d+)?|${SPACE_TOKEN})+`
+const CALC_OF_SPACE_TOKENS = `calc\\(${SPACE_CALCULATION_TERMS}\\)`
 const SPACING_VALUE_PATTERN = `/^(?:(?:${SPACE_TOKEN}|${DETAIL_CARD_SPACING_TOKEN}|0|auto|${CALC_OF_SPACE_TOKENS})(?:\\s+|$))+$/`
+const FOCUS_RING_CALC_OF_SPACE_TOKENS = `calc\\((?=[\\s\\S]*${SPACE_TOKEN})${SPACE_CALCULATION_TERMS}\\)`
+const FOCUS_RING_SPACING_VALUE_PATTERN = `/^(?:${SPACE_TOKEN}|0|${FOCUS_RING_CALC_OF_SPACE_TOKENS})$/`
+const FOCUS_RING_SELECTOR_RULE = 'ddo/focus-ring-selector'
+const focusRingSelectorRule = stylelint.createPlugin(
+  FOCUS_RING_SELECTOR_RULE,
+  () => (root, result) => {
+    root.walkRules((rule) => {
+      const selectorPath = [rule.selector]
+      for (let parent = rule.parent; parent?.type === 'rule'; parent = parent.parent) {
+        selectorPath.push(parent.selector)
+      }
+      const selector = selectorPath.join(' ')
+      const isProxyPseudo =
+        /::(?:before|after)/.test(selector) && /\.focus-ring-(?:proxy|row)/.test(selector)
+      const hasFocusRingProperty = rule.nodes.some(
+        (node) =>
+          node.type === 'decl' &&
+          (/^(?:outline(?:-.+)?|--focus-ring-.+)$/.test(node.prop) ||
+            (selector.includes(':focus-visible') && node.prop === 'border-radius') ||
+            (isProxyPseudo && node.value.includes('var(--focus-ring-'))),
+      )
+      if (!hasFocusRingProperty && !isProxyPseudo) return
+      const componentClass = selector
+        .match(/[.#][a-z][a-z0-9-]*/g)
+        ?.find((className) => !/^\.focus-ring-(?:proxy|row)(?:--[a-z0-9-]+)?$/.test(className))
+      if (!componentClass) return
+      stylelint.utils.report({
+        result,
+        ruleName: FOCUS_RING_SELECTOR_RULE,
+        node: rule,
+        word: componentClass,
+        message: `"${componentClass}" selects focus ring geometry in src/index.css. Move it to component CSS.`,
+      })
+    })
+  },
+)
 
 const RADIUS_VALUE_PATTERN = '/^(?:(?:var\\(--radius-[a-z0-9-]+\\)|0)(?:\\s+|$))+$/'
 
@@ -46,7 +85,7 @@ function disallowedValueMessage(property, value) {
 
 function disallowedOffScaleValueMessage(property, value) {
   if (property.startsWith('--focus-ring-')) {
-    return `Invalid focus ring variant "${property}: ${value}". Select a --focus-ring-* variant from src/index.css.`
+    return `Invalid focus ring placement "${property}: ${value}". Use a spacing token or calc() of spacing tokens.`
   }
   if (property.endsWith('radius')) {
     return `Off-scale "${property}: ${value}". Use var(--radius-xs|sm|md|lg), 0 or inherit (docs/styling.md).`
@@ -90,6 +129,7 @@ const ALLOWED_PROPERTY_VALUES = {
 }
 
 export default {
+  plugins: [focusRingSelectorRule],
   rules: {
     'comment-pattern': [
       STYLELINT_DIRECTIVE_PATTERN,
@@ -114,12 +154,12 @@ export default {
             'outline-offset',
             'outline-style',
             'outline-width',
-            '/^--focus-ring-(?!appearance$|proxy-inset$|proxy-backdrop$|row-fill$)/',
+            '/^--focus-ring-(?!proxy-(?:top|right|bottom|left|backdrop)$|native-offset$|row-fill$)/',
             '/^--pinned-anchor-/',
           ],
           {
             message: (property) =>
-              `"${property}" redefines focus ring geometry. Select a --focus-ring-* variant from src/index.css.`,
+              `"${property}" redefines focus ring geometry. Set a supported focus ring custom property instead.`,
           },
         ],
         'declaration-property-value-disallowed-list': [
@@ -130,21 +170,15 @@ export default {
           },
           {
             message: (property, value) =>
-              `"${property}: ${value}" redefines focus ring geometry. Select a --focus-ring-* variant from src/index.css.`,
+              `"${property}: ${value}" redefines focus ring geometry. Set a supported focus ring custom property instead.`,
           },
         ],
         'declaration-property-value-allowed-list': [
           {
             ...ALLOWED_PROPERTY_VALUES,
-            '--focus-ring-appearance': ['transparent', 'var(--focus-ring-color)'],
             '--focus-ring-row-fill': ['var(--surface-selected)'],
-            '--focus-ring-proxy-inset': [
-              'var(--focus-ring-proxy-outset)',
-              'var(--focus-ring-proxy-inside)',
-              'var(--focus-ring-proxy-constrained)',
-              'var(--focus-ring-proxy-vertical)',
-              '0',
-            ],
+            '/^--focus-ring-proxy-(?:top|right|bottom|left)$/': [FOCUS_RING_SPACING_VALUE_PATTERN],
+            '--focus-ring-native-offset': [FOCUS_RING_SPACING_VALUE_PATTERN],
             '--focus-ring-proxy-backdrop': ['none', 'var(--focus-ring-scrollport-backdrop)'],
           },
           { message: disallowedOffScaleValueMessage },
@@ -172,6 +206,7 @@ export default {
     {
       files: ['src/index.css'],
       rules: {
+        [FOCUS_RING_SELECTOR_RULE]: true,
         'property-disallowed-list': null,
         'rule-selector-property-disallowed-list': null,
         'declaration-property-value-disallowed-list': [

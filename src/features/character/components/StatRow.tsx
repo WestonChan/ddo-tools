@@ -122,7 +122,7 @@ export function StatRow({
         <button
           ref={pinButtonRef}
           type="button"
-          className={`stats-panel-pin${pinButton.isPinned ? ' stats-panel-pin--pinned' : ''}`}
+          className={`stats-panel-pin focus-ring-proxy${pinButton.isPinned ? ' stats-panel-pin--pinned' : ''}`}
           aria-label={`${pinButton.isPinned ? 'Unpin' : 'Pin'} ${stat.name}`}
           title={pinButton.title}
           onClick={pinButton.onClick}

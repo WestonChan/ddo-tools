@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-07',
     changes: [
+      'Focus rings keep clear of the text around them and sit evenly on their lettering; the source name under Obtained from has a little more room above its chest line',
       "An item's set shows only in its enchantments, as the folded set block, and hover cards always show that block",
       'An open hover card stays attached to its row when the page shifts underneath it; a pinned card stays where you pinned it',
       "A hover card opened from the keyboard sits right beside the row's name, level with the row, instead of past the end of the list",

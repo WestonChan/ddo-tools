@@ -11,7 +11,7 @@
 }
 
 .nav-bar-build-button {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-constrained);
+  --focus-ring-proxy-bottom: var(--space-px);
 
   display: flex;
   align-items: center;
@@ -32,7 +32,8 @@
 }
 
 .nav-bar-build-button--comparison {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-vertical);
+  --focus-ring-proxy-top: calc(-1 * var(--space-px));
+  --focus-ring-proxy-bottom: calc(-1 * var(--space-0-5));
 
   padding: var(--space-1) var(--space-2-5) var(--space-1-5);
 }
@@ -142,6 +143,8 @@
   padding: var(--space-1-5) var(--space-1) 0;
 
   & .nav-bar-build-button {
+    --focus-ring-proxy-bottom: var(--space-0-5);
+
     justify-content: center;
     height: 34px;
     padding: 0;
@@ -149,7 +152,8 @@
   }
 
   & .nav-bar-build-button--comparison {
-    --focus-ring-proxy-inset: var(--focus-ring-proxy-vertical);
+    --focus-ring-proxy-top: var(--space-px);
+    --focus-ring-proxy-bottom: calc(-1 * var(--space-1));
   }
 
   & .nav-bar-character-vs {

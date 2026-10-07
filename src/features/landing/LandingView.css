@@ -34,6 +34,8 @@
 }
 
 .landing-tile {
+  --focus-ring-native-offset: var(--space-px);
+
   display: flex;
   flex-direction: column;
   gap: var(--space-1-5);
@@ -128,6 +130,8 @@
 }
 
 .landing-patch-toggle {
+  --focus-ring-native-offset: var(--space-px);
+
   align-self: flex-start;
   display: inline-flex;
   align-items: center;

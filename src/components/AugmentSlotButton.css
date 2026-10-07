@@ -10,6 +10,9 @@
 }
 
 .augment-slot-focus-ring {
+  --focus-ring-proxy-top: calc(var(--space-0-5) + var(--space-px));
+  --focus-ring-proxy-bottom: var(--space-1);
+
   position: absolute;
   inset: calc(-1 * var(--focus-ring-clearance));
   display: none;

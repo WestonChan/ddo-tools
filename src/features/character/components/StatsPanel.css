@@ -61,6 +61,8 @@
 }
 
 .stats-panel-grip {
+  --focus-ring-native-offset: 0;
+
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -252,7 +254,10 @@
 }
 
 .stats-panel-row-toggle {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
+  --focus-ring-proxy-top: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-right: calc(-1 * var(--space-1));
+  --focus-ring-proxy-bottom: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-left: calc(-1 * var(--space-0-5));
 
   flex: 1;
   min-width: 0;
@@ -261,6 +266,10 @@
   margin-left: calc(-1 * var(--space-1));
   padding-left: var(--space-1);
   text-align: left;
+}
+
+.stats-panel-stat .stats-panel-row-toggle {
+  margin-left: 0;
 }
 
 .stats-panel-stat-name {

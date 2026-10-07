@@ -38,7 +38,7 @@ export function WikiLinkIcon({
         href={wikiPageUrl}
         target={WIKI_COMPARE_WINDOW_NAME}
         rel="nofollow"
-        className={`wiki-link-icon hoverable${className ? ` ${className}` : ''}`}
+        className={`wiki-link-icon hoverable focus-ring-proxy${className ? ` ${className}` : ''}`}
         aria-label={label ?? ariaLabel}
         onClick={(e) => {
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return

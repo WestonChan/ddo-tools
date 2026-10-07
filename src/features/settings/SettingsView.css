@@ -63,6 +63,8 @@
 }
 
 .settings-view-accent-swatch {
+  --focus-ring-native-offset: var(--space-px);
+
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);

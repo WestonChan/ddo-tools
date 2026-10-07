@@ -1,4 +1,9 @@
 .wiki-link-icon {
+  --focus-ring-proxy-top: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-right: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-bottom: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-left: calc(-1 * (var(--space-0-5) + var(--space-px)));
+
   display: inline-flex;
   align-items: center;
   justify-content: center;

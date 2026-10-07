@@ -20,6 +20,8 @@
 }
 
 .editable-text-input {
+  --focus-ring-native-offset: var(--space-px);
+
   background: var(--surface-sunken);
   box-shadow: var(--inset-sunken);
   color: var(--text-body);

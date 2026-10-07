@@ -1,0 +1,32 @@
+.search-well,
+.segmented-control-segment {
+  --focus-ring-proxy-top: calc(-1 * var(--space-1));
+  --focus-ring-proxy-right: calc(-1 * var(--space-1));
+  --focus-ring-proxy-bottom: calc(-1 * var(--space-1));
+  --focus-ring-proxy-left: calc(-1 * var(--space-1));
+}
+
+.segmented-control--joined > .segmented-control-segment {
+  --focus-ring-proxy-top: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-right: 0;
+  --focus-ring-proxy-bottom: calc(-1 * var(--space-0-5));
+  --focus-ring-proxy-left: 0;
+}
+
+.underline-tab {
+  --focus-ring-proxy-top: calc(-1 * (var(--space-1) + var(--space-px)));
+  --focus-ring-proxy-right: calc(-1 * var(--space-1));
+  --focus-ring-proxy-bottom: calc(-1 * (var(--space-0-5) + var(--space-px)));
+  --focus-ring-proxy-left: calc(-1 * var(--space-1));
+}
+
+.search-well-input:focus-visible {
+  outline-color: transparent;
+}
+
+.btn-primary,
+.btn-primary-sm,
+.btn-ghost,
+.btn-ghost-sm {
+  --focus-ring-native-offset: var(--space-px);
+}

@@ -108,7 +108,7 @@ describe('LedgerTable', () => {
     )
     const focusedStyle = focusedRule?.[2]
     const globalFocusStyle = globalStyles.match(
-      /:focus-visible,\s*\[data-hover-card-pinned\],\s*\.search-well:focus-within,\s*\.focus-ring-surface\s*\{([^}]+)\}/,
+      /:focus-visible,\s*\[data-hover-card-pinned\]\s*\{([^}]+)\}/,
     )?.[1]
     const globalProxyStyle = globalStyles.match(
       /:is\(\s*\.focus-ring-proxy:focus-visible,[\s\S]*?\.focus-ring-proxy--sibling\s*\)::after\s*\{([^}]+)\}/,
@@ -140,7 +140,7 @@ describe('LedgerTable', () => {
       'border: var(--focus-ring-width) solid var(--focus-ring-color)',
     )
     expect(globalFocusStyle).toContain(
-      'outline: var(--focus-ring-width) solid var(--focus-ring-appearance, var(--focus-ring-color))',
+      'outline: var(--focus-ring-width) solid var(--focus-ring-color)',
     )
 
     const primaryColumns = columns.map((column) =>

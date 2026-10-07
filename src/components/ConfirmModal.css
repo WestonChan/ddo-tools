@@ -36,6 +36,8 @@
 }
 
 .confirm-modal-input input {
+  --focus-ring-native-offset: var(--space-px);
+
   width: 100%;
   background: var(--surface-sunken);
   box-shadow: var(--inset-sunken);

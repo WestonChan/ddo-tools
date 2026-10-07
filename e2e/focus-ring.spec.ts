@@ -12,6 +12,7 @@ const focusedRoutes = [
   '/build-plan',
 ]
 const viewportWidths = [1440, 375]
+const clearanceMeasurementTolerance = 0.1
 
 function captureRestGeometry(): void {
   const restGeometry = new WeakMap<
@@ -55,16 +56,42 @@ function captureRestGeometry(): void {
   ).focusRingRestGeometry = restGeometry
 }
 
-function auditFocusedRing(): { stop: string; stopPath: string; issues: string[] } {
+function auditFocusedRing(clearanceMeasurementTolerance: number): {
+  stop: string
+  stopPath: string
+  issues: string[]
+  opticalExclusion: string | null
+  horizontalExclusion: string | null
+  hasOpticalAudit: boolean
+  hasVerticalCenteringCheck: boolean
+  hasHorizontalCenteringCheck: boolean
+  focusedInkGaps: { left: number; top: number; right: number; bottom: number } | null
+} {
   const focusedElement = document.activeElement as HTMLElement
   if (focusedElement === document.body) {
-    return { stop: 'document.body', stopPath: 'body', issues: [] }
+    return {
+      stop: 'document.body',
+      stopPath: 'body',
+      issues: [],
+      opticalExclusion: 'document body has no text stop',
+      horizontalExclusion: 'document body has no text stop',
+      hasOpticalAudit: false,
+      hasVerticalCenteringCheck: false,
+      hasHorizontalCenteringCheck: false,
+      focusedInkGaps: null,
+    }
   }
   const stopPath: number[] = []
   for (let element = focusedElement; element.parentElement; element = element.parentElement) {
     stopPath.unshift(Array.from(element.parentElement.children).indexOf(element))
   }
   const issues: string[] = []
+  let opticalExclusion: string | null = null
+  let horizontalExclusion: string | null = null
+  let hasOpticalAudit = false
+  let hasVerticalCenteringCheck = false
+  let hasHorizontalCenteringCheck = false
+  let focusedInkGaps: { left: number; top: number; right: number; bottom: number } | null = null
   const bounds = focusedElement.getBoundingClientRect()
   const style = getComputedStyle(focusedElement)
   const restGeometry = (
@@ -118,8 +145,7 @@ function auditFocusedRing(): { stop: string; stopPath: string; issues: string[] 
     ? (nextProxy as HTMLElement)
     : parentProxy?.classList.contains('focus-ring-proxy')
       ? parentProxy
-      : ((focusedElement.closest('.focus-ring-surface, .search-well') as HTMLElement | null) ??
-        focusedElement)
+      : ((focusedElement.closest('.search-well') as HTMLElement | null) ?? focusedElement)
   const targetStyle = getComputedStyle(ringTarget)
   const pseudoStyle = getComputedStyle(ringTarget, '::after')
   const targetBounds = ringTarget.getBoundingClientRect()
@@ -158,7 +184,7 @@ function auditFocusedRing(): { stop: string; stopPath: string; issues: string[] 
   }
 
   const ringCandidates = document.querySelectorAll<HTMLElement>(
-    '.focus-ring-proxy, .focus-ring-surface, .search-well, a[href], button, input, select, textarea, [tabindex]',
+    '.focus-ring-proxy, .search-well, a[href], button, input, select, textarea, [tabindex]',
   )
   for (const candidate of ringCandidates) {
     if (candidate === ringTarget || candidate === focusedElement) continue
@@ -224,21 +250,27 @@ function auditFocusedRing(): { stop: string; stopPath: string; issues: string[] 
     const scaleRadii = ['--radius-xs', '--radius-sm', '--radius-md', '--radius-lg'].map((token) =>
       Number.parseFloat(rootStyle.getPropertyValue(token)),
     )
+    const drawnRadii = [
+      cornerStyle.borderTopLeftRadius,
+      cornerStyle.borderTopRightRadius,
+      cornerStyle.borderBottomRightRadius,
+      cornerStyle.borderBottomLeftRadius,
+    ].map((radius) => {
+      const elementRadius = Number.parseFloat(radius)
+      return isNativeVisible
+        ? Math.max(0, elementRadius + Number.parseFloat(targetStyle.outlineOffset))
+        : elementRadius
+    })
     if (
-      [
-        cornerStyle.borderTopLeftRadius,
-        cornerStyle.borderTopRightRadius,
-        cornerStyle.borderBottomRightRadius,
-        cornerStyle.borderBottomLeftRadius,
-      ].some(
+      drawnRadii.some(
         (radius) =>
-          !Number.isFinite(Number.parseFloat(radius)) ||
-          !scaleRadii.some(
-            (scaleRadius) => Math.abs(Number.parseFloat(radius) - scaleRadius) < 0.5,
-          ),
+          !Number.isFinite(radius) ||
+          !scaleRadii.some((scaleRadius) => Math.abs(radius - scaleRadius) < 0.5),
       )
     ) {
-      issues.push('off-scale ring corner')
+      issues.push(
+        `off-scale ring corner (${drawnRadii.map((radius) => radius.toFixed(1)).join('/')}px)`,
+      )
     }
     if (ringWidth < 2) issues.push('thin')
     for (let ancestor = ringTarget.parentElement; ancestor; ancestor = ancestor.parentElement) {
@@ -269,89 +301,275 @@ function auditFocusedRing(): { stop: string; stopPath: string; issues: string[] 
       getComputedStyle(document.documentElement).getPropertyValue('--focus-ring-text-clearance'),
     )
     if (!Number.isFinite(minimumClearance)) issues.push('missing text clearance token')
-    const occludedEdgeWidth =
-      pseudoStyle.boxShadow === 'none' || !Number.isFinite(minimumClearance)
-        ? 0
-        : ringWidth + minimumClearance
-    const textRoot = ringTarget.contains(focusedElement) ? ringTarget : focusedElement
-    const textNodes = document.createTreeWalker(textRoot, NodeFilter.SHOW_TEXT)
-    while (textNodes.nextNode()) {
-      if (!textNodes.currentNode.textContent?.trim()) continue
+    const minimumNeighbourClearance = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        '--focus-ring-neighbour-clearance',
+      ),
+    )
+    if (!Number.isFinite(minimumNeighbourClearance)) {
+      issues.push('missing neighbouring text clearance token')
+    }
+    const canvasContext = document.createElement('canvas').getContext('2d')!
+    const inkBoundsForText = (
+      textNode: Text,
+      start: number,
+      end: number,
+      isOwnText: boolean,
+    ): DOMRect[] => {
+      const textElement = textNode.parentElement
+      if (!textElement) return []
+      const textStyle = getComputedStyle(textElement)
+      if (
+        textStyle.display === 'none' ||
+        textStyle.visibility !== 'visible' ||
+        Number.parseFloat(textStyle.opacity) === 0
+      ) {
+        return []
+      }
       const textRange = document.createRange()
-      textRange.selectNodeContents(textNodes.currentNode)
-      for (const textBounds of textRange.getClientRects()) {
-        const visibleTextBounds = {
-          left: Math.max(
-            textBounds.left,
-            occludedEdgeWidth ? ringOuter.left + occludedEdgeWidth : 0,
-          ),
-          top: Math.max(textBounds.top, occludedEdgeWidth ? ringOuter.top + occludedEdgeWidth : 0),
-          right: Math.min(
-            textBounds.right,
-            occludedEdgeWidth ? ringOuter.right - occludedEdgeWidth : window.innerWidth,
-          ),
-          bottom: Math.min(
-            textBounds.bottom,
-            occludedEdgeWidth ? ringOuter.bottom - occludedEdgeWidth : window.innerHeight,
-          ),
+      textRange.setStart(textNode, start)
+      textRange.setEnd(textNode, end)
+      const lineBoundsList = Array.from(textRange.getClientRects())
+      if (
+        !isOwnText &&
+        lineBoundsList.every(
+          (lineBounds) =>
+            lineBounds.right < ringOuter.left - minimumNeighbourClearance - 20 ||
+            lineBounds.left > ringOuter.right + minimumNeighbourClearance + 20 ||
+            lineBounds.bottom < ringOuter.top - minimumNeighbourClearance - 20 ||
+            lineBounds.top > ringOuter.bottom + minimumNeighbourClearance + 20,
+        )
+      ) {
+        return []
+      }
+      const text = textNode.data.slice(start, end)
+      canvasContext.font = `${textStyle.fontStyle} ${textStyle.fontVariant} ${textStyle.fontWeight} ${textStyle.fontSize} ${textStyle.fontFamily}`
+      canvasContext.letterSpacing = textStyle.letterSpacing
+      const metrics = canvasContext.measureText(text)
+      return lineBoundsList.flatMap((lineBounds) => {
+        const fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
+        const baseline =
+          lineBounds.top + (lineBounds.height - fontHeight) / 2 + metrics.fontBoundingBoxAscent
+        const inkBounds = {
+          left:
+            lineBoundsList.length === 1
+              ? lineBounds.left - metrics.actualBoundingBoxLeft
+              : lineBounds.left,
+          top: baseline - metrics.actualBoundingBoxAscent,
+          right:
+            lineBoundsList.length === 1
+              ? lineBounds.left + metrics.actualBoundingBoxRight
+              : lineBounds.right,
+          bottom: baseline + Math.max(0, metrics.actualBoundingBoxDescent),
         }
+        inkBounds.left = Math.max(inkBounds.left, 0)
+        inkBounds.top = Math.max(inkBounds.top, 0)
+        inkBounds.right = Math.min(inkBounds.right, window.innerWidth)
+        inkBounds.bottom = Math.min(inkBounds.bottom, window.innerHeight)
         for (
-          let ancestor = textNodes.currentNode.parentElement;
+          let ancestor: Element | null = textElement;
           ancestor;
           ancestor = ancestor.parentElement
         ) {
           const ancestorStyle = getComputedStyle(ancestor)
-          const isClippingHorizontally = /(hidden|clip|auto|scroll)/.test(ancestorStyle.overflowX)
-          const isClippingVertically = /(hidden|clip|auto|scroll)/.test(ancestorStyle.overflowY)
-          if (!isClippingHorizontally && !isClippingVertically) continue
+          if (
+            ancestorStyle.display === 'none' ||
+            ancestorStyle.visibility !== 'visible' ||
+            Number.parseFloat(ancestorStyle.opacity) === 0
+          ) {
+            return []
+          }
           const ancestorBounds = ancestor.getBoundingClientRect()
-          if (isClippingHorizontally) {
-            visibleTextBounds.left = Math.max(
-              visibleTextBounds.left,
-              ancestorBounds.left + ancestor.clientLeft,
-            )
-            visibleTextBounds.right = Math.min(
-              visibleTextBounds.right,
+          if (
+            ancestorStyle.display !== 'inline' &&
+            /(hidden|clip|auto|scroll)/.test(ancestorStyle.overflowX)
+          ) {
+            inkBounds.left = Math.max(inkBounds.left, ancestorBounds.left + ancestor.clientLeft)
+            inkBounds.right = Math.min(
+              inkBounds.right,
               ancestorBounds.left + ancestor.clientLeft + ancestor.clientWidth,
             )
           }
-          if (isClippingVertically) {
-            visibleTextBounds.top = Math.max(
-              visibleTextBounds.top,
-              ancestorBounds.top + ancestor.clientTop,
-            )
-            visibleTextBounds.bottom = Math.min(
-              visibleTextBounds.bottom,
+          if (
+            ancestorStyle.display !== 'inline' &&
+            /(hidden|clip|auto|scroll)/.test(ancestorStyle.overflowY)
+          ) {
+            inkBounds.top = Math.max(inkBounds.top, ancestorBounds.top + ancestor.clientTop)
+            inkBounds.bottom = Math.min(
+              inkBounds.bottom,
               ancestorBounds.top + ancestor.clientTop + ancestor.clientHeight,
             )
           }
         }
-        if (
-          visibleTextBounds.left >= visibleTextBounds.right ||
-          visibleTextBounds.top >= visibleTextBounds.bottom
-        ) {
-          continue
-        }
-        const clearances = {
-          left: visibleTextBounds.left - ringInner.left,
-          top: visibleTextBounds.top - ringInner.top,
-          right: ringInner.right - visibleTextBounds.right,
-          bottom: ringInner.bottom - visibleTextBounds.bottom,
-        }
-        const [closestSide, closestClearance] = Object.entries(clearances).reduce(
-          (closest, side) => (side[1] < closest[1] ? side : closest),
+        return inkBounds.left < inkBounds.right && inkBounds.top < inkBounds.bottom
+          ? [
+              new DOMRect(
+                inkBounds.left,
+                inkBounds.top,
+                inkBounds.right - inkBounds.left,
+                inkBounds.bottom - inkBounds.top,
+              ),
+            ]
+          : []
+      })
+    }
+    const nearbyInk: { bounds: DOMRect; text: string }[] = []
+    const focusedInkBounds: DOMRect[] = []
+    const allTextNodes = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+    while (allTextNodes.nextNode()) {
+      const textNode = allTextNodes.currentNode as Text
+      const textElement = textNode.parentElement
+      if (!textElement || textElement.closest('script, style, .sr-only')) continue
+      const isFocusedText = focusedElement.contains(textNode)
+      const isSameControlText =
+        isFocusedText || (ringTarget.contains(focusedElement) && ringTarget.contains(textNode))
+      for (const word of textNode.data.matchAll(/\S+/g)) {
+        const wordStart = word.index
+        const wordInkBounds = inkBoundsForText(
+          textNode,
+          wordStart,
+          wordStart + word[0].length,
+          isSameControlText,
         )
-        if (
-          closestClearance < minimumClearance - 0.5 &&
-          !issues.some((issue) => issue.startsWith('too close to text'))
-        ) {
-          issues.push(`too close to text (${closestSide} ${closestClearance.toFixed(1)}px)`)
+        if (isFocusedText) {
+          focusedInkBounds.push(...wordInkBounds)
+        } else if (!isSameControlText) {
+          nearbyInk.push(...wordInkBounds.map((bounds) => ({ bounds, text: word[0] })))
         }
+      }
+    }
+    if (Number.isFinite(minimumNeighbourClearance)) {
+      for (const { bounds: inkBounds, text } of nearbyInk) {
+        const horizontalDistance = Math.max(
+          ringOuter.left - inkBounds.right,
+          inkBounds.left - ringOuter.right,
+          0,
+        )
+        const verticalDistance = Math.max(
+          ringOuter.top - inkBounds.bottom,
+          inkBounds.top - ringOuter.bottom,
+          0,
+        )
+        const isInsideRing =
+          inkBounds.left >= ringInner.left &&
+          inkBounds.right <= ringInner.right &&
+          inkBounds.top >= ringInner.top &&
+          inkBounds.bottom <= ringInner.bottom
+        const distanceFromRing = isInsideRing
+          ? Math.min(
+              inkBounds.left - ringInner.left,
+              ringInner.right - inkBounds.right,
+              inkBounds.top - ringInner.top,
+              ringInner.bottom - inkBounds.bottom,
+            )
+          : Math.hypot(horizontalDistance, verticalDistance)
+        if (distanceFromRing < minimumNeighbourClearance - clearanceMeasurementTolerance) {
+          issues.push(`too close to neighbouring text "${text}" (${distanceFromRing.toFixed(1)}px)`)
+          break
+        }
+      }
+    }
+    if (focusedElement.matches('input, select, textarea, [contenteditable="true"]')) {
+      opticalExclusion = 'native editable text has no DOM text ink'
+    } else if (focusedElement.matches('.app-content')) {
+      opticalExclusion = 'scroll region ring surrounds the entire page'
+    } else if (focusedInkBounds.length === 0) {
+      opticalExclusion = 'control has no visible text ink'
+    } else if (
+      Math.max(...focusedInkBounds.map((inkBounds) => inkBounds.top)) -
+        Math.min(...focusedInkBounds.map((inkBounds) => inkBounds.top)) >
+      (Number.parseFloat(getComputedStyle(focusedElement).lineHeight) ||
+        Number.parseFloat(getComputedStyle(focusedElement).fontSize) * 1.2) *
+        0.6
+    ) {
+      opticalExclusion = 'text occupies multiple baselines'
+    } else {
+      hasOpticalAudit = true
+      const textInk = {
+        left: Math.min(...focusedInkBounds.map((inkBounds) => inkBounds.left)),
+        top: Math.min(...focusedInkBounds.map((inkBounds) => inkBounds.top)),
+        right: Math.max(...focusedInkBounds.map((inkBounds) => inkBounds.right)),
+        bottom: Math.max(...focusedInkBounds.map((inkBounds) => inkBounds.bottom)),
+      }
+      const topGap = textInk.top - ringInner.top
+      const bottomGap = ringInner.bottom - textInk.bottom
+      const leftGap = textInk.left - ringInner.left
+      const rightGap = ringInner.right - textInk.right
+      focusedInkGaps = { left: leftGap, top: topGap, right: rightGap, bottom: bottomGap }
+      const verticalImbalance = Math.abs(topGap - bottomGap)
+      const focusedStyle = getComputedStyle(focusedElement)
+      const isFlexOrGrid = /flex|grid/.test(focusedStyle.display)
+      const isContentCentred = isFlexOrGrid
+        ? focusedStyle.justifyContent === 'center'
+        : focusedStyle.textAlign === 'center'
+      hasVerticalCenteringCheck = topGap <= 8 && bottomGap <= 8
+      hasHorizontalCenteringCheck = isContentCentred && leftGap <= 8 && rightGap <= 8
+      const hasLeadingGraphic =
+        isFlexOrGrid &&
+        !isContentCentred &&
+        focusedElement.firstElementChild !== null &&
+        focusedElement.firstElementChild.textContent?.trim() === ''
+      if (hasVerticalCenteringCheck && verticalImbalance > 1) {
+        issues.push(
+          `text ink off centre vertically (above ${topGap.toFixed(1)}px, below ${bottomGap.toFixed(1)}px)`,
+        )
+      }
+      if (hasHorizontalCenteringCheck && Math.abs(leftGap - rightGap) > 1) {
+        issues.push(
+          `text ink off centre horizontally (left ${leftGap.toFixed(1)}px, right ${rightGap.toFixed(1)}px)`,
+        )
+      } else if (hasLeadingGraphic) {
+        horizontalExclusion = 'leading graphic precedes text in a left-aligned control'
+      } else if (!isContentCentred && leftGap < minimumClearance - clearanceMeasurementTolerance) {
+        issues.push(
+          `text ink left clearance ${leftGap.toFixed(1)}px (minimum ${minimumClearance.toFixed(1)}px)`,
+        )
+      }
+    }
+    const occludedEdgeWidth =
+      pseudoStyle.boxShadow === 'none' || !Number.isFinite(minimumClearance)
+        ? 0
+        : ringWidth + minimumClearance
+    for (const inkBounds of focusedInkBounds) {
+      const visibleInkBounds = {
+        left: Math.max(inkBounds.left, ringOuter.left + occludedEdgeWidth),
+        top: Math.max(inkBounds.top, ringOuter.top + occludedEdgeWidth),
+        right: Math.min(inkBounds.right, ringOuter.right - occludedEdgeWidth),
+        bottom: Math.min(inkBounds.bottom, ringOuter.bottom - occludedEdgeWidth),
+      }
+      if (
+        visibleInkBounds.left >= visibleInkBounds.right ||
+        visibleInkBounds.top >= visibleInkBounds.bottom
+      ) {
+        continue
+      }
+      const clearances = {
+        left: visibleInkBounds.left - ringInner.left,
+        top: visibleInkBounds.top - ringInner.top,
+        right: ringInner.right - visibleInkBounds.right,
+        bottom: ringInner.bottom - visibleInkBounds.bottom,
+      }
+      const [closestSide, closestClearance] = Object.entries(clearances).reduce((closest, side) =>
+        side[1] < closest[1] ? side : closest,
+      )
+      if (closestClearance < minimumClearance - clearanceMeasurementTolerance) {
+        issues.push(`too close to text (${closestSide} ${closestClearance.toFixed(1)}px)`)
+        break
       }
     }
   }
   const stop = `${focusedElement.tagName}.${focusedElement.className} ${focusedElement.textContent?.trim().slice(0, 35)}`
-  return { stop, stopPath: stopPath.join('.'), issues: [...new Set(issues)] }
+  return {
+    stop,
+    stopPath: stopPath.join('.'),
+    issues: [...new Set(issues)],
+    opticalExclusion,
+    horizontalExclusion,
+    hasOpticalAudit,
+    hasVerticalCenteringCheck,
+    hasHorizontalCenteringCheck,
+    focusedInkGaps,
+  }
 }
 
 test.beforeEach(async ({ page }) => {
@@ -369,6 +587,7 @@ test.beforeEach(async ({ page }) => {
       })),
       quests: capturedArmor.quests.map((quest) => ({
         ...quest,
+        chest: capturedRing.quests[0].chest,
         name: 'The Key to the Mythal',
       })),
     }
@@ -431,12 +650,15 @@ for (const viewportWidth of viewportWidths) {
 
       const ringFailures: string[] = []
       const visitedStops = new Set<string>()
+      const verticalCenteringStops = new Set<string>()
+      const horizontalCenteringStops = new Set<string>()
+      let opticallyAuditedStops = 0
       let firstStop = ''
       let didWrap = false
       for (let tabIndex = 0; tabIndex < 250; tabIndex += 1) {
         await page.evaluate(captureRestGeometry)
         await page.keyboard.press('Tab')
-        const focusedRing = await page.evaluate(auditFocusedRing)
+        const focusedRing = await page.evaluate(auditFocusedRing, clearanceMeasurementTolerance)
         if (focusedRing.stopPath === 'body' && visitedStops.size > 5) {
           didWrap = true
           break
@@ -447,16 +669,158 @@ for (const viewportWidth of viewportWidths) {
           break
         }
         visitedStops.add(focusedRing.stopPath)
+        if (focusedRing.hasOpticalAudit) opticallyAuditedStops += 1
+        if (focusedRing.hasVerticalCenteringCheck) verticalCenteringStops.add(focusedRing.stop)
+        if (focusedRing.hasHorizontalCenteringCheck) horizontalCenteringStops.add(focusedRing.stop)
         if (focusedRing.issues.length) {
           ringFailures.push(`${focusedRing.stop}: ${focusedRing.issues.join(', ')}`)
         }
       }
       expect(didWrap).toBe(true)
       expect(visitedStops.size).toBeGreaterThan(5)
+      expect(opticallyAuditedStops).toBeGreaterThan(0)
+      console.info(
+        `${viewportWidth}px ${route} ink centring stops: ${JSON.stringify({ vertical: [...verticalCenteringStops].sort(), horizontal: [...horizontalCenteringStops].sort() })}`,
+      )
       expect(ringFailures).toEqual([])
     })
   }
 }
+
+test('source title ring clears the chest line and centres on its lettering', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/resources/items/633')
+  const sourceRow = page.locator('.resources-item-source-row').filter({
+    hasText: 'The Key to the Mythal',
+  })
+  await expect(sourceRow.getByText('End chest')).toBeVisible()
+  const sourceLink = sourceRow.locator('.resources-hover-anchor')
+  await page.evaluate(() => document.fonts.ready)
+  for (let tabIndex = 0; tabIndex < 100; tabIndex += 1) {
+    if (await sourceLink.evaluate((element) => element === document.activeElement)) break
+    await page.keyboard.press('Tab')
+  }
+  await expect(sourceLink).toBeFocused()
+  const focusedRing = await page.evaluate(auditFocusedRing, clearanceMeasurementTolerance)
+  expect(focusedRing.hasOpticalAudit).toBe(true)
+  const inkGaps = focusedRing.focusedInkGaps
+  expect(inkGaps).not.toBeNull()
+  if (inkGaps) expect(Math.abs(inkGaps.top - inkGaps.bottom)).toBeLessThanOrEqual(1)
+  expect(focusedRing.focusedInkGaps?.right).toBeGreaterThanOrEqual(
+    4 - clearanceMeasurementTolerance,
+  )
+  const ringToWikiIcon = await sourceRow.evaluate((row) => {
+    const title = row.querySelector<HTMLElement>('.resources-item-source-title')!
+    const ring = getComputedStyle(title, '::after')
+    const wikiGlyph = row.querySelector<SVGElement>('.wiki-link-icon svg')!
+    return (
+      wikiGlyph.getBoundingClientRect().left -
+      (title.getBoundingClientRect().right - Number.parseFloat(ring.right))
+    )
+  })
+  expect(ringToWikiIcon).toBeGreaterThanOrEqual(3 - clearanceMeasurementTolerance)
+  expect.soft(focusedRing.issues.filter((issue) => issue.includes('neighbouring text'))).toEqual([])
+  expect.soft(focusedRing.issues.filter((issue) => issue.startsWith('text ink'))).toEqual([])
+  expect
+    .soft(focusedRing.issues.filter((issue) => issue.startsWith('too close to text')))
+    .toEqual([])
+})
+
+test('brief Drops from link ring clears its descriptor and centres on its lettering', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/resources/items')
+  const itemRow = page.locator('.ledger-row').first()
+  await expect(itemRow).toBeVisible()
+  await page.evaluate(() => document.fonts.ready)
+  await itemRow.hover()
+  await expect(page.locator('.hover-card[data-hover-card]')).toBeVisible()
+  await itemRow.press('t')
+  const pinnedCard = page.locator('.hover-card--pinned[data-hover-card]')
+  await expect(pinnedCard).toBeVisible()
+  const sourceLink = pinnedCard
+    .locator('.resources-item-source-brief-row .resources-hover-anchor')
+    .filter({ hasText: 'The Key to the Mythal' })
+  await expect(sourceLink).toBeVisible()
+  for (let tabIndex = 0; tabIndex < 60; tabIndex += 1) {
+    if (await sourceLink.evaluate((element) => element === document.activeElement)) break
+    await page.keyboard.press('Tab')
+  }
+  await expect(sourceLink).toBeFocused()
+  const focusedRing = await page.evaluate(auditFocusedRing, clearanceMeasurementTolerance)
+  expect(focusedRing.hasOpticalAudit).toBe(true)
+  const inkGaps = focusedRing.focusedInkGaps
+  expect(inkGaps).not.toBeNull()
+  if (inkGaps) expect(Math.abs(inkGaps.top - inkGaps.bottom)).toBeLessThanOrEqual(1)
+  expect.soft(focusedRing.issues.filter((issue) => issue.includes('neighbouring text'))).toEqual([])
+  expect.soft(focusedRing.issues.filter((issue) => issue.startsWith('text ink'))).toEqual([])
+  expect
+    .soft(focusedRing.issues.filter((issue) => issue.startsWith('too close to text')))
+    .toEqual([])
+})
+
+test('stat pin ring keeps a scale corner and clears its glyph and neighboring text', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/build-plan')
+  await expect(page.getByRole('complementary', { name: 'Stats', exact: true })).toBeVisible()
+  const pin = page.locator('.stats-panel-pin').first()
+  for (let tabIndex = 0; tabIndex < 250; tabIndex += 1) {
+    if (await pin.evaluate((element) => element === document.activeElement)) break
+    await page.evaluate(captureRestGeometry)
+    await page.keyboard.press('Tab')
+  }
+  await expect(pin).toBeFocused()
+  const focusedRing = await page.evaluate(auditFocusedRing, clearanceMeasurementTolerance)
+  expect(focusedRing.issues.filter((issue) => issue.includes('ring corner'))).toEqual([])
+  expect(focusedRing.issues.filter((issue) => issue.includes('neighbouring text'))).toEqual([])
+  const glyphClearance = await pin.evaluate((button) => {
+    const pseudo = getComputedStyle(button, '::after')
+    if (pseudo.content === 'none') return null
+    const buttonBounds = button.getBoundingClientRect()
+    const glyphBounds = button.querySelector('svg')!.getBoundingClientRect()
+    const ringInner = {
+      left:
+        buttonBounds.left +
+        Number.parseFloat(pseudo.left) +
+        Number.parseFloat(pseudo.borderLeftWidth),
+      top:
+        buttonBounds.top + Number.parseFloat(pseudo.top) + Number.parseFloat(pseudo.borderTopWidth),
+      right:
+        buttonBounds.right -
+        Number.parseFloat(pseudo.right) -
+        Number.parseFloat(pseudo.borderRightWidth),
+      bottom:
+        buttonBounds.bottom -
+        Number.parseFloat(pseudo.bottom) -
+        Number.parseFloat(pseudo.borderBottomWidth),
+    }
+    return Math.min(
+      glyphBounds.left - ringInner.left,
+      glyphBounds.top - ringInner.top,
+      ringInner.right - glyphBounds.right,
+      ringInner.bottom - glyphBounds.bottom,
+    )
+  })
+  expect(glyphClearance).not.toBeNull()
+  expect(glyphClearance).toBeGreaterThanOrEqual(4 - clearanceMeasurementTolerance)
+  const unpinnedPin = page.locator('.stats-panel-pin:not(.stats-panel-pin--pinned)').first()
+  const unpinnedNameGap = await unpinnedPin.evaluate((button) => {
+    const name = button.parentElement!.querySelector('.stats-panel-stat-name')!
+    return name.getBoundingClientRect().left - button.getBoundingClientRect().right
+  })
+  expect(unpinnedNameGap).toBeCloseTo(4, 1)
+  await unpinnedPin.click()
+  const pinnedPin = page.locator('.stats-panel-pin--pinned').first()
+  await expect(pinnedPin).toBeVisible()
+  const pinnedNameGap = await pinnedPin.evaluate((button) => {
+    const name = button.parentElement!.querySelector('.stats-panel-stat-name')!
+    return name.getBoundingClientRect().left - button.getBoundingClientRect().right
+  })
+  expect(pinnedNameGap).toBeCloseTo(4, 1)
+})
 
 test('the build plan scroll region keeps keyboard scrolling and an inset ring', async ({
   page,

@@ -182,12 +182,8 @@
   --focus-ring-gap: 2px;
   --focus-ring-outset: var(--focus-ring-gap);
   --focus-ring-clearance: calc(var(--focus-ring-width) + var(--focus-ring-gap));
-  --focus-ring-proxy-outset: calc(-1 * var(--focus-ring-clearance));
-  --focus-ring-proxy-inside: 0;
-  --focus-ring-proxy-constrained: 0 0 calc(-1 * var(--focus-ring-width)) 0;
-  --focus-ring-proxy-vertical: calc(-1 * (var(--focus-ring-width) + var(--space-px))) 0
-    calc(-1 * var(--focus-ring-width)) 0;
   --focus-ring-text-clearance: 4px;
+  --focus-ring-neighbour-clearance: 3px;
   --focus-ring-corner-radius: var(--radius-sm);
   --focus-ring-scrollport-backdrop: inset 0 0 0
     calc(var(--focus-ring-width) + var(--focus-ring-text-clearance)) var(--bg-app);
@@ -373,25 +369,16 @@ kbd,
 }
 
 :focus-visible,
-[data-hover-card-pinned],
-.search-well:focus-within,
-.focus-ring-surface {
-  outline: var(--focus-ring-width) solid var(--focus-ring-appearance, var(--focus-ring-color));
-  outline-offset: var(--focus-ring-outset);
-}
-
-.focus-ring-surface {
-  --focus-ring-appearance: transparent;
-
-  border-radius: var(--radius-xs);
-}
-
-.focus-ring-surface :focus-visible {
-  outline-color: transparent;
+[data-hover-card-pinned] {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-native-offset, var(--focus-ring-outset));
 }
 
 :where(.focus-ring-proxy) {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-inside);
+  --focus-ring-proxy-top: 0;
+  --focus-ring-proxy-right: 0;
+  --focus-ring-proxy-bottom: 0;
+  --focus-ring-proxy-left: 0;
   --focus-ring-proxy-backdrop: none;
 }
 
@@ -437,7 +424,8 @@ kbd,
 )::after {
   content: '';
   position: absolute;
-  inset: var(--focus-ring-proxy-inset, 0);
+  inset: var(--focus-ring-proxy-top, 0) var(--focus-ring-proxy-right, 0)
+    var(--focus-ring-proxy-bottom, 0) var(--focus-ring-proxy-left, 0);
   border: var(--focus-ring-width) solid var(--focus-ring-color);
   border-radius: var(--focus-ring-corner-radius);
   box-shadow: var(--focus-ring-proxy-backdrop, none);
@@ -505,8 +493,6 @@ kbd,
 }
 
 .segmented-control-segment {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
-
   flex: 1;
   display: inline-flex;
   align-items: center;
@@ -540,8 +526,6 @@ kbd,
   box-shadow: none;
 
   & > .segmented-control-segment {
-    --focus-ring-proxy-inset: var(--focus-ring-proxy-vertical);
-
     flex: 0 0 auto;
     gap: var(--space-1-5);
     height: var(--control-h-sm);
@@ -580,10 +564,9 @@ kbd,
 }
 
 .underline-tab {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
-
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1-5);
   height: var(--control-h);
   padding: 0 var(--space-3);
@@ -698,10 +681,6 @@ kbd,
 
   &::placeholder {
     color: var(--text-faint);
-  }
-
-  &:focus-visible {
-    outline-color: transparent;
   }
 }
 

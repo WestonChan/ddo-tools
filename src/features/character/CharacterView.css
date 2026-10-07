@@ -34,6 +34,8 @@
 }
 
 .roster-row {
+  --focus-ring-native-offset: var(--space-px);
+
   flex: 1;
   min-width: 0;
   display: flex;
@@ -140,6 +142,8 @@
 }
 
 .add-planned-build-btn {
+  --focus-ring-native-offset: var(--space-px);
+
   display: flex;
   align-items: center;
   gap: var(--space-1-5);

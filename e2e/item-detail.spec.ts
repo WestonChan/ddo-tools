@@ -299,7 +299,7 @@ test('keyboard enchantment cards sit beside their name cells', async ({ page }) 
   }
 })
 
-test('a card re-places above after delayed detail content makes it too tall for below', async ({
+test('a card re-places above and caps only when its delayed content cannot fit', async ({
   page,
 }) => {
   const listItems = Array.from({ length: 20 }, (_, index) => ({
@@ -374,10 +374,39 @@ test('a card re-places above after delayed detail content makes it too tall for 
   const loadedCardBounds = await card.boundingBox()
   if (!loadedCardBounds) throw new Error('Loaded card has no bounds')
   expect(loadedCardBounds.y + loadedCardBounds.height).toBeLessThanOrEqual(rowBounds.y - 6)
-  expect(await card.evaluate((element) => element.style.maxHeight)).toBe('')
-  expect(await card.evaluate((element) => element.scrollHeight <= element.clientHeight + 1)).toBe(
-    true,
+  const cardSpace = await card.evaluate(
+    (element, anchor) => {
+      const content = element.querySelector<HTMLElement>('.hover-card__content')!
+      const style = getComputedStyle(element)
+      const verticalChrome =
+        Number.parseFloat(style.paddingTop) +
+        Number.parseFloat(style.paddingBottom) +
+        Number.parseFloat(style.borderTopWidth) +
+        Number.parseFloat(style.borderBottomWidth)
+      return {
+        naturalHeight: content.getBoundingClientRect().height + verticalChrome,
+        availableAbove: anchor.top - 6 - 8,
+        availableBelow: window.innerHeight - 8 - (anchor.bottom + 6),
+        viewportCap: window.innerHeight * 0.7,
+        inlineCap: element.style.maxHeight ? Number.parseFloat(element.style.maxHeight) : null,
+        isOverflowing: element.scrollHeight > element.clientHeight + 1,
+      }
+    },
+    { top: rowBounds.y, bottom: rowBounds.y + rowBounds.height },
   )
+  expect(cardSpace.availableAbove).toBeGreaterThan(cardSpace.availableBelow)
+  expect(cardSpace.naturalHeight).toBeGreaterThan(cardSpace.availableBelow)
+  if (cardSpace.naturalHeight <= cardSpace.availableAbove) {
+    expect(cardSpace.inlineCap).toBeNull()
+    if (cardSpace.naturalHeight <= cardSpace.viewportCap)
+      expect(cardSpace.isOverflowing).toBe(false)
+  } else {
+    expect(cardSpace.inlineCap).toBeCloseTo(
+      Math.min(cardSpace.availableAbove, cardSpace.viewportCap),
+      0,
+    )
+    expect(cardSpace.isOverflowing).toBe(true)
+  }
 })
 
 test('capped list and nested cards keep their height and viewport margin', async ({ page }) => {

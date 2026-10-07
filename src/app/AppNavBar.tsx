@@ -124,7 +124,7 @@ function AppNavBar({
     >
       <Link
         to="/"
-        className="nav-bar-brand"
+        className="nav-bar-brand focus-ring-proxy"
         activeOptions={{ exact: true }}
         onClick={collapseIfFullscreenOverlay}
       >

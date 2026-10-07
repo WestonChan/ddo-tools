@@ -207,7 +207,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
       onEscape={hover.dismiss}
     >
       <div className="combobox-search-wrap">
-        <label className="search-well combobox-search">
+        <label className="search-well combobox-search focus-ring-proxy focus-ring-proxy--container">
           <Search size={13} aria-hidden />
           <input
             ref={searchRef}

@@ -196,7 +196,7 @@ export function ClickyItemPicker({
         </span>
       </div>
 
-      <label className="search-well">
+      <label className="search-well focus-ring-proxy focus-ring-proxy--container">
         <Search size={14} aria-hidden />
         <input
           type="search"

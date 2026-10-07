@@ -31,7 +31,7 @@
 }
 
 .ledger-header-cell {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-constrained);
+  --focus-ring-proxy-bottom: calc(-1 * var(--space-px));
 
   display: flex;
   align-items: flex-end;
@@ -186,7 +186,8 @@
 }
 
 .ledger-table--dense .ledger-header-cell {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-vertical);
+  --focus-ring-proxy-top: calc(-1 * var(--space-1));
+  --focus-ring-proxy-bottom: 0;
 }
 
 .ledger-empty {

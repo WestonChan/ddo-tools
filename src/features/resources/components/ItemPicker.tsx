@@ -415,7 +415,7 @@ export function ItemPicker({
   return (
     <div className="resources-picker-inner" ref={pickerRootRef}>
       <div className="resources-search">
-        <label className="search-well resources-search-well">
+        <label className="search-well resources-search-well focus-ring-proxy focus-ring-proxy--container">
           <Search size={14} aria-hidden />
           <input
             ref={effectiveSearchInputRef}
@@ -497,7 +497,7 @@ export function ItemPicker({
         extraControls={{
           bonuses: (
             <label
-              className="resources-include-sets focus-ring-surface"
+              className="resources-include-sets focus-ring-proxy focus-ring-proxy--container"
               data-tip="Also match items whose set bonuses grant these"
             >
               <input

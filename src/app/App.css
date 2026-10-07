@@ -25,7 +25,6 @@
 }
 
 .app-content.focus-ring-proxy {
-  --focus-ring-proxy-inset: var(--focus-ring-proxy-inside);
   --focus-ring-proxy-backdrop: var(--focus-ring-scrollport-backdrop);
 }
 
