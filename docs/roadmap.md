@@ -1452,6 +1452,93 @@ Corrections: 430 applied, 0 stale (392 set-tier adds retired as our writer's own
    - **Planner data that changes upstream:** Master of X feats consolidated; enhancement actives cut to one rank; Morningstar and Warhammer become hand-and-a-half; doublestrike is uncapped, with past 200% at half value; Lahar's DR augments get new minimum levels, plus new bypass augments.
    - **Then:** Maetrim's files catch up through the weekly deploy. Re-read the golden set with `cargo xtask golden-sample` (sets and modern items first) and merge it. Check `wiki-tooltips` failures against the new tooltip text before recording any as differences.
 
+11. **Families, items and runs (decided 2026-10-06).** Today the heroic, epic and legendary relation is
+   spelled three ways: quests carry `epic_level` and `legendary_level` on one row (322 and 227 quests) but five
+   Vale raids are separate "Legendary" rows; items and sets carry only a name prefix (1,882 "Legendary", 658
+   "Epic", 1,385 "(level N)" variants across 263 families, 604 whose drop text is just "Epic version of X"); set
+   names mix prefixes with suffixes ("Adherent of the Mists Set (Heroic)"). Every reader re-derives it from
+   strings, and `sources` maps whole items to whole quests, so a drop cannot say which run it comes from. The
+   tiers are symmetrical: of 1,632 heroic-and-legendary item pairs with sources on both sides, 1,572 have the
+   same sources once tier words are stripped, and most of the other 60 are one quest spelled two ways ("The
+   Master Artificer" against "Master Artificer"). So the thing that has sources is the family, and the row
+   that varies by tier is named for what it is.
+   - **Items keep meaning what a player equips.** `items` stays the concrete row (ML, enhancement bonus,
+     enchantment lines, stats) and gains `family_id` and `tier`; the new `item_families` table is the base
+     (name stem, slot, category, type, icon, wiki page; 5,169 rows). The tier is read from the name prefix
+     once at build; "(level N)" rows are tiers whose level is their ML; set name forms outside the prefix rule
+     are a cited alias list. The 83 families with no heroic item (68 legendary-only such as the Cataclysmic
+     weapons, 8 epic-plus-legendary such as the Red Dragon family, 7 epic-only such as Holistic Stave and
+     Emerald Gaze) are ordinary families a WARN lists as a wiki reading list; rerun the family counts after
+     Update 81.4 lands in Maetrim's files, since an Epic name with no heroic or legendary twin may be real or
+     may be a version the files lack. Sets follow: `set_bonuses` stays the tier-specific set with its pieces and
+     thresholds, over `set_bonus_families`.
+   - **Quests are the base; a run is the small per-tier record.** `quest_runs` holds one row per quest and
+     tier with its level, replacing `epic_level` and `legendary_level`, since nothing else differs between a
+     quest's runs. The five "Legendary" quest rows (Legendary Hound of Xoriat, Legendary Vision of Destruction,
+     The Codex and the Shroud as the Legendary Shroud, and the two the quest-version check lists) become runs
+     of their base quest.
+   - **`sources` maps family to quest** (or crafting system, vendor, event), as its rows already do once tier
+     words are stripped. `source_runs` is the disambiguation: which item of the family a given quest run
+     drops, derived as "matching tier" by default and stated where it differs. Exceptions live there: the
+     legendary Chronoscope raid drops items the heroic one does not, which is right, so it is an explicit row a
+     cited allow-list confirms. A WARN lists every family whose runs map asymmetrically; the 60 pairs above are
+     the first list (spelling drift to fix, Chronoscope-style extras to confirm, a few true errors). The 152
+     pairs where only one side has a source today, and the 365 "version of X" items with none (V7b item 5),
+     gain theirs from the family.
+   - **Which tables have families:** items, augments, sets and quests, which form one chain (quest runs drop
+     item and augment tiers, item tiers belong to set tiers) and are checked against each other along it.
+     Augments tier the same way items do: Undying Sapphire (ML 8) and Legendary Undying Sapphire (ML 30) are
+     one family, and 64 augments carry a prefix (35 with a plain twin: Legendary Green Steel 21, Lost Purpose
+     11, the Ruby, Sapphire and Emerald lines). An augment line levelled under distinct names (Maetrim's
+     `family` column plus the effect) is a family in the same sense as "(level N)" items, which the prefix
+     rule alone will not find. The 43 augment names that repeat at one level are upstream duplicates a
+     family-level uniqueness check catches. Crafting systems are sources whose legendary counterpart is a
+     separate system (Green Steel, Legendary Green Steel), with no families of their own. Every item and
+     augment has a family, including the single-tier majority, so there is one join shape and one stable id;
+     and `sources` points only at families, never at items or augments, for every source kind. A crafting
+     recipe's output is a family, its tier on `source_runs` from the system's own tier or stated.
+   - **Two words: family and tier.** A family is the group of rows that are one thing at different steps;
+     its members differ by tier (heroic, epic, legendary: a different item with its own effects and runs) or
+     by level, both fields on the row. Tier is null unless the row is a heroic, epic or legendary version of
+     something (Legendary Undying Sapphire, Epic Marilith Chain); the heroic majority, crafting outputs and
+     every ladder augment such as Sapphire of Stunning carry null, since there is nothing they are a tier of.
+     A family has at most one member per tier. Level-only families exist where the data stores each level as a row:
+     the "(level N)" items (Docent of Shadow 4 to 16) and the levelled augment lines under distinct names
+     (Maetrim's `family` column). Where the data already keeps one row with a level list and a value per
+     level, as for Sapphire of Stunning (91 augments), that is one row and one family, not a relation.
+     Collapsing the row-per-level families to that shape is a later step. Enchantments have the same relation
+     as `effect_tier_groups` (Wizardry I to XI, Speed V to XV): those are effect families, and the table is
+     renamed to say so, since "tier" now means heroic or legendary.
+   - **What a family holds:** only what is constant across tiers (name stem, slot, type, icon, wiki page,
+     sources). Bonuses never attach to a family. The values differ by tier, and the lines sometimes do too:
+     of 1,673 heroic-and-legendary pairs, 719 carry the same effect names, 82 legendary items add effects
+     (Pendant of the Blue Abishai gains Strength, Cloak of the Zephyr gains Lightning Storm Guard), 30 drop
+     some, and 842 differ in both directions, mostly the same enchantment with its value in the name
+     ("Anarchic 3" against "Anarchic 7", "Vorpal" against "Sovereign Vorpal", the cleanup list's 475
+     value-in-name effects). So effect links, augment slots (higher tiers add sockets) and set membership
+     stay on the item.
+   - **Checks, all forms of one symmetry, each a WARN with a reviewed list:** a family's tiers carry the same
+     effect names (value-in-name variants folded first), and the same sockets up to additions on higher
+     tiers; every quest run that drops a family drops its item of matching tier; a family a quest drops at one
+     tier it drops at every tier it has, and every tier an item family has is dropped, crafted or sold
+     somewhere; set tiers of one family have the same piece count and member families. HARD: every prefixed
+     name resolves to a family; a quest keeps no level its runs lack; tiers are all or nothing within a family
+     (a null row beside a Legendary one is the heroic version, which the build assigns only while the plain
+     row's ML is at most 20 and fails otherwise: on the 2026-10-06 build all 1,785 such rows are, none drops
+     only from an epic or legendary run, and no plain row beside an Epic one is at ML 20 or above); and a
+     family with no tiers is not dropped by a run that has one, unless an exception names it.
+   - **Exceptions are cited rows in data,** in the reviewed-lists file beside the corrections
+     (`xtask/data/source_review.json` already holds the cross-pack items and multi-patron packs): each states
+     the asymmetry outright ("the legendary Chronoscope run drops Legendary X with no heroic counterpart") with
+     the wiki page and read date. The checks skip what the file names and report everything else, so an
+     exception stays reviewable in one place and goes stale visibly when upstream changes. Under V9 the
+     reviewed lists move out of `xtask/data` into the source tree beside what they describe: an
+     `exceptions.toml` in the pack's or quest's folder, so a Chronoscope loot exception sits next to
+     Chronoscope and one edit stays in one folder.
+   - **API and site:** `/v1/items/{id}` keeps meaning the item and gains its family and sibling tiers, so the
+     site changes little and gains "other versions" on detail; the gear phase compares an item across tiers.
+     Families are the stable ids item 7 wants, so the two land together.
+
 **Order.** Schema and ETL in `ddo-data` (a breaking shape change for item, augment and set detail, so a
 `routes/v2` per `AGENTS.md`, with v1 served until the frontend moves), then the frontend's `EnchantmentList`,
 hover cards and filter vocabulary, then the wiki reads fill exact text as they happen (see the tooltip
@@ -2478,6 +2565,7 @@ effects/…, stats/…, classes/…, feats/…    vocabulary, edited rarely
 - **Free to Play** is the one oversized "pack" (122 quests). It splits by patron, which mostly follows the free areas: The Coin Lords 26, The Free Agents 23, House Kundarak 12, House Jorasco 12, House Deneith 10, The Silver Flame 7, House Phiarlan 7, and smaller ones; 9 have no patron.
 - Relations are recorded once: an item's file lists its sources, which are usually its own folder's quest.
 - A WARN names any file whose sources no longer match its folder, with the move command. When an upstream update adds a drop elsewhere, the layout stays honest.
+- Reviewed exceptions live beside what they except: each pack or quest folder may hold an `exceptions.toml` (the confirmed asymmetries, cross-pack drops and multi-patron notes that `xtask/data/source_review.json` holds today), each entry cited to its wiki page. A check that an exception names an entity in its own folder keeps them from drifting.
 - Fixing an item's values, its drop or its quest's facts touches files in one folder. Only changing an enchantment's definition (an effect file) reaches outside it.
 - File slugs are stable ids, which settles deferred item 7.
 
