@@ -359,6 +359,48 @@ test('list selections share one history entry across a reload-free resize', asyn
   await expect(page).toHaveURL(/\/$/)
 })
 
+test('Tab wraps from the last set card control to its first piece', async ({ page }) => {
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const response =
+      path === '/v1/items/487'
+        ? capturedRing
+        : path === '/v1/sets/93'
+          ? capturedSet
+          : path === '/v1/items'
+            ? { total: 0, limit: 200, offset: 0, items: [] }
+            : []
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+
+  await page.goto('/resources/items/487')
+  const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
+  const setAnchor = detailPane
+    .locator('.detail-card__facts .resources-hover-anchor')
+    .filter({ hasText: capturedSet.name })
+  await setAnchor.hover()
+  const setCard = page.getByRole('dialog').filter({ hasText: capturedSet.name })
+  await expect(setCard).toBeVisible()
+  await page.keyboard.press('t')
+  await expect(setCard).toHaveClass(/hover-card--pinned/)
+  await expect(setCard).toBeFocused()
+
+  const firstPiece = setCard.getByRole('button', {
+    name: capturedSet.items[0].name,
+    exact: false,
+  })
+  await expect(firstPiece).toBeVisible()
+  const lastControl = setCard.locator('.resources-hover-effect-row[tabindex="0"]').last()
+  await expect(lastControl).toBeVisible()
+  await lastControl.focus()
+  await page.keyboard.press('Tab')
+  await expect(firstPiece).toBeFocused()
+})
+
 test('the full pane breadcrumb survives a three-deep stack and a narrow resize', async ({
   page,
 }) => {

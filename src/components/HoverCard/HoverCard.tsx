@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useTabFocusWrap } from '../../hooks'
 import { isTypingTarget } from '../../lib/isTypingTarget'
 import './HoverCard.css'
 
@@ -91,8 +92,15 @@ export function positionedCardBeside(
   }
 }
 
-function CardLayer({ card }: { card: CardEntry }): JSX.Element {
+function CardLayer({
+  card,
+  isTopPinnedCard,
+}: {
+  card: CardEntry
+  isTopPinnedCard: boolean
+}): JSX.Element {
   const elementRef = useRef<HTMLDivElement>(null)
+  useTabFocusWrap(elementRef, isTopPinnedCard)
   const hasFocusedPinnedCard = useRef(false)
   const restoreAnchorFocus = useContext(ControllerContext)?.restoreAnchorFocus
   const setCardLabel = useContext(ControllerContext)?.setLabel
@@ -453,6 +461,10 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     }
   }, [open, cancelPending])
 
+  const topPinnedCardId = cards.reduce<number | null>(
+    (topId, card) => (card.isPinned ? card.id : topId),
+    null,
+  )
   return (
     <ControllerContext.Provider
       value={{
@@ -470,7 +482,12 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       }}
     >
       {children}
-      {cards.map((card) => createPortal(<CardLayer key={card.id} card={card} />, document.body))}
+      {cards.map((card) =>
+        createPortal(
+          <CardLayer key={card.id} card={card} isTopPinnedCard={card.id === topPinnedCardId} />,
+          document.body,
+        ),
+      )}
     </ControllerContext.Provider>
   )
 }

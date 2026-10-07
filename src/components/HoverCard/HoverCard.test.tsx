@@ -389,6 +389,109 @@ it('moves focus from an unrelated link into a pinned card and back to its anchor
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
+it('keeps Tab and Shift+Tab inside a pinned card with two controls', async () => {
+  function TwoControlCard(): React.JSX.Element {
+    const anchor = useHoverCard({
+      kind: 'item',
+      delayMs: 0,
+      render: () => (
+        <>
+          <a href="/first">First link</a>
+          <button>Last action</button>
+        </>
+      ),
+    })
+    return <button {...anchor}>Card anchor</button>
+  }
+
+  render(
+    <HoverCardProvider>
+      <TwoControlCard />
+      <button>Outside action</button>
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Card anchor' })
+  anchor.focus()
+  fireEvent.keyDown(anchor, { key: 't' })
+  await screen.findByText('Pinned · Esc')
+  const card = screen.getByRole('dialog')
+  const firstLink = screen.getByRole('link', { name: 'First link' })
+  const lastAction = screen.getByRole('button', { name: 'Last action' })
+  expect(card).toHaveFocus()
+
+  await userEvent.tab()
+  expect(firstLink).toHaveFocus()
+  await userEvent.tab()
+  expect(lastAction).toHaveFocus()
+  await userEvent.tab()
+  expect(firstLink).toHaveFocus()
+  await userEvent.tab({ shift: true })
+  expect(lastAction).toHaveFocus()
+  card.focus()
+  await userEvent.tab({ shift: true })
+  expect(lastAction).toHaveFocus()
+})
+
+it('keeps focus on a pinned card root when it has no focusable controls', async () => {
+  function EmptyCard(): React.JSX.Element {
+    const anchor = useHoverCard({ kind: 'item', delayMs: 0, render: () => <p>No actions</p> })
+    return <button {...anchor}>Empty card anchor</button>
+  }
+
+  render(
+    <HoverCardProvider>
+      <EmptyCard />
+      <button>Outside action</button>
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Empty card anchor' })
+  anchor.focus()
+  fireEvent.keyDown(anchor, { key: 't' })
+  await screen.findByText('Pinned · Esc')
+  const card = screen.getByRole('dialog')
+  expect(card).toHaveFocus()
+  await userEvent.tab()
+  expect(card).toHaveFocus()
+  await userEvent.tab({ shift: true })
+  expect(card).toHaveFocus()
+})
+
+it('traps the top pinned card and returns the trap to its parent after Escape', async () => {
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <button>Outside action</button>
+    </HoverCardProvider>,
+  )
+  const outerAnchor = screen.getByRole('button', { name: 'Item anchor' })
+  outerAnchor.focus()
+  fireEvent.keyDown(outerAnchor, { key: 't' })
+  await screen.findByText('Pinned · Esc')
+  const outerCard = screen.getByRole('dialog')
+  await userEvent.tab()
+  const nestedAnchor = screen.getByRole('button', { name: 'Nested anchor' })
+  expect(nestedAnchor).toHaveFocus()
+  await screen.findByText('Nested facts')
+  await userEvent.keyboard('t')
+  const [parentCard, nestedCard] = screen.getAllByRole('dialog')
+  expect(parentCard).toBe(outerCard)
+  expect(nestedCard).toHaveClass('hover-card--pinned')
+  expect(nestedCard).toHaveFocus()
+
+  await userEvent.tab()
+  const deepAnchor = screen.getByRole('button', { name: 'Enchantment anchor' })
+  expect(deepAnchor).toHaveFocus()
+  await userEvent.tab()
+  expect(deepAnchor).toHaveFocus()
+  await userEvent.keyboard('{Escape}')
+  expect(nestedCard).not.toBeInTheDocument()
+  expect(nestedAnchor).toHaveFocus()
+  await userEvent.tab({ shift: true })
+  expect(screen.getByRole('button', { name: 'Card action' })).toHaveFocus()
+  await userEvent.tab()
+  expect(nestedAnchor).toHaveFocus()
+})
+
 it.each(['focus', 'pointer'] as const)(
   'pops a %s-opened card when Escape immediately follows T',
   (openedBy) => {

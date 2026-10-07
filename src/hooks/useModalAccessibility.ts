@@ -1,5 +1,6 @@
 import { useEffect, useRef, type RefObject } from 'react'
 import { useRegisterActiveModal } from './useRegisterActiveModal'
+import { useTabFocusWrap } from './useTabFocusWrap'
 
 export interface ModalAccessibilityOptions {
   isActive: boolean
@@ -8,15 +9,6 @@ export interface ModalAccessibilityOptions {
   shouldRegisterAsActiveModal?: boolean
 }
 
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(', ')
-
 export function useModalAccessibility({
   isActive,
   onClose,
@@ -24,6 +16,7 @@ export function useModalAccessibility({
   shouldRegisterAsActiveModal,
 }: ModalAccessibilityOptions): void {
   useRegisterActiveModal(shouldRegisterAsActiveModal !== false && isActive)
+  useTabFocusWrap(panelRef, isActive)
 
   /* eslint-disable react-hooks/refs -- Render-phase ref access is the point
      here, not an oversight: the capture has to happen before the commit
@@ -57,33 +50,5 @@ export function useModalAccessibility({
     return () => {
       if (focusRestoreTarget?.isConnected) focusRestoreTarget.focus()
     }
-  }, [isActive, panelRef])
-
-  useEffect(() => {
-    if (!isActive) return
-    const panel = panelRef.current
-    if (!panel) return
-    const wrapTabFocusInPanel = (e: KeyboardEvent): void => {
-      if (e.key !== 'Tab') return
-      const focusableElements = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-      if (focusableElements.length === 0) {
-        e.preventDefault()
-        return
-      }
-      const firstFocusable = focusableElements[0]
-      const lastFocusable = focusableElements[focusableElements.length - 1]
-      const focusedElement = document.activeElement
-      if (e.shiftKey) {
-        if (focusedElement === firstFocusable || focusedElement === panel) {
-          e.preventDefault()
-          lastFocusable.focus()
-        }
-      } else if (focusedElement === lastFocusable) {
-        e.preventDefault()
-        firstFocusable.focus()
-      }
-    }
-    panel.addEventListener('keydown', wrapTabFocusInPanel)
-    return () => panel.removeEventListener('keydown', wrapTabFocusInPanel)
   }, [isActive, panelRef])
 }

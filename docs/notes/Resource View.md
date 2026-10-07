@@ -1,4 +1,4 @@
-Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see tag) · ❌ won't do · 🐛 bug
+Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see tag) · ❌ won't do · 🐛 bug · 🔁 cleanup (a consolidation with no user-visible change)
 
 Phase 4a and 4b are shipped and their bullets pruned — the design decisions they recorded (hybrid
 URL strategy, `ResourceDetailDrawer` extraction, the wiki compare window) now live in the Phase 4b
@@ -33,6 +33,8 @@ entry in [[roadmap]].
 - 📋 Phase 4g — Make filters sticky per list view so they stick around when you leave the page and come back
 - ✅ 2026-10-05 — Sticky list sessions: each resource category keeps its filters, search, sort and scroll across navigation and reloads in the same tab (`resourceListSessions.ts`, sessionStorage). The item list defaults to ML descending, name as the tie-breaker.
 - 🐛 Phase 4g — At 375 the pane's enchantment table (Type 96 + Enchantment 120 + Value 64 px) is wider than the 237px card body, so it scrolls sideways and hides the Value column, now including the Enhancement Bonus row's "+N". Use the hover card's 76px Type column or a smaller Enchantment minimum below 480px; add an e2e check that the Value header sits inside the table at 375. Reviewer finding on detail-v9, 2026-10-05.
+- 🐛 Phase 4g — Tab from a list row while its unpinned hover card is open sends focus to the page body (the row blurs, the card unmounts, nothing takes focus). Pre-existing; Tab should move to the next page control. Reviewer finding on pinned-focus-trap, 2026-10-06.
+- 🔁 Phase 4g — Two definitions of "focusable" remain: `AnchoredMenu`'s `FOCUSABLE_ROW_SELECTOR` (`:disabled`, no select/textarea) and `useTabFocusWrap`'s selector; export one helper from the hook and use it in both. `HoverCard.tsx` also derives the top pinned card twice (render and the Escape handler); derive it once. Reviewer findings on pinned-focus-trap, 2026-10-06.
 - 📋 Phase 4g — List view URL should include the active filters (shareable filtered views) (sessions are already sticky; this is about sharing a link)
 - 📋 Phase 4g — List view should have columns for ml, item slot, and quest pack/expansion so users can order by them
 - ✅ Raid indicator visual pass (2026-10-04): no chips anywhere. The item list shows Raid and Rare only in their columns ("Yes" in the accent / body colour, "—" faint); the detail's Obtained from rows use coloured words; `DropTagChip` is deleted.
