@@ -1469,7 +1469,7 @@ Corrections: 430 applied, 0 stale (392 set-tier adds retired as our writer's own
      are a cited alias list. The 83 families with no heroic item (68 legendary-only such as the Cataclysmic
      weapons, 8 epic-plus-legendary such as the Red Dragon family, 7 epic-only such as Holistic Stave and
      Emerald Gaze) are ordinary families a WARN lists as a wiki reading list; rerun the family counts after
-     Update 81.4 lands in Maetrim's files, since an Epic name with no heroic or legendary twin may be real or
+     Update 82 (2026-10-14, the one with new items) lands in Maetrim's files, since an Epic name with no heroic or legendary twin may be real or
      may be a version the files lack. Sets follow: `set_bonuses` stays the tier-specific set with its pieces and
      thresholds, over `set_bonus_families`.
    - **Quests are the base; a run is the small per-tier record.** `quest_runs` holds one row per quest and
