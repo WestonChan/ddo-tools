@@ -138,6 +138,7 @@ function LedgerRow<Row>({
   const isNavigable = kind === 'row' || isCollapsibleHeading
   const isExpanded = expandedHeadingKeys.has(rowKey(row))
   const isSelected = rowKey(row) === selectedRowKey
+  const isHighlightedRow = isHighlighted?.(row) ?? false
   return (
     <div
       role="row"
@@ -145,9 +146,10 @@ function LedgerRow<Row>({
       data-row-index={index}
       data-row-key={rowKey(row)}
       className={
-        'ledger-row' +
+        'ledger-row focus-ring-proxy focus-ring-row' +
         (isSelected ? ' ledger-row--selected' : '') +
-        (isHighlighted?.(row) ? ' ledger-row--highlighted' : '') +
+        (isHighlightedRow ? ' ledger-row--highlighted' : '') +
+        (isSelected || isHighlightedRow ? ' focus-ring-row--selected' : '') +
         (isHeading
           ? ` ledger-row--${isCollapsibleHeading ? 'heading ledger-row--collapsible' : kind}`
           : '')
@@ -326,7 +328,7 @@ function HeaderCell<Row>({
             : 'none'
       }
       className={
-        'ledger-header-cell' +
+        'ledger-header-cell focus-ring-proxy' +
         (isDragging ? ' ledger-header-cell--dragging' : '') +
         (isOver ? ' ledger-header-cell--over' : '')
       }

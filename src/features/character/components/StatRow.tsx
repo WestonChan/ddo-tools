@@ -131,7 +131,7 @@ export function StatRow({
         </button>
         <button
           type="button"
-          className="stats-panel-row-toggle"
+          className="stats-panel-row-toggle focus-ring-proxy"
           aria-expanded={isExpanded}
           aria-controls={isExpanded ? breakdownId : undefined}
           onClick={onToggleExpanded}

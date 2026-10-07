@@ -90,7 +90,9 @@ function ObtainedFromRow({
     <li className="resources-item-source-row">
       <div className="resources-item-source-left">
         <div className="resources-item-source-name">
-          <span className="resources-item-source-title">{children}</span>
+          <span className="resources-item-source-title focus-ring-proxy focus-ring-proxy--container">
+            {children}
+          </span>
           {wikiPageName && (
             <WikiLinkIcon
               href={wikiUrl ?? undefined}

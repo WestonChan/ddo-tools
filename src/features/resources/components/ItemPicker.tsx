@@ -83,6 +83,7 @@ function MatchModeControl({
         <button
           key={match}
           type="button"
+          className="focus-ring-proxy"
           aria-pressed={value === match}
           data-tip={
             subject === 'Bonus'
@@ -496,7 +497,7 @@ export function ItemPicker({
         extraControls={{
           bonuses: (
             <label
-              className="resources-include-sets"
+              className="resources-include-sets focus-ring-surface"
               data-tip="Also match items whose set bonuses grant these"
             >
               <input

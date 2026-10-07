@@ -177,7 +177,11 @@ function AugmentEffectRow({
     render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (
-    <div className="resources-hover-effect-row" tabIndex={0} {...anchor}>
+    <div
+      className="resources-hover-effect-row focus-ring-row focus-ring-proxy"
+      tabIndex={0}
+      {...anchor}
+    >
       <DetailValueRow
         label={effect.name}
         value={effectValue(effect) ?? ''}
@@ -321,7 +325,7 @@ function LinkedItemRow({
   return (
     <button
       type="button"
-      className="resources-hover-row hover-card-row"
+      className="resources-hover-row hover-card-row focus-ring-row focus-ring-proxy"
       onClick={() => onOpenItem(id, name)}
       {...anchor}
     >
@@ -833,7 +837,11 @@ function SetEffectRow({ effect, originName }: { effect: Effect; originName: stri
     render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (
-    <div className="resources-hover-effect-row" tabIndex={0} {...anchor}>
+    <div
+      className="resources-hover-effect-row focus-ring-row focus-ring-proxy"
+      tabIndex={0}
+      {...anchor}
+    >
       <DetailValueRow
         label={effect.name}
         value={effectValue(effect) ?? '—'}

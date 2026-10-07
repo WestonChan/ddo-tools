@@ -62,7 +62,12 @@ export function AugmentSlotButton({
       >
         <SlotVisual name={name} symbol={symbol} />
       </button>
-      {symbol && <span className="augment-slot-focus-ring" aria-hidden="true" />}
+      {symbol && (
+        <span
+          className="augment-slot-focus-ring focus-ring-proxy focus-ring-proxy--sibling"
+          aria-hidden="true"
+        />
+      )}
     </span>
   )
 }

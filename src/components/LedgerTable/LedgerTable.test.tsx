@@ -95,7 +95,7 @@ describe('LedgerTable', () => {
     expect(screen.queryByRole('row', { name: /First bonus/ })).toBeNull()
     expect(screen.getByRole('row', { name: /Second bonus/ })).toBeInTheDocument()
   })
-  it('uses fills and selected name text without inset marks or row focus outlines', () => {
+  it('uses the same ring and row fill for keyboard focus and pinning', () => {
     const rowStyle = [...ledgerStyles.matchAll(/^\.ledger-row\s*\{([\s\S]*?)\n\}/gm)].find(
       ([, style]) => style.includes('cursor: pointer'),
     )?.[1]
@@ -103,22 +103,45 @@ describe('LedgerTable', () => {
     const selectedNameStyle = ledgerStyles.match(
       /\.ledger-row--selected \.ledger-cell--primary\s*\{([^}]+)\}/,
     )?.[1]
-    const focusedStyle = ledgerStyles.match(
-      /\.ledger-table \.ledger-row:is\(:hover, :focus-visible\):not\(\.ledger-row--selected\)\s*\{([^}]+)\}/,
+    const focusedRule = globalStyles.match(
+      /\.focus-ring-row:is\(([\s\S]*?)\)::before\s*\{([^}]+)\}/,
+    )
+    const focusedStyle = focusedRule?.[2]
+    const globalFocusStyle = globalStyles.match(
+      /:focus-visible,\s*\[data-hover-card-pinned\],\s*\.search-well:focus-within,\s*\.focus-ring-surface\s*\{([^}]+)\}/,
     )?.[1]
-    const unpinnedFocusStyle = ledgerStyles.match(
-      /\.ledger-table \.ledger-row:focus-visible:not\(\[data-hover-card-pinned\]\)\s*\{([^}]+)\}/,
+    const globalProxyStyle = globalStyles.match(
+      /:is\(\s*\.focus-ring-proxy:focus-visible,[\s\S]*?\.focus-ring-proxy--sibling\s*\)::after\s*\{([^}]+)\}/,
     )?.[1]
-    const globalFocusStyle = globalStyles.match(/^:focus-visible\s*\{([^}]+)\}/m)?.[1]
+    const proxyStyle = globalStyles.match(/\.focus-ring-proxy\s*\{([^}]+)\}/)?.[1]
     expect(rowStyle).not.toContain('&:hover')
-    expect(selectedStyle).toContain('background: var(--surface-selected)')
+    expect(rowStyle).not.toContain('border-radius')
+    expect(selectedStyle).not.toContain('background:')
     expect(selectedStyle).not.toMatch(/box-shadow|outline|border-left/)
     expect(selectedNameStyle).toContain('color: var(--text-accent)')
     expect(selectedNameStyle).toContain('font-weight: var(--fw-semibold)')
     expect(ledgerStyles).not.toContain('ledger-row--keyboard-highlighted')
-    expect(focusedStyle).toContain('background: var(--surface-hover)')
-    expect(unpinnedFocusStyle).toContain('outline: 2px solid transparent')
-    expect(globalFocusStyle).toContain('outline: 2px solid var(--border-focus)')
+    expect(focusedRule).not.toBeNull()
+    expect(focusedStyle).toContain('background: var(--focus-ring-row-fill, var(--surface-hover))')
+    expect(focusedRule?.[0]).toContain('[data-hover-card-pinned]')
+    expect(focusedStyle).toContain('border-radius: var(--focus-ring-corner-radius)')
+    expect(focusedStyle).not.toMatch(/outline|border-left/)
+    expect(proxyStyle).toContain('outline-color: transparent')
+    expect(globalProxyStyle).toContain("content: ''")
+    expect(globalStyles).toContain(
+      ':is(:focus-visible, [data-hover-card-pinned]) + .focus-ring-proxy--sibling',
+    )
+    expect(globalStyles).toContain('.focus-ring-proxy--container:has(:focus-visible)')
+    expect(ledgerStyles).not.toContain('[data-hover-card-pinned]')
+    expect(selectedStyle).toContain('--focus-ring-row-fill: var(--surface-selected)')
+    expect(globalStyles).not.toContain('--pinned-anchor-')
+    expect(globalStyles).toContain('--focus-ring-corner-radius: var(--radius-sm)')
+    expect(globalProxyStyle).toContain(
+      'border: var(--focus-ring-width) solid var(--focus-ring-color)',
+    )
+    expect(globalFocusStyle).toContain(
+      'outline: var(--focus-ring-width) solid var(--focus-ring-appearance, var(--focus-ring-color))',
+    )
 
     const primaryColumns = columns.map((column) =>
       column.key === 'name' ? { ...column, key: 'display', isPrimary: true } : column,
@@ -137,6 +160,9 @@ describe('LedgerTable', () => {
     )
     const selectedRow = screen.getByRole('row', { name: /Back/ })
     expect(selectedRow).toHaveClass('ledger-row--selected')
+    expect(selectedRow).toHaveClass('focus-ring-proxy')
+    expect(selectedRow).toHaveClass('focus-ring-row')
+    expect(selectedRow).toHaveClass('focus-ring-row--selected')
     expect(within(selectedRow).getByRole('cell', { name: 'Back' })).toHaveClass(
       'ledger-cell--primary',
     )

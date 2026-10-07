@@ -189,7 +189,11 @@ function EffectHoverRow({ row }: { row: EffectRow }): JSX.Element {
       ),
   })
   return (
-    <div className="resources-hover-effect-row" tabIndex={0} {...anchor}>
+    <div
+      className="resources-hover-effect-row focus-ring-row focus-ring-proxy"
+      tabIndex={0}
+      {...anchor}
+    >
       <DetailValueRow
         label={row.name}
         value={row.value || '—'}

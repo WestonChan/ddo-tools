@@ -205,11 +205,14 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-0-5);
-  padding: 0;
+  padding: var(--space-0-5);
+  margin: calc(-1 * var(--space-0-5));
   border: 0;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-link);
   font-size: var(--fs-detail-tag-label);
+  white-space: nowrap;
   cursor: pointer;
 }
 

@@ -143,6 +143,7 @@
   color: var(--text-muted);
   font-size: var(--fs-label);
   cursor: pointer;
+  border-radius: var(--radius-xs);
 
   & input {
     position: absolute;
@@ -152,6 +153,10 @@
     opacity: 0;
     cursor: pointer;
   }
+}
+
+.resources-include-sets:has(input:focus-visible) {
+  --focus-ring-appearance: var(--focus-ring-color);
 }
 
 .resources-filter-match {
@@ -200,11 +205,6 @@
   background: var(--accent-fill);
   border-color: var(--border-accent);
   color: var(--text-inverse);
-}
-
-.resources-include-sets:has(input:focus-visible) .resources-include-sets-box {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
 }
 
 .resources-chip {
@@ -398,6 +398,8 @@
 }
 
 .resources-effect-ledger .ledger-row {
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-vertical);
+
   height: auto;
   min-height: 30px;
   border-bottom-style: solid;
@@ -408,6 +410,10 @@
   padding-top: var(--space-1);
   padding-bottom: var(--space-1);
   white-space: normal;
+}
+
+.resources-effect-ledger .ledger-cell:last-child {
+  padding-right: var(--space-2);
 }
 
 .resources-effect-ledger .ledger-row--heading {
@@ -434,12 +440,6 @@
 
 .resources-effect-ledger .ledger-row--heading ~ :where(.ledger-row) {
   background: var(--bg-panel);
-}
-
-.resources-effect-ledger
-  .ledger-row--heading
-  ~ .ledger-row:not(.ledger-row--subheading, .ledger-row--highlighted, :focus-visible):hover {
-  background: var(--surface-hover);
 }
 
 .resources-effect-ledger .ledger-heading-cell {
@@ -568,8 +568,9 @@
 }
 
 .resources-effect-ledger .ledger-row--highlighted {
+  --focus-ring-row-fill: var(--surface-selected);
+
   box-shadow: var(--inset-mark-accent);
-  background: var(--surface-selected);
 }
 
 .detail-card__name .resources-effect-wiki-name {
@@ -604,19 +605,15 @@
 .resources-hover-anchor {
   color: var(--text-link);
   cursor: default;
+  border-radius: var(--radius-xs);
+}
+
+.resources-item-source-title .resources-hover-anchor {
+  outline-color: transparent;
 }
 
 .detail-card__fact .resources-hover-anchor {
   color: inherit;
-}
-
-.resources-view [data-hover-card-pinned],
-.resources-hover-anchor[data-hover-card-pinned],
-.resources-hover-row[data-hover-card-pinned],
-.resources-hover-effect-row[data-hover-card-pinned],
-.resources-augment-candidates .ledger-row[data-hover-card-pinned] {
-  outline: 2px solid var(--border-focus);
-  outline-offset: -2px;
 }
 
 .resources-hover-definition {
@@ -666,10 +663,16 @@
 }
 
 .resources-hover-row {
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   color: var(--text-link);
+}
+
+.resources-hover-effect-row {
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
 }
 
 .resources-hover-row > span:last-child {
@@ -716,10 +719,6 @@ button.resources-hover-row {
   font-family: var(--font-ui);
   text-align: left;
   cursor: pointer;
-}
-
-button.resources-hover-row:hover {
-  background: var(--surface-hover);
 }
 
 .resources-set-tier {
@@ -925,6 +924,8 @@ button.resources-hover-row:hover {
 .resources-item-source-title {
   min-width: 0;
   overflow: hidden;
+  padding: var(--space-1-5);
+  margin: calc(-1 * var(--space-1-5));
   color: var(--text-link);
   font-size: var(--fs-body);
   font-weight: var(--fw-semibold);

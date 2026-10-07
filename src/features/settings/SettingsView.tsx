@@ -70,7 +70,7 @@ function AppearanceSection(): JSX.Element {
                 key={option.themePreference}
                 type="button"
                 aria-pressed={isActive}
-                className={`segmented-control-segment${isActive ? ' segmented-control-segment--active' : ''}`}
+                className={`segmented-control-segment focus-ring-proxy${isActive ? ' segmented-control-segment--active' : ''}`}
                 onClick={() => setThemePreference(option.themePreference)}
               >
                 <option.Icon size={14} />

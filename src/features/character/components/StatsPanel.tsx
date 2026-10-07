@@ -83,7 +83,7 @@ export function StatsPanel(): JSX.Element {
             tabIndex={tabGroup.tabStopKey === tab ? 0 : -1}
             aria-selected={activeTab === tab}
             aria-controls={tabPanelId}
-            className={`segmented-control-segment${activeTab === tab ? ' segmented-control-segment--active' : ''}`}
+            className={`segmented-control-segment focus-ring-proxy${activeTab === tab ? ' segmented-control-segment--active' : ''}`}
             onClick={() => setActiveTab(tab)}
             onFocus={() => {
               tabGroup.rememberFocus(tab)

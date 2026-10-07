@@ -95,7 +95,7 @@ function AppLayout(): JSX.Element {
             inert={isInertBehindModal}
           />
 
-          <div className="app-content" inert={isInertBehindNavBarOverlay}>
+          <div className="app-content focus-ring-proxy" inert={isInertBehindNavBarOverlay}>
             <ErrorBoundary
               FallbackComponent={ViewCrashScreen}
               onError={captureBoundaryError}

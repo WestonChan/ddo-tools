@@ -11,18 +11,13 @@
 
 .augment-slot-focus-ring {
   position: absolute;
-  inset: calc(-1 * var(--space-1));
+  inset: calc(-1 * var(--focus-ring-clearance));
   display: none;
-  border: 2px solid var(--border-focus);
-  border-radius: var(--radius-xs);
+
   pointer-events: none;
 }
 
-.augment-slot-symbol:focus-visible {
-  outline-color: transparent;
-}
-
-.augment-slot-symbol:focus-visible + .augment-slot-focus-ring {
+.augment-slot-symbol:is(:focus-visible, [data-hover-card-pinned]) + .augment-slot-focus-ring {
   display: block;
 }
 
@@ -47,6 +42,10 @@
   font-weight: var(--fw-bold);
   line-height: 1;
   cursor: pointer;
+}
+
+.augment-slot-symbol:is(:focus-visible, [data-hover-card-pinned]) {
+  outline-color: transparent;
 }
 
 .augment-slot-symbol--blue {
@@ -130,7 +129,8 @@
   min-width: 0;
   max-width: 100%;
   height: 22px;
-  padding: 0 var(--space-1) 0 0;
+  margin-left: calc(-1 * var(--space-1));
+  padding: 0 var(--space-1);
   background: none;
   border: 0;
   color: var(--text-muted);
@@ -140,6 +140,7 @@
   overflow: hidden;
   white-space: nowrap;
   cursor: pointer;
+  border-radius: var(--radius-xs);
 }
 
 .augment-slot-word-label {

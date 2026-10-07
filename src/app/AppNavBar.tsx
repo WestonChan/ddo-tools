@@ -168,7 +168,7 @@ function AppNavBar({
 
       <button
         type="button"
-        className="nav-bar-row nav-bar-row--faint nav-bar-collapse-btn"
+        className="nav-bar-row nav-bar-row--faint nav-bar-collapse-btn focus-ring-proxy"
         title={isExpanded ? undefined : 'Expand'}
         onClick={onToggleExpanded}
       >
@@ -181,7 +181,7 @@ function AppNavBar({
       {destinationRow(SETTINGS_DESTINATION)}
       <button
         type="button"
-        className="nav-bar-row"
+        className="nav-bar-row focus-ring-proxy"
         title={isExpanded ? undefined : 'Report a bug'}
         onClick={openBugReportIssue}
       >
@@ -189,7 +189,7 @@ function AppNavBar({
         <span className="nav-bar-label">Report a bug</span>
       </button>
       <a
-        className="nav-bar-row nav-bar-row--faint"
+        className="nav-bar-row nav-bar-row--faint focus-ring-proxy"
         href={REPOSITORY_URL}
         target="_blank"
         rel="noopener noreferrer"
@@ -231,7 +231,7 @@ function NavBarLinkRow({
       to={to}
       hash={hash}
       activeOptions={hash ? { includeHash: true } : undefined}
-      className={`nav-bar-row${hash ? ' nav-bar-row--section' : ''}`}
+      className={`nav-bar-row focus-ring-proxy${hash ? ' nav-bar-row--section' : ''}`}
       title={isExpanded ? undefined : label}
       onClick={onNavigate}
     >
@@ -267,7 +267,7 @@ function NavBarWarnings({
       <button
         ref={warningsRowRef}
         type="button"
-        className={`nav-bar-row nav-bar-warnings-row${warnings.length === 0 ? ' nav-bar-warnings-row--empty' : ''}`}
+        className={`nav-bar-row nav-bar-warnings-row focus-ring-proxy${warnings.length === 0 ? ' nav-bar-warnings-row--empty' : ''}`}
         aria-expanded={isPopoverOpen}
         aria-controls={isPopoverOpen ? popoverId : undefined}
         title={isExpanded ? undefined : `Warnings: ${warnings.length}`}

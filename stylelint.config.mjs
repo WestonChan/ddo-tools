@@ -45,6 +45,9 @@ function disallowedValueMessage(property, value) {
 }
 
 function disallowedOffScaleValueMessage(property, value) {
+  if (property.startsWith('--focus-ring-')) {
+    return `Invalid focus ring variant "${property}: ${value}". Select a --focus-ring-* variant from src/index.css.`
+  }
   if (property.endsWith('radius')) {
     return `Off-scale "${property}: ${value}". Use var(--radius-xs|sm|md|lg), 0 or inherit (docs/styling.md).`
   }
@@ -62,6 +65,30 @@ function disallowedOffScaleValueMessage(property, value) {
 
 const STYLELINT_DIRECTIVE_PATTERN = '^stylelint-(?:disable|enable)(?:-line|-next-line)?(?:\\s|$)'
 
+const DISALLOWED_PROPERTY_VALUES = {
+  '/^(?!--)/': RAW_COLOR_PATTERNS,
+  'box-shadow': [SHADOW_WITH_OFFSET_OR_BLUR_PATTERN, SHADOW_WITH_UNRECOGNIZED_TOKEN_PATTERN],
+  'font-family': [FONT_FAMILY_OTHER_THAN_FONT_TOKEN_PATTERN],
+  font: [FONT_SHORTHAND_WITH_LITERAL_FAMILY_PATTERN],
+  '/radius$/': [PILL_RADIUS_PATTERN],
+  '/^outline(?:-style)?$/': [HIDDEN_OUTLINE_PATTERN],
+  'outline-width': ['/^0(?:px)?$/'],
+}
+
+const ALLOWED_PROPERTY_VALUES = {
+  '/^(?:padding|margin|gap)/': [SPACING_VALUE_PATTERN],
+  'letter-spacing': ['/^var\\(--ls-[a-z0-9-]+\\)$/', '0', 'normal'],
+  'font-size': [
+    '/^var\\(--fs-[a-z0-9-]+\\)$/',
+    `/^${DETAIL_CARD_FONT_TOKEN}$/`,
+    'inherit',
+    '/^\\d*\\.?\\d+em$/',
+  ],
+  '/radius$/': [RADIUS_VALUE_PATTERN, 'var(--focus-ring-corner-radius)', 'inherit'],
+  '--focus-ring-corner-radius': ['var(--radius-sm)'],
+  opacity: ['0', '0.42', '1', 'inherit', '/^var\\(/'],
+}
+
 export default {
   rules: {
     'comment-pattern': [
@@ -69,33 +96,90 @@ export default {
       { message: 'No comments in CSS: names and tokens carry the meaning (CLAUDE.md)' },
     ],
     'declaration-property-value-disallowed-list': [
-      {
-        '/^(?!--)/': RAW_COLOR_PATTERNS,
-        'box-shadow': [SHADOW_WITH_OFFSET_OR_BLUR_PATTERN, SHADOW_WITH_UNRECOGNIZED_TOKEN_PATTERN],
-        'font-family': [FONT_FAMILY_OTHER_THAN_FONT_TOKEN_PATTERN],
-        font: [FONT_SHORTHAND_WITH_LITERAL_FAMILY_PATTERN],
-        '/radius$/': [PILL_RADIUS_PATTERN],
-        '/^outline(?:-style)?$/': [HIDDEN_OUTLINE_PATTERN],
-        'outline-width': ['/^0(?:px)?$/'],
-      },
+      DISALLOWED_PROPERTY_VALUES,
       { message: disallowedValueMessage },
     ],
     'declaration-property-value-allowed-list': [
-      {
-        '/^(?:padding|margin|gap)/': [SPACING_VALUE_PATTERN],
-        'letter-spacing': ['/^var\\(--ls-[a-z0-9-]+\\)$/', '0', 'normal'],
-        'font-size': [
-          '/^var\\(--fs-[a-z0-9-]+\\)$/',
-          `/^${DETAIL_CARD_FONT_TOKEN}$/`,
-          'inherit',
-          '/^\\d*\\.?\\d+em$/',
-        ],
-        '/radius$/': [RADIUS_VALUE_PATTERN, 'inherit'],
-        opacity: ['0', '0.42', '1', 'inherit', '/^var\\(/'],
-      },
+      ALLOWED_PROPERTY_VALUES,
       { message: disallowedOffScaleValueMessage },
     ],
     'declaration-no-important': true,
   },
+  overrides: [
+    {
+      files: ['src/**/*.css'],
+      rules: {
+        'property-disallowed-list': [
+          [
+            'outline-offset',
+            'outline-style',
+            'outline-width',
+            '/^--focus-ring-(?!appearance$|proxy-inset$|proxy-backdrop$|row-fill$)/',
+            '/^--pinned-anchor-/',
+          ],
+          {
+            message: (property) =>
+              `"${property}" redefines focus ring geometry. Select a --focus-ring-* variant from src/index.css.`,
+          },
+        ],
+        'declaration-property-value-disallowed-list': [
+          {
+            ...DISALLOWED_PROPERTY_VALUES,
+            outline: ['/^(?!2px solid transparent$)/'],
+            'outline-color': ['/^(?!transparent$)/'],
+          },
+          {
+            message: (property, value) =>
+              `"${property}: ${value}" redefines focus ring geometry. Select a --focus-ring-* variant from src/index.css.`,
+          },
+        ],
+        'declaration-property-value-allowed-list': [
+          {
+            ...ALLOWED_PROPERTY_VALUES,
+            '--focus-ring-appearance': ['transparent', 'var(--focus-ring-color)'],
+            '--focus-ring-row-fill': ['var(--surface-selected)'],
+            '--focus-ring-proxy-inset': [
+              'var(--focus-ring-proxy-outset)',
+              'var(--focus-ring-proxy-inside)',
+              'var(--focus-ring-proxy-constrained)',
+              'var(--focus-ring-proxy-vertical)',
+              '0',
+            ],
+            '--focus-ring-proxy-backdrop': ['none', 'var(--focus-ring-scrollport-backdrop)'],
+          },
+          { message: disallowedOffScaleValueMessage },
+        ],
+        'rule-selector-property-disallowed-list': [
+          {
+            '/data-hover-card-pinned/': [
+              '/^background(?:-.*)?$/',
+              '/^border(?:-.*)?$/',
+              '/^outline(?:-(?:offset|style|width))?$/',
+              '/^--focus-ring-/',
+              'box-shadow',
+              'fill',
+              'stroke',
+            ],
+            '/:focus-visible/': ['border-radius', 'box-shadow'],
+          },
+          {
+            message: (selector, property) =>
+              `"${selector}" redefines the focus ring or fill with "${property}". Use the shared focus recipe from src/index.css.`,
+          },
+        ],
+      },
+    },
+    {
+      files: ['src/index.css'],
+      rules: {
+        'property-disallowed-list': null,
+        'rule-selector-property-disallowed-list': null,
+        'declaration-property-value-disallowed-list': [
+          DISALLOWED_PROPERTY_VALUES,
+          { message: disallowedValueMessage },
+        ],
+      },
+    },
+  ],
   ignoreFiles: ['dist/**', 'node_modules/**'],
 }

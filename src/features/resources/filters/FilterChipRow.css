@@ -19,6 +19,7 @@
 }
 
 .filter-chip-wrap .filter-chip {
+  flex: 0 0 auto;
   gap: var(--space-1-5);
   padding: 0 calc(var(--space-2) - var(--space-px)) 0 calc(var(--space-2) + var(--space-px));
   font-size: var(--fs-hover-copy);

@@ -86,6 +86,7 @@
   --border-strong: rgb(230 224 212 / 0.28);
   --border-accent: var(--gold-500);
   --border-focus: var(--gold-300);
+  --focus-ring-color: color-mix(in srgb, var(--border-focus) 75%, transparent);
 
   --accent-fill: var(--gold-400);
   --accent-fill-hover: var(--gold-300);
@@ -177,6 +178,19 @@
   --radius-sm: 5px;
   --radius-md: 6px;
   --radius-lg: 8px;
+  --focus-ring-width: 2px;
+  --focus-ring-gap: 2px;
+  --focus-ring-outset: var(--focus-ring-gap);
+  --focus-ring-clearance: calc(var(--focus-ring-width) + var(--focus-ring-gap));
+  --focus-ring-proxy-outset: calc(-1 * var(--focus-ring-clearance));
+  --focus-ring-proxy-inside: 0;
+  --focus-ring-proxy-constrained: 0 0 calc(-1 * var(--focus-ring-width)) 0;
+  --focus-ring-proxy-vertical: calc(-1 * (var(--focus-ring-width) + var(--space-px))) 0
+    calc(-1 * var(--focus-ring-width)) 0;
+  --focus-ring-text-clearance: 4px;
+  --focus-ring-corner-radius: var(--radius-sm);
+  --focus-ring-scrollport-backdrop: inset 0 0 0
+    calc(var(--focus-ring-width) + var(--focus-ring-text-clearance)) var(--bg-app);
 
   --shadow-hairline: 0 0 0 1px var(--border-hairline);
   --shadow-popover: 0 6px 20px -4px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.35);
@@ -185,7 +199,6 @@
   --inset-top: inset 0 1px 0 rgb(255 255 255 / 0.05);
   --inset-sunken: inset 0 1px 2px rgb(0 0 0 / 0.35);
   --glow-accent: 0 0 0 1px var(--gold-500), 0 0 12px -2px rgb(from var(--accent) r g b / 0.35);
-  --ring-focus: 0 0 0 2px var(--bg-app), 0 0 0 4px var(--border-focus);
   --inset-mark-accent: inset 2px 0 0 var(--accent-fill);
   --inset-mark-picker: inset 2px 0 0 var(--gold-400);
   --inset-mark-secondary: inset 2px 0 0 var(--arcane-400);
@@ -246,6 +259,7 @@
   --border-strong: rgb(46 42 37 / 0.34);
   --border-accent: var(--gold-500);
   --border-focus: var(--gold-600);
+  --focus-ring-color: var(--border-focus);
 
   --accent-fill: var(--gold-500);
   --accent-fill-hover: var(--gold-400);
@@ -358,9 +372,76 @@ kbd,
   font-variant-numeric: tabular-nums;
 }
 
+:focus-visible,
+[data-hover-card-pinned],
+.search-well:focus-within,
+.focus-ring-surface {
+  outline: var(--focus-ring-width) solid var(--focus-ring-appearance, var(--focus-ring-color));
+  outline-offset: var(--focus-ring-outset);
+}
+
+.focus-ring-surface {
+  --focus-ring-appearance: transparent;
+
+  border-radius: var(--radius-xs);
+}
+
+.focus-ring-surface :focus-visible {
+  outline-color: transparent;
+}
+
+:where(.focus-ring-proxy) {
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-inside);
+  --focus-ring-proxy-backdrop: none;
+}
+
+.focus-ring-proxy {
+  position: relative;
+  outline-color: transparent;
+}
+
+.focus-ring-proxy--sibling {
+  position: absolute;
+}
+
+.focus-ring-row {
+  position: relative;
+  isolation: isolate;
+}
+
+.focus-ring-row:is(
+    :hover,
+    :focus-visible,
+    [data-hover-card-pinned],
+    .focus-ring-row--selected
+  )::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 var(--space-px);
+  background: var(--focus-ring-row-fill, var(--surface-hover));
+  border-radius: var(--focus-ring-corner-radius);
+  content: '';
+  pointer-events: none;
+}
+
 :focus-visible {
-  outline: 2px solid var(--border-focus);
-  outline-offset: -2px;
+  scroll-margin: var(--focus-ring-clearance);
+}
+
+:is(
+  .focus-ring-proxy:focus-visible,
+  .focus-ring-proxy[data-hover-card-pinned],
+  .focus-ring-proxy--container:has(:focus-visible),
+  .focus-ring-proxy--container:has([data-hover-card-pinned]),
+  :is(:focus-visible, [data-hover-card-pinned]) + .focus-ring-proxy--sibling
+)::after {
+  content: '';
+  position: absolute;
+  inset: var(--focus-ring-proxy-inset, 0);
+  border: var(--focus-ring-width) solid var(--focus-ring-color);
+  border-radius: var(--focus-ring-corner-radius);
+  box-shadow: var(--focus-ring-proxy-backdrop, none);
+  pointer-events: none;
 }
 
 ::selection {
@@ -424,6 +505,8 @@ kbd,
 }
 
 .segmented-control-segment {
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
+
   flex: 1;
   display: inline-flex;
   align-items: center;
@@ -454,10 +537,11 @@ kbd,
 .segmented-control--joined {
   gap: 0;
   padding: 0;
-  overflow: hidden;
   box-shadow: none;
 
   & > .segmented-control-segment {
+    --focus-ring-proxy-inset: var(--focus-ring-proxy-vertical);
+
     flex: 0 0 auto;
     gap: var(--space-1-5);
     height: var(--control-h-sm);
@@ -465,6 +549,14 @@ kbd,
     border-radius: 0;
     font-size: var(--fs-body-sm);
     font-weight: var(--fw-regular);
+  }
+
+  & > .segmented-control-segment:first-child {
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  }
+
+  & > .segmented-control-segment:last-child {
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
 
   & > .segmented-control-segment + .segmented-control-segment {
@@ -488,6 +580,8 @@ kbd,
 }
 
 .underline-tab {
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-outset);
+
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
@@ -590,12 +684,6 @@ kbd,
 
   &:hover {
     border-color: var(--border-strong);
-  }
-
-  &:focus-within {
-    border-color: var(--border-focus);
-    outline: 2px solid var(--border-focus);
-    outline-offset: -2px;
   }
 }
 

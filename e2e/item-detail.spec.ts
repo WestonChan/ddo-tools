@@ -543,7 +543,9 @@ test('augment symbols keep their shape, focus ring, colour, and mobile bounds', 
       }
     })
     for (const side of Object.values(clearance)) expect(side).toBeGreaterThan(2)
-    await expect(focusRing).toHaveCSS('border-top-width', '2px')
+    expect(
+      await focusRing.evaluate((ring) => getComputedStyle(ring, '::after').borderLeftWidth),
+    ).toBe('2px')
   }
   await sun.click()
   await expect(pane.locator('.resources-augment-candidates__heading')).toHaveText(
@@ -1325,7 +1327,7 @@ test('search keyboard navigation scrolls a virtualized result into view and open
     colorSample.remove()
     return {
       boxShadow: rowStyle.boxShadow,
-      backgroundColor: rowStyle.backgroundColor,
+      backgroundColor: getComputedStyle(row, '::before').backgroundColor,
       activeFill,
       nameColor: getComputedStyle(name).color,
       accentColor,
@@ -1445,9 +1447,7 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
   expect(await hoverCard.evaluate((card) => getComputedStyle(card).outlineColor)).toBe(
     'rgba(0, 0, 0, 0)',
   )
-  expect(await itemRow.evaluate((row) => getComputedStyle(row).outlineColor)).not.toBe(
-    'rgba(0, 0, 0, 0)',
-  )
+  expect(await itemRow.evaluate((row) => getComputedStyle(row, '::after').content)).not.toBe('none')
   await expect(hoverCard.locator('.detail-fact-grid__cell')).toHaveText([
     'Armor bonus16',
     'Max Dex bonus1',

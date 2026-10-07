@@ -75,7 +75,7 @@ export function CategoryTabs({
                 : undefined
             }
             onKeyDown={isFocusable ? (event) => navigateTab(event, category) : undefined}
-            className={`underline-tab${activeCategory === category ? ' underline-tab--active' : ''}${isEnabled ? '' : ' resources-tab--disabled'}`}
+            className={`underline-tab focus-ring-proxy${activeCategory === category ? ' underline-tab--active' : ''}${isEnabled ? '' : ' resources-tab--disabled'}`}
           >
             {label}
           </button>

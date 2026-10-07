@@ -36,6 +36,13 @@ function renderApp(initialPath = '/build-plan'): void {
 }
 
 describe('AppLayout error boundaries', () => {
+  it('offers the shared ring on the keyboard-scrollable layout region', async () => {
+    renderApp('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+    expect(document.querySelector('.app-content')).toHaveClass('focus-ring-proxy')
+    expect(document.querySelector('.app-content')).not.toHaveAttribute('tabindex', '-1')
+  })
+
   it('renders ErrorScreen inside the Outlet when a view crashes', async () => {
     renderApp('/build-plan')
     await screen.findByRole('heading', { level: 1, name: 'This view crashed' })

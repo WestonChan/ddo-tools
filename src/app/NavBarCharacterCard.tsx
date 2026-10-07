@@ -96,7 +96,7 @@ export function NavBarCharacterCard({ isExpanded }: { isExpanded: boolean }): JS
         <button
           ref={viewedBuildButtonRef}
           type="button"
-          className="nav-bar-build-button"
+          className="nav-bar-build-button focus-ring-proxy"
           aria-label={`Viewed build: ${viewedIdentity.name} · ${viewedIdentity.detail}`}
           aria-expanded={openCardMenu === 'switcher'}
           aria-controls={openCardMenu === 'switcher' ? switcherId : undefined}
@@ -120,7 +120,7 @@ export function NavBarCharacterCard({ isExpanded }: { isExpanded: boolean }): JS
         <button
           ref={comparisonButtonRef}
           type="button"
-          className="nav-bar-build-button nav-bar-build-button--comparison"
+          className="nav-bar-build-button nav-bar-build-button--comparison focus-ring-proxy"
           aria-label={
             comparisonIdentity
               ? `Compared build: ${comparisonIdentity.name} · ${comparisonIdentity.detail}`
@@ -149,7 +149,7 @@ export function NavBarCharacterCard({ isExpanded }: { isExpanded: boolean }): JS
 
         <button
           type="button"
-          className="nav-bar-character-swap"
+          className="nav-bar-character-swap focus-ring-proxy"
           aria-label="Swap"
           title="Swap the viewed and compared builds"
           disabled={!comparisonBuild}

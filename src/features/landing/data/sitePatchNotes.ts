@@ -7,6 +7,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
     date: '2026-10-07',
     changes: [
+      'Keyboard focus shows one rounded ring everywhere, clear of text and softer in dark mode; a row focused with the keyboard looks like a hovered row with a ring, and a pinned anchor looks the same as a focused one',
       "Hover cards follow the detail pane's layout: the same facts as cells, the same sections in the same order, briefer only where a card would grow too tall, and 420px wide",
       'Every "+N more" in a hover card is a Show more / Show less toggle, and augment cards show their sockets as symbols',
       'Opening an item moves focus into its detail, so Tab continues inside it; Escape takes you back to the row',

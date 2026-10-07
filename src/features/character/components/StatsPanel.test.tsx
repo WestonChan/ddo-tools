@@ -126,6 +126,17 @@ function pinnedGroupElement(label: string): HTMLElement {
 }
 
 describe('StatsPanel', () => {
+  it('uses the shared ring proxy for every stat and buff row toggle', async () => {
+    render(<StatsPanel />)
+    const statToggles = document.querySelectorAll('.stats-panel-row-toggle')
+    expect(statToggles.length).toBeGreaterThan(0)
+    for (const toggle of statToggles) expect(toggle).toHaveClass('focus-ring-proxy')
+    await openTab(/^Buffs/)
+    const buffToggles = document.querySelectorAll('.stats-panel-row-toggle')
+    expect(buffToggles.length).toBeGreaterThan(0)
+    for (const toggle of buffToggles) expect(toggle).toHaveClass('focus-ring-proxy')
+  })
+
   it('opens on the Stats tab and switches to Buffs and back', async () => {
     render(<StatsPanel />)
     expect(screen.getByRole('tab', { selected: true })).toHaveTextContent('Stats')

@@ -175,6 +175,9 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-0-5);
+  padding: var(--space-0-5);
+  margin: calc(-1 * var(--space-0-5));
+  border-radius: var(--radius-xs);
   color: var(--text-faint);
 
   &:hover {

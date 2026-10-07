@@ -9,10 +9,9 @@
   overflow-x: auto;
 }
 
-.ledger-body:focus-visible,
-.ledger-plain-body:focus-visible {
-  outline: 2px solid var(--border-focus);
-  outline-offset: -2px;
+.ledger-body,
+.ledger-plain-body {
+  position: relative;
 }
 
 .ledger-head {
@@ -32,11 +31,13 @@
 }
 
 .ledger-header-cell {
-  position: relative;
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-constrained);
+
   display: flex;
   align-items: flex-end;
   min-width: 0;
   padding: 0 var(--space-1-5) var(--space-1);
+  scroll-margin-inline: var(--space-2);
   cursor: grab;
   user-select: none;
   touch-action: none;
@@ -120,16 +121,8 @@
   cursor: pointer;
 }
 
-.ledger-table .ledger-row:is(:hover, :focus-visible):not(.ledger-row--selected) {
-  background: var(--surface-hover);
-}
-
-.ledger-table .ledger-row:focus-visible:not([data-hover-card-pinned]) {
-  outline: 2px solid transparent;
-}
-
 .ledger-row--selected {
-  background: var(--surface-selected);
+  --focus-ring-row-fill: var(--surface-selected);
 }
 
 .ledger-row--selected .ledger-cell--primary {
@@ -172,6 +165,28 @@
 
 .ledger-table--dense .ledger-header-row {
   height: 26px;
+}
+
+.ledger-table--dense {
+  position: relative;
+  margin-top: calc(-1 * var(--space-1));
+  padding-top: var(--space-1);
+  border-top-color: transparent;
+}
+
+.ledger-table--dense::before {
+  position: absolute;
+  top: calc(var(--space-1) - var(--space-px));
+  right: 0;
+  left: 0;
+  border-top: inherit;
+  border-top-color: var(--border-strong);
+  content: '';
+  pointer-events: none;
+}
+
+.ledger-table--dense .ledger-header-cell {
+  --focus-ring-proxy-inset: var(--focus-ring-proxy-vertical);
 }
 
 .ledger-empty {

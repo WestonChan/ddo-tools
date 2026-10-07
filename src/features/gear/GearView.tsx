@@ -7,10 +7,10 @@ export function GearView(): JSX.Element {
   return (
     <div className="page gear-view">
       <div className="underline-tabs gear-view-toolbar">
-        <button type="button" className="underline-tab underline-tab--active">
+        <button type="button" className="underline-tab underline-tab--active focus-ring-proxy">
           Raid set
         </button>
-        <button type="button" className="underline-tab gear-view-new-set-tab">
+        <button type="button" className="underline-tab gear-view-new-set-tab focus-ring-proxy">
           + New set
         </button>
         <div className="gear-view-modes">
