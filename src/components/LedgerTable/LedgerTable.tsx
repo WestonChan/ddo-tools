@@ -171,9 +171,6 @@ function LedgerRow<Row>({
       onKeyDown={(event) => isNavigable && onRowKeyDown(event, index)}
       onMouseEnter={hoverOptions ? hoverAnchor.onMouseEnter : undefined}
       onMouseLeave={hoverOptions ? hoverAnchor.onMouseLeave : undefined}
-      onPointerDown={hoverOptions ? hoverAnchor.onPointerDown : undefined}
-      onPointerUp={hoverOptions ? hoverAnchor.onPointerUp : undefined}
-      onPointerCancel={hoverOptions ? hoverAnchor.onPointerCancel : undefined}
       onKeyDownCapture={hoverOptions ? hoverAnchor.onKeyDown : undefined}
     >
       {isHeading ? (

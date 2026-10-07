@@ -333,6 +333,7 @@ it('shows captured set pieces and tier bonuses', () => {
   expect(screen.queryByRole('dialog')).toBeNull()
 
   const setAnchor = screen.getByText('Devoted Heart')
+  fireEvent.keyDown(document, { key: 'Tab' })
   act(() => setAnchor.focus())
   act(() => vi.advanceTimersByTime(120))
   expect(screen.getByRole('dialog')).toBeInTheDocument()

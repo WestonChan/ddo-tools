@@ -48,14 +48,24 @@ interface CardController {
   clear: () => void
   dismiss: (anchorId: string) => boolean
   setLabel: (cardId: number, label: string) => void
-  restoreAnchorFocus: (anchor: HTMLElement) => void
-  isRestoringAnchorFocus: (anchor: HTMLElement) => boolean
+  isNavigationFocus: (target: EventTarget | null) => boolean
   pinnedAnchorIds: ReadonlySet<string>
 }
 
 const ControllerContext = createContext<CardController | null>(null)
 const DepthContext = createContext(0)
 const CardLabelContext = createContext<((label: string) => void) | null>(null)
+const NAVIGATION_KEYS = new Set([
+  'Tab',
+  'ArrowDown',
+  'ArrowUp',
+  'ArrowLeft',
+  'ArrowRight',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+])
 
 export function positionedCard({
   anchorRect,
@@ -130,7 +140,6 @@ function CardLayer({
   const contentRef = useRef<HTMLDivElement>(null)
   useTabFocusWrap(elementRef, isTopPinnedCard)
   const hasFocusedPinnedCard = useRef(false)
-  const restoreAnchorFocus = useContext(ControllerContext)?.restoreAnchorFocus
   const setCardLabel = useContext(ControllerContext)?.setLabel
   const setLabel = useCallback(
     (label: string) => setCardLabel?.(card.id, label),
@@ -213,9 +222,9 @@ function CardLayer({
     const cardElement = elementRef.current
     return () => {
       if (card.anchorElement?.isConnected && cardElement?.contains(document.activeElement))
-        restoreAnchorFocus?.(card.anchorElement)
+        card.anchorElement.focus({ preventScroll: true })
     }
-  }, [card.anchorElement, card.isPinned, restoreAnchorFocus])
+  }, [card.anchorElement, card.isPinned])
   return (
     <DepthContext.Provider value={card.depth + 1}>
       <div
@@ -228,11 +237,7 @@ function CardLayer({
         className={`hover-card${card.kind === 'hint' ? ' hover-card--hint' : ''}${card.isPinned ? ' hover-card--pinned' : ''}`}
         style={{ ...(position ?? { visibility: 'hidden' }), zIndex: 300 + card.depth }}
       >
-        <div
-          ref={contentRef}
-          className="hover-card__content"
-          style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, gap: 'inherit' }}
-        >
+        <div ref={contentRef} className="hover-card__content">
           {card.kind !== 'hint' && (
             <div className="hover-card__status">
               <span className="section-label">{card.label ?? card.kind}</span>
@@ -251,17 +256,14 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   const pendingTimer = useRef<number | null>(null)
   const pendingAnchorId = useRef<string | null>(null)
   const pendingAnchorElement = useRef<HTMLElement | null>(null)
-  const restoringAnchor = useRef<HTMLElement | null>(null)
+  const isNavigationKeyPending = useRef(false)
+  const navigationFocusedElement = useRef<EventTarget | null>(null)
+  const navigationKeyTimer = useRef<number | null>(null)
   const dismissedFocusAnchor = useRef<HTMLElement | null>(null)
   const cardToPin = useRef<CardEntry | null>(null)
   const nextId = useRef(0)
-  const restoreAnchorFocus = useCallback((anchor: HTMLElement) => {
-    restoringAnchor.current = anchor
-    anchor.focus({ preventScroll: true })
-    restoringAnchor.current = null
-  }, [])
-  const isRestoringAnchorFocus = useCallback(
-    (anchor: HTMLElement) => restoringAnchor.current === anchor,
+  const isNavigationFocus = useCallback(
+    (target: EventTarget | null) => target !== null && navigationFocusedElement.current === target,
     [],
   )
   const cancelPending = useCallback(() => {
@@ -318,10 +320,11 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       cancelPending()
       dismissedFocusAnchor.current = card.openedBy === 'focus' ? card.anchorElement : null
       setCards((current) => current.slice(0, index))
-      if (card.isPinned && card.anchorElement?.isConnected) restoreAnchorFocus(card.anchorElement)
+      if (card.isPinned && card.anchorElement?.isConnected)
+        card.anchorElement.focus({ preventScroll: true })
       return true
     },
-    [cards, cancelPending, restoreAnchorFocus],
+    [cards, cancelPending],
   )
   const setLabel = useCallback((cardId: number, label: string) => {
     setCards((current) => {
@@ -334,6 +337,15 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
   useLayoutEffect(() => {
     cardToPin.current = null
     function onKeyDown(event: KeyboardEvent): void {
+      if (navigationKeyTimer.current !== null) window.clearTimeout(navigationKeyTimer.current)
+      navigationFocusedElement.current = null
+      isNavigationKeyPending.current = NAVIGATION_KEYS.has(event.key)
+      if (isNavigationKeyPending.current)
+        navigationKeyTimer.current = window.setTimeout(() => {
+          isNavigationKeyPending.current = false
+          navigationKeyTimer.current = null
+        }, 0)
+      else navigationKeyTimer.current = null
       const topCardIndex = cards.reduce(
         (index, card, cardIndex) => (card.kind === 'hint' ? index : cardIndex),
         -1,
@@ -369,7 +381,8 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
             const pinnedCardIndex = current.findIndex((card) => card.id === pinnedCard.id)
             return pinnedCardIndex < 0 ? current : current.slice(0, pinnedCardIndex)
           })
-          if (pinnedCard.anchorElement?.isConnected) restoreAnchorFocus(pinnedCard.anchorElement)
+          if (pinnedCard.anchorElement?.isConnected)
+            pinnedCard.anchorElement.focus({ preventScroll: true })
         } else {
           const focusedCardIndex = cards.reduce(
             (index, card, cardIndex) =>
@@ -414,6 +427,24 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         )
       }
     }
+    function onFocusIn(event: FocusEvent): void {
+      navigationFocusedElement.current = isNavigationKeyPending.current ? event.target : null
+      isNavigationKeyPending.current = false
+      if (navigationKeyTimer.current !== null) window.clearTimeout(navigationKeyTimer.current)
+      navigationKeyTimer.current =
+        navigationFocusedElement.current === null
+          ? null
+          : window.setTimeout(() => {
+              navigationFocusedElement.current = null
+              navigationKeyTimer.current = null
+            }, 0)
+    }
+    function onPointerDown(): void {
+      isNavigationKeyPending.current = false
+      navigationFocusedElement.current = null
+      if (navigationKeyTimer.current !== null) window.clearTimeout(navigationKeyTimer.current)
+      navigationKeyTimer.current = null
+    }
     function onMouseDown(event: globalThis.MouseEvent): void {
       const clickedCard =
         event.target instanceof Element
@@ -436,12 +467,16 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       }
     }
     document.addEventListener('keydown', onKeyDown, true)
+    document.addEventListener('focusin', onFocusIn, true)
+    document.addEventListener('pointerdown', onPointerDown, true)
     document.addEventListener('mousedown', onMouseDown, true)
     return () => {
       document.removeEventListener('keydown', onKeyDown, true)
+      document.removeEventListener('focusin', onFocusIn, true)
+      document.removeEventListener('pointerdown', onPointerDown, true)
       document.removeEventListener('mousedown', onMouseDown, true)
     }
-  }, [cards, cancelPending, restoreAnchorFocus])
+  }, [cards, cancelPending])
 
   useEffect(() => {
     function onFocusOut(event: FocusEvent): void {
@@ -504,7 +539,12 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
     }
     function onFocusIn(event: FocusEvent): void {
       const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
-      if (anchor && !anchor.contains(event.relatedTarget as Node | null)) openHint(anchor, 'focus')
+      if (
+        anchor &&
+        !anchor.contains(event.relatedTarget as Node | null) &&
+        isNavigationFocus(event.target)
+      )
+        openHint(anchor, 'focus')
     }
     function onFocusOut(event: FocusEvent): void {
       const anchor = (event.target as Element).closest<HTMLElement>('[data-tip]')
@@ -520,7 +560,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
       document.removeEventListener('focusin', onFocusIn)
       document.removeEventListener('focusout', onFocusOut)
     }
-  }, [open, cancelPending])
+  }, [open, cancelPending, isNavigationFocus])
 
   const topPinnedCardId = cards.reduce<number | null>(
     (topId, card) => (card.isPinned ? card.id : topId),
@@ -535,8 +575,7 @@ export function HoverCardProvider({ children }: { children: ReactNode }): JSX.El
         clear,
         dismiss,
         setLabel,
-        restoreAnchorFocus,
-        isRestoringAnchorFocus,
+        isNavigationFocus,
         pinnedAnchorIds: new Set(
           cards.flatMap((card) => (card.isPinned && card.anchorId ? [card.anchorId] : [])),
         ),
@@ -562,9 +601,6 @@ export function useHoverCard({
   isRow = false,
 }: HoverCardOptions): {
   'data-hover-card-pinned': '' | undefined
-  onPointerDown: () => void
-  onPointerUp: () => void
-  onPointerCancel: () => void
   onMouseEnter: (event: React.MouseEvent<HTMLElement>) => void
   onMouseLeave: () => void
   onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void
@@ -575,7 +611,6 @@ export function useHoverCard({
   const depth = useContext(DepthContext)
   const anchorId = useId()
   const anchorElement = useRef<HTMLElement | null>(null)
-  const isPointerPressing = useRef(false)
   const removeAnchor = controller?.removeAnchor
   useEffect(
     () => () => {
@@ -585,15 +620,6 @@ export function useHoverCard({
   )
   return {
     'data-hover-card-pinned': controller?.pinnedAnchorIds.has(anchorId) ? '' : undefined,
-    onPointerDown: () => {
-      isPointerPressing.current = true
-    },
-    onPointerUp: () => {
-      isPointerPressing.current = false
-    },
-    onPointerCancel: () => {
-      isPointerPressing.current = false
-    },
     onMouseEnter: (event) => {
       anchorElement.current = event.currentTarget
       controller?.open(
@@ -614,13 +640,11 @@ export function useHoverCard({
       )
     },
     onMouseLeave: () => {
-      isPointerPressing.current = false
       controller?.closeFrom(depth)
     },
     onFocus: (event) => {
       anchorElement.current = event.currentTarget
-      if (isPointerPressing.current || controller?.isRestoringAnchorFocus(event.currentTarget))
-        return
+      if (!controller?.isNavigationFocus(event.target)) return
       controller?.open(
         {
           kind,

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/effects-item-487.json' with { type: 'json' }
 import capturedRunearm from '../src/features/resources/queries/fixtures/effects-item-924.json' with { type: 'json' }
 import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-831.json' with { type: 'json' }
@@ -6,6 +6,78 @@ import capturedWeapon from '../src/features/resources/queries/fixtures/effects-i
 import capturedShield from '../src/features/resources/queries/fixtures/effects-item-8203.json' with { type: 'json' }
 import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
+
+async function routeFocusRestoreItems(page: Page): Promise<void> {
+  const items = [
+    { ...capturedArmor, id: 11000, name: 'Focus Armor 1' },
+    { ...capturedArmor, id: 11001, name: 'Focus Armor 2' },
+  ]
+  await page.route('**/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const item = items.find((candidate) => path === `/v1/items/${candidate.id}`)
+    const response =
+      path === '/v1/items'
+        ? {
+            total: items.length,
+            limit: 200,
+            offset: 0,
+            items: items.map((candidate) => ({
+              id: candidate.id,
+              name: candidate.name,
+              slot: candidate.slot,
+              category: candidate.category,
+              item_type: candidate.item_type,
+              minimum_level: candidate.minimum_level,
+              enhancement_bonus: candidate.enhancement_bonus,
+              icon: candidate.icon,
+              pack: null,
+              is_raid: false,
+              is_rare: false,
+              is_legacy: candidate.is_legacy,
+            })),
+          }
+        : (item ?? [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    })
+  })
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/resources/items')
+}
+
+test('clicking Back restores the item row without opening its card', async ({ page }) => {
+  await routeFocusRestoreItems(page)
+  const row = page.getByRole('row', { name: /Focus Armor 1/ })
+  await row.click()
+  await page.mouse.move(0, 0)
+  await page.getByRole('button', { name: 'Back to items', exact: true }).click()
+  await expect(row).toBeFocused()
+  await expect(page.locator('[data-hover-card]')).toHaveCount(0)
+  await page.waitForTimeout(300)
+  await expect(page.locator('[data-hover-card]')).toHaveCount(0)
+})
+
+test('Escape restores the item row without a card, then ArrowDown opens the next card', async ({
+  page,
+}) => {
+  await routeFocusRestoreItems(page)
+  const firstRow = page.getByRole('row', { name: /Focus Armor 1/ })
+  const nextRow = page.getByRole('row', { name: /Focus Armor 2/ })
+  await firstRow.click()
+  await page.mouse.move(0, 0)
+  const pane = page.getByRole('region', { name: 'Item details', exact: true })
+  await pane.getByRole('button', { name: 'Back to items', exact: true }).focus()
+  await page.keyboard.press('Escape')
+  await expect(page).toHaveURL(/\/resources\/items$/)
+  await expect(firstRow).toBeFocused()
+  await page.waitForTimeout(300)
+  await expect(page.locator('[data-hover-card]')).toHaveCount(0)
+  await page.keyboard.press('ArrowDown')
+  await expect(nextRow).toBeFocused()
+  await expect(page.locator('[data-hover-card]')).toContainText('Focus Armor 2')
+})
 
 test('hover cards align links, leave keyboard rows visible, and clear tall row anchors', async ({
   page,
@@ -550,6 +622,9 @@ test('Escape from a tabbed detail pane returns to its focused list row at wide a
     await page.keyboard.press('Enter')
     await expect(ringHeading).toBeVisible()
     await copyLink.focus()
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Shift+Tab')
+    await expect(copyLink).toBeFocused()
     await expect(page.getByRole('tooltip')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('tooltip')).toHaveCount(0)
@@ -602,6 +677,9 @@ test('Escape cancels a keyboard column move in the detail enchantment ledger wit
   const typeHeader = headers.filter({ hasText: 'Type' })
   const firstColumnKey = await headers.first().getAttribute('data-column-key')
   await typeHeader.focus()
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Shift+Tab')
+  await expect(typeHeader).toBeFocused()
   await expect(page.getByRole('tooltip')).toBeVisible()
   await page.keyboard.press('m')
   await expect(typeHeader).toHaveClass(/ledger-header-cell--dragging/)

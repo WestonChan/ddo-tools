@@ -80,6 +80,123 @@ function renderOpenItemCard(): HTMLElement {
   return itemAnchor
 }
 
+function focusWithNavigationKey(element: HTMLElement, key = 'Tab'): void {
+  fireEvent.keyDown(document.activeElement ?? document, { key })
+  act(() => element.focus())
+}
+
+it.each([
+  'Tab',
+  'ArrowDown',
+  'ArrowUp',
+  'ArrowLeft',
+  'ArrowRight',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+])('opens on focus caused by %s', (key) => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.keyDown(document, { key })
+  act(() => anchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
+it('opens on focus caused by Shift+Tab', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Item anchor' })
+  fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+  act(() => anchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})
+
+it('keeps native navigation focus eligible until React handles it after a microtask', async () => {
+  vi.useFakeTimers()
+  function DeferredFocusAnchor(): React.JSX.Element {
+    const hover = useHoverCard({ kind: 'item', delayMs: 0, render: () => 'Card details' })
+    return (
+      <button
+        onFocus={(event) => {
+          const anchor = event.currentTarget
+          queueMicrotask(() =>
+            hover.onFocus({
+              target: anchor,
+              currentTarget: anchor,
+            } as unknown as React.FocusEvent<HTMLElement>),
+          )
+        }}
+      >
+        Deferred anchor
+      </button>
+    )
+  }
+  render(
+    <HoverCardProvider>
+      <DeferredFocusAnchor />
+    </HoverCardProvider>,
+  )
+  const anchor = screen.getByRole('button', { name: 'Deferred anchor' })
+  fireEvent.keyDown(document, { key: 'Tab' })
+  act(() => anchor.focus())
+  await Promise.resolve()
+  act(() => vi.runOnlyPendingTimers())
+  expect(screen.getByRole('dialog')).toHaveTextContent('Card details')
+})
+
+it('ignores focus without navigation, including delayed focus after a key and focus after Escape', () => {
+  vi.useFakeTimers()
+  render(
+    <HoverCardProvider>
+      <CardHarness />
+      <CardHarness />
+      <button>Other control</button>
+    </HoverCardProvider>,
+  )
+  const [firstAnchor, secondAnchor] = screen.getAllByRole('button', { name: 'Item anchor' })
+  const otherControl = screen.getByRole('button', { name: 'Other control' })
+  act(() => firstAnchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  fireEvent.keyDown(firstAnchor, { key: 'ArrowDown' })
+  act(() => otherControl.focus())
+  act(() => secondAnchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  fireEvent.keyDown(secondAnchor, { key: 'Tab' })
+  act(() => vi.advanceTimersByTime(0))
+  act(() => firstAnchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  fireEvent.keyDown(firstAnchor, { key: 'ArrowDown' })
+  fireEvent.keyDown(firstAnchor, { key: 'Escape' })
+  act(() => secondAnchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('dialog')).toBeNull()
+
+  act(() => otherControl.focus())
+  fireEvent.keyDown(otherControl, { key: 'Tab' })
+  fireEvent.pointerDown(firstAnchor)
+  act(() => firstAnchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('dialog')).toBeNull()
+})
+
 it('opens from focus after the pointer delay, switches anchors, and pins with T', () => {
   vi.useFakeTimers()
   render(
@@ -89,12 +206,12 @@ it('opens from focus after the pointer delay, switches anchors, and pins with T'
     </HoverCardProvider>,
   )
   const [firstAnchor, secondAnchor] = screen.getAllByRole('button', { name: 'Item anchor' })
-  act(() => firstAnchor.focus())
+  focusWithNavigationKey(firstAnchor)
   act(() => vi.advanceTimersByTime(259))
   expect(screen.queryByRole('dialog')).toBeNull()
   act(() => vi.advanceTimersByTime(1))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
-  act(() => secondAnchor.focus())
+  focusWithNavigationKey(secondAnchor)
   expect(screen.queryByRole('dialog')).toBeNull()
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -114,7 +231,7 @@ it('dismisses a focus-opened card without moving focus or reopening until focus 
     </HoverCardProvider>,
   )
   const anchor = screen.getByRole('button', { name: 'Item anchor' })
-  act(() => anchor.focus())
+  focusWithNavigationKey(anchor)
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 
@@ -126,7 +243,7 @@ it('dismisses a focus-opened card without moving focus or reopening until focus 
   expect(screen.queryByRole('dialog')).toBeNull()
 
   act(() => screen.getByRole('button', { name: 'Next control' }).focus())
-  act(() => anchor.focus())
+  focusWithNavigationKey(anchor)
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 })
@@ -172,7 +289,7 @@ it('closes a card before leaving a focused ledger row, including pointer-opened 
   fireEvent.keyDown(row, { key: 'Escape' })
   expect(row).toHaveFocus()
   act(() => header.focus())
-  act(() => row.focus())
+  focusWithNavigationKey(row, 'ArrowDown')
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
 
@@ -183,7 +300,7 @@ it('closes a card before leaving a focused ledger row, including pointer-opened 
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   fireEvent.keyDown(header, { key: 'Escape' })
   expect(screen.getByRole('dialog')).toBeInTheDocument()
-  act(() => row.focus())
+  focusWithNavigationKey(row, 'ArrowDown')
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('dialog')).toBeInTheDocument()
   fireEvent.keyDown(row, { key: 'Escape' })
@@ -291,7 +408,7 @@ it('closes a focused header hint while one Escape cancels its keyboard move', as
     )
   })
   const typeHeader = screen.getByRole('columnheader', { name: 'Type' })
-  act(() => typeHeader.focus())
+  focusWithNavigationKey(typeHeader)
   expect(await screen.findByRole('tooltip')).toBeInTheDocument()
   await userEvent.keyboard('m')
   await waitFor(() => expect(typeHeader).toHaveClass('ledger-header-cell--dragging'))
@@ -321,14 +438,14 @@ it('lets Escape through a detail pane while a focus-opened card is only pending,
   )
   const [paneAnchor, listAnchor] = screen.getAllByRole('button', { name: 'Item anchor' })
 
-  act(() => paneAnchor.focus())
+  focusWithNavigationKey(paneAnchor)
   act(() => vi.advanceTimersByTime(100))
   fireEvent.keyDown(paneAnchor, { key: 'Escape' })
   expect(onPaneEscape).toHaveBeenCalledOnce()
   act(() => vi.advanceTimersByTime(500))
   expect(screen.queryByRole('dialog')).toBeNull()
 
-  act(() => listAnchor.focus())
+  focusWithNavigationKey(listAnchor)
   act(() => vi.advanceTimersByTime(100))
   fireEvent.keyDown(listAnchor, { key: 'Escape' })
   expect(onListEscape).not.toHaveBeenCalled()
@@ -519,7 +636,7 @@ it.each(['focus', 'pointer'] as const)(
       </HoverCardProvider>,
     )
     const anchor = screen.getByRole('row', { name: 'Belt' })
-    if (openedBy === 'focus') act(() => anchor.focus())
+    if (openedBy === 'focus') focusWithNavigationKey(anchor)
     else fireEvent.mouseEnter(anchor)
     act(() => vi.advanceTimersByTime(260))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -773,6 +890,10 @@ it('opens a data-tip hint from focus and dismisses it on Escape without moving f
   )
   const anchor = screen.getByRole('button', { name: 'Help' })
   act(() => anchor.focus())
+  act(() => vi.advanceTimersByTime(260))
+  expect(screen.queryByRole('tooltip')).toBeNull()
+  act(() => anchor.blur())
+  focusWithNavigationKey(anchor)
   act(() => vi.advanceTimersByTime(259))
   expect(screen.queryByRole('tooltip')).toBeNull()
   act(() => vi.advanceTimersByTime(1))
@@ -787,7 +908,7 @@ it('opens a data-tip hint from focus and dismisses it on Escape without moving f
   expect(screen.queryByRole('tooltip')).toBeNull()
 
   act(() => screen.getByRole('button', { name: 'Next control' }).focus())
-  act(() => anchor.focus())
+  focusWithNavigationKey(anchor)
   act(() => vi.advanceTimersByTime(260))
   expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful text')
   act(() => screen.getByRole('button', { name: 'Next control' }).focus())
@@ -955,7 +1076,7 @@ it('keeps a pointer row card in place when clicking focuses its row', () => {
   fireEvent.mouseLeave(row)
   fireEvent.pointerUp(document.body)
   act(() => row.blur())
-  act(() => row.focus())
+  focusWithNavigationKey(row, 'ArrowDown')
   act(() => vi.runOnlyPendingTimers())
   expect(screen.getByRole('dialog').style.left).toBe('676px')
 })
@@ -1127,7 +1248,8 @@ it.each([
     const row = screen.getByRole('row', { name: 'Belt' })
     if (openBy === 'pointer') fireEvent.mouseEnter(row, { clientX: 475 })
     else {
-      act(() => row.focus())
+      if (openBy === 'focus') focusWithNavigationKey(row, 'ArrowDown')
+      else act(() => row.focus())
       if (openBy === 't') fireEvent.keyDown(row, { key: 't' })
     }
     act(() => vi.runOnlyPendingTimers())

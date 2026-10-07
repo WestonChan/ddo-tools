@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup, type RenderResult } from '@testing-library/react'
+import { fireEvent, render, screen, cleanup, type RenderResult } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HoverCardProvider } from '../../../../components'
 import type { ApiItemDetail, ApiWeaponStats } from '../../../../lib/api'
@@ -469,6 +469,7 @@ describe('ItemDetailCard details', () => {
     const yellowSocket = screen.getByRole('button', { name: 'Yellow slot' })
     await userEvent.click(yellowSocket)
     const nameHeader = screen.getByRole('columnheader', { name: 'Name' })
+    fireEvent.keyDown(yellowSocket, { key: 'Tab' })
     nameHeader.focus()
     expect(await screen.findByRole('tooltip')).toBeInTheDocument()
 

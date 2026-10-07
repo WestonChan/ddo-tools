@@ -292,6 +292,7 @@ describe('Hotbars', () => {
     await userEvent.unhover(polarRay)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
+    fireEvent.keyDown(document, { key: 'Tab' })
     act(() => slotButton('Nukes', 1).focus())
     expect(
       within(await screen.findByRole('dialog')).getByText('Delayed Blast Fireball'),
@@ -317,6 +318,7 @@ describe('Hotbars', () => {
   it('dismisses a focused slot card on Escape and reopens it when focus returns', async () => {
     await renderHotbars()
     const polarRay = slotButton('Nukes', 4)
+    fireEvent.keyDown(document, { key: 'Tab' })
     act(() => polarRay.focus())
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
 
@@ -327,6 +329,7 @@ describe('Hotbars', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
 
     act(() => slotButton('Nukes', 5).focus())
+    fireEvent.keyDown(document, { key: 'Tab' })
     act(() => polarRay.focus())
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
   })

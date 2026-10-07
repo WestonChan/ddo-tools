@@ -511,6 +511,7 @@ describe('ResourcesView detail pane', () => {
     const setAnchor = screen
       .getByRole('region', { name: 'Item details' })
       .querySelector<HTMLElement>('.resources-hover-anchor')!
+    fireEvent.keyDown(document, { key: 'Tab' })
     setAnchor.focus()
     act(() => vi.advanceTimersByTime(120))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -520,6 +521,7 @@ describe('ResourcesView detail pane', () => {
     expect(navigateMock).toHaveBeenCalledTimes(1)
 
     setAnchor.blur()
+    fireEvent.keyDown(document, { key: 'Tab' })
     setAnchor.focus()
     act(() => vi.advanceTimersByTime(120))
     fireEvent.keyDown(setAnchor, { key: 't' })
