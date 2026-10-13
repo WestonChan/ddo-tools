@@ -111,6 +111,7 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 🩹 📋 Ritual Table — recorded as a quest in Magic of Myth Drannor; it is a crafting device in a side room of Threats Old and New. Source: https://ddowiki.com/page/Ritual_Table.
 - 📋 Green Steel heroic augments — 27 of the 54 save, skill and spell-point augments in `Greensteel_Heroic.Augments.xml` carry a trailing space in their name, which is the only thing distinguishing an element pair (Earth and Negative both give "+1 Exceptional Fortitude Save"); the wiki names the pair identically too, so the element:gem:essence affix is the only key. Read 2026-10-07: https://ddowiki.com/page/Altar_of_Subjugation_-_Manufactured_Ingredient_Recipes.
 - 🩹 📋 Green Steel tier 3 saves — his descriptions read "Reflex Save +1: +2 Exceptional bonus…" (and Fortitude, Will), the lead-in copied from tier 2; the wiki says +2 throughout. Source: https://ddowiki.com/page/Altar_of_Devastation_-_Manufactured_Ingredient_Recipes.
+- 📋 Squire Rale — the wiki lists Touch of the Silver Flame among the items he offers for Scarlet Scarab Powder; his files have no such item (Lumric's Longbow and Signal of the Silver Flame are present). Each of his prices is one powder. Read 2026-10-08: https://ddowiki.com/page/Squire_Rale.
 - 📋 Brightbane Emerald — the wiki line is "Insightful Command +4", his item carries Charisma Skills Insight 5 (the legendary version agrees at 7). Source: https://ddowiki.com/page/Item:Brightbane_Emerald.
 
 ## Item buffs

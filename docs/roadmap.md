@@ -949,7 +949,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 7 | planned | Build Plan (single scrollable page) |
 | 8 | planned | Gear |
 | V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button. Moved after Phase 8 on 2026-10-01: ships once builds and gear are real |
-| V9 | planned | Editable source tree -- the dataset as human-readable files (one per item, quest, set, effect; quests and their loot under their pack), edited by hand or PR, built into SQLite; Maetrim's weekly updates arrive as reviewable diffs. Proposed 2026-10-05; decisions open, see the phase entry |
+| V9 | chunk 1 done | Editable source tree -- the dataset as TOML files, one per entity, under its pack and quest; built into SQLite by `ddo-etl build --data` and written back by `export --db`, with the round trip as the test. Chunk 1 (the tree, both scripts, the proof against the XML build) landed 2026-10-13; chunk 2 switches the deploy, chunk 3 imports Maetrim's updates, chunk 4 adds edit tooling. See the phase entry |
 | 9 | planned | Comparison mode |
 | 10 | planned | Farm checklist |
 | 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
@@ -1544,6 +1544,20 @@ Corrections: 430 applied, 0 stale (392 set-tier adds retired as our writer's own
 hover cards and filter vocabulary, then the wiki reads fill exact text as they happen (see the tooltip
 section of [docs/notes/Data Verification.md](notes/Data%20Verification.md)). Required before 4f ships a
 first-class stats category.
+
+12. **Decide how to represent numbered enchantment sequences (asked 2026-10-14).** Every tier of a damage or
+    guard sequence is its own effect row today, the number in the name and the dice in the description text:
+    Anarchic, Anarchic 2 to 7 and Maetrim's "Anarchic VII", Anarchic Burst and Blast 3 to 7, Acid II to V,
+    Axeblock II to X; 268 effect names end in a number or numeral, while Phase 4e's tier groups cover only Wizardry,
+    Deception and Spell Lore (21 effects). The step is the design, not a chosen model: survey the 268 names against
+    the wiki's own tables, what each sequence varies (dice, a flat number, a damage type, a target such as lawful
+    enemies, an on-hit versus on-crit trigger), and what the gear planner and the stacking rules need from it; then
+    choose the representation and write it into [stacking-rules.md](stacking-rules.md). Candidates to weigh: the
+    number as dice carried on the item's link (count, sides, bonus and damage type, the shape a weapon's base dice
+    and the modifier rows already use) with the description rendered from them; a flat-number sequence as a stat
+    with its value on the link, as Acid Intensity already is; or keeping separate effects where a sequence really
+    changes behaviour between steps. The outcome changes served effect ids and names, the effects list and the wiki
+    tooltip golden set, so it is its own ddo-data task after V9 chunk 1 lands.
 
 #### Phase 4f — Categories
 - **Crafting systems** becomes a Resources category (`/resources/crafting-systems`), not a top-level view: an info page per system (38 systems; where, materials, mechanics). Decided in the D1 navigation review — its interactive halves already live elsewhere (craftable options inline on item detail; materials summing in the Farm checklist), so what remains is reference content. Scope is large; plan it with the rest of this phase.
@@ -2526,57 +2540,24 @@ versioned build JSON is also what Phase 15's `.DDOBuild` import targets.
 
 ---
 
-#### V9 — Editable source tree (proposed 2026-10-05, decisions open)
-The maintainer's idea: build the database from files people can read and edit, laid out so a person can browse them (patron, then pack, then quest), and rebuild when they change. Today the base is Maetrim's XML, flat by type (8,779 `Items/*.item` files plus one file each for quests, patrons, sets and buffs), with our ~40 TOML override and correction files laid over it. Edits mean a correction that cites his current value.
+#### V9 — Editable source tree (chunk 1 landed 2026-10-13; chunks 2–4 open)
+Decided 2026-10-07/08 while building chunk 1. The dataset is TOML files under `data/` at the root of ddo-data, exported once from Maetrim's XML plus the wiki and correction files, and from then on the source: (B) above, canonical, ours wins on a conflict with the conflict listed.
 
-**Format.** TOML, one file per entity: comments, unambiguous types, already the repo's override format, and editor validation through a JSON Schema (Taplo). Alternatives considered:
-- **YAML:** more compact for nested lists, but indentation and implicit typing cause silent errors.
-- **JSON:** no comments, noisy to hand-edit.
-- **XML:** Maetrim's format, but verbose to edit and diff.
-- **Markdown with front matter:** good for prose-heavy entities, a candidate for descriptions only.
+**The rule the tree follows.** The files hold what a person would write: `[[source]]` rows as the API serves them, effects, sockets, notes and citations on the item, booleans omitted when false, derived strings never written. The database holds strict constraints and every value the files carry, in typed columns and rows, never a blob. `ddo-etl build --data` (TOML → DB) and `ddo-etl export --db` (DB → TOML) are the two scripts, and their round trip is the test: TOML → DB → TOML byte-equal into a fresh directory, DB → TOML → DB equal on every table and served response. Both are fast (tree build 5–8 s, export 3–5 s; the served-response comparison is the slow step at about 100 s). CI runs the round trip and, until chunk 2, the XML-versus-data comparison against an allow-list that names the only expected differences.
 
-Precedent for "unpack to files, pack into a database": Foundry VTT's compendium CLI, and the Pathfinder 2e system's per-entity JSON packs. Dolt (git-versioned SQL) keeps the data as a database, not as readable files.
+**Keys.** Names are unique and are the key. A file states a `variant` only when its name is not unique (the Green Steel element pair, the two Twilights, Maetrim's reused enhancement internal names). The served id is `stable_hash(kind, slug(name) + "-" + slug(variant))`, computed at build, never written in a file; moving a file changes nothing, renaming changes only that entity. Nested rows (modifiers, effect links, sources, sockets, recipes, thresholds, requirements) have no id and no slug; their array order is their order and the API serves them in it. Every named table has a `slug` column, NOT NULL and unique within its kind. One declaration per row type generates columns, inserts, reads and file order, so the compiler keeps them aligned.
 
-**Layout: by pack, so one edit stays in one folder.** Counted on the 2026-10-05 build:
-- 6,676 items drop in exactly one pack and only 17 in several. A wiki check on 2026-10-05 shows only 3 of the 17 really span packs:
-  - Beholder Plate Armor and Docent (Reign of Madness, and the Harbinger of Madness chain);
-  - Xachosian Eardweller (The Dreaming Dark and The Path of Inspiration).
-  Ten Masterminds of Sharn saga rewards reach "Free to Play" only through Lost at Sea, the saga's free quest, so they file under Masterminds of Sharn. Four were data errors: a duplicate "Isle of Dread" pack name, and Spider's Bite's mis-attributed drop text.
-- 4,447 drop in one quest, and 219 in several quests (mostly of the same pack).
-- 1,420 have no pack today. About 500 of those belong to content once their version chains, crafting stations and vendors are linked (V7b item 5). The rest are events, starter gear, the store, DM prizes and random loot.
-- An Epic or Legendary version files beside its base item.
-- Every quest has a pack. 58 packs have a single patron, 7 have two or three, and Free to Play has many.
+**Layout, as built (settled 2026-10-14 to 15).** The root of `data/` is `packs/`, `characters/`, `effects/`, `upstream/`, `icons/`, `.schemas/` and `README.md`, and the README opens with the rule that places everything: a source holds what it yields, at the narrowest folder its sources resolve to. A pack folder is tagged with the update it shipped in (`packs/u037-mists-of-ravenloft/`; the module-era packs `m1-` to `m9-`; the two public-beta packs `m0-`), derived from a cited `update` on `pack.toml` beside `released` (65 of 67 day-precise from the wiki's Modules and updates page, read 2026-10-13, the reader's doubts as `release` notes), both served on `/v1/adventure-packs`. Inside a pack, quests, crafting systems, vendors and events are folders holding their record and a `gear/` folder with what they yield (crafting systems also `augments/`); chains, sagas, sets, patrons, filigree sets (placed by the `menu` Maetrim files them under, 26 of 65) and challenges (whose rewards reference the pack) are files in their kind folders; the pack's own `gear/` holds pack-wide drops, chain, saga and challenge rewards, and gear with several quests; nothing nests. 92% of gear has one source, so one rule covers the rest: the one quest that drops it, else the pack's `gear/` when several do, else the one vendor, crafting system or event that yields it; a pack is the authored `pack` or the one every related entity agrees on, never derived through another derived entity. The pseudo-packs carry no tag: `free-to-play/` by patron (an entity under a patron only when every member agrees), `shared/` for what spans packs at its narrowest level (196 sets, 15 crafting systems, 865 augments by Maetrim's augment family, the two chains and two sagas that cross folders, sentient gems), `general/` for starter gear, the store and world drops (241 items), `unsourced/` for the 138 with no known source (369 formerly unsourced items file beside their version family's sourced members, deferred item 11's rule). The folder is derived, never data: one function returns the narrowest folder, a file whose folder no longer matches gets a WARN naming the move, and the next export moves it. Hundreds-of-files folders that remain are what the game is (Temple of Elemental Evil's 582 dungeon-wide drops, Crystal Cove's 246 rewards, the two largest augment families) and were left as one axis rather than a second split by category. `characters/` holds classes, races, feats, spells, enhancement trees (`enhancements/<tree>/tree.toml` with its own icons), stances and buffs; `effects/` holds the 1,899 named effects directly, with stats, stat groups (an effect granting one value to several stats), tiers, clickies and the vocabularies beneath; vocabularies and art stay flat, reached by name. File names are slugs (display names cannot be file names: 4,399 hold a colon, 98 a slash, variants share names) and references are display names; the build reports every unresolved reference in one run with the file, the array and index, the expected path and the nearest names, and `ddo-etl find` prints an entity's path or the nearest names from the files alone. Requirement groups are nested `[[requirement_group]]` tables (859). Icons: `icons/<kind>/<Name>.png` for shared art (7,602 of 8,575 items use an icon another item uses) and a tree's own beside it; exact-case names, one place per name, a missing file fails the build, every image field checked; an owner whose art spans kinds references it by path. The icons Maetrim names without an image and the ones he spells differently from his files are `[[note]]`s on `icon` carrying his value. A generated browsing index per chain, saga and patron is chunk 4 work.
 
-So an item lives with its loot source, under its pack:
-```
-packs/<pack>/pack.toml
-packs/<pack>/<quest>/quest.toml
-packs/<pack>/<quest>/<item>.toml          items from that one quest
-packs/<pack>/items/<item>.toml            pack-wide drops, or several of its quests
-packs/<pack>/sets/<set>.toml              sets whose pieces drop there
-packs/free-to-play/<patron>/<quest>/…     the 122 free quests, split by patron
-crafting/<system>/…, vendors/<vendor>/…, events/<event>/…, challenges/…, starter/…, store/…, world-drops/…
-favor/<patron>/<item>.toml                patron favor rewards
-shared/items/<item>.toml                  the 3 items that really span packs
-effects/…, stats/…, classes/…, feats/…    vocabulary, edited rarely
-```
-- **Packs, not patrons, are the folders.** There are 67 packs, a median of 5 quests each, and they fit one screen of a file browser. Patrons cross packs: 7 real packs have quests for two or three patrons.
-- **Patron is a field on each `quest.toml`.** A generated `patrons/` index lists each patron's packs and quests, for browsing by patron.
-- **Free to Play** is the one oversized "pack" (122 quests). It splits by patron, which mostly follows the free areas: The Coin Lords 26, The Free Agents 23, House Kundarak 12, House Jorasco 12, House Deneith 10, The Silver Flame 7, House Phiarlan 7, and smaller ones; 9 have no patron.
-- Relations are recorded once: an item's file lists its sources, which are usually its own folder's quest.
-- A WARN names any file whose sources no longer match its folder, with the move command. When an upstream update adds a drop elsewhere, the layout stays honest.
-- Reviewed exceptions live beside what they except: each pack or quest folder may hold an `exceptions.toml` (the confirmed asymmetries, cross-pack drops and multi-patron notes that `xtask/data/source_review.json` holds today), each entry cited to its wiki page. A check that an exception names an entity in its own folder keeps them from drifting.
-- Fixing an item's values, its drop or its quest's facts touches files in one folder. Only changing an enchantment's definition (an effect file) reaches outside it.
-- File slugs are stable ids, which settles deferred item 7.
+**Sources.** One table per kind of source (quest drops, pack drops, vendor offers, event rewards, chain and saga rewards, starter gear, crafting outputs, challenge rewards), each with only its own columns; a read-only `sources` view is the union the API serves. A vendor offer is a recipe with cost lines: `price = [{ ingredient, quantity }]`, the same row shape as a crafting recipe's `cost[]`, with 14 currencies Maetrim's data lacks in `vendors/currencies.toml`.
 
-**Source of truth: the main decision.**
-- **(A) Overlay, today's model reorganised:** his XML stays the base, and our per-entity files hold only what we change.
-- **(B) Canonical tree:** a one-time export of everything (his data, wiki rows, corrections) into our files. His weekly update is imported as a three-way diff (his last-imported value, his new value, ours). Clean changes apply, and a field both sides changed is listed for review.
-Recommendation: (B), since the wiki is already treated as right over his data and corrections keep growing. Land the importer first, so his updates stay cheap.
+**Corrections and wiki rows** are notes and citations in the entity's file (`[[note]]` with `reason`, `upstream`, `source`, `read`; `removed = [...]` on a survivor; `[[citation]]`). The build writes the `corrections` table from them. In chunk 1 the XML path (XML + `data/corrections/` + `data/wiki/`) still exists as the proof baseline; it dies in chunk 2. Two `check-db` audits of how his buff families map onto our vocabulary run only with `--source`; they move to the importer.
 
-**Rebuild.** A full build takes 7–10 s, so a watch command that validates the changed file at once and then rebuilds everything is simpler than per-table incremental rebuilds. Incremental builds need a dependency graph between tables; revisit only if the build passes about a minute.
+**Served changes shipped with chunk 1** (ddo-data's `docs/served-changes.md` lists each with its count): `slug` on every named entity; `sets` on every item and `set` naming the item's own set on the 44 two-set items (`set` deprecated); nested `id` fields gone (modifiers, sources, slot options, recipes, tiers, stances); 160 Lukresh vendor costs served, as `price` rows beside a generated `cost` string (deprecated; ten powder offers and The Dragon Keeper's three ingots reword); icons without an image null; optional-buff icons as paths; 52 duplicate effect links and 5 duplicate modifiers removed; set tier modifiers carry positional `sort_order`; saga reward tier `any` on 14 rows; schema 32 → 37; numeric ids changed once.
 
-**Checks.** Schema validation per file, generated from the Rust types; the existing `check-db`, `validate-api` and `wiki-tooltips` run on every PR. A PR summary lists the served responses that changed. Phase 5b's inline corrections could later write these files as PRs.
+**Chunks.** 1 (landed): export and prove. 2: the build reads the tree and only the tree; the XML build path, `data/corrections/` and `data/wiki/` go; the deploy builds from the tree; per-kind templates with lint checks. Lands only when the tree's recorded upstream equals DDOBuilderV2's HEAD at that moment, otherwise chunk 3 first. 3: `ddo-etl import` as his new XML → DB → TOML three-way merged against ours, with `export --xml` writing his format for upstream pull requests; the deploy imports weekly and commits; first input ba7e18e's successor. 4: edit tooling (`ddo-etl watch`, a PR check listing served responses that changed). The XML parsers stay for chunk 3; only the XML build path dies.
+
+**Frontend follow-ups** (ddo-tools, after chunk 1 deploys): `ApiSetRow.icon` may be null; nested `id` fields are gone; `slug`, `sets`, `price` added; `set` and vendor `cost` deprecated; bonus-type, weapon-type and damage-type lists now sort by name; optional-buff `icon` is a path.
 
 ## D-series: Design system
 
