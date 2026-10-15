@@ -949,7 +949,7 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 7 | planned | Build Plan (single scrollable page) |
 | 8 | planned | Gear |
 | V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button. Moved after Phase 8 on 2026-10-01: ships once builds and gear are real |
-| V9 | chunk 1 done | Editable source tree -- the dataset as TOML files, one per entity, under its pack and quest; built into SQLite by `ddo-etl build --data` and written back by `export --db`, with the round trip as the test. Chunk 1 (the tree, both scripts, the proof against the XML build) landed 2026-10-13; chunk 2 switches the deploy, chunk 3 imports Maetrim's updates, chunk 4 adds edit tooling. See the phase entry |
+| V9 | chunk 1 done | Editable source tree -- the dataset as TOML files, one per entity, under its pack and quest; built into SQLite by `ddo-etl build --data` and written back by `export --db`, with the round trip as the test. Chunk 1 (the tree, both scripts, the proof against the XML build) landed 2026-10-15; chunk 2 switches the deploy, chunk 3 imports Maetrim's updates, chunk 4 adds edit tooling. See the phase entry |
 | 9 | planned | Comparison mode |
 | 10 | planned | Farm checklist |
 | 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
@@ -2540,7 +2540,7 @@ versioned build JSON is also what Phase 15's `.DDOBuild` import targets.
 
 ---
 
-#### V9 — Editable source tree (chunk 1 landed 2026-10-13; chunks 2–4 open)
+#### V9 — Editable source tree (chunk 1 landed 2026-10-15; chunks 2–4 open)
 Decided 2026-10-07/08 while building chunk 1. The dataset is TOML files under `data/` at the root of ddo-data, exported once from Maetrim's XML plus the wiki and correction files, and from then on the source: (B) above, canonical, ours wins on a conflict with the conflict listed.
 
 **The rule the tree follows.** The files hold what a person would write: `[[source]]` rows as the API serves them, effects, sockets, notes and citations on the item, booleans omitted when false, derived strings never written. The database holds strict constraints and every value the files carry, in typed columns and rows, never a blob. `ddo-etl build --data` (TOML → DB) and `ddo-etl export --db` (DB → TOML) are the two scripts, and their round trip is the test: TOML → DB → TOML byte-equal into a fresh directory, DB → TOML → DB equal on every table and served response. Both are fast (tree build 5–8 s, export 3–5 s; the served-response comparison is the slow step at about 100 s). CI runs the round trip and, until chunk 2, the XML-versus-data comparison against an allow-list that names the only expected differences.
