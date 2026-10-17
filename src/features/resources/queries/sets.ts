@@ -25,7 +25,7 @@ export async function fetchSetVocabulary(
   searchQuery = '',
 ): Promise<{ rows: string[]; total: number }> {
   const rows: string[] = []
-  let total = 0
+  let total: number
   let offset = 0
   do {
     const page = await fetchApiPage<ApiSetRow, 'sets'>(
