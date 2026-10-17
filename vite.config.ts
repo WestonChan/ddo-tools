@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config'
 import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
-import pkg from './package.json'
+import pkg from './package.json' with { type: 'json' }
 
 export default defineConfig(({ mode }) => {
   const sentry = loadEnv(mode, process.cwd(), 'SENTRY_')
