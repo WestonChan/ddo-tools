@@ -26,6 +26,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Enhancement",
+          "group": null,
           "scale": 1.0,
           "stat": "Stun DC",
           "stat_category": "martial",
@@ -39,7 +40,7 @@
       "tier": null,
       "value": 10,
       "value2": null,
-      "verbose_name": "Enhancement Stun DC +10"
+      "verbose_name": "Stun DC +10"
     },
     {
       "bonus_type": "Insight",
@@ -47,6 +48,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Insight",
+          "group": null,
           "scale": 1.0,
           "stat": "Armor Class",
           "stat_category": "defensive",
@@ -60,7 +62,7 @@
       "tier": null,
       "value": 4,
       "value2": null,
-      "verbose_name": "Insight Armor Class +4"
+      "verbose_name": "Armor Class +4"
     }
   ],
   "enter_value": false,
@@ -92,7 +94,6 @@
       "display_name": null,
       "effect_type": "WeaponOtherDamageBonus",
       "extra_types": null,
-      "id": 13172,
       "is_item_specific": false,
       "is_rare": false,
       "percent": false,
@@ -134,7 +135,6 @@
       "display_name": null,
       "effect_type": "WeaponOtherDamageBonusCritical",
       "extra_types": null,
-      "id": 13173,
       "is_item_specific": false,
       "is_rare": false,
       "percent": false,
@@ -164,7 +164,6 @@
       "display_name": null,
       "effect_type": "TacticalDC",
       "extra_types": null,
-      "id": 13174,
       "is_item_specific": false,
       "is_rare": false,
       "percent": false,
@@ -194,7 +193,6 @@
       "display_name": null,
       "effect_type": "ACBonus",
       "extra_types": null,
-      "id": 13175,
       "is_item_specific": false,
       "is_rare": false,
       "percent": false,
@@ -212,6 +210,7 @@
   "slots": [
     "crafting: alchemical tier 1"
   ],
+  "slug": "martial--shocking-burst-stunning-10-heightened-awareness-4",
   "sources": [],
   "suppress_set_bonus": false,
   "weapon_class": null

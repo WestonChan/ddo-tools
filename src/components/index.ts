@@ -1,4 +1,5 @@
 export { ConfirmModal } from './ConfirmModal'
+export { IngredientCostList } from './IngredientCostList'
 export { EditableText } from './EditableText'
 export {
   HoverCardProvider,

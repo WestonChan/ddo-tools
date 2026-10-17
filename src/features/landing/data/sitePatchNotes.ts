@@ -5,6 +5,13 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-17',
+    changes: [
+      'An item in two sets shows both set bands in its detail and hover card, each opening on its own',
+      'Vendor prices list each ingredient on its own line, as 1 × Epic Ethereal Ingot, in item detail, hover cards and vendor cards',
+    ],
+  },
+  {
     date: '2026-10-07',
     changes: [
       'Hover cards wait for their data and open once, in their final place; moving straight from one card to the next skips the delay, and a card opened from the keyboard never covers its row',

@@ -1,9 +1,9 @@
 import { expect, it } from 'vitest'
 import capturedAugment from '../../queries/fixtures/effects-augment-77.json'
-import capturedItem from '../../queries/fixtures/effects-item-7631.json'
-import capturedWeapon from '../../queries/fixtures/effects-item-3479.json'
-import capturedShield from '../../queries/fixtures/effects-item-8203.json'
-import capturedArmor from '../../queries/fixtures/effects-item-831.json'
+import capturedItem from '../../queries/fixtures/effects-item-7716.json'
+import capturedWeapon from '../../queries/fixtures/effects-item-3492.json'
+import capturedShield from '../../queries/fixtures/effects-item-8309.json'
+import capturedArmor from '../../queries/fixtures/effects-item-833.json'
 import type { ApiAugmentDetail, ApiItemDetail } from '../../../../lib/api'
 import { toAugmentDetail, toItem } from '../../queries/items'
 import {

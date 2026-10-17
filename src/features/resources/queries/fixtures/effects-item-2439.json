@@ -1,15 +1,6 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [
-    {
-      "chest": "end chest",
-      "id": 45,
-      "is_rare": false,
-      "loot_type": "chest",
-      "name": "The Necropolis, Part 4",
-      "wiki_url": "https://ddowiki.com/page/The_Necropolis%2C_Part_4"
-    }
-  ],
+  "adventure_packs": [],
   "armor": null,
   "augment_slots": [
     {
@@ -21,7 +12,6 @@
           "effects": [],
           "grants_slot": "blue",
           "icon": "Heroism",
-          "id": 1689,
           "min_level": 27,
           "modifiers": [],
           "name": "Blue Augment Slot",
@@ -32,7 +22,6 @@
           "effects": [],
           "grants_slot": "yellow",
           "icon": "Heroism",
-          "id": 1690,
           "min_level": 27,
           "modifiers": [],
           "name": "Yellow Augment Slot",
@@ -40,7 +29,7 @@
         }
       ],
       "qualifier": null,
-      "slot_type_id": 144,
+      "slot_type_id": 142,
       "sort_order": 0,
       "variant": "upgradeable - primary augment"
     },
@@ -53,7 +42,6 @@
           "effects": [],
           "grants_slot": "green",
           "icon": "Heroism",
-          "id": 1691,
           "min_level": 27,
           "modifiers": [],
           "name": "Green Augment Slot",
@@ -61,7 +49,7 @@
         }
       ],
       "qualifier": null,
-      "slot_type_id": 145,
+      "slot_type_id": 143,
       "sort_order": 1,
       "variant": "upgradeable - secondary augment"
     }
@@ -87,13 +75,13 @@
         }
       ],
       "damage": [],
-      "description": "Passive: 11 Enhancement bonus to Dexterity.",
+      "description": "Passive: +11 Enhancement bonus to Dexterity.",
       "effect_id": 2,
       "name": "Dexterity",
       "tier": null,
       "value": 11,
       "value2": null,
-      "verbose_name": "Enhancement Dexterity 11"
+      "verbose_name": "Dexterity +11"
     },
     {
       "bonus_type": "Insight",
@@ -118,17 +106,26 @@
         }
       ],
       "damage": [],
-      "description": "This item enchants its user with incredible awareness and speed, granting a 5 Insight bonus to AC and to Saves.",
-      "effect_id": 384,
+      "description": "This item enchants its user with incredible awareness and speed, granting a +5 Insight bonus to AC and to Saves.",
+      "effect_id": 386,
       "name": "Riposte",
       "tier": null,
       "value": 5,
       "value2": null,
-      "verbose_name": "Riposte 5"
+      "verbose_name": "Riposte +5"
     },
     {
       "bonus_type": null,
       "bonuses": [
+        {
+          "amount_source": "constant",
+          "bonus_type": "Equipment",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Incorporeality",
+          "stat_category": "defensive",
+          "value": 10
+        },
         {
           "amount_source": "constant",
           "bonus_type": "Enhancement",
@@ -146,20 +143,11 @@
           "stat": "Move Silently",
           "stat_category": "skill",
           "value": 5
-        },
-        {
-          "amount_source": "constant",
-          "bonus_type": "Equipment",
-          "group": null,
-          "scale": 1.0,
-          "stat": "Incorporeality",
-          "stat_category": "defensive",
-          "value": 10
         }
       ],
       "damage": [],
       "description": "Equipping this item causes you to become partially incorporeal. Your melee attacks do not roll a miss chance for Incorporeal targets. Enemy attacks have a 10% chance to miss you due to incorporeality. You receive a +5 enhancement bonus to your Hide and Move Silently skills.",
-      "effect_id": 560,
+      "effect_id": 567,
       "name": "Ghostly",
       "tier": null,
       "value": null,
@@ -180,16 +168,16 @@
         }
       ],
       "damage": [],
-      "description": "10 Competence bonus to weapon damage.",
+      "description": "+10 Competence bonus to weapon damage.",
       "effect_id": 64,
       "name": "Deadly",
       "tier": null,
       "value": 10,
       "value2": null,
-      "verbose_name": "Competence Deadly 10"
+      "verbose_name": "Deadly +10"
     },
     {
-      "bonus_type": null,
+      "bonus_type": "Enhancement",
       "bonuses": [
         {
           "amount_source": "owner",
@@ -221,8 +209,8 @@
       ],
       "damage": [],
       "description": "Passive: 30% Enhancement bonus to movement speed, 14% Enhancement bonus to melee and ranged attack speed.",
-      "effect_id": 1139,
-      "name": "Speed Roman Numeral XIV",
+      "effect_id": 1151,
+      "name": "Speed XIV",
       "tier": null,
       "value": 30,
       "value2": 14,
@@ -233,7 +221,7 @@
       "bonuses": [],
       "damage": [],
       "description": "This item is engraved with feathers and bestows a powerful magical effect. Whenever the wearer begins to fall from any height, this effect slows the descent dramatically, causing the wearer to fall like a feather.",
-      "effect_id": 467,
+      "effect_id": 470,
       "name": "Feather Falling",
       "tier": null,
       "value": null,
@@ -244,7 +232,7 @@
   "enhancement_bonus": null,
   "events": [],
   "icon": "Bracers_1",
-  "id": 2430,
+  "id": 2439,
   "is_legacy": false,
   "is_minor_artifact": false,
   "item_type": null,
@@ -271,14 +259,17 @@
       "loot_type": "chest",
       "name": "Ghosts of Perdition",
       "pack": "The Necropolis, Part 4",
-      "patron": "The Silver Flame"
+      "patron": "The Silver Flame",
+      "slug": "ghosts-of-perdition"
     }
   ],
   "race_required": null,
   "sagas": [],
   "set": null,
   "set_name": null,
+  "sets": [],
   "slot": "Wrists",
+  "slug": "epic-ethereal-bracers",
   "sources": [
     {
       "character_level": null,
@@ -289,6 +280,8 @@
       "kind": "quest",
       "loot_type": "chest",
       "name": "Ghosts of Perdition",
+      "price": [],
+      "slug": "ghosts-of-perdition",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/Ghosts_of_Perdition"
     }

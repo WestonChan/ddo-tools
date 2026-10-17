@@ -1,7 +1,7 @@
 {
   "augments": {
     "augments": [],
-    "limit": 1,
+    "limit": 100,
     "offset": 0,
     "total": 0
   },
@@ -109,22 +109,24 @@
         ],
         "name": "-1 Quarterstaff of Lesser Halfling Bane",
         "scale": null,
+        "slug": "1-quarterstaff-of-lesser-halfling-bane",
         "value": null,
         "value2": null
       }
     ],
-    "limit": 1,
+    "limit": 100,
     "offset": 0,
     "total": 1
   },
   "kind": "effect",
   "name": "Curse of Weakness",
   "set_tiers": {
-    "limit": 1,
+    "limit": 100,
     "offset": 0,
     "set_tiers": [],
     "total": 0
   },
+  "slug": "curse-of-weakness",
   "tier": null,
   "verbose_name_template": "Curse of Weakness -1",
   "wiki_url": null

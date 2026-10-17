@@ -1,0 +1,168 @@
+{
+  "accepts_sentience": false,
+  "adventure_packs": [],
+  "armor": null,
+  "augment_slots": [
+    {
+      "family": "standard",
+      "label": "blue",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 8,
+      "sort_order": 0,
+      "variant": "blue"
+    },
+    {
+      "family": "standard",
+      "label": "green",
+      "options": [],
+      "qualifier": null,
+      "slot_type_id": 6,
+      "sort_order": 1,
+      "variant": "green"
+    }
+  ],
+  "category": "Clothing",
+  "challenge_packs": [],
+  "clickies": [],
+  "crafting_systems": [],
+  "description": "Shoved below deck, the Barbettes held though, their aim true, manning the cannons\nwith the utmost bravery.",
+  "drop_location": "Tavern Brawl, End chest",
+  "effects": [
+    {
+      "bonus_type": "Insight",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Strength",
+          "stat_category": "ability",
+          "value": 2
+        }
+      ],
+      "damage": [],
+      "description": "Passive: +2 Insight bonus to Strength.",
+      "effect_id": 1,
+      "name": "Strength",
+      "tier": null,
+      "value": 2,
+      "value2": null,
+      "verbose_name": "Insightful Strength +2"
+    },
+    {
+      "bonus_type": "Competence",
+      "bonuses": [
+        {
+          "amount_source": "owner",
+          "bonus_type": "Competence",
+          "group": null,
+          "scale": 1.0,
+          "stat": "Attack Bonus",
+          "stat_category": "martial",
+          "value": 4
+        }
+      ],
+      "damage": [],
+      "description": "Provides a +4 Competence bonus to your attack rolls.",
+      "effect_id": 9,
+      "name": "Attack Bonus",
+      "tier": null,
+      "value": 4,
+      "value2": null,
+      "verbose_name": "Attack Bonus +4"
+    },
+    {
+      "bonus_type": null,
+      "bonuses": [],
+      "damage": [],
+      "description": "Passive: +2 Morale bonus to all your attack rolls, saving throws, and skill checks.",
+      "effect_id": 514,
+      "name": "Heroism",
+      "tier": null,
+      "value": null,
+      "value2": null,
+      "verbose_name": "Heroism"
+    }
+  ],
+  "enhancement_bonus": null,
+  "events": [],
+  "icon": "Bracers_1",
+  "id": 747,
+  "is_legacy": false,
+  "is_minor_artifact": false,
+  "item_type": null,
+  "material": "Steel",
+  "minimum_level": 14,
+  "modifiers": [],
+  "name": "Barbette's Bracers",
+  "quest_chains": [],
+  "quests": [
+    {
+      "chest": "end chest",
+      "difficulties": [
+        "normal",
+        "hard",
+        "elite",
+        "reaper"
+      ],
+      "epic_level": 30,
+      "id": 384,
+      "is_free_to_play": false,
+      "is_raid": false,
+      "is_rare": false,
+      "level": 14,
+      "loot_type": "chest",
+      "name": "Tavern Brawl",
+      "pack": "The Devil's Gambit",
+      "patron": "The Gatekeepers",
+      "slug": "tavern-brawl"
+    }
+  ],
+  "race_required": null,
+  "sagas": [],
+  "set": {
+    "icon": "CaptainsSet",
+    "id": 73,
+    "name": "Captain's Set",
+    "slug": "captains-set"
+  },
+  "set_name": "Captain's Set",
+  "sets": [
+    {
+      "icon": "CaptainsSet",
+      "id": 73,
+      "name": "Captain's Set",
+      "slug": "captains-set"
+    },
+    {
+      "icon": "TheDevilsHandiwork",
+      "id": 77,
+      "name": "The Devil's Handiwork",
+      "slug": "the-devils-handiwork"
+    }
+  ],
+  "slot": "Wrists",
+  "slug": "barbettes-bracers",
+  "sources": [
+    {
+      "character_level": null,
+      "chest": "end chest",
+      "cost": null,
+      "id": 384,
+      "is_rare": false,
+      "kind": "quest",
+      "loot_type": "chest",
+      "name": "Tavern Brawl",
+      "price": [],
+      "slug": "tavern-brawl",
+      "tier": null,
+      "wiki_url": "https://ddowiki.com/page/Tavern_Brawl"
+    }
+  ],
+  "starter_rewards": [],
+  "vendors": [],
+  "weapon": null,
+  "wiki_url": "https://ddowiki.com/page/Item:Barbette's_Bracers"
+}

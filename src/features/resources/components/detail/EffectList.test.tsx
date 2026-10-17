@@ -1,21 +1,21 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
-import { render } from '../../../../test/renderWithQueryClient'
 import { afterEach, expect, it, vi } from 'vitest'
+import { render } from '../../../../test/renderWithQueryClient'
 import { HoverCardProvider, StructuredDetailCard, detailCardSection } from '../../../../components'
 import type { ApiEffect, ApiEffectDetail, ApiItemDetail, ApiSetDetail } from '../../../../lib/api'
 import capturedItem from '../../queries/fixtures/effects-item.json'
-import capturedWeapon from '../../queries/fixtures/effects-item-3479.json'
-import capturedShield from '../../queries/fixtures/effects-item-8203.json'
-import capturedArmor from '../../queries/fixtures/effects-item-831.json'
-import capturedRiposteItem from '../../queries/fixtures/effects-item-2430.json'
-import capturedRiposteDetail from '../../queries/fixtures/effect-detail-384.json'
+import capturedWeapon from '../../queries/fixtures/effects-item-3492.json'
+import capturedShield from '../../queries/fixtures/effects-item-8309.json'
+import capturedArmor from '../../queries/fixtures/effects-item-833.json'
+import capturedRiposteItem from '../../queries/fixtures/effects-item-2439.json'
+import capturedRiposteDetail from '../../queries/fixtures/effect-detail-386.json'
 import capturedCharismaDetail from '../../queries/fixtures/effect-detail-6.json'
 import capturedDefaultRiposteItem from '../../queries/fixtures/effects-item-490.json'
 import capturedConstantItem from '../../queries/fixtures/effects-item-454.json'
-import capturedConstantDetail from '../../queries/fixtures/effect-detail-328.json'
+import capturedConstantDetail from '../../queries/fixtures/effect-detail-329.json'
 import capturedSet from '../../queries/fixtures/effects-set.json'
 import capturedLargerSet from '../../queries/fixtures/effects-set-93.json'
-import capturedTextOnlyItem from '../../queries/fixtures/effects-item-3479.json'
+import capturedTextOnlyItem from '../../queries/fixtures/effects-item-3492.json'
 import capturedGroupAugment from '../../queries/fixtures/effects-augment-633.json'
 import capturedMixedGroupItem from '../../queries/fixtures/effects-item-457.json'
 import {
@@ -124,13 +124,13 @@ it('shows the effect name in the sortable cell and its verbose name and descript
   renderEffects([itemEffect()])
   const row = screen.getByRole('row', { name: /Charisma Enhancement \+8/ })
   expect(within(row).getByText('Charisma')).toHaveClass('resources-effect-name')
-  expect(within(row).queryByText('Enhancement Charisma 8')).toBeNull()
+  expect(within(row).queryByText('Charisma +8')).toBeNull()
   fireEvent.mouseEnter(row)
   act(() => vi.advanceTimersByTime(120))
   const card = screen.getByRole('dialog')
-  const verbose = within(card).getByText('Enhancement Charisma 8')
+  const verbose = within(card).getByText('Charisma +8')
   const stat = card.querySelector('.resources-effect-ungrouped-bonus')!
-  const description = within(card).getByText('Passive: 8 Enhancement bonus to Charisma.')
+  const description = within(card).getByText('Passive: +8 Enhancement bonus to Charisma.')
   expect(card.querySelector('.detail-card__name')!.compareDocumentPosition(verbose) & 4).toBe(4)
   expect(verbose.compareDocumentPosition(stat) & 4).toBe(4)
   expect(stat.compareDocumentPosition(description) & 4).toBe(4)
@@ -303,7 +303,9 @@ it('keeps the set name hover card on the open heading', () => {
     </HoverCardProvider>,
   )
   const heading = screen.getByRole('row', { name: /Adherent of the Mists/ })
-  expect(heading).toHaveTextContent('7 bonuses')
+  expect(heading).toHaveTextContent(
+    `${set.tiers.reduce((count, tier) => count + tier.effects.length, 0)} bonuses`,
+  )
   expect(screen.getAllByRole('row')).toHaveLength(2)
   fireEvent.mouseEnter(heading)
   act(() => vi.advanceTimersByTime(720))
@@ -329,7 +331,7 @@ it('toggles a set from the roving row and sorts its opened effects within the ti
       .getAllByRole('row')
       .slice(3)
       .map((row) => row.querySelector('.resources-effect-value')?.textContent),
-  ).toEqual(['+10', '+10', '+10', '+10', '+5', '+5', '+5'])
+  ).toEqual(['+10', '+10', '+10', '+10', '+5', '+5'])
   fireEvent.keyDown(heading, { key: ' ' })
   expect(heading).toHaveAttribute('aria-expanded', 'false')
   expect(screen.getAllByRole('row')).toHaveLength(2)
@@ -405,12 +407,12 @@ it('keeps a multi-stat effect on one line and matches either stat with a type', 
 it('keeps a captured group bonus on one line and reveals its member stats on hover', () => {
   vi.useFakeTimers()
   const groupEffect = capturedGroupAugment.effects.find(
-    (effect) => effect.name === 'Skills Charisma',
+    (effect) => effect.name === 'Charisma Skills',
   )
   expect(groupEffect).toBeDefined()
   renderEffects([toEffect(groupEffect as ApiEffect, 0)], ['Charisma Skills'])
-  const row = screen.getByRole('row', { name: /Skills Charisma Exceptional \+6/ })
-  expect(screen.getAllByRole('row', { name: /Skills Charisma Exceptional \+6/ })).toHaveLength(1)
+  const row = screen.getByRole('row', { name: /Charisma Skills Exceptional \+6/ })
+  expect(screen.getAllByRole('row', { name: /Charisma Skills Exceptional \+6/ })).toHaveLength(1)
   expect(row).toHaveClass('ledger-row--highlighted')
   fireEvent.mouseEnter(row)
   act(() => vi.advanceTimersByTime(120))
@@ -453,10 +455,10 @@ it.each(['Diplomacy', 'Diplomacy:Exceptional'])(
   'highlights a group line through its member %s',
   (selectedBonus) => {
     const groupEffect = capturedGroupAugment.effects.find(
-      (effect) => effect.name === 'Skills Charisma',
+      (effect) => effect.name === 'Charisma Skills',
     )
     renderEffects([toEffect(groupEffect as ApiEffect, 0)], [selectedBonus])
-    expect(screen.getByRole('row', { name: /Skills Charisma Exceptional \+6/ })).toHaveClass(
+    expect(screen.getByRole('row', { name: /Charisma Skills Exceptional \+6/ })).toHaveClass(
       'ledger-row--highlighted',
     )
   },
@@ -495,7 +497,7 @@ it('shows a tier step on hover and matches its family name', () => {
 it('explains rounded up and rounded down bonuses from a captured Riposte item', () => {
   vi.useFakeTimers()
   effectDetail = capturedRiposteDetail as ApiEffectDetail
-  const riposte = capturedRiposteItem.effects.find((entry) => entry.effect_id === 384)
+  const riposte = capturedRiposteItem.effects.find((entry) => entry.name === 'Riposte')
   expect(riposte).toBeDefined()
   const effect = toEffect(riposte as ApiEffect, 0)
   renderEffects([effect])
@@ -517,7 +519,7 @@ it('explains rounded up and rounded down bonuses from a captured Riposte item', 
 it('explains a default amount and a fixed amount from captured effect lines', () => {
   vi.useFakeTimers()
   effectDetail = capturedRiposteDetail as ApiEffectDetail
-  const defaultLine = capturedDefaultRiposteItem.effects.find((entry) => entry.effect_id === 384)
+  const defaultLine = capturedDefaultRiposteItem.effects.find((entry) => entry.name === 'Riposte')
   expect(defaultLine).toBeDefined()
   renderEffects([toEffect(defaultLine as ApiEffect, 0)])
   fireEvent.mouseEnter(screen.getByRole('row', { name: /Riposte/ }))
@@ -525,7 +527,7 @@ it('explains a default amount and a fixed amount from captured effect lines', ()
   expect(screen.getByRole('dialog')).toHaveTextContent('half of 2 (effect default)')
   cleanup()
   effectDetail = capturedConstantDetail as ApiEffectDetail
-  const fixedLine = capturedConstantItem.effects.find((entry) => entry.effect_id === 328)
+  const fixedLine = capturedConstantItem.effects.find((entry) => entry.name === 'Curse of Weakness')
   expect(fixedLine).toBeDefined()
   renderEffects([toEffect(fixedLine as ApiEffect, 0)])
   fireEvent.mouseEnter(screen.getByRole('row', { name: /Curse of Weakness/ }))

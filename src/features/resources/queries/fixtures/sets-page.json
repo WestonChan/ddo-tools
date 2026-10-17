@@ -9,6 +9,7 @@
       "is_filigree_set": false,
       "item_count": 34,
       "name": "Adherent of the Mists Set (Heroic)",
+      "slug": "adherent-of-the-mists-set-heroic",
       "tier_count": 1
     },
     {
@@ -18,8 +19,19 @@
       "is_filigree_set": false,
       "item_count": 41,
       "name": "Adherent of the Mists Set (Legendary)",
+      "slug": "adherent-of-the-mists-set-legendary",
+      "tier_count": 1
+    },
+    {
+      "augment_count": 0,
+      "icon": null,
+      "id": 250,
+      "is_filigree_set": false,
+      "item_count": 2,
+      "name": "Conduit of the Titans",
+      "slug": "conduit-of-the-titans",
       "tier_count": 1
     }
   ],
-  "total": 2
+  "total": 3
 }

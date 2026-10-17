@@ -7,17 +7,26 @@
     {
       "id": 47,
       "level": 3,
-      "name": "The Kobold's Den: Clan Gnashtooth"
+      "name": "The Kobold's Den: Clan Gnashtooth",
+      "slug": "the-kobolds-den-clan-gnashtooth"
     },
     {
       "id": 46,
       "level": 3,
-      "name": "The Kobold's Den: Rescuing Arlos"
+      "name": "The Kobold's Den: Rescuing Arlos",
+      "slug": "the-kobolds-den-rescuing-arlos"
     },
     {
       "id": 82,
       "level": 4,
-      "name": "Venn's Trail: Clan Tunnelworm"
+      "name": "Venn's Trail: Clan Tunnelworm",
+      "slug": "venns-trail-clan-tunnelworm"
+    },
+    {
+      "id": 86,
+      "level": 4,
+      "name": "Venn's Trail: Venn's Fate",
+      "slug": "venns-trail-venns-fate"
     }
   ],
   "reward_count": 22,
@@ -27,22 +36,178 @@
       "is_rare": false,
       "minimum_level": 3,
       "name": "Acrobat's Ring",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "acrobats-ring"
     },
     {
       "id": 637,
       "is_rare": false,
       "minimum_level": 2,
       "name": "Armor of the Unknown Hero",
-      "slot": "Body"
+      "slot": "Body",
+      "slug": "armor-of-the-unknown-hero"
     },
     {
-      "id": 894,
+      "id": 896,
       "is_rare": false,
       "minimum_level": 3,
       "name": "Black Widow Bracers",
-      "slot": "Wrists"
+      "slot": "Wrists",
+      "slug": "black-widow-bracers"
+    },
+    {
+      "id": 937,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Bloodletter's Knife",
+      "slot": "Main Hand",
+      "slug": "bloodletters-knife"
+    },
+    {
+      "id": 3086,
+      "is_rare": false,
+      "minimum_level": 1,
+      "name": "Flame Warden",
+      "slot": "Runearm",
+      "slug": "flame-warden"
+    },
+    {
+      "id": 3348,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Gloves of Deceit",
+      "slot": "Hands",
+      "slug": "gloves-of-deceit"
+    },
+    {
+      "id": 3377,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Gnashtooth Piecemail Chain",
+      "slot": "Body",
+      "slug": "gnashtooth-piecemail-chain"
+    },
+    {
+      "id": 3378,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Gnashtooth Sickle",
+      "slot": "Main Hand",
+      "slug": "gnashtooth-sickle"
+    },
+    {
+      "id": 3389,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Goggles of Grabbing",
+      "slot": "Goggles",
+      "slug": "goggles-of-grabbing"
+    },
+    {
+      "id": 3426,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Graskitch's Skullcap",
+      "slot": "Head",
+      "slug": "graskitchs-skullcap"
+    },
+    {
+      "id": 3582,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Guardkiller Bow",
+      "slot": "Main Hand",
+      "slug": "guardkiller-bow"
+    },
+    {
+      "id": 3799,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Interogator's Shield",
+      "slot": "Off Hand",
+      "slug": "interogators-shield"
+    },
+    {
+      "id": 5923,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Lost Docent of the Mastermind",
+      "slot": "Body",
+      "slug": "lost-docent-of-the-mastermind"
+    },
+    {
+      "id": 6110,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Melt Wood Staff",
+      "slot": "Main Hand",
+      "slug": "melt-wood-staff"
+    },
+    {
+      "id": 6155,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Misery's Web",
+      "slot": "Trinket",
+      "slug": "miserys-web"
+    },
+    {
+      "id": 6235,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Moss Weave Cloak",
+      "slot": "Back",
+      "slug": "moss-weave-cloak"
+    },
+    {
+      "id": 6528,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Pastemaker",
+      "slot": "Main Hand",
+      "slug": "pastemaker"
+    },
+    {
+      "id": 7127,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Scales of the Ancestors",
+      "slot": "Body",
+      "slug": "scales-of-the-ancestors"
+    },
+    {
+      "id": 7219,
+      "is_rare": false,
+      "minimum_level": 2,
+      "name": "Sewer Smock",
+      "slot": "Body",
+      "slug": "sewer-smock"
+    },
+    {
+      "id": 7521,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Sludge Fin Boots",
+      "slot": "Feet",
+      "slug": "sludge-fin-boots"
+    },
+    {
+      "id": 8356,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Tunnelworm Champion's Belt",
+      "slot": "Waist",
+      "slug": "tunnelworm-champions-belt"
+    },
+    {
+      "id": 8426,
+      "is_rare": false,
+      "minimum_level": 3,
+      "name": "Venn's Necklace",
+      "slot": "Neck",
+      "slug": "venns-necklace"
     }
   ],
+  "slug": "the-lost-seekers",
   "wiki_url": "https://ddowiki.com/page/The_Lost_Seekers"
 }

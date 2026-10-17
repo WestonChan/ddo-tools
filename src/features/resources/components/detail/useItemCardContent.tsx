@@ -1,19 +1,21 @@
 import type { ReactNode } from 'react'
 import { ApiErrorNotice } from '../../../../components'
-import { useItem, useSet } from '../../queries/useItems'
+import { useItem, useSets } from '../../queries/useItems'
 import type { Item } from '../../queries/items'
 import type { SetDetail } from '../../queries/sets'
 
 interface ItemCardContent {
   itemQuery: ReturnType<typeof useItem>
   item: Item | null
-  setDetail: SetDetail | null
+  setDetails: SetDetail[]
   status: ReactNode
 }
 
 export function useItemCardContent(itemId: number | null): ItemCardContent {
   const itemQuery = useItem(itemId)
-  const setQuery = useSet(itemQuery.data?.setId ?? null)
+  const setQueries = useSets(itemQuery.data?.sets.map((set) => set.id) ?? [])
+  const failedSetIndex = setQueries.findIndex((query) => query.error)
+  const failedSetQuery = setQueries[failedSetIndex]
   const item = itemQuery.data ?? null
   const status = itemQuery.error ? (
     <ApiErrorNotice
@@ -28,13 +30,18 @@ export function useItemCardContent(itemId: number | null): ItemCardContent {
     ) : (
       'Item unavailable'
     )
-  ) : setQuery.error ? (
+  ) : failedSetQuery?.error ? (
     <ApiErrorNotice
-      error={setQuery.error}
-      path={`/v1/sets/${item.setId}`}
+      error={failedSetQuery.error}
+      path={`/v1/sets/${item.sets[failedSetIndex].id}`}
       missingResourceName="set"
-      onRetry={() => void setQuery.refetch()}
+      onRetry={() => void failedSetQuery.refetch()}
     />
   ) : null
-  return { itemQuery, item, setDetail: setQuery.data ?? null, status }
+  return {
+    itemQuery,
+    item,
+    setDetails: setQueries.flatMap((query) => (query.data ? [query.data] : [])),
+    status,
+  }
 }

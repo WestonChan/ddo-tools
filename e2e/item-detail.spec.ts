@@ -1,10 +1,10 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import capturedRing from '../src/features/resources/queries/fixtures/effects-item-487.json' with { type: 'json' }
-import capturedRunearm from '../src/features/resources/queries/fixtures/effects-item-924.json' with { type: 'json' }
-import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-831.json' with { type: 'json' }
-import capturedWeapon from '../src/features/resources/queries/fixtures/effects-item-3479.json' with { type: 'json' }
-import capturedShield from '../src/features/resources/queries/fixtures/effects-item-8203.json' with { type: 'json' }
-import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
+import capturedRunearm from '../src/features/resources/queries/fixtures/effects-item-926.json' with { type: 'json' }
+import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-833.json' with { type: 'json' }
+import capturedWeapon from '../src/features/resources/queries/fixtures/effects-item-3492.json' with { type: 'json' }
+import capturedShield from '../src/features/resources/queries/fixtures/effects-item-8309.json' with { type: 'json' }
+import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7716.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
 import charismaDetail from '../src/features/resources/queries/fixtures/effect-detail-6.json' with { type: 'json' }
 
@@ -240,7 +240,7 @@ test('hover cards align links, leave keyboard rows visible, and clear tall row a
               is_legacy: candidate.is_legacy,
             })),
           }
-        : path === '/v1/quests/423'
+        : path === `/v1/quests/${capturedNecklace.quests[0].id}`
           ? { ...capturedNecklace.quests[0], items: [] }
           : (item ?? [])
     await route.fulfill({
@@ -250,24 +250,24 @@ test('hover cards align links, leave keyboard rows visible, and clear tall row a
     })
   })
 
-  await page.goto('/resources/items/7631')
+  await page.goto(`/resources/items/${capturedNecklace.id}`)
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
   const questAnchor = pane
     .locator('.resources-item-source-row .resources-hover-anchor')
-    .filter({ hasText: 'Friends in Low Places' })
+    .filter({ hasText: capturedNecklace.quests[0].name })
   await expect(questAnchor).toBeVisible()
   const questBounds = await questAnchor.boundingBox()
   if (!questBounds) throw new Error('Quest anchor has no bounds')
   const card = page.locator('[data-hover-card]')
   await questAnchor.hover({ position: { x: 4, y: questBounds.height / 2 } })
   await expect(card).toBeVisible()
-  await expect(card).toContainText('Friends in Low Places')
+  await expect(card).toContainText(capturedNecklace.quests[0].name)
   const firstQuestCardBounds = await card.boundingBox()
   await page.mouse.move(0, 0)
   await expect(card).toHaveCount(0)
   await questAnchor.hover({ position: { x: questBounds.width / 2, y: questBounds.height / 2 } })
   await expect(card).toBeVisible()
-  await expect(card).toContainText('Friends in Low Places')
+  await expect(card).toContainText(capturedNecklace.quests[0].name)
   const secondQuestCardBounds = await card.boundingBox()
   expect(firstQuestCardBounds?.x).toBeCloseTo(questBounds.x, 0)
   expect(secondQuestCardBounds?.x).toBeCloseTo(questBounds.x, 0)
@@ -318,9 +318,9 @@ test('keyboard enchantment cards sit beside their name cells', async ({ page }) 
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(
-        path === '/v1/items/487'
+        path === `/v1/items/${capturedRing.id}`
           ? capturedRing
-          : path === '/v1/sets/93'
+          : path === `/v1/sets/${capturedSet.id}`
             ? capturedSet
             : path === '/v1/items'
               ? { total: 0, limit: 200, offset: 0, items: [] }
@@ -329,7 +329,7 @@ test('keyboard enchantment cards sit beside their name cells', async ({ page }) 
     })
   })
   await page.setViewportSize({ width: 1440, height: 800 })
-  await page.goto('/resources/items/487')
+  await page.goto(`/resources/items/${capturedRing.id}`)
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
   const rows = pane.locator(
     '.resources-effect-ledger .ledger-row:not(.ledger-row--heading):not(.ledger-row--subheading)',
@@ -614,11 +614,11 @@ test('capped list and nested cards keep their height and viewport margin', async
               },
             ],
           }
-        : path === '/v1/items/487'
+        : path === `/v1/items/${capturedRing.id}`
           ? capturedRing
-          : path === '/v1/items/924'
+          : path === `/v1/items/${capturedRunearm.id}`
             ? capturedRunearm
-            : path === '/v1/sets/93'
+            : path === `/v1/sets/${capturedSet.id}`
               ? capturedSet
               : []
     await route.fulfill({
@@ -656,7 +656,7 @@ test('capped list and nested cards keep their height and viewport margin', async
     }
   }
 
-  await page.goto('/resources/items/487')
+  await page.goto(`/resources/items/${capturedRing.id}`)
   const listRow = page.locator('.resources-picker .ledger-row').first()
   await listRow.hover()
   const listCard = page.locator('[data-hover-card][data-depth="0"]')
@@ -703,11 +703,10 @@ test('augment symbols keep their shape, focus ring, colour, and mobile bounds', 
     },
     {
       ...capturedRing,
-      id: 1831,
+      id: 1837,
       name: 'Dinosaur Bone Belt',
       slot: 'Waist',
-      set: null,
-      set_name: null,
+      sets: [],
       augment_slots: [
         'isle of dread: artifact scale (accessory)',
         'isle of dread: artifact fang (accessory)',
@@ -728,8 +727,7 @@ test('augment symbols keep their shape, focus ring, colour, and mobile bounds', 
       ...capturedRing,
       id: 4022,
       name: 'Item 4022',
-      set: null,
-      set_name: null,
+      sets: [],
       augment_slots: [
         'crafting: nearly complete: quality ability score (legendary)',
         'green',
@@ -819,7 +817,7 @@ test('augment symbols keep their shape, focus ring, colour, and mobile bounds', 
   await expect(page.locator('[data-hover-card] .augment-slot-symbol--sun')).toHaveText('S')
   await page.mouse.move(0, 0)
 
-  await page.goto('/resources/items/1831')
+  await page.goto('/resources/items/1837')
   const dinosaurSymbols = pane.locator('.augment-slot-symbol--dino')
   await expect(dinosaurSymbols).toHaveCount(4)
   await expect(dinosaurSymbols.first()).toHaveText('D')
@@ -938,7 +936,7 @@ test('Escape from a tabbed detail pane returns to its focused list row at wide a
           }
         : path === `/v1/items/${capturedRing.id}`
           ? capturedRing
-          : path === '/v1/sets/93'
+          : path === `/v1/sets/${capturedSet.id}`
             ? capturedSet
             : []
     await route.fulfill({
@@ -1002,9 +1000,9 @@ test('Escape cancels a keyboard column move in the detail enchantment ledger wit
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(
-        path === '/v1/items/487'
+        path === `/v1/items/${capturedRing.id}`
           ? capturedRing
-          : path === '/v1/sets/93'
+          : path === `/v1/sets/${capturedSet.id}`
             ? capturedSet
             : path === '/v1/items'
               ? { total: 0, limit: 200, offset: 0, items: [] }
@@ -1013,7 +1011,7 @@ test('Escape cancels a keyboard column move in the detail enchantment ledger wit
     })
   })
   await page.setViewportSize({ width: 1440, height: 800 })
-  await page.goto('/resources/items/487')
+  await page.goto(`/resources/items/${capturedRing.id}`)
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
   const headers = pane.locator('.resources-effect-ledger .ledger-header-cell')
   const typeHeader = headers.filter({ hasText: 'Type' })
@@ -1032,7 +1030,7 @@ test('Escape cancels a keyboard column move in the detail enchantment ledger wit
   await expect(typeHeader).not.toHaveClass(/ledger-header-cell--dragging/)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 
-  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+  await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedRing.id}$`))
   await expect(headers.first()).toHaveAttribute('data-column-key', firstColumnKey!)
   await expect(typeHeader).toBeFocused()
 
@@ -1048,9 +1046,9 @@ test('Escape closes a socket from its header and keeps focus in the detail', asy
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(
-        path === '/v1/items/487'
+        path === `/v1/items/${capturedRing.id}`
           ? capturedRing
-          : path === '/v1/sets/93'
+          : path === `/v1/sets/${capturedSet.id}`
             ? capturedSet
             : path === '/v1/items'
               ? {
@@ -1139,7 +1137,7 @@ test('detail sections share the title facts left edge at desktop and mobile widt
               is_legacy: candidate.is_legacy,
             })),
           }
-        : path === '/v1/sets/93'
+        : path === `/v1/sets/${capturedSet.id}`
           ? capturedSet
           : (item ?? [])
     await route.fulfill({
@@ -1218,7 +1216,7 @@ test('list selections share one history entry across a reload-free resize', asyn
               is_legacy: candidate.is_legacy,
             })),
           }
-        : path === '/v1/sets/93'
+        : path === `/v1/sets/${capturedSet.id}`
           ? capturedSet
           : (item ?? [])
     await route.fulfill({
@@ -1271,9 +1269,9 @@ test('Tab wraps from the last set card control to its first piece', async ({ pag
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
-      path === '/v1/items/487'
+      path === `/v1/items/${capturedRing.id}`
         ? capturedRing
-        : path === '/v1/sets/93'
+        : path === `/v1/sets/${capturedSet.id}`
           ? capturedSet
           : path === '/v1/items'
             ? { total: 0, limit: 200, offset: 0, items: [] }
@@ -1285,7 +1283,7 @@ test('Tab wraps from the last set card control to its first piece', async ({ pag
     })
   })
 
-  await page.goto('/resources/items/487')
+  await page.goto(`/resources/items/${capturedRing.id}`)
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
   const setBand = detailPane
     .locator('.resources-effect-ledger .ledger-row--heading')
@@ -1312,7 +1310,7 @@ test('Tab wraps from the last set card control to its first piece', async ({ pag
 test('the full pane breadcrumb survives a three-deep stack and a narrow resize', async ({
   page,
 }) => {
-  const thirdSetPiece = capturedSet.items.find((item) => item.id === 1036)
+  const thirdSetPiece = capturedSet.items.find((item) => item.name === 'Bracers of the Fallen Hero')
   if (!thirdSetPiece) throw new Error('Expected the third captured set piece')
   const thirdItem = {
     ...capturedRing,
@@ -1349,7 +1347,7 @@ test('the full pane breadcrumb survives a three-deep stack and a narrow resize',
               },
             ],
           }
-        : path === '/v1/sets/93'
+        : path === `/v1/sets/${capturedSet.id}`
           ? capturedSet
           : (item ?? [])
     await route.fulfill({
@@ -1389,7 +1387,7 @@ test('the full pane breadcrumb survives a three-deep stack and a narrow resize',
   await expect(breadcrumb.getByRole('button', { name: capturedRunearm.name })).toBeVisible()
   await expect(breadcrumb.getByText(thirdSetPiece.name, { exact: true })).toBeVisible()
   await expect(breadcrumb.getByRole('button', { name: thirdSetPiece.name })).toHaveCount(0)
-  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+  await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedRing.id}$`))
 
   await page.setViewportSize({ width: 375, height: 800 })
   await expect(picker).toHaveCount(0)
@@ -1432,7 +1430,7 @@ test('obtained-from rows keep source details left and quest metadata right at wi
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
-      path === '/v1/items/7631'
+      path === `/v1/items/${capturedNecklace.id}`
         ? capturedNecklace
         : path === '/v1/items'
           ? { total: 0, limit: 200, offset: 0, items: [] }
@@ -1445,11 +1443,11 @@ test('obtained-from rows keep source details left and quest metadata right at wi
   })
 
   await page.setViewportSize({ width: 1440, height: 800 })
-  await page.goto('/resources/items/7631')
+  await page.goto(`/resources/items/${capturedNecklace.id}`)
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
   const questRow = pane
     .locator('.resources-item-source-row')
-    .filter({ hasText: 'Friends in Low Places' })
+    .filter({ hasText: capturedNecklace.quests[0].name })
   const leftColumn = questRow.locator('.resources-item-source-left')
   const rightColumn = questRow.locator('.resources-item-source-right')
   const sourceRowGeometry = (
@@ -1480,15 +1478,20 @@ test('obtained-from rows keep source details left and quest metadata right at wi
     }
   }
   await expect(leftColumn.locator('.resources-item-source-title')).toHaveText(
-    'Friends in Low Places',
+    capturedNecklace.quests[0].name,
   )
-  await expect(rightColumn.locator('.resources-item-source-level')).toHaveText('Level 16 / 26')
+  const capturedQuest = capturedNecklace.quests[0]
+  if (capturedQuest.epic_level === null)
+    throw new Error('Expected the captured quest to have an epic level')
+  await expect(rightColumn.locator('.resources-item-source-level')).toHaveText(
+    `Level ${capturedQuest.level} / ${capturedQuest.epic_level}`,
+  )
   const wideGeometry = await questRow.evaluate(sourceRowGeometry)
   expect(wideGeometry.rightLeft).toBeGreaterThanOrEqual(wideGeometry.leftRight)
   expect(Math.abs(wideGeometry.leftTop - wideGeometry.rightTop)).toBeLessThan(2)
 
   await page.setViewportSize({ width: 375, height: 800 })
-  await page.goto('/resources/items/7631')
+  await page.goto(`/resources/items/${capturedNecklace.id}`)
   await expect(
     pane.getByRole('heading', { name: capturedNecklace.name, exact: true }),
   ).toBeVisible()
@@ -1620,7 +1623,7 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
-      path === '/v1/items/831'
+      path === `/v1/items/${capturedArmor.id}`
         ? capturedArmor
         : path === '/v1/items'
           ? {
@@ -1654,16 +1657,18 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
     })
   })
 
-  await page.goto('/resources/items/831')
+  await page.goto(`/resources/items/${capturedArmor.id}`)
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
   const enhancementRow = detailPane.locator('.resources-effect-ledger .ledger-row').first()
   await expect(enhancementRow.locator('.resources-effect-name')).toHaveText('Enhancement Bonus')
   await expect(enhancementRow.locator('.resources-effect-type')).toHaveText('Enhancement')
-  await expect(enhancementRow.locator('.resources-effect-value')).toHaveText('+5')
+  await expect(enhancementRow.locator('.resources-effect-value')).toHaveText(
+    `+${capturedArmor.enhancement_bonus}`,
+  )
   const grid = detailPane.locator('.detail-fact-grid')
   await expect(grid.locator('.detail-fact-grid__cell')).toHaveText([
-    'Armor bonus16',
-    'Max Dex bonus1',
+    `Armor bonus${capturedArmor.armor.armor_bonus}`,
+    `Max Dex bonus${capturedArmor.armor.max_dex_bonus}`,
   ])
   expect(
     await grid.evaluate((element) => {
@@ -1678,9 +1683,9 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
   await moreButton.click()
   const extras = detailPane.locator('.detail-extras')
   await expect(extras.locator('.detail-extras__entry')).toHaveText([
-    'Spell failure35%',
-    'Check penalty-5',
-    'MaterialMagesteel',
+    `Spell failure${capturedArmor.armor.arcane_spell_failure}%`,
+    `Check penalty${capturedArmor.armor.armor_check_penalty}`,
+    `Material${capturedArmor.material}`,
   ])
   expect(
     await detailPane
@@ -1702,7 +1707,7 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
         return [style.display, style.breakInside, style.alignItems, style.gap, style.padding]
       }),
   ).toEqual(['flex', 'avoid', 'baseline', '8px', '0px'])
-  const itemRow = page.getByRole('row', { name: /Beholder Plate Armor/ })
+  const itemRow = page.getByRole('row', { name: capturedArmor.name })
   await itemRow.hover()
   await itemRow.press('t')
   await expect(itemRow).toHaveAttribute('data-hover-card-pinned', '')
@@ -1713,22 +1718,22 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
   )
   expect(await itemRow.evaluate((row) => getComputedStyle(row, '::after').content)).not.toBe('none')
   await expect(hoverCard.locator('.detail-fact-grid__cell')).toHaveText([
-    'Armor bonus16',
-    'Max Dex bonus1',
+    `Armor bonus${capturedArmor.armor.armor_bonus}`,
+    `Max Dex bonus${capturedArmor.armor.max_dex_bonus}`,
   ])
   await hoverCard.getByRole('button', { name: 'More details', exact: true }).click()
   await expect(hoverCard.locator('.detail-extras__entry')).toHaveText([
-    'Spell failure35%',
-    'Check penalty-5',
-    'MaterialMagesteel',
+    `Spell failure${capturedArmor.armor.arcane_spell_failure}%`,
+    `Check penalty${capturedArmor.armor.armor_check_penalty}`,
+    `Material${capturedArmor.material}`,
   ])
 })
 
-test('item 4127 keeps its set in the folded enchantment band in the pane and pinned card', async ({
+test('item 4152 keeps its set in the folded enchantment band in the pane and pinned card', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/resources/items/4127')
+  await page.goto('/resources/items/4152')
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
   await expect(
     pane.getByRole('heading', {
@@ -1777,9 +1782,9 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
-      path === '/v1/items/487'
+      path === `/v1/items/${capturedRing.id}`
         ? capturedRing
-        : path === '/v1/sets/93'
+        : path === `/v1/sets/${capturedSet.id}`
           ? capturedSet
           : path === '/v1/items'
             ? {
@@ -1813,17 +1818,19 @@ test('set band heights and opening an augment socket preserve the item detail la
     })
   })
 
-  await page.goto('/resources/items/487')
+  await page.goto(`/resources/items/${capturedRing.id}`)
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
   const setHeading = detailPane.locator('.resources-effect-ledger .ledger-row--heading')
   const tierEyebrow = detailPane.locator('.resources-effect-ledger .ledger-row--subheading')
   await expect(setHeading).toHaveAttribute('aria-expanded', 'false')
-  await expect(setHeading).toContainText('7 bonuses')
+  await expect(setHeading).toContainText(
+    `${capturedSet.tiers.reduce((count, tier) => count + tier.effects.length, 0)} bonuses`,
+  )
   await expect(tierEyebrow).toHaveCount(0)
   await setHeading.click()
   await page.mouse.move(0, 0)
   await expect(setHeading).toHaveAttribute('aria-expanded', 'true')
-  await expect(tierEyebrow).toHaveText('5 pieces')
+  await expect(tierEyebrow).toHaveText(`${capturedSet.tiers[0].equipped_count} pieces`)
   await page.evaluate(() => document.fonts.ready)
   expect((await setHeading.boundingBox())?.height).toBe(34)
   expect((await tierEyebrow.boundingBox())?.height).toBe(24)
@@ -1842,7 +1849,7 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.keyboard.press('Escape')
   await expect(tierBonus).toBeFocused()
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+  await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedRing.id}$`))
   await detailPane.locator('.resources-effect-ledger .ledger-header-cell').first().focus()
   await page.keyboard.press('Tab')
   await page.keyboard.press('End')
@@ -1851,7 +1858,7 @@ test('set band heights and opening an augment socket preserve the item detail la
   await page.keyboard.press('Escape')
   await expect(tierBonus).toBeFocused()
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+  await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedRing.id}$`))
   const header = detailPane.locator('.detail-card__header')
   const facts = header.locator('.detail-card__facts')
   const socket = facts.getByRole('button', { name: 'Yellow slot', exact: true })
@@ -1926,10 +1933,10 @@ test('set band heights and opening an augment socket preserve the item detail la
   ])
   await page.keyboard.press('Escape')
   await expect(hoverCard).toHaveCount(0)
-  await expect(page).toHaveURL(/\/resources\/items\/487$/)
+  await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedRing.id}$`))
   await page.mouse.move(0, 0)
   await page.setViewportSize({ width: 375, height: 800 })
-  await page.goto('/resources/items/487')
+  await page.goto(`/resources/items/${capturedRing.id}`)
   await expect(facts).toBeVisible()
   await expect(page.locator('.resources-picker')).toHaveCount(0)
   await page.evaluate(() => document.fonts.ready)
@@ -1972,7 +1979,7 @@ test('the detail pane displays the item name once beside the list and takes over
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const response =
-      path === '/v1/items/831'
+      path === `/v1/items/${capturedArmor.id}`
         ? capturedArmor
         : path === '/v1/items'
           ? {
@@ -2003,13 +2010,13 @@ test('the detail pane displays the item name once beside the list and takes over
       body: JSON.stringify(response),
     })
   })
-  await page.goto('/resources/items/831')
+  await page.goto(`/resources/items/${capturedArmor.id}`)
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
   await expect(
-    detailPane.getByRole('heading', { name: 'Beholder Plate Armor', exact: true }),
+    detailPane.getByRole('heading', { name: capturedArmor.name, exact: true }),
   ).toBeVisible()
-  await expect(detailPane.locator('.detail-card__name')).toHaveText('Beholder Plate Armor')
-  expect(dataRequests.sort()).toEqual(['/v1/items', '/v1/items/831'])
+  await expect(detailPane.locator('.detail-card__name')).toHaveText(capturedArmor.name)
+  expect(dataRequests.sort()).toEqual(['/v1/items', `/v1/items/${capturedArmor.id}`])
   await expect(page.getByRole('dialog')).toHaveCount(0)
   const picker = page.locator('.resources-picker')
   const desktopPicker = await picker.boundingBox()
@@ -2017,7 +2024,7 @@ test('the detail pane displays the item name once beside the list and takes over
   expect(desktopPicker).not.toBeNull()
   expect(desktopPane).not.toBeNull()
   expect((desktopPane?.x ?? 0) > (desktopPicker?.x ?? 0)).toBe(true)
-  const itemRow = page.getByRole('row', { name: /Beholder Plate Armor/ })
+  const itemRow = page.getByRole('row', { name: capturedArmor.name })
   await itemRow.hover()
   const hoverCard = page.locator('[data-hover-card]')
   await expect(hoverCard).toBeVisible()
@@ -2027,16 +2034,16 @@ test('the detail pane displays the item name once beside the list and takes over
   await expect(hoverCard).toBeVisible()
   await page.mouse.move(0, 0)
   await expect(page.locator('[data-hover-card]')).toHaveCount(0)
-  await expect(page).toHaveURL(/\/resources\/items\/831$/)
+  await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedArmor.id}$`))
   await page.keyboard.press('Escape')
-  await expect(page).toHaveURL(/\/resources\/items\/831$/)
+  await expect(page).toHaveURL(new RegExp(`/resources/items/${capturedArmor.id}$`))
   await page.getByRole('button', { name: 'Back to items', exact: true }).click()
   await expect(page).toHaveURL(/\/resources\/items$/)
   await expect(itemRow).toBeFocused()
   await page.setViewportSize({ width: 375, height: 800 })
-  await page.goto('/resources/items/831')
+  await page.goto(`/resources/items/${capturedArmor.id}`)
   await expect(
-    detailPane.getByRole('heading', { name: 'Beholder Plate Armor', exact: true }),
+    detailPane.getByRole('heading', { name: capturedArmor.name, exact: true }),
   ).toBeVisible()
   await expect(picker).toHaveCount(0)
   await expect(detailPane).toBeInViewport()
@@ -2048,17 +2055,17 @@ test('the detail pane displays the item name once beside the list and takes over
   await page.getByRole('button', { name: 'Back to items', exact: true }).click()
   await expect(picker).toBeVisible()
   await expect(detailPane).toHaveCount(0)
-  await page.getByRole('row', { name: /Beholder Plate Armor/ }).click()
+  await page.getByRole('row', { name: capturedArmor.name }).click()
   await expect(detailPane).toBeVisible()
   await page.goBack()
   await expect(picker).toBeVisible()
   await expect(detailPane).toHaveCount(0)
-  await expect(page.getByRole('row', { name: /Beholder Plate Armor/ })).toBeFocused()
-  await page.getByRole('row', { name: /Beholder Plate Armor/ }).click()
+  await expect(page.getByRole('row', { name: capturedArmor.name })).toBeFocused()
+  await page.getByRole('row', { name: capturedArmor.name }).click()
   await expect(detailPane).toBeVisible()
   await page.getByRole('button', { name: 'Back to items', exact: true }).click()
   await expect(picker).toBeVisible()
-  await expect(page.getByRole('row', { name: /Beholder Plate Armor/ })).toBeFocused()
+  await expect(page.getByRole('row', { name: capturedArmor.name })).toBeFocused()
   await page.goForward()
   await expect(detailPane).toBeVisible()
 })
@@ -2073,8 +2080,7 @@ test('pinned item cards keep one fact row, three weapon stat columns, and expand
       ...capturedArmor,
       id: 9001,
       name: 'Three Socket Armor',
-      set: null,
-      set_name: null,
+      sets: [],
       augment_slots: ['blue', 'green', 'colorless'].map((label, sort_order) => ({
         ...slot,
         family: 'standard',
@@ -2083,7 +2089,7 @@ test('pinned item cards keep one fact row, three weapon stat columns, and expand
         sort_order,
       })),
     },
-    { ...capturedWeapon, id: 9002, name: 'Five Stat Weapon', set: null, set_name: null },
+    { ...capturedWeapon, id: 9002, name: 'Five Stat Weapon', sets: [] },
   ]
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -2192,11 +2198,11 @@ test('a loading bonus keeps its kicker line height until the kind arrives', asyn
   })
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
-    if (path === '/v1/effects/6') await effectDetailResponse
+    if (path === `/v1/effects/${charismaDetail.id}`) await effectDetailResponse
     const response =
-      path === '/v1/items/7631'
+      path === `/v1/items/${capturedNecklace.id}`
         ? capturedNecklace
-        : path === '/v1/effects/6'
+        : path === `/v1/effects/${charismaDetail.id}`
           ? charismaDetail
           : path === '/v1/items'
             ? {
@@ -2229,12 +2235,12 @@ test('a loading bonus keeps its kicker line height until the kind arrives', asyn
       body: JSON.stringify(response),
     })
   })
-  await page.goto('/resources/items/7631')
+  await page.goto(`/resources/items/${capturedNecklace.id}`)
   await page.evaluate(() => document.fonts.ready)
   const detailPane = page.getByRole('region', { name: 'Item details', exact: true })
   const charismaRow = detailPane
     .locator('.resources-effect-ledger .ledger-row')
-    .filter({ hasText: 'Charisma' })
+    .filter({ hasText: charismaDetail.name })
     .first()
   await expect(charismaRow).toBeVisible()
   await expect
@@ -2252,8 +2258,10 @@ test('a loading bonus keeps its kicker line height until the kind arrives', asyn
   const kicker = card.locator('.detail-card__kicker-row')
   await expect(card.getByText('T to pin')).toBeVisible()
   await expect(kicker).toHaveText('')
-  await expect(card.locator('.detail-card__name')).toHaveText('Charisma')
-  await expect(card.locator('.detail-card__facts')).toContainText('Value+8')
+  await expect(card.locator('.detail-card__name')).toHaveText(charismaDetail.name)
+  await expect(card.locator('.detail-card__facts')).toContainText(
+    `Value+${capturedNecklace.effects.find((effect) => effect.effect_id === charismaDetail.id)!.value}`,
+  )
   const loadingHeight = (await kicker.boundingBox())?.height
   releaseEffectDetail()
   await expect(kicker).toHaveText('Stat')

@@ -204,7 +204,7 @@ test('shows loot status in its columns and keeps the count on the applied line',
   await expect.poll(countRightGap).toBe(0)
 })
 
-test('selects two sets and sends repeated names with All mode', async ({ page }) => {
+test('selects every captured set and sends repeated names with All mode', async ({ page }) => {
   const itemRequests: URL[] = []
   page.on('request', (request) => {
     const url = new URL(request.url())
@@ -220,7 +220,9 @@ test('selects two sets and sends repeated names with All mode', async ({ page })
   await expect.poll(() => itemRequests.at(-1)?.searchParams.getAll('set')).toEqual(setNames)
   expect(itemRequests.at(-1)?.searchParams.get('set_match')).toBe('all')
   await setChip.click()
-  await expect(setChip.locator('..').locator('.filter-chip-badge')).toHaveText('2')
+  await expect(setChip.locator('..').locator('.filter-chip-badge')).toHaveText(
+    String(setNames.length),
+  )
 })
 
 test('filter chips keep their label width when values are selected', async ({ page }) => {

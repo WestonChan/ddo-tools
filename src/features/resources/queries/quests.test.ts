@@ -14,6 +14,7 @@ it('reports a missing quest item list with its path and field', async () => {
 
 it('maps quest loot to the resource domain shape', () => {
   const quest = toQuestDetail({
+    slug: 'the-storm',
     id: 7,
     name: 'The Storm',
     pack: 'Storm Pack',
@@ -25,6 +26,7 @@ it('maps quest loot to the resource domain shape', () => {
       {
         id: 11,
         name: 'Storm Blade',
+        slug: 'storm-blade',
         slot: 'Main Hand',
         minimum_level: 20,
         loot_type: 'chest',

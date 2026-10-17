@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-831.json' with { type: 'json' }
+import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-833.json' with { type: 'json' }
 import capturedRing from '../src/features/resources/queries/fixtures/effects-item-487.json' with { type: 'json' }
 import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
 
@@ -608,9 +608,9 @@ test.beforeEach(async ({ page }) => {
     const response =
       path === '/v1/items/633'
         ? item
-        : path === '/v1/items/487'
+        : path === `/v1/items/${capturedRing.id}`
           ? capturedRing
-          : path === '/v1/sets/93'
+          : path === `/v1/sets/${capturedSet.id}`
             ? capturedSet
             : path === '/v1/items'
               ? { total: 1, limit: 200, offset: 0, items: [listedItem] }
@@ -859,7 +859,7 @@ for (const viewportWidth of viewportWidths) {
     }))
     expect(listShape).toEqual({ corners: '0px', fillContent: 'none', height: 32 })
 
-    await page.goto('/resources/items/487')
+    await page.goto(`/resources/items/${capturedRing.id}`)
     const setHeading = page.locator('.resources-effect-ledger .ledger-row--heading').first()
     await expect(setHeading).toBeVisible()
     const headingCorners = await setHeading.evaluate((row) => {

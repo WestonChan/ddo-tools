@@ -1,6 +1,7 @@
 import { Fragment, useId, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import {
   StructuredDetailCard,
+  IngredientCostList,
   DetailMoreButton,
   detailCardSection,
   type DetailCardDefinition,
@@ -28,6 +29,7 @@ import type {
   ItemWeaponStats,
   ItemArmorStats,
 } from '../../queries/items'
+import type { IngredientCost } from '../../../../lib/ingredientCost'
 
 const ITEM_SOURCE_LABELS: Record<ItemSourceKind, string | null> = {
   adventurePack: 'Anywhere in the pack',
@@ -42,7 +44,6 @@ function itemSourceDescriptorParts(itemSource: ItemSource): string[] {
   return [
     ITEM_SOURCE_LABELS[itemSource.kind],
     itemSource.vendorLocation,
-    itemSource.cost,
     itemSource.chest ? sentenceCased(itemSource.chest) : null,
   ].filter((descriptorPart): descriptorPart is string => Boolean(descriptorPart))
 }
@@ -51,11 +52,31 @@ const SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE: ReadonlySet<ItemSourceKind
   'adventurePack',
 ])
 
+function ItemSourceDetails({
+  children,
+  price,
+}: {
+  children: ReactNode
+  price: IngredientCost[]
+}): JSX.Element {
+  return (
+    <>
+      {children && <div className="resources-item-source-details">{children}</div>}
+      {price.length > 0 && (
+        <div className="resources-item-source-details resources-item-source-price">
+          <IngredientCostList costs={price} />
+        </div>
+      )}
+    </>
+  )
+}
+
 function ObtainedFromRow({
   children,
   wikiPageName,
   wikiUrl,
   descriptorParts,
+  price,
   isRaid = false,
   isRareLoot = false,
   level = null,
@@ -67,6 +88,7 @@ function ObtainedFromRow({
   wikiPageName?: string
   wikiUrl?: string | null
   descriptorParts: ReactNode[]
+  price: IngredientCost[]
   isRaid?: boolean
   isRareLoot?: boolean
   level?: number | null
@@ -97,32 +119,34 @@ function ObtainedFromRow({
             />
           )}
         </div>
-        {(descriptorParts.length > 0 || isRaid || isRareLoot) && (
-          <div className="resources-item-source-details">
-            {descriptorParts.map((descriptorPart, index) => (
-              <Fragment key={index}>
-                {index > 0 && <span className="resources-item-source-separator">·</span>}
-                <span className="resources-item-source-descriptor">{descriptorPart}</span>
-              </Fragment>
-            ))}
-            {isRaid && (
-              <>
-                {descriptorParts.length > 0 && (
-                  <span className="resources-item-source-separator">·</span>
-                )}
-                <span className="resources-item-source-raid">Raid</span>
-              </>
-            )}
-            {isRareLoot && (
-              <>
-                {(descriptorParts.length > 0 || isRaid) && (
-                  <span className="resources-item-source-separator">·</span>
-                )}
-                <span className="resources-item-source-rare">Rare</span>
-              </>
-            )}
-          </div>
-        )}
+        <ItemSourceDetails price={price}>
+          {(descriptorParts.length > 0 || isRaid || isRareLoot) && (
+            <>
+              {descriptorParts.map((descriptorPart, index) => (
+                <Fragment key={index}>
+                  {index > 0 && <span className="resources-item-source-separator">·</span>}
+                  <span className="resources-item-source-descriptor">{descriptorPart}</span>
+                </Fragment>
+              ))}
+              {isRaid && (
+                <>
+                  {descriptorParts.length > 0 && (
+                    <span className="resources-item-source-separator">·</span>
+                  )}
+                  <span className="resources-item-source-raid">Raid</span>
+                </>
+              )}
+              {isRareLoot && (
+                <>
+                  {(descriptorParts.length > 0 || isRaid) && (
+                    <span className="resources-item-source-separator">·</span>
+                  )}
+                  <span className="resources-item-source-rare">Rare</span>
+                </>
+              )}
+            </>
+          )}
+        </ItemSourceDetails>
       </div>
       {(levelNumbersText || locationText) && (
         <div className="resources-item-source-right">
@@ -326,6 +350,7 @@ interface ItemSourceEntry {
   key: string
   name: string
   descriptorParts: string[]
+  price: IngredientCost[]
   chests: string[]
   hasWikiPage: boolean
   isRaid: boolean
@@ -349,6 +374,7 @@ function itemSourceEntries(
     key: source.key,
     name: source.name,
     descriptorParts: itemSourceDescriptorParts(source),
+    price: source.price,
     chests: [],
     hasWikiPage:
       source.wikiUrl !== null || SOURCE_KINDS_WITH_WIKI_PAGE_NAMED_AFTER_SOURCE.has(source.kind),
@@ -373,6 +399,7 @@ function itemSourceEntries(
         ...(quest.isEndReward ? ['End reward'] : []),
       ],
       chests: quest.chests.map(sentenceCased),
+      price: [],
       hasWikiPage: true,
       isRaid: quest.isRaid,
       isRareLoot: quest.isRareLoot,
@@ -391,6 +418,7 @@ function itemSourceEntries(
       key: `chain-${chain.id}`,
       name: chain.name,
       descriptorParts: ['Chain end reward'],
+      price: [],
       chests: [],
       hasWikiPage: true,
       isRaid: false,
@@ -409,6 +437,7 @@ function itemSourceEntries(
       key: `saga-${saga.id}-${saga.tier}`,
       name: saga.name,
       descriptorParts: ['Saga reward', ...(saga.tier ? [sentenceCased(saga.tier)] : [])],
+      price: [],
       chests: [],
       hasWikiPage: true,
       isRaid: false,
@@ -457,6 +486,7 @@ function ItemSourcesFullView({ entries }: { entries: readonly ItemSourceEntry[] 
           key={entry.key}
           wikiPageName={entry.hasWikiPage ? entry.name : undefined}
           wikiUrl={entry.wikiUrl}
+          price={entry.price}
           descriptorParts={entry.descriptorParts.map((part) =>
             entry.chests.includes(part) ? (
               <span key={part} className="resources-item-source-chest">
@@ -493,22 +523,24 @@ function ItemSourcesBriefView({ entries }: { entries: readonly ItemSourceEntry[]
               <ItemSourceName entry={entry} />
             </span>
           </span>
-          <span>
-            {[
-              ...entry.descriptorParts,
-              ...(entry.isRaid ? ['Raid'] : []),
-              ...(entry.isRareLoot ? ['Rare'] : []),
-              ...([entry.level, entry.epicLevel].filter((level) => level !== null).length
-                ? [
-                    `Level ${[entry.level, entry.epicLevel].filter((level) => level !== null).join(' / ')}`,
-                  ]
-                : []),
-              entry.pack,
-              entry.patron,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </span>
+          <div>
+            <ItemSourceDetails price={entry.price}>
+              {[
+                ...entry.descriptorParts,
+                ...(entry.isRaid ? ['Raid'] : []),
+                ...(entry.isRareLoot ? ['Rare'] : []),
+                ...([entry.level, entry.epicLevel].filter((level) => level !== null).length
+                  ? [
+                      `Level ${[entry.level, entry.epicLevel].filter((level) => level !== null).join(' / ')}`,
+                    ]
+                  : []),
+                entry.pack,
+                entry.patron,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </ItemSourceDetails>
+          </div>
         </div>
       ))}
     </div>
@@ -611,7 +643,7 @@ function ItemClickiesView({ entries }: { entries: readonly ItemClickie[] }): JSX
 interface ItemDetailCardProps {
   item: Item | null
   matchingBonuses?: string[]
-  setDetail?: SetDetail | null
+  setDetails?: SetDetail[]
   onOpenItem?: (id: number, name: string) => void
   status?: ReactNode
 }
@@ -619,7 +651,7 @@ interface ItemDetailCardProps {
 function useItemDetailDefinition({
   item,
   matchingBonuses = [],
-  setDetail,
+  setDetails = [],
   onOpenItem,
   status,
 }: ItemDetailCardProps): DetailCardDefinition {
@@ -687,7 +719,7 @@ function useItemDetailDefinition({
       modifiers: item.modifiers,
       onOpenItem,
     }),
-    ...(setDetail ? setEffectRows(setDetail, matchingBonuses, onOpenItem) : []),
+    ...setDetails.flatMap((set) => setEffectRows(set, matchingBonuses, onOpenItem)),
   ]
   const sources = itemSourceEntries(item, onOpenItem)
   const sections = [

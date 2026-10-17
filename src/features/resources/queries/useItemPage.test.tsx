@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
+import capturedTwoSetItem from './fixtures/item-two-sets-747.json'
+import capturedNoSetItem from './fixtures/effects-item.json'
 import {
   useItemPage,
   useFittingAugmentsBySlotLabel,
@@ -66,15 +68,21 @@ it('prefetches an item and its set through the same queries rendered by the card
   expect(isItemCardReady(queryClient, 487)).toBe(false)
   const prefetchedItemCard = prefetchItemCard(queryClient, 487)
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
-  await prefetchedItemCard
-  expect(isItemCardReady(queryClient, 487)).toBe(true)
+  const settled = vi.fn()
+  void prefetchedItemCard.then(settled)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  expect(settled).not.toHaveBeenCalled()
+  expect(isItemCardReady(queryClient, 487)).toBe(false)
   expect(queryClient.getQueryState(setDetailQueryOptions(93).queryKey)?.fetchStatus).toBe(
     'fetching',
   )
   releaseSetResponse()
+  await prefetchedItemCard
+  expect(settled).toHaveBeenCalledOnce()
   await waitFor(() =>
     expect(queryClient.getQueryState(setDetailQueryOptions(93).queryKey)?.status).toBe('success'),
   )
+  expect(isItemCardReady(queryClient, 487)).toBe(true)
   function CardQueryWrapper({ children }: { children: ReactNode }): ReactNode {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   }
@@ -280,4 +288,48 @@ describe('useItemPage', () => {
     )
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
+})
+
+it('prefetches every set and waits for each to settle before a two-set card is ready', async () => {
+  const releases: Array<() => void> = []
+  const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+    const path = new URL(String(request)).pathname
+    return path === `/v1/items/${capturedTwoSetItem.id}`
+      ? Promise.resolve(new Response(JSON.stringify(capturedTwoSetItem)))
+      : new Promise<Response>((resolve) => {
+          releases.push(() => resolve(new Response('Unavailable', { status: 500 })))
+        })
+  })
+  const client = new QueryClient()
+  const settled = vi.fn()
+  const prefetch = prefetchItemCard(client, capturedTwoSetItem.id).then(settled)
+  await waitFor(() => expect(releases).toHaveLength(2))
+  expect(fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual([
+    `/v1/items/${capturedTwoSetItem.id}`,
+    ...capturedTwoSetItem.sets.map((set) => `/v1/sets/${set.id}`),
+  ])
+  expect(isItemCardReady(client, capturedTwoSetItem.id)).toBe(false)
+  releases[0]()
+  await waitFor(() =>
+    expect(
+      client.getQueryState(setDetailQueryOptions(capturedTwoSetItem.sets[0].id).queryKey)?.status,
+    ).toBe('error'),
+  )
+  expect(isItemCardReady(client, capturedTwoSetItem.id)).toBe(false)
+  expect(settled).not.toHaveBeenCalled()
+  releases[1]()
+  await prefetch
+  expect(settled).toHaveBeenCalledOnce()
+  await waitFor(() => expect(isItemCardReady(client, capturedTwoSetItem.id)).toBe(true))
+})
+
+it('requests no sets for an item with none', async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(new Response(JSON.stringify(capturedNoSetItem)))
+  const client = new QueryClient()
+  await prefetchItemCard(client, capturedNoSetItem.id)
+  expect(capturedNoSetItem.sets).toEqual([])
+  expect(fetchMock).toHaveBeenCalledOnce()
+  expect(isItemCardReady(client, capturedNoSetItem.id)).toBe(true)
 })

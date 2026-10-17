@@ -15,7 +15,7 @@
       "bonuses": [],
       "damage": [],
       "description": "This weapon is less well-made than normal, giving a -1 penalty to attack and damage rolls.",
-      "effect_id": 326,
+      "effect_id": 327,
       "name": "Weapon Enchantment Bad",
       "tier": null,
       "value": null,
@@ -27,7 +27,7 @@
       "bonuses": [],
       "damage": [],
       "description": "A bane weapon excels at attacking one type or subtype of creature. Against Halflings, this weapon's effective enhancement bonus is +1 better than its normal enhancement bonus. It deals an extra 1 to 6 points of damage against the foe.",
-      "effect_id": 327,
+      "effect_id": 328,
       "name": "Lesser Halfling Bane",
       "tier": null,
       "value": null,
@@ -35,7 +35,7 @@
       "verbose_name": "Lesser Halfling Bane"
     },
     {
-      "bonus_type": null,
+      "bonus_type": "Penalty",
       "bonuses": [
         {
           "amount_source": "constant",
@@ -49,12 +49,12 @@
       ],
       "damage": [],
       "description": "Passive -1 Penalty to Strength. The minimum level required to equip this item is lower than normal due to this curse.",
-      "effect_id": 328,
+      "effect_id": 329,
       "name": "Curse of Weakness",
       "tier": null,
-      "value": null,
+      "value": -1,
       "value2": null,
-      "verbose_name": "Curse of Weakness -1"
+      "verbose_name": "Curse of Weakness"
     }
   ],
   "enhancement_bonus": null,
@@ -74,7 +74,9 @@
   "sagas": [],
   "set": null,
   "set_name": null,
+  "sets": [],
   "slot": "Main Hand",
+  "slug": "1-quarterstaff-of-lesser-halfling-bane",
   "sources": [],
   "starter_rewards": [],
   "vendors": [],

@@ -719,11 +719,13 @@
   --focus-ring-proxy-left: calc(-1 * var(--space-1-5));
 }
 
-.resources-item-source-brief-row > span {
+.resources-item-source-brief-row > span,
+.resources-item-source-brief-row > div {
   width: 100%;
 }
 
-.resources-item-source-brief-row > span:last-child {
+.resources-item-source-brief-row > div:last-child {
+  color: var(--text-muted);
   flex: none;
   text-align: left;
   overflow-wrap: break-word;
@@ -953,11 +955,16 @@ button.resources-hover-row {
 }
 
 .resources-item-source-details {
+  color: var(--text-muted);
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: calc(var(--space-1) + var(--space-px));
   font-size: var(--fs-label);
+}
+
+.resources-item-source-price {
+  display: block;
 }
 
 .resources-item-source-descriptor {

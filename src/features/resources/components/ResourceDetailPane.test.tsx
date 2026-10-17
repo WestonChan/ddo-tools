@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, cleanup } from '@testing-library/react'
-import { render } from '../../../test/renderWithQueryClient'
 import userEvent from '@testing-library/user-event'
+import { render } from '../../../test/renderWithQueryClient'
 import { ResourceDetailPane } from './ResourceDetailPane'
 import { ApiError, API_HTTP_ERROR, API_NETWORK_ERROR } from '../../../lib/api'
 import type { Item } from '../queries/items'
@@ -43,8 +43,7 @@ function itemDetailFor(id: number): Item {
     requiredRace: null,
     description: 'A test item.',
     dropLocation: null,
-    setName: null,
-    setId: null,
+    sets: [],
     canAcceptSentience: false,
     isMinorArtifact: false,
     wikiUrl: 'https://ddowiki.com/page/Item:Test_Item',
@@ -91,6 +90,7 @@ vi.mock('../queries/useItems', () => ({
     isPending: false,
     error: null,
   }),
+  useSets: () => [],
   useSet: () => ({ data: undefined, isPending: false, error: null }),
 }))
 

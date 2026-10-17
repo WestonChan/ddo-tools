@@ -1,15 +1,6 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [
-    {
-      "chest": "end chest",
-      "id": 55,
-      "is_rare": false,
-      "loot_type": "chest",
-      "name": "The Soul Splitter",
-      "wiki_url": "https://ddowiki.com/page/The_Soul_Splitter"
-    }
-  ],
+  "adventure_packs": [],
   "armor": null,
   "augment_slots": [
     {
@@ -34,7 +25,7 @@
       "bonuses": [],
       "damage": [],
       "description": "This weapon is wielded by the pure to smite the wicked, dealing an additional 4d6 good damage on each hit. This effect makes the weapon good aligned. Evil characters wielding this weapon will suffer one negative level.",
-      "effect_id": 332,
+      "effect_id": 334,
       "name": "Holy 4",
       "tier": null,
       "value": null,
@@ -46,7 +37,7 @@
       "bonuses": [],
       "damage": [],
       "description": "This weapon is righteous and wielded by those who stand against chaos, dealing an additional 4d6 law damage on each hit. This effect makes the weapon lawfully aligned. Chaotic characters wielding this weapon will suffer one negative level.",
-      "effect_id": 333,
+      "effect_id": 335,
       "name": "Axiomatic 4",
       "tier": null,
       "value": null,
@@ -58,7 +49,7 @@
       "bonuses": [],
       "damage": [],
       "description": "This weapon is attuned specifically to hunt monsters that bring ill intent from other planes, dealing an additional 4d10 bane damage vs. Evil Outsiders.",
-      "effect_id": 334,
+      "effect_id": 336,
       "name": "Evil Outsider Bane 4",
       "tier": null,
       "value": null,
@@ -72,8 +63,9 @@
           "amount_source": "owner",
           "bonus_type": "Insight",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Bluff",
@@ -84,8 +76,9 @@
           "amount_source": "owner",
           "bonus_type": "Insight",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Diplomacy",
@@ -96,11 +89,51 @@
           "amount_source": "owner",
           "bonus_type": "Insight",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Haggle",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
+          },
+          "scale": 1.0,
+          "stat": "Intimidate",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
+          },
+          "scale": 1.0,
+          "stat": "Perform",
+          "stat_category": "skill",
+          "value": 5
+        },
+        {
+          "amount_source": "owner",
+          "bonus_type": "Insight",
+          "group": {
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
+          },
+          "scale": 1.0,
+          "stat": "Use Magic Device",
           "stat_category": "skill",
           "value": 5
         },
@@ -112,52 +145,16 @@
           "stat": "Hide",
           "stat_category": "skill",
           "value": -6
-        },
-        {
-          "amount_source": "owner",
-          "bonus_type": "Insight",
-          "group": {
-            "id": 336,
-            "name": "Charisma Skills"
-          },
-          "scale": 1.0,
-          "stat": "Intimidate",
-          "stat_category": "skill",
-          "value": 5
-        },
-        {
-          "amount_source": "owner",
-          "bonus_type": "Insight",
-          "group": {
-            "id": 336,
-            "name": "Charisma Skills"
-          },
-          "scale": 1.0,
-          "stat": "Perform",
-          "stat_category": "skill",
-          "value": 5
-        },
-        {
-          "amount_source": "owner",
-          "bonus_type": "Insight",
-          "group": {
-            "id": 336,
-            "name": "Charisma Skills"
-          },
-          "scale": 1.0,
-          "stat": "Use Magic Device",
-          "stat_category": "skill",
-          "value": 5
         }
       ],
       "damage": [],
-      "description": "Passive: 5 Insightful bonus on Charisma based skill checks. Command armor and command shields make their owners very noticeable, imposing a -6 penalty on Hide checks.",
-      "effect_id": 335,
+      "description": "Passive: +5 Insightful bonus on Charisma based skill checks. Command armor and command shields make their owners very noticeable, imposing a -6 penalty on Hide checks.",
+      "effect_id": 337,
       "name": "Command",
       "tier": null,
       "value": 5,
       "value2": -6,
-      "verbose_name": "Command 5"
+      "verbose_name": "Insightful Command +5"
     }
   ],
   "enhancement_bonus": 5,
@@ -190,14 +187,17 @@
       "loot_type": "chest",
       "name": "The Underlane Assignment",
       "pack": "The Soul Splitter",
-      "patron": "Sharn City Council"
+      "patron": "Sharn City Council",
+      "slug": "the-underlane-assignment"
     }
   ],
   "race_required": null,
   "sagas": [],
   "set": null,
   "set_name": null,
+  "sets": [],
   "slot": "Main Hand",
+  "slug": "absolute-judgement",
   "sources": [
     {
       "character_level": null,
@@ -208,6 +208,8 @@
       "kind": "quest",
       "loot_type": "chest",
       "name": "The Underlane Assignment",
+      "price": [],
+      "slug": "the-underlane-assignment",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/The_Underlane_Assignment"
     }

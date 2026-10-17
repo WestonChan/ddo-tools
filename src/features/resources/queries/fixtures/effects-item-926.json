@@ -1,15 +1,6 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [
-    {
-      "chest": "end chest",
-      "id": 34,
-      "is_rare": false,
-      "loot_type": "chest",
-      "name": "Mists of Ravenloft",
-      "wiki_url": "https://ddowiki.com/page/Mists_of_Ravenloft"
-    }
-  ],
+  "adventure_packs": [],
   "armor": null,
   "augment_slots": [
     {
@@ -42,7 +33,7 @@
       "bonuses": [],
       "damage": [],
       "description": "The maximum charge tier of this rune arm is tier 3.",
-      "effect_id": 347,
+      "effect_id": 350,
       "name": "Maximum Charge Tier III",
       "tier": null,
       "value": null,
@@ -55,6 +46,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Enhancement",
+          "group": null,
           "scale": 1.0,
           "stat": "Fire Spell Power",
           "stat_category": "magical",
@@ -62,13 +54,13 @@
         }
       ],
       "damage": [],
-      "description": "77 Enhancement bonus to Fire spell power.",
-      "effect_id": 317,
+      "description": "+77 Enhancement bonus to Fire spell power.",
+      "effect_id": 318,
       "name": "Combustion",
       "tier": null,
       "value": 77,
       "value2": null,
-      "verbose_name": "Enhancement Combustion 77"
+      "verbose_name": "Combustion +77"
     },
     {
       "bonus_type": "Quality",
@@ -76,6 +68,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Quality",
+          "group": null,
           "scale": 1.0,
           "stat": "Fire Spell Power",
           "stat_category": "magical",
@@ -83,13 +76,13 @@
         }
       ],
       "damage": [],
-      "description": "18 Quality bonus to Fire spell power.",
-      "effect_id": 317,
+      "description": "+18 Quality bonus to Fire spell power.",
+      "effect_id": 318,
       "name": "Combustion",
       "tier": null,
       "value": 18,
       "value2": null,
-      "verbose_name": "Quality Combustion 18"
+      "verbose_name": "Quality Combustion +18"
     },
     {
       "bonus_type": "Equipment",
@@ -97,6 +90,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Equipment",
+          "group": null,
           "scale": 1.0,
           "stat": "Fire Spell Lore",
           "stat_category": "magical",
@@ -105,19 +99,19 @@
       ],
       "damage": [],
       "description": "Passive: Your Fire spells gain a 11% Equipment bonus to their chance to critical hit.",
-      "effect_id": 602,
+      "effect_id": 611,
       "name": "Fire Lore",
       "tier": null,
       "value": 11,
       "value2": null,
-      "verbose_name": "Equipment Fire Lore 11%"
+      "verbose_name": "Fire Lore +11%"
     },
     {
       "bonus_type": null,
       "bonuses": [],
       "damage": [],
       "description": "Any weapon you wield becomes able to bypass silver damage reduction.",
-      "effect_id": 603,
+      "effect_id": 612,
       "name": "Tira's Splendor",
       "tier": null,
       "value": null,
@@ -129,7 +123,7 @@
       "bonuses": [],
       "damage": [],
       "description": "Wearing this Rune Arm will imbue any weapon you wield, dealing 2d6 points of Fire damage per hit. This damage scales with 200% Melee or Ranged power (whichever is higher).",
-      "effect_id": 604,
+      "effect_id": 613,
       "name": "Rune Arm Imbue - Fire III",
       "tier": null,
       "value": null,
@@ -140,7 +134,7 @@
   "enhancement_bonus": null,
   "events": [],
   "icon": "RuneArm_1b",
-  "id": 924,
+  "id": 926,
   "is_legacy": false,
   "is_minor_artifact": false,
   "item_type": "Rune Arm",
@@ -166,7 +160,6 @@
       "display_name": null,
       "effect_type": "ItemClickie",
       "extra_types": null,
-      "id": 10004,
       "is_item_specific": false,
       "is_rare": false,
       "percent": false,
@@ -201,7 +194,8 @@
       "loot_type": "chest",
       "name": "Mad Tea Party",
       "pack": "Mists of Ravenloft",
-      "patron": "Keepers of Barovia"
+      "patron": "Keepers of Barovia",
+      "slug": "mad-tea-party"
     }
   ],
   "race_required": null,
@@ -209,10 +203,20 @@
   "set": {
     "icon": "AdherentOfTheMists",
     "id": 93,
-    "name": "Adherent of the Mists Set (Heroic)"
+    "name": "Adherent of the Mists Set (Heroic)",
+    "slug": "adherent-of-the-mists-set-heroic"
   },
   "set_name": "Adherent of the Mists Set (Heroic)",
+  "sets": [
+    {
+      "icon": "AdherentOfTheMists",
+      "id": 93,
+      "name": "Adherent of the Mists Set (Heroic)",
+      "slug": "adherent-of-the-mists-set-heroic"
+    }
+  ],
   "slot": "Runearm",
+  "slug": "blight-inferno",
   "sources": [
     {
       "character_level": null,
@@ -223,6 +227,8 @@
       "kind": "quest",
       "loot_type": "chest",
       "name": "Mad Tea Party",
+      "price": [],
+      "slug": "mad-tea-party",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/Mad_Tea_Party"
     }

@@ -1,6 +1,6 @@
 {
   "augments": [],
-  "id": 2,
+  "id": 3,
   "is_free_to_play": false,
   "items": [
     {
@@ -10,7 +10,8 @@
       "loot_type": "chest",
       "minimum_level": 13,
       "name": "Bastard Sword of the Fallen Age",
-      "slot": "Main Hand"
+      "slot": "Main Hand",
+      "slug": "bastard-sword-of-the-fallen-age"
     },
     {
       "chest": "any end chest",
@@ -19,17 +20,1992 @@
       "loot_type": "chest",
       "minimum_level": 13,
       "name": "Bastard Sword of the Golden Age",
-      "slot": "Main Hand"
+      "slot": "Main Hand",
+      "slug": "bastard-sword-of-the-golden-age"
     },
     {
       "chest": "any end chest",
-      "id": 808,
+      "id": 809,
       "is_rare": false,
       "loot_type": "chest",
       "minimum_level": 13,
       "name": "Battle Axe of the Fallen Age",
-      "slot": "Main Hand"
+      "slot": "Main Hand",
+      "slug": "battle-axe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 810,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Battle Axe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "battle-axe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 922,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Blessed Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "blessed-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 923,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Blessed Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "blessed-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 970,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Booming Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "booming-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 971,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Booming Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "booming-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1151,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Burning Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "burning-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1152,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Burning Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "burning-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1268,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Caustic Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "caustic-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1269,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Caustic Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "caustic-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1460,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Club of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "club-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1461,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Club of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "club-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1667,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Dagger of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "dagger-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1668,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Dagger of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "dagger-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1696,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Dart of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "dart-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1697,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Dart of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "dart-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1722,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Deathly Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "deathly-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 1723,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Deathly Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "deathly-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 2100,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Dwarven Waraxe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "dwarven-waraxe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 2101,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Dwarven Waraxe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "dwarven-waraxe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 2962,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Falchion of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "falchion-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 2963,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Falchion of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "falchion-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3203,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Freezing Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "freezing-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3204,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Freezing Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "freezing-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3329,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Gleaming Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "gleaming-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3330,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Gleaming Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "gleaming-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3456,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Great Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "great-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3457,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Great Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "great-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3470,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Greataxe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "greataxe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3471,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Greataxe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "greataxe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3475,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Greatclub of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "greatclub-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3476,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Greatclub of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "greatclub-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3492,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Greatsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "greatsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3493,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Greatsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "greatsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3606,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Hand Axe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "hand-axe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3607,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Hand Axe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "hand-axe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3614,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Handwraps of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "handwraps-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3615,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Handwraps of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "handwraps-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3639,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Heavy Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "heavy-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3640,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Heavy Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "heavy-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3643,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Heavy Mace of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "heavy-mace-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3644,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Heavy Mace of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "heavy-mace-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3647,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Heavy Pick of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "heavy-pick-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3648,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Heavy Pick of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "heavy-pick-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3873,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Kama of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "kama-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3874,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Kama of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "kama-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3892,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Khopesh of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "khopesh-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3893,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Khopesh of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "khopesh-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3904,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Kinetic Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "kinetic-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3905,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Kinetic Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "kinetic-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3934,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Kukri of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "kukri-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 3935,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Kukri of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "kukri-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4070,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Bastard Sword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-bastard-sword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4071,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Bastard Sword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-bastard-sword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4073,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Battle Axe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-battle-axe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4074,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Battle Axe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-battle-axe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4112,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Blessed Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-blessed-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4113,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Blessed Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-blessed-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4130,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Booming Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-booming-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4131,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Booming Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-booming-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4186,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Burning Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-burning-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4187,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Burning Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-burning-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4281,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Caustic Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-caustic-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4282,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Caustic Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-caustic-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4330,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Club of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-club-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4331,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Club of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-club-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4402,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Dagger of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-dagger-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4403,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Dagger of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-dagger-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4411,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Dart of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-dart-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4412,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Dart of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-dart-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4421,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Deathly Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-deathly-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4422,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Deathly Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-deathly-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4572,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Dwarven Waraxe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-dwarven-waraxe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4573,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Dwarven Waraxe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-dwarven-waraxe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4616,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Falchion of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-falchion-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4617,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Falchion of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-falchion-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4738,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Freezing Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-freezing-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4739,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Freezing Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-freezing-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4781,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Gleaming Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-gleaming-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4782,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Gleaming Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-gleaming-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4827,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Great Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-great-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4828,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Great Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-great-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4839,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Greataxe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-greataxe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4840,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Greataxe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-greataxe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4842,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Greatclub of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-greatclub-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4843,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Greatclub of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-greatclub-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4846,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Greatsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-greatsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4847,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Greatsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-greatsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4911,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Hand Axe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-hand-axe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4912,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Hand Axe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-hand-axe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4916,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Handwraps of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-handwraps-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4917,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Handwraps of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-handwraps-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4932,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Heavy Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-heavy-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4933,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Heavy Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-heavy-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4935,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Heavy Mace of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-heavy-mace-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4936,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Heavy Mace of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-heavy-mace-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4938,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Heavy Pick of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-heavy-pick-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4939,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Heavy Pick of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-heavy-pick-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 4999,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Kama of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-kama-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5000,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Kama of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-kama-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5007,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Khopesh of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-khopesh-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5008,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Khopesh of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-khopesh-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5012,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Kinetic Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-kinetic-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5013,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Kinetic Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-kinetic-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5019,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Kukri of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-kukri-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5020,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Kukri of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-kukri-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5063,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5064,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5066,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Hammer of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-hammer-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5067,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Hammer of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-hammer-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5069,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Mace of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-mace-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5070,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Mace of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-mace-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5072,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Pick of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-pick-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5073,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Light Pick of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-light-pick-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5085,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Longbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-longbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5086,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Longbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-longbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5088,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5089,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5138,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Maul of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-maul-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5139,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Maul of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-maul-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5151,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Mending Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-mending-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5152,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Mending Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-mending-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5170,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Morningstar of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-morningstar-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5171,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Morningstar of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-morningstar-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5284,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Quarterstaff of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-quarterstaff-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5285,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Quarterstaff of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-quarterstaff-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5288,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Rapier of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-rapier-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5289,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Rapier of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-rapier-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5304,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Repeating Heavy Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-repeating-heavy-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5305,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Repeating Heavy Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-repeating-heavy-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5307,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Repeating Light Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-repeating-light-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5308,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Repeating Light Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-repeating-light-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5403,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Scimitar of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-scimitar-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5404,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Scimitar of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-scimitar-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5489,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shocking Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shocking-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5490,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shocking Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shocking-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5491,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shortbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shortbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5492,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shortbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shortbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5494,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shortsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shortsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5495,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shortsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shortsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5497,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shuriken of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shuriken-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5498,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Shuriken of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-shuriken-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5501,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Sickle of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-sickle-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5502,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Sickle of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-sickle-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5690,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Throwing Axe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-throwing-axe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5691,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Throwing Axe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-throwing-axe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5693,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Throwing Dagger of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-throwing-dagger-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5694,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Throwing Dagger of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-throwing-dagger-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5696,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Throwing Hammer of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-throwing-hammer-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5697,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Throwing Hammer of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-throwing-hammer-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5787,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Warhammer of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "legendary-warhammer-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5788,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 33,
+      "name": "Legendary Warhammer of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "legendary-warhammer-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5859,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "light-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5860,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "light-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5863,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Hammer of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "light-hammer-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5864,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Hammer of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "light-hammer-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5867,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Mace of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "light-mace-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5868,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Mace of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "light-mace-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5871,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Pick of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "light-pick-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5872,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Light Pick of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "light-pick-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5910,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Longbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "longbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5911,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Longbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "longbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5914,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 5915,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6092,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Maul of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "maul-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6093,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Maul of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "maul-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6122,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Mending Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "mending-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6123,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Mending Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "mending-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6230,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Morningstar of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "morningstar-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6231,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Morningstar of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "morningstar-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6741,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Quarterstaff of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "quarterstaff-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6742,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Quarterstaff of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "quarterstaff-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6787,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Rapier of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "rapier-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6788,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Rapier of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "rapier-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6834,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Repeating Heavy Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "repeating-heavy-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6835,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Repeating Heavy Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "repeating-heavy-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6838,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Repeating Light Crossbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "repeating-light-crossbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 6839,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Repeating Light Crossbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "repeating-light-crossbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7161,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Scimitar of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "scimitar-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7162,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Scimitar of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "scimitar-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7378,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shocking Longsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "shocking-longsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7379,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shocking Longsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "shocking-longsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7382,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shortbow of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "shortbow-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7383,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shortbow of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "shortbow-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7386,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shortsword of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "shortsword-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7387,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shortsword of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "shortsword-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7394,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shuriken of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "shuriken-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7395,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Shuriken of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "shuriken-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7400,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Sickle of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "sickle-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 7401,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Sickle of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "sickle-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8198,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Throwing Axe of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "throwing-axe-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8199,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Throwing Axe of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "throwing-axe-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8202,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Throwing Dagger of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "throwing-dagger-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8203,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Throwing Dagger of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "throwing-dagger-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8206,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Throwing Hammer of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "throwing-hammer-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8207,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Throwing Hammer of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "throwing-hammer-of-the-golden-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8481,
+      "is_rare": false,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Warhammer of the Fallen Age",
+      "slot": "Main Hand",
+      "slug": "warhammer-of-the-fallen-age"
+    },
+    {
+      "chest": "any end chest",
+      "id": 8482,
+      "is_rare": true,
+      "loot_type": "chest",
+      "minimum_level": 13,
+      "name": "Warhammer of the Golden Age",
+      "slot": "Main Hand",
+      "slug": "warhammer-of-the-golden-age"
     }
   ],
-  "name": "Magic of Myth Drannor"
+  "name": "Magic of Myth Drannor",
+  "released": null,
+  "slug": "magic-of-myth-drannor",
+  "update": null
 }

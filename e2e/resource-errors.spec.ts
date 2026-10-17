@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import capturedItem from '../src/features/resources/queries/fixtures/effects-item-7631.json' with { type: 'json' }
+import capturedItem from '../src/features/resources/queries/fixtures/effects-item-7716.json' with { type: 'json' }
 
 async function routeItemError(
   page: import('@playwright/test').Page,
@@ -7,7 +7,7 @@ async function routeItemError(
 ): Promise<void> {
   await page.route('**/v1/**', async (route) => {
     const path = new URL(route.request().url()).pathname
-    if (path === '/v1/items/7631') {
+    if (path === `/v1/items/${capturedItem.id}`) {
       if (isMalformed) {
         await route.fulfill({
           status: 200,
@@ -53,13 +53,13 @@ async function routeItemError(
 
 test('malformed item detail offers a prefilled bug report', async ({ page }) => {
   await routeItemError(page, true)
-  await page.goto('/resources/items/7631?private=ignored')
+  await page.goto(`/resources/items/${capturedItem.id}?private=ignored`)
   const detail = page.getByRole('region', { name: 'Item details', exact: true })
   await expect(detail.getByText('Something went wrong on our side.')).toBeVisible()
   const report = detail.getByRole('link', { name: 'Report a bug', exact: true })
   const issueUrl = new URL((await report.getAttribute('href')) ?? '')
-  expect(issueUrl.searchParams.get('body')).toContain('/v1/items/7631: augment_slots')
-  expect(issueUrl.searchParams.get('body')).toContain('/resources/items/7631')
+  expect(issueUrl.searchParams.get('body')).toContain(`/v1/items/${capturedItem.id}: augment_slots`)
+  expect(issueUrl.searchParams.get('body')).toContain(`/resources/items/${capturedItem.id}`)
   expect(issueUrl.searchParams.get('body')).not.toContain('private=ignored')
   await expect(report).toHaveAttribute('target', '_blank')
 })
@@ -68,7 +68,7 @@ test('an aborted item request offers connection guidance without a report link',
   page,
 }) => {
   await routeItemError(page, false)
-  await page.goto('/resources/items/7631')
+  await page.goto(`/resources/items/${capturedItem.id}`)
   const detail = page.getByRole('region', { name: 'Item details', exact: true })
   await expect(detail.getByText('Could not reach the game-data service.')).toBeVisible()
   await expect(detail.getByRole('button', { name: 'Retry', exact: true })).toBeVisible()

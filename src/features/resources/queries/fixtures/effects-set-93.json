@@ -9,208 +9,243 @@
       "id": 487,
       "minimum_level": 10,
       "name": "Adversion",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "adversion"
     },
     {
-      "id": 924,
+      "id": 926,
       "minimum_level": 10,
       "name": "Blight Inferno",
-      "slot": "Runearm"
+      "slot": "Runearm",
+      "slug": "blight-inferno"
     },
     {
-      "id": 1036,
+      "id": 1038,
       "minimum_level": 10,
       "name": "Bracers of the Fallen Hero",
-      "slot": "Wrists"
+      "slot": "Wrists",
+      "slug": "bracers-of-the-fallen-hero"
     },
     {
-      "id": 1614,
+      "id": 1618,
       "minimum_level": 10,
       "name": "Crumbling Gloves",
-      "slot": "Hands"
+      "slot": "Hands",
+      "slug": "crumbling-gloves"
     },
     {
-      "id": 1643,
+      "id": 1647,
       "minimum_level": 10,
       "name": "Cursebane Ring",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "cursebane-ring"
     },
     {
-      "id": 1696,
+      "id": 1702,
       "minimum_level": 10,
       "name": "Dawn's Herald-Charm",
-      "slot": "Neck"
+      "slot": "Neck",
+      "slug": "dawns-herald-charm"
     },
     {
-      "id": 1720,
+      "id": 1726,
       "minimum_level": 10,
       "name": "Deathwarden",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "deathwarden"
     },
     {
-      "id": 3154,
+      "id": 3164,
       "minimum_level": 10,
       "name": "Flightfoot Greaves",
-      "slot": "Feet"
+      "slot": "Feet",
+      "slug": "flightfoot-greaves"
     },
     {
-      "id": 3236,
+      "id": 3246,
       "minimum_level": 10,
       "name": "Garstone's Lenses",
-      "slot": "Goggles"
+      "slot": "Goggles",
+      "slug": "garstones-lenses"
     },
     {
-      "id": 3244,
+      "id": 3254,
       "minimum_level": 10,
       "name": "Gauntlets of Innate Arcanum",
-      "slot": "Hands"
+      "slot": "Hands",
+      "slug": "gauntlets-of-innate-arcanum"
     },
     {
-      "id": 3871,
+      "id": 3891,
       "minimum_level": 10,
       "name": "Keylock Ring",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "keylock-ring"
     },
     {
-      "id": 3880,
+      "id": 3901,
       "minimum_level": 10,
       "name": "Kindred Pendant",
-      "slot": "Neck"
+      "slot": "Neck",
+      "slug": "kindred-pendant"
     },
     {
-      "id": 3889,
+      "id": 3910,
       "minimum_level": 10,
       "name": "Knifepalm",
-      "slot": "Hands"
+      "slot": "Hands",
+      "slug": "knifepalm"
     },
     {
-      "id": 5846,
+      "id": 5918,
       "minimum_level": 10,
       "name": "Lore-Fueled Packbanner",
-      "slot": "Wrists"
+      "slot": "Wrists",
+      "slug": "lore-fueled-packbanner"
     },
     {
-      "id": 5978,
+      "id": 6050,
       "minimum_level": 10,
       "name": "Mantle of Fury",
-      "slot": "Back"
+      "slot": "Back",
+      "slug": "mantle-of-fury"
     },
     {
-      "id": 6080,
+      "id": 6153,
       "minimum_level": 10,
       "name": "Mirrorplate Tower",
-      "slot": "Off Hand"
+      "slot": "Off Hand",
+      "slug": "mirrorplate-tower"
     },
     {
-      "id": 6266,
+      "id": 6340,
       "minimum_level": 10,
       "name": "Negotiator's Spectacles",
-      "slot": "Goggles"
+      "slot": "Goggles",
+      "slug": "negotiators-spectacles"
     },
     {
-      "id": 6493,
+      "id": 6567,
       "minimum_level": 10,
       "name": "Perfect Pinnacle",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "perfect-pinnacle"
     },
     {
-      "id": 6540,
+      "id": 6614,
       "minimum_level": 10,
       "name": "Phasecloak",
-      "slot": "Back"
+      "slot": "Back",
+      "slug": "phasecloak"
     },
     {
-      "id": 6751,
+      "id": 6827,
       "minimum_level": 10,
       "name": "Reflective Bloodstone",
-      "slot": "Neck"
+      "slot": "Neck",
+      "slug": "reflective-bloodstone"
     },
     {
-      "id": 6822,
+      "id": 6900,
       "minimum_level": 10,
       "name": "Ring of Nightfall",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "ring-of-nightfall"
     },
     {
-      "id": 7056,
+      "id": 7134,
       "minimum_level": 10,
       "name": "Scarlet Scale Cloak",
-      "slot": "Back"
+      "slot": "Back",
+      "slug": "scarlet-scale-cloak"
     },
     {
-      "id": 7159,
+      "id": 7239,
       "minimum_level": 10,
       "name": "Shadow's Footsteps",
-      "slot": "Feet"
+      "slot": "Feet",
+      "slug": "shadows-footsteps"
     },
     {
-      "id": 7366,
+      "id": 7450,
       "minimum_level": 10,
       "name": "Silverthread Cloak",
-      "slot": "Back"
+      "slot": "Back",
+      "slug": "silverthread-cloak"
     },
     {
-      "id": 7413,
+      "id": 7497,
       "minimum_level": 10,
       "name": "Skulled Ring",
-      "slot": "Ring"
+      "slot": "Ring",
+      "slug": "skulled-ring"
     },
     {
-      "id": 7467,
+      "id": 7552,
       "minimum_level": 10,
       "name": "Softsole Slippers",
-      "slot": "Feet"
+      "slot": "Feet",
+      "slug": "softsole-slippers"
     },
     {
-      "id": 7677,
+      "id": 7762,
       "minimum_level": 10,
       "name": "Summoner's Spectacles",
-      "slot": "Goggles"
-    },
-    {
-      "id": 7691,
-      "minimum_level": 10,
-      "name": "Suppressive Fire",
-      "slot": "Runearm"
+      "slot": "Goggles",
+      "slug": "summoners-spectacles"
     },
     {
       "id": 7776,
       "minimum_level": 10,
-      "name": "Symphonic Lenses",
-      "slot": "Goggles"
+      "name": "Suppressive Fire",
+      "slot": "Runearm",
+      "slug": "suppressive-fire"
     },
     {
-      "id": 8006,
+      "id": 7861,
+      "minimum_level": 10,
+      "name": "Symphonic Lenses",
+      "slot": "Goggles",
+      "slug": "symphonic-lenses"
+    },
+    {
+      "id": 8099,
       "minimum_level": 10,
       "name": "The Mistfallen",
-      "slot": "Off Hand"
+      "slot": "Off Hand",
+      "slug": "the-mistfallen"
     },
     {
-      "id": 8261,
+      "id": 8368,
       "minimum_level": 10,
       "name": "Twisthallow Cloak",
-      "slot": "Back"
+      "slot": "Back",
+      "slug": "twisthallow-cloak"
     },
     {
-      "id": 8309,
+      "id": 8416,
       "minimum_level": 10,
       "name": "Van Richten's Cane",
-      "slot": "Off Hand"
+      "slot": "Off Hand",
+      "slug": "van-richtens-cane"
     },
     {
-      "id": 8342,
+      "id": 8449,
       "minimum_level": 10,
       "name": "Vistani Fighter's Sash",
-      "slot": "Waist"
+      "slot": "Waist",
+      "slug": "vistani-fighters-sash"
     },
     {
-      "id": 8378,
+      "id": 8486,
       "minimum_level": 10,
       "name": "Warsword Shield",
-      "slot": "Off Hand"
+      "slot": "Off Hand",
+      "slug": "warsword-shield"
     }
   ],
   "name": "Adherent of the Mists Set (Heroic)",
+  "slug": "adherent-of-the-mists-set-heroic",
   "tiers": [
     {
       "effects": [
@@ -220,6 +255,7 @@
             {
               "amount_source": "owner",
               "bonus_type": "Profane",
+              "group": null,
               "scale": 1.0,
               "stat": "Physical Resistance Rating",
               "stat_category": "defensive",
@@ -233,7 +269,7 @@
           "tier": null,
           "value": 5,
           "value2": null,
-          "verbose_name": "Profane Physical Resistance Rating +5"
+          "verbose_name": "+5 Profane Bonus to Physical Resistance Rating"
         },
         {
           "bonus_type": "Profane",
@@ -241,6 +277,7 @@
             {
               "amount_source": "owner",
               "bonus_type": "Profane",
+              "group": null,
               "scale": 1.0,
               "stat": "Healing Amplification",
               "stat_category": "other",
@@ -248,13 +285,13 @@
             }
           ],
           "damage": [],
-          "description": "This effect amplifies all incoming positive energy healing by 10 (Profane bonus ). Includes spells, potions, and other effects.",
+          "description": "This effect amplifies all incoming positive energy healing by +10 (Profane bonus ). Includes spells, potions, and other effects.",
           "effect_id": 73,
           "name": "Healing Amplification",
           "tier": null,
           "value": 10,
           "value2": null,
-          "verbose_name": "Profane Healing Amplification 10"
+          "verbose_name": "+10 Profane Bonus to Healing Amplification"
         },
         {
           "bonus_type": "Profane",
@@ -262,6 +299,7 @@
             {
               "amount_source": "owner",
               "bonus_type": "Profane",
+              "group": null,
               "scale": 1.0,
               "stat": "Negative Healing Amplification",
               "stat_category": "other",
@@ -275,7 +313,7 @@
           "tier": null,
           "value": 10,
           "value2": null,
-          "verbose_name": "Profane Negative Healing Amplification +10"
+          "verbose_name": "+10 Profane Bonus to Negative Healing Amplification"
         },
         {
           "bonus_type": "Profane",
@@ -283,6 +321,7 @@
             {
               "amount_source": "owner",
               "bonus_type": "Profane",
+              "group": null,
               "scale": 1.0,
               "stat": "Repair Amplification",
               "stat_category": "other",
@@ -290,13 +329,13 @@
             }
           ],
           "damage": [],
-          "description": "This effect amplifies all incoming repair energy healing by 10 (Profane bonus ). Includes spells, potions, and other effects.",
+          "description": "This effect amplifies all incoming repair energy healing by +10 (Profane bonus ). Includes spells, potions, and other effects.",
           "effect_id": 74,
           "name": "Repair Amplification",
           "tier": null,
           "value": 10,
           "value2": null,
-          "verbose_name": "Profane Repair Amplification 10"
+          "verbose_name": "+10 Profane Bonus to Repair Amplification"
         },
         {
           "bonus_type": "Profane",
@@ -304,27 +343,24 @@
             {
               "amount_source": "owner",
               "bonus_type": "Profane",
+              "group": {
+                "id": 2095,
+                "name": "Melee and Ranged Power",
+                "slug": "melee-and-ranged-power"
+              },
               "scale": 1.0,
               "stat": "Melee Power",
               "stat_category": "martial",
               "value": 5
-            }
-          ],
-          "damage": [],
-          "description": "This item provides a 5 Profane bonus to Melee Power.",
-          "effect_id": 7,
-          "name": "Melee Power",
-          "tier": null,
-          "value": 5,
-          "value2": null,
-          "verbose_name": "Profane Melee Power 5"
-        },
-        {
-          "bonus_type": "Profane",
-          "bonuses": [
+            },
             {
               "amount_source": "owner",
               "bonus_type": "Profane",
+              "group": {
+                "id": 2095,
+                "name": "Melee and Ranged Power",
+                "slug": "melee-and-ranged-power"
+              },
               "scale": 1.0,
               "stat": "Ranged Power",
               "stat_category": "martial",
@@ -332,13 +368,13 @@
             }
           ],
           "damage": [],
-          "description": "This item provides a 5 Profane bonus to Ranged Power.",
-          "effect_id": 8,
-          "name": "Ranged Power",
+          "description": "+5 Profane bonus to Melee and Ranged Power.",
+          "effect_id": 2095,
+          "name": "Melee and Ranged Power",
           "tier": null,
           "value": 5,
           "value2": null,
-          "verbose_name": "Profane Ranged Power 5"
+          "verbose_name": "+5 Profane Bonus to Melee and Ranged Power"
         },
         {
           "bonus_type": "Profane",
@@ -346,6 +382,7 @@
             {
               "amount_source": "owner",
               "bonus_type": "Profane",
+              "group": null,
               "scale": 1.0,
               "stat": "Universal Spell Power",
               "stat_category": "magical",
@@ -353,17 +390,16 @@
             }
           ],
           "damage": [],
-          "description": "Passive: 10 Profane bonus to Universal Spell Power.",
+          "description": "Passive: +10 Profane bonus to Universal Spell Power.",
           "effect_id": 24,
           "name": "Universal Spell Power",
           "tier": null,
           "value": 10,
           "value2": null,
-          "verbose_name": "Profane Universal Spell Power 10"
+          "verbose_name": "+10 Profane Bonus to Universal Spell Power"
         }
       ],
       "equipped_count": 5,
-      "id": 107,
       "modifiers": [
         {
           "amount_type": "Simple",
@@ -382,7 +418,6 @@
           "display_name": null,
           "effect_type": "PRR",
           "extra_types": null,
-          "id": 15777,
           "is_item_specific": false,
           "is_rare": false,
           "percent": false,
@@ -413,13 +448,12 @@
             "NegativeHealingAmplification",
             "RepairAmplification"
           ],
-          "id": 15778,
           "is_item_specific": false,
           "is_rare": false,
           "percent": false,
           "rank": null,
           "requirements": [],
-          "sort_order": 0,
+          "sort_order": 1,
           "stack_source": null,
           "targets": null,
           "value": null
@@ -443,13 +477,12 @@
           "extra_types": [
             "RangedPower"
           ],
-          "id": 15779,
           "is_item_specific": false,
           "is_rare": false,
           "percent": false,
           "rank": null,
           "requirements": [],
-          "sort_order": 0,
+          "sort_order": 2,
           "stack_source": null,
           "targets": null,
           "value": null
@@ -471,13 +504,12 @@
           "display_name": null,
           "effect_type": "UniversalSpellPower",
           "extra_types": null,
-          "id": 15780,
           "is_item_specific": false,
           "is_rare": false,
           "percent": false,
           "rank": null,
           "requirements": [],
-          "sort_order": 0,
+          "sort_order": 3,
           "stack_source": null,
           "targets": null,
           "value": null

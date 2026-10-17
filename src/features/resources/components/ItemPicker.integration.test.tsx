@@ -11,6 +11,7 @@ import type { ApiEffectVocabularyRow } from '../../../lib/api'
 function vocabularyRow(name: string, kind: 'effect' | 'stat', id: number): ApiEffectVocabularyRow {
   return {
     ...effectPage.effects[0],
+    slug: 'test-effect',
     id,
     name,
     kind,
@@ -458,3 +459,27 @@ describe('ItemPicker page errors', () => {
 function ItemPickerHarness(): React.JSX.Element {
   return <ItemPicker category="items" selectedItemId={null} />
 }
+
+it('lists a captured set with a null icon without creating a broken image', async () => {
+  const nullIconSet = capturedSetPage.sets.find((set) => set.icon === null)!
+  expect(nullIconSet).toBeDefined()
+  vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+    const path = new URL(String(request)).pathname
+    const response =
+      path === '/v1/sets'
+        ? { sets: [nullIconSet], total: 1, limit: 10000, offset: 0 }
+        : { items: [], total: 0, limit: 200, offset: 0 }
+    return Promise.resolve(new Response(JSON.stringify(response)))
+  })
+  const { container } = render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <ItemPickerHarness />
+    </QueryClientProvider>,
+  )
+  await waitFor(() => expect(resourceResultCount()).toHaveTextContent('0 results'))
+  await userEvent.click(screen.getByRole('button', { name: 'Set' }))
+  expect(await screen.findByRole('option', { name: nullIconSet.name })).toBeInTheDocument()
+  expect(container.querySelector('img')).toBeNull()
+})

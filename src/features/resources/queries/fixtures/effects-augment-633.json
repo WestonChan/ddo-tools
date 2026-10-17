@@ -27,8 +27,9 @@
           "amount_source": "owner",
           "bonus_type": "Exceptional",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Bluff",
@@ -39,8 +40,9 @@
           "amount_source": "owner",
           "bonus_type": "Exceptional",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Diplomacy",
@@ -51,8 +53,9 @@
           "amount_source": "owner",
           "bonus_type": "Exceptional",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Haggle",
@@ -63,8 +66,9 @@
           "amount_source": "owner",
           "bonus_type": "Exceptional",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Intimidate",
@@ -75,8 +79,9 @@
           "amount_source": "owner",
           "bonus_type": "Exceptional",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Perform",
@@ -87,8 +92,9 @@
           "amount_source": "owner",
           "bonus_type": "Exceptional",
           "group": {
-            "id": 336,
-            "name": "Charisma Skills"
+            "id": 338,
+            "name": "Charisma Skills",
+            "slug": "charisma-skills"
           },
           "scale": 1.0,
           "stat": "Use Magic Device",
@@ -97,13 +103,13 @@
         }
       ],
       "damage": [],
-      "description": null,
-      "effect_id": 2039,
-      "name": "Skills Charisma",
+      "description": "+6 Exceptional bonus to all Charisma based skills.",
+      "effect_id": 338,
+      "name": "Charisma Skills",
       "tier": null,
       "value": 6,
       "value2": null,
-      "verbose_name": "Exceptional Skills Charisma +6"
+      "verbose_name": "Exceptional Charisma Skills +6"
     }
   ],
   "enter_value": false,
@@ -133,7 +139,6 @@
       "display_name": null,
       "effect_type": "SkillBonusAbility",
       "extra_types": null,
-      "id": 13816,
       "is_item_specific": false,
       "is_rare": false,
       "percent": false,
@@ -153,6 +158,7 @@
   "slots": [
     "crafting: eldritch rune"
   ],
+  "slug": "eldritch-rune-of-skill--charisma",
   "sources": [],
   "suppress_set_bonus": false,
   "weapon_class": null

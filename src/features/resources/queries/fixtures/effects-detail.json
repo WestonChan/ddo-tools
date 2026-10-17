@@ -64,6 +64,7 @@
         ],
         "name": "+1 Quality Strength",
         "scale": 1.0,
+        "slug": "1-quality-strength",
         "value": 1,
         "value2": null
       }
@@ -144,6 +145,7 @@
         ],
         "name": "-1 Quarterstaff of Lesser Halfling Bane",
         "scale": 1.0,
+        "slug": "1-quarterstaff-of-lesser-halfling-bane",
         "value": -1,
         "value2": null
       }
@@ -164,7 +166,6 @@
         "effect": "Strength",
         "effect_id": 1,
         "equipped_count": 3,
-        "id": 250,
         "line": {
           "bonus_type": "Artifact",
           "bonuses": [
@@ -230,6 +231,7 @@
     ],
     "total": 37
   },
+  "slug": "strength",
   "tier": null,
   "verbose_name_template": "%b1 Strength +{1}",
   "wiki_url": null

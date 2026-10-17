@@ -68,7 +68,7 @@ function setRows(setDetail: SetDetail, selectedBonuses: ReadonlySet<string>): Ef
   ]
   for (const tier of setDetail.tiers) {
     rows.push({
-      key: `tier-${tier.equippedCount}`,
+      key: `set-${setDetail.id}-tier-${tier.equippedCount}`,
       itemName: '',
       modifiers: [],
       setId: setDetail.id,
@@ -83,7 +83,7 @@ function setRows(setDetail: SetDetail, selectedBonuses: ReadonlySet<string>): Ef
     })
     rows.push(
       ...tier.effects.map((effect) =>
-        toEffectRow(effect, selectedBonuses, `tier-${tier.equippedCount}-`),
+        toEffectRow(effect, selectedBonuses, `set-${setDetail.id}-tier-${tier.equippedCount}-`),
       ),
     )
   }

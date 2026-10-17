@@ -7,45 +7,121 @@
     {
       "id": 60,
       "level": 3,
-      "name": "Back to Basics"
+      "name": "Back to Basics",
+      "slug": "back-to-basics"
     },
     {
       "id": 54,
       "level": 3,
-      "name": "Danger at Dunwater"
+      "name": "Danger at Dunwater",
+      "slug": "danger-at-dunwater"
     },
     {
       "id": 53,
       "level": 3,
-      "name": "Down You Go"
+      "name": "Down You Go",
+      "slug": "down-you-go"
+    },
+    {
+      "id": 61,
+      "level": 3,
+      "name": "Rest for the Night",
+      "slug": "rest-for-the-night"
+    },
+    {
+      "id": 56,
+      "level": 3,
+      "name": "Swim at Your Own Risk",
+      "slug": "swim-at-your-own-risk"
+    },
+    {
+      "id": 55,
+      "level": 3,
+      "name": "The Final Enemy",
+      "slug": "the-final-enemy"
+    },
+    {
+      "id": 59,
+      "level": 3,
+      "name": "The Haunting of Saltmarsh",
+      "slug": "the-haunting-of-saltmarsh"
+    },
+    {
+      "id": 57,
+      "level": 3,
+      "name": "The Hijacked Haul",
+      "slug": "the-hijacked-haul"
+    },
+    {
+      "id": 58,
+      "level": 3,
+      "name": "Under the Cover of Darkness",
+      "slug": "under-the-cover-of-darkness"
+    },
+    {
+      "id": 52,
+      "level": 3,
+      "name": "What Sleeps Below",
+      "slug": "what-sleeps-below"
     }
   ],
   "reward_count": 6,
   "rewards": [
     {
-      "id": 891,
+      "id": 893,
       "is_rare": false,
       "minimum_level": 29,
       "name": "Black Pearl Ring",
       "slot": "Ring",
+      "slug": "black-pearl-ring",
       "tier": "epic"
     },
     {
-      "id": 2933,
+      "id": 2942,
       "is_rare": false,
       "minimum_level": 29,
       "name": "Explorer of the Depths",
       "slot": "Head",
+      "slug": "explorer-of-the-depths",
       "tier": "epic"
     },
     {
-      "id": 6868,
+      "id": 6946,
       "is_rare": false,
       "minimum_level": 29,
       "name": "Ring of the Kraken",
       "slot": "Ring",
+      "slug": "ring-of-the-kraken",
+      "tier": "epic"
+    },
+    {
+      "id": 7111,
+      "is_rare": false,
+      "minimum_level": 29,
+      "name": "Sapphire Spyglass",
+      "slot": "Trinket",
+      "slug": "sapphire-spyglass",
+      "tier": "epic"
+    },
+    {
+      "id": 7976,
+      "is_rare": false,
+      "minimum_level": 29,
+      "name": "The Brass Admiral",
+      "slot": "Head",
+      "slug": "the-brass-admiral",
+      "tier": "epic"
+    },
+    {
+      "id": 8165,
+      "is_rare": false,
+      "minimum_level": 29,
+      "name": "The Two-Headed Platinum Piece",
+      "slot": "Trinket",
+      "slug": "the-two-headed-platinum-piece",
       "tier": "epic"
     }
   ],
+  "slug": "the-haunting-of-saltmarsh",
   "wiki_url": "https://ddowiki.com/page/Sinister_Secret_of_Saltmarsh_(Legendary)"
 }

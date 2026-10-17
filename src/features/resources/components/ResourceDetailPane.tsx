@@ -112,7 +112,7 @@ function renderedDetailBody(
         <ItemDetailCard
           key={`${topEntry.category}-${topEntry.id}`}
           item={itemCard.item}
-          setDetail={itemCard.setDetail}
+          setDetails={itemCard.setDetails}
           status={itemCard.status}
           matchingBonuses={matchingBonuses}
           onOpenItem={onOpenItem}

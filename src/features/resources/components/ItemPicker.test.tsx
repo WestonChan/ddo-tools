@@ -8,8 +8,8 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
-import { render } from '../../../test/renderWithQueryClient'
 import userEvent from '@testing-library/user-event'
+import { render } from '../../../test/renderWithQueryClient'
 import capturedGroups from '../queries/fixtures/effects-page-groups.json'
 import capturedSetPage from '../queries/fixtures/sets-page.json'
 import { ItemPicker } from './ItemPicker'

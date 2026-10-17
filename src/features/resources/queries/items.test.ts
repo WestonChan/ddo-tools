@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import twoSetItem from './fixtures/item-two-sets-747.json'
+import pricedItem from './fixtures/data-build-item-barovian-handwraps.json'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
 import capturedItem from './fixtures/effects-item.json'
-import capturedWeapon from './fixtures/effects-item-3479.json'
-import capturedShield from './fixtures/effects-item-8203.json'
+import capturedWeapon from './fixtures/effects-item-3492.json'
+import capturedShield from './fixtures/effects-item-8309.json'
 import capturedAugment from './fixtures/effects-augment.json'
 import effectPage from './fixtures/effects-page.json'
 import {
@@ -26,7 +28,9 @@ afterEach(() => {
 function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
   return {
     id: 1,
+    slug: 'test-entity',
     name: 'Bloodstone',
+    sets: [],
     slot: 'Trinket',
     category: 'Jewelry',
     item_type: null,
@@ -43,6 +47,7 @@ function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
 
 const API_ITEM_DETAIL: ApiItemDetail = {
   id: 7,
+  slug: 'test-entity',
   name: 'Sireth, Spear of the Sky',
   slot: 'Main Hand',
   category: 'Weapon',
@@ -54,7 +59,6 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   icon: 'Quarterstaff_6a',
   description: 'A spear.',
   drop_location: 'Caught in the Web, End Chest',
-  set_name: null,
   accepts_sentience: true,
   is_minor_artifact: false,
   wiki_url: 'https://ddowiki.com/page/Item:Sireth,_Spear_of_the_Sky',
@@ -114,10 +118,11 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   clickies: [
     { name: 'Acid Shot', clickie_id: 2, spell_id: null, description: 'Shoots acid.', icon: null },
   ],
-  set: { id: 5, name: 'Eminence of Winter', icon: null },
+  sets: [{ id: 5, slug: 'eminence-of-winter', name: 'Eminence of Winter', icon: null }],
   quests: [
     {
       id: 11,
+      slug: 'test-entity',
       name: 'Caught in the Web',
       level: 20,
       epic_level: null,
@@ -134,6 +139,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   quest_chains: [
     {
       id: 3,
+      slug: 'test-entity',
       name: 'The Lost Seekers',
       is_rare: true,
       wiki_url: 'https://ddowiki.com/page/The_Lost_Seekers',
@@ -142,12 +148,20 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   sagas: [
     {
       id: 1,
+      slug: 'test-entity',
       name: 'Masterminds of Sharn',
       tier: 'epic',
       is_rare: false,
       wiki_url: 'https://ddowiki.com/page/Masterminds_of_Sharn_(saga)',
     },
-    { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', is_rare: true, wiki_url: null },
+    {
+      id: 1,
+      slug: 'test-entity',
+      name: 'Masterminds of Sharn',
+      tier: 'legendary',
+      is_rare: true,
+      wiki_url: null,
+    },
   ],
   adventure_packs: [],
   crafting_systems: [],
@@ -163,9 +177,9 @@ describe('mappers', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ ...capturedItem, augment_slots: undefined })),
     )
-    await expect(fetchItem(7631)).rejects.toMatchObject({
+    await expect(fetchItem(7716)).rejects.toMatchObject({
       kind: 'api-response',
-      message: expect.stringContaining('/v1/items/7631: augment_slots'),
+      message: expect.stringContaining('/v1/items/7716: augment_slots'),
     })
   })
 
@@ -173,9 +187,9 @@ describe('mappers', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ ...capturedItem, slot: undefined })),
     )
-    await expect(fetchItem(7631)).rejects.toMatchObject({
+    await expect(fetchItem(7716)).rejects.toMatchObject({
       kind: 'api-response',
-      message: expect.stringContaining('/v1/items/7631: slot'),
+      message: expect.stringContaining('/v1/items/7716: slot'),
     })
   })
 
@@ -252,7 +266,7 @@ describe('mappers', () => {
     const item = toItem(API_ITEM_DETAIL)
     expect(item.equipmentSlot).toBe('Main Hand')
     expect(item.enhancementBonus).toBe(7)
-    expect(item.setName).toBe('Eminence of Winter')
+    expect(item.sets).toEqual(API_ITEM_DETAIL.sets)
     expect(item.weaponStats?.damageReductionBypasses).toHaveLength(4)
     expect(item.armorStats).toBeNull()
     expect(item.effects[0]).toEqual({
@@ -347,6 +361,7 @@ describe('mappers', () => {
         {
           id: 25,
           name: 'The Isle of Dread',
+          slug: 'the-isle-of-dread',
           loot_type: 'chest',
           chest: 'any legendary chest',
           is_rare: true,
@@ -355,6 +370,7 @@ describe('mappers', () => {
         {
           id: 40,
           name: 'Magic of Myth Drannor',
+          slug: 'magic-of-myth-drannor',
           loot_type: 'chest',
           chest: null,
           is_rare: false,
@@ -369,7 +385,7 @@ describe('mappers', () => {
         key: 'adventurePack-25-0',
         name: 'The Isle of Dread',
         vendorLocation: null,
-        cost: null,
+        price: [],
         chest: 'any legendary chest',
         characterLevel: null,
         isRareLoot: true,
@@ -381,7 +397,7 @@ describe('mappers', () => {
         key: 'adventurePack-40-1',
         name: 'Magic of Myth Drannor',
         vendorLocation: null,
-        cost: null,
+        price: [],
         chest: null,
         characterLevel: null,
         isRareLoot: false,
@@ -397,6 +413,7 @@ describe('mappers', () => {
       crafting_systems: [
         {
           id: 32,
+          slug: 'test-entity',
           name: 'Thunder-Forged',
           is_rare: false,
           wiki_url: 'https://ddowiki.com/page/Thunder-Forged',
@@ -405,6 +422,7 @@ describe('mappers', () => {
       challenge_packs: [
         {
           id: 62,
+          slug: 'test-entity',
           name: 'Secrets of the Artificers',
           is_rare: true,
           wiki_url: 'https://ddowiki.com/page/Secrets_of_the_Artificers',
@@ -413,9 +431,10 @@ describe('mappers', () => {
       vendors: [
         {
           id: 1,
+          slug: 'test-entity',
           name: 'Morten Edgewright',
           location: 'The Harbor',
-          cost: '50 Tokens',
+          price: [{ ingredient: 'Token', quantity: 50 }],
           is_rare: false,
           wiki_url: null,
         },
@@ -423,6 +442,7 @@ describe('mappers', () => {
       events: [
         {
           id: 4,
+          slug: 'test-entity',
           name: 'The Night Revels',
           is_rare: false,
           wiki_url: 'https://ddowiki.com/page/The_Night_Revels',
@@ -437,7 +457,7 @@ describe('mappers', () => {
         key: 'craftingSystem-32',
         name: 'Thunder-Forged',
         vendorLocation: null,
-        cost: null,
+        price: [],
         chest: null,
         characterLevel: null,
         isRareLoot: false,
@@ -449,7 +469,7 @@ describe('mappers', () => {
         key: 'challengePack-62',
         name: 'Secrets of the Artificers',
         vendorLocation: null,
-        cost: null,
+        price: [],
         chest: null,
         characterLevel: null,
         isRareLoot: true,
@@ -461,7 +481,7 @@ describe('mappers', () => {
         key: 'vendor-1',
         name: 'Morten Edgewright',
         vendorLocation: 'The Harbor',
-        cost: '50 Tokens',
+        price: [{ ingredient: 'Token', quantity: 50 }],
         chest: null,
         characterLevel: null,
         isRareLoot: false,
@@ -473,7 +493,7 @@ describe('mappers', () => {
         key: 'event-4',
         name: 'The Night Revels',
         vendorLocation: null,
-        cost: null,
+        price: [],
         chest: null,
         characterLevel: null,
         isRareLoot: false,
@@ -485,7 +505,7 @@ describe('mappers', () => {
         key: 'starter-15',
         name: 'Starter gear at level 15',
         vendorLocation: null,
-        cost: null,
+        price: [],
         chest: null,
         characterLevel: 15,
         isRareLoot: false,
@@ -531,6 +551,7 @@ describe('mappers', () => {
 
   it('toAugmentSummary keeps the augment identity and slots', () => {
     const a: ApiAugment = {
+      slug: 'test-augment',
       id: 2,
       name: 'Silverscale',
       family: 'DinosaurBone',
@@ -557,6 +578,7 @@ describe('mappers', () => {
 
   it('toAugmentSummary keeps each crafting recipe with its system, tier and ingredient quantities', () => {
     const a: ApiAugment = {
+      slug: 'test-augment',
       id: 3,
       name: 'Melancholic Acid Spell Critical Damage (Legendary)',
       family: 'Lamordia_Legendary',
@@ -821,6 +843,7 @@ describe('fetchers', () => {
 
   it('fetchAugmentsFittingSlot orders by level then name', async () => {
     const createApiAugment = (id: number, name: string, min_level: number | null): ApiAugment => ({
+      slug: 'test-augment',
       id,
       name,
       family: 'Ruby',
@@ -846,5 +869,24 @@ describe('fetchers', () => {
     const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
     expect(url.pathname).toBe('/v1/augments')
     expect(Object.fromEntries(url.searchParams)).toEqual({ slot: 'red', limit: '10000' })
+  })
+})
+
+describe('schema 37 item fields', () => {
+  it('maps all sets in API order', () => {
+    expect(toItem(twoSetItem as ApiItemDetail)).toMatchObject({ sets: twoSetItem.sets })
+  })
+  it('rejects a detail missing its sets collection', () => {
+    const { sets: omittedSets, ...incompleteItem } = twoSetItem
+    expect(omittedSets).toHaveLength(2)
+    expect(() => toItem(incompleteItem as unknown as ApiItemDetail)).toThrow(/sets/)
+  })
+  it('maps vendor price rows without reading deprecated display text', () => {
+    expect(toItem(pricedItem as ApiItemDetail).sourcesBeyondQuests).toContainEqual(
+      expect.objectContaining({
+        kind: 'vendor',
+        price: [{ ingredient: 'Vistani Talisman', quantity: 40 }],
+      }),
+    )
   })
 })

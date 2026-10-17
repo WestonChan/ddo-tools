@@ -5,6 +5,7 @@ import {
   ApiErrorNotice,
   AugmentSlotDisplay,
   StructuredDetailCard,
+  IngredientCostList,
   detailCardSection,
   type DetailCardDefinition,
   type DetailCardFact,
@@ -47,6 +48,7 @@ import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 import { BonusHoverCard } from './BonusDetailCard'
 import { resourceStatusDefinition } from './resourceStatusDefinition'
 import { DamageView, DescriptionView } from './ResourceCardViews'
+import type { IngredientCost } from '../../../../lib/ingredientCost'
 
 type OpenItem = (id: number, name: string) => void
 
@@ -68,8 +70,8 @@ export function ItemHoverContent({
   onOpenItem?: OpenItem
 }): JSX.Element {
   const openItem = useOpenItemFromCard(onOpenItem)
-  const { item, setDetail, status } = useItemCardContent(itemId)
-  return <ItemHoverCard item={item} setDetail={setDetail} onOpenItem={openItem} status={status} />
+  const { item, setDetails, status } = useItemCardContent(itemId)
+  return <ItemHoverCard item={item} setDetails={setDetails} onOpenItem={openItem} status={status} />
 }
 
 function useAugmentDetailDefinition(augmentId: number): DetailCardDefinition {
@@ -303,7 +305,7 @@ type LinkedItem = {
   minimumLevel?: number | null
   isRareLoot?: boolean
   chest?: string | null
-  cost?: string | null
+  price?: IngredientCost[]
   tier?: string | null
   pack?: string | null
   onOpenItem: OpenItem
@@ -326,7 +328,7 @@ function LinkedItemRow({
   minimumLevel,
   isRareLoot,
   chest,
-  cost,
+  price = [],
   tier,
   pack,
   onOpenItem,
@@ -352,7 +354,7 @@ function LinkedItemRow({
       {((minimumLevel !== undefined && minimumLevel !== null) ||
         isRareLoot ||
         chest ||
-        cost ||
+        price.length > 0 ||
         tier ||
         pack) && (
         <span className="resources-source-item-details">
@@ -360,12 +362,12 @@ function LinkedItemRow({
             minimumLevel !== undefined && minimumLevel !== null ? `ML ${minimumLevel}` : null,
             chest,
             isRareLoot ? 'Rare' : null,
-            cost,
             tier,
             pack,
           ]
             .filter(Boolean)
             .join(' · ')}
+          <IngredientCostList costs={price} />
         </span>
       )}
     </button>

@@ -1,17 +1,21 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { act, fireEvent, screen, cleanup, within, type RenderResult } from '@testing-library/react'
-import { render } from '../../../../test/renderWithQueryClient'
 import userEvent from '@testing-library/user-event'
+import capturedTwoSetItem from '../../queries/fixtures/item-two-sets-747.json'
+import capturedCaptainSet from '../../queries/fixtures/effects-set-73.json'
+import capturedDevilSet from '../../queries/fixtures/effects-set-77.json'
+import pricedItem from '../../queries/fixtures/data-build-item-barovian-handwraps.json'
+import { render } from '../../../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../../../components'
 import type { ApiItemDetail, ApiSetDetail, ApiWeaponStats } from '../../../../lib/api'
-import capturedWeapon from '../../queries/fixtures/effects-item-3479.json'
-import capturedRuneArm from '../../queries/fixtures/effects-item-924.json'
-import capturedArmor from '../../queries/fixtures/effects-item-831.json'
-import capturedShield from '../../queries/fixtures/effects-item-8203.json'
+import capturedWeapon from '../../queries/fixtures/effects-item-3492.json'
+import capturedRuneArm from '../../queries/fixtures/effects-item-926.json'
+import capturedArmor from '../../queries/fixtures/effects-item-833.json'
+import capturedShield from '../../queries/fixtures/effects-item-8309.json'
 import capturedRing from '../../queries/fixtures/effects-item-487.json'
 import capturedSet from '../../queries/fixtures/effects-set-93.json'
 import capturedNecklace from '../../queries/fixtures/effects-item.json'
-import capturedBracers from '../../queries/fixtures/effects-item-2430.json'
+import capturedBracers from '../../queries/fixtures/effects-item-2439.json'
 import { toItem } from '../../queries/items'
 import { toSetDetail } from '../../queries/sets'
 import { ItemDetailCard, ItemHoverCard } from './ItemDetailCard'
@@ -46,8 +50,7 @@ const plainItem: Item = {
   requiredRace: null,
   description: null,
   dropLocation: null,
-  setName: null,
-  setId: null,
+  sets: [],
   canAcceptSentience: false,
   isMinorArtifact: false,
   wikiUrl: null,
@@ -89,7 +92,7 @@ function itemSource(overrides: Partial<ItemSource> = {}): ItemSource {
     key: 'craftingSystem-32',
     name: 'Thunder-Forged',
     vendorLocation: null,
-    cost: null,
+    price: [],
     chest: null,
     characterLevel: null,
     isRareLoot: false,
@@ -521,9 +524,7 @@ describe('ItemDetailCard details', () => {
       '—',
     ])
     rerender(
-      <ItemDetailCard
-        item={{ ...plainItem, minimumLevel: 0, equipmentSlot: '  ', setName: '  ' }}
-      />,
+      <ItemDetailCard item={{ ...plainItem, minimumLevel: 0, equipmentSlot: '  ', sets: [] }} />,
     )
     expect(facts.map((fact) => fact.lastElementChild?.textContent)).toEqual([
       '0',
@@ -568,7 +569,7 @@ describe('ItemDetailCard details', () => {
     const setDetail = toSetDetail(capturedSet as ApiSetDetail)
     const { container, rerender } = render(
       <HoverCardProvider>
-        <ItemHoverCard item={item} setDetail={setDetail} />
+        <ItemHoverCard item={item} setDetails={[setDetail]} />
       </HoverCardProvider>,
     )
     const enchantments = container.querySelector('[data-section-key="enchantments"]')!
@@ -577,7 +578,9 @@ describe('ItemDetailCard details', () => {
       name: /Adherent of the Mists/,
     })
     expect(setBand).toHaveAttribute('aria-expanded', 'false')
-    expect(setBand).toHaveTextContent('7 bonuses')
+    expect(setBand).toHaveTextContent(
+      `${capturedSet.tiers.reduce((count, tier) => count + tier.effects.length, 0)} bonuses`,
+    )
     expect(enchantments.querySelector('.ledger-header-row')).toBeNull()
     expect(enchantments.querySelector('.ledger-row--subheading')).toBeNull()
     expect(enchantments.querySelector('.detail-card__more')).toBeNull()
@@ -595,7 +598,7 @@ describe('ItemDetailCard details', () => {
     })
     rerender(
       <HoverCardProvider>
-        <ItemHoverCard item={sixRowItem} setDetail={setDetail} />
+        <ItemHoverCard item={sixRowItem} setDetails={[setDetail]} />
       </HoverCardProvider>,
     )
     expect(enchantments.querySelectorAll('.resources-hover-effect-row')).toHaveLength(5)
@@ -613,7 +616,7 @@ describe('ItemDetailCard details', () => {
       <HoverCardProvider>
         <ItemHoverCard
           item={toCapturedItem({ ...capturedRing, enhancement_bonus: null, effects: [] })}
-          setDetail={setDetail}
+          setDetails={[setDetail]}
         />
       </HoverCardProvider>,
     )
@@ -628,7 +631,7 @@ describe('ItemDetailCard details', () => {
     const { container } = render(
       <ItemHoverCard
         item={item}
-        setDetail={setDetail}
+        setDetails={[setDetail]}
         matchingBonuses={['Positive Spell Power']}
       />,
     )
@@ -805,21 +808,26 @@ describe('ItemDetailCard obtained-from layout', () => {
     expect(row.querySelector('.resources-chip')).toBeNull()
   })
 
-  it('places mapped adventure-pack and chain descriptors beneath their names', () => {
-    const { container } = renderItemDetailCard(toItem(capturedArmor as ApiItemDetail))
+  it('places mapped adventure-pack descriptors beneath their names', () => {
+    const { container } = renderItemDetailCard(toItem(capturedWeapon as ApiItemDetail))
     const rows = Array.from(container.querySelectorAll('.resources-item-source-row'))
     const packRow = rows.find(
       (row) =>
-        row.querySelector('.resources-item-source-title')?.textContent === 'Reign of Madness',
+        row.querySelector('.resources-item-source-title')?.textContent === 'Magic of Myth Drannor',
     )!
+    expect(
+      packRow.querySelector('.resources-item-source-left .resources-item-source-details'),
+    ).toHaveTextContent(/Anywhere in the pack\s*·\s*Any end chest/)
+    expect(packRow.querySelector('.resources-item-source-right')).toBeNull()
+  })
+
+  it('places mapped quest-chain descriptors beneath their names', () => {
+    const { container } = renderItemDetailCard(toItem(capturedArmor as ApiItemDetail))
+    const rows = Array.from(container.querySelectorAll('.resources-item-source-row'))
     const chainRow = rows.find(
       (row) =>
         row.querySelector('.resources-item-source-descriptor')?.textContent === 'Chain end reward',
     )!
-    expect(
-      packRow.querySelector('.resources-item-source-left .resources-item-source-details'),
-    ).toHaveTextContent(/Anywhere in the pack\s*·\s*Opuloxx chest/)
-    expect(packRow.querySelector('.resources-item-source-right')).toBeNull()
     expect(
       chainRow.querySelector('.resources-item-source-left .resources-item-source-details'),
     ).toHaveTextContent('Chain end reward')
@@ -828,7 +836,7 @@ describe('ItemDetailCard obtained-from layout', () => {
   })
 
   it('separates each pack descriptor and Rare with the same faint dot', () => {
-    const apiItem = capturedArmor as ApiItemDetail
+    const apiItem = capturedWeapon as ApiItemDetail
     const { container } = renderItemDetailCard(
       toItem({
         ...apiItem,
@@ -840,7 +848,7 @@ describe('ItemDetailCard obtained-from layout', () => {
     )
     const packRow = Array.from(container.querySelectorAll('.resources-item-source-row')).find(
       (row) =>
-        row.querySelector('.resources-item-source-title')?.textContent === 'Reign of Madness',
+        row.querySelector('.resources-item-source-title')?.textContent === 'Magic of Myth Drannor',
     )!
     const details = packRow.querySelector('.resources-item-source-details')!
     expect(Array.from(details.children).map((part) => part.className)).toEqual([
@@ -853,7 +861,7 @@ describe('ItemDetailCard obtained-from layout', () => {
     expect(Array.from(details.children).map((part) => part.textContent)).toEqual([
       'Anywhere in the pack',
       '·',
-      'Opuloxx chest',
+      'Any end chest',
       '·',
       'Rare',
     ])
@@ -1222,11 +1230,12 @@ describe('ItemDetailCard sources beyond quests', () => {
           key: 'vendor-1',
           name: 'Morten Edgewright',
           vendorLocation: 'The Harbor',
-          cost: '50 Tokens',
+          price: [{ ingredient: 'Token', quantity: 50 }],
         }),
       ],
     })
-    expect(rowDescriptorText(container)).toEqual(['Sold by · The Harbor · 50 Tokens'])
+    expect(rowDescriptorText(container)).toEqual(['Sold by · The Harbor'])
+    expect(screen.getByText('50 × Token')).toBeInTheDocument()
   })
 
   it('lists a vendor with no location or cost as Sold by alone', () => {
@@ -1305,7 +1314,7 @@ describe('ItemDetailCard header attributes', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       enhancementBonus: 5,
-      setName: 'Adherent of the Mists',
+      sets: capturedRing.sets,
     })
     expect(container.querySelector('.detail-fact-grid')).toBeNull()
     expect(container.querySelector('.resources-effect-ledger .ledger-row')).toHaveTextContent(
@@ -1472,4 +1481,105 @@ describe('ItemDetailCard action row', () => {
       screen.getByText('Actions arrive with the Gear and Farm checklist phases.'),
     ).toBeInTheDocument()
   })
+})
+
+it.each([ItemDetailCard, ItemHoverCard])(
+  'renders captured vendor prices through the shared card definition',
+  (Card) => {
+    render(<Card item={toItem(pricedItem as ApiItemDetail)} />)
+    expect(screen.getByText('40 × Vistani Talisman')).toBeInTheDocument()
+  },
+)
+
+it.each([
+  { name: 'no sets', response: capturedNecklace, sets: [] },
+  { name: 'one set', response: capturedRing, sets: [capturedSet] },
+  { name: 'two sets', response: capturedTwoSetItem, sets: [capturedCaptainSet, capturedDevilSet] },
+])(
+  'keeps $name and every tier in API order identically in pane and hover',
+  async ({ response, sets }) => {
+    const item = toItem(response as ApiItemDetail)
+    expect(sets.map((set) => set.id)).toEqual(item.sets.map((set) => set.id))
+    const setDetails = sets.map((set) => toSetDetail(set as ApiSetDetail))
+    const expandedRowsByCard: string[][] = []
+    const consoleError = vi.spyOn(console, 'error')
+    try {
+      for (const Card of [ItemDetailCard, ItemHoverCard]) {
+        const { container, unmount } = render(
+          <HoverCardProvider>
+            <Card item={item} setDetails={setDetails} />
+          </HoverCardProvider>,
+        )
+        const headings = Array.from(container.querySelectorAll<HTMLElement>('.ledger-row--heading'))
+        expect(
+          headings.map((heading) => heading.querySelector('.resources-set-name')?.textContent),
+        ).toEqual(sets.map((set) => set.name))
+        for (const heading of headings) {
+          expect(heading).toHaveAttribute('aria-expanded', 'false')
+          await userEvent.click(heading)
+          expect(heading).toHaveAttribute('aria-expanded', 'true')
+        }
+        expect(
+          Array.from(
+            container.querySelectorAll('.ledger-row--subheading'),
+            (row) => row.textContent,
+          ),
+        ).toEqual(sets.flatMap((set) => set.tiers.map((tier) => `${tier.equipped_count} pieces`)))
+        const rows = Array.from(container.querySelectorAll('.resources-effect-ledger .ledger-row'))
+        const firstSetIndex = rows.findIndex((row) => row.classList.contains('ledger-row--heading'))
+        const setRows = firstSetIndex === -1 ? [] : rows.slice(firstSetIndex)
+        expect(
+          setRows.flatMap((row) =>
+            Array.from(row.querySelectorAll('.resources-effect-name'), (name) => name.textContent),
+          ),
+        ).toEqual(
+          sets.flatMap((set) =>
+            set.tiers.flatMap((tier) => tier.effects.map((effect) => effect.name)),
+          ),
+        )
+        expandedRowsByCard.push(setRows.map((row) => row.textContent ?? ''))
+        unmount()
+      }
+      expect(expandedRowsByCard[0]).toEqual(expandedRowsByCard[1])
+      expect(consoleError).not.toHaveBeenCalled()
+    } finally {
+      consoleError.mockRestore()
+    }
+  },
+)
+
+it('keeps hover quest metadata on one descriptor line', () => {
+  const { container } = render(<ItemHoverCard item={toItem(capturedTwoSetItem as ApiItemDetail)} />)
+  const row = Array.from(container.querySelectorAll('.resources-item-source-brief-row')).find(
+    (row) => row.textContent?.includes('Tavern Brawl'),
+  )!
+  const lines = row.querySelectorAll('.resources-item-source-details')
+  expect(lines).toHaveLength(1)
+  expect(lines[0]).toHaveTextContent(
+    "End chest · Level 14 / 30 · The Devil's Gambit · The Gatekeepers",
+  )
+  expect(row.querySelector('span:empty')).toBeNull()
+})
+
+it('keeps priced source details identical in pane and hover', () => {
+  const detailsByCard: string[][] = []
+  for (const Card of [ItemDetailCard, ItemHoverCard]) {
+    const { unmount } = render(<Card item={toItem(pricedItem as ApiItemDetail)} />)
+    const price = screen.getByText('40 × Vistani Talisman')
+    expect(price.closest('.resources-item-source-details')).not.toBeNull()
+    expect(
+      price.closest('.resources-item-source-brief-row')?.querySelector('span:empty') ?? null,
+    ).toBeNull()
+    const details = price.closest('.resources-item-source-left, .resources-item-source-brief-row')!
+    expect(details.textContent!.indexOf('Sold by')).toBeLessThan(
+      details.textContent!.indexOf('40 ×'),
+    )
+    detailsByCard.push(
+      Array.from(details.querySelectorAll('.resources-item-source-details'), (row) =>
+        (row.textContent ?? '').replace(/\s*·\s*/g, ' · '),
+      ),
+    )
+    unmount()
+  }
+  expect(detailsByCard[0]).toEqual(detailsByCard[1])
 })

@@ -1,17 +1,22 @@
-import { afterEach, expect, it, vi } from 'vitest'
-import { apiErrorDescription, type ApiSetDetail } from '../../../lib/api'
+import { afterEach, expect, expectTypeOf, it, vi } from 'vitest'
+import { apiErrorDescription, type ApiSetDetail, type ApiSetRow } from '../../../lib/api'
 import capturedSet from './fixtures/effects-set.json'
 import capturedSetPage from './fixtures/sets-page.json'
 import { fetchSet, fetchSetVocabulary, toSetDetail } from './sets'
 
 afterEach(() => vi.unstubAllGlobals())
 
+it('accepts the captured set vocabulary shape', () => {
+  const sets: ApiSetRow[] = capturedSetPage.sets
+  expectTypeOf(sets).toEqualTypeOf<ApiSetRow[]>()
+})
+
 it('fetches all pages of matching set names in API order', async () => {
   const fetchMock = vi
     .fn()
     .mockResolvedValueOnce(
       new Response(
-        JSON.stringify({ ...capturedSetPage, limit: 1, sets: [capturedSetPage.sets[0]] }),
+        JSON.stringify({ ...capturedSetPage, total: 2, limit: 1, sets: [capturedSetPage.sets[0]] }),
       ),
     )
     .mockResolvedValueOnce(
@@ -20,13 +25,14 @@ it('fetches all pages of matching set names in API order', async () => {
           ...capturedSetPage,
           limit: 1,
           offset: 1,
+          total: 2,
           sets: [capturedSetPage.sets[1]],
         }),
       ),
     )
   vi.stubGlobal('fetch', fetchMock)
   expect(await fetchSetVocabulary('  Adherent  ')).toEqual({
-    rows: capturedSetPage.sets.map((set) => set.name),
+    rows: capturedSetPage.sets.slice(0, 2).map((set) => set.name),
     total: 2,
   })
   expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -67,7 +73,7 @@ it('keeps captured set tier effects in owner order with their stat bonuses', () 
   expect(set.tiers[0].equippedCount).toBe(2)
   expect(set.tiers[0].effects[0]).toMatchObject({
     name: 'Positive Spell Power',
-    verboseName: 'Equipment Positive Spell Power +36',
+    verboseName: '+36 Equipment Bonus to Positive Spell Power',
     bonuses: [{ statName: 'Positive Spell Power', bonusType: 'Equipment', value: 36 }],
   })
 })

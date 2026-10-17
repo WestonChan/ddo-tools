@@ -1,23 +1,6 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [
-    {
-      "chest": null,
-      "id": 46,
-      "is_rare": false,
-      "loot_type": null,
-      "name": "Harbinger of Madness",
-      "wiki_url": "https://ddowiki.com/page/Harbinger_of_Madness"
-    },
-    {
-      "chest": "opuloxx chest",
-      "id": 52,
-      "is_rare": false,
-      "loot_type": "chest",
-      "name": "Reign of Madness",
-      "wiki_url": "https://ddowiki.com/page/Reign_of_Madness"
-    }
-  ],
+  "adventure_packs": [],
   "armor": {
     "adamantine_body": null,
     "arcane_spell_failure": 35,
@@ -52,7 +35,7 @@
       "bonuses": [],
       "damage": [],
       "description": "This item was made from powerful antimagic materials. When scoring a critical hit on an enemy with your ranged or melee weapons, the target must make a DC 28 Fortitude save or be unable to cast spells for a brief duration.",
-      "effect_id": 547,
+      "effect_id": 555,
       "name": "Antimagic Spike",
       "tier": null,
       "value": null,
@@ -64,7 +47,7 @@
       "bonuses": [],
       "damage": [],
       "description": "When enemies hit you, they may be assaulted by these psychic forces, falling to the ground unless they make a DC 35 Reflex save.",
-      "effect_id": 548,
+      "effect_id": 556,
       "name": "Telekinesis Guard",
       "tier": null,
       "value": null,
@@ -76,7 +59,7 @@
       "bonuses": [],
       "damage": [],
       "description": "The metal plates of this armor sometimes tire you out. When you are damaged there is a small chance that you will become Exhausted.",
-      "effect_id": 549,
+      "effect_id": 557,
       "name": "Metal Fatigue",
       "tier": null,
       "value": null,
@@ -87,7 +70,7 @@
   "enhancement_bonus": 5,
   "events": [],
   "icon": "HeavyArmor_1a",
-  "id": 831,
+  "id": 833,
   "is_legacy": false,
   "is_minor_artifact": false,
   "item_type": "Heavy",
@@ -100,6 +83,7 @@
       "id": 11,
       "is_rare": false,
       "name": "Harbinger of Madness",
+      "slug": "harbinger-of-madness",
       "wiki_url": "https://ddowiki.com/page/Harbinger_of_Madness"
     }
   ],
@@ -121,14 +105,17 @@
       "loot_type": "chest",
       "name": "The Lord of Eyes",
       "pack": "Reign of Madness",
-      "patron": "The Twelve"
+      "patron": "The Twelve",
+      "slug": "the-lord-of-eyes"
     }
   ],
   "race_required": null,
   "sagas": [],
   "set": null,
   "set_name": null,
+  "sets": [],
   "slot": "Body",
+  "slug": "beholder-plate-armor",
   "sources": [
     {
       "character_level": null,
@@ -139,6 +126,8 @@
       "kind": "quest",
       "loot_type": "chest",
       "name": "The Lord of Eyes",
+      "price": [],
+      "slug": "the-lord-of-eyes",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/The_Lord_of_Eyes"
     },
@@ -151,6 +140,8 @@
       "kind": "quest_chain",
       "loot_type": null,
       "name": "Harbinger of Madness",
+      "price": [],
+      "slug": "harbinger-of-madness",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/Harbinger_of_Madness"
     }

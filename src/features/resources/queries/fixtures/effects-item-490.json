@@ -25,7 +25,7 @@
       "bonuses": [],
       "damage": [],
       "description": "On Shield Bash: +2d4 Bludgeoning damage. On Melee Hit: +4% Chance to automatically hit your enemy with a Shield Bash attack.",
-      "effect_id": 383,
+      "effect_id": 385,
       "name": "Bashing IV",
       "tier": null,
       "value": null,
@@ -55,13 +55,13 @@
         }
       ],
       "damage": [],
-      "description": "This item enchants its user with incredible awareness and speed, granting a 2 Insight bonus to AC and to Saves.",
-      "effect_id": 384,
+      "description": "This item enchants its user with incredible awareness and speed, granting a +2 Insight bonus to AC and to Saves.",
+      "effect_id": 386,
       "name": "Riposte",
       "tier": null,
-      "value": null,
+      "value": 2,
       "value2": null,
-      "verbose_name": "Riposte 2"
+      "verbose_name": "Riposte +2"
     }
   ],
   "enhancement_bonus": 4,
@@ -81,7 +81,9 @@
   "sagas": [],
   "set": null,
   "set_name": null,
+  "sets": [],
   "slot": "Off Hand",
+  "slug": "aegis-of-the-deep",
   "sources": [
     {
       "character_level": 15,
@@ -92,6 +94,8 @@
       "kind": "starter",
       "loot_type": null,
       "name": "Advance to level 15",
+      "price": [],
+      "slug": null,
       "tier": null,
       "wiki_url": null
     }

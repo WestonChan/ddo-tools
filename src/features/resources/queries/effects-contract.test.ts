@@ -13,7 +13,7 @@ import setResponse from './fixtures/effects-set.json'
 import effectPage from './fixtures/effects-page.json'
 import effectDetail from './fixtures/effects-detail.json'
 import groupPage from './fixtures/effects-page-groups.json'
-import groupDetail from './fixtures/effect-detail-336.json'
+import groupDetail from './fixtures/effect-detail-338.json'
 import groupItem from './fixtures/effects-item-457.json'
 import {
   fetchAugment,
@@ -34,7 +34,7 @@ it('maps captured owner effects with their provenance and damage', () => {
   expect(item.effects[0]).toMatchObject({
     id: 6,
     name: 'Charisma',
-    verboseName: 'Enhancement Charisma 8',
+    verboseName: 'Charisma +8',
     tier: null,
     damage: [],
     bonuses: [{ statName: 'Charisma', value: 8, amountSource: 'owner', scale: 1 }],
@@ -125,7 +125,11 @@ it('guards both effect kinds and partial nested detail responses', () => {
 it('accepts captured group bonuses, group vocabulary and per-link carriers', () => {
   const groupEffect = groupItem.effects.find((effect) => effect.name === 'Command')
   expect(isApiEffect(groupEffect)).toBe(true)
-  expect(groupEffect?.bonuses[0].group).toEqual({ id: 336, name: 'Charisma Skills' })
+  expect(groupEffect?.bonuses[0].group).toEqual({
+    id: 338,
+    slug: 'charisma-skills',
+    name: 'Charisma Skills',
+  })
   expect(
     isApiEffect({
       ...groupEffect,
@@ -227,7 +231,7 @@ it('fetches both kinds through /v1/effects and rejects malformed owner effects',
     '/v1/effects': effectPage,
     '/v1/effects/1': effectDetail,
     '/v1/effects/2': { ...effectDetail, id: 2, kind: 'effect', name: 'Riposte' },
-    '/v1/effects/336': groupDetail,
+    '/v1/effects/338': groupDetail,
     [`/v1/items/${itemResponse.id}`]: itemResponse,
     [`/v1/augments/${augmentResponse.id}`]: augmentResponse,
     [`/v1/sets/${setResponse.id}`]: setResponse,
@@ -250,7 +254,7 @@ it('fetches both kinds through /v1/effects and rejects malformed owner effects',
   ])
   expect((await fetchEffectDetail('/v1/effects/1')).kind).toBe('stat')
   expect((await fetchEffectDetail('/v1/effects/2')).kind).toBe('effect')
-  expect((await fetchEffectDetail('/v1/effects/336')).kind).toBe('group')
+  expect((await fetchEffectDetail('/v1/effects/338')).kind).toBe('group')
   for (const [request] of fetchMock.mock.calls.filter(([request]) =>
     /\/v1\/effects\/\d+$/.test(new URL(String(request)).pathname),
   )) {
@@ -297,4 +301,11 @@ it('builds repeated bonus keys and type selection without a match flag in Any mo
     quest: ['7', '8'],
     quest_match: undefined,
   })
+})
+
+it('accepts set tier carriers without a nested row identity', () => {
+  const detail = structuredClone(effectDetail)
+  expect(detail.set_tiers.set_tiers.length).toBeGreaterThan(0)
+  for (const tier of detail.set_tiers.set_tiers) Reflect.deleteProperty(tier, 'id')
+  expect(isApiEffectDetail(detail)).toBe(true)
 })

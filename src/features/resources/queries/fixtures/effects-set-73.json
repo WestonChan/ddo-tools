@@ -1,0 +1,85 @@
+{
+  "augments": [],
+  "filigrees": [],
+  "icon": "CaptainsSet",
+  "id": 73,
+  "is_filigree_set": false,
+  "items": [
+    {
+      "id": 747,
+      "minimum_level": 14,
+      "name": "Barbette's Bracers",
+      "slot": "Wrists",
+      "slug": "barbettes-bracers"
+    },
+    {
+      "id": 7361,
+      "minimum_level": 14,
+      "name": "Ship Kickers",
+      "slot": "Feet",
+      "slug": "ship-kickers"
+    }
+  ],
+  "name": "Captain's Set",
+  "slug": "captains-set",
+  "tiers": [
+    {
+      "effects": [
+        {
+          "bonus_type": "Quality",
+          "bonuses": [
+            {
+              "amount_source": "owner",
+              "bonus_type": "Quality",
+              "group": null,
+              "scale": 1.0,
+              "stat": "Strength",
+              "stat_category": "ability",
+              "value": 1
+            }
+          ],
+          "damage": [],
+          "description": "Passive: +1 Quality bonus to Strength.",
+          "effect_id": 1,
+          "name": "Strength",
+          "tier": null,
+          "value": 1,
+          "value2": null,
+          "verbose_name": "+1 Quality Bonus to Strength"
+        }
+      ],
+      "equipped_count": 2,
+      "modifiers": [
+        {
+          "amount_type": "Simple",
+          "amounts": [
+            1
+          ],
+          "apply_as_item_effect": false,
+          "bonus": "Quality",
+          "bonus_type": "Quality",
+          "cap": null,
+          "damage": null,
+          "dice_bonus": null,
+          "dice_damage": null,
+          "dice_number": null,
+          "dice_sides": null,
+          "display_name": null,
+          "effect_type": "AbilityBonus",
+          "extra_types": null,
+          "is_item_specific": false,
+          "is_rare": false,
+          "percent": false,
+          "rank": null,
+          "requirements": [],
+          "sort_order": 0,
+          "stack_source": null,
+          "targets": [
+            "Strength"
+          ],
+          "value": null
+        }
+      ]
+    }
+  ]
+}

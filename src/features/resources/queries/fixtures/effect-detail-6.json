@@ -64,6 +64,7 @@
         ],
         "name": "+1 Quality Charisma",
         "scale": 1.0,
+        "slug": "1-quality-charisma",
         "value": 1,
         "value2": null
       }
@@ -144,6 +145,7 @@
         ],
         "name": "Accomplice",
         "scale": 1.0,
+        "slug": "accomplice",
         "value": -1,
         "value2": null
       }
@@ -164,7 +166,6 @@
         "effect": "Charisma",
         "effect_id": 6,
         "equipped_count": 3,
-        "id": 242,
         "line": {
           "bonus_type": "Artifact",
           "bonuses": [
@@ -230,6 +231,7 @@
     ],
     "total": 36
   },
+  "slug": "charisma",
   "tier": null,
   "verbose_name_template": "%b1 Charisma +{1}",
   "wiki_url": null

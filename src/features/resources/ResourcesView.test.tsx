@@ -8,8 +8,8 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
-import { render } from '../../test/renderWithQueryClient'
 import userEvent from '@testing-library/user-event'
+import { render } from '../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
 import type { Effect, Item, ItemAugmentSlot, ItemSummary } from './queries/items'
@@ -55,8 +55,7 @@ const BLOODSTONE_ITEM: Item = {
   requiredRace: null,
   description: null,
   dropLocation: null,
-  setName: null,
-  setId: null,
+  sets: [],
   canAcceptSentience: false,
   isMinorArtifact: false,
   wikiUrl: null,
@@ -134,8 +133,9 @@ vi.mock('./queries/useItems', () => ({
               name: selectedItem.name,
               effects: itemEffects,
               augmentSlots: itemAugmentSlots,
-              setId: stackedSet?.id ?? null,
-              setName: stackedSet?.name ?? null,
+              sets: stackedSet
+                ? [{ id: stackedSet.id, name: stackedSet.name, slug: 'test-set', icon: null }]
+                : [],
             }
           : undefined,
       isPending: !isItemDetailLoaded,
@@ -152,6 +152,12 @@ vi.mock('./queries/useItems', () => ({
   useEffectDetail: () => ({ data: undefined, isPending: false }),
   useRaidQuests: () => ({ data: [] }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
+  useSets: (ids: number[]) =>
+    ids.map((id) => ({
+      data: id === stackedSet?.id ? stackedSet : undefined,
+      isPending: false,
+      error: null,
+    })),
   useSet: (id: number | null) => ({
     data: id === stackedSet?.id ? stackedSet : undefined,
     isPending: false,

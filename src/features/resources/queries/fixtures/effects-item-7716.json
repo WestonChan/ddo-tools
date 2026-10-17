@@ -1,23 +1,6 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [
-    {
-      "chest": null,
-      "id": 48,
-      "is_rare": false,
-      "loot_type": null,
-      "name": "Shadowfell Conspiracy",
-      "wiki_url": "https://ddowiki.com/page/Shadowfell_Conspiracy"
-    },
-    {
-      "chest": "end chest",
-      "id": 48,
-      "is_rare": false,
-      "loot_type": "chest",
-      "name": "Shadowfell Conspiracy",
-      "wiki_url": "https://ddowiki.com/page/Shadowfell_Conspiracy"
-    }
-  ],
+  "adventure_packs": [],
   "armor": null,
   "augment_slots": [
     {
@@ -33,6 +16,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Attack Bonus",
                   "stat_category": "martial",
@@ -40,18 +24,17 @@
                 }
               ],
               "damage": [],
-              "description": "Provides a 9 Competence bonus to your attack rolls.",
+              "description": "Provides a +9 Competence bonus to your attack rolls.",
               "effect_id": 9,
               "name": "Attack Bonus",
               "tier": null,
               "value": 9,
               "value2": null,
-              "verbose_name": "Competence Attack Bonus 9"
+              "verbose_name": "Attack Bonus +9"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3491,
           "min_level": 25,
           "modifiers": [
             {
@@ -71,7 +54,6 @@
               "display_name": null,
               "effect_type": "Weapon_Attack",
               "extra_types": null,
-              "id": 12813,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -95,6 +77,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Resistance",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Armor Class",
                   "stat_category": "defensive",
@@ -102,18 +85,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 9 Natural Armor Bonus to Armor Class.",
-              "effect_id": 414,
+              "description": "Passive: +9 Natural Armor Bonus to Armor Class.",
+              "effect_id": 418,
               "name": "Natural Armor",
               "tier": null,
               "value": 9,
               "value2": null,
-              "verbose_name": "Resistance Natural Armor 9"
+              "verbose_name": "Resistance Natural Armor +9"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3492,
           "min_level": 25,
           "modifiers": [
             {
@@ -133,7 +115,6 @@
               "display_name": null,
               "effect_type": "NaturalArmor",
               "extra_types": null,
-              "id": 12814,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -157,6 +138,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Resistance",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Saving Throws",
                   "stat_category": "defensive",
@@ -170,12 +152,11 @@
               "tier": null,
               "value": 9,
               "value2": null,
-              "verbose_name": "Resistance Saving Throws +9"
+              "verbose_name": "Saving Throws +9"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3493,
           "min_level": 25,
           "modifiers": [
             {
@@ -195,7 +176,6 @@
               "display_name": null,
               "effect_type": "SaveBonus",
               "extra_types": null,
-              "id": 12815,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -219,6 +199,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Enhancement",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Spell Points",
                   "stat_category": "magical",
@@ -232,12 +213,11 @@
               "tier": null,
               "value": 225,
               "value2": null,
-              "verbose_name": "Enhancement Spell Points +225"
+              "verbose_name": "Spell Points +225"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3494,
           "min_level": 25,
           "modifiers": [
             {
@@ -257,7 +237,6 @@
               "display_name": null,
               "effect_type": "SpellPoints",
               "extra_types": null,
-              "id": 12816,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -281,6 +260,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Bluff",
                   "stat_category": "skill",
@@ -288,18 +268,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Bluff skill.",
+              "description": "Passive: +19 Competence bonus to the Bluff skill.",
               "effect_id": 42,
               "name": "Bluff",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Bluff 19"
+              "verbose_name": "Competence Bluff +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3495,
           "min_level": 25,
           "modifiers": [
             {
@@ -319,7 +298,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12817,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -345,6 +323,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Concentration",
                   "stat_category": "skill",
@@ -352,18 +331,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Concentration skill.",
+              "description": "Passive: +19 Competence bonus to the Concentration skill.",
               "effect_id": 43,
               "name": "Concentration",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Concentration 19"
+              "verbose_name": "Concentration +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3496,
           "min_level": 25,
           "modifiers": [
             {
@@ -383,7 +361,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12818,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -409,6 +386,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Diplomacy",
                   "stat_category": "skill",
@@ -416,18 +394,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Diplomacy skill.",
+              "description": "Passive: +19 Competence bonus to the Diplomacy skill.",
               "effect_id": 44,
               "name": "Diplomacy",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Diplomacy 19"
+              "verbose_name": "Diplomacy +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3497,
           "min_level": 25,
           "modifiers": [
             {
@@ -447,7 +424,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12819,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -473,6 +449,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Haggle",
                   "stat_category": "skill",
@@ -480,18 +457,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Haggle skill.",
+              "description": "Passive: +19 Competence bonus to the Haggle skill.",
               "effect_id": 46,
               "name": "Haggle",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Haggle 19"
+              "verbose_name": "Competence Haggle +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3498,
           "min_level": 25,
           "modifiers": [
             {
@@ -511,7 +487,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12820,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -537,6 +512,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Heal",
                   "stat_category": "skill",
@@ -544,18 +520,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Heal skill.",
+              "description": "Passive: +19 Competence bonus to the Heal skill.",
               "effect_id": 47,
               "name": "Heal",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Heal 19"
+              "verbose_name": "Heal +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3499,
           "min_level": 25,
           "modifiers": [
             {
@@ -575,7 +550,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12821,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -601,6 +575,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Intimidate",
                   "stat_category": "skill",
@@ -608,18 +583,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Intimidate skill.",
+              "description": "Passive: +19 Competence bonus to the Intimidate skill.",
               "effect_id": 49,
               "name": "Intimidate",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Intimidate 19"
+              "verbose_name": "Intimidate +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3500,
           "min_level": 25,
           "modifiers": [
             {
@@ -639,7 +613,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12822,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -665,6 +638,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Listen",
                   "stat_category": "skill",
@@ -672,18 +646,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Listen skill.",
+              "description": "Passive: +19 Competence bonus to the Listen skill.",
               "effect_id": 51,
               "name": "Listen",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Listen 19"
+              "verbose_name": "Listen +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3501,
           "min_level": 25,
           "modifiers": [
             {
@@ -703,7 +676,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12823,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -729,6 +701,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Search",
                   "stat_category": "skill",
@@ -736,18 +709,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Search skill.",
+              "description": "Passive: +19 Competence bonus to the Search skill.",
               "effect_id": 56,
               "name": "Search",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Search 19"
+              "verbose_name": "Search +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3502,
           "min_level": 25,
           "modifiers": [
             {
@@ -767,7 +739,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12824,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -793,6 +764,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Spellcraft",
                   "stat_category": "skill",
@@ -800,18 +772,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Spellcraft skill.",
+              "description": "Passive: +19 Competence bonus to the Spellcraft skill.",
               "effect_id": 57,
               "name": "Spellcraft",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Spellcraft 19"
+              "verbose_name": "Spellcraft +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3503,
           "min_level": 25,
           "modifiers": [
             {
@@ -831,7 +802,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12825,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -857,6 +827,7 @@
                 {
                   "amount_source": "owner",
                   "bonus_type": "Competence",
+                  "group": null,
                   "scale": 1.0,
                   "stat": "Spot",
                   "stat_category": "skill",
@@ -864,18 +835,17 @@
                 }
               ],
               "damage": [],
-              "description": "Passive: 19 Competence bonus to the Spot skill.",
+              "description": "Passive: +19 Competence bonus to the Spot skill.",
               "effect_id": 58,
               "name": "Spot",
               "tier": null,
               "value": 19,
               "value2": null,
-              "verbose_name": "Competence Spot 19"
+              "verbose_name": "Spot +19"
             }
           ],
           "grants_slot": null,
           "icon": null,
-          "id": 3504,
           "min_level": 25,
           "modifiers": [
             {
@@ -895,7 +865,6 @@
               "display_name": null,
               "effect_type": "SkillBonus",
               "extra_types": null,
-              "id": 12826,
               "is_item_specific": false,
               "is_rare": false,
               "percent": false,
@@ -941,6 +910,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Enhancement",
+          "group": null,
           "scale": 1.0,
           "stat": "Charisma",
           "stat_category": "ability",
@@ -948,19 +918,19 @@
         }
       ],
       "damage": [],
-      "description": "Passive: 8 Enhancement bonus to Charisma.",
+      "description": "Passive: +8 Enhancement bonus to Charisma.",
       "effect_id": 6,
       "name": "Charisma",
       "tier": null,
       "value": 8,
       "value2": null,
-      "verbose_name": "Enhancement Charisma 8"
+      "verbose_name": "Charisma +8"
     }
   ],
   "enhancement_bonus": null,
   "events": [],
   "icon": "Necklace_17b",
-  "id": 7631,
+  "id": 7716,
   "is_legacy": false,
   "is_minor_artifact": false,
   "item_type": null,
@@ -973,6 +943,7 @@
       "id": 22,
       "is_rare": false,
       "name": "Shadow Over Wheloon",
+      "slug": "shadow-over-wheloon",
       "wiki_url": "https://ddowiki.com/page/Shadow_Over_Wheloon"
     }
   ],
@@ -994,14 +965,17 @@
       "loot_type": "chest",
       "name": "Friends in Low Places",
       "pack": "Shadowfell Conspiracy",
-      "patron": "Purple Dragon Knights"
+      "patron": "Purple Dragon Knights",
+      "slug": "friends-in-low-places"
     }
   ],
   "race_required": null,
   "sagas": [],
   "set": null,
   "set_name": null,
+  "sets": [],
   "slot": "Neck",
+  "slug": "stolen-necklace-level-25",
   "sources": [
     {
       "character_level": null,
@@ -1012,6 +986,8 @@
       "kind": "quest",
       "loot_type": "chest",
       "name": "Friends in Low Places",
+      "price": [],
+      "slug": "friends-in-low-places",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/Friends_in_Low_Places"
     },
@@ -1024,6 +1000,8 @@
       "kind": "quest_chain",
       "loot_type": null,
       "name": "Shadow Over Wheloon",
+      "price": [],
+      "slug": "shadow-over-wheloon",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/Shadow_Over_Wheloon"
     }

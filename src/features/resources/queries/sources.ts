@@ -9,6 +9,7 @@ import {
   type ApiVendorDetail,
   type ApiEventDetail,
 } from '../../../lib/api'
+import type { IngredientCost } from '../../../lib/ingredientCost'
 
 export interface SourceItem {
   id: number
@@ -17,7 +18,7 @@ export interface SourceItem {
   minimumLevel: number | null
   isRareLoot: boolean
   chest: string | null
-  cost: string | null
+  price: IngredientCost[]
   tier: string | null
   pack: string | null
 }
@@ -74,7 +75,7 @@ function sourceItems(items: ApiSourceItem[]): SourceItem[] {
     minimumLevel: item.minimum_level ?? null,
     isRareLoot: item.is_rare ?? false,
     chest: item.chest ?? null,
-    cost: item.cost ?? null,
+    price: item.price ?? [],
     tier: item.tier ?? null,
     pack: item.pack ?? null,
   }))

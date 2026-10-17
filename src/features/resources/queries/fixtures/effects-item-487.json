@@ -1,15 +1,6 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [
-    {
-      "chest": "end chest",
-      "id": 34,
-      "is_rare": false,
-      "loot_type": "chest",
-      "name": "Mists of Ravenloft",
-      "wiki_url": "https://ddowiki.com/page/Mists_of_Ravenloft"
-    }
-  ],
+  "adventure_packs": [],
   "armor": null,
   "augment_slots": [
     {
@@ -35,20 +26,21 @@
         {
           "amount_source": "owner",
           "bonus_type": "Equipment",
+          "group": null,
           "scale": 1.0,
-          "stat": "Abjuration Spell Focus",
+          "stat": "Abjuration Focus",
           "stat_category": "magical",
           "value": 4
         }
       ],
       "damage": [],
-      "description": "4 Equipment bonus to the DC of Abjuration spells.",
+      "description": "+4 Equipment bonus to the DC of Abjuration spells.",
       "effect_id": 92,
-      "name": "Abjuration Spell Focus",
+      "name": "Abjuration Focus",
       "tier": null,
       "value": 4,
       "value2": null,
-      "verbose_name": "Equipment Abjuration Focus 4"
+      "verbose_name": "Abjuration Focus +4"
     },
     {
       "bonus_type": "Insight",
@@ -56,20 +48,21 @@
         {
           "amount_source": "owner",
           "bonus_type": "Insight",
+          "group": null,
           "scale": 1.0,
-          "stat": "Abjuration Spell Focus",
+          "stat": "Abjuration Focus",
           "stat_category": "magical",
           "value": 2
         }
       ],
       "damage": [],
-      "description": "2 Insight bonus to the DC of Abjuration spells.",
+      "description": "+2 Insight bonus to the DC of Abjuration spells.",
       "effect_id": 92,
-      "name": "Abjuration Spell Focus",
+      "name": "Abjuration Focus",
       "tier": null,
       "value": 2,
       "value2": null,
-      "verbose_name": "Insight Abjuration Focus 2"
+      "verbose_name": "Abjuration Focus +2"
     },
     {
       "bonus_type": "Enhancement",
@@ -77,6 +70,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Enhancement",
+          "group": null,
           "scale": 1.0,
           "stat": "Spell Points",
           "stat_category": "magical",
@@ -84,13 +78,13 @@
         }
       ],
       "damage": [],
-      "description": "Passive: 112 Enhancement Bonus to Spell Points. If you have Sorcerer or Favored Soul levels, you gain additional spell points proportionate to the ratio of those levels to other heroic classes.",
-      "effect_id": 351,
-      "name": "Wizardry Number",
+      "description": "Passive: +112 Enhancement Bonus to Spell Points. If you have Sorcerer or Favored Soul levels, you gain additional spell points proportionate to the ratio of those levels to other heroic classes.",
+      "effect_id": 354,
+      "name": "Wizardry",
       "tier": null,
       "value": 112,
       "value2": null,
-      "verbose_name": "Enhancement Wizardry 112"
+      "verbose_name": "Wizardry +112"
     },
     {
       "bonus_type": "Equipment",
@@ -98,6 +92,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Equipment",
+          "group": null,
           "scale": 1.0,
           "stat": "Spell Penetration",
           "stat_category": "magical",
@@ -105,13 +100,13 @@
         }
       ],
       "damage": [],
-      "description": "Passive: 4 Equipment bonus to Spell Penetration checks.",
+      "description": "Passive: +4 Equipment bonus to Spell Penetration checks.",
       "effect_id": 23,
       "name": "Spell Penetration",
       "tier": null,
       "value": 4,
       "value2": null,
-      "verbose_name": "Equipment Spell Penetration 4"
+      "verbose_name": "Spell Penetration +4"
     }
   ],
   "enhancement_bonus": null,
@@ -144,7 +139,8 @@
       "loot_type": "chest",
       "name": "Mad Tea Party",
       "pack": "Mists of Ravenloft",
-      "patron": "Keepers of Barovia"
+      "patron": "Keepers of Barovia",
+      "slug": "mad-tea-party"
     }
   ],
   "race_required": null,
@@ -152,10 +148,20 @@
   "set": {
     "icon": "AdherentOfTheMists",
     "id": 93,
-    "name": "Adherent of the Mists Set (Heroic)"
+    "name": "Adherent of the Mists Set (Heroic)",
+    "slug": "adherent-of-the-mists-set-heroic"
   },
   "set_name": "Adherent of the Mists Set (Heroic)",
+  "sets": [
+    {
+      "icon": "AdherentOfTheMists",
+      "id": 93,
+      "name": "Adherent of the Mists Set (Heroic)",
+      "slug": "adherent-of-the-mists-set-heroic"
+    }
+  ],
   "slot": "Ring",
+  "slug": "adversion",
   "sources": [
     {
       "character_level": null,
@@ -166,6 +172,8 @@
       "kind": "quest",
       "loot_type": "chest",
       "name": "Mad Tea Party",
+      "price": [],
+      "slug": "mad-tea-party",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/Mad_Tea_Party"
     }

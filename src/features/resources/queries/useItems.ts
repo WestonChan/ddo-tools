@@ -3,6 +3,7 @@ import {
   queryOptions,
   useInfiniteQuery,
   useQuery,
+  useQueries,
   type InfiniteData,
   type UseInfiniteQueryResult,
   type UseQueryResult,
@@ -152,8 +153,10 @@ export const sourceDetailQueryOptions = (
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
-function itemCardSetQueryOptions(item: Item): ReturnType<typeof setDetailQueryOptions> | null {
-  return item.setId === null ? null : setDetailQueryOptions(item.setId)
+function itemCardSetQueryOptions(
+  ids: readonly number[],
+): ReturnType<typeof setDetailQueryOptions>[] {
+  return ids.map(setDetailQueryOptions)
 }
 
 export function isDetailQueryReady(
@@ -166,12 +169,22 @@ export function isDetailQueryReady(
 
 export async function prefetchItemCard(queryClient: QueryClient, id: number): Promise<void> {
   const item = await queryClient.ensureQueryData(itemDetailQueryOptions(id))
-  const setOptions = itemCardSetQueryOptions(item)
-  if (setOptions) void queryClient.prefetchQuery(setOptions)
+  await Promise.allSettled(
+    itemCardSetQueryOptions(item.sets.map((set) => set.id)).map((options) =>
+      queryClient.prefetchQuery(options),
+    ),
+  )
 }
 
 export function isItemCardReady(queryClient: QueryClient, id: number): boolean {
-  return isDetailQueryReady(queryClient, itemDetailQueryOptions(id))
+  if (!isDetailQueryReady(queryClient, itemDetailQueryOptions(id))) return false
+  const item = queryClient.getQueryData(itemDetailQueryOptions(id).queryKey)
+  return (
+    !item ||
+    itemCardSetQueryOptions(item.sets.map((set) => set.id)).every((options) =>
+      isDetailQueryReady(queryClient, options),
+    )
+  )
 }
 
 export function prefetchEffect(
@@ -216,6 +229,10 @@ export function useItem(id: number | null): UseQueryResult<Item> {
     ...itemDetailQueryOptions(id ?? -1),
     enabled: id !== null,
   })
+}
+
+export function useSets(ids: readonly number[]): UseQueryResult<SetDetail>[] {
+  return useQueries({ queries: itemCardSetQueryOptions(ids) })
 }
 
 export function useSet(id: number | null): UseQueryResult<SetDetail> {

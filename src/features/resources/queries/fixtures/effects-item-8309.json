@@ -1,15 +1,6 @@
 {
   "accepts_sentience": false,
-  "adventure_packs": [
-    {
-      "chest": "end chest",
-      "id": 2,
-      "is_rare": false,
-      "loot_type": "chest",
-      "name": "Magic of Myth Drannor",
-      "wiki_url": "https://ddowiki.com/page/Magic_of_Myth_Drannor"
-    }
-  ],
+  "adventure_packs": [],
   "armor": {
     "adamantine_body": null,
     "arcane_spell_failure": 50,
@@ -45,6 +36,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Insight",
+          "group": null,
           "scale": 1.0,
           "stat": "Melee Threat Generation",
           "stat_category": "martial",
@@ -52,13 +44,13 @@
         }
       ],
       "damage": [],
-      "description": "27% Insight bonus to increased threat generation from melee damage",
-      "effect_id": 361,
+      "description": "+27% Insight bonus to increased threat generation from melee damage",
+      "effect_id": 364,
       "name": "Incite",
       "tier": null,
       "value": 27,
       "value2": null,
-      "verbose_name": "Insight Incite 27%"
+      "verbose_name": "Insightful Incite +27"
     },
     {
       "bonus_type": "Primal",
@@ -66,6 +58,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Primal",
+          "group": null,
           "scale": 1.0,
           "stat": "Armor Class",
           "stat_category": "defensive",
@@ -73,20 +66,21 @@
         }
       ],
       "damage": [],
-      "description": "This item fuses with your body and toughens your skin, providing a 7 Primal bonus to your natural armor.",
-      "effect_id": 728,
+      "description": "This item fuses with your body and toughens your skin, providing a +7 Primal bonus to your natural armor.",
+      "effect_id": 737,
       "name": "Rough Hide",
       "tier": null,
       "value": 7,
       "value2": null,
-      "verbose_name": "Primal Rough Hide 7"
+      "verbose_name": "Rough Hide +7"
     },
     {
-      "bonus_type": null,
+      "bonus_type": "Profane",
       "bonuses": [
         {
           "amount_source": "owner",
           "bonus_type": "Profane",
+          "group": null,
           "scale": 1.0,
           "stat": "Hit Points",
           "stat_category": "martial",
@@ -94,13 +88,13 @@
         }
       ],
       "damage": [],
-      "description": "23 Profane bonus to Hit Points.",
-      "effect_id": 423,
+      "description": "+23 Profane bonus to Hit Points.",
+      "effect_id": 427,
       "name": "Profane Lifeforce",
       "tier": null,
       "value": 23,
       "value2": null,
-      "verbose_name": "Profane Lifeforce 23"
+      "verbose_name": "Profane Lifeforce +23"
     },
     {
       "bonus_type": "Legendary",
@@ -108,6 +102,7 @@
         {
           "amount_source": "owner",
           "bonus_type": "Legendary",
+          "group": null,
           "scale": 1.0,
           "stat": "Maximum Hit Points",
           "stat_category": "defensive",
@@ -115,19 +110,19 @@
         }
       ],
       "damage": [],
-      "description": "You have a 20% Legendary bonus to Maximum Hit Points.",
-      "effect_id": 507,
+      "description": "You have a +20% Legendary bonus to Maximum Hit Points.",
+      "effect_id": 511,
       "name": "Legendary Conditioning",
       "tier": null,
       "value": 20,
       "value2": null,
-      "verbose_name": "Legendary Conditioning 20%"
+      "verbose_name": "Legendary Conditioning +20%"
     }
   ],
   "enhancement_bonus": 5,
   "events": [],
   "icon": "Shield_2",
-  "id": 8203,
+  "id": 8309,
   "is_legacy": false,
   "is_minor_artifact": false,
   "item_type": "Tower Shield",
@@ -154,14 +149,17 @@
       "loot_type": "chest",
       "name": "Portal to Below",
       "pack": "Magic of Myth Drannor",
-      "patron": "Cormanthor Elves"
+      "patron": "Cormanthor Elves",
+      "slug": "portal-to-below"
     }
   ],
   "race_required": null,
   "sagas": [],
   "set": null,
   "set_name": null,
+  "sets": [],
   "slot": "Off Hand",
+  "slug": "tower-shield-of-the-fallen-age",
   "sources": [
     {
       "character_level": null,
@@ -172,6 +170,8 @@
       "kind": "quest",
       "loot_type": "chest",
       "name": "Portal to Below",
+      "price": [],
+      "slug": "portal-to-below",
       "tier": null,
       "wiki_url": "https://ddowiki.com/page/Portal_to_Below"
     }

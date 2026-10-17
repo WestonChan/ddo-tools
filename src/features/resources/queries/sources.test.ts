@@ -3,7 +3,7 @@ import adventurePack from './fixtures/adventure-packs.json'
 import questChain from './fixtures/quest-chains.json'
 import saga from './fixtures/sagas.json'
 import craftingSystem from './fixtures/crafting-systems.json'
-import vendor from './fixtures/vendors.json'
+import vendor from '../../../test/fixtures/data-build-vendor-morten-edgewright.json'
 import event from './fixtures/events.json'
 import {
   toAdventurePack,
@@ -27,9 +27,9 @@ describe('captured source detail responses', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ ...adventurePack, items: null })),
     )
-    await expect(fetchAdventurePack(2)).rejects.toMatchObject({
+    await expect(fetchAdventurePack(3)).rejects.toMatchObject({
       kind: 'api-response',
-      message: expect.stringContaining('/v1/adventure-packs/2: items'),
+      message: expect.stringContaining('/v1/adventure-packs/3: items'),
     })
   })
   it('maps a pack and its yielded items', () => {
@@ -66,7 +66,7 @@ describe('captured source detail responses', () => {
       pack: 'Sinister Secret of Saltmarsh',
     })
     expect(mappedSaga.quests[0]).toEqual({ id: 60, name: 'Back to Basics', level: 3 })
-    expect(mappedSaga.items[0]).toMatchObject({ id: 891, name: 'Black Pearl Ring', slot: 'Ring' })
+    expect(mappedSaga.items[0]).toMatchObject({ id: 893, name: 'Black Pearl Ring', slot: 'Ring' })
     expect(mappedSaga.items).toHaveLength(saga.rewards.length)
   })
 
@@ -79,7 +79,14 @@ describe('captured source detail responses', () => {
     })
     expect(system.recipes[0]).toEqual({
       name: 'Attributes +5',
-      outputs: ['Strength +5', 'Intelligence +5', 'Dexterity +5'],
+      outputs: [
+        'Charisma +5',
+        'Constitution +5',
+        'Dexterity +5',
+        'Intelligence +5',
+        'Strength +5',
+        'Wisdom +5',
+      ],
     })
     expect(system.recipes).toHaveLength(craftingSystem.recipes.length)
   })
@@ -92,10 +99,10 @@ describe('captured source detail responses', () => {
       location: 'The Keep on the Borderlands',
     })
     expect(mappedVendor.items[0]).toMatchObject({
-      id: 2428,
+      id: vendor.items[0].id,
       name: 'Epic Ethereal Bastard Sword',
       slot: 'Main Hand',
-      cost: '1 Epic Ethereal Ingot',
+      price: [{ ingredient: 'Epic Ethereal Ingot', quantity: 1 }],
     })
     expect(mappedVendor.items).toHaveLength(vendor.items.length)
   })
@@ -113,11 +120,11 @@ describe('captured source detail responses', () => {
 })
 
 it.each([
-  [fetchAdventurePack, '/v1/adventure-packs/2', adventurePack, 2],
+  [fetchAdventurePack, '/v1/adventure-packs/3', adventurePack, 3],
   [fetchQuestChain, '/v1/quest-chains/1', questChain, 1],
   [fetchSaga, '/v1/sagas/1', saga, 1],
   [fetchCraftingSystem, '/v1/crafting-systems/1', craftingSystem, 1],
-  [fetchVendor, '/v1/vendors/1', vendor, 1],
+  [fetchVendor, `/v1/vendors/${vendor.id}`, vendor, vendor.id],
   [fetchEvent, '/v1/events/1', event, 1],
 ] as const)('fetches and maps %s by id', async (fetchSource, path, response, id) => {
   const fetchMock = vi
@@ -126,4 +133,14 @@ it.each([
   const source = await fetchSource(id)
   expect(new URL(String(fetchMock.mock.calls[0][0])).pathname).toBe(path)
   expect(source.id).toBe(id)
+})
+
+it('maps every Dragon Keeper ingredient in source order', () => {
+  expect(toVendor(vendor).items.find((item) => item.name === 'The Dragon Keeper')).toMatchObject({
+    price: [
+      { ingredient: 'Ethereal Ingot', quantity: 1 },
+      { ingredient: 'Arcane Ingot', quantity: 1 },
+      { ingredient: 'Silver Ingot', quantity: 1 },
+    ],
+  })
 })

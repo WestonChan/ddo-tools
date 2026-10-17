@@ -89,7 +89,7 @@ export function isApiEffectVocabularyRow(value: unknown): value is ApiEffectVoca
 function isEffectCarrier(value: unknown, isSetTier: boolean): boolean {
   return (
     isRecord(value) &&
-    Number.isSafeInteger(value.id) &&
+    (isSetTier || Number.isSafeInteger(value.id)) &&
     typeof value.name === 'string' &&
     isApiEffect(value.line) &&
     (value.amount_source == null || typeof value.amount_source === 'string') &&

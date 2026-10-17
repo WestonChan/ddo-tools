@@ -24,6 +24,7 @@ import type {
   ApiItemChallengePack,
   ApiItemCraftingSystem,
   ApiItemDetail,
+  ApiItemSet,
   ApiItemEvent,
   ApiItemVendor,
   ApiItemRow,
@@ -34,6 +35,7 @@ import type {
   ApiQuestSummary,
   ApiEffectDamage,
 } from '../../../lib/api'
+import type { IngredientCost } from '../../../lib/ingredientCost'
 
 export const ITEM_PAGE_SIZE = 200
 const ITEM_SORT_FIELD_BY_COLUMN: Record<string, string> = {
@@ -109,8 +111,7 @@ export interface ItemAttributes {
   requiredRace: string | null
   description: string | null
   dropLocation: string | null
-  setName: string | null
-  setId: number | null
+  sets: ApiItemSet[]
   canAcceptSentience: boolean
   isMinorArtifact: boolean
   wikiUrl: string | null
@@ -157,15 +158,10 @@ export interface ItemAugmentSlot {
   options: ItemAugmentSlotOption[]
 }
 
-export interface CraftingIngredientCost {
-  ingredient: string
-  quantity: number
-}
-
 export interface CraftingRecipe {
   system: string
   tier: ApiCraftingTier
-  ingredientCosts: CraftingIngredientCost[]
+  ingredientCosts: IngredientCost[]
 }
 
 export interface AugmentSummary {
@@ -212,7 +208,6 @@ export interface Effect {
 }
 
 export interface ResourceModifier {
-  id: number
   effectType: string
   displayName: string | null
   bonusType: string | null
@@ -277,7 +272,7 @@ export interface ItemSource {
   key: string
   name: string
   vendorLocation: string | null
-  cost: string | null
+  price: IngredientCost[]
   chest: string | null
   characterLevel: number | null
   isRareLoot: boolean
@@ -363,14 +358,13 @@ export function toItem(
     race_required: 'nullable-string',
     description: 'nullable-string',
     drop_location: 'nullable-string',
-    set_name: 'nullable-string',
     accepts_sentience: 'boolean',
     is_minor_artifact: 'boolean',
     wiki_url: 'nullable-string',
     is_legacy: 'boolean',
     weapon: 'nullable-object',
     armor: 'nullable-object',
-    set: 'nullable-object',
+    sets: 'array',
   })
   if (apiItemDetail.weapon)
     assertApiResponseFields(apiItemDetail.weapon, path, { dr_bypass: 'array' }, 'weapon.')
@@ -389,8 +383,7 @@ export function toItem(
     requiredRace: apiItemDetail.race_required,
     description: apiItemDetail.description,
     dropLocation: apiItemDetail.drop_location,
-    setName: apiItemDetail.set?.name ?? apiItemDetail.set_name,
-    setId: apiItemDetail.set?.id ?? null,
+    sets: apiItemDetail.sets,
     canAcceptSentience: apiItemDetail.accepts_sentience,
     isMinorArtifact: apiItemDetail.is_minor_artifact,
     wikiUrl: apiItemDetail.wiki_url,
@@ -475,7 +468,7 @@ function namedSource(
     key: `${kind}-${apiSource.id}`,
     name: apiSource.name,
     vendorLocation: null,
-    cost: null,
+    price: [],
     chest: null,
     characterLevel: null,
     isRareLoot: apiSource.is_rare,
@@ -490,7 +483,7 @@ function toSourcesBeyondQuests(apiItemDetail: ApiItemDetail): ItemSource[] {
     ...apiItemDetail.vendors.map((v) => ({
       ...namedSource('vendor', v),
       vendorLocation: v.location,
-      cost: v.cost,
+      price: v.price,
     })),
     ...apiItemDetail.events.map((e) => namedSource('event', e)),
     ...apiItemDetail.starter_rewards.map((s) => ({
@@ -499,7 +492,7 @@ function toSourcesBeyondQuests(apiItemDetail: ApiItemDetail): ItemSource[] {
       key: `starter-${s.character_level}`,
       name: `Starter gear at level ${s.character_level}`,
       vendorLocation: null,
-      cost: null,
+      price: [],
       chest: null,
       characterLevel: s.character_level,
       isRareLoot: false,
@@ -553,7 +546,6 @@ export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
 
 function toResourceModifier(modifier: ApiModifier): ResourceModifier {
   return {
-    id: modifier.id,
     effectType: modifier.effect_type,
     displayName: modifier.display_name,
     bonusType: modifier.bonus_type,
