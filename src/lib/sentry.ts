@@ -1,6 +1,23 @@
 import * as Sentry from '@sentry/react'
 import { urlWithoutQueryOrFragment } from './githubIssue'
 
+const identifyingFieldNamesToDeny = ['forwarded', '-ip', 'remote-', 'via', '-user']
+
+const restrictiveDataCollection = {
+  userInfo: false,
+  cookies: false,
+  httpHeaders: {
+    request: { deny: identifyingFieldNamesToDeny },
+    response: { deny: identifyingFieldNamesToDeny },
+  },
+  httpBodies: [],
+  urlQueryParams: { deny: identifyingFieldNamesToDeny },
+  genAI: { inputs: false, outputs: false },
+  databaseQueryData: false,
+  queues: false,
+  graphQL: { document: false, variables: false },
+} satisfies Sentry.BrowserOptions['dataCollection']
+
 export function initializeSentry(): void {
   const dsn = import.meta.env.SENTRY_DSN
   if (!dsn) {
@@ -22,7 +39,7 @@ export function initializeSentry(): void {
       tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
       replaysSessionSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
       replaysOnErrorSampleRate: 1.0,
-      sendDefaultPii: false,
+      dataCollection: restrictiveDataCollection,
       beforeSend(event) {
         if (event.request?.url) {
           event.request.url = urlWithoutQueryOrFragment(event.request.url)
