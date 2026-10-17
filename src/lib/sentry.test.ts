@@ -33,6 +33,25 @@ describe('initializeSentry', () => {
     expect(sentryInitSpy).toHaveBeenCalledWith(expect.objectContaining({ environment: mode }))
   })
 
+  it('starts from the restrictive data collection baseline, never the permissive default', () => {
+    vi.stubEnv('SENTRY_DSN', 'https://key@o0.ingest.sentry.io/0')
+    initializeSentry()
+    const [options] = sentryInitSpy.mock.calls[0]
+    expect(options).toEqual(
+      expect.objectContaining({
+        dataCollection: expect.objectContaining({
+          userInfo: false,
+          cookies: false,
+          httpBodies: [],
+          databaseQueryData: false,
+          queues: false,
+          genAI: { inputs: false, outputs: false },
+        }),
+      }),
+    )
+    expect(options).not.toHaveProperty('sendDefaultPii')
+  })
+
   it('does not crash when Sentry.init throws (e.g. malformed DSN)', () => {
     vi.stubEnv('SENTRY_DSN', 'not-a-real-dsn')
     sentryInitSpy.mockImplementationOnce(() => {
