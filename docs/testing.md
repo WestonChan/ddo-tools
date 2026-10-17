@@ -39,5 +39,6 @@ The directory and the filename suffix together identify which runner picks up a 
   - Anything that would require heavy mocking in Vitest — defer it to E2E.
   - Don't duplicate Vitest coverage. If a hook or component has a unit test, don't re-assert the same thing in an E2E spec.
 - **Base URL:** `http://localhost:5173/ddo-tools/` (set in [playwright.config.ts](../playwright.config.ts)). Use `page.goto('/')` for the root, not the full URL.
+- **Remote browser:** when `PLAYWRIGHT_WS_ENDPOINT` is set, the config connects to a Playwright browser server at that address instead of launching Chromium. Start one with `npx playwright run-server --host 127.0.0.1 --port <port>`. This is for sandboxes that can start the dev server but not a browser (Codex under `/wstack:orchestrate`); the browser outside reaches the dev server over localhost.
 - **State reset:** E2E tests share browser state across tests by default. Reset relevant `localStorage`/cookies in `test.beforeEach` — see [landing.spec.ts](../e2e/landing.spec.ts) for the existing pattern.
 - **Don't mock React internals:** There's no `vi.mock` equivalent in a real browser. If you find yourself wanting to mock a hook, that's a signal the test belongs in Vitest, not Playwright.

@@ -10,6 +10,9 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:5181/',
     trace: 'on-first-retry',
+    ...(process.env.PLAYWRIGHT_WS_ENDPOINT
+      ? { connectOptions: { wsEndpoint: process.env.PLAYWRIGHT_WS_ENDPOINT } }
+      : {}),
   },
   projects: [
     {
