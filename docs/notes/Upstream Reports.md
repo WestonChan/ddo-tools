@@ -120,3 +120,12 @@ Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while
 - 📋 Malleable Sceptre of Reconstruction — `RepairLore` buff `Value1` is 2122 (a typo; the wiki gives the real value). Kept as the effect's value, no stat row, until a value correction from the wiki item read. Source: https://ddowiki.com/page/Item:Malleable_Sceptre_of_Reconstruction.
 - 📋 Devils' Infernal Dance tier 3 — his Fortification Bypass effect carries a stray `<Type>Doubleshot</Type>` that would grant Doubleshot +10 Artifact beside the tier's own Doubleshot +5; removed by a `set_tier_bonus` correction. Source: https://ddowiki.com/page/Named_item_sets.
 - 📋 Dolorous Invigorator (Heroic, Legendary) — the `TacticalDC` effect has `<Bonus>Not Set</Bonus>`; the wiki types the DCs Profane; ten `augment_bonus` type corrections supply it.
+
+## Found reviewing d1350a0c against the wiki (2026-10-17)
+
+- 📋 Grim Barricade "Reaper's Constitution I" — his cost_per_rank went 1 → 2 in d1350a0c; the Reaper_enhancements page (2026-10-08) says AP 1, and says "Reaper's Luck" (the memento) costs 2 and gives +9, where his file has cost 1 and +15. Possibly the two rows swapped. Kept his values: the data files allow enhancement notes only on `description` and `icon`.
+- 📋 Kensei "Reed In The Wind" — his cost_per_rank is 2 (unchanged by d1350a0c); the page (2026-10-16) says AP 1.
+- 📋 Mordenkainen's Disjunction — his description reads "must almost make a Will save for they will be unable to cast"; the page reads "must make a Will save, or they will be unable to cast".
+- 📋 Vial Smash: Cold, Electric, Poison — his class list costs all five at 2 SP; the pages say 4 for these three. His Poison description dropped "Applies Contaminated", which the page still states.
+- 📋 Gem of Many Facets (all three) — his descriptions say "Cannith Crafting"; the pages (U79) say "Essence Crafting". The Epic and Legendary descriptions lack the pages' second paragraph (random set choice, Essence Crafting key, disjunction, re-roll on upgrade).
+
