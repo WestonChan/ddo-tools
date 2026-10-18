@@ -1,4 +1,4 @@
-import type { Slug } from '../../../../lib/api'
+import { apiDetailPath, type Slug } from '../../../../lib/api'
 import type { ReactNode } from 'react'
 import { ApiErrorNotice } from '../../../../components'
 import { useItem, useSets } from '../../queries/useItems'
@@ -21,7 +21,7 @@ export function useItemCardContent(itemSlug: Slug | null): ItemCardContent {
   const status = itemQuery.error ? (
     <ApiErrorNotice
       error={itemQuery.error}
-      path={`/v1/items/${itemSlug}`}
+      path={apiDetailPath('items', itemSlug)}
       missingResourceName="item"
       onRetry={() => void itemQuery.refetch()}
     />
@@ -34,7 +34,7 @@ export function useItemCardContent(itemSlug: Slug | null): ItemCardContent {
   ) : failedSetQuery?.error ? (
     <ApiErrorNotice
       error={failedSetQuery.error}
-      path={`/v1/sets/${item.sets[failedSetIndex].slug}`}
+      path={apiDetailPath('sets', item.sets[failedSetIndex].slug)}
       missingResourceName="set"
       onRetry={() => void failedSetQuery.refetch()}
     />

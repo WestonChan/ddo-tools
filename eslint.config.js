@@ -129,6 +129,30 @@ const apiListResponseRestriction = {
   },
 }
 
+const apiPathRestrictions = [
+  { ...popupRoleClaimRestriction, files: ['src/**/*.{ts,tsx}'] },
+  barrelReExportRestriction,
+  detailVariantComparisonRestriction,
+  apiListResponseRestriction,
+].map(({ files, ignores = [], rules }) => ({
+  files,
+  ignores: [...ignores, 'src/lib/api/**', '**/*.test.{ts,tsx}'],
+  rules: {
+    'no-restricted-syntax': [
+      ...rules['no-restricted-syntax'],
+      {
+        selector: 'TemplateElement[value.raw=/^\\u002fv1\\u002f/]',
+        message: 'Build API detail paths with apiDetailPath.',
+      },
+      {
+        selector: 'Literal[value=/^\\u002fv1\\u002f/]:not([value=/^\\u002fv1\\u002f[a-z-]+$/])',
+        message:
+          'Build API detail paths with apiDetailPath; bare collection paths may stay literal.',
+      },
+    ],
+  },
+}))
+
 const EMPTY_TYPE_NAME_SUFFIXES = [
   'Manager',
   'Helper',
@@ -252,5 +276,6 @@ export default defineConfig([
   },
   typeNamingRules,
   booleanNamingRules,
+  ...apiPathRestrictions,
   eslintConfigPrettier,
 ])

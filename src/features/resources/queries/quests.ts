@@ -14,7 +14,7 @@ export interface QuestDetail {
 
 export function toQuestDetail(
   apiQuest: ApiQuestDetail,
-  path = `/v1/quests/${apiQuest?.slug ?? 'unknown'}`,
+  path = apiDetailPath('quests', apiQuest?.slug),
 ): QuestDetail {
   assertApiResponseFields(apiQuest, path, { slug: 'string', name: 'string', items: 'array' })
   return {

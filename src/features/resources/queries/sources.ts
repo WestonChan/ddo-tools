@@ -88,7 +88,7 @@ function sourceQuests(quests: ApiSourceQuest[]): SourceQuest[] {
 
 export function toAdventurePack(
   response: ApiAdventurePackDetail,
-  path = `/v1/adventure-packs/${response?.slug ?? 'unknown'}`,
+  path = apiDetailPath('adventure-packs', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {
@@ -100,7 +100,7 @@ export function toAdventurePack(
 
 export function toQuestChain(
   response: ApiQuestSeriesDetail,
-  path = `/v1/quest-chains/${response?.slug ?? 'unknown'}`,
+  path = apiDetailPath('quest-chains', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, {
     slug: 'string',
@@ -118,7 +118,7 @@ export function toQuestChain(
 
 export function toSaga(
   response: ApiQuestSeriesDetail,
-  path = `/v1/sagas/${response?.slug ?? 'unknown'}`,
+  path = apiDetailPath('sagas', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, {
     slug: 'string',
@@ -136,7 +136,7 @@ export function toSaga(
 
 export function toCraftingSystem(
   response: ApiCraftingSystemDetail,
-  path = `/v1/crafting-systems/${response?.slug ?? 'unknown'}`,
+  path = apiDetailPath('crafting-systems', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', recipes: 'array' })
   response.recipes.forEach((recipe, index) => {
@@ -156,7 +156,7 @@ export function toCraftingSystem(
 
 export function toVendor(
   response: ApiVendorDetail,
-  path = `/v1/vendors/${response?.slug ?? 'unknown'}`,
+  path = apiDetailPath('vendors', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {
@@ -169,7 +169,7 @@ export function toVendor(
 
 export function toEvent(
   response: ApiEventDetail,
-  path = `/v1/events/${response?.slug ?? 'unknown'}`,
+  path = apiDetailPath('events', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {

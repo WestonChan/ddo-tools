@@ -1,5 +1,5 @@
 import { resourcePath } from '../../../../lib/resourcePaths'
-import type { Slug } from '../../../../lib/api'
+import { apiDetailPath, type Slug } from '../../../../lib/api'
 import type { JSX, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -86,7 +86,7 @@ function useAugmentDetailDefinition(augmentSlug: Slug): DetailCardDefinition {
       status: augmentQuery.error ? (
         <ApiErrorNotice
           error={augmentQuery.error}
-          path={`/v1/augments/${augmentSlug}`}
+          path={apiDetailPath('augments', augmentSlug)}
           missingResourceName="augment"
           onRetry={() => void augmentQuery.refetch()}
         />
@@ -255,7 +255,7 @@ function useQuestDetailDefinition({
       status: questQuery.error ? (
         <ApiErrorNotice
           error={questQuery.error}
-          path={`/v1/quests/${questSlug}`}
+          path={apiDetailPath('quests', questSlug)}
           missingResourceName="quest"
           onRetry={() => void questQuery.refetch()}
         />
@@ -637,7 +637,7 @@ function AdventurePackHoverContent({
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/adventure-packs/${slug}`}
+      path={apiDetailPath('adventure-packs', slug)}
       kind="adventurePack"
       name={name}
       onOpenItem={onOpenItem}
@@ -658,7 +658,7 @@ function QuestChainHoverContent({
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/quest-chains/${slug}`}
+      path={apiDetailPath('quest-chains', slug)}
       kind="questChain"
       name={name}
       onOpenItem={onOpenItem}
@@ -679,7 +679,7 @@ function SagaHoverContent({
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/sagas/${slug}`}
+      path={apiDetailPath('sagas', slug)}
       kind="saga"
       name={name}
       onOpenItem={onOpenItem}
@@ -700,7 +700,7 @@ function CraftingSystemHoverContent({
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/crafting-systems/${slug}`}
+      path={apiDetailPath('crafting-systems', slug)}
       kind="craftingSystem"
       name={name}
       onOpenItem={onOpenItem}
@@ -721,7 +721,7 @@ function VendorHoverContent({
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/vendors/${slug}`}
+      path={apiDetailPath('vendors', slug)}
       kind="vendor"
       name={name}
       onOpenItem={onOpenItem}
@@ -742,7 +742,7 @@ function EventHoverContent({
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/events/${slug}`}
+      path={apiDetailPath('events', slug)}
       kind="event"
       name={name}
       onOpenItem={onOpenItem}
@@ -767,7 +767,7 @@ function useSetDetailDefinition({
       status: setQuery.error ? (
         <ApiErrorNotice
           error={setQuery.error}
-          path={`/v1/sets/${setSlug}`}
+          path={apiDetailPath('sets', setSlug)}
           missingResourceName="set"
           onRetry={() => void setQuery.refetch()}
         />

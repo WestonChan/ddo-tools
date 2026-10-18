@@ -1,6 +1,10 @@
 import { expect, it } from 'vitest'
 import { API_DETAIL_KINDS, apiDetailPath, slugFromPathSegment } from './entityPaths'
 
+it.each([null, undefined])('keeps the missing-slug diagnostic path for %s', (slug) => {
+  expect(apiDetailPath('items', slug)).toBe('/v1/items/unknown')
+})
+
 it.each(['strength', '1-strength', 'sapphire--resistance', '6263613332164767'])(
   'accepts %s',
   (segment) => expect(slugFromPathSegment(segment)).toBe(segment),

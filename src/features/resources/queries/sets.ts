@@ -56,7 +56,7 @@ export async function fetchSetVocabulary(
 
 export function toSetDetail(
   apiSet: ApiSetDetail,
-  path = `/v1/sets/${apiSet?.slug ?? 'unknown'}`,
+  path = apiDetailPath('sets', apiSet?.slug),
 ): SetDetail {
   assertApiResponseFields(apiSet, path, {
     slug: 'string',

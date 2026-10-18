@@ -330,7 +330,7 @@ export function toItemSummary(apiItemRow: ApiItemRow, rowIndex = 0): ItemSummary
 
 export function toItem(
   apiItemDetail: ApiItemDetail,
-  path = `/v1/items/${apiItemDetail?.slug ?? 'unknown'}`,
+  path = apiDetailPath('items', apiItemDetail?.slug),
 ): Item {
   assertApiResponseFields(apiItemDetail, path, {
     augment_slots: 'array',
@@ -527,7 +527,7 @@ function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
 }
 
 export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
-  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.slug ?? 'unknown'}`, {
+  assertApiResponseFields(apiAugment, apiDetailPath('augments', apiAugment?.slug), {
     slug: 'string',
     name: 'string',
     min_level: 'nullable-number',
@@ -561,7 +561,7 @@ function toResourceModifier(modifier: ApiModifier): ResourceModifier {
 }
 
 export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
-  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.slug ?? 'unknown'}`, {
+  assertApiResponseFields(apiAugment, apiDetailPath('augments', apiAugment?.slug), {
     effects: 'array',
     modifiers: 'array',
   })
