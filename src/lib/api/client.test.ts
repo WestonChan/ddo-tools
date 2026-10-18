@@ -47,7 +47,7 @@ describe('apiUrl', () => {
 
 describe('fetchApiPage', () => {
   it('reloads a stale envelope once at the same URL and accepts the current response', async () => {
-    const currentPage = { total: 1, limit: 200, offset: 0, items: [{ id: 9 }] }
+    const currentPage = { total: 1, limit: 200, offset: 0, items: [{ slug: 'zed' }] }
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(new Response(JSON.stringify({ ...currentPage, items: undefined })))
@@ -56,7 +56,7 @@ describe('fetchApiPage', () => {
       total: 1,
       limit: 200,
       offset: 0,
-      rows: [{ id: 9 }],
+      rows: [{ slug: 'zed' }],
     })
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls[0][0]).toBe(fetchMock.mock.calls[1][0])
@@ -83,11 +83,11 @@ describe('fetchApiPage', () => {
       .spyOn(globalThis, 'fetch')
       .mockImplementation(() =>
         Promise.resolve(
-          new Response(JSON.stringify({ total: 1, limit: 200, offset: 0, items: [{ id: 'x' }] })),
+          new Response(JSON.stringify({ total: 1, limit: 200, offset: 0, items: [{ slug: 9 }] })),
         ),
       )
-    const error = await fetchApiPage<{ id: number }, 'items'>('/v1/items', 'items', undefined, {
-      isValidPage: (page) => page.rows.every((row) => typeof row.id === 'number'),
+    const error = await fetchApiPage<{ slug: string }, 'items'>('/v1/items', 'items', undefined, {
+      isValidPage: (page) => page.rows.every((row) => typeof row.slug === 'string'),
       responseErrorMessage: 'Invalid item rows for /v1/items',
     }).catch((caught: unknown) => caught)
     expect(error).toMatchObject({
@@ -108,25 +108,25 @@ describe('fetchApiPage', () => {
             limit: 200,
             offset: 200,
             [rowsKey]: [
-              { id: 9, name: 'Zed' },
-              { id: 7, name: 'Abe' },
+              { slug: 'zed', name: 'Zed' },
+              { slug: 'abe', name: 'Abe' },
             ],
           }),
         ),
       )
-      const page = await fetchApiPage<{ id: number; name: string }, typeof rowsKey>(
+      const page = await fetchApiPage<{ slug: string; name: string }, typeof rowsKey>(
         '/v1/catalog',
         rowsKey,
         { limit: 200, offset: 200 },
       )
-      expectTypeOf(page.rows).toEqualTypeOf<{ id: number; name: string }[]>()
+      expectTypeOf(page.rows).toEqualTypeOf<{ slug: string; name: string }[]>()
       expect(page).toEqual({
         total: 202,
         limit: 200,
         offset: 200,
         rows: [
-          { id: 9, name: 'Zed' },
-          { id: 7, name: 'Abe' },
+          { slug: 'zed', name: 'Zed' },
+          { slug: 'abe', name: 'Abe' },
         ],
       })
       expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
@@ -138,7 +138,13 @@ describe('fetchApiPage', () => {
   it.each([
     { requestedLimit: 1, total: 0, limit: 1, offset: 0, items: [] },
     { requestedLimit: 200, total: 3, limit: 200, offset: 200, items: [] },
-    { requestedLimit: 20000, total: 10001, limit: 10000, offset: 10000, items: [{ id: 1 }] },
+    {
+      requestedLimit: 20000,
+      total: 10001,
+      limit: 10000,
+      offset: 10000,
+      items: [{ slug: 'test-item' }],
+    },
   ])(
     'preserves empty and capped pages at offset $offset and total $total',
     async ({ requestedLimit, items, ...metadata }) => {

@@ -234,6 +234,22 @@ export default defineConfig([
   popupRoleClaimRestriction,
   detailVariantComparisonRestriction,
   apiListResponseRestriction,
+  {
+    files: ['src/lib/api/types.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        ...apiListResponseRestriction.rules['no-restricted-syntax'],
+        {
+          selector: 'TSPropertySignature[key.name=/^(id|.*_id|detail_path)$/]',
+          message: 'API identity uses slug fields and shared path builders.',
+        },
+        {
+          selector: 'TSPropertySignature[key.value=/^(id|.*_id|detail_path)$/]',
+          message: 'API identity uses slug fields and shared path builders.',
+        },
+      ],
+    },
+  },
   typeNamingRules,
   booleanNamingRules,
   eslintConfigPrettier,
