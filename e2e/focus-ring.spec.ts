@@ -6,7 +6,7 @@ import capturedSet from '../src/features/resources/queries/fixtures/set-adherent
 const focusedRoutes = [
   '/',
   '/resources/items',
-  '/resources/items/633',
+  '/resources/items/test-633',
   '/settings',
   '/gear',
   '/build-plan',
@@ -598,7 +598,7 @@ test.beforeEach(async ({ page }) => {
     const path = new URL(route.request().url()).pathname
     const item = {
       ...capturedArmor,
-      id: 633,
+      slug: 'test-633',
       augment_slots: ['blue', 'sun'].map((label, sort_order) => ({
         ...capturedArmor.augment_slots[0],
         family: 'standard',
@@ -613,7 +613,7 @@ test.beforeEach(async ({ page }) => {
       })),
     }
     const listedItem = {
-      id: item.id,
+      slug: item.slug,
       name: item.name,
       slot: item.slot,
       category: item.category,
@@ -627,11 +627,11 @@ test.beforeEach(async ({ page }) => {
       is_legacy: item.is_legacy,
     }
     const response =
-      path === '/v1/items/633'
+      path === '/v1/items/test-633'
         ? item
-        : path === `/v1/items/${capturedRing.id}`
+        : path === `/v1/items/${capturedRing.slug}`
           ? capturedRing
-          : path === `/v1/sets/${capturedSet.id}`
+          : path === `/v1/sets/${capturedSet.slug}`
             ? capturedSet
             : path === '/v1/items'
               ? { total: 1, limit: 200, offset: 0, items: [listedItem] }
@@ -710,7 +710,7 @@ for (const viewportWidth of viewportWidths) {
 
 test('source title ring clears the chest line and centres on its lettering', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/resources/items/633')
+  await page.goto('/resources/items/test-633')
   const sourceRow = page.locator('.resources-item-source-row').filter({
     hasText: 'The Key to the Mythal',
   })
@@ -880,7 +880,7 @@ for (const viewportWidth of viewportWidths) {
     }))
     expect(listShape).toEqual({ corners: '0px', fillContent: 'none', height: 32 })
 
-    await page.goto(`/resources/items/${capturedRing.id}`)
+    await page.goto(`/resources/items/${capturedRing.slug}`)
     const setHeading = page.locator('.resources-effect-ledger .ledger-row--heading').first()
     await expect(setHeading).toBeVisible()
     const headingCorners = await setHeading.evaluate((row) => {
@@ -911,7 +911,7 @@ for (const theme of ['Dark', 'Light']) {
       .getByRole('group', { name: 'Theme', exact: true })
       .getByRole('button', { name: theme, exact: true })
       .click()
-    await page.goto('/resources/items/633')
+    await page.goto('/resources/items/test-633')
     await expect(page.getByRole('region', { name: 'Item details', exact: true })).toBeVisible()
 
     for (const selector of [
@@ -1026,7 +1026,7 @@ test('a selected row keeps the same selection fill and ring when pinned', async 
 
 test('quest title keeps the source text edge and rest row height', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/resources/items/633')
+  await page.goto('/resources/items/test-633')
   const sourceRow = page.locator('.resources-item-source-row').filter({
     hasText: 'The Key to the Mythal',
   })
@@ -1124,7 +1124,7 @@ for (const viewportWidth of viewportWidths) {
     page,
   }) => {
     await page.setViewportSize({ width: viewportWidth, height: 900 })
-    await page.goto('/resources/items/633')
+    await page.goto('/resources/items/test-633')
     const link = page
       .locator('.resources-item-source-title .resources-hover-anchor')
       .filter({ hasText: 'The Key to the Mythal' })

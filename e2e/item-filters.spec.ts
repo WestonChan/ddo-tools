@@ -4,7 +4,7 @@ import capturedSetPage from '../src/features/resources/queries/fixtures/sets-pag
 
 const items = [
   {
-    id: 1,
+    slug: 'test-1',
     name: 'Bloodstone',
     slot: 'Trinket',
     category: 'Trinket',
@@ -18,7 +18,7 @@ const items = [
     is_legacy: false,
   },
   {
-    id: 2,
+    slug: 'test-2',
     name: 'Cloak of Night',
     slot: 'Back',
     category: 'Cloak',
@@ -32,7 +32,7 @@ const items = [
     is_legacy: false,
   },
   {
-    id: 3,
+    slug: 'test-3',
     name: 'Ring of Spell Storing',
     slot: 'Ring',
     category: 'Ring',
@@ -100,19 +100,19 @@ test.beforeEach(async ({ page }) => {
               )
             : path === '/v1/equipment-slots'
               ? listPage('equipment_slots', [
-                  { id: 1, name: 'Back', sort_order: 1, category: 'Armor' },
-                  { id: 2, name: 'Ring', sort_order: 2, category: 'Jewelry' },
-                  { id: 3, name: 'Trinket', sort_order: 3, category: 'Jewelry' },
+                  { slug: 'test-1', name: 'Back', sort_order: 1, category: 'Armor' },
+                  { slug: 'test-2', name: 'Ring', sort_order: 2, category: 'Jewelry' },
+                  { slug: 'test-3', name: 'Trinket', sort_order: 3, category: 'Jewelry' },
                 ])
               : path === '/v1/adventure-packs'
                 ? listPage('adventure_packs', [
-                    { id: 1, name: 'Shadowfell', is_free_to_play: false },
-                    { id: 2, name: 'Vault of Night', is_free_to_play: false },
+                    { slug: 'test-1', name: 'Shadowfell', is_free_to_play: false },
+                    { slug: 'test-2', name: 'Vault of Night', is_free_to_play: false },
                   ])
                 : path === '/v1/quests'
                   ? listPage('quests', [
-                      { id: 7, name: 'The Raid', pack: 'Vault of Night', is_raid: true },
-                      { id: 8, name: 'Another Raid', pack: 'Shadowfell', is_raid: true },
+                      { slug: 'test-7', name: 'The Raid', pack: 'Vault of Night', is_raid: true },
+                      { slug: 'test-8', name: 'Another Raid', pack: 'Shadowfell', is_raid: true },
                     ])
                   : listPage('items', [])
     await route.fulfill({
@@ -597,7 +597,7 @@ test('sends all active filters in one item request and removes cleared parameter
   ])
   expect(itemRequests.at(-1)!.searchParams.getAll('slot')).toEqual(['Back', 'Ring'])
   expect(itemRequests.at(-1)!.searchParams.getAll('pack')).toEqual(['Shadowfell', 'Vault of Night'])
-  expect(itemRequests.at(-1)!.searchParams.getAll('quest')).toEqual(['7', '8'])
+  expect(itemRequests.at(-1)!.searchParams.getAll('quest')).toEqual(['test-7', 'test-8'])
   expect(
     itemRequests.filter((url) => Object.fromEntries(url.searchParams).q === 'torc'),
   ).toHaveLength(1)
@@ -616,7 +616,7 @@ test('loads the next 200 items near the virtual list end without resetting scrol
 }) => {
   const pagedItems = Array.from({ length: 201 }, (_, index) => ({
     ...items[0],
-    id: index + 1,
+    slug: `test-${index + 1}`,
     name: `Item ${String(index + 1).padStart(3, '0')}`,
   }))
   const offsets: number[] = []
