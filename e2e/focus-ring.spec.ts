@@ -310,6 +310,7 @@ function auditFocusedRing(clearanceMeasurementTolerance: number): {
       issues.push('missing neighbouring text clearance token')
     }
     const canvasContext = document.createElement('canvas').getContext('2d')!
+    const rejectedCanvasFontSentinel = '1px serif'
     const inkBoundsForText = (
       textNode: Text,
       start: number,
@@ -343,24 +344,44 @@ function auditFocusedRing(clearanceMeasurementTolerance: number): {
         return []
       }
       const text = textNode.data.slice(start, end)
-      canvasContext.font = `${textStyle.fontStyle} ${textStyle.fontVariant} ${textStyle.fontWeight} ${textStyle.fontSize} ${textStyle.fontFamily}`
-      canvasContext.letterSpacing = textStyle.letterSpacing
-      const metrics = canvasContext.measureText(text)
+      const scaledLength = (length: string, scale: number): string =>
+        length === 'normal' ? length : `${Number.parseFloat(length) * scale}px`
+      const measuredAtScale = (scale: number): TextMetrics => {
+        const canvasFontVariant = textStyle.fontVariantCaps === 'small-caps' ? 'small-caps' : ''
+        const requestedFont = `${textStyle.fontStyle} ${canvasFontVariant} ${textStyle.fontWeight} ${scaledLength(textStyle.fontSize, scale)} ${textStyle.fontFamily}`
+        canvasContext.font = rejectedCanvasFontSentinel
+        canvasContext.font = requestedFont
+        if (canvasContext.font === rejectedCanvasFontSentinel) {
+          issues.push(`canvas rejected the font of "${text}" (${requestedFont})`)
+        }
+        canvasContext.letterSpacing = scaledLength(textStyle.letterSpacing, scale)
+        return canvasContext.measureText(text)
+      }
+      const layoutMetrics = measuredAtScale(1)
+      const glyphOutlineScale = 64
+      const outlineMetrics = measuredAtScale(glyphOutlineScale)
+      const glyphOutline = {
+        left: outlineMetrics.actualBoundingBoxLeft / glyphOutlineScale,
+        right: outlineMetrics.actualBoundingBoxRight / glyphOutlineScale,
+        ascent: outlineMetrics.actualBoundingBoxAscent / glyphOutlineScale,
+        descent: outlineMetrics.actualBoundingBoxDescent / glyphOutlineScale,
+        advance: outlineMetrics.width / glyphOutlineScale,
+      }
       return lineBoundsList.flatMap((lineBounds) => {
-        const fontHeight = metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent
+        const fontHeight =
+          layoutMetrics.fontBoundingBoxAscent + layoutMetrics.fontBoundingBoxDescent
         const baseline =
-          lineBounds.top + (lineBounds.height - fontHeight) / 2 + metrics.fontBoundingBoxAscent
+          lineBounds.top +
+          (lineBounds.height - fontHeight) / 2 +
+          layoutMetrics.fontBoundingBoxAscent
         const inkBounds = {
-          left:
-            lineBoundsList.length === 1
-              ? lineBounds.left - metrics.actualBoundingBoxLeft
-              : lineBounds.left,
-          top: baseline - metrics.actualBoundingBoxAscent,
+          left: lineBoundsList.length === 1 ? lineBounds.left - glyphOutline.left : lineBounds.left,
+          top: baseline - glyphOutline.ascent,
           right:
             lineBoundsList.length === 1
-              ? lineBounds.left + metrics.actualBoundingBoxRight
+              ? lineBounds.right - glyphOutline.advance + glyphOutline.right
               : lineBounds.right,
-          bottom: baseline + Math.max(0, metrics.actualBoundingBoxDescent),
+          bottom: baseline + Math.max(0, glyphOutline.descent),
         }
         inkBounds.left = Math.max(inkBounds.left, 0)
         inkBounds.top = Math.max(inkBounds.top, 0)
