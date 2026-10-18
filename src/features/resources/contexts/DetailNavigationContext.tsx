@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, type JSX, type ReactNode } from 'react'
-import type { ResourceCategory } from '../resourceCategories'
+import type { ResourceCategory } from '../../../lib/resourcePaths'
 import type { ResourceReference } from '../hooks/useDetailStack'
 
 export interface DetailNavigation {

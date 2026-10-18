@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import type { ResourceCategory } from '../resourceCategories'
+import type { ResourceCategory } from '../../../lib/resourcePaths'
 
 export interface ResourceReference {
   category: ResourceCategory

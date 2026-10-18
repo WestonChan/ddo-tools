@@ -1,3 +1,5 @@
+export type Slug = string & { readonly __slug: unique symbol }
+
 export type ApiQueryParameters = Record<
   string,
   string | number | boolean | readonly string[] | undefined

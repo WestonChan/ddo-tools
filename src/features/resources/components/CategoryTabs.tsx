@@ -1,12 +1,8 @@
 import { useRef, type JSX, type KeyboardEvent } from 'react'
 import { HintAnchor } from '../../../components'
 import { useRovingGroup } from '../../../hooks'
-import {
-  RESOURCE_CATEGORIES,
-  LABEL_BY_RESOURCE_CATEGORY,
-  ENABLED_RESOURCE_CATEGORIES,
-  type ResourceCategory,
-} from '../resourceCategories'
+import { LABEL_BY_RESOURCE_CATEGORY, ENABLED_RESOURCE_CATEGORIES } from '../resourceCategories'
+import { RESOURCE_CATEGORIES, type ResourceCategory } from '../../../lib/resourcePaths'
 
 interface CategoryTabsProps {
   activeCategory: ResourceCategory

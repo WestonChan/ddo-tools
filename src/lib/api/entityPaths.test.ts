@@ -1,0 +1,19 @@
+import { expect, it } from 'vitest'
+import { API_DETAIL_KINDS, apiDetailPath, slugFromPathSegment } from './entityPaths'
+
+it.each(['strength', '1-strength', 'sapphire--resistance', '6263613332164767'])(
+  'accepts %s',
+  (segment) => expect(slugFromPathSegment(segment)).toBe(segment),
+)
+
+it.each(['', 'Strength', 'two words', '../item', 'item/other', '-item', 'item\n'])(
+  'rejects %j',
+  (segment) => expect(slugFromPathSegment(segment)).toBeNull(),
+)
+
+it('builds every detail kind from a validated segment', () => {
+  const slug = slugFromPathSegment('strength')!
+  for (const kind of API_DETAIL_KINDS)
+    expect(apiDetailPath(kind, slug)).toBe(`/v1/${kind}/strength`)
+  expect(API_DETAIL_KINDS).toHaveLength(16)
+})

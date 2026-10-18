@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from 'react'
 import type { LedgerSort } from '../../components'
 import { EMPTY_ITEM_FILTERS, isItemSortColumn, type ItemListFilters } from './queries/items'
-import { RESOURCE_CATEGORIES, type ResourceCategory } from './resourceCategories'
+import { RESOURCE_CATEGORIES, type ResourceCategory } from '../../lib/resourcePaths'
 
 type OtherResourceCategory = Exclude<ResourceCategory, 'items'>
 type OtherResourceFilters = Record<

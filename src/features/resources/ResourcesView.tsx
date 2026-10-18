@@ -14,11 +14,8 @@ import { CategoryTabs } from './components/CategoryTabs'
 import { ItemPicker } from './components/ItemPicker'
 import { ResourceDetailPane } from './components/ResourceDetailPane'
 import { WireframePlaceholder } from '../../components'
-import {
-  LABEL_BY_RESOURCE_CATEGORY,
-  isResourceCategory,
-  type ResourceCategory,
-} from './resourceCategories'
+import { LABEL_BY_RESOURCE_CATEGORY } from './resourceCategories'
+import { isResourceCategory, type ResourceCategory } from '../../lib/resourcePaths'
 import './ResourcesView.css'
 import { useResourceListSession } from './resourceListSessions'
 import { isTypingTarget } from '../../lib/isTypingTarget'

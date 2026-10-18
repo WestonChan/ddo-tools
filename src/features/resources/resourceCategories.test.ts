@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { DETAIL_TITLE_ID, isResourceCategory } from './resourceCategories'
+import { DETAIL_TITLE_ID } from './resourceCategories'
+import { isResourceCategory } from '../../lib/resourcePaths'
 
 describe('isResourceCategory', () => {
   it('rejects unknown strings (including case mismatches)', () => {

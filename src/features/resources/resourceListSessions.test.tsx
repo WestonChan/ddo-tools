@@ -5,7 +5,7 @@ import {
   setResourceListSession,
   useResourceListSession,
 } from './resourceListSessions'
-import type { ResourceCategory } from './resourceCategories'
+import type { ResourceCategory } from '../../lib/resourcePaths'
 import { itemListParameters } from './queries/items'
 
 const STORAGE_KEY = 'ddo-tools:resource-list-sessions:v1'
