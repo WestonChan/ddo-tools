@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import capturedTwoSetItem from '../queries/fixtures/item-two-sets-747.json'
-import capturedCaptainSet from '../queries/fixtures/effects-set-73.json'
-import capturedDevilSet from '../queries/fixtures/effects-set-77.json'
+import capturedTwoSetItem from '../queries/fixtures/item-barbettes-bracers.json'
+import capturedCaptainSet from '../queries/fixtures/set-captains-set.json'
+import capturedDevilSet from '../queries/fixtures/set-the-devils-handiwork.json'
 import { ItemHoverContent } from './detail/ResourceHoverCards'
 import { render } from '../../../test/renderWithQueryClient'
 import { ResourceDetailPane } from './ResourceDetailPane'
-import capturedItem from '../queries/fixtures/effects-item-7716.json'
+import capturedItem from '../queries/fixtures/item-stolen-necklace-level-25.json'
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
 

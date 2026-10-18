@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
-import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-833.json' with { type: 'json' }
-import capturedRing from '../src/features/resources/queries/fixtures/effects-item-487.json' with { type: 'json' }
-import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
+import capturedArmor from '../src/features/resources/queries/fixtures/item-beholder-plate-armor.json' with { type: 'json' }
+import capturedRing from '../src/features/resources/queries/fixtures/item-adversion.json' with { type: 'json' }
+import capturedSet from '../src/features/resources/queries/fixtures/set-adherent-of-the-mists-set-heroic.json' with { type: 'json' }
 
 const focusedRoutes = [
   '/',

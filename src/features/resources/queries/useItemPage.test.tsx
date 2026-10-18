@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
-import capturedTwoSetItem from './fixtures/item-two-sets-747.json'
-import capturedNoSetItem from './fixtures/effects-item.json'
+import capturedTwoSetItem from './fixtures/item-barbettes-bracers.json'
+import capturedNoSetItem from './fixtures/item-stolen-necklace-level-25.json'
 import {
   useItemPage,
   useFittingAugmentsBySlotLabel,
@@ -15,9 +15,9 @@ import {
   setDetailQueryOptions,
 } from './useItems'
 import { EMPTY_ITEM_FILTERS } from './items'
-import adventurePack from './fixtures/adventure-packs.json'
-import capturedRing from './fixtures/effects-item-487.json'
-import capturedSet from './fixtures/effects-set-93.json'
+import adventurePack from './fixtures/adventure-pack-magic-of-myth-drannor.json'
+import capturedRing from './fixtures/item-adversion.json'
+import capturedSet from './fixtures/set-adherent-of-the-mists-set-heroic.json'
 
 function apiPage(name: string, total = 1): Response {
   return new Response(
@@ -60,39 +60,41 @@ it('prefetches an item and its set through the same queries rendered by the card
   })
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
     const path = new URL(String(request)).pathname
-    return path === '/v1/items/487'
+    return path === `/v1/items/${capturedRing.id}`
       ? Promise.resolve(new Response(JSON.stringify(capturedRing), { status: 200 }))
       : setResponseReady
   })
   const queryClient = new QueryClient()
-  expect(isItemCardReady(queryClient, 487)).toBe(false)
-  const prefetchedItemCard = prefetchItemCard(queryClient, 487)
+  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(false)
+  const prefetchedItemCard = prefetchItemCard(queryClient, capturedRing.id)
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
   const settled = vi.fn()
   void prefetchedItemCard.then(settled)
   await new Promise((resolve) => setTimeout(resolve, 0))
   expect(settled).not.toHaveBeenCalled()
-  expect(isItemCardReady(queryClient, 487)).toBe(false)
-  expect(queryClient.getQueryState(setDetailQueryOptions(93).queryKey)?.fetchStatus).toBe(
-    'fetching',
-  )
+  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(false)
+  expect(
+    queryClient.getQueryState(setDetailQueryOptions(capturedSet.id).queryKey)?.fetchStatus,
+  ).toBe('fetching')
   releaseSetResponse()
   await prefetchedItemCard
   expect(settled).toHaveBeenCalledOnce()
   await waitFor(() =>
-    expect(queryClient.getQueryState(setDetailQueryOptions(93).queryKey)?.status).toBe('success'),
+    expect(queryClient.getQueryState(setDetailQueryOptions(capturedSet.id).queryKey)?.status).toBe(
+      'success',
+    ),
   )
-  expect(isItemCardReady(queryClient, 487)).toBe(true)
+  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(true)
   function CardQueryWrapper({ children }: { children: ReactNode }): ReactNode {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   }
-  const item = renderHook(() => useItem(487), { wrapper: CardQueryWrapper })
-  const set = renderHook(() => useSet(93), { wrapper: CardQueryWrapper })
+  const item = renderHook(() => useItem(capturedRing.id), { wrapper: CardQueryWrapper })
+  const set = renderHook(() => useSet(capturedSet.id), { wrapper: CardQueryWrapper })
   expect(item.result.current.data?.name).toBe(capturedRing.name)
   expect(set.result.current.data?.name).toBe(capturedSet.name)
   expect(fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual([
-    '/v1/items/487',
-    '/v1/sets/93',
+    `/v1/items/${capturedRing.id}`,
+    `/v1/sets/${capturedSet.id}`,
   ])
 })
 
@@ -101,12 +103,12 @@ it('keeps a prefetch error for the card to display without a second request', as
     .spyOn(globalThis, 'fetch')
     .mockResolvedValue(new Response('Missing item', { status: 404 }))
   const queryClient = new QueryClient()
-  await expect(prefetchItemCard(queryClient, 487)).rejects.toThrow()
-  expect(isItemCardReady(queryClient, 487)).toBe(true)
+  await expect(prefetchItemCard(queryClient, capturedRing.id)).rejects.toThrow()
+  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(true)
   function ErrorQueryWrapper({ children }: { children: ReactNode }): ReactNode {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   }
-  const item = renderHook(() => useItem(487), { wrapper: ErrorQueryWrapper })
+  const item = renderHook(() => useItem(capturedRing.id), { wrapper: ErrorQueryWrapper })
   expect(item.result.current.error).not.toBeNull()
   expect(fetchMock).toHaveBeenCalledOnce()
 })

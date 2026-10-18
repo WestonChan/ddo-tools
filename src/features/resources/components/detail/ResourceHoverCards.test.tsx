@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { JSX } from 'react'
 import { readFileSync } from 'node:fs'
-import capturedNullIconSet from '../../queries/fixtures/set-null-icon-250.json'
+import capturedNullIconSet from '../../queries/fixtures/set-conduit-of-the-titans.json'
 import { render } from '../../../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../../../components'
 import {
@@ -21,21 +21,21 @@ import {
 import { BonusDetailCard, BonusHoverCard } from './BonusDetailCard'
 import { EffectListFullView } from './EffectList'
 import { setEffectRows } from './effectRows'
-import capturedItem from '../../queries/fixtures/effects-item.json'
-import capturedRing from '../../queries/fixtures/effects-item-487.json'
-import adventurePack from '../../queries/fixtures/adventure-packs.json'
-import questChain from '../../queries/fixtures/quest-chains.json'
-import saga from '../../queries/fixtures/sagas.json'
-import craftingSystem from '../../queries/fixtures/crafting-systems.json'
-import vendor from '../../../../test/fixtures/data-build-vendor-morten-edgewright.json'
-import event from '../../queries/fixtures/events.json'
-import augment from '../../queries/fixtures/effects-augment-77.json'
-import capturedAugment from '../../queries/fixtures/effects-augment.json'
-import groupedAugment from '../../queries/fixtures/effects-augment-633.json'
-import capturedSet from '../../queries/fixtures/effects-set.json'
-import riposteDetail from '../../queries/fixtures/effect-detail-386.json'
-import groupDetail from '../../queries/fixtures/effect-detail-338.json'
-import charismaDetail from '../../queries/fixtures/effect-detail-6.json'
+import capturedItem from '../../queries/fixtures/item-stolen-necklace-level-25.json'
+import capturedRing from '../../queries/fixtures/item-adversion.json'
+import adventurePack from '../../queries/fixtures/adventure-pack-magic-of-myth-drannor.json'
+import questChain from '../../queries/fixtures/quest-chain-the-lost-seekers.json'
+import saga from '../../queries/fixtures/saga-the-haunting-of-saltmarsh.json'
+import craftingSystem from '../../queries/fixtures/crafting-system-slave-lords-crafting.json'
+import vendor from '../../../../test/fixtures/vendor-morten-edgewright.json'
+import event from '../../queries/fixtures/event-treasure-of-crystal-cove.json'
+import augment from '../../queries/fixtures/augment-martial--shocking-burst-stunning-10-heightened-awareness-4.json'
+import capturedAugment from '../../queries/fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
+import groupedAugment from '../../queries/fixtures/augment-eldritch-rune-of-skill--charisma.json'
+import capturedSet from '../../queries/fixtures/set-devoted-heart.json'
+import riposteDetail from '../../queries/fixtures/effect-riposte.json'
+import groupDetail from '../../queries/fixtures/effect-charisma-skills.json'
+import charismaDetail from '../../queries/fixtures/effect-charisma.json'
 import {
   ApiError,
   API_RESPONSE_ERROR,
@@ -418,7 +418,7 @@ it('opens an item yielded by a pack', () => {
       name: /Bastard Sword of the Fallen Age/,
     }),
   )
-  expect(openItem).toHaveBeenCalledWith(794, 'Bastard Sword of the Fallen Age')
+  expect(openItem).toHaveBeenCalledWith(adventurePack.items[0].id, adventurePack.items[0].name)
 })
 
 it.each([
@@ -598,7 +598,7 @@ it('shows captured set pieces and tier bonuses', () => {
   expect(card).toHaveTextContent('Positive Spell Power')
   expect(card.querySelector('.resources-set-tier')).toHaveClass('hover-card-row')
   fireEvent.click(within(card).getByRole('button', { name: /Devoted Goggles/ }))
-  expect(openItem).toHaveBeenCalledWith(1821, 'Devoted Goggles')
+  expect(openItem).toHaveBeenCalledWith(capturedSet.items[0].id, capturedSet.items[0].name)
   expect(screen.queryByRole('dialog')).toBeNull()
 
   fireEvent.keyDown(document, { key: 'Tab' })

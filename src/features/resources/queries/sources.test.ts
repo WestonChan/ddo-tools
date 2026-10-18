@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import adventurePack from './fixtures/adventure-packs.json'
-import questChain from './fixtures/quest-chains.json'
-import saga from './fixtures/sagas.json'
-import craftingSystem from './fixtures/crafting-systems.json'
-import vendor from '../../../test/fixtures/data-build-vendor-morten-edgewright.json'
-import event from './fixtures/events.json'
+import adventurePack from './fixtures/adventure-pack-magic-of-myth-drannor.json'
+import questChain from './fixtures/quest-chain-the-lost-seekers.json'
+import saga from './fixtures/saga-the-haunting-of-saltmarsh.json'
+import craftingSystem from './fixtures/crafting-system-slave-lords-crafting.json'
+import vendor from '../../../test/fixtures/vendor-morten-edgewright.json'
+import event from './fixtures/event-treasure-of-crystal-cove.json'
 import {
   toAdventurePack,
   toQuestChain,
@@ -40,7 +40,7 @@ describe('captured source detail responses', () => {
       isFreeToPlay: false,
     })
     expect(pack.items[0]).toMatchObject({
-      id: 794,
+      id: adventurePack.items[0].id,
       name: 'Bastard Sword of the Fallen Age',
       slot: 'Main Hand',
       minimumLevel: 13,
@@ -53,8 +53,16 @@ describe('captured source detail responses', () => {
   it('maps a quest chain with quests and rewards', () => {
     const chain = toQuestChain(questChain)
     expect(chain).toMatchObject({ kind: 'questChain', name: 'The Lost Seekers' })
-    expect(chain.quests[0]).toEqual({ id: 47, name: "The Kobold's Den: Clan Gnashtooth", level: 3 })
-    expect(chain.items[0]).toMatchObject({ id: 468, name: "Acrobat's Ring", slot: 'Ring' })
+    expect(chain.quests[0]).toEqual({
+      id: questChain.quests[0].id,
+      name: "The Kobold's Den: Clan Gnashtooth",
+      level: 3,
+    })
+    expect(chain.items[0]).toMatchObject({
+      id: questChain.rewards[0].id,
+      name: "Acrobat's Ring",
+      slot: 'Ring',
+    })
     expect(chain.items).toHaveLength(questChain.rewards.length)
   })
 
@@ -65,8 +73,16 @@ describe('captured source detail responses', () => {
       name: 'The Haunting of Saltmarsh',
       pack: 'Sinister Secret of Saltmarsh',
     })
-    expect(mappedSaga.quests[0]).toEqual({ id: 60, name: 'Back to Basics', level: 3 })
-    expect(mappedSaga.items[0]).toMatchObject({ id: 893, name: 'Black Pearl Ring', slot: 'Ring' })
+    expect(mappedSaga.quests[0]).toEqual({
+      id: saga.quests[0].id,
+      name: 'Back to Basics',
+      level: 3,
+    })
+    expect(mappedSaga.items[0]).toMatchObject({
+      id: saga.rewards[0].id,
+      name: 'Black Pearl Ring',
+      slot: 'Ring',
+    })
     expect(mappedSaga.items).toHaveLength(saga.rewards.length)
   })
 
@@ -111,7 +127,7 @@ describe('captured source detail responses', () => {
     const mappedEvent = toEvent(event)
     expect(mappedEvent).toMatchObject({ kind: 'event', name: 'Treasure of Crystal Cove' })
     expect(mappedEvent.items[0]).toMatchObject({
-      id: 484,
+      id: event.items[0].id,
       name: "Admiral's Tricorne",
       slot: 'Head',
     })
@@ -120,12 +136,17 @@ describe('captured source detail responses', () => {
 })
 
 it.each([
-  [fetchAdventurePack, '/v1/adventure-packs/3', adventurePack, 3],
-  [fetchQuestChain, '/v1/quest-chains/1', questChain, 1],
-  [fetchSaga, '/v1/sagas/1', saga, 1],
-  [fetchCraftingSystem, '/v1/crafting-systems/1', craftingSystem, 1],
+  [fetchAdventurePack, `/v1/adventure-packs/${adventurePack.id}`, adventurePack, adventurePack.id],
+  [fetchQuestChain, `/v1/quest-chains/${questChain.id}`, questChain, questChain.id],
+  [fetchSaga, `/v1/sagas/${saga.id}`, saga, saga.id],
+  [
+    fetchCraftingSystem,
+    `/v1/crafting-systems/${craftingSystem.id}`,
+    craftingSystem,
+    craftingSystem.id,
+  ],
   [fetchVendor, `/v1/vendors/${vendor.id}`, vendor, vendor.id],
-  [fetchEvent, '/v1/events/1', event, 1],
+  [fetchEvent, `/v1/events/${event.id}`, event, event.id],
 ] as const)('fetches and maps %s by id', async (fetchSource, path, response, id) => {
   const fetchMock = vi
     .spyOn(globalThis, 'fetch')

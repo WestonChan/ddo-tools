@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import twoSetItem from './fixtures/item-two-sets-747.json'
-import pricedItem from './fixtures/data-build-item-barovian-handwraps.json'
+import twoSetItem from './fixtures/item-barbettes-bracers.json'
+import pricedItem from './fixtures/item-barovian-handwraps.json'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
-import capturedItem from './fixtures/effects-item.json'
-import capturedWeapon from './fixtures/effects-item-3492.json'
-import capturedShield from './fixtures/effects-item-8309.json'
-import capturedAugment from './fixtures/effects-augment.json'
+import capturedItem from './fixtures/item-stolen-necklace-level-25.json'
+import capturedWeapon from './fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedShield from './fixtures/item-tower-shield-of-the-fallen-age.json'
+import capturedAugment from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
 import effectPage from './fixtures/effects-page.json'
 import {
   fetchAdventurePackNames,

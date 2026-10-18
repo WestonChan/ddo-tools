@@ -9,7 +9,7 @@ import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { ApiError, API_HTTP_ERROR } from '../../../../lib/api'
 import type { ApiItemDetail } from '../../../../lib/api'
 import { toItem } from '../../queries/items'
-import capturedRing from '../../queries/fixtures/effects-item-487.json'
+import capturedRing from '../../queries/fixtures/item-adversion.json'
 
 let augmentsBySlotLabel: Record<string, AugmentSummary[]> = {}
 let augmentError: ApiError | null = null

@@ -415,8 +415,12 @@ describe('ItemPicker server-backed filters', () => {
     }))
     renderItemPicker()
     await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
-    await userEvent.click(screen.getByRole('option', { name: /Charisma Skills.*Group/ }))
-    expect(itemListParameters(latestFilters(), '', false).bonus).toEqual(['Charisma Skills'])
+    await userEvent.click(
+      screen.getByRole('option', {
+        name: (name) => name.startsWith(group!.name) && name.includes('Group'),
+      }),
+    )
+    expect(itemListParameters(latestFilters(), '', false).bonus).toEqual([group!.name])
   })
 
   it('chooses Constitution Insight through the pointer caption and sends its typed bonus', async () => {

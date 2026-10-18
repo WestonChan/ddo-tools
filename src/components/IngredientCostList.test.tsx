@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
 import { IngredientCostList } from './IngredientCostList'
-import vendor from '../test/fixtures/data-build-vendor-morten-edgewright.json'
+import vendor from '../test/fixtures/vendor-morten-edgewright.json'
 
 afterEach(cleanup)
 

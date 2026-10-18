@@ -1,6 +1,6 @@
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest'
 import { apiErrorDescription, type ApiSetDetail, type ApiSetRow } from '../../../lib/api'
-import capturedSet from './fixtures/effects-set.json'
+import capturedSet from './fixtures/set-devoted-heart.json'
 import capturedSetPage from './fixtures/sets-page.json'
 import { fetchSet, fetchSetVocabulary, toSetDetail } from './sets'
 
@@ -57,11 +57,13 @@ it('reloads an incomplete set vocabulary page before treating it as a contract e
   const fetchMock = vi
     .fn()
     .mockResolvedValueOnce(new Response(JSON.stringify({ ...capturedSetPage, sets: [] })))
-    .mockResolvedValueOnce(new Response(JSON.stringify(capturedSetPage)))
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ ...capturedSetPage, total: capturedSetPage.sets.length })),
+    )
   vi.stubGlobal('fetch', fetchMock)
   expect(await fetchSetVocabulary()).toEqual({
     rows: capturedSetPage.sets.map((set) => set.name),
-    total: capturedSetPage.total,
+    total: capturedSetPage.sets.length,
   })
   expect(fetchMock).toHaveBeenCalledTimes(2)
   expect(fetchMock.mock.calls[1][1]).toHaveProperty('cache', 'reload')

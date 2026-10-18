@@ -1,12 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import capturedRing from '../src/features/resources/queries/fixtures/effects-item-487.json' with { type: 'json' }
-import capturedRunearm from '../src/features/resources/queries/fixtures/effects-item-926.json' with { type: 'json' }
-import capturedArmor from '../src/features/resources/queries/fixtures/effects-item-833.json' with { type: 'json' }
-import capturedWeapon from '../src/features/resources/queries/fixtures/effects-item-3492.json' with { type: 'json' }
-import capturedShield from '../src/features/resources/queries/fixtures/effects-item-8309.json' with { type: 'json' }
-import capturedNecklace from '../src/features/resources/queries/fixtures/effects-item-7716.json' with { type: 'json' }
-import capturedSet from '../src/features/resources/queries/fixtures/effects-set-93.json' with { type: 'json' }
-import charismaDetail from '../src/features/resources/queries/fixtures/effect-detail-6.json' with { type: 'json' }
+import capturedRing from '../src/features/resources/queries/fixtures/item-adversion.json' with { type: 'json' }
+import capturedRunearm from '../src/features/resources/queries/fixtures/item-blight-inferno.json' with { type: 'json' }
+import capturedArmor from '../src/features/resources/queries/fixtures/item-beholder-plate-armor.json' with { type: 'json' }
+import capturedWeapon from '../src/features/resources/queries/fixtures/item-greatsword-of-the-fallen-age.json' with { type: 'json' }
+import capturedShield from '../src/features/resources/queries/fixtures/item-tower-shield-of-the-fallen-age.json' with { type: 'json' }
+import capturedNecklace from '../src/features/resources/queries/fixtures/item-stolen-necklace-level-25.json' with { type: 'json' }
+import capturedSet from '../src/features/resources/queries/fixtures/set-adherent-of-the-mists-set-heroic.json' with { type: 'json' }
+import charismaDetail from '../src/features/resources/queries/fixtures/effect-charisma.json' with { type: 'json' }
 
 async function routeFocusRestoreItems(
   page: Page,

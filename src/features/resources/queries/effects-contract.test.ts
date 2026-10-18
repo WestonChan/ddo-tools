@@ -7,14 +7,14 @@ import {
   multiValueFilterParameters,
   statBonusFilterValue,
 } from '../../../lib/api'
-import itemResponse from './fixtures/effects-item.json'
-import augmentResponse from './fixtures/effects-augment.json'
-import setResponse from './fixtures/effects-set.json'
+import itemResponse from './fixtures/item-stolen-necklace-level-25.json'
+import augmentResponse from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
+import setResponse from './fixtures/set-devoted-heart.json'
 import effectPage from './fixtures/effects-page.json'
-import effectDetail from './fixtures/effects-detail.json'
+import effectDetail from './fixtures/effect-strength.json'
 import groupPage from './fixtures/effects-page-groups.json'
-import groupDetail from './fixtures/effect-detail-338.json'
-import groupItem from './fixtures/effects-item-457.json'
+import groupDetail from './fixtures/effect-charisma-skills.json'
+import groupItem from './fixtures/item-absolute-judgement.json'
 import {
   fetchAugment,
   fetchEffectDetail,
@@ -32,7 +32,7 @@ it('maps captured owner effects with their provenance and damage', () => {
   const augment = toAugmentDetail(augmentResponse as ApiAugmentDetail)
   const set = toSetDetail(setResponse as ApiSetDetail)
   expect(item.effects[0]).toMatchObject({
-    id: 6,
+    id: itemResponse.effects[0].effect_id,
     name: 'Charisma',
     verboseName: 'Charisma +8',
     tier: null,
@@ -126,7 +126,7 @@ it('accepts captured group bonuses, group vocabulary and per-link carriers', () 
   const groupEffect = groupItem.effects.find((effect) => effect.name === 'Command')
   expect(isApiEffect(groupEffect)).toBe(true)
   expect(groupEffect?.bonuses[0].group).toEqual({
-    id: 338,
+    id: groupDetail.id,
     slug: 'charisma-skills',
     name: 'Charisma Skills',
   })

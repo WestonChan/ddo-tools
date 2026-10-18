@@ -1,3 +1,4 @@
+import capturedNullIconSetPage from '../queries/fixtures/sets-null-icon-page.json'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -266,7 +267,11 @@ describe('ItemPicker page errors', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
       const url = new URL(String(request))
       if (url.pathname === '/v1/sets') {
-        return Promise.resolve(new Response(JSON.stringify(capturedSetPage), { status: 200 }))
+        return Promise.resolve(
+          new Response(JSON.stringify({ ...capturedSetPage, total: capturedSetPage.sets.length }), {
+            status: 200,
+          }),
+        )
       }
       if (url.pathname === '/v1/adventure-packs') {
         return Promise.resolve(
@@ -461,7 +466,7 @@ function ItemPickerHarness(): React.JSX.Element {
 }
 
 it('lists a captured set with a null icon without creating a broken image', async () => {
-  const nullIconSet = capturedSetPage.sets.find((set) => set.icon === null)!
+  const nullIconSet = capturedNullIconSetPage.sets.find((set) => set.icon === null)!
   expect(nullIconSet).toBeDefined()
   vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
     const path = new URL(String(request)).pathname
