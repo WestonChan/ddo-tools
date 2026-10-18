@@ -19,7 +19,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Cache Dependencies
         id: cache
         uses: actions/cache@v6
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Cache Dependencies
         id: cache
         uses: actions/cache@v6
@@ -65,7 +65,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Cache Dependencies
         id: cache
         uses: actions/cache@v6
@@ -89,7 +89,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Cache Dependencies
         id: cache
         uses: actions/cache@v6
