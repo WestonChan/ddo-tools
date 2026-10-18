@@ -19,11 +19,15 @@ export const API_DETAIL_KINDS = [
   'vendors',
 ] as const
 
-export function apiDetailPath(
+export function apiDetailPath(kind: (typeof API_DETAIL_KINDS)[number], slug: Slug): string {
+  return `/v1/${kind}/${slug}`
+}
+
+export function apiResponseDiagnosticPath(
   kind: (typeof API_DETAIL_KINDS)[number],
   slug: Slug | null | undefined,
 ): string {
-  return `/v1/${kind}/${slug ?? 'unknown'}`
+  return apiDetailPath(kind, slug ?? ('unknown' as Slug))
 }
 
 export function slugFromPathSegment(text: string): Slug | null {

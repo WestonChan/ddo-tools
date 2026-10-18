@@ -1,5 +1,6 @@
 import {
   apiDetailPath,
+  apiResponseDiagnosticPath,
   type Slug,
   assertApiResponseFields,
   fetchApiJson,
@@ -89,7 +90,7 @@ function sourceQuests(quests: ApiSourceQuest[]): SourceQuest[] {
 
 export function toAdventurePack(
   response: ApiAdventurePackDetail,
-  path = apiDetailPath('adventure-packs', response?.slug),
+  path = apiResponseDiagnosticPath('adventure-packs', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {
@@ -101,7 +102,7 @@ export function toAdventurePack(
 
 export function toQuestChain(
   response: ApiQuestSeriesDetail,
-  path = apiDetailPath('quest-chains', response?.slug),
+  path = apiResponseDiagnosticPath('quest-chains', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, {
     slug: 'string',
@@ -119,7 +120,7 @@ export function toQuestChain(
 
 export function toSaga(
   response: ApiQuestSeriesDetail,
-  path = apiDetailPath('sagas', response?.slug),
+  path = apiResponseDiagnosticPath('sagas', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, {
     slug: 'string',
@@ -137,7 +138,7 @@ export function toSaga(
 
 export function toCraftingSystem(
   response: ApiCraftingSystemDetail,
-  path = apiDetailPath('crafting-systems', response?.slug),
+  path = apiResponseDiagnosticPath('crafting-systems', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', recipes: 'array' })
   response.recipes.forEach((recipe, index) => {
@@ -157,7 +158,7 @@ export function toCraftingSystem(
 
 export function toVendor(
   response: ApiVendorDetail,
-  path = apiDetailPath('vendors', response?.slug),
+  path = apiResponseDiagnosticPath('vendors', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {
@@ -170,7 +171,7 @@ export function toVendor(
 
 export function toEvent(
   response: ApiEventDetail,
-  path = apiDetailPath('events', response?.slug),
+  path = apiResponseDiagnosticPath('events', response?.slug),
 ): SourceDetail {
   assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {

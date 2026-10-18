@@ -13,7 +13,12 @@ export {
   isApiError,
 } from './client'
 export { shouldRetryQuery } from './retry'
-export { API_DETAIL_KINDS, apiDetailPath, slugFromPathSegment } from './entityPaths'
+export {
+  API_DETAIL_KINDS,
+  apiDetailPath,
+  apiResponseDiagnosticPath,
+  slugFromPathSegment,
+} from './entityPaths'
 export {
   isApiEffect,
   isApiEffectList,

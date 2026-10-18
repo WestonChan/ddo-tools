@@ -1,5 +1,6 @@
 import {
   apiDetailPath,
+  apiResponseDiagnosticPath,
   type Slug,
   assertApiResponseFields,
   fetchApiPage,
@@ -329,7 +330,7 @@ export function toItemSummary(apiItemRow: ApiItemRow, rowIndex = 0): ItemSummary
 
 export function toItem(
   apiItemDetail: ApiItemDetail,
-  path = apiDetailPath('items', apiItemDetail?.slug),
+  path = apiResponseDiagnosticPath('items', apiItemDetail?.slug),
 ): Item {
   assertApiResponseFields(apiItemDetail, path, {
     augment_slots: 'array',
@@ -526,7 +527,7 @@ function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
 }
 
 export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
-  assertApiResponseFields(apiAugment, apiDetailPath('augments', apiAugment?.slug), {
+  assertApiResponseFields(apiAugment, apiResponseDiagnosticPath('augments', apiAugment?.slug), {
     slug: 'string',
     name: 'string',
     min_level: 'nullable-number',
@@ -560,7 +561,7 @@ function toResourceModifier(modifier: ApiModifier): ResourceModifier {
 }
 
 export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
-  assertApiResponseFields(apiAugment, apiDetailPath('augments', apiAugment?.slug), {
+  assertApiResponseFields(apiAugment, apiResponseDiagnosticPath('augments', apiAugment?.slug), {
     effects: 'array',
     modifiers: 'array',
   })

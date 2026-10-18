@@ -1,8 +1,18 @@
-import { expect, it } from 'vitest'
-import { API_DETAIL_KINDS, apiDetailPath, slugFromPathSegment } from './entityPaths'
+import { expect, expectTypeOf, it } from 'vitest'
+import {
+  API_DETAIL_KINDS,
+  apiDetailPath,
+  apiResponseDiagnosticPath,
+  slugFromPathSegment,
+} from './entityPaths'
+import type { Slug } from './types'
+
+it('requires a slug for request detail paths', () => {
+  expectTypeOf(apiDetailPath).parameter(1).toEqualTypeOf<Slug>()
+})
 
 it.each([null, undefined])('keeps the missing-slug diagnostic path for %s', (slug) => {
-  expect(apiDetailPath('items', slug)).toBe('/v1/items/unknown')
+  expect(apiResponseDiagnosticPath('items', slug)).toBe('/v1/items/unknown')
 })
 
 it.each(['strength', '1-strength', 'sapphire--resistance', '6263613332164767'])(
@@ -28,4 +38,6 @@ it('builds every detail kind from a validated segment', () => {
   for (const kind of API_DETAIL_KINDS)
     expect(apiDetailPath(kind, slug)).toBe(`/v1/${kind}/strength`)
   expect(API_DETAIL_KINDS).toHaveLength(16)
+  for (const kind of API_DETAIL_KINDS)
+    expect(apiResponseDiagnosticPath(kind, slug)).toBe(apiDetailPath(kind, slug))
 })

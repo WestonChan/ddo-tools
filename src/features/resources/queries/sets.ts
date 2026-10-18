@@ -1,5 +1,6 @@
 import {
   apiDetailPath,
+  apiResponseDiagnosticPath,
   type Slug,
   assertApiResponseFields,
   fetchApiPage,
@@ -57,7 +58,7 @@ export async function fetchSetVocabulary(
 
 export function toSetDetail(
   apiSet: ApiSetDetail,
-  path = apiDetailPath('sets', apiSet?.slug),
+  path = apiResponseDiagnosticPath('sets', apiSet?.slug),
 ): SetDetail {
   assertApiResponseFields(apiSet, path, {
     slug: 'string',

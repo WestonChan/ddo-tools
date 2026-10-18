@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { apiDetailPath, type Slug } from '../../../../lib/api'
+import { apiDetailPath, apiResponseDiagnosticPath, type Slug } from '../../../../lib/api'
 import { ApiErrorNotice } from '../../../../components'
 import { useItem, useSets } from '../../queries/useItems'
 import type { Item } from '../../queries/items'
@@ -21,7 +21,7 @@ export function useItemCardContent(itemSlug: Slug | null): ItemCardContent {
   const status = itemQuery.error ? (
     <ApiErrorNotice
       error={itemQuery.error}
-      path={apiDetailPath('items', itemSlug)}
+      path={apiResponseDiagnosticPath('items', itemSlug)}
       missingResourceName="item"
       onRetry={() => void itemQuery.refetch()}
     />

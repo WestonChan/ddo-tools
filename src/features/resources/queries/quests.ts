@@ -1,5 +1,6 @@
 import {
   apiDetailPath,
+  apiResponseDiagnosticPath,
   type Slug,
   assertApiResponseFields,
   fetchApiJson,
@@ -19,7 +20,7 @@ export interface QuestDetail {
 
 export function toQuestDetail(
   apiQuest: ApiQuestDetail,
-  path = apiDetailPath('quests', apiQuest?.slug),
+  path = apiResponseDiagnosticPath('quests', apiQuest?.slug),
 ): QuestDetail {
   assertApiResponseFields(apiQuest, path, { slug: 'string', name: 'string', items: 'array' })
   return {
