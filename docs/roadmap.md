@@ -949,12 +949,14 @@ itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 | 7 | planned | Build Plan (single scrollable page) |
 | 8 | planned | Gear |
 | V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button. Moved after Phase 8 on 2026-10-01: ships once builds and gear are real |
+| 16a | planned | PWA shell and offline game data -- manifest, service worker, `/v1` and icon caches keyed by dataset version, offline indicator, install notes (requires 8 and V8) |
 | V10 | planned | Data issue reports -- `reports.db` on the Fly volume, `POST /v1/reports` taking the edited-entity diff (`set`, `add`, `remove`, `unmapped`, `create`), deduplicated by fingerprint with a request count, grouped by entity for a wiki reader agent that verifies each change |
 | V9 | chunks 1 and 3 done, deploy switched | Editable source tree -- the dataset as TOML files, one per entity, under its pack and quest; built into SQLite by `ddo-etl build --data` and written back by `export --db`, with the round trip as the test. Chunk 1 (the tree, both scripts, the proof against the XML build) landed 2026-10-15; chunk 3 (`ddo-etl import-ddobuilder`, Maetrim's updates as a three-way merge in the database) and the deploy and CI switch to the data files landed 2026-10-17; chunk 2's cleanup and chunk 4's tooling are open. See the phase entry |
 | 9 | planned | Comparison mode |
 | 10 | planned | Farm checklist |
 | 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
 | 12 | planned | Build Overview |
+| 16b | planned | Offline build edits and merge -- edits with no connection, three-way merge into the V8 server copy on reconnect, conflict dialog, "Not synced" badge (requires 16a, V8 and a settled build JSON) |
 | 13 | planned | Settings view cleanup |
 | 14 | superseded | Build sharing via URL -- replaced by V8's server-side sharing; the URL codec is optional fallback |
 | 15 | planned | `.DDOBuild` import (DDOBuilderV2 desktop files) |
@@ -979,6 +981,7 @@ isn't true it is said here):
 - **D1 is independent of the V-series and of 4d–4g.** It changed only the frontend's look and shell;
   every later frontend phase inherits its tokens, rail, `StatsPanel`, `PageSection` and
   `AnchoredMenu` rather than the layout this document's older sketches describe.
+- **16a and 16b are one feature in two places.** 16a (shell and offline game data) goes right after V8, ahead of Phase 9, because it needs builds to exist but not their final shape. 16b (offline edits and merge) waits until after Phase 12 so the merge is written once against a settled build JSON; Phases 13 and 15 are independent of both.
 - **3b is independent of every phase around it.** It touches the rail, the error components,
   `src/lib/sentry.ts` and one Vercel Function, none of which 4e–8 change, so it can run alongside
   4e or jump ahead of it. It sits after 4e only because 4e was already next when 3b was added. Its
@@ -2006,6 +2009,35 @@ Import build files from [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOB
 
 ---
 
+### Phase 16a: PWA Shell and Offline Game Data
+
+Added 2026-10-17. First half of making the site an installable PWA whose builds can be edited with no connection. It follows Phase 8 and V8 and runs before Phase 9; 16b (the offline merge) follows Phase 12.
+
+**Why here.** Nothing in it needs builds to exist, so it could go earlier, but an offline shell has nothing to edit before Phase 7 and 8, and every push to `main` ships a new version, so a service worker would add stale-shell bugs to a codebase that changes daily. Doing it once the app settles keeps the cache invalidation honest.
+
+**What already works offline, and what does not.** Phase 5 makes `user.db` the working copy, persisted to IndexedDB, so a build's edits never need the network. Two things do: the app shell (nothing caches it since V6 removed the service worker) and the game data, because the frontend holds none and reads `ddo-api` through TanStack Query. The API is immutable per deployment, which is what makes caching it safe.
+
+- **App shell.** Web app manifest (name, icons, theme from the design-system tokens, `display: standalone`) and a service worker that precaches the built assets and serves `index.html` for every route, matching `vercel.json`'s SPA rewrite. A new deploy shows an "update ready" prompt rather than swapping assets under an open build. Tooling is an open decision: `vite-plugin-pwa` (Workbox) or a hand-written worker; research it per the package-comparison rule before adding a dependency.
+- **Game data offline.** Cache `/v1` reads stale-while-revalidate, keyed by the dataset version so a redeploy never mixes two datasets; icons cache-first. Open question: lazily cache what the player has opened, or fetch the bulk dumps (`/v1/dump.sqlite` and the JSON dumps V4 ships) once on install so the whole Resources browser and the stats engine work offline. The stats engine (Phase 6) needs every item, feat and enhancement a build touches, so the bulk dump is the likely answer. Show an offline indicator; `ApiGate` and the query error states must treat "offline with a cached dataset" as a working state, not an error.
+- **Install and platform notes.** `beforeinstallprompt` is Chromium-only; iOS Safari installs through Share > Add to Home Screen with no prompt, so the install affordance lives in Settings (Phase 13) as a short how-to, not a popup. iOS evicts site storage after about seven days without a visit unless the app is installed, so call `navigator.storage.persist()` and keep Phase 5's export (the raw `user.db` download) visible as the safety net.
+- **Tests.** Playwright with the context set offline: load the site online, go offline, reload, and assert the shell and a previously cached resource render and the offline indicator shows; a redeploy simulated by changing the dataset version shows the update prompt and drops the old data cache.
+
+**Requirement that must hold by structure.** The offline cache and the live API must serve one dataset: the service worker's cache key and the `dataset_version` a build records (16b) come from one declaration, and a test fails if they are read from two places.
+
+---
+
+### Phase 16b: Offline Build Edits and Merge
+
+Added 2026-10-17. Second half: builds are edited with no connection and merged into the server copy once one is acquired. It needs 16a, V8 and a settled build JSON, so it goes after Phase 12. Each field Phases 9 to 12 add (comparison state, persisted hotbars) widens what the merge handles and tests, and building it last writes the merge function once against a stable shape. Phase 9's unsaved-build badge is reused here for "Not synced".
+
+- **Build identity and sync state.** Each local build carries what V8 returns on create (`id`, `edit_token`) once it has been shared, plus `base_version` (the server `updated_at` the local copy last agreed with), the `base` snapshot at that version, and a `dirty` flag. A build that was never shared has no server copy and needs no merge.
+- **Merge on reconnect.** For each dirty shared build, `GET /v1/builds/{id}`: if `updated_at` equals `base_version`, `PUT` the local copy with the token and move the base forward. If the server moved, do a three-way merge on the build JSON (base, local, server) by field: disjoint changes merge silently; a field both sides changed is a conflict the player resolves in a merge dialog that shows both values, with "keep mine", "keep theirs" and "keep both as two builds". Nothing is overwritten without that choice. A build the server no longer has (deleted or expired from V8's `last_accessed` sweep) is offered back as a fresh share rather than dropped. V8's `PUT` therefore wants an `If-Match` on `updated_at` so a stale write is refused with a 409, not accepted last-writer-wins; that is a V8 requirement, listed in V8's entry.
+- **Triggers and queue.** Merge runs on the `online` event, on app start, and on tab focus, never in the background of a closed app unless the browser grants Background Sync (Chromium only, so treat it as an enhancement). Failed attempts back off and surface as a per-build "Not synced" badge; they never block editing.
+- **Schema versions across devices.** A build's `schema_version` and `dataset_version` (V8) decide whether an old offline copy can still be opened: a copy at an older schema migrates forward on open, and one at a newer schema than the app (another device updated first) opens read-only with a reload prompt.
+- **Tests.** Merge is a pure function over (base, local, server) with unit tests for disjoint edits, same-field conflicts, delete-versus-edit, reordered arrays and schema mismatch; Playwright runs the offline path (edit a build offline, reload, edit again, go online, assert one `PUT`, then repeat against a server that moved to assert the conflict dialog).
+
+---
+
 ## V-series: Rust data API + Vercel hosting
 
 Decided 2026-09-20. The site moves from "static SPA that downloads a 13 MB SQLite file and queries it
@@ -2538,7 +2570,7 @@ capability; adding GitHub OAuth later is additive (`owner_id` nullable, "claim t
 Write routes are `no-store` and rate-limited; reads use `updated_at` as the ETag. Frontend: `user.db`
 stays the working copy; Share posts a snapshot and stores `{id, edit_token}` beside the local build;
 a shared link opens read-only with "Import to my builds". Requires Phase 5's build structures; the
-versioned build JSON is also what Phase 15's `.DDOBuild` import targets.
+versioned build JSON is also what Phase 15's `.DDOBuild` import targets. Phase 16b's offline merge adds one requirement here: `PUT` takes an `If-Match` on `updated_at` and answers 409 with the current body when it is stale, so a client that edited offline can merge instead of overwriting.
 
 ---
 
