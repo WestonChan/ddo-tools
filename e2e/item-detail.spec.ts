@@ -1729,11 +1729,11 @@ test('item detail fact cells and columns render in pane and hover', async ({ pag
   ])
 })
 
-test('item 4152 keeps its set in the folded enchantment band in the pane and pinned card', async ({
+test("Legendary Bracers of the Demon's Consort keeps its set in the folded enchantment band in the pane and pinned card", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/resources/items/4152')
+  await page.goto('/resources/items/6263613332164767')
   const pane = page.getByRole('region', { name: 'Item details', exact: true })
   await expect(
     pane.getByRole('heading', {
