@@ -32,7 +32,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 
 **Running locally, end to end.**
 
-1. On Node 24 (`.nvmrc`; `fnm use` or `nvm use`), `npm install && npm run dev` — the site on http://localhost:5173/, reading the public API. That is enough for most frontend work. When another Node major is the one installed, prefix a script with `npx -y -p node@24 --` (for example `npx -y -p node@24 -- npm run lint`), or `npm install` prints `EBADENGINE` and tests run on an unsupported Node.
+1. On the Node major in `.nvmrc` (`fnm use` or `nvm use`), `npm install && npm run dev` — the site on http://localhost:5173/, reading the public API. That is enough for most frontend work. When another Node major is the one installed, prefix a script with `npx -y -p node@$(cat .nvmrc) --` (for example `npx -y -p node@$(cat .nvmrc) -- npm run lint`), or `npm install` prints `EBADENGINE` and tests run on an unsupported Node.
 2. To run against a local API (schema changes, new endpoints): in `ddo-data`, `export PATH="/opt/homebrew/opt/rustup/bin:$PATH"`, build the DB with `cargo run --release -p ddo-etl -- build --source upstream/Output/DataFiles --out ddo.db`, serve it with `DDO_DB_PATH=ddo.db ICONS_DIR=icons PORT=8089 cargo run --release -p ddo-api`, and set `VITE_API_URL=http://localhost:8089` in this repo's `.env`. Docker is not installed on the maintainer's Mac; the image is CI-only.
 3. `.env` is gitignored; `.env.example` lists every variable (`VITE_API_URL`, Sentry's `SENTRY_*`).
 
@@ -65,7 +65,7 @@ The symlinked `node_modules` is enough for `npm run lint`, `npx vitest run`, `np
 
 ## Project Structure
 
-- **Stack** — React 19 + TypeScript + Vite + TanStack Query on Node 24. `.nvmrc` is the one place the Node major is chosen: every CI job reads it, `engines.node` and `@types/node` follow it, and `src/test/nodeMajorAgreement.test.ts` fails when they disagree. The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
+- **Stack** — React 19 + TypeScript + Vite + TanStack Query. `.nvmrc` is the one place the Node major is chosen: every CI job reads it, `engines.node` and `@types/node` follow it, and `src/test/nodeMajorAgreement.test.ts` fails when they disagree. The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
 - **App shell** — `src/app/` contains only components that appear on every page (root App, nav bar, bottom bar, loading gate, error boundary). The shell should still render with all features removed.
 - **Feature modules** — domain features live under `src/features/`, each owning its own views, components, types, and CSS. See `.claude/rules/frontend.md` for the per-feature breakdown.
 - **Shared frontend code** — non-feature code lives at the `src/` level (`src/components/`, `src/hooks/`, `src/stores/`).
