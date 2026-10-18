@@ -1,3 +1,4 @@
+import { apiDetailPath, type Slug } from '../../../lib/api'
 import {
   assertApiResponseFields,
   fetchApiJson,
@@ -12,7 +13,7 @@ import {
 import type { IngredientCost } from '../../../lib/ingredientCost'
 
 export interface SourceItem {
-  id: number
+  slug: Slug
   name: string
   slot: string
   minimumLevel: number | null
@@ -24,7 +25,7 @@ export interface SourceItem {
 }
 
 export interface SourceQuest {
-  id: number
+  slug: Slug
   name: string
   level: number | null
 }
@@ -39,7 +40,7 @@ export type SourceDetailKind =
 
 export interface SourceDetail {
   kind: SourceDetailKind
-  id: number
+  slug: Slug
   name: string
   pack: string | null
   isFreeToPlay: boolean | null
@@ -51,10 +52,10 @@ export interface SourceDetail {
   recipes: SourceRecipe[]
 }
 
-function sourceDetail(kind: SourceDetailKind, id: number, name: string): SourceDetail {
+function sourceDetail(kind: SourceDetailKind, slug: Slug, name: string): SourceDetail {
   return {
     kind,
-    id,
+    slug,
     name,
     pack: null,
     isFreeToPlay: null,
@@ -69,7 +70,7 @@ function sourceDetail(kind: SourceDetailKind, id: number, name: string): SourceD
 
 function sourceItems(items: ApiSourceItem[]): SourceItem[] {
   return items.map((item) => ({
-    id: item.id,
+    slug: item.slug,
     name: item.name,
     slot: item.slot,
     minimumLevel: item.minimum_level ?? null,
@@ -82,16 +83,16 @@ function sourceItems(items: ApiSourceItem[]): SourceItem[] {
 }
 
 function sourceQuests(quests: ApiSourceQuest[]): SourceQuest[] {
-  return quests.map(({ id, name, level }) => ({ id, name, level }))
+  return quests.map(({ slug, name, level }) => ({ slug, name, level }))
 }
 
 export function toAdventurePack(
   response: ApiAdventurePackDetail,
-  path = `/v1/adventure-packs/${response?.id ?? 'unknown'}`,
+  path = `/v1/adventure-packs/${response?.slug ?? 'unknown'}`,
 ): SourceDetail {
-  assertApiResponseFields(response, path, { id: 'number', name: 'string', items: 'array' })
+  assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {
-    ...sourceDetail('adventurePack', response.id, response.name),
+    ...sourceDetail('adventurePack', response.slug, response.name),
     isFreeToPlay: response.is_free_to_play,
     items: sourceItems(response.items),
   }
@@ -99,16 +100,16 @@ export function toAdventurePack(
 
 export function toQuestChain(
   response: ApiQuestSeriesDetail,
-  path = `/v1/quest-chains/${response?.id ?? 'unknown'}`,
+  path = `/v1/quest-chains/${response?.slug ?? 'unknown'}`,
 ): SourceDetail {
   assertApiResponseFields(response, path, {
-    id: 'number',
+    slug: 'string',
     name: 'string',
     quests: 'array',
     rewards: 'array',
   })
   return {
-    ...sourceDetail('questChain', response.id, response.name),
+    ...sourceDetail('questChain', response.slug, response.name),
     pack: response.pack,
     quests: sourceQuests(response.quests),
     items: sourceItems(response.rewards),
@@ -117,16 +118,16 @@ export function toQuestChain(
 
 export function toSaga(
   response: ApiQuestSeriesDetail,
-  path = `/v1/sagas/${response?.id ?? 'unknown'}`,
+  path = `/v1/sagas/${response?.slug ?? 'unknown'}`,
 ): SourceDetail {
   assertApiResponseFields(response, path, {
-    id: 'number',
+    slug: 'string',
     name: 'string',
     quests: 'array',
     rewards: 'array',
   })
   return {
-    ...sourceDetail('saga', response.id, response.name),
+    ...sourceDetail('saga', response.slug, response.name),
     pack: response.pack,
     quests: sourceQuests(response.quests),
     items: sourceItems(response.rewards),
@@ -135,14 +136,14 @@ export function toSaga(
 
 export function toCraftingSystem(
   response: ApiCraftingSystemDetail,
-  path = `/v1/crafting-systems/${response?.id ?? 'unknown'}`,
+  path = `/v1/crafting-systems/${response?.slug ?? 'unknown'}`,
 ): SourceDetail {
-  assertApiResponseFields(response, path, { id: 'number', name: 'string', recipes: 'array' })
+  assertApiResponseFields(response, path, { slug: 'string', name: 'string', recipes: 'array' })
   response.recipes.forEach((recipe, index) => {
     assertApiResponseFields(recipe, path, { augments: 'array' }, `recipes[${index}].`)
   })
   return {
-    ...sourceDetail('craftingSystem', response.id, response.name),
+    ...sourceDetail('craftingSystem', response.slug, response.name),
     pack: response.pack,
     npc: response.npc,
     ingredientCount: response.ingredient_count,
@@ -155,11 +156,11 @@ export function toCraftingSystem(
 
 export function toVendor(
   response: ApiVendorDetail,
-  path = `/v1/vendors/${response?.id ?? 'unknown'}`,
+  path = `/v1/vendors/${response?.slug ?? 'unknown'}`,
 ): SourceDetail {
-  assertApiResponseFields(response, path, { id: 'number', name: 'string', items: 'array' })
+  assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {
-    ...sourceDetail('vendor', response.id, response.name),
+    ...sourceDetail('vendor', response.slug, response.name),
     pack: response.pack,
     location: response.location,
     items: sourceItems(response.items),
@@ -168,41 +169,41 @@ export function toVendor(
 
 export function toEvent(
   response: ApiEventDetail,
-  path = `/v1/events/${response?.id ?? 'unknown'}`,
+  path = `/v1/events/${response?.slug ?? 'unknown'}`,
 ): SourceDetail {
-  assertApiResponseFields(response, path, { id: 'number', name: 'string', items: 'array' })
+  assertApiResponseFields(response, path, { slug: 'string', name: 'string', items: 'array' })
   return {
-    ...sourceDetail('event', response.id, response.name),
+    ...sourceDetail('event', response.slug, response.name),
     items: sourceItems(response.items),
   }
 }
 
-export async function fetchAdventurePack(id: number): Promise<SourceDetail> {
-  const path = `/v1/adventure-packs/${id}`
+export async function fetchAdventurePack(slug: Slug): Promise<SourceDetail> {
+  const path = apiDetailPath('adventure-packs', slug)
   return toAdventurePack(await fetchApiJson<ApiAdventurePackDetail>(path), path)
 }
 
-export async function fetchQuestChain(id: number): Promise<SourceDetail> {
-  const path = `/v1/quest-chains/${id}`
+export async function fetchQuestChain(slug: Slug): Promise<SourceDetail> {
+  const path = apiDetailPath('quest-chains', slug)
   return toQuestChain(await fetchApiJson<ApiQuestSeriesDetail>(path), path)
 }
 
-export async function fetchSaga(id: number): Promise<SourceDetail> {
-  const path = `/v1/sagas/${id}`
+export async function fetchSaga(slug: Slug): Promise<SourceDetail> {
+  const path = apiDetailPath('sagas', slug)
   return toSaga(await fetchApiJson<ApiQuestSeriesDetail>(path), path)
 }
 
-export async function fetchCraftingSystem(id: number): Promise<SourceDetail> {
-  const path = `/v1/crafting-systems/${id}`
+export async function fetchCraftingSystem(slug: Slug): Promise<SourceDetail> {
+  const path = apiDetailPath('crafting-systems', slug)
   return toCraftingSystem(await fetchApiJson<ApiCraftingSystemDetail>(path), path)
 }
 
-export async function fetchVendor(id: number): Promise<SourceDetail> {
-  const path = `/v1/vendors/${id}`
+export async function fetchVendor(slug: Slug): Promise<SourceDetail> {
+  const path = apiDetailPath('vendors', slug)
   return toVendor(await fetchApiJson<ApiVendorDetail>(path), path)
 }
 
-export async function fetchEvent(id: number): Promise<SourceDetail> {
-  const path = `/v1/events/${id}`
+export async function fetchEvent(slug: Slug): Promise<SourceDetail> {
+  const path = apiDetailPath('events', slug)
   return toEvent(await fetchApiJson<ApiEventDetail>(path), path)
 }

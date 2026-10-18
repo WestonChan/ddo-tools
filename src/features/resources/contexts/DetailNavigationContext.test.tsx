@@ -1,3 +1,4 @@
+import { slugFromPathSegment } from '../../../lib/api'
 import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 import {
@@ -29,7 +30,12 @@ describe('DetailNavigationContext', () => {
     expect(capturedNavigation).not.toBeNull()
     expect(capturedNavigation!.deepLinkUrl).toBeNull()
     expect(capturedNavigation!.pickerCategory).toBe('items')
-    expect(() => capturedNavigation!.pushResource({ category: 'items', id: 42 })).not.toThrow()
+    expect(() =>
+      capturedNavigation!.pushResource({
+        category: 'items',
+        slug: slugFromPathSegment('test-42')!,
+      }),
+    ).not.toThrow()
     expect(() => capturedNavigation!.closeDetail()).not.toThrow()
   })
 
@@ -53,8 +59,11 @@ describe('DetailNavigationContext', () => {
         />
       </DetailNavigationProvider>,
     )
-    capturedNavigation!.pushResource({ category: 'items', id: 7 })
-    expect(pushResource).toHaveBeenCalledWith({ category: 'items', id: 7 })
+    capturedNavigation!.pushResource({ category: 'items', slug: slugFromPathSegment('test-7')! })
+    expect(pushResource).toHaveBeenCalledWith({
+      category: 'items',
+      slug: slugFromPathSegment('test-7')!,
+    })
     capturedNavigation!.closeDetail()
     expect(closeDetail).toHaveBeenCalled()
     expect(capturedNavigation!.deepLinkUrl).toBe('https://example.test/x')

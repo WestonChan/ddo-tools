@@ -1,23 +1,24 @@
+import { apiDetailPath, type Slug } from '../../../lib/api'
 import { assertApiResponseFields, fetchApiJson, type ApiQuestDetail } from '../../../lib/api'
 
 export interface QuestDetail {
-  id: number
+  slug: Slug
   name: string
   pack: string | null
   patron: string | null
   level: number | null
   epicLevel: number | null
   isRaid: boolean
-  items: Array<{ id: number; name: string; slot: string; minimumLevel: number | null }>
+  items: Array<{ slug: Slug; name: string; slot: string; minimumLevel: number | null }>
 }
 
 export function toQuestDetail(
   apiQuest: ApiQuestDetail,
-  path = `/v1/quests/${apiQuest?.id ?? 'unknown'}`,
+  path = `/v1/quests/${apiQuest?.slug ?? 'unknown'}`,
 ): QuestDetail {
-  assertApiResponseFields(apiQuest, path, { id: 'number', name: 'string', items: 'array' })
+  assertApiResponseFields(apiQuest, path, { slug: 'string', name: 'string', items: 'array' })
   return {
-    id: apiQuest.id,
+    slug: apiQuest.slug,
     name: apiQuest.name,
     pack: apiQuest.pack,
     patron: apiQuest.patron,
@@ -25,7 +26,7 @@ export function toQuestDetail(
     epicLevel: apiQuest.epic_level,
     isRaid: apiQuest.is_raid,
     items: apiQuest.items.map((item) => ({
-      id: item.id,
+      slug: item.slug,
       name: item.name,
       slot: item.slot,
       minimumLevel: item.minimum_level,
@@ -33,7 +34,7 @@ export function toQuestDetail(
   }
 }
 
-export async function fetchQuest(id: number): Promise<QuestDetail> {
-  const path = `/v1/quests/${id}`
+export async function fetchQuest(slug: Slug): Promise<QuestDetail> {
+  const path = apiDetailPath('quests', slug)
   return toQuestDetail(await fetchApiJson<ApiQuestDetail>(path), path)
 }

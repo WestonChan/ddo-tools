@@ -1,3 +1,4 @@
+import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -21,7 +22,7 @@ const MELANCHOLIC_SLOT = {
 const AUGMENTS_BY_SLOT_LABEL = {
   [MELANCHOLIC_SLOT.label]: [
     {
-      id: 1,
+      slug: slugFromPathSegment('test-1')!,
       name: 'Melancholic Charisma',
       minimumLevel: 8,
       slots: ['lamordia: melancholic (accessory)'],
@@ -30,10 +31,10 @@ const AUGMENTS_BY_SLOT_LABEL = {
   ],
 }
 
-function itemDetailFor(id: number): Item {
+function itemDetailFor(slug: Slug): Item {
   return {
-    id,
-    name: id === 42 ? 'Test Item' : 'Other Item',
+    slug,
+    name: slug === 'test-42' ? 'Test Item' : 'Other Item',
     equipmentSlot: 'Trinket',
     category: 'Trinket',
     type: null,
@@ -63,9 +64,9 @@ function itemDetailFor(id: number): Item {
 }
 
 vi.mock('../queries/useItems', () => ({
-  useItem: (id: number | null) => {
-    if (id === null) return { data: undefined, isPending: false, error: null }
-    if (id === 404) {
+  useItem: (slug: Slug | null) => {
+    if (slug === null) return { data: undefined, isPending: false, error: null }
+    if (slug === 'test-404') {
       return {
         data: undefined,
         isPending: false,
@@ -73,7 +74,7 @@ vi.mock('../queries/useItems', () => ({
         refetch: vi.fn(),
       }
     }
-    if (id === 500) {
+    if (slug === 'test-500') {
       return {
         data: undefined,
         isPending: false,
@@ -81,9 +82,9 @@ vi.mock('../queries/useItems', () => ({
         refetch: vi.fn(),
       }
     }
-    if (id === 405) return { data: undefined, isPending: false, error: null }
-    if (id === 406) return { data: undefined, isPending: true, error: null }
-    return { data: itemDetailFor(id), isPending: false, error: null }
+    if (slug === 'test-405') return { data: undefined, isPending: false, error: null }
+    if (slug === 'test-406') return { data: undefined, isPending: true, error: null }
+    return { data: itemDetailFor(slug), isPending: false, error: null }
   },
   useFittingAugmentsBySlotLabel: (label: string | null) => ({
     data: label === null ? undefined : (AUGMENTS_BY_SLOT_LABEL[label] ?? []),
@@ -102,7 +103,11 @@ describe('ResourceDetailPane', () => {
   it('renders the parsed item body when the URL points at an item', () => {
     render(
       <ResourceDetailPane
-        resourceInUrl={{ category: 'items', id: 42, name: 'Test Item' }}
+        resourceInUrl={{
+          category: 'items',
+          slug: slugFromPathSegment('test-42')!,
+          name: 'Test Item',
+        }}
         pickerCategory="items"
       />,
     )
@@ -114,9 +119,9 @@ describe('ResourceDetailPane', () => {
     const onFocusItem = vi.fn()
     render(
       <ResourceDetailPane
-        resourceInUrl={{ category: 'items', id: 42 }}
+        resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-42')! }}
         pickerCategory="items"
-        focusItemId={42}
+        focusItemSlug={slugFromPathSegment('test-42')!}
         onFocusItem={onFocusItem}
       />,
     )
@@ -126,7 +131,10 @@ describe('ResourceDetailPane', () => {
 
   it('resolves a nameless URL entry from its item detail', () => {
     render(
-      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 42 }} pickerCategory="items" />,
+      <ResourceDetailPane
+        resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-42')! }}
+        pickerCategory="items"
+      />,
     )
     expect(screen.getByRole('heading', { level: 2, name: 'Test Item' })).toBeInTheDocument()
     expect(screen.getAllByText('Test Item').length).toBeGreaterThan(1)
@@ -137,16 +145,22 @@ describe('ResourceDetailPane', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/select an item/i)
   })
 
-  it('renders not-found for an id the API does not know', () => {
+  it('renders not-found for an slug the API does not know', () => {
     render(
-      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 404 }} pickerCategory="items" />,
+      <ResourceDetailPane
+        resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-404')! }}
+        pickerCategory="items"
+      />,
     )
     expect(screen.getByRole('status')).toHaveTextContent('This item no longer exists.')
   })
 
   it('keeps the pane loading placeholder and status role until the item exists', () => {
     render(
-      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 406 }} pickerCategory="items" />,
+      <ResourceDetailPane
+        resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-406')! }}
+        pickerCategory="items"
+      />,
     )
     expect(screen.getByRole('status')).toHaveTextContent('Loading…')
     expect(screen.queryByRole('heading', { name: 'Loading item…' })).toBeNull()
@@ -154,15 +168,21 @@ describe('ResourceDetailPane', () => {
 
   it('keeps the pane not-found placeholder and recovery hint', () => {
     render(
-      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 405 }} pickerCategory="items" />,
+      <ResourceDetailPane
+        resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-405')! }}
+        pickerCategory="items"
+      />,
     )
-    expect(screen.getByRole('status')).toHaveTextContent('No item with id 405.')
+    expect(screen.getByRole('status')).toHaveTextContent('No item with slug test-405.')
     expect(screen.getByRole('status')).toHaveTextContent('Pick another row from the list.')
   })
 
   it('renders an error state for a transport failure', () => {
     render(
-      <ResourceDetailPane resourceInUrl={{ category: 'items', id: 500 }} pickerCategory="items" />,
+      <ResourceDetailPane
+        resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-500')! }}
+        pickerCategory="items"
+      />,
     )
     expect(screen.getByRole('status')).toHaveTextContent('Could not reach the game-data service.')
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
@@ -172,7 +192,11 @@ describe('ResourceDetailPane', () => {
   it('renders the DetailBreadcrumbBar with breadcrumb at depth 1 (no back arrow)', () => {
     render(
       <ResourceDetailPane
-        resourceInUrl={{ category: 'items', id: 42, name: 'Test Item' }}
+        resourceInUrl={{
+          category: 'items',
+          slug: slugFromPathSegment('test-42')!,
+          name: 'Test Item',
+        }}
         pickerCategory="items"
       />,
     )
@@ -184,7 +208,11 @@ describe('ResourceDetailPane', () => {
     const user = userEvent.setup()
     const { rerender } = render(
       <ResourceDetailPane
-        resourceInUrl={{ category: 'items', id: 42, name: 'Test Item' }}
+        resourceInUrl={{
+          category: 'items',
+          slug: slugFromPathSegment('test-42')!,
+          name: 'Test Item',
+        }}
         pickerCategory="items"
       />,
     )
@@ -193,7 +221,11 @@ describe('ResourceDetailPane', () => {
 
     rerender(
       <ResourceDetailPane
-        resourceInUrl={{ category: 'items', id: 43, name: 'Other Item' }}
+        resourceInUrl={{
+          category: 'items',
+          slug: slugFromPathSegment('test-43')!,
+          name: 'Other Item',
+        }}
         pickerCategory="items"
       />,
     )

@@ -1,3 +1,4 @@
+import { slugFromPathSegment } from '../lib/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -133,7 +134,7 @@ function HoverPicker({ isInitiallyOpen = true }: { isInitiallyOpen?: boolean }):
             {
               value: 'Strength',
               label: 'Strength',
-              detailPath: '/v1/effects/1',
+              detailSlug: slugFromPathSegment('strength')!,
               children: [{ value: 'Strength:Insight', label: 'Strength · Insight' }],
             },
           ]}

@@ -1,3 +1,4 @@
+import { apiDetailPath, type Slug } from '../../../lib/api'
 import {
   assertApiResponseFields,
   fetchApiPage,
@@ -15,10 +16,10 @@ export interface SetTier {
 }
 
 export interface SetDetail {
-  id: number
+  slug: Slug
   name: string
   tiers: SetTier[]
-  items: Array<{ id: number; name: string; slot: string; minimumLevel: number | null }>
+  items: Array<{ slug: Slug; name: string; slot: string; minimumLevel: number | null }>
 }
 
 export async function fetchSetVocabulary(
@@ -55,10 +56,10 @@ export async function fetchSetVocabulary(
 
 export function toSetDetail(
   apiSet: ApiSetDetail,
-  path = `/v1/sets/${apiSet?.id ?? 'unknown'}`,
+  path = `/v1/sets/${apiSet?.slug ?? 'unknown'}`,
 ): SetDetail {
   assertApiResponseFields(apiSet, path, {
-    id: 'number',
+    slug: 'string',
     name: 'string',
     items: 'array',
     tiers: 'array',
@@ -67,10 +68,10 @@ export function toSetDetail(
     assertApiResponseFields(tier, path, { effects: 'array' }, `tiers[${index}].`)
   })
   return {
-    id: apiSet.id,
+    slug: apiSet.slug,
     name: apiSet.name,
     items: apiSet.items.map((item) => ({
-      id: item.id,
+      slug: item.slug,
       name: item.name,
       slot: item.slot,
       minimumLevel: item.minimum_level,
@@ -95,8 +96,8 @@ function invalidSetField(response: unknown): string | null {
   return invalidTierIndex === -1 ? null : `tiers[${invalidTierIndex}].effects`
 }
 
-export async function fetchSet(id: number): Promise<SetDetail> {
-  const path = `/v1/sets/${id}`
+export async function fetchSet(slug: Slug): Promise<SetDetail> {
+  const path = apiDetailPath('sets', slug)
   const response = await fetchValidatedApiJson<ApiSetDetail>(
     path,
     undefined,

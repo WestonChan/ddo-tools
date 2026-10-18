@@ -1,3 +1,4 @@
+import { slugFromPathSegment } from './entityPaths'
 import type {
   ApiEffect,
   ApiEffectDetail,
@@ -35,7 +36,8 @@ function isApiEffectBonus(value: unknown): boolean {
     Number.isFinite(value.scale) &&
     (value.group == null ||
       (isRecord(value.group) &&
-        Number.isSafeInteger(value.group.id) &&
+        typeof value.group.slug === 'string' &&
+        slugFromPathSegment(value.group.slug) !== null &&
         typeof value.group.name === 'string'))
   )
 }
@@ -43,7 +45,8 @@ function isApiEffectBonus(value: unknown): boolean {
 export function isApiEffect(value: unknown): value is ApiEffect {
   if (!isRecord(value)) return false
   return (
-    Number.isSafeInteger(value.effect_id) &&
+    typeof value.effect_slug === 'string' &&
+    slugFromPathSegment(value.effect_slug) !== null &&
     typeof value.name === 'string' &&
     typeof value.verbose_name === 'string' &&
     (value.description == null || typeof value.description === 'string') &&
@@ -68,11 +71,10 @@ export function isApiEffectList(value: unknown): value is ApiEffect[] {
 export function isApiEffectVocabularyRow(value: unknown): value is ApiEffectVocabularyRow {
   if (!isRecord(value)) return false
   return (
-    Number.isSafeInteger(value.id) &&
+    typeof value.slug === 'string' &&
+    slugFromPathSegment(value.slug) !== null &&
     typeof value.name === 'string' &&
     (value.kind === 'effect' || value.kind === 'stat' || value.kind === 'group') &&
-    typeof value.detail_path === 'string' &&
-    value.detail_path === `/v1/effects/${value.id}` &&
     Number.isSafeInteger(value.item_count) &&
     Number.isSafeInteger(value.augment_count) &&
     Number.isSafeInteger(value.set_count) &&
@@ -89,20 +91,22 @@ export function isApiEffectVocabularyRow(value: unknown): value is ApiEffectVoca
 function isEffectCarrier(value: unknown, isSetTier: boolean): boolean {
   return (
     isRecord(value) &&
-    (isSetTier || Number.isSafeInteger(value.id)) &&
+    (isSetTier || (typeof value.slug === 'string' && slugFromPathSegment(value.slug) !== null)) &&
     typeof value.name === 'string' &&
     isApiEffect(value.line) &&
     (value.amount_source == null || typeof value.amount_source === 'string') &&
     (value.bonus_type == null || typeof value.bonus_type === 'string') &&
     (value.effect == null || typeof value.effect === 'string') &&
-    (value.effect_id == null || Number.isSafeInteger(value.effect_id)) &&
+    (value.effect_slug == null ||
+      (typeof value.effect_slug === 'string' && slugFromPathSegment(value.effect_slug) !== null)) &&
     (value.scale == null || Number.isFinite(value.scale)) &&
     (value.value == null || Number.isSafeInteger(value.value)) &&
     (value.value2 == null || Number.isSafeInteger(value.value2)) &&
     (value.bonuses == null ||
       (Array.isArray(value.bonuses) && value.bonuses.every(isApiEffectBonus))) &&
     (!isSetTier ||
-      (Number.isSafeInteger(value.set_id) &&
+      (typeof value.set_slug === 'string' &&
+        slugFromPathSegment(value.set_slug) !== null &&
         typeof value.set_name === 'string' &&
         Number.isSafeInteger(value.equipped_count)))
   )
@@ -122,7 +126,8 @@ function isEffectCarrierPage(value: unknown, key: string, isSetTier = false): bo
 function isTierStep(value: unknown): boolean {
   return (
     isRecord(value) &&
-    Number.isSafeInteger(value.id) &&
+    typeof value.slug === 'string' &&
+    slugFromPathSegment(value.slug) !== null &&
     typeof value.name === 'string' &&
     Number.isSafeInteger(value.rank)
   )
@@ -131,7 +136,8 @@ function isTierStep(value: unknown): boolean {
 export function isApiEffectDetail(value: unknown): value is ApiEffectDetail {
   return (
     isRecord(value) &&
-    Number.isSafeInteger(value.id) &&
+    typeof value.slug === 'string' &&
+    slugFromPathSegment(value.slug) !== null &&
     typeof value.name === 'string' &&
     (value.kind === 'effect' || value.kind === 'stat' || value.kind === 'group') &&
     (value.category == null || typeof value.category === 'string') &&

@@ -137,9 +137,9 @@ function EffectLedger({
             ? {
                 kind: 'set',
                 delayMs: NESTED_CARD_OPEN_DELAY_MS,
-                prefetch: () => queryClient.ensureQueryData(setDetailQueryOptions(row.setId!)),
-                isReady: () => isDetailQueryReady(queryClient, setDetailQueryOptions(row.setId!)),
-                render: () => <SetHoverCard setId={row.setId!} onOpenItem={row.onOpenItem} />,
+                prefetch: () => queryClient.ensureQueryData(setDetailQueryOptions(row.setSlug!)),
+                isReady: () => isDetailQueryReady(queryClient, setDetailQueryOptions(row.setSlug!)),
+                render: () => <SetHoverCard setSlug={row.setSlug!} onOpenItem={row.onOpenItem} />,
               }
             : row.enhancement
               ? {
@@ -153,8 +153,8 @@ function EffectLedger({
                 ? {
                     kind: 'enchantment',
                     delayMs: NESTED_CARD_OPEN_DELAY_MS,
-                    prefetch: () => prefetchEffect(queryClient, row.effect!.id),
-                    isReady: () => isEffectReady(queryClient, row.effect!.id),
+                    prefetch: () => prefetchEffect(queryClient, row.effect!.slug),
+                    isReady: () => isEffectReady(queryClient, row.effect!.slug),
                     render: () => (
                       <BonusHoverCard
                         effect={row.effect!}
@@ -214,8 +214,8 @@ function EffectHoverRow({ row }: { row: EffectRow }): JSX.Element {
     kind: 'enchantment',
     delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
-    prefetch: row.effect ? () => prefetchEffect(queryClient, row.effect!.id) : undefined,
-    isReady: row.effect ? () => isEffectReady(queryClient, row.effect!.id) : undefined,
+    prefetch: row.effect ? () => prefetchEffect(queryClient, row.effect!.slug) : undefined,
+    isReady: row.effect ? () => isEffectReady(queryClient, row.effect!.slug) : undefined,
     render: () =>
       row.enhancement ? (
         <BonusHoverCard enhancement={row.enhancement} originName={row.itemName} />

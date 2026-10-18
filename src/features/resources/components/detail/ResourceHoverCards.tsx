@@ -1,3 +1,4 @@
+import type { Slug } from '../../../../lib/api'
 import type { JSX, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -50,32 +51,32 @@ import { resourceStatusDefinition } from './resourceStatusDefinition'
 import { DamageView, DescriptionView } from './ResourceCardViews'
 import type { IngredientCost } from '../../../../lib/ingredientCost'
 
-type OpenItem = (id: number, name: string) => void
+type OpenItem = (slug: Slug, name: string) => void
 
 function useOpenItemFromCard(onOpenItem?: OpenItem): OpenItem {
   const navigate = useNavigate()
   const clearCards = useClearHoverCards()
-  return (id, name) => {
+  return (slug, name) => {
     clearCards()
-    if (onOpenItem) onOpenItem(id, name)
-    else void navigate({ to: `/resources/items/${id}` })
+    if (onOpenItem) onOpenItem(slug, name)
+    else void navigate({ to: `/resources/items/${slug}` })
   }
 }
 
 export function ItemHoverContent({
-  itemId,
+  itemSlug,
   onOpenItem,
 }: {
-  itemId: number
+  itemSlug: Slug
   onOpenItem?: OpenItem
 }): JSX.Element {
   const openItem = useOpenItemFromCard(onOpenItem)
-  const { item, setDetails, status } = useItemCardContent(itemId)
+  const { item, setDetails, status } = useItemCardContent(itemSlug)
   return <ItemHoverCard item={item} setDetails={setDetails} onOpenItem={openItem} status={status} />
 }
 
-function useAugmentDetailDefinition(augmentId: number): DetailCardDefinition {
-  const augmentQuery = useAugment(augmentId)
+function useAugmentDetailDefinition(augmentSlug: Slug): DetailCardDefinition {
+  const augmentQuery = useAugment(augmentSlug)
   if (augmentQuery.error || !augmentQuery.data)
     return resourceStatusDefinition({
       kicker: 'Augment',
@@ -84,7 +85,7 @@ function useAugmentDetailDefinition(augmentId: number): DetailCardDefinition {
       status: augmentQuery.error ? (
         <ApiErrorNotice
           error={augmentQuery.error}
-          path={`/v1/augments/${augmentId}`}
+          path={`/v1/augments/${augmentSlug}`}
           missingResourceName="augment"
           onRetry={() => void augmentQuery.refetch()}
         />
@@ -146,13 +147,13 @@ function augmentFacts(
   ]
 }
 
-export function AugmentDetailCard({ augmentId }: { augmentId: number }): JSX.Element {
-  const definition = useAugmentDetailDefinition(augmentId)
+export function AugmentDetailCard({ augmentSlug }: { augmentSlug: Slug }): JSX.Element {
+  const definition = useAugmentDetailDefinition(augmentSlug)
   return <StructuredDetailCard variant="pane" {...definition} />
 }
 
-export function AugmentHoverCard({ augmentId }: { augmentId: number }): JSX.Element {
-  const definition = useAugmentDetailDefinition(augmentId)
+export function AugmentHoverCard({ augmentSlug }: { augmentSlug: Slug }): JSX.Element {
+  const definition = useAugmentDetailDefinition(augmentSlug)
   return <StructuredDetailCard variant="hover" {...definition} />
 }
 
@@ -165,7 +166,7 @@ function AugmentEffectsView({
     <>
       {entries.map(({ effect, originName }) => (
         <AugmentEffectRow
-          key={`${effect.id}-${effect.sortOrder}`}
+          key={`${effect.slug}-${effect.sortOrder}`}
           effect={effect}
           originName={originName}
         />
@@ -186,8 +187,8 @@ function AugmentEffectRow({
     kind: 'enchantment',
     delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
-    prefetch: () => prefetchEffect(queryClient, effect.id),
-    isReady: () => isEffectReady(queryClient, effect.id),
+    prefetch: () => prefetchEffect(queryClient, effect.slug),
+    isReady: () => isEffectReady(queryClient, effect.slug),
     render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (
@@ -213,11 +214,11 @@ function AugmentEffectRow({
 }
 
 export function QuestHoverAnchor({
-  questId,
+  questSlug,
   onOpenItem,
   children,
 }: {
-  questId: number
+  questSlug: Slug
   onOpenItem?: OpenItem
   children: ReactNode
 }): JSX.Element {
@@ -225,9 +226,9 @@ export function QuestHoverAnchor({
   const anchor = useHoverCard({
     kind: 'quest',
     delayMs: NESTED_CARD_OPEN_DELAY_MS,
-    prefetch: () => queryClient.ensureQueryData(questDetailQueryOptions(questId)),
-    isReady: () => isDetailQueryReady(queryClient, questDetailQueryOptions(questId)),
-    render: () => <QuestHoverCard questId={questId} onOpenItem={onOpenItem} />,
+    prefetch: () => queryClient.ensureQueryData(questDetailQueryOptions(questSlug)),
+    isReady: () => isDetailQueryReady(queryClient, questDetailQueryOptions(questSlug)),
+    render: () => <QuestHoverCard questSlug={questSlug} onOpenItem={onOpenItem} />,
   })
   return (
     <span className="resources-hover-anchor" tabIndex={0} {...anchor}>
@@ -237,14 +238,14 @@ export function QuestHoverAnchor({
 }
 
 function useQuestDetailDefinition({
-  questId,
+  questSlug,
   onOpenItem,
 }: {
-  questId: number
+  questSlug: Slug
   onOpenItem?: OpenItem
 }): DetailCardDefinition {
   const openItem = useOpenItemFromCard(onOpenItem)
-  const questQuery = useQuest(questId)
+  const questQuery = useQuest(questSlug)
   if (questQuery.error || !questQuery.data)
     return resourceStatusDefinition({
       kicker: 'Quest',
@@ -253,7 +254,7 @@ function useQuestDetailDefinition({
       status: questQuery.error ? (
         <ApiErrorNotice
           error={questQuery.error}
-          path={`/v1/quests/${questId}`}
+          path={`/v1/quests/${questSlug}`}
           missingResourceName="quest"
           onRetry={() => void questQuery.refetch()}
         />
@@ -264,7 +265,7 @@ function useQuestDetailDefinition({
       ),
     })
   const quest = questQuery.data
-  const uniqueItems = [...new Map(quest.items.map((item) => [item.id, item])).values()]
+  const uniqueItems = [...new Map(quest.items.map((item) => [item.slug, item])).values()]
   const facts = questFacts(quest)
   const sections = [
     detailCardSection({
@@ -288,18 +289,18 @@ function questFacts(quest?: NonNullable<ReturnType<typeof useQuest>['data']>): D
   ]
 }
 
-export function QuestDetailCard(props: { questId: number; onOpenItem?: OpenItem }): JSX.Element {
+export function QuestDetailCard(props: { questSlug: Slug; onOpenItem?: OpenItem }): JSX.Element {
   const definition = useQuestDetailDefinition(props)
   return <StructuredDetailCard variant="pane" {...definition} />
 }
 
-export function QuestHoverCard(props: { questId: number; onOpenItem?: OpenItem }): JSX.Element {
+export function QuestHoverCard(props: { questSlug: Slug; onOpenItem?: OpenItem }): JSX.Element {
   const definition = useQuestDetailDefinition(props)
   return <StructuredDetailCard variant="hover" {...definition} />
 }
 
 type LinkedItem = {
-  id: number
+  slug: Slug
   name: string
   slot: string
   minimumLevel?: number | null
@@ -315,14 +316,14 @@ function LinkedItemsView({ entries }: { entries: readonly LinkedItem[] }): JSX.E
   return (
     <div className="resources-hover-rows">
       {entries.map((item) => (
-        <LinkedItemRow key={item.id} {...item} />
+        <LinkedItemRow key={item.slug} {...item} />
       ))}
     </div>
   )
 }
 
 function LinkedItemRow({
-  id,
+  slug,
   name,
   slot,
   minimumLevel,
@@ -338,15 +339,15 @@ function LinkedItemRow({
     kind: 'item',
     delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
-    prefetch: () => prefetchItemCard(queryClient, id),
-    isReady: () => isItemCardReady(queryClient, id),
-    render: () => <ItemHoverContent itemId={id} onOpenItem={onOpenItem} />,
+    prefetch: () => prefetchItemCard(queryClient, slug),
+    isReady: () => isItemCardReady(queryClient, slug),
+    render: () => <ItemHoverContent itemSlug={slug} onOpenItem={onOpenItem} />,
   })
   return (
     <button
       type="button"
       className="resources-hover-row hover-card-row focus-ring-row focus-ring-proxy"
-      onClick={() => onOpenItem(id, name)}
+      onClick={() => onOpenItem(slug, name)}
       {...anchor}
     >
       <span>{name}</span>
@@ -387,32 +388,32 @@ const SOURCE_CARD_LABELS: Record<SourceDetailKind, string> = {
 
 export function SourceHoverAnchor({
   kind,
-  id,
+  slug,
   name,
   wikiUrl,
   onOpenItem,
   children,
 }: {
   kind: SourceHoverKind
-  id: number | null
+  slug: Slug | null
   name: string
   wikiUrl?: string | null
   onOpenItem?: OpenItem
   children: ReactNode
 }): JSX.Element {
   const queryClient = useQueryClient()
-  const isHint = kind === 'challengePack' || kind === 'starter' || id === null
+  const isHint = kind === 'challengePack' || kind === 'starter' || slug === null
   const anchor = useHoverCard({
     kind: isHint ? 'hint' : kind,
     delayMs: NESTED_CARD_OPEN_DELAY_MS,
     prefetch:
-      kind === 'challengePack' || kind === 'starter' || id === null
+      kind === 'challengePack' || kind === 'starter' || slug === null
         ? undefined
-        : () => queryClient.ensureQueryData(sourceDetailQueryOptions(kind, id)),
+        : () => queryClient.ensureQueryData(sourceDetailQueryOptions(kind, slug)),
     isReady:
-      kind === 'challengePack' || kind === 'starter' || id === null
+      kind === 'challengePack' || kind === 'starter' || slug === null
         ? undefined
-        : () => isDetailQueryReady(queryClient, sourceDetailQueryOptions(kind, id)),
+        : () => isDetailQueryReady(queryClient, sourceDetailQueryOptions(kind, slug)),
     render: () =>
       isHint ? (
         <span className="resources-source-hint">
@@ -420,7 +421,7 @@ export function SourceHoverAnchor({
           <WikiLinkIcon href={wikiUrl ?? undefined} pageName={name} />
         </span>
       ) : (
-        <SourceHoverContent kind={kind} id={id} name={name} onOpenItem={onOpenItem} />
+        <SourceHoverContent kind={kind} slug={slug} name={name} onOpenItem={onOpenItem} />
       ),
   })
   return (
@@ -432,28 +433,28 @@ export function SourceHoverAnchor({
 
 function SourceHoverContent({
   kind,
-  id,
+  slug,
   name,
   onOpenItem,
 }: {
   kind: SourceDetailKind
-  id: number
+  slug: Slug
   name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
   switch (kind) {
     case 'adventurePack':
-      return <AdventurePackHoverContent id={id} name={name} onOpenItem={onOpenItem} />
+      return <AdventurePackHoverContent slug={slug} name={name} onOpenItem={onOpenItem} />
     case 'questChain':
-      return <QuestChainHoverContent id={id} name={name} onOpenItem={onOpenItem} />
+      return <QuestChainHoverContent slug={slug} name={name} onOpenItem={onOpenItem} />
     case 'saga':
-      return <SagaHoverContent id={id} name={name} onOpenItem={onOpenItem} />
+      return <SagaHoverContent slug={slug} name={name} onOpenItem={onOpenItem} />
     case 'craftingSystem':
-      return <CraftingSystemHoverContent id={id} name={name} onOpenItem={onOpenItem} />
+      return <CraftingSystemHoverContent slug={slug} name={name} onOpenItem={onOpenItem} />
     case 'vendor':
-      return <VendorHoverContent id={id} name={name} onOpenItem={onOpenItem} />
+      return <VendorHoverContent slug={slug} name={name} onOpenItem={onOpenItem} />
     case 'event':
-      return <EventHoverContent id={id} name={name} onOpenItem={onOpenItem} />
+      return <EventHoverContent slug={slug} name={name} onOpenItem={onOpenItem} />
   }
 }
 
@@ -598,8 +599,8 @@ function SourceQuestsView({
   return (
     <div className="resources-hover-rows">
       {entries.map((quest) => (
-        <div key={quest.id} className="resources-hover-row hover-card-row">
-          <QuestHoverAnchor questId={quest.id} onOpenItem={quest.onOpenItem}>
+        <div key={quest.slug} className="resources-hover-row hover-card-row">
+          <QuestHoverAnchor questSlug={quest.slug} onOpenItem={quest.onOpenItem}>
             {quest.name}
           </QuestHoverAnchor>
           <span>{quest.level === null ? '' : `Level ${quest.level}`}</span>
@@ -623,19 +624,19 @@ function SourceRecipesView({ entries }: { entries: readonly SourceRecipe[] }): J
 }
 
 function AdventurePackHoverContent({
-  id,
+  slug,
   name,
   onOpenItem,
 }: {
-  id: number
+  slug: Slug
   name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
-  const query = useAdventurePack(id)
+  const query = useAdventurePack(slug)
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/adventure-packs/${id}`}
+      path={`/v1/adventure-packs/${slug}`}
       kind="adventurePack"
       name={name}
       onOpenItem={onOpenItem}
@@ -644,19 +645,19 @@ function AdventurePackHoverContent({
 }
 
 function QuestChainHoverContent({
-  id,
+  slug,
   name,
   onOpenItem,
 }: {
-  id: number
+  slug: Slug
   name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
-  const query = useQuestChain(id)
+  const query = useQuestChain(slug)
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/quest-chains/${id}`}
+      path={`/v1/quest-chains/${slug}`}
       kind="questChain"
       name={name}
       onOpenItem={onOpenItem}
@@ -665,19 +666,19 @@ function QuestChainHoverContent({
 }
 
 function SagaHoverContent({
-  id,
+  slug,
   name,
   onOpenItem,
 }: {
-  id: number
+  slug: Slug
   name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
-  const query = useSaga(id)
+  const query = useSaga(slug)
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/sagas/${id}`}
+      path={`/v1/sagas/${slug}`}
       kind="saga"
       name={name}
       onOpenItem={onOpenItem}
@@ -686,19 +687,19 @@ function SagaHoverContent({
 }
 
 function CraftingSystemHoverContent({
-  id,
+  slug,
   name,
   onOpenItem,
 }: {
-  id: number
+  slug: Slug
   name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
-  const query = useCraftingSystem(id)
+  const query = useCraftingSystem(slug)
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/crafting-systems/${id}`}
+      path={`/v1/crafting-systems/${slug}`}
       kind="craftingSystem"
       name={name}
       onOpenItem={onOpenItem}
@@ -707,19 +708,19 @@ function CraftingSystemHoverContent({
 }
 
 function VendorHoverContent({
-  id,
+  slug,
   name,
   onOpenItem,
 }: {
-  id: number
+  slug: Slug
   name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
-  const query = useVendor(id)
+  const query = useVendor(slug)
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/vendors/${id}`}
+      path={`/v1/vendors/${slug}`}
       kind="vendor"
       name={name}
       onOpenItem={onOpenItem}
@@ -728,19 +729,19 @@ function VendorHoverContent({
 }
 
 function EventHoverContent({
-  id,
+  slug,
   name,
   onOpenItem,
 }: {
-  id: number
+  slug: Slug
   name: string
   onOpenItem?: OpenItem
 }): JSX.Element {
-  const query = useEvent(id)
+  const query = useEvent(slug)
   return (
     <LoadedSourceCard
       query={query}
-      path={`/v1/events/${id}`}
+      path={`/v1/events/${slug}`}
       kind="event"
       name={name}
       onOpenItem={onOpenItem}
@@ -749,14 +750,14 @@ function EventHoverContent({
 }
 
 function useSetDetailDefinition({
-  setId,
+  setSlug,
   onOpenItem,
 }: {
-  setId: number
+  setSlug: Slug
   onOpenItem?: OpenItem
 }): DetailCardDefinition {
   const openItem = useOpenItemFromCard(onOpenItem)
-  const setQuery = useSet(setId)
+  const setQuery = useSet(setSlug)
   if (setQuery.error || !setQuery.data)
     return resourceStatusDefinition({
       kicker: 'Set',
@@ -765,7 +766,7 @@ function useSetDetailDefinition({
       status: setQuery.error ? (
         <ApiErrorNotice
           error={setQuery.error}
-          path={`/v1/sets/${setId}`}
+          path={`/v1/sets/${setSlug}`}
           missingResourceName="set"
           onRetry={() => void setQuery.refetch()}
         />
@@ -802,12 +803,12 @@ function setFacts(set?: NonNullable<ReturnType<typeof useSet>['data']>): DetailC
   ]
 }
 
-export function SetDetailCard(props: { setId: number; onOpenItem?: OpenItem }): JSX.Element {
+export function SetDetailCard(props: { setSlug: Slug; onOpenItem?: OpenItem }): JSX.Element {
   const definition = useSetDetailDefinition(props)
   return <StructuredDetailCard variant="pane" {...definition} />
 }
 
-export function SetHoverCard(props: { setId: number; onOpenItem?: OpenItem }): JSX.Element {
+export function SetHoverCard(props: { setSlug: Slug; onOpenItem?: OpenItem }): JSX.Element {
   const definition = useSetDetailDefinition(props)
   return <StructuredDetailCard variant="hover" {...definition} />
 }
@@ -826,7 +827,7 @@ function SetTiersView({
           </div>
           {tier.effects.map((effect) => (
             <SetEffectRow
-              key={`${effect.id}-${effect.sortOrder}`}
+              key={`${effect.slug}-${effect.sortOrder}`}
               effect={effect}
               originName={tier.originName}
             />
@@ -843,8 +844,8 @@ function SetEffectRow({ effect, originName }: { effect: Effect; originName: stri
     kind: 'enchantment',
     delayMs: NESTED_CARD_OPEN_DELAY_MS,
     isRow: true,
-    prefetch: () => prefetchEffect(queryClient, effect.id),
-    isReady: () => isEffectReady(queryClient, effect.id),
+    prefetch: () => prefetchEffect(queryClient, effect.slug),
+    isReady: () => isEffectReady(queryClient, effect.slug),
     render: () => <BonusHoverCard effect={effect} originName={originName} />,
   })
   return (

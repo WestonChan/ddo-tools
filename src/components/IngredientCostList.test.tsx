@@ -1,7 +1,10 @@
+import { apiFixture } from '../test/apiFixture'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
 import { IngredientCostList } from './IngredientCostList'
-import vendor from '../test/fixtures/vendor-morten-edgewright.json'
+import vendorResponse from '../test/fixtures/vendor-morten-edgewright.json'
+
+const vendor = apiFixture(vendorResponse)
 
 afterEach(cleanup)
 

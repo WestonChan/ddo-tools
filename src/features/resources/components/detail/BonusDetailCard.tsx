@@ -1,3 +1,4 @@
+import { apiDetailPath, type Slug } from '../../../../lib/api'
 import type { JSX } from 'react'
 import {
   ApiErrorNotice,
@@ -50,7 +51,7 @@ function EffectBonusRows({
   const groupedBonuses = new Map<string, EffectBonus[]>()
   for (const bonus of bonuses) {
     if (!bonus.group) continue
-    const key = `${bonus.group.id}:${bonus.bonusType}:${bonus.value}`
+    const key = `${bonus.group.slug}:${bonus.bonusType}:${bonus.value}`
     groupedBonuses.set(key, [...(groupedBonuses.get(key) ?? []), bonus])
   }
   const ungroupedBonuses = bonuses.filter((bonus) => !bonus.group)
@@ -118,7 +119,7 @@ function EffectBonusRows({
 interface BonusDetailCardProps {
   effect?: Effect
   enhancement?: ItemEnhancementRow
-  detailPath?: string
+  detailSlug?: Slug
   originName?: string
   modifiers?: ResourceModifier[]
   verboseName?: string | null
@@ -127,13 +128,13 @@ interface BonusDetailCardProps {
 function useBonusDetailDefinition({
   effect,
   enhancement,
-  detailPath,
+  detailSlug,
   originName,
   modifiers = [],
   verboseName,
 }: BonusDetailCardProps): DetailCardDefinition {
-  const resolvedDetailPath = detailPath ?? (effect ? `/v1/effects/${effect.id}` : '')
-  const detailQuery = useEffectDetail(resolvedDetailPath, Boolean(resolvedDetailPath))
+  const resolvedDetailSlug = detailSlug ?? effect?.slug ?? null
+  const detailQuery = useEffectDetail(resolvedDetailSlug, Boolean(resolvedDetailSlug))
   const detail = detailQuery.data
   const knownKind = effect?.kind ?? detail?.kind
   const bonus = effect ?? enhancement
@@ -209,12 +210,14 @@ function useBonusDetailDefinition({
         ? [
             <ApiErrorNotice
               error={detailQuery.error}
-              path={resolvedDetailPath}
+              path={
+                resolvedDetailSlug ? apiDetailPath('effects', resolvedDetailSlug) : '/v1/effects'
+              }
               missingResourceName="bonus"
               onRetry={() => void detailQuery.refetch()}
             />,
           ]
-        : detailQuery.isPending && resolvedDetailPath
+        : detailQuery.isPending && resolvedDetailSlug
           ? ['Loading bonus…']
           : [],
       FullView: ResourceStatusView,

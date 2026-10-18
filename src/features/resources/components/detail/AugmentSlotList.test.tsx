@@ -1,3 +1,5 @@
+import { slugFromPathSegment, type Slug } from '../../../../lib/api'
+import { apiFixture } from '../../../../test/apiFixture'
 import { it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { act, fireEvent, screen, cleanup, waitFor } from '@testing-library/react'
 import { render } from '../../../../test/renderWithQueryClient'
@@ -9,7 +11,9 @@ import type { AugmentSummary, ItemAugmentSlot } from '../../queries/items'
 import { ApiError, API_HTTP_ERROR } from '../../../../lib/api'
 import type { ApiItemDetail } from '../../../../lib/api'
 import { toItem } from '../../queries/items'
-import capturedRing from '../../queries/fixtures/item-adversion.json'
+import capturedRingResponse from '../../queries/fixtures/item-adversion.json'
+
+const capturedRing = apiFixture(capturedRingResponse)
 
 let augmentsBySlotLabel: Record<string, AugmentSummary[]> = {}
 let augmentError: ApiError | null = null
@@ -22,8 +26,8 @@ const fittingAugmentsHookMock = vi.fn((label: string | null) => ({
 }))
 vi.mock('../../queries/useItems', () => ({
   isDetailQueryReady: () => false,
-  augmentDetailQueryOptions: (id: number) => ({
-    queryKey: ['augments', 'detail', id],
+  augmentDetailQueryOptions: (slug: Slug) => ({
+    queryKey: ['augments', 'detail', slug],
     queryFn: () => new Promise(() => {}),
   }),
   useAugment: () => ({ isPending: true }),
@@ -35,7 +39,14 @@ beforeEach(() => {
   augmentError = null
   augmentsBySlotLabel = {
     red: RED_AUGMENTS,
-    sun: [{ ...RED_AUGMENTS[0], id: 3, name: 'Solar Gem', slots: ['sun'] }],
+    sun: [
+      {
+        ...RED_AUGMENTS[0],
+        slug: slugFromPathSegment('test-3')!,
+        name: 'Solar Gem',
+        slots: ['sun'],
+      },
+    ],
   }
 })
 afterEach(cleanup)
@@ -46,14 +57,14 @@ function slot(sortOrder: number, label: string, family = 'standard'): ItemAugmen
 
 const RED_AUGMENTS: AugmentSummary[] = [
   {
-    id: 1,
+    slug: slugFromPathSegment('test-1')!,
     name: 'Ruby of Flame',
     minimumLevel: 8,
     slots: ['red', 'colorless'],
     recipes: [],
   },
   {
-    id: 2,
+    slug: slugFromPathSegment('test-2')!,
     name: 'Prismatic Ruby',
     minimumLevel: null,
     slots: ['red', 'blue', 'yellow'],

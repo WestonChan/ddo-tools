@@ -1,3 +1,5 @@
+import { slugFromPathSegment } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   act,
@@ -10,18 +12,21 @@ import {
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { render } from '../../../test/renderWithQueryClient'
-import capturedGroups from '../queries/fixtures/effects-page-groups.json'
-import capturedSetPage from '../queries/fixtures/sets-page.json'
+import capturedGroupsResponse from '../queries/fixtures/effects-page-groups.json'
+import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
 import { ItemPicker } from './ItemPicker'
 import { itemListParameters, type ItemListFilters, type ItemSummary } from '../queries/items'
 import { resetResourceListSessionsForTests, useResourceListSession } from '../resourceListSessions'
+
+const capturedGroups = apiFixture(capturedGroupsResponse)
+const capturedSetPage = apiFixture(capturedSetPageResponse)
 
 const navigateMock = vi.fn()
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 
 function itemRow(overrides: Partial<ItemSummary> = {}): ItemSummary {
   return {
-    id: 1,
+    slug: slugFromPathSegment('test-1')!,
     name: 'Bloodstone',
     equipmentSlot: 'Trinket',
     category: 'Jewelry',
@@ -37,14 +42,14 @@ function itemRow(overrides: Partial<ItemSummary> = {}): ItemSummary {
 const SAMPLE_ITEMS = [
   itemRow(),
   itemRow({
-    id: 2,
+    slug: slugFromPathSegment('test-2')!,
     name: 'Cloak of Night',
     equipmentSlot: 'Back',
     pack: 'Shadowfell',
     isRaidLoot: false,
   }),
   itemRow({
-    id: 3,
+    slug: slugFromPathSegment('test-3')!,
     name: 'Ring of Spell Storing',
     equipmentSlot: 'Ring',
     isRaidLoot: false,
@@ -68,10 +73,10 @@ const useItemPageMock = vi.fn((...request: [ItemListFilters, string, boolean, un
 const fetchNextPageMock = vi.fn()
 const EFFECT_ROWS = [
   {
-    id: 1,
+    slug: slugFromPathSegment('test-1')!,
     name: 'Charisma',
     kind: 'stat',
-    detail_path: '/v1/effects/1',
+
     item_count: 1,
     augment_count: 0,
     set_count: 0,
@@ -81,20 +86,20 @@ const EFFECT_ROWS = [
     ],
   },
   {
-    id: 2,
+    slug: slugFromPathSegment('test-2')!,
     name: 'Strength',
     kind: 'stat',
-    detail_path: '/v1/effects/2',
+
     item_count: 1,
     augment_count: 0,
     set_count: 0,
     bonus_types: [],
   },
   {
-    id: 3,
+    slug: slugFromPathSegment('test-3')!,
     name: 'Vorpal',
     kind: 'effect',
-    detail_path: '/v1/effects/3',
+
     item_count: 1,
     augment_count: 0,
     set_count: 0,
@@ -143,8 +148,8 @@ vi.mock('../queries/useItems', () => ({
   useAdventurePackNames: () => ({ data: ['Shadowfell', 'Vault of Night'] }),
   useRaidQuests: () => ({
     data: [
-      { id: 7, name: 'The Raid', pack: 'Vault of Night' },
-      { id: 8, name: 'Empty Raid', pack: null },
+      { slug: slugFromPathSegment('test-7')!, name: 'The Raid', pack: 'Vault of Night' },
+      { slug: slugFromPathSegment('test-8')!, name: 'Empty Raid', pack: null },
     ],
   }),
 }))
@@ -174,7 +179,7 @@ function renderItemPicker(): void {
 }
 
 function ItemPickerHarness(): React.JSX.Element {
-  return <ItemPicker category="items" selectedItemId={null} />
+  return <ItemPicker category="items" selectedItemSlug={null} />
 }
 
 function latestFilters(): ItemListFilters {
@@ -353,7 +358,7 @@ describe('ItemPicker server-backed filters', () => {
       set: [],
       setMatch: 'any',
       pack: [],
-      raid: ['7'],
+      raid: ['test-7'],
       isRareOnly: true,
       isRaidOnly: false,
     })
@@ -426,9 +431,9 @@ describe('ItemPicker server-backed filters', () => {
   it('chooses Constitution Insight through the pointer caption and sends its typed bonus', async () => {
     const constitution = {
       ...EFFECT_ROWS[0],
-      id: 99,
+      slug: slugFromPathSegment('test-99')!,
       name: 'Constitution',
-      detail_path: '/v1/effects/99',
+
       bonus_types: [{ name: 'Insight', item_count: 1 }],
     }
     useEffectVocabularyMock.mockImplementation((searchQuery) => ({
@@ -537,7 +542,7 @@ describe('ItemPicker server-backed filters', () => {
     await user.click(screen.getByRole('button', { name: 'Raid' }))
     await user.click(screen.getByRole('button', { name: 'Show applied · 4' }))
     expect(latestFilters().pack).toEqual(['Shadowfell', 'Vault of Night'])
-    expect(latestFilters().raid).toEqual(['7', '8'])
+    expect(latestFilters().raid).toEqual(['test-7', 'test-8'])
     expect(
       Array.from(document.querySelectorAll('.filter-applied-label'), (label) => label.textContent),
     ).toEqual(['Pack', 'Raid'])
@@ -571,8 +576,11 @@ describe('ItemPicker server-backed filters', () => {
       data: {
         total: 2,
         items: [
-          itemRow({ id: 2, name: 'Torc of Prince Raiyum-de II' }),
-          itemRow({ id: 1, name: '+3 Combustion Scorched Bastard Sword' }),
+          itemRow({ slug: slugFromPathSegment('test-2')!, name: 'Torc of Prince Raiyum-de II' }),
+          itemRow({
+            slug: slugFromPathSegment('test-1')!,
+            name: '+3 Combustion Scorched Bastard Sword',
+          }),
         ],
       },
       isPending: false,
@@ -655,7 +663,7 @@ describe('ItemPicker server-backed filters', () => {
 
   it('shows an empty raid as a normal empty result', async () => {
     useItemPageMock.mockImplementation((filters) =>
-      filters.raid.includes('8')
+      filters.raid.includes('test-8')
         ? { data: { total: 0, items: [] }, isPending: false, isFetching: false, error: null }
         : pageState,
     )
@@ -663,7 +671,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(resourceResultCount()).toHaveTextContent(/^93 results$/)
     await userEvent.click(screen.getByRole('button', { name: 'Raid' }))
     await userEvent.click(screen.getByRole('option', { name: /Empty Raid/ }))
-    expect(latestFilters().raid).toEqual(['8'])
+    expect(latestFilters().raid).toEqual(['test-8'])
     expect(resourceResultCount()).toHaveTextContent(/^0 results$/)
     expect(screen.getByText('No items match your filters.')).toBeInTheDocument()
     expect(
@@ -684,7 +692,7 @@ describe('ItemPicker server-backed filters', () => {
   it('opens the detail route from a ledger row', async () => {
     renderItemPicker()
     await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/1' })
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-1' })
   })
 
   it('moves focus from search into rows and keeps it there on Escape without clearing the query', async () => {
@@ -712,7 +720,7 @@ describe('ItemPicker server-backed filters', () => {
     const search = screen.getByRole('searchbox', { name: 'Search items' })
     search.focus()
     await userEvent.keyboard('{ArrowDown}{ArrowDown}{Enter}')
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/2' })
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-2' })
     expect(search).not.toHaveFocus()
     expect(screen.getByRole('row', { name: /Cloak of Night/ })).toHaveFocus()
     await userEvent.keyboard('x')
@@ -742,7 +750,7 @@ describe('ItemPicker server-backed filters', () => {
     await userEvent.keyboard('{ArrowDown}')
     expect(screen.getByRole('row', { name: /Cloak of Night/ })).toHaveFocus()
     await userEvent.keyboard('{Enter}')
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/2' })
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-2' })
     expect(search).not.toHaveFocus()
   })
 

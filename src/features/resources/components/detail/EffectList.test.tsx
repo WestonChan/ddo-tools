@@ -1,23 +1,25 @@
+import { slugFromPathSegment, type Slug } from '../../../../lib/api'
+import { apiFixture } from '../../../../test/apiFixture'
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { render } from '../../../../test/renderWithQueryClient'
 import { HoverCardProvider, StructuredDetailCard, detailCardSection } from '../../../../components'
 import type { ApiEffect, ApiEffectDetail, ApiItemDetail, ApiSetDetail } from '../../../../lib/api'
-import capturedItem from '../../queries/fixtures/item-stolen-necklace-level-25.json'
-import capturedWeapon from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
-import capturedShield from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
-import capturedArmor from '../../queries/fixtures/item-beholder-plate-armor.json'
-import capturedRiposteItem from '../../queries/fixtures/item-epic-ethereal-bracers.json'
-import capturedRiposteDetail from '../../queries/fixtures/effect-riposte.json'
-import capturedCharismaDetail from '../../queries/fixtures/effect-charisma.json'
-import capturedDefaultRiposteItem from '../../queries/fixtures/item-aegis-of-the-deep.json'
-import capturedConstantItem from '../../queries/fixtures/item-1-quarterstaff-of-lesser-halfling-bane.json'
-import capturedConstantDetail from '../../queries/fixtures/effect-curse-of-weakness.json'
-import capturedSet from '../../queries/fixtures/set-devoted-heart.json'
-import capturedLargerSet from '../../queries/fixtures/set-adherent-of-the-mists-set-heroic.json'
-import capturedTextOnlyItem from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
-import capturedGroupAugment from '../../queries/fixtures/augment-eldritch-rune-of-skill--charisma.json'
-import capturedMixedGroupItem from '../../queries/fixtures/item-absolute-judgement.json'
+import capturedItemResponse from '../../queries/fixtures/item-stolen-necklace-level-25.json'
+import capturedWeaponResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedShieldResponse from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
+import capturedArmorResponse from '../../queries/fixtures/item-beholder-plate-armor.json'
+import capturedRiposteItemResponse from '../../queries/fixtures/item-epic-ethereal-bracers.json'
+import capturedRiposteDetailResponse from '../../queries/fixtures/effect-riposte.json'
+import capturedCharismaDetailResponse from '../../queries/fixtures/effect-charisma.json'
+import capturedDefaultRiposteItemResponse from '../../queries/fixtures/item-aegis-of-the-deep.json'
+import capturedConstantItemResponse from '../../queries/fixtures/item-1-quarterstaff-of-lesser-halfling-bane.json'
+import capturedConstantDetailResponse from '../../queries/fixtures/effect-curse-of-weakness.json'
+import capturedSetResponse from '../../queries/fixtures/set-devoted-heart.json'
+import capturedLargerSetResponse from '../../queries/fixtures/set-adherent-of-the-mists-set-heroic.json'
+import capturedTextOnlyItemResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedGroupAugmentResponse from '../../queries/fixtures/augment-eldritch-rune-of-skill--charisma.json'
+import capturedMixedGroupItemResponse from '../../queries/fixtures/item-absolute-judgement.json'
 import {
   toEffect,
   toItem,
@@ -28,6 +30,22 @@ import {
 import { toSetDetail, type SetDetail } from '../../queries/sets'
 import { EffectListFullView, EffectListBriefView } from './EffectList'
 import { itemEffectRows, setEffectRows } from './effectRows'
+
+const capturedItem = apiFixture(capturedItemResponse)
+const capturedWeapon = apiFixture(capturedWeaponResponse)
+const capturedShield = apiFixture(capturedShieldResponse)
+const capturedArmor = apiFixture(capturedArmorResponse)
+const capturedRiposteItem = apiFixture(capturedRiposteItemResponse)
+const capturedRiposteDetail = apiFixture(capturedRiposteDetailResponse)
+const capturedCharismaDetail = apiFixture(capturedCharismaDetailResponse)
+const capturedDefaultRiposteItem = apiFixture(capturedDefaultRiposteItemResponse)
+const capturedConstantItem = apiFixture(capturedConstantItemResponse)
+const capturedConstantDetail = apiFixture(capturedConstantDetailResponse)
+const capturedSet = apiFixture(capturedSetResponse)
+const capturedLargerSet = apiFixture(capturedLargerSetResponse)
+const capturedTextOnlyItem = apiFixture(capturedTextOnlyItemResponse)
+const capturedGroupAugment = apiFixture(capturedGroupAugmentResponse)
+const capturedMixedGroupItem = apiFixture(capturedMixedGroupItemResponse)
 
 function EffectList({
   item,
@@ -46,7 +64,7 @@ function EffectList({
   setDetail?: SetDetail | null
   matchingBonuses?: string[]
   variant?: 'pane' | 'hover'
-  onOpenItem?: (id: number, name: string) => void
+  onOpenItem?: (slug: Slug, name: string) => void
 }): React.JSX.Element {
   const itemRows = [
     ...itemEffectRows({ item, effects, itemName, modifiers, matchingBonuses, onOpenItem }),
@@ -82,8 +100,8 @@ let effectDetail: ApiEffectDetail | null = null
 vi.mock('../../queries/useItems', () => ({
   isEffectReady: () => true,
   isDetailQueryReady: () => false,
-  setDetailQueryOptions: (id: number) => ({
-    queryKey: ['sets', 'detail', id],
+  setDetailQueryOptions: (slug: Slug) => ({
+    queryKey: ['sets', 'detail', slug],
     queryFn: () => new Promise(() => {}),
   }),
   useEffectDetail: (_path: string, isEnabled = true) => ({
@@ -174,8 +192,18 @@ it('shows dashes in the type and value columns of a text-only effect', () => {
 })
 
 it('sorts the Enchantment column by effect name rather than verbose name', () => {
-  const first = { ...itemEffect(), id: 3000, name: 'Alpha', verboseName: 'Zeta Alpha' }
-  const second = { ...itemEffect(), id: 3001, name: 'Zulu', verboseName: 'Alpha Zulu' }
+  const first = {
+    ...itemEffect(),
+    slug: slugFromPathSegment('test-3000')!,
+    name: 'Alpha',
+    verboseName: 'Zeta Alpha',
+  }
+  const second = {
+    ...itemEffect(),
+    slug: slugFromPathSegment('test-3001')!,
+    name: 'Zulu',
+    verboseName: 'Alpha Zulu',
+  }
   renderEffects([second, first])
   fireEvent.click(screen.getByRole('columnheader', { name: 'Enchantment' }))
   expect(
@@ -375,7 +403,7 @@ it('uses the detail kind for the hover card kicker', () => {
 it('keeps a multi-stat effect on one line and matches either stat with a type', () => {
   const effect = {
     ...itemEffect(),
-    id: 200,
+    slug: slugFromPathSegment('test-200')!,
     name: 'Firestorm Lore',
     verboseName: 'Firestorm Lore +15%',
     bonuses: [

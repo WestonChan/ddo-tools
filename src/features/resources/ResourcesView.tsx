@@ -1,3 +1,4 @@
+import { slugFromPathSegment, type Slug } from '../../lib/api'
 import {
   useCallback,
   useEffect,
@@ -25,29 +26,28 @@ const RESOURCE_COLUMN_MINIMUM_PX = 480
 
 function useResourceRouteParams(): {
   category: ResourceCategory
-  selectedResourceId: number | null
+  selectedResourceSlug: Slug | null
 } {
   const params = useParams({ strict: false })
   const category: ResourceCategory =
     params.category && isResourceCategory(params.category) ? params.category : 'items'
-  const parsed = params.id !== undefined ? Number(params.id) : NaN
-  const selectedResourceId = Number.isFinite(parsed) && parsed >= 0 ? parsed : null
-  return { category, selectedResourceId }
+  const selectedResourceSlug = params.slug === undefined ? null : slugFromPathSegment(params.slug)
+  return { category, selectedResourceSlug }
 }
 
 function ResourcesView(): JSX.Element {
-  const { category, selectedResourceId } = useResourceRouteParams()
+  const { category, selectedResourceSlug } = useResourceRouteParams()
   const navigate = useNavigate()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const categoryPanelId = useId()
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const pickerRef = useRef<HTMLElement | null>(null)
   const detailPaneRef = useRef<HTMLElement | null>(null)
-  const lastSelectedItemId = useRef<number | null>(null)
+  const lastSelectedItemSlug = useRef<Slug | null>(null)
   const wasOpenedFromList = useRef(false)
   const { filters } = useResourceListSession('items')
-  const [itemToFocus, setItemToFocus] = useState<number | null>(null)
-  const [rowToFocusId, setRowToFocusId] = useState<number | null>(null)
+  const [itemToFocus, setItemToFocus] = useState<Slug | null>(null)
+  const [rowToFocusSlug, setRowToFocusSlug] = useState<Slug | null>(null)
   const [isSingleColumn, setIsSingleColumn] = useState(true)
   const [listSelectionCount, setListSelectionCount] = useState(0)
 
@@ -78,17 +78,17 @@ function ResourcesView(): JSX.Element {
   }
 
   useEffect(() => {
-    if (selectedResourceId !== null) {
-      lastSelectedItemId.current = selectedResourceId
+    if (selectedResourceSlug !== null) {
+      lastSelectedItemSlug.current = selectedResourceSlug
       return
     }
-    const previousItemId = lastSelectedItemId.current
-    if (previousItemId !== null) {
-      setRowToFocusId(previousItemId)
-      lastSelectedItemId.current = null
+    const previousItemSlug = lastSelectedItemSlug.current
+    if (previousItemSlug !== null) {
+      setRowToFocusSlug(previousItemSlug)
+      lastSelectedItemSlug.current = null
     }
     wasOpenedFromList.current = false
-  }, [selectedResourceId])
+  }, [selectedResourceSlug])
 
   const scrollRenderedDetailIntoView = useCallback((): void => {
     const pane = detailPaneRef.current
@@ -107,7 +107,7 @@ function ResourcesView(): JSX.Element {
   }, [navigate, category, isSingleColumn])
 
   function closeFocusedDetailOnEscape(event: ReactKeyboardEvent<HTMLElement>): void {
-    if (event.key !== 'Escape' || event.defaultPrevented || selectedResourceId === null) return
+    if (event.key !== 'Escape' || event.defaultPrevented || selectedResourceSlug === null) return
     if (isTypingTarget(event.target)) return
     event.preventDefault()
     event.stopPropagation()
@@ -116,19 +116,19 @@ function ResourcesView(): JSX.Element {
 
   useEffect(() => {
     if (
-      rowToFocusId !== null &&
-      selectedResourceId === null &&
+      rowToFocusSlug !== null &&
+      selectedResourceSlug === null &&
       document.activeElement === document.body
     )
       pickerRef.current?.focus()
-  }, [rowToFocusId, selectedResourceId])
+  }, [rowToFocusSlug, selectedResourceSlug])
 
   useEffect(() => {
     function focusSearchOnSlash(e: KeyboardEvent): void {
       const target = e.target as HTMLElement | null
       const isTypingInTextField =
         target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable
-      const isListVisible = selectedResourceId === null || !isSingleColumn
+      const isListVisible = selectedResourceSlug === null || !isSingleColumn
       if (e.key === '/' && !isTypingInTextField && isListVisible && searchInputRef.current) {
         e.preventDefault()
         searchInputRef.current.focus()
@@ -138,17 +138,18 @@ function ResourcesView(): JSX.Element {
     return () => {
       document.removeEventListener('keydown', focusSearchOnSlash)
     }
-  }, [selectedResourceId, isSingleColumn])
+  }, [selectedResourceSlug, isSingleColumn])
 
-  const resourceInUrl = selectedResourceId !== null ? { category, id: selectedResourceId } : null
+  const resourceInUrl =
+    selectedResourceSlug !== null ? { category, slug: selectedResourceSlug } : null
 
-  function selectItemFromList(id: number): void {
-    const isReplacingSelectedItem = selectedResourceId !== null
+  function selectItemFromList(slug: Slug): void {
+    const isReplacingSelectedItem = selectedResourceSlug !== null
     if (!isReplacingSelectedItem) wasOpenedFromList.current = true
-    setItemToFocus(id)
+    setItemToFocus(slug)
     setListSelectionCount((count) => count + 1)
     navigate({
-      to: `/resources/items/${id}`,
+      to: `/resources/items/${slug}`,
       ...(isReplacingSelectedItem ? { replace: true } : {}),
     })
   }
@@ -172,17 +173,17 @@ function ResourcesView(): JSX.Element {
           { '--resources-column-min-width': `${RESOURCE_COLUMN_MINIMUM_PX}px` } as CSSProperties
         }
       >
-        {(!isSingleColumn || selectedResourceId === null || category !== 'items') && (
+        {(!isSingleColumn || selectedResourceSlug === null || category !== 'items') && (
           <aside className="resources-picker" ref={pickerRef} tabIndex={-1}>
             {category === 'items' ? (
               <ItemPicker
                 category={category}
-                selectedItemId={selectedResourceId}
+                selectedItemSlug={selectedResourceSlug}
                 searchInputRef={searchInputRef}
                 onOpenItemFromHover={selectItemFromList}
                 onOpenItem={selectItemFromList}
-                rowToFocusId={rowToFocusId}
-                onRowFocused={() => setRowToFocusId(null)}
+                rowToFocusSlug={rowToFocusSlug}
+                onRowFocused={() => setRowToFocusSlug(null)}
               />
             ) : (
               <div className="resources-picker-inner">
@@ -194,9 +195,9 @@ function ResourcesView(): JSX.Element {
             )}
           </aside>
         )}
-        {category === 'items' && (!isSingleColumn || selectedResourceId !== null) && (
+        {category === 'items' && (!isSingleColumn || selectedResourceSlug !== null) && (
           <section
-            className={`resources-detail-pane${selectedResourceId === null ? ' resources-detail-pane--empty' : ''}`}
+            className={`resources-detail-pane${selectedResourceSlug === null ? ' resources-detail-pane--empty' : ''}`}
             ref={detailPaneRef}
             aria-label="Item details"
             data-detail-pane=""
@@ -207,7 +208,7 @@ function ResourcesView(): JSX.Element {
               resourceInUrl={resourceInUrl}
               pickerCategory={category}
               matchingBonuses={filters.bonuses}
-              focusItemId={itemToFocus}
+              focusItemSlug={itemToFocus}
               onFocusItem={() => setItemToFocus(null)}
               onDetailRendered={scrollRenderedDetailIntoView}
               onCloseDetail={closeDetail}

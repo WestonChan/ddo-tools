@@ -1,3 +1,4 @@
+import { slugFromPathSegment } from '../../../lib/api'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { API_HTTP_ERROR, ApiError } from '../../../lib/api'
@@ -25,13 +26,15 @@ describe('StatusPlaceholder', () => {
     expect(screen.getByText(/no items in database/i)).toBeInTheDocument()
   })
 
-  it('not-found surfaces the missing id', () => {
-    render(<StatusPlaceholder reason="not-found" missingItemId={999} />)
-    expect(screen.getByText(/no item with id 999/i)).toBeInTheDocument()
+  it('not-found surfaces the missing slug', () => {
+    render(
+      <StatusPlaceholder reason="not-found" missingItemSlug={slugFromPathSegment('test-999')!} />,
+    )
+    expect(screen.getByText(/no item with slug test-999/i)).toBeInTheDocument()
     expect(screen.getByText(/pick another row/i)).toBeInTheDocument()
   })
 
-  it('not-found without id falls back to a generic message', () => {
+  it('not-found without slug falls back to a generic message', () => {
     render(<StatusPlaceholder reason="not-found" />)
     expect(screen.getByText(/^not found\.$/i)).toBeInTheDocument()
   })

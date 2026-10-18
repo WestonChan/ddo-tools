@@ -1,32 +1,47 @@
+import { slugFromPathSegment, type Slug } from '../../../../lib/api'
+import { apiFixture } from '../../../../test/apiFixture'
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { act, fireEvent, screen, cleanup, within, type RenderResult } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import capturedTwoSetItem from '../../queries/fixtures/item-barbettes-bracers.json'
-import capturedCaptainSet from '../../queries/fixtures/set-captains-set.json'
-import capturedDevilSet from '../../queries/fixtures/set-the-devils-handiwork.json'
-import pricedItem from '../../queries/fixtures/item-barovian-handwraps.json'
+import capturedTwoSetItemResponse from '../../queries/fixtures/item-barbettes-bracers.json'
+import capturedCaptainSetResponse from '../../queries/fixtures/set-captains-set.json'
+import capturedDevilSetResponse from '../../queries/fixtures/set-the-devils-handiwork.json'
+import pricedItemResponse from '../../queries/fixtures/item-barovian-handwraps.json'
 import { render } from '../../../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../../../components'
 import type { ApiItemDetail, ApiSetDetail, ApiWeaponStats } from '../../../../lib/api'
-import capturedWeapon from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
-import capturedRuneArm from '../../queries/fixtures/item-blight-inferno.json'
-import capturedArmor from '../../queries/fixtures/item-beholder-plate-armor.json'
-import capturedShield from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
-import capturedRing from '../../queries/fixtures/item-adversion.json'
-import capturedSet from '../../queries/fixtures/set-adherent-of-the-mists-set-heroic.json'
-import capturedNecklace from '../../queries/fixtures/item-stolen-necklace-level-25.json'
-import capturedBracers from '../../queries/fixtures/item-epic-ethereal-bracers.json'
+import capturedWeaponResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedRuneArmResponse from '../../queries/fixtures/item-blight-inferno.json'
+import capturedArmorResponse from '../../queries/fixtures/item-beholder-plate-armor.json'
+import capturedShieldResponse from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
+import capturedRingResponse from '../../queries/fixtures/item-adversion.json'
+import capturedSetResponse from '../../queries/fixtures/set-adherent-of-the-mists-set-heroic.json'
+import capturedNecklaceResponse from '../../queries/fixtures/item-stolen-necklace-level-25.json'
+import capturedBracersResponse from '../../queries/fixtures/item-epic-ethereal-bracers.json'
 import { toItem } from '../../queries/items'
 import { toSetDetail } from '../../queries/sets'
 import { ItemDetailCard, ItemHoverCard } from './ItemDetailCard'
 import type { Item, ItemSource, LootQuest } from '../../queries/items'
 
+const capturedTwoSetItem = apiFixture(capturedTwoSetItemResponse)
+const capturedCaptainSet = apiFixture(capturedCaptainSetResponse)
+const capturedDevilSet = apiFixture(capturedDevilSetResponse)
+const pricedItem = apiFixture(pricedItemResponse)
+const capturedWeapon = apiFixture(capturedWeaponResponse)
+const capturedRuneArm = apiFixture(capturedRuneArmResponse)
+const capturedArmor = apiFixture(capturedArmorResponse)
+const capturedShield = apiFixture(capturedShieldResponse)
+const capturedRing = apiFixture(capturedRingResponse)
+const capturedSet = apiFixture(capturedSetResponse)
+const capturedNecklace = apiFixture(capturedNecklaceResponse)
+const capturedBracers = apiFixture(capturedBracersResponse)
+
 vi.mock('../../queries/useItems', () => ({
   isItemCardReady: () => true,
   isEffectReady: () => true,
   isDetailQueryReady: () => false,
-  setDetailQueryOptions: (id: number) => ({
-    queryKey: ['sets', 'detail', id],
+  setDetailQueryOptions: (slug: Slug) => ({
+    queryKey: ['sets', 'detail', slug],
     queryFn: () => new Promise(() => {}),
   }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
@@ -39,7 +54,7 @@ afterEach(() => {
 })
 
 const plainItem: Item = {
-  id: 42,
+  slug: slugFromPathSegment('test-42')!,
   name: 'Voice of the Master',
   equipmentSlot: 'Trinket',
   category: 'Trinket',
@@ -70,7 +85,7 @@ const plainItem: Item = {
 
 function quest(overrides: Partial<LootQuest> = {}): LootQuest {
   return {
-    id: 7,
+    slug: slugFromPathSegment('test-7')!,
     name: "Delera's Tomb",
     patron: null,
     pack: null,
@@ -88,8 +103,8 @@ function quest(overrides: Partial<LootQuest> = {}): LootQuest {
 function itemSource(overrides: Partial<ItemSource> = {}): ItemSource {
   return {
     kind: 'craftingSystem',
-    id: 32,
-    key: 'craftingSystem-32',
+    slug: slugFromPathSegment('test-32')!,
+    key: 'craftingSystem-test-32',
     name: 'Thunder-Forged',
     vendorLocation: null,
     price: [],
@@ -104,8 +119,8 @@ function itemSource(overrides: Partial<ItemSource> = {}): ItemSource {
 function packDrop(overrides: Partial<ItemSource> = {}): ItemSource {
   return itemSource({
     kind: 'adventurePack',
-    id: 25,
-    key: 'adventurePack-25',
+    slug: slugFromPathSegment('test-25')!,
+    key: 'adventurePack-test-25',
     name: 'The Isle of Dread',
     chest: 'any legendary chest',
     wikiUrl: 'https://ddowiki.com/page/The_Isle_of_Dread',
@@ -972,8 +987,8 @@ describe('ItemDetailCard drop locations', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [
-        quest({ id: 1, name: 'Tempest Spine', isRareLoot: true }),
-        quest({ id: 2, name: 'The Pit' }),
+        quest({ slug: slugFromPathSegment('test-1')!, name: 'Tempest Spine', isRareLoot: true }),
+        quest({ slug: slugFromPathSegment('test-2')!, name: 'The Pit' }),
       ],
     })
     const rows = container.querySelectorAll('.resources-item-source-row')
@@ -1023,7 +1038,14 @@ describe('ItemDetailCard drop locations', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       quests: [quest()],
-      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: true, wikiUrl: null }],
+      questChains: [
+        {
+          slug: slugFromPathSegment('test-3')!,
+          name: 'The Lost Seekers',
+          isRareLoot: true,
+          wikiUrl: null,
+        },
+      ],
     })
     const rows = container.querySelectorAll('.resources-item-source-row')
     expect(rows).toHaveLength(2)
@@ -1044,13 +1066,19 @@ describe('ItemDetailCard drop locations', () => {
       ...plainItem,
       sagas: [
         {
-          id: 1,
+          slug: slugFromPathSegment('test-1')!,
           name: 'Masterminds of Sharn',
           tier: 'epic',
           isRareLoot: false,
           wikiUrl: null,
         },
-        { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true, wikiUrl: null },
+        {
+          slug: slugFromPathSegment('test-1')!,
+          name: 'Masterminds of Sharn',
+          tier: 'legendary',
+          isRareLoot: true,
+          wikiUrl: null,
+        },
       ],
     })
     expect(screen.getByText('Obtained from')).toBeInTheDocument()
@@ -1076,7 +1104,13 @@ describe('ItemDetailCard drop locations', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       sagas: [
-        { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
+        {
+          slug: slugFromPathSegment('test-1')!,
+          name: 'Masterminds of Sharn',
+          tier: null,
+          isRareLoot: false,
+          wikiUrl: null,
+        },
       ],
     })
     expect(container.querySelector('.resources-item-source-descriptor')).toHaveTextContent(
@@ -1119,7 +1153,7 @@ describe('ItemDetailCard drop locations', () => {
       ...plainItem,
       questChains: [
         {
-          id: 3,
+          slug: slugFromPathSegment('test-3')!,
           name: 'The Lost Seekers',
           isRareLoot: false,
           wikiUrl: 'https://ddowiki.com/page/The_Lost_Seekers_(chain)',
@@ -1127,7 +1161,7 @@ describe('ItemDetailCard drop locations', () => {
       ],
       sagas: [
         {
-          id: 1,
+          slug: slugFromPathSegment('test-1')!,
           name: 'Masterminds of Sharn',
           tier: 'epic',
           isRareLoot: false,
@@ -1147,9 +1181,22 @@ describe('ItemDetailCard drop locations', () => {
   it('builds the quest chain and saga wiki links from the name when the API gives no wiki_url', () => {
     renderItemDetailCard({
       ...plainItem,
-      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: false, wikiUrl: null }],
+      questChains: [
+        {
+          slug: slugFromPathSegment('test-3')!,
+          name: 'The Lost Seekers',
+          isRareLoot: false,
+          wikiUrl: null,
+        },
+      ],
       sagas: [
-        { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
+        {
+          slug: slugFromPathSegment('test-1')!,
+          name: 'Masterminds of Sharn',
+          tier: null,
+          isRareLoot: false,
+          wikiUrl: null,
+        },
       ],
     })
     expect(screen.getByRole('link', { name: 'Open The Lost Seekers on DDO Wiki' })).toHaveAttribute(
@@ -1210,7 +1257,7 @@ describe('ItemDetailCard sources beyond quests', () => {
       sourcesBeyondQuests: [
         itemSource({
           kind: 'challengePack',
-          key: 'challengePack-62',
+          key: 'challengePack-test-62',
           name: 'Secrets of the Artificers',
           isRareLoot: true,
           wikiUrl: 'https://ddowiki.com/page/Secrets_of_the_Artificers',
@@ -1227,7 +1274,7 @@ describe('ItemDetailCard sources beyond quests', () => {
       sourcesBeyondQuests: [
         itemSource({
           kind: 'vendor',
-          key: 'vendor-1',
+          key: 'vendor-test-1',
           name: 'Morten Edgewright',
           vendorLocation: 'The Harbor',
           price: [{ ingredient: 'Token', quantity: 50 }],
@@ -1241,7 +1288,7 @@ describe('ItemDetailCard sources beyond quests', () => {
   it('lists a vendor with no location or cost as Sold by alone', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
-      sourcesBeyondQuests: [itemSource({ kind: 'vendor', key: 'vendor-1', name: 'Morten' })],
+      sourcesBeyondQuests: [itemSource({ kind: 'vendor', key: 'vendor-test-1', name: 'Morten' })],
     })
     expect(rowDescriptorText(container)).toEqual(['Sold by'])
   })
@@ -1250,7 +1297,7 @@ describe('ItemDetailCard sources beyond quests', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,
       sourcesBeyondQuests: [
-        itemSource({ kind: 'event', key: 'event-4', name: 'The Night Revels' }),
+        itemSource({ kind: 'event', key: 'event-test-4', name: 'The Night Revels' }),
       ],
     })
     expect(rowDescriptorText(container)).toEqual(['Event reward'])
@@ -1280,9 +1327,22 @@ describe('ItemDetailCard sources beyond quests', () => {
       ...plainItem,
       quests: [quest()],
       adventurePackDrops: [packDrop()],
-      questChains: [{ id: 3, name: 'The Lost Seekers', isRareLoot: false, wikiUrl: null }],
+      questChains: [
+        {
+          slug: slugFromPathSegment('test-3')!,
+          name: 'The Lost Seekers',
+          isRareLoot: false,
+          wikiUrl: null,
+        },
+      ],
       sagas: [
-        { id: 1, name: 'Masterminds of Sharn', tier: null, isRareLoot: false, wikiUrl: null },
+        {
+          slug: slugFromPathSegment('test-1')!,
+          name: 'Masterminds of Sharn',
+          tier: null,
+          isRareLoot: false,
+          wikiUrl: null,
+        },
       ],
       sourcesBeyondQuests: [itemSource()],
     })
@@ -1499,7 +1559,7 @@ it.each([
   'keeps $name and every tier in API order identically in pane and hover',
   async ({ response, sets }) => {
     const item = toItem(response as ApiItemDetail)
-    expect(sets.map((set) => set.id)).toEqual(item.sets.map((set) => set.id))
+    expect(sets.map((set) => set.slug)).toEqual(item.sets.map((set) => set.slug))
     const setDetails = sets.map((set) => toSetDetail(set as ApiSetDetail))
     const expandedRowsByCard: string[][] = []
     const consoleError = vi.spyOn(console, 'error')

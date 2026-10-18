@@ -1,12 +1,14 @@
+import { slugFromPathSegment, type Slug } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import twoSetItem from './fixtures/item-barbettes-bracers.json'
-import pricedItem from './fixtures/item-barovian-handwraps.json'
+import twoSetItemResponse from './fixtures/item-barbettes-bracers.json'
+import pricedItemResponse from './fixtures/item-barovian-handwraps.json'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
-import capturedItem from './fixtures/item-stolen-necklace-level-25.json'
-import capturedWeapon from './fixtures/item-greatsword-of-the-fallen-age.json'
-import capturedShield from './fixtures/item-tower-shield-of-the-fallen-age.json'
-import capturedAugment from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
-import effectPage from './fixtures/effects-page.json'
+import capturedItemResponse from './fixtures/item-stolen-necklace-level-25.json'
+import capturedWeaponResponse from './fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedShieldResponse from './fixtures/item-tower-shield-of-the-fallen-age.json'
+import capturedAugmentResponse from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
+import effectPageResponse from './fixtures/effects-page.json'
 import {
   fetchAdventurePackNames,
   fetchAugmentsFittingSlot,
@@ -21,14 +23,21 @@ import {
   toItemSummary,
 } from './items'
 
+const twoSetItem = apiFixture(twoSetItemResponse)
+const pricedItem = apiFixture(pricedItemResponse)
+const capturedItem = apiFixture(capturedItemResponse)
+const capturedWeapon = apiFixture(capturedWeaponResponse)
+const capturedShield = apiFixture(capturedShieldResponse)
+const capturedAugment = apiFixture(capturedAugmentResponse)
+const effectPage = apiFixture(effectPageResponse)
+
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
 function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
   return {
-    id: 1,
-    slug: 'test-entity',
+    slug: slugFromPathSegment('test-1')!,
     name: 'Bloodstone',
     sets: [],
     slot: 'Trinket',
@@ -46,8 +55,7 @@ function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
 }
 
 const API_ITEM_DETAIL: ApiItemDetail = {
-  id: 7,
-  slug: 'test-entity',
+  slug: slugFromPathSegment('test-7')!,
   name: 'Sireth, Spear of the Sky',
   slot: 'Main Hand',
   category: 'Weapon',
@@ -83,7 +91,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   modifiers: [],
   effects: [
     {
-      effect_id: 9,
+      effect_slug: slugFromPathSegment('test-9')!,
       name: 'Supreme Good',
       verbose_name: 'Supreme Good',
       description: 'Smites.',
@@ -98,7 +106,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   augment_slots: [
     {
       sort_order: 0,
-      slot_type_id: 4,
+      slot_type_slug: slugFromPathSegment('test-4')!,
       label: 'crafting: attuned to heroism 1',
       family: 'crafting',
       variant: 'attuned to heroism 1',
@@ -107,7 +115,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
     },
     {
       sort_order: 1,
-      slot_type_id: 1,
+      slot_type_slug: slugFromPathSegment('test-1')!,
       label: 'red',
       family: 'standard',
       variant: 'red',
@@ -116,13 +124,18 @@ const API_ITEM_DETAIL: ApiItemDetail = {
     },
   ],
   clickies: [
-    { name: 'Acid Shot', clickie_id: 2, spell_id: null, description: 'Shoots acid.', icon: null },
+    {
+      name: 'Acid Shot',
+      clickie_slug: slugFromPathSegment('test-2')!,
+      spell_slug: null,
+      description: 'Shoots acid.',
+      icon: null,
+    },
   ],
-  sets: [{ id: 5, slug: 'eminence-of-winter', name: 'Eminence of Winter', icon: null }],
+  sets: [{ slug: slugFromPathSegment('test-5')!, name: 'Eminence of Winter', icon: null }],
   quests: [
     {
-      id: 11,
-      slug: 'test-entity',
+      slug: slugFromPathSegment('test-11')!,
       name: 'Caught in the Web',
       level: 20,
       epic_level: null,
@@ -138,8 +151,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   ],
   quest_chains: [
     {
-      id: 3,
-      slug: 'test-entity',
+      slug: slugFromPathSegment('test-3')!,
       name: 'The Lost Seekers',
       is_rare: true,
       wiki_url: 'https://ddowiki.com/page/The_Lost_Seekers',
@@ -147,16 +159,14 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   ],
   sagas: [
     {
-      id: 1,
-      slug: 'test-entity',
+      slug: slugFromPathSegment('test-1')!,
       name: 'Masterminds of Sharn',
       tier: 'epic',
       is_rare: false,
       wiki_url: 'https://ddowiki.com/page/Masterminds_of_Sharn_(saga)',
     },
     {
-      id: 1,
-      slug: 'test-entity',
+      slug: slugFromPathSegment('test-1')!,
       name: 'Masterminds of Sharn',
       tier: 'legendary',
       is_rare: true,
@@ -177,9 +187,9 @@ describe('mappers', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ ...capturedItem, augment_slots: undefined })),
     )
-    await expect(fetchItem(7716)).rejects.toMatchObject({
+    await expect(fetchItem(slugFromPathSegment('test-7716')!)).rejects.toMatchObject({
       kind: 'api-response',
-      message: expect.stringContaining('/v1/items/7716: augment_slots'),
+      message: expect.stringContaining('/v1/items/test-7716: augment_slots'),
     })
   })
 
@@ -187,15 +197,22 @@ describe('mappers', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ ...capturedItem, slot: undefined })),
     )
-    await expect(fetchItem(7716)).rejects.toMatchObject({
+    await expect(fetchItem(slugFromPathSegment('test-7716')!)).rejects.toMatchObject({
       kind: 'api-response',
-      message: expect.stringContaining('/v1/items/7716: slot'),
+      message: expect.stringContaining('/v1/items/test-7716: slot'),
     })
   })
 
   it('reports a malformed list row with the list path and field', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ total: 1, limit: 200, offset: 0, items: [{ id: 1 }] })),
+      new Response(
+        JSON.stringify({
+          total: 1,
+          limit: 200,
+          offset: 0,
+          items: [{ slug: slugFromPathSegment('test-1')! }],
+        }),
+      ),
     )
     await expect(fetchItemPage(EMPTY_ITEM_FILTERS, '', false)).rejects.toMatchObject({
       kind: 'api-response',
@@ -210,7 +227,7 @@ describe('mappers', () => {
           total: 1,
           limit: 10000,
           offset: 0,
-          adventure_packs: [{ id: 1, is_free_to_play: false }],
+          adventure_packs: [{ slug: slugFromPathSegment('test-1')!, is_free_to_play: false }],
         }),
       ),
     )
@@ -240,7 +257,7 @@ describe('mappers', () => {
 
   it('toItemSummary renames the API columns the picker reads', () => {
     expect(toItemSummary(createApiItemRow())).toEqual({
-      id: 1,
+      slug: slugFromPathSegment('test-1')!,
       name: 'Bloodstone',
       equipmentSlot: 'Trinket',
       category: 'Jewelry',
@@ -270,7 +287,7 @@ describe('mappers', () => {
     expect(item.weaponStats?.damageReductionBypasses).toHaveLength(4)
     expect(item.armorStats).toBeNull()
     expect(item.effects[0]).toEqual({
-      id: 9,
+      slug: slugFromPathSegment('test-9')!,
       name: 'Supreme Good',
       verboseName: 'Supreme Good',
       description: 'Smites.',
@@ -285,7 +302,7 @@ describe('mappers', () => {
     expect(item.augmentSlots[0].options[0].name).toBe('Planar Conflux')
     expect(item.clickies).toEqual([{ name: 'Acid Shot', description: 'Shoots acid.' }])
     expect(item.quests[0]).toEqual({
-      id: 11,
+      slug: slugFromPathSegment('test-11')!,
       name: 'Caught in the Web',
       level: 20,
       epicLevel: null,
@@ -336,7 +353,7 @@ describe('mappers', () => {
     const item = toItem(API_ITEM_DETAIL)
     expect(item.questChains).toEqual([
       {
-        id: 3,
+        slug: slugFromPathSegment('test-3')!,
         name: 'The Lost Seekers',
         isRareLoot: true,
         wikiUrl: 'https://ddowiki.com/page/The_Lost_Seekers',
@@ -344,13 +361,19 @@ describe('mappers', () => {
     ])
     expect(item.sagas).toEqual([
       {
-        id: 1,
+        slug: slugFromPathSegment('test-1')!,
         name: 'Masterminds of Sharn',
         tier: 'epic',
         isRareLoot: false,
         wikiUrl: 'https://ddowiki.com/page/Masterminds_of_Sharn_(saga)',
       },
-      { id: 1, name: 'Masterminds of Sharn', tier: 'legendary', isRareLoot: true, wikiUrl: null },
+      {
+        slug: slugFromPathSegment('test-1')!,
+        name: 'Masterminds of Sharn',
+        tier: 'legendary',
+        isRareLoot: true,
+        wikiUrl: null,
+      },
     ])
   })
 
@@ -359,18 +382,18 @@ describe('mappers', () => {
       ...API_ITEM_DETAIL,
       adventure_packs: [
         {
-          id: 25,
+          slug: slugFromPathSegment('test-25')!,
           name: 'The Isle of Dread',
-          slug: 'the-isle-of-dread',
+
           loot_type: 'chest',
           chest: 'any legendary chest',
           is_rare: true,
           wiki_url: 'https://ddowiki.com/page/The_Isle_of_Dread',
         },
         {
-          id: 40,
+          slug: slugFromPathSegment('test-40')!,
           name: 'Magic of Myth Drannor',
-          slug: 'magic-of-myth-drannor',
+
           loot_type: 'chest',
           chest: null,
           is_rare: false,
@@ -381,8 +404,8 @@ describe('mappers', () => {
     expect(item.adventurePackDrops).toEqual([
       {
         kind: 'adventurePack',
-        id: 25,
-        key: 'adventurePack-25-0',
+        slug: slugFromPathSegment('test-25')!,
+        key: 'adventurePack-test-25-0',
         name: 'The Isle of Dread',
         vendorLocation: null,
         price: [],
@@ -393,8 +416,8 @@ describe('mappers', () => {
       },
       {
         kind: 'adventurePack',
-        id: 40,
-        key: 'adventurePack-40-1',
+        slug: slugFromPathSegment('test-40')!,
+        key: 'adventurePack-test-40-1',
         name: 'Magic of Myth Drannor',
         vendorLocation: null,
         price: [],
@@ -412,8 +435,7 @@ describe('mappers', () => {
       ...API_ITEM_DETAIL,
       crafting_systems: [
         {
-          id: 32,
-          slug: 'test-entity',
+          slug: slugFromPathSegment('test-32')!,
           name: 'Thunder-Forged',
           is_rare: false,
           wiki_url: 'https://ddowiki.com/page/Thunder-Forged',
@@ -421,8 +443,7 @@ describe('mappers', () => {
       ],
       challenge_packs: [
         {
-          id: 62,
-          slug: 'test-entity',
+          slug: slugFromPathSegment('test-62')!,
           name: 'Secrets of the Artificers',
           is_rare: true,
           wiki_url: 'https://ddowiki.com/page/Secrets_of_the_Artificers',
@@ -430,8 +451,7 @@ describe('mappers', () => {
       ],
       vendors: [
         {
-          id: 1,
-          slug: 'test-entity',
+          slug: slugFromPathSegment('test-1')!,
           name: 'Morten Edgewright',
           location: 'The Harbor',
           price: [{ ingredient: 'Token', quantity: 50 }],
@@ -441,8 +461,7 @@ describe('mappers', () => {
       ],
       events: [
         {
-          id: 4,
-          slug: 'test-entity',
+          slug: slugFromPathSegment('test-4')!,
           name: 'The Night Revels',
           is_rare: false,
           wiki_url: 'https://ddowiki.com/page/The_Night_Revels',
@@ -453,8 +472,8 @@ describe('mappers', () => {
     expect(item.sourcesBeyondQuests).toEqual([
       {
         kind: 'craftingSystem',
-        id: 32,
-        key: 'craftingSystem-32',
+        slug: slugFromPathSegment('test-32')!,
+        key: 'craftingSystem-test-32',
         name: 'Thunder-Forged',
         vendorLocation: null,
         price: [],
@@ -465,8 +484,8 @@ describe('mappers', () => {
       },
       {
         kind: 'challengePack',
-        id: 62,
-        key: 'challengePack-62',
+        slug: slugFromPathSegment('test-62')!,
+        key: 'challengePack-test-62',
         name: 'Secrets of the Artificers',
         vendorLocation: null,
         price: [],
@@ -477,8 +496,8 @@ describe('mappers', () => {
       },
       {
         kind: 'vendor',
-        id: 1,
-        key: 'vendor-1',
+        slug: slugFromPathSegment('test-1')!,
+        key: 'vendor-test-1',
         name: 'Morten Edgewright',
         vendorLocation: 'The Harbor',
         price: [{ ingredient: 'Token', quantity: 50 }],
@@ -489,8 +508,8 @@ describe('mappers', () => {
       },
       {
         kind: 'event',
-        id: 4,
-        key: 'event-4',
+        slug: slugFromPathSegment('test-4')!,
+        key: 'event-test-4',
         name: 'The Night Revels',
         vendorLocation: null,
         price: [],
@@ -501,7 +520,7 @@ describe('mappers', () => {
       },
       {
         kind: 'starter',
-        id: null,
+        slug: null,
         key: 'starter-15',
         name: 'Starter gear at level 15',
         vendorLocation: null,
@@ -530,7 +549,7 @@ describe('mappers', () => {
     const item = toItem({ ...API_ITEM_DETAIL, quests: [chestDrop, endReward] })
     expect(item.quests).toHaveLength(1)
     expect(item.quests[0]).toMatchObject({
-      id: 11,
+      slug: slugFromPathSegment('test-11')!,
       chests: ['end chest'],
       isEndReward: true,
       isRareLoot: true,
@@ -551,8 +570,8 @@ describe('mappers', () => {
 
   it('toAugmentSummary keeps the augment identity and slots', () => {
     const a: ApiAugment = {
-      slug: 'test-augment',
-      id: 2,
+      slug: slugFromPathSegment('test-2')!,
+
       name: 'Silverscale',
       family: 'DinosaurBone',
       description: null,
@@ -568,7 +587,7 @@ describe('mappers', () => {
       crafting: [],
     }
     expect(toAugmentSummary(a)).toEqual({
-      id: 2,
+      slug: slugFromPathSegment('test-2')!,
       name: 'Silverscale',
       minimumLevel: 31,
       slots: ['isle of dread: scale (armor)'],
@@ -578,8 +597,8 @@ describe('mappers', () => {
 
   it('toAugmentSummary keeps each crafting recipe with its system, tier and ingredient quantities', () => {
     const a: ApiAugment = {
-      slug: 'test-augment',
-      id: 3,
+      slug: slugFromPathSegment('test-augment')!,
+
       name: 'Melancholic Acid Spell Critical Damage (Legendary)',
       family: 'Lamordia_Legendary',
       description: null,
@@ -646,7 +665,10 @@ describe('fetchers', () => {
       total: 202,
       limit: 200,
       offset: 200,
-      items: [createApiItemRow({ id: 7, name: 'Torc' }), createApiItemRow({ id: 8 })],
+      items: [
+        createApiItemRow({ slug: slugFromPathSegment('test-7')!, name: 'Torc' }),
+        createApiItemRow({ slug: slugFromPathSegment('test-8')! }),
+      ],
     })
     const page = await fetchItemPage(
       {
@@ -714,8 +736,8 @@ describe('fetchers', () => {
       rowsKey: 'adventure_packs',
       fetchVocabulary: fetchAdventurePackNames,
       rows: [
-        { id: 1, name: 'Storm Pack', is_free_to_play: false },
-        { id: 2, name: 'Free Pack', is_free_to_play: true },
+        { slug: slugFromPathSegment('test-1')!, name: 'Storm Pack', is_free_to_play: false },
+        { slug: slugFromPathSegment('test-2')!, name: 'Free Pack', is_free_to_play: true },
       ],
       expected: ['Storm Pack', 'Free Pack'],
     },
@@ -724,8 +746,18 @@ describe('fetchers', () => {
       rowsKey: 'equipment_slots',
       fetchVocabulary: fetchEquipmentSlotNames,
       rows: [
-        { id: 1, name: 'Main Hand', sort_order: 0, category: 'Weapon' },
-        { id: 2, name: 'Trinket', sort_order: 1, category: 'Jewelry' },
+        {
+          slug: slugFromPathSegment('test-1')!,
+          name: 'Main Hand',
+          sort_order: 0,
+          category: 'Weapon',
+        },
+        {
+          slug: slugFromPathSegment('test-2')!,
+          name: 'Trinket',
+          sort_order: 1,
+          category: 'Jewelry',
+        },
       ],
       expected: ['Main Hand', 'Trinket'],
     },
@@ -734,13 +766,18 @@ describe('fetchers', () => {
       rowsKey: 'quests',
       fetchVocabulary: fetchRaidQuests,
       rows: [
-        { id: 1, name: 'Regular quest', pack: 'Storm Pack', is_raid: false },
-        { id: 2, name: 'Raid', pack: 'Storm Pack', is_raid: true },
-        { id: 3, name: 'Unpacked raid', pack: null, is_raid: true },
+        {
+          slug: slugFromPathSegment('test-1')!,
+          name: 'Regular quest',
+          pack: 'Storm Pack',
+          is_raid: false,
+        },
+        { slug: slugFromPathSegment('test-2')!, name: 'Raid', pack: 'Storm Pack', is_raid: true },
+        { slug: slugFromPathSegment('test-3')!, name: 'Unpacked raid', pack: null, is_raid: true },
       ],
       expected: [
-        { id: 2, name: 'Raid', pack: 'Storm Pack' },
-        { id: 3, name: 'Unpacked raid', pack: null },
+        { slug: slugFromPathSegment('test-2')!, name: 'Raid', pack: 'Storm Pack' },
+        { slug: slugFromPathSegment('test-3')!, name: 'Unpacked raid', pack: null },
       ],
     },
   ])(
@@ -771,9 +808,8 @@ describe('fetchers', () => {
   it('keeps effects beyond the default 100-row page', async () => {
     const rows = Array.from({ length: 101 }, (_, index) => ({
       ...effectPage.effects[0],
-      id: index + 1,
+      slug: slugFromPathSegment(`test-${index + 1}`)!,
       name: `Effect ${index}`,
-      detail_path: `/v1/effects/${index + 1}`,
     }))
     mockFetchResponse({
       total: 101,
@@ -797,7 +833,7 @@ describe('fetchers', () => {
       total: 1,
       limit: 200,
       offset: 0,
-      items: [createApiItemRow({ id: 5 })],
+      items: [createApiItemRow({ slug: slugFromPathSegment('test-5')! })],
     })
     const page = await fetchItemPage(
       {
@@ -842,9 +878,9 @@ describe('fetchers', () => {
   })
 
   it('fetchAugmentsFittingSlot orders by level then name', async () => {
-    const createApiAugment = (id: number, name: string, min_level: number | null): ApiAugment => ({
-      slug: 'test-augment',
-      id,
+    const createApiAugment = (slug: Slug, name: string, min_level: number | null): ApiAugment => ({
+      slug,
+
       name,
       family: 'Ruby',
       description: null,
@@ -859,9 +895,9 @@ describe('fetchers', () => {
       limit: 10000,
       offset: 0,
       augments: [
-        createApiAugment(1, 'Zed', 4),
-        createApiAugment(2, 'Abe', null),
-        createApiAugment(3, 'Bob', 4),
+        createApiAugment(slugFromPathSegment('test-1')!, 'Zed', 4),
+        createApiAugment(slugFromPathSegment('test-2')!, 'Abe', null),
+        createApiAugment(slugFromPathSegment('test-3')!, 'Bob', 4),
       ],
     })
     const fittingAugments = await fetchAugmentsFittingSlot('red')

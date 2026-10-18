@@ -1,9 +1,11 @@
+import { slugFromPathSegment } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
-import capturedTwoSetItem from './fixtures/item-barbettes-bracers.json'
-import capturedNoSetItem from './fixtures/item-stolen-necklace-level-25.json'
+import capturedTwoSetItemResponse from './fixtures/item-barbettes-bracers.json'
+import capturedNoSetItemResponse from './fixtures/item-stolen-necklace-level-25.json'
 import {
   useItemPage,
   useFittingAugmentsBySlotLabel,
@@ -15,9 +17,15 @@ import {
   setDetailQueryOptions,
 } from './useItems'
 import { EMPTY_ITEM_FILTERS } from './items'
-import adventurePack from './fixtures/adventure-pack-magic-of-myth-drannor.json'
-import capturedRing from './fixtures/item-adversion.json'
-import capturedSet from './fixtures/set-adherent-of-the-mists-set-heroic.json'
+import adventurePackResponse from './fixtures/adventure-pack-magic-of-myth-drannor.json'
+import capturedRingResponse from './fixtures/item-adversion.json'
+import capturedSetResponse from './fixtures/set-adherent-of-the-mists-set-heroic.json'
+
+const capturedTwoSetItem = apiFixture(capturedTwoSetItemResponse)
+const capturedNoSetItem = apiFixture(capturedNoSetItemResponse)
+const adventurePack = apiFixture(adventurePackResponse)
+const capturedRing = apiFixture(capturedRingResponse)
+const capturedSet = apiFixture(capturedSetResponse)
 
 function apiPage(name: string, total = 1): Response {
   return new Response(
@@ -27,7 +35,7 @@ function apiPage(name: string, total = 1): Response {
       offset: 0,
       items: [
         {
-          id: 1,
+          slug: slugFromPathSegment('test-1')!,
           name,
           slot: 'Trinket',
           category: 'Jewelry',
@@ -60,41 +68,41 @@ it('prefetches an item and its set through the same queries rendered by the card
   })
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
     const path = new URL(String(request)).pathname
-    return path === `/v1/items/${capturedRing.id}`
+    return path === `/v1/items/${capturedRing.slug}`
       ? Promise.resolve(new Response(JSON.stringify(capturedRing), { status: 200 }))
       : setResponseReady
   })
   const queryClient = new QueryClient()
-  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(false)
-  const prefetchedItemCard = prefetchItemCard(queryClient, capturedRing.id)
+  expect(isItemCardReady(queryClient, capturedRing.slug)).toBe(false)
+  const prefetchedItemCard = prefetchItemCard(queryClient, capturedRing.slug)
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
   const settled = vi.fn()
   void prefetchedItemCard.then(settled)
   await new Promise((resolve) => setTimeout(resolve, 0))
   expect(settled).not.toHaveBeenCalled()
-  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(false)
+  expect(isItemCardReady(queryClient, capturedRing.slug)).toBe(false)
   expect(
-    queryClient.getQueryState(setDetailQueryOptions(capturedSet.id).queryKey)?.fetchStatus,
+    queryClient.getQueryState(setDetailQueryOptions(capturedSet.slug).queryKey)?.fetchStatus,
   ).toBe('fetching')
   releaseSetResponse()
   await prefetchedItemCard
   expect(settled).toHaveBeenCalledOnce()
   await waitFor(() =>
-    expect(queryClient.getQueryState(setDetailQueryOptions(capturedSet.id).queryKey)?.status).toBe(
-      'success',
-    ),
+    expect(
+      queryClient.getQueryState(setDetailQueryOptions(capturedSet.slug).queryKey)?.status,
+    ).toBe('success'),
   )
-  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(true)
+  expect(isItemCardReady(queryClient, capturedRing.slug)).toBe(true)
   function CardQueryWrapper({ children }: { children: ReactNode }): ReactNode {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   }
-  const item = renderHook(() => useItem(capturedRing.id), { wrapper: CardQueryWrapper })
-  const set = renderHook(() => useSet(capturedSet.id), { wrapper: CardQueryWrapper })
+  const item = renderHook(() => useItem(capturedRing.slug), { wrapper: CardQueryWrapper })
+  const set = renderHook(() => useSet(capturedSet.slug), { wrapper: CardQueryWrapper })
   expect(item.result.current.data?.name).toBe(capturedRing.name)
   expect(set.result.current.data?.name).toBe(capturedSet.name)
   expect(fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual([
-    `/v1/items/${capturedRing.id}`,
-    `/v1/sets/${capturedSet.id}`,
+    `/v1/items/${capturedRing.slug}`,
+    `/v1/sets/${capturedSet.slug}`,
   ])
 })
 
@@ -103,12 +111,12 @@ it('keeps a prefetch error for the card to display without a second request', as
     .spyOn(globalThis, 'fetch')
     .mockResolvedValue(new Response('Missing item', { status: 404 }))
   const queryClient = new QueryClient()
-  await expect(prefetchItemCard(queryClient, capturedRing.id)).rejects.toThrow()
-  expect(isItemCardReady(queryClient, capturedRing.id)).toBe(true)
+  await expect(prefetchItemCard(queryClient, capturedRing.slug)).rejects.toThrow()
+  expect(isItemCardReady(queryClient, capturedRing.slug)).toBe(true)
   function ErrorQueryWrapper({ children }: { children: ReactNode }): ReactNode {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   }
-  const item = renderHook(() => useItem(capturedRing.id), { wrapper: ErrorQueryWrapper })
+  const item = renderHook(() => useItem(capturedRing.slug), { wrapper: ErrorQueryWrapper })
   expect(item.result.current.error).not.toBeNull()
   expect(fetchMock).toHaveBeenCalledOnce()
 })
@@ -144,10 +152,14 @@ it('reopens a cached source card without a second request', async () => {
   function CachedWrapper({ children }: { children: ReactNode }): ReactNode {
     return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   }
-  const first = renderHook(() => useAdventurePack(2), { wrapper: CachedWrapper })
+  const first = renderHook(() => useAdventurePack(slugFromPathSegment('test-2')!), {
+    wrapper: CachedWrapper,
+  })
   await waitFor(() => expect(first.result.current.data?.name).toBe('Magic of Myth Drannor'))
   first.unmount()
-  const second = renderHook(() => useAdventurePack(2), { wrapper: CachedWrapper })
+  const second = renderHook(() => useAdventurePack(slugFromPathSegment('test-2')!), {
+    wrapper: CachedWrapper,
+  })
   expect(second.result.current.data?.name).toBe('Magic of Myth Drannor')
   expect(fetchMock).toHaveBeenCalledOnce()
 })
@@ -296,7 +308,7 @@ it('prefetches every set and waits for each to settle before a two-set card is r
   const releases: Array<() => void> = []
   const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
     const path = new URL(String(request)).pathname
-    return path === `/v1/items/${capturedTwoSetItem.id}`
+    return path === `/v1/items/${capturedTwoSetItem.slug}`
       ? Promise.resolve(new Response(JSON.stringify(capturedTwoSetItem)))
       : new Promise<Response>((resolve) => {
           releases.push(() => resolve(new Response('Unavailable', { status: 500 })))
@@ -304,25 +316,25 @@ it('prefetches every set and waits for each to settle before a two-set card is r
   })
   const client = new QueryClient()
   const settled = vi.fn()
-  const prefetch = prefetchItemCard(client, capturedTwoSetItem.id).then(settled)
+  const prefetch = prefetchItemCard(client, capturedTwoSetItem.slug).then(settled)
   await waitFor(() => expect(releases).toHaveLength(2))
   expect(fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual([
-    `/v1/items/${capturedTwoSetItem.id}`,
-    ...capturedTwoSetItem.sets.map((set) => `/v1/sets/${set.id}`),
+    `/v1/items/${capturedTwoSetItem.slug}`,
+    ...capturedTwoSetItem.sets.map((set) => `/v1/sets/${set.slug}`),
   ])
-  expect(isItemCardReady(client, capturedTwoSetItem.id)).toBe(false)
+  expect(isItemCardReady(client, capturedTwoSetItem.slug)).toBe(false)
   releases[0]()
   await waitFor(() =>
     expect(
-      client.getQueryState(setDetailQueryOptions(capturedTwoSetItem.sets[0].id).queryKey)?.status,
+      client.getQueryState(setDetailQueryOptions(capturedTwoSetItem.sets[0].slug).queryKey)?.status,
     ).toBe('error'),
   )
-  expect(isItemCardReady(client, capturedTwoSetItem.id)).toBe(false)
+  expect(isItemCardReady(client, capturedTwoSetItem.slug)).toBe(false)
   expect(settled).not.toHaveBeenCalled()
   releases[1]()
   await prefetch
   expect(settled).toHaveBeenCalledOnce()
-  await waitFor(() => expect(isItemCardReady(client, capturedTwoSetItem.id)).toBe(true))
+  await waitFor(() => expect(isItemCardReady(client, capturedTwoSetItem.slug)).toBe(true))
 })
 
 it('requests no sets for an item with none', async () => {
@@ -330,8 +342,8 @@ it('requests no sets for an item with none', async () => {
     .spyOn(globalThis, 'fetch')
     .mockResolvedValue(new Response(JSON.stringify(capturedNoSetItem)))
   const client = new QueryClient()
-  await prefetchItemCard(client, capturedNoSetItem.id)
+  await prefetchItemCard(client, capturedNoSetItem.slug)
   expect(capturedNoSetItem.sets).toEqual([])
   expect(fetchMock).toHaveBeenCalledOnce()
-  expect(isItemCardReady(client, capturedNoSetItem.id)).toBe(true)
+  expect(isItemCardReady(client, capturedNoSetItem.slug)).toBe(true)
 })

@@ -72,8 +72,8 @@ export function itemFilterDefinitions(
               ? selectedTypes[0].name
               : `${selectedTypes.length} types`
         return {
-          key: row.detail_path,
-          detailPath: row.detail_path,
+          key: row.slug,
+          detailSlug: row.slug,
           value: row.name,
           label: row.name,
           caption: row.kind === 'stat' ? `Stat · ${typeLabel}` : effectKindLabel(row.kind),
@@ -83,7 +83,7 @@ export function itemFilterDefinitions(
                   value: statBonusFilterValue(row.name, bonusType.name),
                   label: `${row.name} · ${bonusType.name}`,
                   caption: `${bonusType.item_count}`,
-                  detailPath: row.detail_path,
+                  detailSlug: row.slug,
                 }))
               : undefined,
         }
@@ -116,7 +116,7 @@ export function itemFilterDefinitions(
       group: 'source',
       searchPlaceholder: 'Find a raid…',
       options: raidQuests.map((quest) => ({
-        value: String(quest.id),
+        value: String(quest.slug),
         label: quest.name,
         caption: quest.pack ?? undefined,
       })),

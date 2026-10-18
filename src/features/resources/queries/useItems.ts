@@ -1,3 +1,4 @@
+import { type Slug } from '../../../lib/api'
 import {
   keepPreviousData,
   queryOptions,
@@ -60,73 +61,73 @@ const resourceQueryKeys = {
       'page',
       itemListParameters(filters, searchQuery, includesSetBonuses, 0, sort),
     ] as const,
-  item: (id: number) => ['items', 'detail', id] as const,
+  item: (slug: Slug) => ['items', 'detail', slug] as const,
   adventurePackNames: ['items', 'packs'] as const,
   equipmentSlotNames: ['items', 'slots'] as const,
   effectVocabulary: (searchQuery: string) => ['effects', 'vocabulary', searchQuery] as const,
-  effectDetail: (detailPath: string) => ['effects', 'detail', detailPath] as const,
+  effectDetail: (slug: Slug) => ['effects', 'detail', slug] as const,
   augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
-  augment: (id: number) => ['augments', 'detail', id] as const,
+  augment: (slug: Slug) => ['augments', 'detail', slug] as const,
   raidQuests: ['quests', 'raids'] as const,
   setVocabulary: (searchQuery: string) => ['sets', 'vocabulary', searchQuery] as const,
-  set: (id: number) => ['sets', 'detail', id] as const,
-  quest: (id: number) => ['quests', 'detail', id] as const,
-  source: (kind: string, id: number) => ['sources', kind, id] as const,
+  set: (slug: Slug) => ['sets', 'detail', slug] as const,
+  quest: (slug: Slug) => ['quests', 'detail', slug] as const,
+  source: (kind: string, slug: Slug) => ['sources', kind, slug] as const,
 }
 
 const itemDetailQueryOptions = (
-  id: number,
+  slug: Slug,
 ): DetailQueryOptions<Item, ReturnType<typeof resourceQueryKeys.item>> =>
   queryOptions({
-    queryKey: resourceQueryKeys.item(id),
-    queryFn: () => fetchItem(id),
+    queryKey: resourceQueryKeys.item(slug),
+    queryFn: () => fetchItem(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const setDetailQueryOptions = (
-  id: number,
+  slug: Slug,
 ): DetailQueryOptions<SetDetail, ReturnType<typeof resourceQueryKeys.set>> =>
   queryOptions({
-    queryKey: resourceQueryKeys.set(id),
-    queryFn: () => fetchSet(id),
+    queryKey: resourceQueryKeys.set(slug),
+    queryFn: () => fetchSet(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const questDetailQueryOptions = (
-  id: number,
+  slug: Slug,
 ): DetailQueryOptions<QuestDetail, ReturnType<typeof resourceQueryKeys.quest>> =>
   queryOptions({
-    queryKey: resourceQueryKeys.quest(id),
-    queryFn: () => fetchQuest(id),
+    queryKey: resourceQueryKeys.quest(slug),
+    queryFn: () => fetchQuest(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const effectDetailQueryOptions = (
-  detailPath: string,
+  slug: Slug,
 ): DetailQueryOptions<
   Awaited<ReturnType<typeof fetchEffectDetail>>,
   ReturnType<typeof resourceQueryKeys.effectDetail>
 > =>
   queryOptions({
-    queryKey: resourceQueryKeys.effectDetail(detailPath),
-    queryFn: () => fetchEffectDetail(detailPath),
+    queryKey: resourceQueryKeys.effectDetail(slug),
+    queryFn: () => fetchEffectDetail(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const augmentDetailQueryOptions = (
-  id: number,
+  slug: Slug,
 ): DetailQueryOptions<AugmentDetail, ReturnType<typeof resourceQueryKeys.augment>> =>
   queryOptions({
-    queryKey: resourceQueryKeys.augment(id),
-    queryFn: () => fetchAugment(id),
+    queryKey: resourceQueryKeys.augment(slug),
+    queryFn: () => fetchAugment(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
@@ -139,24 +140,24 @@ const sourceDetailFetchers = {
   craftingSystem: fetchCraftingSystem,
   vendor: fetchVendor,
   event: fetchEvent,
-} satisfies Record<SourceDetail['kind'], (id: number) => Promise<SourceDetail>>
+} satisfies Record<SourceDetail['kind'], (slug: Slug) => Promise<SourceDetail>>
 
 export const sourceDetailQueryOptions = (
   kind: SourceDetail['kind'],
-  id: number,
+  slug: Slug,
 ): DetailQueryOptions<SourceDetail, ReturnType<typeof resourceQueryKeys.source>> =>
   queryOptions({
-    queryKey: resourceQueryKeys.source(kind, id),
-    queryFn: () => sourceDetailFetchers[kind](id),
+    queryKey: resourceQueryKeys.source(kind, slug),
+    queryFn: () => sourceDetailFetchers[kind](slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 function itemCardSetQueryOptions(
-  ids: readonly number[],
+  slugs: readonly Slug[],
 ): ReturnType<typeof setDetailQueryOptions>[] {
-  return ids.map(setDetailQueryOptions)
+  return slugs.map(setDetailQueryOptions)
 }
 
 export function isDetailQueryReady(
@@ -167,21 +168,21 @@ export function isDetailQueryReady(
   return status === 'success' || status === 'error'
 }
 
-export async function prefetchItemCard(queryClient: QueryClient, id: number): Promise<void> {
-  const item = await queryClient.ensureQueryData(itemDetailQueryOptions(id))
+export async function prefetchItemCard(queryClient: QueryClient, slug: Slug): Promise<void> {
+  const item = await queryClient.ensureQueryData(itemDetailQueryOptions(slug))
   await Promise.allSettled(
-    itemCardSetQueryOptions(item.sets.map((set) => set.id)).map((options) =>
+    itemCardSetQueryOptions(item.sets.map((set) => set.slug)).map((options) =>
       queryClient.prefetchQuery(options),
     ),
   )
 }
 
-export function isItemCardReady(queryClient: QueryClient, id: number): boolean {
-  if (!isDetailQueryReady(queryClient, itemDetailQueryOptions(id))) return false
-  const item = queryClient.getQueryData(itemDetailQueryOptions(id).queryKey)
+export function isItemCardReady(queryClient: QueryClient, slug: Slug): boolean {
+  if (!isDetailQueryReady(queryClient, itemDetailQueryOptions(slug))) return false
+  const item = queryClient.getQueryData(itemDetailQueryOptions(slug).queryKey)
   return (
     !item ||
-    itemCardSetQueryOptions(item.sets.map((set) => set.id)).every((options) =>
+    itemCardSetQueryOptions(item.sets.map((set) => set.slug)).every((options) =>
       isDetailQueryReady(queryClient, options),
     )
   )
@@ -189,13 +190,13 @@ export function isItemCardReady(queryClient: QueryClient, id: number): boolean {
 
 export function prefetchEffect(
   queryClient: QueryClient,
-  id: number,
+  slug: Slug,
 ): Promise<Awaited<ReturnType<typeof fetchEffectDetail>>> {
-  return queryClient.ensureQueryData(effectDetailQueryOptions(`/v1/effects/${id}`))
+  return queryClient.ensureQueryData(effectDetailQueryOptions(slug))
 }
 
-export function isEffectReady(queryClient: QueryClient, id: number): boolean {
-  return isDetailQueryReady(queryClient, effectDetailQueryOptions(`/v1/effects/${id}`))
+export function isEffectReady(queryClient: QueryClient, slug: Slug): boolean {
+  return isDetailQueryReady(queryClient, effectDetailQueryOptions(slug))
 }
 
 export function useItemPage(
@@ -224,21 +225,21 @@ export function useItemPage(
   })
 }
 
-export function useItem(id: number | null): UseQueryResult<Item> {
+export function useItem(slug: Slug | null): UseQueryResult<Item> {
   return useQuery({
-    ...itemDetailQueryOptions(id ?? -1),
-    enabled: id !== null,
+    ...itemDetailQueryOptions(slug!),
+    enabled: slug !== null,
   })
 }
 
-export function useSets(ids: readonly number[]): UseQueryResult<SetDetail>[] {
-  return useQueries({ queries: itemCardSetQueryOptions(ids) })
+export function useSets(slugs: readonly Slug[]): UseQueryResult<SetDetail>[] {
+  return useQueries({ queries: itemCardSetQueryOptions(slugs) })
 }
 
-export function useSet(id: number | null): UseQueryResult<SetDetail> {
+export function useSet(slug: Slug | null): UseQueryResult<SetDetail> {
   return useQuery({
-    ...setDetailQueryOptions(id ?? -1),
-    enabled: id !== null,
+    ...setDetailQueryOptions(slug!),
+    enabled: slug !== null,
   })
 }
 
@@ -254,10 +255,10 @@ export function useSetVocabulary(
   })
 }
 
-export function useQuest(id: number | null): UseQueryResult<QuestDetail> {
+export function useQuest(slug: Slug | null): UseQueryResult<QuestDetail> {
   return useQuery({
-    ...questDetailQueryOptions(id ?? -1),
-    enabled: id !== null,
+    ...questDetailQueryOptions(slug!),
+    enabled: slug !== null,
   })
 }
 
@@ -292,12 +293,12 @@ export function useEffectVocabulary(
 }
 
 export function useEffectDetail(
-  detailPath: string,
+  slug: Slug | null,
   isEnabled = true,
 ): UseQueryResult<Awaited<ReturnType<typeof fetchEffectDetail>>> {
   return useQuery({
-    ...effectDetailQueryOptions(detailPath),
-    enabled: isEnabled,
+    ...effectDetailQueryOptions(slug!),
+    enabled: isEnabled && slug !== null,
   })
 }
 
@@ -324,37 +325,37 @@ export function useFittingAugmentsBySlotLabel(
   })
 }
 
-export function useAugment(id: number | null): UseQueryResult<AugmentDetail> {
+export function useAugment(slug: Slug | null): UseQueryResult<AugmentDetail> {
   return useQuery({
-    ...augmentDetailQueryOptions(id ?? -1),
-    enabled: id !== null,
+    ...augmentDetailQueryOptions(slug!),
+    enabled: slug !== null,
   })
 }
 
-function useSourceDetail(kind: SourceDetail['kind'], id: number): UseQueryResult<SourceDetail> {
-  return useQuery(sourceDetailQueryOptions(kind, id))
+function useSourceDetail(kind: SourceDetail['kind'], slug: Slug): UseQueryResult<SourceDetail> {
+  return useQuery(sourceDetailQueryOptions(kind, slug))
 }
 
-export function useAdventurePack(id: number): UseQueryResult<SourceDetail> {
-  return useSourceDetail('adventurePack', id)
+export function useAdventurePack(slug: Slug): UseQueryResult<SourceDetail> {
+  return useSourceDetail('adventurePack', slug)
 }
 
-export function useQuestChain(id: number): UseQueryResult<SourceDetail> {
-  return useSourceDetail('questChain', id)
+export function useQuestChain(slug: Slug): UseQueryResult<SourceDetail> {
+  return useSourceDetail('questChain', slug)
 }
 
-export function useSaga(id: number): UseQueryResult<SourceDetail> {
-  return useSourceDetail('saga', id)
+export function useSaga(slug: Slug): UseQueryResult<SourceDetail> {
+  return useSourceDetail('saga', slug)
 }
 
-export function useCraftingSystem(id: number): UseQueryResult<SourceDetail> {
-  return useSourceDetail('craftingSystem', id)
+export function useCraftingSystem(slug: Slug): UseQueryResult<SourceDetail> {
+  return useSourceDetail('craftingSystem', slug)
 }
 
-export function useVendor(id: number): UseQueryResult<SourceDetail> {
-  return useSourceDetail('vendor', id)
+export function useVendor(slug: Slug): UseQueryResult<SourceDetail> {
+  return useSourceDetail('vendor', slug)
 }
 
-export function useEvent(id: number): UseQueryResult<SourceDetail> {
-  return useSourceDetail('event', id)
+export function useEvent(slug: Slug): UseQueryResult<SourceDetail> {
+  return useSourceDetail('event', slug)
 }

@@ -1,3 +1,4 @@
+import { slugFromPathSegment } from '../../../lib/api'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useDetailStack, type ResourceReference } from './useDetailStack'
@@ -11,9 +12,21 @@ beforeEach(() => {
   navigateMock.mockClear()
 })
 
-const itemA: ResourceReference = { category: 'items', id: 1, name: 'A' }
-const itemB: ResourceReference = { category: 'items', id: 2, name: 'B' }
-const itemC: ResourceReference = { category: 'items', id: 3, name: 'C' }
+const itemA: ResourceReference = {
+  category: 'items',
+  slug: slugFromPathSegment('test-1')!,
+  name: 'A',
+}
+const itemB: ResourceReference = {
+  category: 'items',
+  slug: slugFromPathSegment('test-2')!,
+  name: 'B',
+}
+const itemC: ResourceReference = {
+  category: 'items',
+  slug: slugFromPathSegment('test-3')!,
+  name: 'C',
+}
 
 describe('useDetailStack — initial state', () => {
   it('starts empty when resourceInUrl is null', () => {
@@ -36,15 +49,26 @@ describe('useDetailStack — initial state', () => {
 describe('useDetailStack — pushResource', () => {
   it('keeps the first item name when a second item is pushed', () => {
     const { result } = renderHook(() =>
-      useDetailStack({ resourceInUrl: { category: 'items', id: 1 }, pickerCategory: 'items' }),
+      useDetailStack({
+        resourceInUrl: { category: 'items', slug: slugFromPathSegment('test-1')! },
+        pickerCategory: 'items',
+      }),
     )
     act(() => {
-      result.current.nameResource({ category: 'items', id: 1, name: 'Blight Inferno' })
-      result.current.pushResource({ category: 'items', id: 2, name: 'Adversion' })
+      result.current.nameResource({
+        category: 'items',
+        slug: slugFromPathSegment('test-1')!,
+        name: 'Blight Inferno',
+      })
+      result.current.pushResource({
+        category: 'items',
+        slug: slugFromPathSegment('test-2')!,
+        name: 'Adversion',
+      })
     })
     expect(result.current.stack).toEqual([
-      { category: 'items', id: 1, name: 'Blight Inferno' },
-      { category: 'items', id: 2, name: 'Adversion' },
+      { category: 'items', slug: slugFromPathSegment('test-1')!, name: 'Blight Inferno' },
+      { category: 'items', slug: slugFromPathSegment('test-2')!, name: 'Adversion' },
     ])
   })
   it('depth-1 push navigates and waits for URL sync', () => {
@@ -54,7 +78,7 @@ describe('useDetailStack — pushResource', () => {
     act(() => {
       result.current.pushResource(itemA)
     })
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/1' })
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-1' })
     expect(result.current.stack).toEqual([])
   })
 
@@ -258,7 +282,7 @@ describe('useDetailStack — deepLinkUrl', () => {
     act(() => {
       result.current.pushResource(itemB)
     })
-    expect(result.current.deepLinkUrl).toContain('/resources/items/2')
-    expect(result.current.deepLinkUrl).not.toContain('/resources/items/1')
+    expect(result.current.deepLinkUrl).toContain('/resources/items/test-2')
+    expect(result.current.deepLinkUrl).not.toContain('/resources/items/test-1')
   })
 })

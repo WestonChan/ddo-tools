@@ -12,8 +12,8 @@ export type ApiPage<T, K extends string> = {
 } & Record<K, T[]>
 
 export interface ApiItemRow {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   slot: string
   category: string
@@ -29,8 +29,8 @@ export interface ApiItemRow {
 }
 
 export interface ApiEffectBonusGroup {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
 }
 
@@ -55,7 +55,8 @@ export interface ApiEffectDamage {
 }
 
 export interface ApiEffect {
-  effect_id: number
+  effect_id?: number
+  effect_slug: Slug
   name: string
   kind?: 'effect' | 'stat' | 'group'
   tier?: { group: string; rank: number } | null
@@ -91,7 +92,8 @@ export interface ApiAugmentSlotOption {
 
 export interface ApiItemAugmentSlot {
   sort_order: number
-  slot_type_id: number
+  slot_type_id?: number
+  slot_type_slug: Slug
   label: string
   family: string
   variant: string
@@ -101,15 +103,17 @@ export interface ApiItemAugmentSlot {
 
 export interface ApiItemClickie {
   name: string
-  clickie_id: number | null
-  spell_id: number | null
+  clickie_id?: number | null
+  clickie_slug: Slug | null
+  spell_id?: number | null
+  spell_slug: Slug | null
   description: string | null
   icon: string | null
 }
 
 export interface ApiLootQuest {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   level: number | null
   epic_level: number | null
@@ -124,16 +128,16 @@ export interface ApiLootQuest {
 }
 
 export interface ApiItemQuestChain {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   is_rare: boolean
   wiki_url: string | null
 }
 
 export interface ApiItemSaga {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   tier: string | null
   is_rare: boolean
@@ -141,8 +145,8 @@ export interface ApiItemSaga {
 }
 
 export interface ApiItemAdventurePack {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   loot_type: string | null
   chest: string | null
@@ -151,24 +155,24 @@ export interface ApiItemAdventurePack {
 }
 
 export interface ApiItemCraftingSystem {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   is_rare: boolean
   wiki_url: string | null
 }
 
 export interface ApiItemChallengePack {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   is_rare: boolean
   wiki_url: string | null
 }
 
 export interface ApiItemVendor {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   location: string | null
   price: ApiIngredientCost[]
@@ -177,8 +181,8 @@ export interface ApiItemVendor {
 }
 
 export interface ApiItemEvent {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   is_rare: boolean
   wiki_url: string | null
@@ -201,8 +205,8 @@ export type ApiItemSourceKind =
 
 export interface ApiItemSource {
   kind: ApiItemSourceKind
-  id: number | null
-  slug: string | null
+  id?: number | null
+  slug: Slug | null
   name: string
   loot_type: string | null
   chest: string | null
@@ -243,15 +247,15 @@ export interface ApiArmorStats {
 }
 
 export interface ApiItemSet {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   icon: string | null
 }
 
 export interface ApiItemDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   slot: string
   category: string
@@ -287,8 +291,8 @@ export interface ApiItemDetail {
 }
 
 export interface ApiAugment {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   family: string
   description: string | null
@@ -320,8 +324,8 @@ export interface ApiCraftingRecipe {
 }
 
 export interface ApiAdventurePack {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   is_free_to_play: boolean
   update: string | null
@@ -329,8 +333,8 @@ export interface ApiAdventurePack {
 }
 
 export interface ApiSourceItem {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   slot: string
   minimum_level?: number | null
@@ -342,15 +346,15 @@ export interface ApiSourceItem {
 }
 
 export interface ApiSourceQuest {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   level: number | null
 }
 
 export interface ApiAdventurePackDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   is_free_to_play: boolean
   update: string | null
@@ -359,8 +363,8 @@ export interface ApiAdventurePackDetail {
 }
 
 export interface ApiQuestSeriesDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   pack: string | null
   quests: ApiSourceQuest[]
@@ -368,18 +372,18 @@ export interface ApiQuestSeriesDetail {
 }
 
 export interface ApiCraftingSystemDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   pack: string | null
   npc: string | null
   ingredient_count: number
-  recipes: Array<{ option: string; augments: Array<{ id: number; slug: string; name: string }> }>
+  recipes: Array<{ option: string; augments: Array<{ id?: number; slug: Slug; name: string }> }>
 }
 
 export interface ApiVendorDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   pack: string | null
   location: string | null
@@ -387,23 +391,23 @@ export interface ApiVendorDetail {
 }
 
 export interface ApiEventDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   items: ApiSourceItem[]
 }
 
 export interface ApiEquipmentSlot {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   sort_order: number
   category: string
 }
 
 export interface ApiEffectVocabularyRow {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   kind: 'stat' | 'effect' | 'group'
   detail_path: string
@@ -414,14 +418,15 @@ export interface ApiEffectVocabularyRow {
 }
 
 export interface ApiEffectCarrier {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   line: ApiEffect
   amount_source?: string | null
   bonus_type?: string | null
   effect?: string | null
   effect_id?: number | null
+  effect_slug?: Slug | null
   scale?: number | null
   value?: number | null
   value2?: number | null
@@ -435,14 +440,15 @@ export interface ApiEffectCarrierLine {
   bonus_type?: string | null
   effect?: string | null
   effect_id?: number | null
+  effect_slug?: Slug | null
   scale?: number | null
   value?: number | null
   value2?: number | null
 }
 
 export interface ApiEffectDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   kind: 'effect' | 'stat' | 'group'
   category?: string | null
@@ -454,7 +460,7 @@ export interface ApiEffectDetail {
   tier?: {
     group: string
     rank: number
-    steps: Array<{ id: number; slug: string; name: string; rank: number }>
+    steps: Array<{ id?: number; slug: Slug; name: string; rank: number }>
   } | null
   bonuses: Array<{
     target: string
@@ -470,7 +476,8 @@ export interface ApiEffectDetail {
   augments: ApiPage<ApiEffectCarrier, 'augments'>
   set_tiers: ApiPage<
     Omit<ApiEffectCarrier, 'id' | 'slug'> & {
-      set_id: number
+      set_id?: number
+      set_slug: Slug
       set_name: string
       equipped_count: number
     },
@@ -479,8 +486,8 @@ export interface ApiEffectDetail {
 }
 
 export interface ApiQuestSummary {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   pack: string | null
   is_raid: boolean
@@ -498,8 +505,8 @@ export interface ApiSetModifier {
 }
 
 export interface ApiSetRow {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   icon: string | null
   is_filigree_set: boolean
@@ -509,8 +516,8 @@ export interface ApiSetRow {
 }
 
 export interface ApiSetDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   icon: string | null
   tiers: Array<{
@@ -519,8 +526,8 @@ export interface ApiSetDetail {
     modifiers: ApiSetModifier[]
   }>
   items: Array<{
-    id: number
-    slug: string
+    id?: number
+    slug: Slug
     name: string
     slot: string
     minimum_level: number | null
@@ -528,8 +535,8 @@ export interface ApiSetDetail {
 }
 
 export interface ApiQuestDetail {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   pack: string | null
   patron: string | null
@@ -537,8 +544,8 @@ export interface ApiQuestDetail {
   epic_level: number | null
   is_raid: boolean
   items: Array<{
-    id: number
-    slug: string
+    id?: number
+    slug: Slug
     name: string
     slot: string
     minimum_level: number | null
@@ -549,8 +556,8 @@ export interface ApiQuestDetail {
 }
 
 export interface ApiOptionalBuff {
-  id: number
-  slug: string
+  id?: number
+  slug: Slug
   name: string
   description: string
   icon: string | null

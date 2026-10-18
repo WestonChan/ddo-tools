@@ -1,3 +1,4 @@
+import { slugFromPathSegment } from '../../../lib/api'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -8,9 +9,21 @@ import {
 } from '../contexts/DetailNavigationContext'
 import type { ResourceReference } from '../hooks/useDetailStack'
 
-const alphaEntry: ResourceReference = { category: 'items', id: 1, name: 'Alpha' }
-const betaEntry: ResourceReference = { category: 'items', id: 2, name: 'Beta' }
-const gammaEntry: ResourceReference = { category: 'items', id: 3, name: 'Gamma' }
+const alphaEntry: ResourceReference = {
+  category: 'items',
+  slug: slugFromPathSegment('test-1')!,
+  name: 'Alpha',
+}
+const betaEntry: ResourceReference = {
+  category: 'items',
+  slug: slugFromPathSegment('test-2')!,
+  name: 'Beta',
+}
+const gammaEntry: ResourceReference = {
+  category: 'items',
+  slug: slugFromPathSegment('test-3')!,
+  name: 'Gamma',
+}
 
 interface BreadcrumbBarRenderOptions {
   stack: ResourceReference[]
@@ -113,8 +126,8 @@ describe('DetailBreadcrumbBar', () => {
     expect(onJumpToCrumb).toHaveBeenLastCalledWith(1)
   })
 
-  it('crumb labels fall back to category + id when entry has no name', () => {
-    renderBreadcrumbBar({ stack: [{ category: 'items', id: 42 }] })
-    expect(screen.getByText(/items #42/i)).toBeInTheDocument()
+  it('crumb labels fall back to category + slug when entry has no name', () => {
+    renderBreadcrumbBar({ stack: [{ category: 'items', slug: slugFromPathSegment('test-42')! }] })
+    expect(screen.getByText(/items #test-42/i)).toBeInTheDocument()
   })
 })

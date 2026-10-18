@@ -1,10 +1,11 @@
+import type { Slug } from '../../../lib/api'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import type { ResourceCategory } from '../../../lib/resourcePaths'
 
 export interface ResourceReference {
   category: ResourceCategory
-  id: number
+  slug: Slug
   name?: string
 }
 
@@ -26,7 +27,7 @@ export interface DetailStack {
 }
 
 function isSameResource(a: ResourceReference, b: ResourceReference): boolean {
-  return a.category === b.category && a.id === b.id
+  return a.category === b.category && a.slug === b.slug
 }
 
 export function useDetailStack({
@@ -54,7 +55,7 @@ export function useDetailStack({
   const pushResource = useCallback(
     (resource: ResourceReference) => {
       if (stack.length === 0) {
-        navigate({ to: `/resources/${resource.category}/${resource.id}` })
+        navigate({ to: `/resources/${resource.category}/${resource.slug}` })
         return
       }
       setStack((previousStack) => {
@@ -109,7 +110,7 @@ export function useDetailStack({
   const top = stack[stack.length - 1] ?? null
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
-  const deepLinkUrl = top ? `${origin}${basePath}/resources/${top.category}/${top.id}` : null
+  const deepLinkUrl = top ? `${origin}${basePath}/resources/${top.category}/${top.slug}` : null
 
   return {
     stack,

@@ -15,7 +15,7 @@ describe('isResourceCategory', () => {
 })
 
 describe('DETAIL_TITLE_ID', () => {
-  it('is a non-empty id shared by the detail pane and its heading', () => {
+  it('is a non-empty slug shared by the detail pane and its heading', () => {
     expect(DETAIL_TITLE_ID).toBeTruthy()
   })
 })

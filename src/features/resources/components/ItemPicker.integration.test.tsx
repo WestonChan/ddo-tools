@@ -1,22 +1,27 @@
-import capturedNullIconSetPage from '../queries/fixtures/sets-null-icon-page.json'
+import { slugFromPathSegment, type Slug } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
+import capturedNullIconSetPageResponse from '../queries/fixtures/sets-null-icon-page.json'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ItemPicker } from './ItemPicker'
 import { resetResourceListSessionsForTests } from '../resourceListSessions'
-import effectPage from '../queries/fixtures/effects-page.json'
-import capturedSetPage from '../queries/fixtures/sets-page.json'
+import effectPageResponse from '../queries/fixtures/effects-page.json'
+import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
 import type { ApiEffectVocabularyRow } from '../../../lib/api'
 
-function vocabularyRow(name: string, kind: 'effect' | 'stat', id: number): ApiEffectVocabularyRow {
+const capturedNullIconSetPage = apiFixture(capturedNullIconSetPageResponse)
+const effectPage = apiFixture(effectPageResponse)
+const capturedSetPage = apiFixture(capturedSetPageResponse)
+
+function vocabularyRow(name: string, kind: 'effect' | 'stat', slug: Slug): ApiEffectVocabularyRow {
   return {
     ...effectPage.effects[0],
-    slug: 'test-effect',
-    id,
+    slug,
+
     name,
     kind,
-    detail_path: `/v1/effects/${id}`,
   }
 }
 
@@ -107,19 +112,27 @@ describe('ItemPicker page errors', () => {
           total: 1,
           limit: 10000,
           offset: 0,
-          effects: [vocabularyRow('Strength', 'stat', 1)],
+          effects: [vocabularyRow('Strength', 'stat', slugFromPathSegment('test-1')!)],
         },
         '/v1/adventure-packs': {
           total: 1,
           limit: 10000,
           offset: 0,
-          adventure_packs: [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
+          adventure_packs: [
+            {
+              slug: slugFromPathSegment('test-1')!,
+              name: 'Vault of Night',
+              is_free_to_play: false,
+            },
+          ],
         },
         '/v1/quests': {
           total: 1,
           limit: 10000,
           offset: 0,
-          quests: [{ id: 7, name: 'The Raid', pack: null, is_raid: true }],
+          quests: [
+            { slug: slugFromPathSegment('test-7')!, name: 'The Raid', pack: null, is_raid: true },
+          ],
         },
       }
       return Promise.resolve(new Response(JSON.stringify(responses[path]), { status: 200 }))
@@ -153,7 +166,14 @@ describe('ItemPicker page errors', () => {
           total: 1,
           limit: 10000,
           offset: 0,
-          equipment_slots: [{ id: 1, name: 'Trinket', sort_order: 1, category: 'Jewelry' }],
+          equipment_slots: [
+            {
+              slug: slugFromPathSegment('test-1')!,
+              name: 'Trinket',
+              sort_order: 1,
+              category: 'Jewelry',
+            },
+          ],
         }),
         { status: 200 },
       ),
@@ -185,7 +205,7 @@ describe('ItemPicker page errors', () => {
               offset: 0,
               items: [
                 {
-                  id: 1,
+                  slug: slugFromPathSegment('test-1')!,
                   name: 'Bloodstone',
                   slot: 'Trinket',
                   category: 'Jewelry',
@@ -209,19 +229,32 @@ describe('ItemPicker page errors', () => {
           total: 1,
           limit: 10000,
           offset: 0,
-          effects: [vocabularyRow('Bad Filter', 'stat', 2)],
+          effects: [vocabularyRow('Bad Filter', 'stat', slugFromPathSegment('test-2')!)],
         },
         '/v1/equipment-slots': {
           total: 1,
           limit: 10000,
           offset: 0,
-          equipment_slots: [{ id: 1, name: 'Trinket', sort_order: 1, category: 'Jewelry' }],
+          equipment_slots: [
+            {
+              slug: slugFromPathSegment('test-1')!,
+              name: 'Trinket',
+              sort_order: 1,
+              category: 'Jewelry',
+            },
+          ],
         },
         '/v1/adventure-packs': {
           total: 1,
           limit: 10000,
           offset: 0,
-          adventure_packs: [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
+          adventure_packs: [
+            {
+              slug: slugFromPathSegment('test-1')!,
+              name: 'Vault of Night',
+              is_free_to_play: false,
+            },
+          ],
         },
         '/v1/quests': { total: 0, limit: 10000, offset: 0, quests: [] },
       }
@@ -280,7 +313,13 @@ describe('ItemPicker page errors', () => {
               total: 1,
               limit: 10000,
               offset: 0,
-              adventure_packs: [{ id: 1, name: 'Vault of Night', is_free_to_play: false }],
+              adventure_packs: [
+                {
+                  slug: slugFromPathSegment('test-1')!,
+                  name: 'Vault of Night',
+                  is_free_to_play: false,
+                },
+              ],
             }),
             { status: 200 },
           ),
@@ -333,7 +372,10 @@ describe('ItemPicker page errors', () => {
               total: 2,
               limit: 10000,
               offset: 0,
-              effects: [vocabularyRow('Strength', 'stat', 1), vocabularyRow('Vorpal', 'effect', 2)],
+              effects: [
+                vocabularyRow('Strength', 'stat', slugFromPathSegment('test-1')!),
+                vocabularyRow('Vorpal', 'effect', slugFromPathSegment('test-2')!),
+              ],
             }),
             { status: 200 },
           ),
@@ -388,7 +430,7 @@ describe('ItemPicker page errors', () => {
             offset: 0,
             items: [
               {
-                id: 1,
+                slug: slugFromPathSegment('test-1')!,
                 name: 'Bloodstone',
                 slot: 'Trinket',
                 category: 'Jewelry',
@@ -462,7 +504,7 @@ describe('ItemPicker page errors', () => {
 })
 
 function ItemPickerHarness(): React.JSX.Element {
-  return <ItemPicker category="items" selectedItemId={null} />
+  return <ItemPicker category="items" selectedItemSlug={null} />
 }
 
 it('lists a captured set with a null icon without creating a broken image', async () => {

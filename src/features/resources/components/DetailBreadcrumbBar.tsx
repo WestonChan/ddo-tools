@@ -12,7 +12,7 @@ interface DetailBreadcrumbBarProps {
 }
 
 function crumbLabel(entry: ResourceReference): string {
-  return entry.name ?? `${entry.category} #${entry.id}`
+  return entry.name ?? `${entry.category} #${entry.slug}`
 }
 
 export function DetailBreadcrumbBar({
@@ -62,7 +62,7 @@ export function DetailBreadcrumbBar({
             if (isLast) {
               return (
                 <span
-                  key={`${entry.category}-${entry.id}`}
+                  key={`${entry.category}-${entry.slug}`}
                   className="resources-detail-breadcrumb-current"
                 >
                   {separator}
@@ -74,7 +74,7 @@ export function DetailBreadcrumbBar({
             }
             return (
               <span
-                key={`${entry.category}-${entry.id}-${index}`}
+                key={`${entry.category}-${entry.slug}-${index}`}
                 className="resources-detail-breadcrumb-link-wrap"
               >
                 {separator}

@@ -1,3 +1,4 @@
+import type { Slug } from '../lib/api'
 import { useEffect, useId, useRef, useState, type JSX, type ReactNode, type RefObject } from 'react'
 import { Check, ChevronDown, Search } from 'lucide-react'
 import { AnchoredMenu } from './AnchoredMenu'
@@ -12,7 +13,7 @@ export interface FilterOption {
   children?: FilterOption[]
   isNested?: boolean
   parentValue?: string
-  detailPath?: string
+  detailSlug?: Slug
 }
 
 interface ComboboxCommonProps {
@@ -278,7 +279,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                     className={`combobox-option${index === activeIndex ? ' combobox-option--active' : ''}${option.isNested ? ' combobox-option--nested' : ''}`}
                     onMouseEnter={(event) => {
                       setHighlightedIndex(index)
-                      if (!renderHoverCard || !option.detailPath) return
+                      if (!renderHoverCard || !option.detailSlug) return
                       const menu = event.currentTarget.closest<HTMLElement>('.combobox-menu')
                       if (
                         !menu ||

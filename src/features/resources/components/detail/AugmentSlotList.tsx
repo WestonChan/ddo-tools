@@ -130,7 +130,7 @@ export function AugmentCandidateLedger({
         columns={AUGMENT_COLUMNS}
         rowCount={fittingAugments.length}
         rowAt={(index) => fittingAugments[index]}
-        rowKey={(augment) => augment.id}
+        rowKey={(augment) => augment.slug}
         onRowActivate={() => {}}
         isVirtualized={false}
         isDense
@@ -151,9 +151,9 @@ export function AugmentCandidateLedger({
         hoverCard={(augment) => ({
           kind: 'augment',
           delayMs: NESTED_CARD_OPEN_DELAY_MS,
-          prefetch: () => queryClient.ensureQueryData(augmentDetailQueryOptions(augment.id)),
-          isReady: () => isDetailQueryReady(queryClient, augmentDetailQueryOptions(augment.id)),
-          render: () => <AugmentHoverCard augmentId={augment.id} />,
+          prefetch: () => queryClient.ensureQueryData(augmentDetailQueryOptions(augment.slug)),
+          isReady: () => isDetailQueryReady(queryClient, augmentDetailQueryOptions(augment.slug)),
+          render: () => <AugmentHoverCard augmentSlug={augment.slug} />,
         })}
       />
     </section>

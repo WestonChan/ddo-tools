@@ -1,13 +1,20 @@
+import { slugFromPathSegment } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import capturedTwoSetItem from '../queries/fixtures/item-barbettes-bracers.json'
-import capturedCaptainSet from '../queries/fixtures/set-captains-set.json'
-import capturedDevilSet from '../queries/fixtures/set-the-devils-handiwork.json'
+import capturedTwoSetItemResponse from '../queries/fixtures/item-barbettes-bracers.json'
+import capturedCaptainSetResponse from '../queries/fixtures/set-captains-set.json'
+import capturedDevilSetResponse from '../queries/fixtures/set-the-devils-handiwork.json'
 import { ItemHoverContent } from './detail/ResourceHoverCards'
 import { render } from '../../../test/renderWithQueryClient'
 import { ResourceDetailPane } from './ResourceDetailPane'
-import capturedItem from '../queries/fixtures/item-stolen-necklace-level-25.json'
+import capturedItemResponse from '../queries/fixtures/item-stolen-necklace-level-25.json'
+
+const capturedTwoSetItem = apiFixture(capturedTwoSetItemResponse)
+const capturedCaptainSet = apiFixture(capturedCaptainSetResponse)
+const capturedDevilSet = apiFixture(capturedDevilSetResponse)
+const capturedItem = apiFixture(capturedItemResponse)
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
 
@@ -18,7 +25,10 @@ afterEach(() => {
 
 function renderItemDetail(): void {
   render(
-    <ResourceDetailPane resourceInUrl={{ category: 'items', id: 7716 }} pickerCategory="items" />,
+    <ResourceDetailPane
+      resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-7716')! }}
+      pickerCategory="items"
+    />,
   )
 }
 
@@ -33,8 +43,8 @@ describe('ResourceDetailPane errors from the API path', () => {
     const issueUrl = new URL(report.getAttribute('href') ?? '')
     expect(report).toHaveAttribute('target', '_blank')
     expect(issueUrl.searchParams.get('labels')).toBe('bug')
-    expect(issueUrl.searchParams.get('title')).toContain('/v1/items/7716')
-    expect(issueUrl.searchParams.get('body')).toContain('/v1/items/7716: augment_slots')
+    expect(issueUrl.searchParams.get('title')).toContain('/v1/items/test-7716')
+    expect(issueUrl.searchParams.get('body')).toContain('/v1/items/test-7716: augment_slots')
     expect(issueUrl.searchParams.get('body')).toContain('**Site version:**')
     expect(issueUrl.searchParams.get('body')).toContain('**API base URL:**')
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
@@ -58,12 +68,12 @@ const twoSetCards = [
     name: 'pane',
     card: (
       <ResourceDetailPane
-        resourceInUrl={{ category: 'items', id: capturedTwoSetItem.id }}
+        resourceInUrl={{ category: 'items', slug: capturedTwoSetItem.slug }}
         pickerCategory="items"
       />
     ),
   },
-  { name: 'hover', card: <ItemHoverContent itemId={capturedTwoSetItem.id} /> },
+  { name: 'hover', card: <ItemHoverContent itemSlug={capturedTwoSetItem.slug} /> },
 ]
 
 it.each(twoSetCards)(
@@ -72,13 +82,13 @@ it.each(twoSetCards)(
     let hasSetFailure = true
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
       const path = new URL(String(request)).pathname
-      if (path === `/v1/sets/${capturedCaptainSet.id}` && hasSetFailure) {
+      if (path === `/v1/sets/${capturedCaptainSet.slug}` && hasSetFailure) {
         return Promise.resolve(new Response('Unavailable', { status: 500 }))
       }
       const responses: Record<string, unknown> = {
-        [`/v1/items/${capturedTwoSetItem.id}`]: capturedTwoSetItem,
-        [`/v1/sets/${capturedCaptainSet.id}`]: capturedCaptainSet,
-        [`/v1/sets/${capturedDevilSet.id}`]: capturedDevilSet,
+        [`/v1/items/${capturedTwoSetItem.slug}`]: capturedTwoSetItem,
+        [`/v1/sets/${capturedCaptainSet.slug}`]: capturedCaptainSet,
+        [`/v1/sets/${capturedDevilSet.slug}`]: capturedDevilSet,
       }
       return Promise.resolve(new Response(JSON.stringify(responses[path])))
     })
@@ -87,7 +97,7 @@ it.each(twoSetCards)(
     expect(await screen.findByRole('row', { name: /The Devil's Handiwork/ })).toBeInTheDocument()
     const report = screen.getByRole('link', { name: 'Report a bug' })
     expect(new URL(report.getAttribute('href')!).searchParams.get('title')).toContain(
-      `/v1/sets/${capturedCaptainSet.id}`,
+      `/v1/sets/${capturedCaptainSet.slug}`,
     )
     expect(screen.queryByRole('row', { name: /Captain's Set/ })).toBeNull()
     hasSetFailure = false
@@ -98,10 +108,10 @@ it.each(twoSetCards)(
       Array.from(container.querySelectorAll('.resources-set-name'), (name) => name.textContent),
     ).toEqual(capturedTwoSetItem.sets.map((set) => set.name))
     expect(fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual([
-      `/v1/items/${capturedTwoSetItem.id}`,
-      `/v1/sets/${capturedCaptainSet.id}`,
-      `/v1/sets/${capturedDevilSet.id}`,
-      `/v1/sets/${capturedCaptainSet.id}`,
+      `/v1/items/${capturedTwoSetItem.slug}`,
+      `/v1/sets/${capturedCaptainSet.slug}`,
+      `/v1/sets/${capturedDevilSet.slug}`,
+      `/v1/sets/${capturedCaptainSet.slug}`,
     ])
   },
 )
@@ -109,7 +119,7 @@ it.each(twoSetCards)(
 it('reports the first failed set in item order when both set requests fail', async () => {
   vi.spyOn(globalThis, 'fetch').mockImplementation((request) =>
     Promise.resolve(
-      new URL(String(request)).pathname === `/v1/items/${capturedTwoSetItem.id}`
+      new URL(String(request)).pathname === `/v1/items/${capturedTwoSetItem.slug}`
         ? new Response(JSON.stringify(capturedTwoSetItem))
         : new Response('Unavailable', { status: 500 }),
     ),
@@ -117,7 +127,7 @@ it('reports the first failed set in item order when both set requests fail', asy
   render(twoSetCards[0].card)
   const report = await screen.findByRole('link', { name: 'Report a bug' })
   expect(new URL(report.getAttribute('href')!).searchParams.get('title')).toContain(
-    `/v1/sets/${capturedTwoSetItem.sets[0].id}`,
+    `/v1/sets/${capturedTwoSetItem.sets[0].slug}`,
   )
   expect(screen.getAllByText('The game-data service had a problem.')).toHaveLength(1)
 })

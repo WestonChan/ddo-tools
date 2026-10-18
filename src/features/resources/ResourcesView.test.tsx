@@ -1,3 +1,5 @@
+import { slugFromPathSegment, type Slug } from '../../lib/api'
+import { apiFixture } from '../../test/apiFixture'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   act,
@@ -14,12 +16,14 @@ import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
 import type { Effect, Item, ItemAugmentSlot, ItemSummary } from './queries/items'
 import type { SetDetail } from './queries/sets'
-import capturedEffectsPage from './queries/fixtures/effects-page.json'
+import capturedEffectsPageResponse from './queries/fixtures/effects-page.json'
 import {
   resetResourceListSessionsForTests,
   setResourceListSession,
   useResourceListSession,
 } from './resourceListSessions'
+
+const capturedEffectsPage = apiFixture(capturedEffectsPageResponse)
 
 let mockRouteParams: Record<string, string> = { category: 'items' }
 const navigateMock = vi.fn()
@@ -31,7 +35,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 const ITEM_SUMMARIES: ItemSummary[] = [
   {
-    id: 42,
+    slug: slugFromPathSegment('test-42')!,
     name: 'Bloodstone',
     equipmentSlot: 'Trinket',
     category: 'Trinket',
@@ -44,7 +48,7 @@ const ITEM_SUMMARIES: ItemSummary[] = [
 ]
 
 const BLOODSTONE_ITEM: Item = {
-  id: 42,
+  slug: slugFromPathSegment('test-42')!,
   name: 'Bloodstone',
   equipmentSlot: 'Trinket',
   category: 'Trinket',
@@ -87,7 +91,7 @@ let itemPageQueryState: {
 let isItemDetailLoaded = true
 let itemEffects: Effect[] = []
 const STRENGTH_EFFECT: Effect = {
-  id: 1,
+  slug: slugFromPathSegment('test-1')!,
   name: 'Strength',
   verboseName: 'Strength +2',
   description: null,
@@ -109,9 +113,9 @@ vi.mock('./queries/useItems', () => ({
   isDetailQueryReady: () => true,
   isEffectReady: () => true,
   effectDetailQueryOptions: (path: string) => ({ queryKey: ['effects', 'detail', path] }),
-  setDetailQueryOptions: (id: number) => ({ queryKey: ['sets', 'detail', id] }),
-  questDetailQueryOptions: (id: number) => ({ queryKey: ['quests', 'detail', id] }),
-  sourceDetailQueryOptions: (kind: string, id: number) => ({ queryKey: ['sources', kind, id] }),
+  setDetailQueryOptions: (slug: Slug) => ({ queryKey: ['sets', 'detail', slug] }),
+  questDetailQueryOptions: (slug: Slug) => ({ queryKey: ['quests', 'detail', slug] }),
+  sourceDetailQueryOptions: (kind: string, slug: Slug) => ({ queryKey: ['sources', kind, slug] }),
   useItemPage: (...request: unknown[]) => {
     itemPageRequests(...request)
     return {
@@ -122,19 +126,19 @@ vi.mock('./queries/useItems', () => ({
       refetch: refetchMock,
     }
   },
-  useItem: (id: number | null) => {
-    const selectedItem = itemPageQueryState.data?.items.find((item) => item.id === id)
+  useItem: (slug: Slug | null) => {
+    const selectedItem = itemPageQueryState.data?.items.find((item) => item.slug === slug)
     return {
       data:
         selectedItem && isItemDetailLoaded
           ? {
               ...BLOODSTONE_ITEM,
-              id: selectedItem.id,
+              slug: selectedItem.slug,
               name: selectedItem.name,
               effects: itemEffects,
               augmentSlots: itemAugmentSlots,
               sets: stackedSet
-                ? [{ id: stackedSet.id, name: stackedSet.name, slug: 'test-set', icon: null }]
+                ? [{ slug: stackedSet.slug, name: stackedSet.name, icon: null }]
                 : [],
             }
           : undefined,
@@ -152,14 +156,14 @@ vi.mock('./queries/useItems', () => ({
   useEffectDetail: () => ({ data: undefined, isPending: false }),
   useRaidQuests: () => ({ data: [] }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
-  useSets: (ids: number[]) =>
-    ids.map((id) => ({
-      data: id === stackedSet?.id ? stackedSet : undefined,
+  useSets: (slugs: Slug[]) =>
+    slugs.map((slug) => ({
+      data: slug === stackedSet?.slug ? stackedSet : undefined,
       isPending: false,
       error: null,
     })),
-  useSet: (id: number | null) => ({
-    data: id === stackedSet?.id ? stackedSet : undefined,
+  useSet: (slug: Slug | null) => ({
+    data: slug === stackedSet?.slug ? stackedSet : undefined,
     isPending: false,
     error: null,
   }),
@@ -244,16 +248,16 @@ describe('resource list sessions', () => {
 
 const STACK_ITEMS = [
   ITEM_SUMMARIES[0],
-  { ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' },
-  { ...ITEM_SUMMARIES[0], id: 44, name: 'Moonstone' },
+  { ...ITEM_SUMMARIES[0], slug: slugFromPathSegment('test-43')!, name: 'Heartstone' },
+  { ...ITEM_SUMMARIES[0], slug: slugFromPathSegment('test-44')!, name: 'Moonstone' },
 ]
 
 function renderStackedResourcesView(): ReturnType<typeof render> {
   stackedSet = {
-    id: 93,
+    slug: slugFromPathSegment('test-93')!,
     name: 'Stone Set',
     items: STACK_ITEMS.map((item) => ({
-      id: item.id,
+      slug: item.slug,
       name: item.name,
       slot: item.equipmentSlot,
       minimumLevel: item.minimumLevel,
@@ -267,7 +271,7 @@ function renderStackedResourcesView(): ReturnType<typeof render> {
     error: null,
   }
   navigateMock.mockImplementation((navigation: { to: string }) => {
-    mockRouteParams = { category: 'items', id: navigation.to.split('/').at(-1) ?? '' }
+    mockRouteParams = { category: 'items', slug: navigation.to.split('/').at(-1) ?? '' }
   })
   return render(
     <HoverCardProvider>
@@ -321,7 +325,9 @@ describe('ResourcesView data gate', () => {
 describe('ResourcesView keyboard shortcuts', () => {
   it('closes a wide detail from a pane control and returns focus to its list row', async () => {
     navigateMock.mockImplementation(({ to }: { to: string }) => {
-      mockRouteParams = to.endsWith('/42') ? { category: 'items', id: '42' } : { category: 'items' }
+      mockRouteParams = to.endsWith('/test-42')
+        ? { category: 'items', slug: slugFromPathSegment('test-42')! }
+        : { category: 'items' }
     })
     const view = render(<ResourcesView />)
     await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
@@ -339,7 +345,9 @@ describe('ResourcesView keyboard shortcuts', () => {
   it('closes a detail from an enchantment row and returns focus to the open item', async () => {
     itemEffects = [STRENGTH_EFFECT]
     navigateMock.mockImplementation(({ to }: { to: string }) => {
-      mockRouteParams = to.endsWith('/42') ? { category: 'items', id: '42' } : { category: 'items' }
+      mockRouteParams = to.endsWith('/test-42')
+        ? { category: 'items', slug: slugFromPathSegment('test-42')! }
+        : { category: 'items' }
     })
     const view = render(<ResourcesView />)
     await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
@@ -376,7 +384,7 @@ describe('ResourcesView keyboard shortcuts', () => {
   })
 
   it('does not close the detail on Escape when focus sits outside the view', async () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     render(<ResourcesView />)
     ;(document.activeElement as HTMLElement | null)?.blur()
     expect(document.body).toHaveFocus()
@@ -391,19 +399,19 @@ describe('ResourcesView keyboard shortcuts', () => {
     try {
       navigateMock.mockImplementationOnce(({ to }: { to: string }) => {
         window.history.replaceState(null, '', to)
-        mockRouteParams = { category: 'items', id: to.split('/').at(-1) ?? '' }
+        mockRouteParams = { category: 'items', slug: to.split('/').at(-1) ?? '' }
       })
       const view = render(<ResourcesView />)
       const search = screen.getByRole('searchbox', { name: 'Search items' })
       act(() => search.focus())
       await userEvent.keyboard('{ArrowDown}{Enter}')
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-42' })
       view.rerender(<ResourcesView />)
       const itemsTab = screen.getByRole('tab', { name: 'Items' })
       act(() => itemsTab.focus())
       await userEvent.keyboard('{ArrowLeft}{ArrowRight}{Home}{End}')
       expect(itemsTab).toHaveFocus()
-      expect(window.location.pathname).toBe('/resources/items/42')
+      expect(window.location.pathname).toBe('/resources/items/test-42')
       expect(navigateMock).toHaveBeenCalledTimes(1)
       expect(screen.getByRole('region', { name: 'Item details' })).toBeInTheDocument()
     } finally {
@@ -418,7 +426,7 @@ describe('ResourcesView keyboard shortcuts', () => {
   })
 
   it('focuses the visible search input on "/" while a detail is selected', async () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: 'Search items' })
     await userEvent.keyboard('/')
@@ -430,7 +438,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
     try {
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       render(<ResourcesView />)
       expect(screen.queryByRole('searchbox')).toBeNull()
       const event = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true })
@@ -464,11 +472,11 @@ describe('ResourcesView keyboard shortcuts', () => {
       const search = screen.getByRole('searchbox', { name: 'Search items' })
       search.focus()
       await userEvent.keyboard('{ArrowDown}{Enter}')
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-42' })
       expect(search).not.toHaveFocus()
       expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
 
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       view.rerender(<ResourcesView />)
       expect(screen.queryByRole('searchbox')).toBeNull()
       expect(screen.getByRole('heading', { name: 'Bloodstone' })).toHaveFocus()
@@ -485,9 +493,9 @@ describe('ResourcesView keyboard shortcuts', () => {
       const search = screen.getByRole('searchbox', { name: 'Search items' })
       search.focus()
       await userEvent.keyboard('{ArrowDown}{Enter}')
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-42' })
 
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       view.rerender(<ResourcesView />)
       const title = screen.getByRole('heading', { name: 'Bloodstone' })
       expect(title).toHaveFocus()
@@ -504,7 +512,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     try {
       const view = render(<ResourcesView />)
       await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       view.rerender(<ResourcesView />)
       expect(screen.getByRole('heading', { name: 'Bloodstone' })).toHaveFocus()
     } finally {
@@ -516,7 +524,7 @@ describe('ResourcesView keyboard shortcuts', () => {
     isItemDetailLoaded = false
     const view = render(<ResourcesView />)
     await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     view.rerender(<ResourcesView />)
     expect(screen.queryByRole('heading', { name: 'Bloodstone' })).toBeNull()
 
@@ -536,7 +544,7 @@ describe('ResourcesView keyboard shortcuts', () => {
   })
 
   it('keeps focus on a row on Escape without closing the selected detail', async () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     render(<ResourcesView />)
     const input = screen.getByRole('searchbox', { name: 'Search items' })
     await userEvent.click(input)
@@ -588,7 +596,7 @@ describe('ResourcesView detail pane', () => {
 
   it('cancels a keyboard column move in the pane ledger without closing the detail', async () => {
     itemEffects = [STRENGTH_EFFECT]
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     render(<ResourcesView />)
     const pane = screen.getByRole('region', { name: 'Item details' })
     const headers = within(pane)
@@ -641,7 +649,7 @@ describe('ResourcesView detail pane', () => {
     itemAugmentSlots = [
       { sortOrder: 0, label: 'red', family: 'standard', qualifier: null, options: [] },
     ]
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     render(<ResourcesView />)
     const slotButton = screen.getByRole('button', { name: 'Red slot' })
     await userEvent.click(slotButton)
@@ -677,7 +685,7 @@ describe('ResourcesView detail pane', () => {
       mockRouteParams = { category: 'items' }
     })
     navigateMock.mockImplementation(({ to }: { to: string }) => {
-      mockRouteParams = { category: 'items', id: to.split('/').at(-1) ?? '' }
+      mockRouteParams = { category: 'items', slug: to.split('/').at(-1) ?? '' }
     })
     try {
       const view = render(<ResourcesView />)
@@ -700,12 +708,17 @@ describe('ResourcesView detail pane', () => {
 
   it('focuses the first loaded list row when the closed item is absent', async () => {
     itemPageQueryState = {
-      data: { total: 1, items: [{ ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' }] },
+      data: {
+        total: 1,
+        items: [
+          { ...ITEM_SUMMARIES[0], slug: slugFromPathSegment('test-43')!, name: 'Heartstone' },
+        ],
+      },
       isPending: false,
       isFetching: false,
       error: null,
     }
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     navigateMock.mockImplementation(() => {
       mockRouteParams = { category: 'items' }
     })
@@ -726,7 +739,7 @@ describe('ResourcesView detail pane', () => {
       isFetching: false,
       error: null,
     }
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     navigateMock.mockImplementation(() => {
       mockRouteParams = { category: 'items' }
     })
@@ -742,7 +755,7 @@ describe('ResourcesView detail pane', () => {
   it('replaces a narrow deep link when Escape closes its detail', async () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => {})
     try {
       render(<ResourcesView />)
@@ -803,7 +816,10 @@ describe('ResourcesView detail pane', () => {
       expect(within(breadcrumb).getByText('Bloodstone')).toBeInTheDocument()
       expect(within(breadcrumb).queryByText('Heartstone')).toBeNull()
       expect(screen.queryByRole('button', { name: 'Back one level' })).toBeNull()
-      expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items/42', replace: true })
+      expect(navigateMock).toHaveBeenLastCalledWith({
+        to: '/resources/items/test-42',
+        replace: true,
+      })
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
     }
@@ -841,7 +857,10 @@ describe('ResourcesView detail pane', () => {
       expect(within(breadcrumb).getByText('Moonstone')).toBeInTheDocument()
       expect(within(breadcrumb).queryByText('Bloodstone')).toBeNull()
       expect(within(breadcrumb).queryByText('Heartstone')).toBeNull()
-      expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items/44', replace: true })
+      expect(navigateMock).toHaveBeenLastCalledWith({
+        to: '/resources/items/test-44',
+        replace: true,
+      })
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
     }
@@ -869,8 +888,8 @@ describe('ResourcesView detail pane', () => {
     )
     const items = [
       ITEM_SUMMARIES[0],
-      { ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' },
-      { ...ITEM_SUMMARIES[0], id: 44, name: 'Moonstone' },
+      { ...ITEM_SUMMARIES[0], slug: slugFromPathSegment('test-43')!, name: 'Heartstone' },
+      { ...ITEM_SUMMARIES[0], slug: slugFromPathSegment('test-44')!, name: 'Moonstone' },
     ]
     itemPageQueryState = {
       data: { total: items.length, items },
@@ -881,7 +900,7 @@ describe('ResourcesView detail pane', () => {
     navigateMock.mockImplementation((navigation: { to: string } & Record<string, unknown>) => {
       if (navigation.replace === true) visitedPaths[visitedPaths.length - 1] = navigation.to
       else visitedPaths.push(navigation.to)
-      mockRouteParams = { category: 'items', id: navigation.to.split('/').at(-1) ?? '' }
+      mockRouteParams = { category: 'items', slug: navigation.to.split('/').at(-1) ?? '' }
     })
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => {
       visitedPaths.pop()
@@ -895,11 +914,11 @@ describe('ResourcesView detail pane', () => {
         expect(screen.getByRole('heading', { name: item.name })).toHaveFocus()
       }
       expect(navigateMock.mock.calls.map(([options]) => options)).toEqual([
-        { to: '/resources/items/42' },
-        { to: '/resources/items/43', replace: true },
-        { to: '/resources/items/44', replace: true },
+        { to: '/resources/items/test-42' },
+        { to: '/resources/items/test-43', replace: true },
+        { to: '/resources/items/test-44', replace: true },
       ])
-      expect(visitedPaths).toEqual(['/resources/items', '/resources/items/44'])
+      expect(visitedPaths).toEqual(['/resources/items', '/resources/items/test-44'])
 
       act(() =>
         onResize?.([{ contentRect: { width: 375 } } as ResizeObserverEntry], {} as ResizeObserver),
@@ -941,19 +960,22 @@ describe('ResourcesView detail pane', () => {
     itemPageQueryState = {
       data: {
         total: 2,
-        items: [ITEM_SUMMARIES[0], { ...ITEM_SUMMARIES[0], id: 43, name: 'Heartstone' }],
+        items: [
+          ITEM_SUMMARIES[0],
+          { ...ITEM_SUMMARIES[0], slug: slugFromPathSegment('test-43')!, name: 'Heartstone' },
+        ],
       },
       isPending: false,
       isFetching: false,
       error: null,
     }
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => {})
     try {
       const view = render(<ResourcesView />)
       await userEvent.click(screen.getByRole('row', { name: /Heartstone/ }))
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/43', replace: true })
-      mockRouteParams = { category: 'items', id: '43' }
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-43', replace: true })
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-43')! }
       view.rerender(<ResourcesView />)
       act(() =>
         onResize?.([{ contentRect: { width: 375 } } as ResizeObserverEntry], {} as ResizeObserver),
@@ -983,9 +1005,9 @@ describe('ResourcesView detail pane', () => {
         expect(listBody.scrollTop).toBe(120)
       }
       await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
-      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/42' })
+      expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items/test-42' })
 
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       view.rerender(<ResourcesView />)
       expect(screen.queryByRole('searchbox')).toBeNull()
       expect(screen.getByRole('region', { name: 'Item details' })).toBeInTheDocument()
@@ -1008,7 +1030,7 @@ describe('ResourcesView detail pane', () => {
     try {
       const view = render(<ResourcesView />)
       await userEvent.click(screen.getByRole('row', { name: /Bloodstone/ }))
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       view.rerender(<ResourcesView />)
       await userEvent.click(screen.getByRole('button', { name: 'Back to items' }))
       expect(back).toHaveBeenCalledOnce()
@@ -1054,7 +1076,7 @@ describe('ResourcesView detail pane', () => {
       },
     )
     try {
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       const view = render(<ResourcesView />)
       const body = view.container.querySelector<HTMLElement>('.resources-body')!
       expect(body.style.getPropertyValue('--resources-column-min-width')).toBe('480px')
@@ -1076,7 +1098,7 @@ describe('ResourcesView detail pane', () => {
     const previousWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 375 })
     try {
-      mockRouteParams = { category: 'items', id: '42' }
+      mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
       render(<ResourcesView />)
       expect(screen.queryByRole('searchbox')).toBeNull()
       await userEvent.click(screen.getByRole('button', { name: 'Back to items' }))
@@ -1087,7 +1109,7 @@ describe('ResourcesView detail pane', () => {
   })
 
   it('renders one detail card within the pane', () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     const { container } = render(<ResourcesView />)
     expect(container.querySelectorAll('.resources-detail-pane .detail-card')).toHaveLength(1)
     expect(container.querySelector('.resources-detail-pane .detail-card')).toHaveClass(
@@ -1096,7 +1118,7 @@ describe('ResourcesView detail pane', () => {
   })
 
   it('renders the selected item in a labelled pane without a modal', () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     render(<ResourcesView />)
     expect(screen.getByRole('region', { name: 'Item details' })).toContainElement(
       screen.getByRole('heading', { name: 'Bloodstone' }),
@@ -1106,7 +1128,7 @@ describe('ResourcesView detail pane', () => {
   })
 
   it('closes the pane from the breadcrumb', async () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     render(<ResourcesView />)
 
     await userEvent.click(screen.getByRole('button', { name: 'Back to items' }))
@@ -1115,7 +1137,7 @@ describe('ResourcesView detail pane', () => {
   })
 
   it('keeps the picker interactive while the pane is open', () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     const { container } = render(<ResourcesView />)
     expect(container.querySelector('.resources-picker')).not.toHaveAttribute('inert')
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeVisible()
@@ -1129,7 +1151,7 @@ describe('ResourcesView detail pane', () => {
   })
 
   it('returns focus to the selected row when the URL closes', () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     const view = render(<ResourcesView />)
     mockRouteParams = { category: 'items' }
     view.rerender(<ResourcesView />)
@@ -1137,7 +1159,7 @@ describe('ResourcesView detail pane', () => {
   })
 
   it('scrolls a stacked pane into view only after its detail card renders', () => {
-    mockRouteParams = { category: 'items', id: '42' }
+    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
     isItemDetailLoaded = false
     const scrollIntoView = vi.fn()
     const previousScrollIntoView = HTMLElement.prototype.scrollIntoView

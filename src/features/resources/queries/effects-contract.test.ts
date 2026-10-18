@@ -1,3 +1,5 @@
+import { slugFromPathSegment } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { ApiAugmentDetail, ApiItemDetail, ApiSetDetail } from '../../../lib/api'
 import {
@@ -7,14 +9,14 @@ import {
   multiValueFilterParameters,
   statBonusFilterValue,
 } from '../../../lib/api'
-import itemResponse from './fixtures/item-stolen-necklace-level-25.json'
-import augmentResponse from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
-import setResponse from './fixtures/set-devoted-heart.json'
-import effectPage from './fixtures/effects-page.json'
-import effectDetail from './fixtures/effect-strength.json'
-import groupPage from './fixtures/effects-page-groups.json'
-import groupDetail from './fixtures/effect-charisma-skills.json'
-import groupItem from './fixtures/item-absolute-judgement.json'
+import itemResponseResponse from './fixtures/item-stolen-necklace-level-25.json'
+import augmentResponseResponse from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
+import setResponseResponse from './fixtures/set-devoted-heart.json'
+import effectPageResponse from './fixtures/effects-page.json'
+import effectDetailResponse from './fixtures/effect-strength.json'
+import groupPageResponse from './fixtures/effects-page-groups.json'
+import groupDetailResponse from './fixtures/effect-charisma-skills.json'
+import groupItemResponse from './fixtures/item-absolute-judgement.json'
 import {
   fetchAugment,
   fetchEffectDetail,
@@ -25,6 +27,15 @@ import {
 } from './items'
 import { fetchSet, toSetDetail } from './sets'
 
+const itemResponse = apiFixture(itemResponseResponse)
+const augmentResponse = apiFixture(augmentResponseResponse)
+const setResponse = apiFixture(setResponseResponse)
+const effectPage = apiFixture(effectPageResponse)
+const effectDetail = apiFixture(effectDetailResponse)
+const groupPage = apiFixture(groupPageResponse)
+const groupDetail = apiFixture(groupDetailResponse)
+const groupItem = apiFixture(groupItemResponse)
+
 afterEach(() => vi.unstubAllGlobals())
 
 it('maps captured owner effects with their provenance and damage', () => {
@@ -32,7 +43,7 @@ it('maps captured owner effects with their provenance and damage', () => {
   const augment = toAugmentDetail(augmentResponse as ApiAugmentDetail)
   const set = toSetDetail(setResponse as ApiSetDetail)
   expect(item.effects[0]).toMatchObject({
-    id: itemResponse.effects[0].effect_id,
+    slug: itemResponse.effects[0].effect_slug,
     name: 'Charisma',
     verboseName: 'Charisma +8',
     tier: null,
@@ -56,7 +67,7 @@ it('guards required provenance, damage, tiers and unified vocabulary paths', () 
   expect(isApiEffect(effect)).toBe(true)
   expect(
     isApiEffect({
-      effect_id: 4,
+      effect_slug: slugFromPathSegment('test-4')!,
       name: 'Text only',
       verbose_name: 'Text only',
       bonuses: [],
@@ -74,7 +85,7 @@ it('guards required provenance, damage, tiers and unified vocabulary paths', () 
   expect(isApiEffect({ ...effect, tier: { group: 'Riposte', rank: 2 } })).toBe(true)
   expect(isApiEffectVocabularyRow(effectPage.effects[0])).toBe(true)
   expect(isApiEffectVocabularyRow(effectPage.effects[1])).toBe(true)
-  expect(isApiEffectVocabularyRow({ ...effectPage.effects[0], detail_path: '/v1/stats/87' })).toBe(
+  expect(isApiEffectVocabularyRow({ ...effectPage.effects[0], slug: '/v1/stats/test-87' })).toBe(
     false,
   )
 })
@@ -125,15 +136,17 @@ it('guards both effect kinds and partial nested detail responses', () => {
 it('accepts captured group bonuses, group vocabulary and per-link carriers', () => {
   const groupEffect = groupItem.effects.find((effect) => effect.name === 'Command')
   expect(isApiEffect(groupEffect)).toBe(true)
-  expect(groupEffect?.bonuses[0].group).toEqual({
-    id: groupDetail.id,
-    slug: 'charisma-skills',
+  expect(groupEffect?.bonuses[0].group).toMatchObject({
+    slug: groupDetail.slug,
+
     name: 'Charisma Skills',
   })
   expect(
     isApiEffect({
       ...groupEffect,
-      bonuses: [{ ...groupEffect?.bonuses[0], group: { id: 'bad', name: 'Charisma Skills' } }],
+      bonuses: [
+        { ...groupEffect?.bonuses[0], group: { slug: 'Bad Slug', name: 'Charisma Skills' } },
+      ],
     }),
   ).toBe(false)
   expect(isApiEffectVocabularyRow(groupPage.effects[0])).toBe(true)
@@ -165,19 +178,19 @@ it('accepts captured group bonuses, group vocabulary and per-link carriers', () 
 it.each([
   {
     name: 'item detail',
-    fetchCurrent: () => fetchItem(itemResponse.id),
+    fetchCurrent: () => fetchItem(itemResponse.slug),
     stale: { ...itemResponse, effects: undefined },
     current: itemResponse,
   },
   {
     name: 'augment detail',
-    fetchCurrent: () => fetchAugment(augmentResponse.id),
+    fetchCurrent: () => fetchAugment(augmentResponse.slug),
     stale: { ...augmentResponse, effects: undefined },
     current: augmentResponse,
   },
   {
     name: 'set detail',
-    fetchCurrent: () => fetchSet(setResponse.id),
+    fetchCurrent: () => fetchSet(setResponse.slug),
     stale: { ...setResponse, tiers: [{ ...setResponse.tiers[0], effects: undefined }] },
     current: setResponse,
   },
@@ -192,7 +205,7 @@ it.each([
   },
   {
     name: 'effect detail',
-    fetchCurrent: () => fetchEffectDetail('/v1/effects/1'),
+    fetchCurrent: () => fetchEffectDetail(slugFromPathSegment('test-1')!),
     stale: { ...effectDetail, verbose_name_template: undefined },
     current: effectDetail,
   },
@@ -214,14 +227,14 @@ it.each([
 it('does not reload a current item response and stops after two stale ones', async () => {
   const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(itemResponse)))
   vi.stubGlobal('fetch', fetchMock)
-  await expect(fetchItem(itemResponse.id)).resolves.toBeDefined()
+  await expect(fetchItem(itemResponse.slug)).resolves.toBeDefined()
   expect(fetchMock).toHaveBeenCalledTimes(1)
   fetchMock
     .mockClear()
     .mockImplementation(() =>
       Promise.resolve(new Response(JSON.stringify({ ...itemResponse, effects: undefined }))),
     )
-  await expect(fetchItem(itemResponse.id)).rejects.toMatchObject({ kind: 'api-response' })
+  await expect(fetchItem(itemResponse.slug)).rejects.toMatchObject({ kind: 'api-response' })
   expect(fetchMock).toHaveBeenCalledTimes(2)
   expect(fetchMock.mock.calls[1][1]).toHaveProperty('cache', 'reload')
 })
@@ -229,34 +242,39 @@ it('does not reload a current item response and stops after two stale ones', asy
 it('fetches both kinds through /v1/effects and rejects malformed owner effects', async () => {
   const responses: Record<string, unknown> = {
     '/v1/effects': effectPage,
-    '/v1/effects/1': effectDetail,
-    '/v1/effects/2': { ...effectDetail, id: 2, kind: 'effect', name: 'Riposte' },
-    '/v1/effects/338': groupDetail,
-    [`/v1/items/${itemResponse.id}`]: itemResponse,
-    [`/v1/augments/${augmentResponse.id}`]: augmentResponse,
-    [`/v1/sets/${setResponse.id}`]: setResponse,
+    '/v1/effects/test-1': effectDetail,
+    '/v1/effects/test-2': {
+      ...effectDetail,
+      slug: slugFromPathSegment('test-2')!,
+      kind: 'effect',
+      name: 'Riposte',
+    },
+    '/v1/effects/test-338': groupDetail,
+    [`/v1/items/${itemResponse.slug}`]: itemResponse,
+    [`/v1/augments/${augmentResponse.slug}`]: augmentResponse,
+    [`/v1/sets/${setResponse.slug}`]: setResponse,
   }
   const fetchMock = vi.fn((request: string) =>
     Promise.resolve(new Response(JSON.stringify(responses[new URL(request).pathname]))),
   )
   vi.stubGlobal('fetch', fetchMock)
-  expect((await fetchItem(itemResponse.id)).effects[0].verboseName).toBe(
+  expect((await fetchItem(itemResponse.slug)).effects[0].verboseName).toBe(
     itemResponse.effects[0].verbose_name,
   )
-  expect((await fetchAugment(augmentResponse.id)).effects[0].verboseName).toBe(
+  expect((await fetchAugment(augmentResponse.slug)).effects[0].verboseName).toBe(
     augmentResponse.effects[0].verbose_name,
   )
-  expect((await fetchSet(setResponse.id)).tiers[0].effects).toHaveLength(1)
+  expect((await fetchSet(setResponse.slug)).tiers[0].effects).toHaveLength(1)
   expect((await fetchEffectVocabulary('acid')).rows.map((row) => row.kind)).toEqual([
     'stat',
     'stat',
     'stat',
   ])
-  expect((await fetchEffectDetail('/v1/effects/1')).kind).toBe('stat')
-  expect((await fetchEffectDetail('/v1/effects/2')).kind).toBe('effect')
-  expect((await fetchEffectDetail('/v1/effects/338')).kind).toBe('group')
+  expect((await fetchEffectDetail(slugFromPathSegment('test-1')!)).kind).toBe('stat')
+  expect((await fetchEffectDetail(slugFromPathSegment('test-2')!)).kind).toBe('effect')
+  expect((await fetchEffectDetail(slugFromPathSegment('test-338')!)).kind).toBe('group')
   for (const [request] of fetchMock.mock.calls.filter(([request]) =>
-    /\/v1\/effects\/\d+$/.test(new URL(String(request)).pathname),
+    /\/v1\/effects\/[^/]+$/.test(new URL(String(request)).pathname),
   )) {
     const parameters = new URL(String(request)).searchParams
     expect(Object.fromEntries(parameters)).toEqual({
@@ -265,19 +283,18 @@ it('fetches both kinds through /v1/effects and rejects malformed owner effects',
       set_tiers_limit: '0',
     })
   }
-  await expect(fetchEffectDetail('/v1/stats/1')).rejects.toMatchObject({ kind: 'api-response' })
   expect(new URL(String(fetchMock.mock.calls[3][0])).searchParams.get('q')).toBe('acid')
-  responses[`/v1/items/${itemResponse.id}`] = {
+  responses[`/v1/items/${itemResponse.slug}`] = {
     ...itemResponse,
     effects: [{ ...itemResponse.effects[0], bonuses: undefined }],
   }
-  await expect(fetchItem(itemResponse.id)).rejects.toMatchObject({ kind: 'api-response' })
-  responses[`/v1/items/${itemResponse.id}`] = null
-  await expect(fetchItem(itemResponse.id)).rejects.toMatchObject({ kind: 'api-response' })
-  responses[`/v1/augments/${augmentResponse.id}`] = null
-  await expect(fetchAugment(augmentResponse.id)).rejects.toMatchObject({ kind: 'api-response' })
-  responses[`/v1/sets/${setResponse.id}`] = { ...setResponse, tiers: undefined }
-  await expect(fetchSet(setResponse.id)).rejects.toMatchObject({ kind: 'api-response' })
+  await expect(fetchItem(itemResponse.slug)).rejects.toMatchObject({ kind: 'api-response' })
+  responses[`/v1/items/${itemResponse.slug}`] = null
+  await expect(fetchItem(itemResponse.slug)).rejects.toMatchObject({ kind: 'api-response' })
+  responses[`/v1/augments/${augmentResponse.slug}`] = null
+  await expect(fetchAugment(augmentResponse.slug)).rejects.toMatchObject({ kind: 'api-response' })
+  responses[`/v1/sets/${setResponse.slug}`] = { ...setResponse, tiers: undefined }
+  await expect(fetchSet(setResponse.slug)).rejects.toMatchObject({ kind: 'api-response' })
 })
 
 it('builds repeated bonus keys and type selection without a match flag in Any mode', () => {
@@ -306,6 +323,6 @@ it('builds repeated bonus keys and type selection without a match flag in Any mo
 it('accepts set tier carriers without a nested row identity', () => {
   const detail = structuredClone(effectDetail)
   expect(detail.set_tiers.set_tiers.length).toBeGreaterThan(0)
-  for (const tier of detail.set_tiers.set_tiers) Reflect.deleteProperty(tier, 'id')
+  for (const tier of detail.set_tiers.set_tiers) Reflect.deleteProperty(tier, 'slug')
   expect(isApiEffectDetail(detail)).toBe(true)
 })

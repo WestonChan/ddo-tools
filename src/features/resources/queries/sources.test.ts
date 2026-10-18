@@ -1,10 +1,12 @@
+import { slugFromPathSegment } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import adventurePack from './fixtures/adventure-pack-magic-of-myth-drannor.json'
-import questChain from './fixtures/quest-chain-the-lost-seekers.json'
-import saga from './fixtures/saga-the-haunting-of-saltmarsh.json'
-import craftingSystem from './fixtures/crafting-system-slave-lords-crafting.json'
-import vendor from '../../../test/fixtures/vendor-morten-edgewright.json'
-import event from './fixtures/event-treasure-of-crystal-cove.json'
+import adventurePackResponse from './fixtures/adventure-pack-magic-of-myth-drannor.json'
+import questChainResponse from './fixtures/quest-chain-the-lost-seekers.json'
+import sagaResponse from './fixtures/saga-the-haunting-of-saltmarsh.json'
+import craftingSystemResponse from './fixtures/crafting-system-slave-lords-crafting.json'
+import vendorResponse from '../../../test/fixtures/vendor-morten-edgewright.json'
+import eventResponse from './fixtures/event-treasure-of-crystal-cove.json'
 import {
   toAdventurePack,
   toQuestChain,
@@ -20,6 +22,13 @@ import {
   fetchEvent,
 } from './sources'
 
+const adventurePack = apiFixture(adventurePackResponse)
+const questChain = apiFixture(questChainResponse)
+const saga = apiFixture(sagaResponse)
+const craftingSystem = apiFixture(craftingSystemResponse)
+const vendor = apiFixture(vendorResponse)
+const event = apiFixture(eventResponse)
+
 afterEach(() => vi.restoreAllMocks())
 
 describe('captured source detail responses', () => {
@@ -27,9 +36,9 @@ describe('captured source detail responses', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ ...adventurePack, items: null })),
     )
-    await expect(fetchAdventurePack(3)).rejects.toMatchObject({
+    await expect(fetchAdventurePack(slugFromPathSegment('test-3')!)).rejects.toMatchObject({
       kind: 'api-response',
-      message: expect.stringContaining('/v1/adventure-packs/3: items'),
+      message: expect.stringContaining('/v1/adventure-packs/test-3: items'),
     })
   })
   it('maps a pack and its yielded items', () => {
@@ -40,7 +49,7 @@ describe('captured source detail responses', () => {
       isFreeToPlay: false,
     })
     expect(pack.items[0]).toMatchObject({
-      id: adventurePack.items[0].id,
+      slug: adventurePack.items[0].slug,
       name: 'Bastard Sword of the Fallen Age',
       slot: 'Main Hand',
       minimumLevel: 13,
@@ -54,12 +63,12 @@ describe('captured source detail responses', () => {
     const chain = toQuestChain(questChain)
     expect(chain).toMatchObject({ kind: 'questChain', name: 'The Lost Seekers' })
     expect(chain.quests[0]).toEqual({
-      id: questChain.quests[0].id,
+      slug: questChain.quests[0].slug,
       name: "The Kobold's Den: Clan Gnashtooth",
       level: 3,
     })
     expect(chain.items[0]).toMatchObject({
-      id: questChain.rewards[0].id,
+      slug: questChain.rewards[0].slug,
       name: "Acrobat's Ring",
       slot: 'Ring',
     })
@@ -74,12 +83,12 @@ describe('captured source detail responses', () => {
       pack: 'Sinister Secret of Saltmarsh',
     })
     expect(mappedSaga.quests[0]).toEqual({
-      id: saga.quests[0].id,
+      slug: saga.quests[0].slug,
       name: 'Back to Basics',
       level: 3,
     })
     expect(mappedSaga.items[0]).toMatchObject({
-      id: saga.rewards[0].id,
+      slug: saga.rewards[0].slug,
       name: 'Black Pearl Ring',
       slot: 'Ring',
     })
@@ -115,7 +124,7 @@ describe('captured source detail responses', () => {
       location: 'The Keep on the Borderlands',
     })
     expect(mappedVendor.items[0]).toMatchObject({
-      id: vendor.items[0].id,
+      slug: vendor.items[0].slug,
       name: 'Epic Ethereal Bastard Sword',
       slot: 'Main Hand',
       price: [{ ingredient: 'Epic Ethereal Ingot', quantity: 1 }],
@@ -127,7 +136,7 @@ describe('captured source detail responses', () => {
     const mappedEvent = toEvent(event)
     expect(mappedEvent).toMatchObject({ kind: 'event', name: 'Treasure of Crystal Cove' })
     expect(mappedEvent.items[0]).toMatchObject({
-      id: event.items[0].id,
+      slug: event.items[0].slug,
       name: "Admiral's Tricorne",
       slot: 'Head',
     })
@@ -136,24 +145,29 @@ describe('captured source detail responses', () => {
 })
 
 it.each([
-  [fetchAdventurePack, `/v1/adventure-packs/${adventurePack.id}`, adventurePack, adventurePack.id],
-  [fetchQuestChain, `/v1/quest-chains/${questChain.id}`, questChain, questChain.id],
-  [fetchSaga, `/v1/sagas/${saga.id}`, saga, saga.id],
+  [
+    fetchAdventurePack,
+    `/v1/adventure-packs/${adventurePack.slug}`,
+    adventurePack,
+    adventurePack.slug,
+  ],
+  [fetchQuestChain, `/v1/quest-chains/${questChain.slug}`, questChain, questChain.slug],
+  [fetchSaga, `/v1/sagas/${saga.slug}`, saga, saga.slug],
   [
     fetchCraftingSystem,
-    `/v1/crafting-systems/${craftingSystem.id}`,
+    `/v1/crafting-systems/${craftingSystem.slug}`,
     craftingSystem,
-    craftingSystem.id,
+    craftingSystem.slug,
   ],
-  [fetchVendor, `/v1/vendors/${vendor.id}`, vendor, vendor.id],
-  [fetchEvent, `/v1/events/${event.id}`, event, event.id],
-] as const)('fetches and maps %s by id', async (fetchSource, path, response, id) => {
+  [fetchVendor, `/v1/vendors/${vendor.slug}`, vendor, vendor.slug],
+  [fetchEvent, `/v1/events/${event.slug}`, event, event.slug],
+] as const)('fetches and maps %s by slug', async (fetchSource, path, response, slug) => {
   const fetchMock = vi
     .spyOn(globalThis, 'fetch')
     .mockResolvedValue(new Response(JSON.stringify(response), { status: 200 }))
-  const source = await fetchSource(id)
+  const source = await fetchSource(slug)
   expect(new URL(String(fetchMock.mock.calls[0][0])).pathname).toBe(path)
-  expect(source.id).toBe(id)
+  expect(source.slug).toBe(slug)
 })
 
 it('maps every Dragon Keeper ingredient in source order', () => {

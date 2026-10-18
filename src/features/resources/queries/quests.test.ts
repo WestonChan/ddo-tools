@@ -1,21 +1,22 @@
+import { slugFromPathSegment } from '../../../lib/api'
 import { expect, it, vi } from 'vitest'
 import { fetchQuest, toQuestDetail } from './quests'
 
 it('reports a missing quest item list with its path and field', async () => {
   vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-    new Response(JSON.stringify({ id: 7, name: 'The Storm' })),
+    new Response(JSON.stringify({ slug: slugFromPathSegment('test-7')!, name: 'The Storm' })),
   )
-  await expect(fetchQuest(7)).rejects.toMatchObject({
+  await expect(fetchQuest(slugFromPathSegment('test-7')!)).rejects.toMatchObject({
     kind: 'api-response',
-    message: expect.stringContaining('/v1/quests/7: items'),
+    message: expect.stringContaining('/v1/quests/test-7: items'),
   })
   vi.restoreAllMocks()
 })
 
 it('maps quest loot to the resource domain shape', () => {
   const quest = toQuestDetail({
-    slug: 'the-storm',
-    id: 7,
+    slug: slugFromPathSegment('the-storm')!,
+
     name: 'The Storm',
     pack: 'Storm Pack',
     is_raid: true,
@@ -24,9 +25,9 @@ it('maps quest loot to the resource domain shape', () => {
     patron: 'House Storm',
     items: [
       {
-        id: 11,
+        slug: slugFromPathSegment('test-11')!,
         name: 'Storm Blade',
-        slug: 'storm-blade',
+
         slot: 'Main Hand',
         minimum_level: 20,
         loot_type: 'chest',
@@ -40,7 +41,7 @@ it('maps quest loot to the resource domain shape', () => {
   expect(quest.epicLevel).toBe(30)
   expect(quest.patron).toBe('House Storm')
   expect(quest.items[0]).toEqual({
-    id: 11,
+    slug: slugFromPathSegment('test-11')!,
     name: 'Storm Blade',
     slot: 'Main Hand',
     minimumLevel: 20,

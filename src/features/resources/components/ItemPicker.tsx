@@ -1,3 +1,4 @@
+import type { Slug } from '../../../lib/api'
 import {
   useCallback,
   useEffect,
@@ -54,11 +55,11 @@ import { BonusHoverCard } from './detail/BonusDetailCard'
 
 interface ItemPickerProps {
   category: 'items'
-  selectedItemId: number | null
+  selectedItemSlug: Slug | null
   searchInputRef?: RefObject<HTMLInputElement | null>
-  onOpenItemFromHover?: (id: number, name: string) => void
-  onOpenItem?: (id: number) => void
-  rowToFocusId?: number | null
+  onOpenItemFromHover?: (slug: Slug, name: string) => void
+  onOpenItem?: (slug: Slug) => void
+  rowToFocusSlug?: Slug | null
   onRowFocused?: () => void
 }
 const EMPTY_NAMES: string[] = []
@@ -183,11 +184,11 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
 
 export function ItemPicker({
   category,
-  selectedItemId,
+  selectedItemSlug,
   searchInputRef,
   onOpenItemFromHover,
   onOpenItem,
-  rowToFocusId = null,
+  rowToFocusSlug = null,
   onRowFocused,
 }: ItemPickerProps): JSX.Element {
   const navigate = useNavigate()
@@ -340,7 +341,7 @@ export function ItemPicker({
   const rejectedFilterLabel =
     rejectedFilter === 'bonuses' ? 'Bonuses' : rejectedFilter === 'set' ? 'Set' : null
   const rowAt = useCallback((index: number) => itemsToShow[index], [itemsToShow])
-  const rowKey = useCallback((item: ItemSummary) => item.id, [])
+  const rowKey = useCallback((item: ItemSummary) => item.slug, [])
   const pageQueryKey = JSON.stringify([
     filters,
     activeSearchQuery,
@@ -365,17 +366,17 @@ export function ItemPicker({
   }, [itemPageQuery, pageQueryKey, itemsToShow.length])
   const openItemDetail = useCallback(
     (item: ItemSummary) => {
-      if (onOpenItem) onOpenItem(item.id)
-      else void navigate({ to: '/resources/' + category + '/' + item.id })
+      if (onOpenItem) onOpenItem(item.slug)
+      else void navigate({ to: '/resources/' + category + '/' + item.slug })
     },
     [navigate, category, onOpenItem],
   )
 
   useEffect(() => {
-    if (rowToFocusId === null) return
+    if (rowToFocusSlug === null) return
     const picker = pickerRootRef.current
     if (!picker) return
-    const returnedItemIndex = itemsToShow.findIndex((item) => item.id === rowToFocusId)
+    const returnedItemIndex = itemsToShow.findIndex((item) => item.slug === rowToFocusSlug)
     const itemToFocus = itemsToShow[returnedItemIndex < 0 ? 0 : returnedItemIndex]
     if (!itemToFocus) {
       if (!itemPageQuery.isPending) {
@@ -385,7 +386,7 @@ export function ItemPicker({
       return
     }
     const focusReturnedRow = (): boolean => {
-      const row = picker.querySelector<HTMLElement>(`[data-row-key="${itemToFocus.id}"]`)
+      const row = picker.querySelector<HTMLElement>(`[data-row-key="${itemToFocus.slug}"]`)
       if (!row) return false
       row.scrollIntoView?.({ block: 'nearest' })
       row.focus()
@@ -403,7 +404,7 @@ export function ItemPicker({
     })
     observer.observe(picker, { childList: true, subtree: true })
     return () => observer.disconnect()
-  }, [rowToFocusId, onRowFocused, itemsToShow, itemPageQuery.isPending, effectiveSearchInputRef])
+  }, [rowToFocusSlug, onRowFocused, itemsToShow, itemPageQuery.isPending, effectiveSearchInputRef])
 
   function clearAll(): void {
     onFiltersChange(EMPTY_ITEM_FILTERS)
@@ -481,18 +482,18 @@ export function ItemPicker({
           if (key === 'set') setSetVocabularySearchQuery(query)
         }}
         renderPickerHover={(key, option) =>
-          key === 'bonuses' && option.detailPath ? (
-            <BonusHoverCard detailPath={option.detailPath} />
+          key === 'bonuses' && option.detailSlug ? (
+            <BonusHoverCard detailSlug={option.detailSlug} />
           ) : null
         }
         prefetchPickerHover={(key, option) =>
-          key === 'bonuses' && option.detailPath
-            ? queryClient.ensureQueryData(effectDetailQueryOptions(option.detailPath))
+          key === 'bonuses' && option.detailSlug
+            ? queryClient.ensureQueryData(effectDetailQueryOptions(option.detailSlug))
             : Promise.resolve()
         }
         isPickerHoverReady={(key, option) =>
-          key === 'bonuses' && option.detailPath
-            ? isDetailQueryReady(queryClient, effectDetailQueryOptions(option.detailPath))
+          key === 'bonuses' && option.detailSlug
+            ? isDetailQueryReady(queryClient, effectDetailQueryOptions(option.detailSlug))
             : true
         }
         searchControls={{
@@ -542,11 +543,11 @@ export function ItemPicker({
         hoverCard={(item) => ({
           kind: 'item',
           delayMs: ROW_CARD_OPEN_DELAY_MS,
-          prefetch: () => prefetchItemCard(queryClient, item.id),
-          isReady: () => isItemCardReady(queryClient, item.id),
-          render: () => <ItemHoverContent itemId={item.id} onOpenItem={onOpenItemFromHover} />,
+          prefetch: () => prefetchItemCard(queryClient, item.slug),
+          isReady: () => isItemCardReady(queryClient, item.slug),
+          render: () => <ItemHoverContent itemSlug={item.slug} onOpenItem={onOpenItemFromHover} />,
         })}
-        selectedRowKey={selectedItemId}
+        selectedRowKey={selectedItemSlug}
         isSortedExternally
         onNearEnd={fetchNextPageNearEnd}
         sort={effectiveSort}

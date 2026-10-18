@@ -1,3 +1,4 @@
+import type { Slug } from '../../../lib/api'
 import { useEffect, useMemo, useRef, type JSX } from 'react'
 import { DetailNavigationProvider } from '../contexts/DetailNavigationContext'
 import { useDetailStack, type ResourceReference } from '../hooks/useDetailStack'
@@ -12,7 +13,7 @@ interface ResourceDetailPaneProps {
   resourceInUrl: ResourceReference | null
   pickerCategory: ResourceCategory
   matchingBonuses?: string[]
-  focusItemId?: number | null
+  focusItemSlug?: Slug | null
   onFocusItem?: () => void
   onDetailRendered?: () => void
   onCloseDetail?: () => void
@@ -22,7 +23,7 @@ export function ResourceDetailPane({
   resourceInUrl,
   pickerCategory,
   matchingBonuses = [],
-  focusItemId = null,
+  focusItemSlug = null,
   onFocusItem,
   onDetailRendered,
   onCloseDetail,
@@ -42,17 +43,17 @@ export function ResourceDetailPane({
   })
 
   const topEntry = stack[stack.length - 1] ?? null
-  const topItemId = topEntry !== null && topEntry.category === 'items' ? topEntry.id : null
-  const lastFocusedItemId = useRef<number | null>(null)
+  const topItemSlug = topEntry !== null && topEntry.category === 'items' ? topEntry.slug : null
+  const lastFocusedItemSlug = useRef<Slug | null>(null)
 
-  const itemCard = useItemCardContent(topItemId)
+  const itemCard = useItemCardContent(topItemSlug)
   const itemDetailQuery = itemCard.itemQuery
 
   const namedDetailStack = useMemo(() => {
     return stack.map((entry) => {
       if (entry.name) return entry
       const name =
-        entry.category === 'items' && entry.id === itemDetailQuery.data?.id
+        entry.category === 'items' && entry.slug === itemDetailQuery.data?.slug
           ? itemDetailQuery.data.name
           : undefined
       return name ? { ...entry, name } : entry
@@ -60,21 +61,22 @@ export function ResourceDetailPane({
   }, [stack, itemDetailQuery.data])
 
   useEffect(() => {
-    if (itemDetailQuery.data?.id !== topItemId) return
-    nameResource({ category: 'items', id: topItemId, name: itemDetailQuery.data.name })
+    if (itemDetailQuery.data?.slug !== topItemSlug) return
+    nameResource({ category: 'items', slug: topItemSlug, name: itemDetailQuery.data.name })
     onDetailRendered?.()
-  }, [itemDetailQuery.data, topItemId, nameResource, onDetailRendered])
+  }, [itemDetailQuery.data, topItemSlug, nameResource, onDetailRendered])
 
   useEffect(() => {
-    if (stack.length <= 1 && focusItemId === null) lastFocusedItemId.current = null
+    if (stack.length <= 1 && focusItemSlug === null) lastFocusedItemSlug.current = null
     const shouldFocus =
-      lastFocusedItemId.current !== topItemId && (focusItemId === topItemId || stack.length > 1)
-    if (shouldFocus && itemDetailQuery.data?.id === topItemId) {
+      lastFocusedItemSlug.current !== topItemSlug &&
+      (focusItemSlug === topItemSlug || stack.length > 1)
+    if (shouldFocus && itemDetailQuery.data?.slug === topItemSlug) {
       document.getElementById(DETAIL_TITLE_ID)?.focus()
-      lastFocusedItemId.current = topItemId
-      if (focusItemId === topItemId) onFocusItem?.()
+      lastFocusedItemSlug.current = topItemSlug
+      if (focusItemSlug === topItemSlug) onFocusItem?.()
     }
-  }, [stack.length, itemDetailQuery.data, topItemId, focusItemId, onFocusItem])
+  }, [stack.length, itemDetailQuery.data, topItemSlug, focusItemSlug, onFocusItem])
 
   return (
     <DetailNavigationProvider
@@ -91,8 +93,8 @@ export function ResourceDetailPane({
       )}
       <div className="resources-detail-pane-body">
         <section className="resources-detail">
-          {renderedDetailBody(topEntry, itemCard, matchingBonuses, (id, name) =>
-            pushResource({ category: 'items', id, name }),
+          {renderedDetailBody(topEntry, itemCard, matchingBonuses, (slug, name) =>
+            pushResource({ category: 'items', slug, name }),
           )}
         </section>
       </div>
@@ -104,14 +106,14 @@ function renderedDetailBody(
   topEntry: ResourceReference | null,
   itemCard: ReturnType<typeof useItemCardContent>,
   matchingBonuses: string[],
-  onOpenItem: (id: number, name: string) => void,
+  onOpenItem: (slug: Slug, name: string) => void,
 ): JSX.Element {
   if (topEntry === null) return <StatusPlaceholder reason="no-selection" />
   if (topEntry.category === 'items') {
     if (itemCard.item) {
       return (
         <ItemDetailCard
-          key={`${topEntry.category}-${topEntry.id}`}
+          key={`${topEntry.category}-${topEntry.slug}`}
           item={itemCard.item}
           setDetails={itemCard.setDetails}
           status={itemCard.status}
@@ -127,13 +129,13 @@ function renderedDetailBody(
       return (
         <StatusPlaceholder
           error={itemCard.itemQuery.error}
-          path={`/v1/items/${topEntry.id}`}
+          path={`/v1/items/${topEntry.slug}`}
           missingResourceName="item"
           onRetry={() => void itemCard.itemQuery.refetch()}
         />
       )
     }
-    return <StatusPlaceholder reason="not-found" missingItemId={topEntry.id} />
+    return <StatusPlaceholder reason="not-found" missingItemSlug={topEntry.slug} />
   }
   return <StatusPlaceholder reason="empty-table" category={topEntry.category} />
 }

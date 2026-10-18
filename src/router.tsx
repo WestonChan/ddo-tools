@@ -88,7 +88,7 @@ const resourceCategoryRoute = createRoute({
 
 const resourceDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: 'resources/$category/$id',
+  path: 'resources/$category/$slug',
   component: ResourcesView,
 })
 

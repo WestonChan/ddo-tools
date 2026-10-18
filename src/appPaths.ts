@@ -8,5 +8,5 @@ export const APP_PATHS = [
   'farm-checklist',
   'resources',
   'resources/$category',
-  'resources/$category/$id',
+  'resources/$category/$slug',
 ] as const

@@ -1,8 +1,12 @@
+import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest'
 import { apiErrorDescription, type ApiSetDetail, type ApiSetRow } from '../../../lib/api'
-import capturedSet from './fixtures/set-devoted-heart.json'
-import capturedSetPage from './fixtures/sets-page.json'
+import capturedSetResponse from './fixtures/set-devoted-heart.json'
+import capturedSetPageResponse from './fixtures/sets-page.json'
 import { fetchSet, fetchSetVocabulary, toSetDetail } from './sets'
+
+const capturedSet = apiFixture(capturedSetResponse)
+const capturedSetPage = apiFixture(capturedSetPageResponse)
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -101,8 +105,8 @@ it('fetches the set detail and rejects a missing effect list', async () => {
       ),
     )
   vi.stubGlobal('fetch', fetchMock)
-  expect((await fetchSet(capturedSet.id)).tiers[0].effects).toHaveLength(1)
-  await expect(fetchSet(capturedSet.id)).rejects.toMatchObject({ kind: 'api-response' })
+  expect((await fetchSet(capturedSet.slug)).tiers[0].effects).toHaveLength(1)
+  await expect(fetchSet(capturedSet.slug)).rejects.toMatchObject({ kind: 'api-response' })
 })
 
 it('reports a malformed set tier with its path and field', async () => {
@@ -119,10 +123,10 @@ it('reports a malformed set tier with its path and field', async () => {
       ),
     ),
   )
-  const error = await fetchSet(capturedSet.id).catch((caught: unknown) => caught)
+  const error = await fetchSet(capturedSet.slug).catch((caught: unknown) => caught)
   expect(error).toMatchObject({
     kind: 'api-response',
-    message: expect.stringContaining(`/v1/sets/${capturedSet.id}: tiers[1].effects`),
+    message: expect.stringContaining(`/v1/sets/${capturedSet.slug}: tiers[1].effects`),
   })
   expect(apiErrorDescription(error).kind).toBe('our-bug')
 })
@@ -130,5 +134,5 @@ it('reports a malformed set tier with its path and field', async () => {
 it('names the set tier field when a tier reaches the mapper without effects', () => {
   expect(() =>
     toSetDetail({ ...capturedSet, tiers: [{ ...capturedSet.tiers[0], effects: null }] } as never),
-  ).toThrow(`/v1/sets/${capturedSet.id}: tiers[0].effects`)
+  ).toThrow(`/v1/sets/${capturedSet.slug}: tiers[0].effects`)
 })

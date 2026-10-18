@@ -1,3 +1,4 @@
+import type { Slug } from '../../../../lib/api'
 import type { SetDetail } from '../../queries/sets'
 import type { Effect, Item, ResourceModifier } from '../../queries/items'
 import { effectValue, itemEnhancementRow, type ItemEnhancementRow } from './structuredRows'
@@ -5,8 +6,8 @@ import { effectValue, itemEnhancementRow, type ItemEnhancementRow } from './stru
 export interface EffectRow {
   itemName: string
   modifiers: ResourceModifier[]
-  setId: number | null
-  onOpenItem?: (id: number, name: string) => void
+  setSlug: Slug | null
+  onOpenItem?: (slug: Slug, name: string) => void
   hasBonusFilter: boolean
   key: string
   name: string
@@ -31,10 +32,10 @@ function matchesBonusFilter(effect: Effect, selectedBonuses: ReadonlySet<string>
 
 function toEffectRow(effect: Effect, selectedBonuses: ReadonlySet<string>, prefix = ''): EffectRow {
   return {
-    key: `${prefix}effect-${effect.id}-${effect.sortOrder}`,
+    key: `${prefix}effect-${effect.slug}-${effect.sortOrder}`,
     itemName: '',
     modifiers: [],
-    setId: null,
+    setSlug: null,
     hasBonusFilter: false,
     name: effect.name,
     type:
@@ -51,10 +52,10 @@ function toEffectRow(effect: Effect, selectedBonuses: ReadonlySet<string>, prefi
 function setRows(setDetail: SetDetail, selectedBonuses: ReadonlySet<string>): EffectRow[] {
   const rows: EffectRow[] = [
     {
-      key: `set-${setDetail.id}`,
+      key: `set-${setDetail.slug}`,
       itemName: '',
       modifiers: [],
-      setId: setDetail.id,
+      setSlug: setDetail.slug,
       hasBonusFilter: false,
       name: setDetail.name,
       type: null,
@@ -68,10 +69,10 @@ function setRows(setDetail: SetDetail, selectedBonuses: ReadonlySet<string>): Ef
   ]
   for (const tier of setDetail.tiers) {
     rows.push({
-      key: `set-${setDetail.id}-tier-${tier.equippedCount}`,
+      key: `set-${setDetail.slug}-tier-${tier.equippedCount}`,
       itemName: '',
       modifiers: [],
-      setId: setDetail.id,
+      setSlug: setDetail.slug,
       hasBonusFilter: false,
       name: `${tier.equippedCount} pieces`,
       type: null,
@@ -83,7 +84,7 @@ function setRows(setDetail: SetDetail, selectedBonuses: ReadonlySet<string>): Ef
     })
     rows.push(
       ...tier.effects.map((effect) =>
-        toEffectRow(effect, selectedBonuses, `set-${setDetail.id}-tier-${tier.equippedCount}-`),
+        toEffectRow(effect, selectedBonuses, `set-${setDetail.slug}-tier-${tier.equippedCount}-`),
       ),
     )
   }
@@ -103,7 +104,7 @@ export function itemEffectRows({
   matchingBonuses?: string[]
   itemName?: string
   modifiers?: ResourceModifier[]
-  onOpenItem?: (id: number, name: string) => void
+  onOpenItem?: (slug: Slug, name: string) => void
 }): EffectRow[] {
   const selectedBonuses = new Set(matchingBonuses.map((name) => name.toLowerCase()))
   const enhancement = item ? itemEnhancementRow(item) : null
@@ -111,7 +112,7 @@ export function itemEffectRows({
     enhancement && item
       ? [
           {
-            key: `item-enhancement-${item.id}`,
+            key: `item-enhancement-${item.slug}`,
             name: enhancement.name,
             type: enhancement.type,
             value: enhancement.value,
@@ -121,7 +122,7 @@ export function itemEffectRows({
             isMatch: false,
             itemName,
             modifiers,
-            setId: null,
+            setSlug: null,
             onOpenItem,
             hasBonusFilter: matchingBonuses.length > 0,
           },
@@ -133,7 +134,7 @@ export function itemEffectRows({
       ...toEffectRow(effect, selectedBonuses),
       itemName,
       modifiers,
-      setId: null,
+      setSlug: null,
       onOpenItem,
       hasBonusFilter: matchingBonuses.length > 0,
     })),
@@ -143,14 +144,14 @@ export function itemEffectRows({
 export function setEffectRows(
   setDetail: SetDetail,
   matchingBonuses: string[] = [],
-  onOpenItem?: (id: number, name: string) => void,
+  onOpenItem?: (slug: Slug, name: string) => void,
 ): EffectRow[] {
   const selectedBonuses = new Set(matchingBonuses.map((name) => name.toLowerCase()))
   return setRows(setDetail, selectedBonuses).map((row) => ({
     ...row,
     itemName: setDetail.name,
     modifiers: [],
-    setId: setDetail.id,
+    setSlug: setDetail.slug,
     onOpenItem,
     hasBonusFilter: matchingBonuses.length > 0,
   }))

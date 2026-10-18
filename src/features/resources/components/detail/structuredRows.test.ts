@@ -1,9 +1,10 @@
+import { apiFixture } from '../../../../test/apiFixture'
 import { expect, it } from 'vitest'
-import capturedAugment from '../../queries/fixtures/augment-martial--shocking-burst-stunning-10-heightened-awareness-4.json'
-import capturedItem from '../../queries/fixtures/item-stolen-necklace-level-25.json'
-import capturedWeapon from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
-import capturedShield from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
-import capturedArmor from '../../queries/fixtures/item-beholder-plate-armor.json'
+import capturedAugmentResponse from '../../queries/fixtures/augment-martial--shocking-burst-stunning-10-heightened-awareness-4.json'
+import capturedItemResponse from '../../queries/fixtures/item-stolen-necklace-level-25.json'
+import capturedWeaponResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedShieldResponse from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
+import capturedArmorResponse from '../../queries/fixtures/item-beholder-plate-armor.json'
 import type { ApiAugmentDetail, ApiItemDetail } from '../../../../lib/api'
 import { toAugmentDetail, toItem } from '../../queries/items'
 import {
@@ -12,6 +13,12 @@ import {
   damageExpression,
   itemEnhancementRow,
 } from './structuredRows'
+
+const capturedAugment = apiFixture(capturedAugmentResponse)
+const capturedItem = apiFixture(capturedItemResponse)
+const capturedWeapon = apiFixture(capturedWeaponResponse)
+const capturedShield = apiFixture(capturedShieldResponse)
+const capturedArmor = apiFixture(capturedArmorResponse)
 
 it('builds the item enhancement row and hover copy from captured weapon, shield and armor fields', () => {
   for (const [captured, description] of [

@@ -1,8 +1,10 @@
+import { slugFromPathSegment, type Slug } from '../../../../lib/api'
+import { apiFixture } from '../../../../test/apiFixture'
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { JSX } from 'react'
 import { readFileSync } from 'node:fs'
-import capturedNullIconSet from '../../queries/fixtures/set-conduit-of-the-titans.json'
+import capturedNullIconSetResponse from '../../queries/fixtures/set-conduit-of-the-titans.json'
 import { render } from '../../../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../../../components'
 import {
@@ -21,21 +23,21 @@ import {
 import { BonusDetailCard, BonusHoverCard } from './BonusDetailCard'
 import { EffectListFullView } from './EffectList'
 import { setEffectRows } from './effectRows'
-import capturedItem from '../../queries/fixtures/item-stolen-necklace-level-25.json'
-import capturedRing from '../../queries/fixtures/item-adversion.json'
-import adventurePack from '../../queries/fixtures/adventure-pack-magic-of-myth-drannor.json'
-import questChain from '../../queries/fixtures/quest-chain-the-lost-seekers.json'
-import saga from '../../queries/fixtures/saga-the-haunting-of-saltmarsh.json'
-import craftingSystem from '../../queries/fixtures/crafting-system-slave-lords-crafting.json'
-import vendor from '../../../../test/fixtures/vendor-morten-edgewright.json'
-import event from '../../queries/fixtures/event-treasure-of-crystal-cove.json'
-import augment from '../../queries/fixtures/augment-martial--shocking-burst-stunning-10-heightened-awareness-4.json'
-import capturedAugment from '../../queries/fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
-import groupedAugment from '../../queries/fixtures/augment-eldritch-rune-of-skill--charisma.json'
-import capturedSet from '../../queries/fixtures/set-devoted-heart.json'
-import riposteDetail from '../../queries/fixtures/effect-riposte.json'
-import groupDetail from '../../queries/fixtures/effect-charisma-skills.json'
-import charismaDetail from '../../queries/fixtures/effect-charisma.json'
+import capturedItemResponse from '../../queries/fixtures/item-stolen-necklace-level-25.json'
+import capturedRingResponse from '../../queries/fixtures/item-adversion.json'
+import adventurePackResponse from '../../queries/fixtures/adventure-pack-magic-of-myth-drannor.json'
+import questChainResponse from '../../queries/fixtures/quest-chain-the-lost-seekers.json'
+import sagaResponse from '../../queries/fixtures/saga-the-haunting-of-saltmarsh.json'
+import craftingSystemResponse from '../../queries/fixtures/crafting-system-slave-lords-crafting.json'
+import vendorResponse from '../../../../test/fixtures/vendor-morten-edgewright.json'
+import eventResponse from '../../queries/fixtures/event-treasure-of-crystal-cove.json'
+import augmentResponse from '../../queries/fixtures/augment-martial--shocking-burst-stunning-10-heightened-awareness-4.json'
+import capturedAugmentResponse from '../../queries/fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
+import groupedAugmentResponse from '../../queries/fixtures/augment-eldritch-rune-of-skill--charisma.json'
+import capturedSetResponse from '../../queries/fixtures/set-devoted-heart.json'
+import riposteDetailResponse from '../../queries/fixtures/effect-riposte.json'
+import groupDetailResponse from '../../queries/fixtures/effect-charisma-skills.json'
+import charismaDetailResponse from '../../queries/fixtures/effect-charisma.json'
 import {
   ApiError,
   API_RESPONSE_ERROR,
@@ -55,6 +57,23 @@ import {
   toVendor,
   toEvent,
 } from '../../queries/sources'
+
+const capturedNullIconSet = apiFixture(capturedNullIconSetResponse)
+const capturedItem = apiFixture(capturedItemResponse)
+const capturedRing = apiFixture(capturedRingResponse)
+const adventurePack = apiFixture(adventurePackResponse)
+const questChain = apiFixture(questChainResponse)
+const saga = apiFixture(sagaResponse)
+const craftingSystem = apiFixture(craftingSystemResponse)
+const vendor = apiFixture(vendorResponse)
+const event = apiFixture(eventResponse)
+const augment = apiFixture(augmentResponse)
+const capturedAugment = apiFixture(capturedAugmentResponse)
+const groupedAugment = apiFixture(groupedAugmentResponse)
+const capturedSet = apiFixture(capturedSetResponse)
+const riposteDetail = apiFixture(riposteDetailResponse)
+const groupDetail = apiFixture(groupDetailResponse)
+const charismaDetail = apiFixture(charismaDetailResponse)
 
 function cardForVariant(
   variant: 'pane' | 'hover',
@@ -86,23 +105,23 @@ vi.mock('../../queries/useItems', () => ({
       (kind !== 'sources' || pendingHoverKind !== 'source')
     )
   },
-  setDetailQueryOptions: (id: number) => ({
-    queryKey: ['sets', 'detail', id],
+  setDetailQueryOptions: (slug: Slug) => ({
+    queryKey: ['sets', 'detail', slug],
     queryFn: () => new Promise(() => {}),
   }),
-  questDetailQueryOptions: (id: number) => ({
-    queryKey: ['quests', 'detail', id],
+  questDetailQueryOptions: (slug: Slug) => ({
+    queryKey: ['quests', 'detail', slug],
     queryFn: () => new Promise(() => {}),
   }),
-  sourceDetailQueryOptions: (kind: string, id: number) => ({
-    queryKey: ['sources', kind, id],
+  sourceDetailQueryOptions: (kind: string, slug: Slug) => ({
+    queryKey: ['sources', kind, slug],
     queryFn: () => new Promise(() => {}),
   }),
   useItem: () => ({
     isPending: pendingHoverKind === 'item',
     error:
       failedHoverKind === 'item'
-        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/items/7716: body')
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/items/test-7716: body')
         : null,
     refetch: vi.fn(),
     data:
@@ -117,7 +136,7 @@ vi.mock('../../queries/useItems', () => ({
     isPending: pendingHoverKind === 'augment',
     error:
       failedHoverKind === 'augment'
-        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/augments/77: body')
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/augments/test-77: body')
         : null,
     refetch: vi.fn(),
     data:
@@ -140,7 +159,7 @@ vi.mock('../../queries/useItems', () => ({
         : toAdventurePack(adventurePack),
     error:
       failedHoverKind === 'source'
-        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/adventure-packs/3: items')
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/adventure-packs/test-3: items')
         : null,
     refetch: vi.fn(),
   }),
@@ -168,14 +187,14 @@ vi.mock('../../queries/useItems', () => ({
     isPending: pendingHoverKind === 'quest',
     error:
       failedHoverKind === 'quest'
-        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/quests/7: items')
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid /v1/quests/test-7: items')
         : null,
     refetch: vi.fn(),
     data:
       failedHoverKind === 'quest' || pendingHoverKind === 'quest'
         ? undefined
         : {
-            id: 7,
+            slug: slugFromPathSegment('test-7')!,
             name: 'The Storm',
             pack: 'Storm Pack',
             patron: 'House Storm',
@@ -184,13 +203,13 @@ vi.mock('../../queries/useItems', () => ({
             isRaid: true,
             items: [
               {
-                id: 11,
+                slug: slugFromPathSegment('test-11')!,
                 name: 'Storm Blade',
                 slot: 'Main Hand',
                 minimumLevel: 20,
               },
               {
-                id: 11,
+                slug: slugFromPathSegment('test-11')!,
                 name: 'Storm Blade',
                 slot: 'Main Hand',
                 minimumLevel: 20,
@@ -202,7 +221,7 @@ vi.mock('../../queries/useItems', () => ({
     isPending: pendingHoverKind === 'effect',
     error:
       failedHoverKind === 'effect'
-        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid response for /v1/effects/386: body')
+        ? new ApiError(API_RESPONSE_ERROR, 0, 'Invalid response for /v1/effects/test-386: body')
         : null,
     refetch: vi.fn(),
     data:
@@ -211,23 +230,23 @@ vi.mock('../../queries/useItems', () => ({
         : effectVocabularyDetail,
   }),
   useSets: (ids: number[]) =>
-    ids.map((id) => ({
+    ids.map((slug) => ({
       data: undefined,
       isPending: false,
       error:
         failedHoverKind === 'set'
-          ? new ApiError(API_RESPONSE_ERROR, 0, `Invalid response for /v1/sets/${id}: tiers`)
+          ? new ApiError(API_RESPONSE_ERROR, 0, `Invalid response for /v1/sets/${slug}: tiers`)
           : null,
       refetch: vi.fn(),
     })),
-  useSet: (setId: number | null) => ({
+  useSet: (setSlug: Slug | null) => ({
     isPending: pendingHoverKind === 'set',
     error:
       failedHoverKind === 'set'
         ? new ApiError(
             API_RESPONSE_ERROR,
             0,
-            `Invalid response for /v1/sets/${setId}: tiers[0].effects`,
+            `Invalid response for /v1/sets/${setSlug}: tiers[0].effects`,
           )
         : null,
     refetch: vi.fn(),
@@ -235,13 +254,15 @@ vi.mock('../../queries/useItems', () => ({
       failedHoverKind === 'set' || pendingHoverKind === 'set'
         ? undefined
         : toSetDetail(
-            (setId === capturedNullIconSet.id ? capturedNullIconSet : capturedSet) as ApiSetDetail,
+            (setSlug === capturedNullIconSet.slug
+              ? capturedNullIconSet
+              : capturedSet) as ApiSetDetail,
           ),
   }),
 }))
 
 it('renders each effect stat in its own hover row', () => {
-  render(<BonusHoverCard detailPath="/v1/effects/386" />)
+  render(<BonusHoverCard detailSlug={riposteDetail.slug} />)
   const armorRow = screen.getByText('Armor Class').closest('.hover-card-row')
   const savesRow = screen.getByText('Saving Throws').closest('.hover-card-row')
   expect(armorRow).not.toBeNull()
@@ -251,7 +272,7 @@ it('renders each effect stat in its own hover row', () => {
 
 it('labels a group and lists its member stats in separate hover rows', () => {
   effectVocabularyDetail = groupDetail
-  render(<BonusHoverCard detailPath="/v1/effects/338" />)
+  render(<BonusHoverCard detailSlug={groupDetail.slug} />)
   expect(screen.getByText('Group')).toBeInTheDocument()
   const bluffRow = screen.getByText('Bluff').closest('.hover-card-row')
   const diplomacyRow = screen.getByText('Diplomacy').closest('.hover-card-row')
@@ -274,7 +295,7 @@ it('does not repeat a grouped bonus value and type beneath its facts', () => {
 })
 
 it('keeps item facts and shows its captured effect name with a plain type', () => {
-  render(<ItemHoverContent itemId={7716} />)
+  render(<ItemHoverContent itemSlug={slugFromPathSegment('test-7716')!} />)
   expect(screen.getByText('Stolen Necklace (Level 25)')).toBeInTheDocument()
   expect(screen.getByText('Charisma')).toBeInTheDocument()
   expect(screen.getByText('+8')).toHaveClass('detail-value-row__value')
@@ -283,12 +304,12 @@ it('keeps item facts and shows its captured effect name with a plain type', () =
 
 it('does not add modifier-only damage rows that the pane does not show', () => {
   hasItemDamage = true
-  render(<ItemHoverContent itemId={7716} />)
+  render(<ItemHoverContent itemSlug={slugFromPathSegment('test-7716')!} />)
   expect(screen.queryByText('1d6 Electric')).toBeNull()
 })
 
 it('shows the captured augment effect and dice as separate rows', () => {
-  render(<AugmentHoverCard augmentId={77} />)
+  render(<AugmentHoverCard augmentSlug={slugFromPathSegment('test-77')!} />)
   expect(screen.getByText(/Solar Gem of Physical Resistance Rating/)).toBeInTheDocument()
   expect(screen.getByText('Artifact')).toHaveClass('detail-type-tag')
   expect(screen.getByText('1d6 Electric')).toHaveClass('detail-value-row__value')
@@ -301,7 +322,7 @@ it('shows an augment effect verbose name before its stat rows on nested hover', 
   vi.useFakeTimers()
   render(
     <HoverCardProvider>
-      <AugmentHoverCard augmentId={77} />
+      <AugmentHoverCard augmentSlug={slugFromPathSegment('test-77')!} />
     </HoverCardProvider>,
   )
   fireEvent.mouseEnter(
@@ -319,7 +340,7 @@ it('shows a captured set effect verbose name before its stat rows on nested hove
   vi.useFakeTimers()
   render(
     <HoverCardProvider>
-      <SetHoverCard setId={6} />
+      <SetHoverCard setSlug={slugFromPathSegment('test-6')!} />
     </HoverCardProvider>,
   )
   fireEvent.mouseEnter(
@@ -377,11 +398,15 @@ it.each([
   ['craftingSystem', 'Crafting system', 1, 'Slave Lords Crafting', 'Strength +5'],
   ['vendor', 'Vendor', 1, 'Morten Edgewright', 'Epic Ethereal Bastard Sword'],
   ['event', 'Event', 1, 'Treasure of Crystal Cove', "Admiral's Tricorne"],
-] as const)('shows a %s source card with its yields', (kind, label, id, name, yieldName) => {
+] as const)('shows a %s source card with its yields', (kind, label, slug, name, yieldName) => {
   vi.useFakeTimers()
   render(
     <HoverCardProvider>
-      <SourceHoverAnchor kind={kind} id={id} name={name}>
+      <SourceHoverAnchor
+        kind={kind}
+        slug={slug === null ? null : slugFromPathSegment(`test-${slug}`)!}
+        name={name}
+      >
         {name}
       </SourceHoverAnchor>
     </HoverCardProvider>,
@@ -403,7 +428,7 @@ it('opens an item yielded by a pack', () => {
     <HoverCardProvider>
       <SourceHoverAnchor
         kind="adventurePack"
-        id={3}
+        slug={slugFromPathSegment('test-3')!}
         name="Magic of Myth Drannor"
         onOpenItem={openItem}
       >
@@ -418,17 +443,21 @@ it('opens an item yielded by a pack', () => {
       name: /Bastard Sword of the Fallen Age/,
     }),
   )
-  expect(openItem).toHaveBeenCalledWith(adventurePack.items[0].id, adventurePack.items[0].name)
+  expect(openItem).toHaveBeenCalledWith(adventurePack.items[0].slug, adventurePack.items[0].name)
 })
 
 it.each([
   ['challengePack', 5, 'Vaults of the Artificers'],
   ['starter', null, 'Starter gear at level 15'],
-] as const)('shows a hint card for %s without requesting source detail', (kind, id, name) => {
+] as const)('shows a hint card for %s without requesting source detail', (kind, slug, name) => {
   vi.useFakeTimers()
   render(
     <HoverCardProvider>
-      <SourceHoverAnchor kind={kind} id={id} name={name}>
+      <SourceHoverAnchor
+        kind={kind}
+        slug={slug === null ? null : slugFromPathSegment(`test-${slug}`)!}
+        name={name}
+      >
         Source
       </SourceHoverAnchor>
     </HoverCardProvider>,
@@ -472,7 +501,7 @@ it('keeps embedded bonus details under an empty kicker until its kind arrives', 
 
 it('keeps a bonus without embedded data in the shared loading shell', () => {
   pendingHoverKind = 'effect'
-  const { container } = render(<BonusHoverCard detailPath="/v1/effects/386" />)
+  const { container } = render(<BonusHoverCard detailSlug={riposteDetail.slug} />)
   expect(container.querySelector('.detail-card__kicker-row')?.textContent).toBe('')
   expect(
     [...container.querySelectorAll('.detail-card__fact .section-label')].map(
@@ -484,7 +513,7 @@ it('keeps a bonus without embedded data in the shared loading shell', () => {
 
 it('keeps a related set error in the item card section list', () => {
   failedHoverKind = 'set'
-  render(<ItemHoverContent itemId={7716} />)
+  render(<ItemHoverContent itemSlug={slugFromPathSegment('test-7716')!} />)
   expect(
     screen.getByText('Something went wrong on our side.').closest('.detail-card__body'),
   ).toBeInTheDocument()
@@ -493,12 +522,24 @@ it('keeps a related set error in the item card section list', () => {
 it.each([
   [
     'item',
-    () => <ItemHoverContent itemId={7716} />,
+    () => <ItemHoverContent itemSlug={slugFromPathSegment('test-7716')!} />,
     ['ML', 'Gear slot', 'Raid', 'Rare', 'Augments'],
   ],
-  ['augment', () => <AugmentHoverCard augmentId={77} />, ['ML', 'Slots']],
-  ['quest', () => <QuestHoverCard questId={7} />, ['Level', 'Pack', 'Patron', 'Raid']],
-  ['set', () => <SetHoverCard setId={6} />, ['Pieces', 'Bonus tiers']],
+  [
+    'augment',
+    () => <AugmentHoverCard augmentSlug={slugFromPathSegment('test-77')!} />,
+    ['ML', 'Slots'],
+  ],
+  [
+    'quest',
+    () => <QuestHoverCard questSlug={slugFromPathSegment('test-7')!} />,
+    ['Level', 'Pack', 'Patron', 'Raid'],
+  ],
+  [
+    'set',
+    () => <SetHoverCard setSlug={slugFromPathSegment('test-6')!} />,
+    ['Pieces', 'Bonus tiers'],
+  ],
 ] as const)('keeps the %s loading state inside its detail shell', (kind, card, factLabels) => {
   pendingHoverKind = kind
   const { container } = render(card())
@@ -512,11 +553,11 @@ it.each([
 })
 
 it.each([
-  ['item', () => <ItemHoverContent itemId={7716} />],
-  ['augment', () => <AugmentHoverCard augmentId={77} />],
-  ['quest', () => <QuestHoverCard questId={7} />],
-  ['set', () => <SetHoverCard setId={6} />],
-  ['effect', () => <BonusHoverCard detailPath="/v1/effects/386" />],
+  ['item', () => <ItemHoverContent itemSlug={slugFromPathSegment('test-7716')!} />],
+  ['augment', () => <AugmentHoverCard augmentSlug={slugFromPathSegment('test-77')!} />],
+  ['quest', () => <QuestHoverCard questSlug={slugFromPathSegment('test-7')!} />],
+  ['set', () => <SetHoverCard setSlug={slugFromPathSegment('test-6')!} />],
+  ['effect', () => <BonusHoverCard detailSlug={riposteDetail.slug} />],
 ] as const)('keeps the %s error inside its detail shell', (kind, card) => {
   failedHoverKind = kind
   const { container } = render(card())
@@ -539,7 +580,7 @@ it.each([
   pendingHoverKind = 'source'
   render(
     <HoverCardProvider>
-      <SourceHoverAnchor kind={kind} id={2} name={name}>
+      <SourceHoverAnchor kind={kind} slug={slugFromPathSegment('test-2')!} name={name}>
         {name}
       </SourceHoverAnchor>
     </HoverCardProvider>,
@@ -561,7 +602,7 @@ it('shows a quest’s pack, raid flag, and unique loot item, then opens that ite
   const openItem = vi.fn()
   render(
     <HoverCardProvider>
-      <QuestHoverAnchor questId={7} onOpenItem={openItem}>
+      <QuestHoverAnchor questSlug={slugFromPathSegment('test-7')!} onOpenItem={openItem}>
         Quest
       </QuestHoverAnchor>
     </HoverCardProvider>,
@@ -577,7 +618,7 @@ it('shows a quest’s pack, raid flag, and unique loot item, then opens that ite
   expect(within(card).getAllByText('Storm Blade')).toHaveLength(1)
   expect(card.querySelector('.resources-hover-row')).toHaveClass('hover-card-row')
   fireEvent.click(within(card).getByRole('button', { name: /Storm Blade/ }))
-  expect(openItem).toHaveBeenCalledWith(11, 'Storm Blade')
+  expect(openItem).toHaveBeenCalledWith('test-11', 'Storm Blade')
   expect(screen.queryByRole('dialog')).toBeNull()
 })
 
@@ -598,7 +639,7 @@ it('shows captured set pieces and tier bonuses', () => {
   expect(card).toHaveTextContent('Positive Spell Power')
   expect(card.querySelector('.resources-set-tier')).toHaveClass('hover-card-row')
   fireEvent.click(within(card).getByRole('button', { name: /Devoted Goggles/ }))
-  expect(openItem).toHaveBeenCalledWith(capturedSet.items[0].id, capturedSet.items[0].name)
+  expect(openItem).toHaveBeenCalledWith(capturedSet.items[0].slug, capturedSet.items[0].name)
   expect(screen.queryByRole('dialog')).toBeNull()
 
   fireEvent.keyDown(document, { key: 'Tab' })
@@ -620,9 +661,13 @@ it.each(['set', 'quest', 'source'] as const)(
         {kind === 'set' ? (
           <EffectListFullView entries={setEffectRows(toSetDetail(capturedSet as ApiSetDetail))} />
         ) : kind === 'quest' ? (
-          <QuestHoverAnchor questId={7}>Quest</QuestHoverAnchor>
+          <QuestHoverAnchor questSlug={slugFromPathSegment('test-7')!}>Quest</QuestHoverAnchor>
         ) : (
-          <SourceHoverAnchor kind="adventurePack" id={3} name="Magic of Myth Drannor">
+          <SourceHoverAnchor
+            kind="adventurePack"
+            slug={slugFromPathSegment('test-3')!}
+            name="Magic of Myth Drannor"
+          >
             Source
           </SourceHoverAnchor>
         )}
@@ -646,7 +691,7 @@ it.each(['set', 'quest', 'source'] as const)(
 
 it('shows an actionable error in a failed bonus hover card', () => {
   failedHoverKind = 'effect'
-  render(<BonusHoverCard detailPath="/v1/effects/386" />)
+  render(<BonusHoverCard detailSlug={riposteDetail.slug} />)
   expect(screen.getByText('Something went wrong on our side.')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Report a bug' })).toBeInTheDocument()
@@ -670,8 +715,8 @@ it.each([
     (variant: 'pane' | 'hover') =>
       cardForVariant(
         variant,
-        <AugmentDetailCard augmentId={77} />,
-        <AugmentHoverCard augmentId={77} />,
+        <AugmentDetailCard augmentSlug={slugFromPathSegment('test-77')!} />,
+        <AugmentHoverCard augmentSlug={slugFromPathSegment('test-77')!} />,
       ),
     ['ML', 'Slots'],
     ['Enchantments', 'Damage', 'Description'],
@@ -681,8 +726,8 @@ it.each([
     (variant: 'pane' | 'hover') =>
       cardForVariant(
         variant,
-        <BonusDetailCard detailPath="/v1/effects/386" />,
-        <BonusHoverCard detailPath="/v1/effects/386" />,
+        <BonusDetailCard detailSlug={riposteDetail.slug} />,
+        <BonusHoverCard detailSlug={riposteDetail.slug} />,
       ),
     ['Type', 'Value', 'Tier'],
     ['Stats', 'Found on'],
@@ -690,14 +735,22 @@ it.each([
   [
     'quest',
     (variant: 'pane' | 'hover') =>
-      cardForVariant(variant, <QuestDetailCard questId={7} />, <QuestHoverCard questId={7} />),
+      cardForVariant(
+        variant,
+        <QuestDetailCard questSlug={slugFromPathSegment('test-7')!} />,
+        <QuestHoverCard questSlug={slugFromPathSegment('test-7')!} />,
+      ),
     ['Level', 'Pack', 'Patron', 'Raid'],
     ['Drops here'],
   ],
   [
     'set',
     (variant: 'pane' | 'hover') =>
-      cardForVariant(variant, <SetDetailCard setId={6} />, <SetHoverCard setId={6} />),
+      cardForVariant(
+        variant,
+        <SetDetailCard setSlug={slugFromPathSegment('test-6')!} />,
+        <SetHoverCard setSlug={slugFromPathSegment('test-6')!} />,
+      ),
     ['Pieces', 'Bonus tiers'],
     ['Pieces', 'Set bonuses'],
   ],
@@ -876,8 +929,8 @@ it.each([
     (variant: 'pane' | 'hover') =>
       cardForVariant(
         variant,
-        <AugmentDetailCard augmentId={77} />,
-        <AugmentHoverCard augmentId={77} />,
+        <AugmentDetailCard augmentSlug={slugFromPathSegment('test-77')!} />,
+        <AugmentHoverCard augmentSlug={slugFromPathSegment('test-77')!} />,
       ),
   ],
   [
@@ -885,19 +938,27 @@ it.each([
     (variant: 'pane' | 'hover') =>
       cardForVariant(
         variant,
-        <BonusDetailCard detailPath="/v1/effects/386" />,
-        <BonusHoverCard detailPath="/v1/effects/386" />,
+        <BonusDetailCard detailSlug={riposteDetail.slug} />,
+        <BonusHoverCard detailSlug={riposteDetail.slug} />,
       ),
   ],
   [
     'quest',
     (variant: 'pane' | 'hover') =>
-      cardForVariant(variant, <QuestDetailCard questId={7} />, <QuestHoverCard questId={7} />),
+      cardForVariant(
+        variant,
+        <QuestDetailCard questSlug={slugFromPathSegment('test-7')!} />,
+        <QuestHoverCard questSlug={slugFromPathSegment('test-7')!} />,
+      ),
   ],
   [
     'set',
     (variant: 'pane' | 'hover') =>
-      cardForVariant(variant, <SetDetailCard setId={6} />, <SetHoverCard setId={6} />),
+      cardForVariant(
+        variant,
+        <SetDetailCard setSlug={slugFromPathSegment('test-6')!} />,
+        <SetHoverCard setSlug={slugFromPathSegment('test-6')!} />,
+      ),
   ],
   [
     'adventurePack',
@@ -995,7 +1056,7 @@ it('opens one bonus card contract from an item table and an augment row', () => 
 
   render(
     <HoverCardProvider>
-      <AugmentDetailCard augmentId={77} />
+      <AugmentDetailCard augmentSlug={slugFromPathSegment('test-77')!} />
     </HoverCardProvider>,
   )
   const augmentRow = screen.getByText('Charisma').closest('.resources-hover-effect-row')!
@@ -1037,7 +1098,7 @@ it.each([SetDetailCard, SetHoverCard])(
   'renders a captured set without an icon safely in either card',
   (Card) => {
     expect(capturedNullIconSet.icon).toBeNull()
-    const { container } = render(<Card setId={capturedNullIconSet.id} />)
+    const { container } = render(<Card setSlug={capturedNullIconSet.slug} />)
     expect(screen.getByRole('heading', { name: capturedNullIconSet.name })).toBeInTheDocument()
     expect(screen.getByText('Rune Arm Spell Focus')).toBeInTheDocument()
     expect(container.querySelector('img')).toBeNull()

@@ -1,6 +1,5 @@
+import { apiDetailPath, type Slug } from '../../../lib/api'
 import {
-  ApiError,
-  API_RESPONSE_ERROR,
   assertApiResponseFields,
   fetchApiPage,
   fetchValidatedApiJson,
@@ -52,7 +51,7 @@ export function isItemSortColumn(columnKey: string): boolean {
 }
 
 export interface ItemSummary {
-  id: number
+  slug: Slug
   name: string
   equipmentSlot: string
   category: string
@@ -100,7 +99,7 @@ export interface ItemPage {
 }
 
 export interface ItemAttributes {
-  id: number
+  slug: Slug
   name: string
   equipmentSlot: string
   category: string
@@ -165,7 +164,7 @@ export interface CraftingRecipe {
 }
 
 export interface AugmentSummary {
-  id: number
+  slug: Slug
   name: string
   minimumLevel: number | null
   slots: string[]
@@ -193,7 +192,7 @@ export interface EffectDamage {
 }
 
 export interface Effect {
-  id: number
+  slug: Slug
   name: string
   kind?: ApiEffect['kind']
   verboseName: string
@@ -235,7 +234,7 @@ export interface ItemClickie {
 }
 
 export interface LootQuest {
-  id: number
+  slug: Slug
   name: string
   level: number | null
   epicLevel: number | null
@@ -249,14 +248,14 @@ export interface LootQuest {
 }
 
 export interface RewardingQuestChain {
-  id: number
+  slug: Slug
   name: string
   isRareLoot: boolean
   wikiUrl: string | null
 }
 
 export interface RewardingSaga {
-  id: number
+  slug: Slug
   name: string
   tier: string | null
   isRareLoot: boolean
@@ -268,7 +267,7 @@ export type ItemSourceKind =
 
 export interface ItemSource {
   kind: ItemSourceKind
-  id: number | null
+  slug: Slug | null
   key: string
   name: string
   vendorLocation: string | null
@@ -280,7 +279,7 @@ export interface ItemSource {
 }
 
 export interface RaidQuest {
-  id: number
+  slug: Slug
   name: string
   pack: string | null
 }
@@ -304,7 +303,7 @@ export function toItemSummary(apiItemRow: ApiItemRow, rowIndex = 0): ItemSummary
     apiItemRow,
     '/v1/items',
     {
-      id: 'number',
+      slug: 'string',
       name: 'string',
       slot: 'string',
       category: 'string',
@@ -317,7 +316,7 @@ export function toItemSummary(apiItemRow: ApiItemRow, rowIndex = 0): ItemSummary
     `items[${rowIndex}].`,
   )
   return {
-    id: apiItemRow.id,
+    slug: apiItemRow.slug,
     name: apiItemRow.name,
     equipmentSlot: apiItemRow.slot,
     category: apiItemRow.category,
@@ -331,7 +330,7 @@ export function toItemSummary(apiItemRow: ApiItemRow, rowIndex = 0): ItemSummary
 
 export function toItem(
   apiItemDetail: ApiItemDetail,
-  path = `/v1/items/${apiItemDetail?.id ?? 'unknown'}`,
+  path = `/v1/items/${apiItemDetail?.slug ?? 'unknown'}`,
 ): Item {
   assertApiResponseFields(apiItemDetail, path, {
     augment_slots: 'array',
@@ -347,7 +346,7 @@ export function toItem(
     vendors: 'array',
     events: 'array',
     starter_rewards: 'array',
-    id: 'number',
+    slug: 'string',
     name: 'string',
     slot: 'string',
     category: 'string',
@@ -372,7 +371,7 @@ export function toItem(
     assertApiResponseFields(slot, path, { options: 'array' }, `augment_slots[${index}].`)
   })
   return {
-    id: apiItemDetail.id,
+    slug: apiItemDetail.slug,
     name: apiItemDetail.name,
     equipmentSlot: apiItemDetail.slot,
     category: apiItemDetail.category,
@@ -432,13 +431,13 @@ export function toItem(
     clickies: apiItemDetail.clickies.map((c) => ({ name: c.name, description: c.description })),
     quests: toLootQuests(apiItemDetail.quests),
     questChains: apiItemDetail.quest_chains.map((c) => ({
-      id: c.id,
+      slug: c.slug,
       name: c.name,
       isRareLoot: c.is_rare,
       wikiUrl: c.wiki_url,
     })),
     sagas: apiItemDetail.sagas.map((s) => ({
-      id: s.id,
+      slug: s.slug,
       name: s.name,
       tier: s.tier,
       isRareLoot: s.is_rare,
@@ -446,7 +445,7 @@ export function toItem(
     })),
     adventurePackDrops: apiItemDetail.adventure_packs.map((p, index) => ({
       ...namedSource('adventurePack', p),
-      key: `adventurePack-${p.id}-${index}`,
+      key: `adventurePack-${p.slug}-${index}`,
       chest: p.chest,
     })),
     sourcesBeyondQuests: toSourcesBeyondQuests(apiItemDetail),
@@ -464,8 +463,8 @@ function namedSource(
 ): ItemSource {
   return {
     kind,
-    id: apiSource.id,
-    key: `${kind}-${apiSource.id}`,
+    slug: apiSource.slug,
+    key: `${kind}-${apiSource.slug}`,
     name: apiSource.name,
     vendorLocation: null,
     price: [],
@@ -488,7 +487,7 @@ function toSourcesBeyondQuests(apiItemDetail: ApiItemDetail): ItemSource[] {
     ...apiItemDetail.events.map((e) => namedSource('event', e)),
     ...apiItemDetail.starter_rewards.map((s) => ({
       kind: 'starter' as const,
-      id: null,
+      slug: null,
       key: `starter-${s.character_level}`,
       name: `Starter gear at level ${s.character_level}`,
       vendorLocation: null,
@@ -502,10 +501,10 @@ function toSourcesBeyondQuests(apiItemDetail: ApiItemDetail): ItemSource[] {
 }
 
 function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
-  const lootQuestsById = new Map<number, LootQuest>()
+  const lootQuestsBySlug = new Map<Slug, LootQuest>()
   for (const apiLootQuest of apiLootQuests) {
-    const lootQuest = lootQuestsById.get(apiLootQuest.id) ?? {
-      id: apiLootQuest.id,
+    const lootQuest = lootQuestsBySlug.get(apiLootQuest.slug) ?? {
+      slug: apiLootQuest.slug,
       name: apiLootQuest.name,
       level: apiLootQuest.level,
       epicLevel: apiLootQuest.epic_level,
@@ -522,21 +521,21 @@ function toLootQuests(apiLootQuests: ApiLootQuest[]): LootQuest[] {
     lootQuest.isRareLoot ||= apiLootQuest.is_rare
     if (apiLootQuest.chest && !lootQuest.chests.includes(apiLootQuest.chest))
       lootQuest.chests.push(apiLootQuest.chest)
-    lootQuestsById.set(apiLootQuest.id, lootQuest)
+    lootQuestsBySlug.set(apiLootQuest.slug, lootQuest)
   }
-  return [...lootQuestsById.values()]
+  return [...lootQuestsBySlug.values()]
 }
 
 export function toAugmentSummary(apiAugment: ApiAugment): AugmentSummary {
-  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.id ?? 'unknown'}`, {
-    id: 'number',
+  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.slug ?? 'unknown'}`, {
+    slug: 'string',
     name: 'string',
     min_level: 'nullable-number',
     crafting: 'array',
     slots: 'array',
   })
   return {
-    id: apiAugment.id,
+    slug: apiAugment.slug,
     name: apiAugment.name,
     minimumLevel: apiAugment.min_level,
     slots: apiAugment.slots,
@@ -562,7 +561,7 @@ function toResourceModifier(modifier: ApiModifier): ResourceModifier {
 }
 
 export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
-  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.id ?? 'unknown'}`, {
+  assertApiResponseFields(apiAugment, `/v1/augments/${apiAugment?.slug ?? 'unknown'}`, {
     effects: 'array',
     modifiers: 'array',
   })
@@ -577,7 +576,7 @@ export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
 
 export function toEffect(apiEffect: ApiEffect, sortOrder: number): Effect {
   return {
-    id: apiEffect.effect_id,
+    slug: apiEffect.effect_slug,
     name: apiEffect.name,
     ...(apiEffect.kind ? { kind: apiEffect.kind } : {}),
     verboseName: apiEffect.verbose_name,
@@ -674,8 +673,8 @@ export async function fetchItemPage(
   return { total: page.total, items: page.rows.map((row, index) => toItemSummary(row, index)) }
 }
 
-export async function fetchItem(id: number): Promise<Item> {
-  const path = `/v1/items/${id}`
+export async function fetchItem(slug: Slug): Promise<Item> {
+  const path = apiDetailPath('items', slug)
   const response = await fetchValidatedApiJson<ApiItemDetail>(
     path,
     undefined,
@@ -741,15 +740,13 @@ export async function fetchEffectVocabulary(
   return { rows: page.rows, total: page.total }
 }
 
-export async function fetchEffectDetail(detailPath: string): Promise<ApiEffectDetail> {
-  if (!/^\/v1\/effects\/\d+$/.test(detailPath)) {
-    throw new ApiError(API_RESPONSE_ERROR, 0, `Invalid effect detail path: ${detailPath}`)
-  }
+export async function fetchEffectDetail(slug: Slug): Promise<ApiEffectDetail> {
+  const path = apiDetailPath('effects', slug)
   return fetchValidatedApiJson(
-    detailPath,
+    path,
     { items_limit: 0, augments_limit: 0, set_tiers_limit: 0 },
     isApiEffectDetail,
-    `Invalid effect detail for ${detailPath}`,
+    `Invalid effect detail for ${path}`,
   )
 }
 
@@ -766,8 +763,8 @@ export async function fetchAugmentsFittingSlot(slotLabel: string): Promise<Augme
   })
 }
 
-export async function fetchAugment(augmentId: number): Promise<AugmentDetail> {
-  const path = `/v1/augments/${augmentId}`
+export async function fetchAugment(augmentSlug: Slug): Promise<AugmentDetail> {
+  const path = apiDetailPath('augments', augmentSlug)
   const response = await fetchValidatedApiJson<ApiAugmentDetail>(
     path,
     undefined,
@@ -790,10 +787,10 @@ export async function fetchRaidQuests(): Promise<RaidQuest[]> {
       assertApiResponseFields(
         quest,
         '/v1/quests',
-        { id: 'number', name: 'string', is_raid: 'boolean', pack: 'nullable-string' },
+        { slug: 'string', name: 'string', is_raid: 'boolean', pack: 'nullable-string' },
         `quests[${index}].`,
       )
       return quest.is_raid
     })
-    .map((quest) => ({ id: quest.id, name: quest.name, pack: quest.pack }))
+    .map((quest) => ({ slug: quest.slug, name: quest.name, pack: quest.pack }))
 }

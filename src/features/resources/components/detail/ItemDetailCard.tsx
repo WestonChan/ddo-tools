@@ -1,3 +1,4 @@
+import type { Slug } from '../../../../lib/api'
 import { Fragment, useId, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from 'react'
 import {
   StructuredDetailCard,
@@ -269,7 +270,7 @@ function toExtraWeaponStats(weaponStats: ItemWeaponStats): DetailStat[] {
 }
 
 interface ItemStatSection {
-  itemId: number
+  itemSlug: Slug
   primaryStats: DetailStat[]
   extraStats: DetailStat[]
   damageReductionBypasses: string[]
@@ -299,7 +300,7 @@ function itemStatSection(item: Item, kind: ItemDetailKind): ItemStatSection {
     primaryStats = toPrimaryWeaponStats(item.weaponStats, item.enhancementBonus)
     extraStats = [...toExtraWeaponStats(item.weaponStats), ...materialStats]
   }
-  return { itemId: item.id, primaryStats, extraStats, damageReductionBypasses }
+  return { itemSlug: item.slug, primaryStats, extraStats, damageReductionBypasses }
 }
 
 function toLabeledArmorStats(armorStats: ItemArmorStats): DetailStat[] {
@@ -359,16 +360,16 @@ interface ItemSourceEntry {
   epicLevel: number | null
   pack: string | null
   patron: string | null
-  questId: number | null
+  questSlug: Slug | null
   sourceKind: SourceHoverKind | null
-  sourceId: number | null
+  sourceSlug: Slug | null
   wikiUrl: string | null
-  onOpenItem?: (id: number, name: string) => void
+  onOpenItem?: (slug: Slug, name: string) => void
 }
 
 function itemSourceEntries(
   item: Item,
-  onOpenItem?: (id: number, name: string) => void,
+  onOpenItem?: (slug: Slug, name: string) => void,
 ): ItemSourceEntry[] {
   const sourceEntry = (source: ItemSource): ItemSourceEntry => ({
     key: source.key,
@@ -384,15 +385,15 @@ function itemSourceEntries(
     epicLevel: null,
     pack: null,
     patron: null,
-    questId: null,
+    questSlug: null,
     sourceKind: source.kind,
-    sourceId: source.id,
+    sourceSlug: source.slug,
     wikiUrl: source.wikiUrl,
     onOpenItem,
   })
   return [
     ...item.quests.map((quest) => ({
-      key: `quest-${quest.id}`,
+      key: `quest-${quest.slug}`,
       name: quest.name,
       descriptorParts: [
         ...quest.chests.map(sentenceCased),
@@ -407,15 +408,15 @@ function itemSourceEntries(
       epicLevel: quest.epicLevel,
       pack: quest.pack,
       patron: quest.patron,
-      questId: quest.id,
+      questSlug: quest.slug,
       sourceKind: null,
-      sourceId: null,
+      sourceSlug: null,
       wikiUrl: null,
       onOpenItem,
     })),
     ...item.adventurePackDrops.map(sourceEntry),
     ...item.questChains.map((chain) => ({
-      key: `chain-${chain.id}`,
+      key: `chain-${chain.slug}`,
       name: chain.name,
       descriptorParts: ['Chain end reward'],
       price: [],
@@ -427,14 +428,14 @@ function itemSourceEntries(
       epicLevel: null,
       pack: null,
       patron: null,
-      questId: null,
+      questSlug: null,
       sourceKind: 'questChain' as const,
-      sourceId: chain.id,
+      sourceSlug: chain.slug,
       wikiUrl: chain.wikiUrl,
       onOpenItem,
     })),
     ...item.sagas.map((saga) => ({
-      key: `saga-${saga.id}-${saga.tier}`,
+      key: `saga-${saga.slug}-${saga.tier}`,
       name: saga.name,
       descriptorParts: ['Saga reward', ...(saga.tier ? [sentenceCased(saga.tier)] : [])],
       price: [],
@@ -446,9 +447,9 @@ function itemSourceEntries(
       epicLevel: null,
       pack: null,
       patron: null,
-      questId: null,
+      questSlug: null,
       sourceKind: 'saga' as const,
-      sourceId: saga.id,
+      sourceSlug: saga.slug,
       wikiUrl: saga.wikiUrl,
       onOpenItem,
     })),
@@ -457,9 +458,9 @@ function itemSourceEntries(
 }
 
 function ItemSourceName({ entry }: { entry: ItemSourceEntry }): JSX.Element {
-  if (entry.questId !== null)
+  if (entry.questSlug !== null)
     return (
-      <QuestHoverAnchor questId={entry.questId} onOpenItem={entry.onOpenItem}>
+      <QuestHoverAnchor questSlug={entry.questSlug} onOpenItem={entry.onOpenItem}>
         {entry.name}
       </QuestHoverAnchor>
     )
@@ -467,7 +468,7 @@ function ItemSourceName({ entry }: { entry: ItemSourceEntry }): JSX.Element {
     return (
       <SourceHoverAnchor
         kind={entry.sourceKind}
-        id={entry.sourceId}
+        slug={entry.sourceSlug}
         name={entry.name}
         wikiUrl={entry.wikiUrl}
         onOpenItem={entry.onOpenItem}
@@ -613,9 +614,9 @@ function ItemDescriptionBriefView({ entries }: { entries: readonly string[] }): 
 function ItemStatsView({ entries }: { entries: readonly ItemStatSection[] }): JSX.Element {
   return (
     <>
-      {entries.map(({ itemId, primaryStats, extraStats, damageReductionBypasses }) => (
+      {entries.map(({ itemSlug, primaryStats, extraStats, damageReductionBypasses }) => (
         <DetailStats
-          key={itemId}
+          key={itemSlug}
           primaryStats={primaryStats}
           extraStats={extraStats}
           damageReductionBypasses={damageReductionBypasses}
@@ -644,7 +645,7 @@ interface ItemDetailCardProps {
   item: Item | null
   matchingBonuses?: string[]
   setDetails?: SetDetail[]
-  onOpenItem?: (id: number, name: string) => void
+  onOpenItem?: (slug: Slug, name: string) => void
   status?: ReactNode
 }
 
@@ -658,7 +659,7 @@ function useItemDetailDefinition({
   const [expandedSlotSortOrder, setExpandedSlotSortOrder] = useState<number | null>(null)
   const expandedSocketButtonRef = useRef<HTMLButtonElement | null>(null)
   const clearHoverCards = useClearHoverCards()
-  const augmentLedgerId = useId()
+  const augmentLedgerSlug = useId()
   const expandedSlot = item?.augmentSlots.find((slot) => slot.sortOrder === expandedSlotSortOrder)
 
   function closeExpandedSocket(): void {
@@ -691,7 +692,7 @@ function useItemDetailDefinition({
         <AugmentSlotList
           augmentSlots={item.augmentSlots}
           expandedSlotSortOrder={expandedSlotSortOrder}
-          ledgerId={augmentLedgerId}
+          ledgerId={augmentLedgerSlug}
           expandedSocketButtonRef={expandedSocketButtonRef}
           onToggleSlot={(sortOrder) =>
             setExpandedSlotSortOrder((current) => (current === sortOrder ? null : sortOrder))
@@ -832,7 +833,7 @@ function useItemDetailDefinition({
     afterHeader: expandedSlot ? (
       <AugmentCandidateLedger
         slot={expandedSlot}
-        ledgerId={augmentLedgerId}
+        ledgerId={augmentLedgerSlug}
         onClose={closeExpandedSocket}
       />
     ) : null,
