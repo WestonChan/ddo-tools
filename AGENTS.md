@@ -32,7 +32,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 
 **Running locally, end to end.**
 
-1. `npm install && npm run dev` — the site on http://localhost:5173/, reading the public API. That is enough for most frontend work.
+1. On Node 24 (`.nvmrc`; `fnm use` or `nvm use`), `npm install && npm run dev` — the site on http://localhost:5173/, reading the public API. That is enough for most frontend work. When another Node major is the one installed, prefix a script with `npx -y -p node@24 --` (for example `npx -y -p node@24 -- npm run lint`), or `npm install` prints `EBADENGINE` and tests run on an unsupported Node.
 2. To run against a local API (schema changes, new endpoints): in `ddo-data`, `export PATH="/opt/homebrew/opt/rustup/bin:$PATH"`, build the DB with `cargo run --release -p ddo-etl -- build --source upstream/Output/DataFiles --out ddo.db`, serve it with `DDO_DB_PATH=ddo.db ICONS_DIR=icons PORT=8089 cargo run --release -p ddo-api`, and set `VITE_API_URL=http://localhost:8089` in this repo's `.env`. Docker is not installed on the maintainer's Mac; the image is CI-only.
 3. `.env` is gitignored; `.env.example` lists every variable (`VITE_API_URL`, Sentry's `SENTRY_*`).
 
