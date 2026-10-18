@@ -1,5 +1,3 @@
-import { resourcePath, resourceCategoryPath } from '../../lib/resourcePaths'
-import { slugFromPathSegment, type Slug } from '../../lib/api'
 import {
   useCallback,
   useEffect,
@@ -12,12 +10,18 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
+import {
+  resourcePath,
+  resourceCategoryPath,
+  isResourceCategory,
+  type ResourceCategory,
+} from '../../lib/resourcePaths'
+import { slugFromPathSegment, type Slug } from '../../lib/api'
 import { CategoryTabs } from './components/CategoryTabs'
 import { ItemPicker } from './components/ItemPicker'
 import { ResourceDetailPane } from './components/ResourceDetailPane'
 import { WireframePlaceholder } from '../../components'
 import { LABEL_BY_RESOURCE_CATEGORY } from './resourceCategories'
-import { isResourceCategory, type ResourceCategory } from '../../lib/resourcePaths'
 import './ResourcesView.css'
 import { useResourceListSession } from './resourceListSessions'
 import { isTypingTarget } from '../../lib/isTypingTarget'

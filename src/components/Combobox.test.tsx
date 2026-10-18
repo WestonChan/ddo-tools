@@ -1,8 +1,8 @@
-import { slugFromPathSegment } from '../lib/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useRef, useState, type JSX } from 'react'
+import { slugFromPathSegment } from '../lib/api'
 import { Combobox, type FilterOption } from './Combobox'
 import { HoverCardProvider } from './HoverCard'
 

@@ -1,5 +1,5 @@
-import { apiFixture } from '../../../../test/apiFixture'
 import { expect, it } from 'vitest'
+import { apiFixture } from '../../../../test/apiFixture'
 import capturedAugmentResponse from '../../queries/fixtures/augment-martial--shocking-burst-stunning-10-heightened-awareness-4.json'
 import capturedItemResponse from '../../queries/fixtures/item-stolen-necklace-level-25.json'
 import capturedWeaponResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'

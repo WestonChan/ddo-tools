@@ -1,6 +1,6 @@
-import { slugFromPathSegment } from '../../../lib/api'
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { slugFromPathSegment } from '../../../lib/api'
 import { API_HTTP_ERROR, ApiError } from '../../../lib/api'
 import { StatusPlaceholder } from './StatusPlaceholder'
 

@@ -1,5 +1,3 @@
-import { slugFromPathSegment, type Slug } from '../../lib/api'
-import { apiFixture } from '../../test/apiFixture'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   act,
@@ -11,6 +9,8 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { slugFromPathSegment, type Slug } from '../../lib/api'
+import { apiFixture } from '../../test/apiFixture'
 import { render } from '../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'

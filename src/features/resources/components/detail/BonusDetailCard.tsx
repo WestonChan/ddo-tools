@@ -1,5 +1,5 @@
-import { apiDetailPath, type Slug } from '../../../../lib/api'
 import type { JSX } from 'react'
+import { apiDetailPath, type Slug } from '../../../../lib/api'
 import {
   ApiErrorNotice,
   StructuredDetailCard,
@@ -9,8 +9,12 @@ import {
   DetailValueRow,
   WikiLinkIcon,
 } from '../../../../components'
-import type { Effect, EffectBonus, ResourceModifier } from '../../queries/items'
-import { toEffectDamage } from '../../queries/items'
+import {
+  type Effect,
+  type EffectBonus,
+  type ResourceModifier,
+  toEffectDamage,
+} from '../../queries/items'
 import { useEffectDetail } from '../../queries/useItems'
 import { effectKindLabel } from '../effectKindLabel'
 import {

@@ -1,5 +1,3 @@
-import { slugFromPathSegment } from '../../../lib/api'
-import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   act,
@@ -11,6 +9,8 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { slugFromPathSegment } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import { render } from '../../../test/renderWithQueryClient'
 import capturedGroupsResponse from '../queries/fixtures/effects-page-groups.json'
 import capturedSetPageResponse from '../queries/fixtures/sets-page.json'

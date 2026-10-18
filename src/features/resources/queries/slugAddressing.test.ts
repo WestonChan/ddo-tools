@@ -1,5 +1,5 @@
-import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, expect, it, vi } from 'vitest'
+import { apiFixture } from '../../../test/apiFixture'
 import { slugFromPathSegment } from '../../../lib/api'
 import capturedItemResponse from './fixtures/item-adversion.json'
 import capturedAugmentResponse from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'

@@ -1,6 +1,6 @@
-import { slugFromPathSegment } from '../../../lib/api'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
+import { slugFromPathSegment } from '../../../lib/api'
 import { useDetailStack, type ResourceReference } from './useDetailStack'
 
 const navigateMock = vi.fn()

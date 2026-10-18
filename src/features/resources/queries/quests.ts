@@ -1,5 +1,10 @@
-import { apiDetailPath, type Slug } from '../../../lib/api'
-import { assertApiResponseFields, fetchApiJson, type ApiQuestDetail } from '../../../lib/api'
+import {
+  apiDetailPath,
+  type Slug,
+  assertApiResponseFields,
+  fetchApiJson,
+  type ApiQuestDetail,
+} from '../../../lib/api'
 
 export interface QuestDetail {
   slug: Slug

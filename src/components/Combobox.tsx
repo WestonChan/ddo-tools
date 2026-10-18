@@ -1,6 +1,6 @@
-import type { Slug } from '../lib/api'
 import { useEffect, useId, useRef, useState, type JSX, type ReactNode, type RefObject } from 'react'
 import { Check, ChevronDown, Search } from 'lucide-react'
+import type { Slug } from '../lib/api'
 import { AnchoredMenu } from './AnchoredMenu'
 import { NESTED_CARD_OPEN_DELAY_MS, positionedCardBeside, useHoverCardControl } from './HoverCard'
 import './Combobox.css'

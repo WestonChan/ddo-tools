@@ -1,7 +1,7 @@
-import { type Slug } from '../../../lib/api'
 import {
   keepPreviousData,
   queryOptions,
+  skipToken,
   useInfiniteQuery,
   useQuery,
   useQueries,
@@ -11,7 +11,7 @@ import {
   type QueryClient,
   type QueryKey,
 } from '@tanstack/react-query'
-import { API_HTTP_ERROR, isApiError, shouldRetryQuery } from '../../../lib/api'
+import { type Slug, API_HTTP_ERROR, isApiError, shouldRetryQuery } from '../../../lib/api'
 import {
   fetchAugment,
   fetchAdventurePackNames,
@@ -61,73 +61,73 @@ const resourceQueryKeys = {
       'page',
       itemListParameters(filters, searchQuery, includesSetBonuses, 0, sort),
     ] as const,
-  item: (slug: Slug) => ['items', 'detail', slug] as const,
+  item: (slug: Slug | null) => ['items', 'detail', slug] as const,
   adventurePackNames: ['items', 'packs'] as const,
   equipmentSlotNames: ['items', 'slots'] as const,
   effectVocabulary: (searchQuery: string) => ['effects', 'vocabulary', searchQuery] as const,
-  effectDetail: (slug: Slug) => ['effects', 'detail', slug] as const,
+  effectDetail: (slug: Slug | null) => ['effects', 'detail', slug] as const,
   augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
-  augment: (slug: Slug) => ['augments', 'detail', slug] as const,
+  augment: (slug: Slug | null) => ['augments', 'detail', slug] as const,
   raidQuests: ['quests', 'raids'] as const,
   setVocabulary: (searchQuery: string) => ['sets', 'vocabulary', searchQuery] as const,
-  set: (slug: Slug) => ['sets', 'detail', slug] as const,
-  quest: (slug: Slug) => ['quests', 'detail', slug] as const,
+  set: (slug: Slug | null) => ['sets', 'detail', slug] as const,
+  quest: (slug: Slug | null) => ['quests', 'detail', slug] as const,
   source: (kind: string, slug: Slug) => ['sources', kind, slug] as const,
 }
 
 export const itemDetailQueryOptions = (
-  slug: Slug,
+  slug: Slug | null,
 ): DetailQueryOptions<Item, ReturnType<typeof resourceQueryKeys.item>> =>
   queryOptions({
     queryKey: resourceQueryKeys.item(slug),
-    queryFn: () => fetchItem(slug),
+    queryFn: slug === null ? skipToken : () => fetchItem(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const setDetailQueryOptions = (
-  slug: Slug,
+  slug: Slug | null,
 ): DetailQueryOptions<SetDetail, ReturnType<typeof resourceQueryKeys.set>> =>
   queryOptions({
     queryKey: resourceQueryKeys.set(slug),
-    queryFn: () => fetchSet(slug),
+    queryFn: slug === null ? skipToken : () => fetchSet(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const questDetailQueryOptions = (
-  slug: Slug,
+  slug: Slug | null,
 ): DetailQueryOptions<QuestDetail, ReturnType<typeof resourceQueryKeys.quest>> =>
   queryOptions({
     queryKey: resourceQueryKeys.quest(slug),
-    queryFn: () => fetchQuest(slug),
+    queryFn: slug === null ? skipToken : () => fetchQuest(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const effectDetailQueryOptions = (
-  slug: Slug,
+  slug: Slug | null,
 ): DetailQueryOptions<
   Awaited<ReturnType<typeof fetchEffectDetail>>,
   ReturnType<typeof resourceQueryKeys.effectDetail>
 > =>
   queryOptions({
     queryKey: resourceQueryKeys.effectDetail(slug),
-    queryFn: () => fetchEffectDetail(slug),
+    queryFn: slug === null ? skipToken : () => fetchEffectDetail(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
 
 export const augmentDetailQueryOptions = (
-  slug: Slug,
+  slug: Slug | null,
 ): DetailQueryOptions<AugmentDetail, ReturnType<typeof resourceQueryKeys.augment>> =>
   queryOptions({
     queryKey: resourceQueryKeys.augment(slug),
-    queryFn: () => fetchAugment(slug),
+    queryFn: slug === null ? skipToken : () => fetchAugment(slug),
     retry: false,
     retryOnMount: false,
     ...NEVER_STALE_QUERY_OPTIONS,
@@ -227,7 +227,7 @@ export function useItemPage(
 
 export function useItem(slug: Slug | null): UseQueryResult<Item> {
   return useQuery({
-    ...itemDetailQueryOptions(slug!),
+    ...itemDetailQueryOptions(slug),
     enabled: slug !== null,
   })
 }
@@ -238,7 +238,7 @@ export function useSets(slugs: readonly Slug[]): UseQueryResult<SetDetail>[] {
 
 export function useSet(slug: Slug | null): UseQueryResult<SetDetail> {
   return useQuery({
-    ...setDetailQueryOptions(slug!),
+    ...setDetailQueryOptions(slug),
     enabled: slug !== null,
   })
 }
@@ -257,7 +257,7 @@ export function useSetVocabulary(
 
 export function useQuest(slug: Slug | null): UseQueryResult<QuestDetail> {
   return useQuery({
-    ...questDetailQueryOptions(slug!),
+    ...questDetailQueryOptions(slug),
     enabled: slug !== null,
   })
 }
@@ -297,7 +297,7 @@ export function useEffectDetail(
   isEnabled = true,
 ): UseQueryResult<Awaited<ReturnType<typeof fetchEffectDetail>>> {
   return useQuery({
-    ...effectDetailQueryOptions(slug!),
+    ...effectDetailQueryOptions(slug),
     enabled: isEnabled && slug !== null,
   })
 }
@@ -327,7 +327,7 @@ export function useFittingAugmentsBySlotLabel(
 
 export function useAugment(slug: Slug | null): UseQueryResult<AugmentDetail> {
   return useQuery({
-    ...augmentDetailQueryOptions(slug!),
+    ...augmentDetailQueryOptions(slug),
     enabled: slug !== null,
   })
 }

@@ -1,8 +1,12 @@
-import { resourcePath, resourceCategoryPath, resourceUrl } from '../../../lib/resourcePaths'
-import type { Slug } from '../../../lib/api'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import type { ResourceCategory } from '../../../lib/resourcePaths'
+import {
+  resourcePath,
+  resourceCategoryPath,
+  resourceUrl,
+  type ResourceCategory,
+} from '../../../lib/resourcePaths'
+import type { Slug } from '../../../lib/api'
 
 export interface ResourceReference {
   category: ResourceCategory

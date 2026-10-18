@@ -1,5 +1,5 @@
-import { slugFromPathSegment } from '../../../lib/api'
 import { expect, it, vi } from 'vitest'
+import { slugFromPathSegment } from '../../../lib/api'
 import { fetchQuest, toQuestDetail } from './quests'
 
 it('reports a missing quest item list with its path and field', async () => {

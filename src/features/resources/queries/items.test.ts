@@ -1,6 +1,6 @@
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
-import { describe, it, expect, vi, afterEach } from 'vitest'
 import twoSetItemResponse from './fixtures/item-barbettes-bracers.json'
 import pricedItemResponse from './fixtures/item-barovian-handwraps.json'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'

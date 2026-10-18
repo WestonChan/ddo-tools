@@ -1,5 +1,5 @@
-import { apiDetailPath, type Slug } from '../../../../lib/api'
 import type { ReactNode } from 'react'
+import { apiDetailPath, type Slug } from '../../../../lib/api'
 import { ApiErrorNotice } from '../../../../components'
 import { useItem, useSets } from '../../queries/useItems'
 import type { Item } from '../../queries/items'

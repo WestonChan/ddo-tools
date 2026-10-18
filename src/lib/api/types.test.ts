@@ -1,5 +1,5 @@
-import { apiFixture } from '../../test/apiFixture'
 import { expectTypeOf, it } from 'vitest'
+import { apiFixture } from '../../test/apiFixture'
 import type { ApiAdventurePack, ApiOptionalBuff } from './types'
 import capturedBuffsResponse from './fixtures/optional-buffs.json'
 import capturedPacksResponse from './fixtures/adventure-packs.json'

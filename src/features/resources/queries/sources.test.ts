@@ -1,6 +1,6 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { slugFromPathSegment } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import adventurePackResponse from './fixtures/adventure-pack-magic-of-myth-drannor.json'
 import questChainResponse from './fixtures/quest-chain-the-lost-seekers.json'
 import sagaResponse from './fixtures/saga-the-haunting-of-saltmarsh.json'

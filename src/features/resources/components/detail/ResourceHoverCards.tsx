@@ -1,8 +1,8 @@
-import { resourcePath } from '../../../../lib/resourcePaths'
-import { apiDetailPath, type Slug } from '../../../../lib/api'
 import type { JSX, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
+import { resourcePath } from '../../../../lib/resourcePaths'
+import { apiDetailPath, type Slug } from '../../../../lib/api'
 import {
   ApiErrorNotice,
   AugmentSlotDisplay,

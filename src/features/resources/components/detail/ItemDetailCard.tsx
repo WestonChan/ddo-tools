@@ -1,5 +1,5 @@
-import type { Slug } from '../../../../lib/api'
 import { Fragment, useId, useLayoutEffect, useRef, useState, type JSX, type ReactNode } from 'react'
+import type { Slug } from '../../../../lib/api'
 import {
   StructuredDetailCard,
   IngredientCostList,

@@ -1,5 +1,6 @@
-import { apiDetailPath, type Slug } from '../../../lib/api'
 import {
+  apiDetailPath,
+  type Slug,
   assertApiResponseFields,
   fetchApiPage,
   fetchValidatedApiJson,

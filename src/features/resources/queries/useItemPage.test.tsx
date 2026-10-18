@@ -1,9 +1,9 @@
-import { slugFromPathSegment } from '../../../lib/api'
-import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, type ReactNode } from 'react'
+import { slugFromPathSegment } from '../../../lib/api'
+import { apiFixture } from '../../../test/apiFixture'
 import capturedTwoSetItemResponse from './fixtures/item-barbettes-bracers.json'
 import capturedNoSetItemResponse from './fixtures/item-stolen-necklace-level-25.json'
 import {

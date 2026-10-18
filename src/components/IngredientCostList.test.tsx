@@ -1,6 +1,6 @@
-import { apiFixture } from '../test/apiFixture'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, expect, it } from 'vitest'
+import { apiFixture } from '../test/apiFixture'
 import { IngredientCostList } from './IngredientCostList'
 import vendorResponse from '../test/fixtures/vendor-morten-edgewright.json'
 

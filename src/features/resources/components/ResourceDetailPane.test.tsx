@@ -1,7 +1,7 @@
-import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { render } from '../../../test/renderWithQueryClient'
 import { ResourceDetailPane } from './ResourceDetailPane'
 import { ApiError, API_HTTP_ERROR, API_NETWORK_ERROR } from '../../../lib/api'
@@ -145,7 +145,7 @@ describe('ResourceDetailPane', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/select an item/i)
   })
 
-  it('renders not-found for an slug the API does not know', () => {
+  it('renders not-found for a slug the API does not know', () => {
     render(
       <ResourceDetailPane
         resourceInUrl={{ category: 'items', slug: slugFromPathSegment('test-404')! }}

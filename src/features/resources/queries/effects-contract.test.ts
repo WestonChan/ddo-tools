@@ -1,6 +1,6 @@
+import { afterEach, expect, it, vi } from 'vitest'
 import { slugFromPathSegment } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
-import { afterEach, expect, it, vi } from 'vitest'
 import type { ApiAugmentDetail, ApiItemDetail, ApiSetDetail } from '../../../lib/api'
 import {
   isApiEffect,

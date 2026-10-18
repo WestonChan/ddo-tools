@@ -1,5 +1,5 @@
-import { apiFixture } from '../../../test/apiFixture'
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest'
+import { apiFixture } from '../../../test/apiFixture'
 import { apiErrorDescription, type ApiSetDetail, type ApiSetRow } from '../../../lib/api'
 import capturedSetResponse from './fixtures/set-devoted-heart.json'
 import capturedSetPageResponse from './fixtures/sets-page.json'

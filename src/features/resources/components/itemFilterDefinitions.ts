@@ -1,6 +1,5 @@
 import type { FilterDefinition } from '../filters/filterModel'
-import type { ApiEffectVocabularyRow } from '../../../lib/api'
-import { statBonusFilterValue } from '../../../lib/api'
+import { type ApiEffectVocabularyRow, statBonusFilterValue } from '../../../lib/api'
 import type { ItemListFilters, RaidQuest } from '../queries/items'
 import { effectKindLabel } from './effectKindLabel'
 

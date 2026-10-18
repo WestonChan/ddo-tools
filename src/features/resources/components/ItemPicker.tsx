@@ -1,5 +1,3 @@
-import { resourcePath } from '../../../lib/resourcePaths'
-import type { Slug } from '../../../lib/api'
 import {
   useCallback,
   useEffect,
@@ -14,6 +12,8 @@ import {
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, Search } from 'lucide-react'
+import { resourcePath } from '../../../lib/resourcePaths'
+import { type Slug, isApiError, type ApiEffectVocabularyRow } from '../../../lib/api'
 import {
   ApiErrorNotice,
   ApiGate,
@@ -22,7 +22,6 @@ import {
   type LedgerColumn,
   type LedgerSort,
 } from '../../../components'
-import { isApiError, type ApiEffectVocabularyRow } from '../../../lib/api'
 import { useDebouncedValue } from '../../../hooks'
 import { FilterChipRow } from '../filters/FilterChipRow'
 import {
