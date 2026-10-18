@@ -6,10 +6,18 @@ it.each(['strength', '1-strength', 'sapphire--resistance', '6263613332164767'])(
   (segment) => expect(slugFromPathSegment(segment)).toBe(segment),
 )
 
-it.each(['', 'Strength', 'two words', '../item', 'item/other', '-item', 'item\n'])(
-  'rejects %j',
-  (segment) => expect(slugFromPathSegment(segment)).toBeNull(),
-)
+it.each([
+  '',
+  'Strength',
+  'two words',
+  '../item',
+  'item/other',
+  '-item',
+  'item\n',
+  'item\r',
+  'item\u2028',
+  'item\u2029',
+])('rejects %j', (segment) => expect(slugFromPathSegment(segment)).toBeNull())
 
 it('builds every detail kind from a validated segment', () => {
   const slug = slugFromPathSegment('strength')!

@@ -152,7 +152,7 @@ describe('ResourceDetailPane', () => {
         pickerCategory="items"
       />,
     )
-    expect(screen.getByRole('status')).toHaveTextContent('This item no longer exists.')
+    expect(screen.getByRole('status')).toHaveTextContent('Item link "test-404" was not found.')
   })
 
   it('keeps the pane loading placeholder and status role until the item exists', () => {
@@ -173,7 +173,7 @@ describe('ResourceDetailPane', () => {
         pickerCategory="items"
       />,
     )
-    expect(screen.getByRole('status')).toHaveTextContent('No item with slug test-405.')
+    expect(screen.getByRole('status')).toHaveTextContent('Item link "test-405" was not found.')
     expect(screen.getByRole('status')).toHaveTextContent('Pick another row from the list.')
   })
 

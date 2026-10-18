@@ -75,7 +75,7 @@ const resourceQueryKeys = {
   source: (kind: string, slug: Slug) => ['sources', kind, slug] as const,
 }
 
-const itemDetailQueryOptions = (
+export const itemDetailQueryOptions = (
   slug: Slug,
 ): DetailQueryOptions<Item, ReturnType<typeof resourceQueryKeys.item>> =>
   queryOptions({

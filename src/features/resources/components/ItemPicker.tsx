@@ -1,3 +1,4 @@
+import { resourcePath } from '../../../lib/resourcePaths'
 import type { Slug } from '../../../lib/api'
 import {
   useCallback,
@@ -367,7 +368,7 @@ export function ItemPicker({
   const openItemDetail = useCallback(
     (item: ItemSummary) => {
       if (onOpenItem) onOpenItem(item.slug)
-      else void navigate({ to: '/resources/' + category + '/' + item.slug })
+      else void navigate({ to: resourcePath(category, item.slug) })
     },
     [navigate, category, onOpenItem],
   )

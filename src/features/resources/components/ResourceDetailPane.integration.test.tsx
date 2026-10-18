@@ -10,18 +10,79 @@ import { ItemHoverContent } from './detail/ResourceHoverCards'
 import { render } from '../../../test/renderWithQueryClient'
 import { ResourceDetailPane } from './ResourceDetailPane'
 import capturedItemResponse from '../queries/fixtures/item-stolen-necklace-level-25.json'
+import capturedLegacyItem from '../queries/fixtures/item-legendary-bracers-of-the-demons-consort.json'
+import capturedLegacySet from '../queries/fixtures/set-the-legendary-deserts-starless-nights.json'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useParams } from '@tanstack/react-router'
+import { renderWithRouter } from '../../../test/renderWithRouter'
+import { resourcePath } from '../../../lib/resourcePaths'
+import type { JSX } from 'react'
 
 const capturedTwoSetItem = apiFixture(capturedTwoSetItemResponse)
 const capturedCaptainSet = apiFixture(capturedCaptainSetResponse)
 const capturedDevilSet = apiFixture(capturedDevilSetResponse)
 const capturedItem = apiFixture(capturedItemResponse)
 
-vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
+const navigateMock = vi.fn()
+vi.mock('@tanstack/react-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tanstack/react-router')>()),
+  useNavigate: () => navigateMock,
+}))
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  navigateMock.mockReset()
 })
+
+function CanonicalItemPane(): JSX.Element {
+  const params = useParams({ strict: false })
+  const slug = slugFromPathSegment(params.slug ?? '')!
+  return (
+    <ResourceDetailPane
+      resourceInUrl={{ category: 'items', slug }}
+      pickerCategory="items"
+      focusItemSlug={slug}
+    />
+  )
+}
+
+it.each(['6263613332164767', 'former-bracers'])(
+  'canonicalizes %s while naming and focusing its entry with one history entry',
+  async (segment) => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (request) => {
+      const path = new URL(String(request)).pathname
+      return new Response(
+        JSON.stringify(path.startsWith('/v1/items/') ? capturedLegacyItem : capturedLegacySet),
+      )
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { router } = renderWithRouter(
+      <QueryClientProvider client={client}>
+        <CanonicalItemPane />
+      </QueryClientProvider>,
+      resourcePath('items', slugFromPathSegment(segment)!),
+    )
+    navigateMock.mockImplementation((options) => router.navigate(options))
+    const heading = await screen.findByRole('heading', { name: capturedLegacyItem.name })
+    await waitFor(() =>
+      expect(router.history.location.pathname).toBe(
+        resourcePath('items', slugFromPathSegment(capturedLegacyItem.slug)!),
+      ),
+    )
+    expect(router.history.length).toBe(1)
+    expect(heading).toHaveFocus()
+    expect(screen.getByRole('navigation', { name: 'Detail breadcrumb' })).toHaveTextContent(
+      capturedLegacyItem.name,
+    )
+    expect(
+      fetchMock.mock.calls.filter(([request]) =>
+        new URL(String(request)).pathname.startsWith('/v1/items/'),
+      ),
+    ).toHaveLength(1)
+    client.clear()
+  },
+)
 
 function renderItemDetail(): void {
   render(

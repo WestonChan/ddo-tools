@@ -1,3 +1,4 @@
+import { resourcePath, resourceCategoryPath, resourceUrl } from '../../../lib/resourcePaths'
 import type { Slug } from '../../../lib/api'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
@@ -55,7 +56,7 @@ export function useDetailStack({
   const pushResource = useCallback(
     (resource: ResourceReference) => {
       if (stack.length === 0) {
-        navigate({ to: `/resources/${resource.category}/${resource.slug}` })
+        navigate({ to: resourcePath(resource.category, resource.slug) })
         return
       }
       setStack((previousStack) => {
@@ -85,7 +86,7 @@ export function useDetailStack({
   const closeDetail = useCallback(() => {
     setStack([])
     if (onCloseDetail) onCloseDetail()
-    else navigate({ to: `/resources/${pickerCategory}`, replace: true })
+    else navigate({ to: resourceCategoryPath(pickerCategory), replace: true })
   }, [navigate, pickerCategory, onCloseDetail])
 
   const popResource = useCallback(() => {
@@ -108,9 +109,7 @@ export function useDetailStack({
   )
 
   const top = stack[stack.length - 1] ?? null
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
-  const deepLinkUrl = top ? `${origin}${basePath}/resources/${top.category}/${top.slug}` : null
+  const deepLinkUrl = top ? resourceUrl(top.category, top.slug) : null
 
   return {
     stack,

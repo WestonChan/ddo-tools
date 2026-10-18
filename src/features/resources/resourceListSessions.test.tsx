@@ -18,6 +18,22 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('resource list sessions', () => {
+  it('drops the previous version written with numeric raid values', () => {
+    const session = renderHook(() => useResourceListSession('items'))
+    act(() =>
+      setResourceListSession('items', {
+        filters: { ...session.result.current.filters, raid: ['6263613332164767'] },
+      }),
+    )
+    session.unmount()
+    const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY)!)
+    stored.version = 1
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
+    resetResourceListSessionsForTests()
+    const restored = renderHook(() => useResourceListSession('items'))
+    expect(restored.result.current.filters.raid).toEqual([])
+    expect(itemListParameters(restored.result.current.filters, '', false).quest).toBeUndefined()
+  })
   it('keeps each category independent through writes and a storage round trip', () => {
     const items = renderHook(() => useResourceListSession('items'))
     const sets = renderHook(() => useResourceListSession('sets'))

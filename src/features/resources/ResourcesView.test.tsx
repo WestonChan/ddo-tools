@@ -14,6 +14,7 @@ import userEvent from '@testing-library/user-event'
 import { render } from '../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
+import * as resourceQueries from './queries/useItems'
 import type { Effect, Item, ItemAugmentSlot, ItemSummary } from './queries/items'
 import type { SetDetail } from './queries/sets'
 import capturedEffectsPageResponse from './queries/fixtures/effects-page.json'
@@ -192,6 +193,18 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
 })
+
+it.each(['Uppercase', 'two words', ''])(
+  'rejects invalid detail segment %j without a detail request',
+  (segment) => {
+    const itemQuery = vi.spyOn(resourceQueries, 'useItem')
+    mockRouteParams = { category: 'items', slug: segment }
+    render(<ResourcesView />)
+    expect(screen.getByText(`Item link "${segment}" was not found.`)).toBeInTheDocument()
+    expect(itemQuery.mock.calls.every(([slug]) => slug === null)).toBe(true)
+    expect(screen.getByRole('button', { name: 'Back to items' })).toBeInTheDocument()
+  },
+)
 
 describe('resource list sessions', () => {
   it('restores filters, match mode, set bonuses, search, sort, and scroll after leaving the view', async () => {

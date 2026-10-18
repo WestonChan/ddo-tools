@@ -28,9 +28,12 @@ describe('StatusPlaceholder', () => {
 
   it('not-found surfaces the missing slug', () => {
     render(
-      <StatusPlaceholder reason="not-found" missingItemSlug={slugFromPathSegment('test-999')!} />,
+      <StatusPlaceholder
+        reason="not-found"
+        missingLinkSegment={slugFromPathSegment('test-999')!}
+      />,
     )
-    expect(screen.getByText(/no item with slug test-999/i)).toBeInTheDocument()
+    expect(screen.getByText(/Item link "test-999" was not found\./i)).toBeInTheDocument()
     expect(screen.getByText(/pick another row/i)).toBeInTheDocument()
   })
 

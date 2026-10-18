@@ -1,3 +1,4 @@
+import { resourcePath, resourceCategoryPath } from '../../lib/resourcePaths'
 import { slugFromPathSegment, type Slug } from '../../lib/api'
 import {
   useCallback,
@@ -27,16 +28,22 @@ const RESOURCE_COLUMN_MINIMUM_PX = 480
 function useResourceRouteParams(): {
   category: ResourceCategory
   selectedResourceSlug: Slug | null
+  invalidSegment: string | null
 } {
   const params = useParams({ strict: false })
   const category: ResourceCategory =
     params.category && isResourceCategory(params.category) ? params.category : 'items'
   const selectedResourceSlug = params.slug === undefined ? null : slugFromPathSegment(params.slug)
-  return { category, selectedResourceSlug }
+  return {
+    category,
+    selectedResourceSlug,
+    invalidSegment: params.slug !== undefined && selectedResourceSlug === null ? params.slug : null,
+  }
 }
 
 function ResourcesView(): JSX.Element {
-  const { category, selectedResourceSlug } = useResourceRouteParams()
+  const { category, selectedResourceSlug, invalidSegment } = useResourceRouteParams()
+  const hasDetailLink = selectedResourceSlug !== null || invalidSegment !== null
   const navigate = useNavigate()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const categoryPanelId = useId()
@@ -74,7 +81,7 @@ function ResourcesView(): JSX.Element {
   }, [])
 
   function navigateToCategory(nextCategory: ResourceCategory): void {
-    navigate({ to: `/resources/${nextCategory}` })
+    navigate({ to: resourceCategoryPath(nextCategory) })
   }
 
   useEffect(() => {
@@ -103,11 +110,11 @@ function ResourcesView(): JSX.Element {
       window.history.back()
       return
     }
-    navigate({ to: `/resources/${category}`, replace: true })
+    navigate({ to: resourceCategoryPath(category), replace: true })
   }, [navigate, category, isSingleColumn])
 
   function closeFocusedDetailOnEscape(event: ReactKeyboardEvent<HTMLElement>): void {
-    if (event.key !== 'Escape' || event.defaultPrevented || selectedResourceSlug === null) return
+    if (event.key !== 'Escape' || event.defaultPrevented || !hasDetailLink) return
     if (isTypingTarget(event.target)) return
     event.preventDefault()
     event.stopPropagation()
@@ -144,12 +151,12 @@ function ResourcesView(): JSX.Element {
     selectedResourceSlug !== null ? { category, slug: selectedResourceSlug } : null
 
   function selectItemFromList(slug: Slug): void {
-    const isReplacingSelectedItem = selectedResourceSlug !== null
+    const isReplacingSelectedItem = hasDetailLink
     if (!isReplacingSelectedItem) wasOpenedFromList.current = true
     setItemToFocus(slug)
     setListSelectionCount((count) => count + 1)
     navigate({
-      to: `/resources/items/${slug}`,
+      to: resourcePath('items', slug),
       ...(isReplacingSelectedItem ? { replace: true } : {}),
     })
   }
@@ -173,7 +180,7 @@ function ResourcesView(): JSX.Element {
           { '--resources-column-min-width': `${RESOURCE_COLUMN_MINIMUM_PX}px` } as CSSProperties
         }
       >
-        {(!isSingleColumn || selectedResourceSlug === null || category !== 'items') && (
+        {(!isSingleColumn || !hasDetailLink || category !== 'items') && (
           <aside className="resources-picker" ref={pickerRef} tabIndex={-1}>
             {category === 'items' ? (
               <ItemPicker
@@ -195,15 +202,16 @@ function ResourcesView(): JSX.Element {
             )}
           </aside>
         )}
-        {category === 'items' && (!isSingleColumn || selectedResourceSlug !== null) && (
+        {category === 'items' && (!isSingleColumn || hasDetailLink) && (
           <section
-            className={`resources-detail-pane${selectedResourceSlug === null ? ' resources-detail-pane--empty' : ''}`}
+            className={`resources-detail-pane${!hasDetailLink ? ' resources-detail-pane--empty' : ''}`}
             ref={detailPaneRef}
             aria-label="Item details"
             data-detail-pane=""
             onKeyDown={closeFocusedDetailOnEscape}
           >
             <ResourceDetailPane
+              invalidLinkSegment={invalidSegment}
               key={listSelectionCount}
               resourceInUrl={resourceInUrl}
               pickerCategory={category}

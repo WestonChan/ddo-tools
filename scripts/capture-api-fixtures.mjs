@@ -2,6 +2,8 @@ import { writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 
 const manifest = {
+  'src/features/resources/queries/fixtures/item-legendary-bracers-of-the-demons-consort.json': '/v1/items/legendary-bracers-of-the-demons-consort',
+  'src/features/resources/queries/fixtures/set-the-legendary-deserts-starless-nights.json': '/v1/sets/the-legendary-deserts-starless-nights',
   'src/features/resources/queries/fixtures/quest-death-house.json': '/v1/quests/death-house',
   'src/features/resources/queries/fixtures/sets-null-icon-page.json':
     '/v1/sets?q=Conduit%20of%20the%20Titans&limit=1',

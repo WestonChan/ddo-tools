@@ -1,4 +1,3 @@
-import type { Slug } from '../../../lib/api'
 import type { JSX, ReactNode } from 'react'
 import { ApiErrorNotice, WireframePlaceholder } from '../../../components'
 
@@ -10,7 +9,7 @@ const STATUS_PLACEHOLDER_MIN_HEIGHT_PX = 140
 interface EmptyStatusPlaceholderProps {
   reason: StatusPlaceholderReason
   searchQuery?: string
-  missingItemSlug?: Slug | null
+  missingLinkSegment?: string | null
   category?: string
 }
 
@@ -28,7 +27,7 @@ type StatusPlaceholderProps = EmptyStatusPlaceholderProps | ErrorStatusPlacehold
 function placeholderMessage({
   reason,
   searchQuery,
-  missingItemSlug,
+  missingLinkSegment,
   category,
 }: EmptyStatusPlaceholderProps): { title: string; hint?: string } {
   switch (reason) {
@@ -44,8 +43,8 @@ function placeholderMessage({
     case 'not-found':
       return {
         title:
-          missingItemSlug !== null && missingItemSlug !== undefined
-            ? `No item with slug ${missingItemSlug}.`
+          missingLinkSegment !== null && missingLinkSegment !== undefined
+            ? `Item link "${missingLinkSegment}" was not found.`
             : 'Not found.',
         hint: 'Pick another row from the list.',
       }

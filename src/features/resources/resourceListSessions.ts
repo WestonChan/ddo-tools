@@ -45,7 +45,7 @@ export const RESOURCE_LIST_CONFIGURATION: {
 }
 
 const RESOURCE_LIST_SESSIONS_STORAGE_KEY = 'ddo-tools:resource-list-sessions:v1'
-const RESOURCE_LIST_SESSIONS_VERSION = 1
+const RESOURCE_LIST_SESSIONS_VERSION = 2
 let currentSessions: ResourceListSessions | null = null
 const sessionListeners = new Map<ResourceCategory, Set<() => void>>()
 

@@ -1,3 +1,4 @@
+import { resourcePath } from '../../../../lib/resourcePaths'
 import type { Slug } from '../../../../lib/api'
 import type { JSX, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
@@ -59,7 +60,7 @@ function useOpenItemFromCard(onOpenItem?: OpenItem): OpenItem {
   return (slug, name) => {
     clearCards()
     if (onOpenItem) onOpenItem(slug, name)
-    else void navigate({ to: `/resources/items/${slug}` })
+    else void navigate({ to: resourcePath('items', slug) })
   }
 }
 
