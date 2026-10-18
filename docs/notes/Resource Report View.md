@@ -13,7 +13,9 @@ Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see
 	- Bonus rows can link to other resource detail views (depends on Phase 4f Categories cross-linking).
 
 📋 Phase 5+ — Submit + override flow:
-- Submitting sends the changed item as a report. Whether that is a pre-filled GitHub issue or Sentry feedback is open; see roadmap Phase 5b. Before sending, search existing items in the DB for an exact match to avoid duplicate reports.
+- Submitting sends the edit as a diff to V10's `POST /v1/reports` (decided 2026-10-17; see roadmap V10). The editable unit is the fields a person writes (an effect's name, value, value2, bonus type), never the derived text; the card re-renders from the draft. A review step before submit lists each change with a per-change revert. Duplicates are suppressed by the server's fingerprint and request count: a repeat claim returns its status and verdict ("checked on a date: the wiki says X"). The draft lives in `user.db` as the local override.
+- Missing things: the effect picker's empty state offers "Can't find it? Report as missing" (an `unmapped` add with the typed text); a small separate form reports a whole missing entity (kind, name, ddowiki link).
+- Before sending, search existing items in the DB for a near match on a missing entity's name and offer "did you mean".
 - If the editable view isn't sufficient, suggest the rail's "Report a bug" row instead (the Sentry feedback form after Phase 3b).
 - After submission: show a confirmation toast — "Updated locally + report submitted."
 - Store the changed item as a local override in `user.db`. Subsequent reads use the override.
