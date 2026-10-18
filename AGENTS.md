@@ -65,7 +65,7 @@ The symlinked `node_modules` is enough for `npm run lint`, `npx vitest run`, `np
 
 ## Project Structure
 
-- **Stack** — React 19 + TypeScript + Vite + TanStack Query. The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
+- **Stack** — React 19 + TypeScript + Vite + TanStack Query on Node 24. `.nvmrc` is the one place the Node major is chosen: every CI job reads it, `engines.node` and `@types/node` follow it, and `src/test/nodeMajorAgreement.test.ts` fails when they disagree. The router basename comes from Vite's `BASE_URL` (`/` on Vercel).
 - **App shell** — `src/app/` contains only components that appear on every page (root App, nav bar, bottom bar, loading gate, error boundary). The shell should still render with all features removed.
 - **Feature modules** — domain features live under `src/features/`, each owning its own views, components, types, and CSS. See `.claude/rules/frontend.md` for the per-feature breakdown.
 - **Shared frontend code** — non-feature code lives at the `src/` level (`src/components/`, `src/hooks/`, `src/stores/`).
