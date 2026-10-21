@@ -8,7 +8,7 @@ particular implementation.
 (the community-standard desktop planner) via [ddo-builds.com's open-source TS port](https://github.com/johngalt316/ddo-builds),
 plus DDOBuilderV2's `BonusTypes.xml` bonus-type table. Game mechanics are facts and
 not copyrightable; **no code or data files were copied** — see the licensing note in
-[roadmap.md](roadmap.md) Phase 6. Spot-check disputed rules against
+[architecture.md](architecture.md) Phase 6. Spot-check disputed rules against
 [ddowiki.com](https://ddowiki.com/page/Stacking) and in-game before hardening tests on them.
 
 ## The core model

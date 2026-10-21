@@ -2,7 +2,7 @@ Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see
 
 Phase 4a and 4b are shipped and their bullets pruned — the design decisions they recorded (hybrid
 URL strategy, `ResourceDetailDrawer` extraction, the wiki compare window) now live in the Phase 4b
-entry in [[roadmap]].
+entry in [[architecture]].
 
 - 📋 Phase 4g — Per-row wiki links in the Enchantments list. **The data landed in 4c**: `unique_enchantments` (762 rows) carries both the `wiki_url` to link to and the `effect` text the stacking tooltip needs, reachable via the new nullable FK on `bonuses` and `effects`. Only the UI is left. Original note: (`ddowiki.com/page/<stat>`) plus a hover tooltip explaining stacking semantics. Since 4e the surface is `EffectList` and the data is each effect's `wiki_url` from `/v1/effects/{slug}` (none filled yet; the wiki reads fill them).
 - ✅ Raid-ness moved out of the frontend into `quest_loot.loot_type`. The scraper now records which wiki category each loot mapping came from (`_QUEST_LOOT_SOURCES` in [`scraper.py`](../../scripts/src/ddo_data/wiki/scraper.py) carries a `LootType` per entry), `insert_quest_loot` implements the raid-wins precedence its docstring had always described, and the frontend's 36-name `IN (...)` is now `WHERE loot_type = 'raid'`. The misleading "raid-ness is derived from the quest, not stored on the mapping" docstring is gone.
@@ -19,7 +19,7 @@ entry in [[roadmap]].
 	- Data prerequisites: pack type (adventure pack vs expansion) isn't modeled in the DB; `quests` needs a free-to-play marker (or a seeded F2P quest list); the 13 raid quests with NULL `pack_id` (see [[DB Errors]]) would fall through pack-based ownership checks.
 - ✅ Phase 4d — Keyboard model for every ledger (revised 2026-10-03): the scrolling body is the Tab stop, Enter steps into the rows (or ArrowDown from the Resources search), arrows / Home / End move focus, a focused row acts as hovered (card opens, T pins), Enter does the click action and keeps focus, Escape pops a pinned card or returns to the body; Escape never closes the detail.
 	- ✅ WCAG 1.4.13 (shipped 2026-10-04): a card opened by keyboard focus outside a ledger row (a Hotbars slot reached by Tab, the Set link in the facts, a `data-tip` hint) can be dismissed with Escape while focus stays put: the row handler claims Escape first, and the provider closes an unpinned focus-opened card when nothing else claimed the key.
-- ✅ Phase 4d — Search is the API's `q`: the item name as a substring, or exactly a slot, category or pack name, ranked exact name, then prefix, then the rest. Typo tolerance is gone with the Fuse index; an API change if wanted (📋 Phase 4g note in the roadmap).
+- ✅ Phase 4d — Search is the API's `q`: the item name as a substring, or exactly a slot, category or pack name, ranked exact name, then prefix, then the rest. Typo tolerance is gone with the Fuse index; an API change if wanted (📋 Phase 4g, tracked in the project).
 - ✅ Phase 4d — The list is a `LedgerTable`: Name, ML, Slot, Pack, Raid and Rare columns, sortable, resizable and drag-reorderable; Pack, Raid and Rare hide below 375px. More columns (icons, material) wait on 4g.
 - ✅ Phase 4d follow-up — Hover cards for every "Obtained from" source (pack, chain, saga, crafting system, vendor, event with what each yields; challenge packs and starter gear as name-and-wiki hints), shipped 2026-10-03. The augment sockets open a ledger of fitting augments with augment hover cards; picking one is Phase 8.
 - 📋 Phase 8 — "Comparison to the equipped set" rows in hover cards, once gear sets exist.

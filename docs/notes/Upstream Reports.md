@@ -1,6 +1,6 @@
 Status legend: ✅ reported upstream · 📋 to report · ❌ won't report · 🔧 the missing entity is created from the wiki with `source = 'wiki'` until he adds it · 🩹 also corrected locally in `ddo-data/crates/ddo-etl/data/corrections/` until he fixes it (from 2026-09-30 every disagreement here is meant to carry 🩹; the wiki is assumed right)
 
-Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while reading the wiki into the ETL override files (roadmap V7). Since 2026-09-30 the wiki is assumed right: every value disagreement here is also a correction in `ddo-data/crates/ddo-etl/data/corrections/` (120 applied at seeding), and each is still reported at https://github.com/Maetrim/DDOBuilderV2 so the correction can expire. Entries without 🩹 are rows he lacks, parser notes, or judgement calls that are not a stored value.
+Disagreements between ddowiki and Maetrim's DDOBuilderV2 data files, found while reading the wiki into the ETL override files (V7 in `docs/architecture.md`). Since 2026-09-30 the wiki is assumed right: every value disagreement here is also a correction in `ddo-data/crates/ddo-etl/data/corrections/` (120 applied at seeding), and each is still reported at https://github.com/Maetrim/DDOBuilderV2 so the correction can expire. Entries without 🩹 are rows he lacks, parser notes, or judgement calls that are not a stored value.
 
 ## Crafting
 

@@ -2,9 +2,9 @@
 
 ## Context
 
-The DB has 78 tables, 7,249 items, 810 feats, 3,146 enhancements, 480 spells, 25 classes, 29 races. This document defines the overall UI structure, navigation, and feature modules, and is the single source of truth for what ships and when.
+The DB has 78 tables, 7,249 items, 810 feats, 3,146 enhancements, 480 spells, 25 classes, 29 races. This document is the design record and spec: the overall UI structure, navigation, feature modules, the data architecture, and why each shipped phase went the way it did. What ships and when lives in the [DDO Tools project](https://github.com/users/WestonChan/projects/2).
 
-**Where to start**: the **Phase status** table under `## Implementation Order` names the one phase that is next. Read that first — the sections above it are feature specs, not work orders.
+**Where to start**: the project's Ready column names the next piece of work. The sections here are specs, not work orders.
 
 ---
 
@@ -901,92 +901,9 @@ Phase 5), `features/resources/` (Phase 4c-4g), `features/settings/`
 
 ---
 
-## Implementation Order
+## Phases
 
-### Phase status
-
-Exactly one row is `→ NEXT`. **When a phase ships, mark it `done` and move `→ NEXT` in the same
-commit** (per `CLAUDE.md`) — this table is the only place order is recorded, so it cannot contradict
-itself. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
-
-| Phase | Status | What |
-|---|---|---|
-| 1 | done | Layout restructuring -- feature nav, routing, bottom bar, DB loading gate |
-| 1b | done | CSS refactor -- design-system tokens |
-| 1c | done | Explicit function return types (ESLint rule) |
-| 1d | done | Router migration to `@tanstack/react-router` |
-| 1e | done | Transparent pip fills (Character view) |
-| 2 | done | Landing view + site patch notes |
-| 3 | done | Error reporting & resilience -- Sentry, boundaries, `DatabaseGate` |
-| 4a | done | Resources browser -- items picker + detail |
-| 4b | done | Resources drawer architecture + wiki compare window |
-| 4h | done | Shared-hook state cleanup -- `useTheme` to `useSyncExternalStore` |
-| 4i | done | `<Modal>` primitive consolidation (+ mobile fullscreen nav modal behavior) |
-| 4j | done | Licensing & attribution housekeeping -- LICENSE file, IP disclaimer, wiki credit, site-metadata footer |
-| 4k | done | File-structure cleanup -- feature-layout consistency, dead icon removal |
-| 4n | done | Naming pass -- every identifier in `src/` and `e2e/` checked against `docs/naming.md` and renamed where it failed |
-| 4o | done | Lint enforcement -- written conventions (import direction, barrels, naming shape, case collisions, tokens, formatting) checked by `npm run lint` and `cargo lint` |
-| 4c | done | ETL template/entity normalization + rare loot (Python pipeline) |
-| 4m | superseded | ETL data-quality audits (Python) -- replaced by V2/V3, which source these fields from DDOBuilderV2 instead of the wiki |
-| 4l | superseded | DDOBuilderV2 cross-check utility -- inverted by V2: Maetrim's data is now the primary source and the old `ddo.db` is the fixture |
-| V1 | done | Rust API + Vercel plan -- this roadmap section, `ddo-data` workspace scaffold |
-| V2 | done | `ddo-etl` parses DDOBuilderV2 items into SQLite; 97.2% of legacy item names matched |
-| V3 | done | `ddo-etl` covers augments, sets, filigrees, clickies, feats, races, classes, enhancement trees, spells |
-| V4 | done | `ddo-api` -- axum read API over the ETL output, OpenAPI, ETags, rate limiting, bulk dumps, Dockerfile + `fly.toml` (first deploy pending the Fly account) |
-| V5 | done | GitHub Action -- scheduled DDOBuilderV2 pull, ETL build, icons, validation gates, `flyctl deploy` (first run pending the Fly account) |
-| V6 | done | Frontend on the API -- TanStack Query, hand-written API types, sql.js + `DatabaseGate` removed, Vercel config (first deploy pending the Vercel account) |
-| D1 | done | Design-system adoption -- tokens, fonts and lint rules from the Claude Design system; the rail with character switcher, compare picker and warnings; stats-panel shell; landing tiles; page scaffolds for the unbuilt views; resources and characters restyled |
-| V7 | done | Wiki gap-fill -- quest loot rarity, quest facts, all 37 crafting systems and blank descriptions read from ddowiki into ETL overrides; the unread parts of Maetrim's files; per-table ledger in `docs/notes/Data Verification.md` |
-| V7b | done | Item sources -- every item has a structured source: vendors, events, crafting outputs, challenges and starter gear join quests, chains, sagas and packs; `drops` becomes `sources` and provenance becomes `provenance`; the "every item has a source" integrity check turns hard |
-| 4d | done | Filter UX overhaul -- chip-row filters sent as `/v1/items` parameters, shared `Combobox`, `LedgerTable` (sort, resize, reorder, arrow keys), `HoverCard` system with pinning, the designed item detail card |
-| 4e | done | Effects and bonuses (the stat DB rework) -- stats, named effects and stat groups in one `effects` table, bonuses through `owner_bonuses`, `/v1/effects` and the `bonus=` filter, the site on the new shape; deferred chunks listed in the phase entry |
-| **3b** | **→ NEXT** | Sentry in production, then bug reports through it -- the production deploy gets the Sentry variables it has never had and the build fails without them; Sentry's User Feedback widget replaces every pre-filled GitHub issue link; a same-origin tunnel so ad blockers don't drop reports |
-| 4f | planned | Categories -- feats, enhancements, bonuses, stats (requires 4e) |
-| 4g | planned | Polish -- filter persistence, sortable picker table |
-| 5 | planned | Characters view & build context -- `user.db`, Zustand stores |
-| 5b | planned | Resource Report View -- inline corrections in the detail card, submitted as a diff to V10's `/v1/reports` (requires 5 and V10) |
-| 6 | planned | Stats engine |
-| 7 | planned | Build Plan (single scrollable page) |
-| 8 | planned | Gear |
-| V8 | planned | Build sharing with a server -- Fly volume SQLite, token-authorized `/v1/builds` routes, Share button. Moved after Phase 8 on 2026-10-01: ships once builds and gear are real. Builds reference entities by slug and apply redirects as a data migration (4e item 7) |
-| 16a | planned | PWA shell and offline game data -- manifest, service worker, `/v1` and icon caches keyed by dataset version, offline indicator, install notes (requires 8 and V8) |
-| V10 | planned | Data issue reports -- `reports.db` on the Fly volume, `POST /v1/reports` taking the edited-entity diff (`set`, `add`, `remove`, `unmapped`, `create`), deduplicated by fingerprint with a request count, grouped by entity for a wiki reader agent that verifies each change |
-| V9 | chunks 1–3 done; chunk 4 open | Editable source tree -- the dataset as TOML files, one per entity, under its pack and quest; built into SQLite by `ddo-etl build --data` and written back by `export --db`, with the round trip as the test. Chunk 1 (the tree, both scripts, the proof against the XML build) landed 2026-10-15; chunk 3 (`ddo-etl import-ddobuilder`, Maetrim's updates as a three-way merge in the database) and the deploy switch landed 2026-10-17; chunk 2 (corrections and whole-entity citations on every kind, in-game sources, the XML build path and embedded inputs deleted, per-kind templates and lints) landed 2026-10-19; chunk 4's edit tooling is open. See the phase entry |
-| V11 | planned (next data-side step after V9 chunk 2) | Triggers and effect checks -- decide how triggers are held in the database and fill the four columns nothing populates today (`effect_bonuses.trigger_id`, `triggers.description`, `effects.wiki_url`, `effects.default_value2`), checking effects against the wiki. See the phase entry |
-| 9 | planned | Comparison mode |
-| 10 | planned | Farm checklist |
-| 11 | superseded | DB pipeline -- SLAs, abilities, purchasable augments (folded into V3; DDOBuilderV2 ships these) |
-| 12 | planned | Build Overview |
-| 16b | planned | Offline build edits and merge -- edits with no connection, three-way merge into the V8 server copy on reconnect, conflict dialog, "Not synced" badge (requires 16a, V8 and a settled build JSON) |
-| 13 | planned | Settings view cleanup |
-| 14 | superseded | Build sharing via URL -- replaced by V8's server-side sharing; the URL codec is optional fallback |
-| 15 | planned | `.DDOBuild` import (DDOBuilderV2 desktop files) |
-
-Phases 4h–4k, 4n and 4o are general frontend/repo cleanup rather than Resources-browser work; they sit under
-Phase 4 only because they surfaced during it. Ordered first because all are small and self-contained.
-
-**Independence and ordering notes** (the table reads as strictly serial by default, so where that
-isn't true it is said here):
-
-- **The V-series is the critical path.** V2 through V5 happen in the `ddo-data` repo and can run
-  while nothing changes here. V6 is the first phase that touches this repo's code, and every later
-  frontend phase (4d–4g, 5 onward) builds on V6's data layer, not on sql.js. Don't start 4d–4g before
-  V6 lands; they would be written against a data layer that is about to be deleted.
-- **The `{{Enhancement bonus}}` gap that made 4m block Phase 8** is closed by V2: every DDOBuilderV2
-  `.item` carries an explicit `<BonusType>` per `<Buff>`, which is the field 4m was trying to recover
-  from wikitext. Phase 8 now depends on V2/V3 instead.
-- **4d–4g remain serial** behind each other as written (4f still `requires 4e`), and all four wait
-  on V6.
-- **Phase 5 (`user.db`) is unchanged.** V8 adds server-side sharing on top of it; the browser copy
-  stays the working copy.
-- **D1 is independent of the V-series and of 4d–4g.** It changed only the frontend's look and shell;
-  every later frontend phase inherits its tokens, rail, `StatsPanel`, `PageSection` and
-  `AnchoredMenu` rather than the layout this document's older sketches describe.
-- **16a and 16b are one feature in two places.** 16a (shell and offline game data) goes right after V8, ahead of Phase 9, because it needs builds to exist but not their final shape. 16b (offline edits and merge) waits until after Phase 12 so the merge is written once against a settled build JSON; Phases 13 and 15 are independent of both.
-- **3b is independent of every phase around it.** It touches the rail, the error components,
-  `src/lib/sentry.ts` and one Vercel Function, none of which 4e–8 change, so it can run alongside
-  4e or jump ahead of it. It sits after 4e only because 4e was already next when 3b was added. Its
-  first step, the production Sentry variables, is a Vercel dashboard change that can happen today.
+What ships, in what order and what blocks what lives in the [DDO Tools project](https://github.com/users/WestonChan/projects/2): one epic per phase, its chunks as sub-issues, the board order as the priority order. The entries below are the design record of each phase (what was decided and why) and the spec for the ones still open. Branch naming: `phase-<n><letter>-<slug>` (e.g. `phase-4b-resources`).
 
 ### Phase 1: Layout Restructuring (done)
 - Redesign nav bar as feature nav (Build Overview, Build Plan, Gear + TOOLS)
@@ -1046,6 +963,8 @@ Infrastructure for per-view error handling. Built early so every subsequent phas
 - `NotFoundView`: 404 page for unknown routes — TanStack Router already routes unknown paths here; this phase upgrades the visual chrome to `<ErrorScreen tone='info'>` with the sanitized attempted path, "Go to landing", and "Report broken link" actions. Empty-path fallback when sanitized pathname is `/`.
 
 ### Phase 3b: Bug Reports Through Sentry
+
+Tracked in [ddo-tools#35](https://github.com/WestonChan/ddo-tools/issues/35).
 
 Every report control on the site opens a pre-filled GitHub issue today. That asks a player for a GitHub account and a trip to a site many have never used, and it splits each report from the Sentry event and replay it describes. Phase 3b sends all of them to Sentry's User Feedback widget instead: the player types into a dialog on the page, and the report lands in Sentry already linked to the session replay and, from an error screen, to the error itself. The repository links in the rail footer and the landing footer stay; they point at the source, not at reporting.
 
@@ -1252,6 +1171,8 @@ Follow-ups shipped 2026-10-03 after use: hover cards survive clicks (unpinned ca
 Deferred from the original scope, each with a home: to-hit and to-damage by stat (Phase 4e/4f, the stat list has no such entries); material, binding and augment-slot filters, "Content you own", column and filter persistence, a "via <enchantment>" caption, fuzzy search (Phase 4g); report mode (Phase 5b); the compare bookmark and the augment slot picker (Phase 8).
 
 #### Phase 4e — Enchantment lines (the stat DB rework), spec decided 2026-10-03
+
+Deferred chunks tracked in [ddo-data#13](https://github.com/WestonChan/ddo-data/issues/13).
 
 **Naming (decided 2026-10-04, applied in the API chunk before anything ships).** The model below was written with
 "enchantment" for the named thing; it is renamed so the words match DDO's and stay right once feats,
@@ -1573,10 +1494,14 @@ first-class stats category.
     tooltip golden set, so it is its own ddo-data task after V9 chunk 1 lands.
 
 #### Phase 4f — Categories
+
+Tracked in [ddo-tools#43](https://github.com/WestonChan/ddo-tools/issues/43).
 - **Crafting systems** becomes a Resources category (`/resources/crafting-systems`), not a top-level view: an info page per system (38 systems; where, materials, mechanics). Decided in the D1 navigation review — its interactive halves already live elsewhere (craftable options inline on item detail; materials summing in the Farm checklist), so what remains is reference content. Scope is large; plan it with the rest of this phase.
 - Wire feats, enhancements and a **Stats** tab into the picker (decided 2026-10-04: one Stats tab replaces the separate Stats and Enchantments tabs). A stat page lists everything that grants it (gear effects, feats, enhancements, set tiers, buffs once 4e's deferred item 5 lands), grouped by bonus type so stacking is visible; effect pages (`/v1/effects/{id}`: what it does, its ladder, where to get it) open from item, feat and stat pages rather than a tab of their own. Needs from `ddo-data`: stat descriptions and wiki links, and `q` with counts on `/v1/stats`. Each tab gets its own query layer + detail component. Swap the bonus-row wiki-link icon (currently `<a target="_blank">` opening ddowiki) to call `pushResource({ category: 'stats', id })` so the inspector navigates *inside* our app.
 
 #### Phase 4g — Polish
+
+Tracked in [ddo-tools#46](https://github.com/WestonChan/ddo-tools/issues/46).
 - Filter persistence per category via `useLocalStorage`, together with the ledger's column widths, order and sort (all component state since 4d).
 - **"Content you own" filter** — items whose source quests the user can run, from an account-type setting plus owned packs and the recurring giveaway sets. Needs the spec in [docs/notes/Resource View.md](notes/Resource%20View.md) and Phase 13's settings; moved here from 4d on 2026-10-02.
 - **Filters the list rows cannot answer yet**: material, binding, augment-slot colour, crafting system, augment slot type (sun/moon). Each is a `/v1/items` parameter in `ddo-data` first (the rule since 4d: no client-side matching), then a chip in `itemFilterDefinitions`.
@@ -1883,6 +1808,8 @@ entries as their own report section" design is still right, but that section wil
 
 #### Phase 5b — Resource Report View
 
+Tracked in [ddo-tools#63](https://github.com/WestonChan/ddo-tools/issues/63).
+
 Split out of Phase 4 because both items need `user.db`. Runs after Phase 5; blocked until then.
 Detail: [docs/notes/Resource Report View.md](notes/Resource%20Report%20View.md).
 
@@ -1891,6 +1818,8 @@ Detail: [docs/notes/Resource Report View.md](notes/Resource%20Report%20View.md).
 - **Submission target decided 2026-10-17:** V10's reports endpoint, not a GitHub issue (needs an account) or Sentry feedback (applied by hand). The draft stays a local override in `user.db` until submitted.
 
 ### Phase 5: Characters View & Build Context
+
+Tracked in [ddo-tools#53](https://github.com/WestonChan/ddo-tools/issues/53).
 
 Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnation-button bug + flow copy pass).
 
@@ -1909,6 +1838,8 @@ Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnati
 - Owned content settings
 
 ### Phase 6: Stats Engine
+
+Tracked in [ddo-tools#67](https://github.com/WestonChan/ddo-tools/issues/67).
 - Stats pipeline: `computeStats.ts`, `bonusStacking.ts`, `statSources.ts`
 - `StatsPanel.tsx` replacing `BuildSidePanel.tsx`
 - Breakdown popover, search, pin, stat highlight
@@ -1917,6 +1848,8 @@ Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnati
 **Rules reference** (applies to Phases 6–8): the game's stacking/effect-resolution rules are documented in [stacking-rules.md](stacking-rules.md) (extracted 2026-07-25 from DDOBuilderV2's model via [ddo-builds.com's open-source TS port](https://github.com/johngalt316/ddo-builds)) — read it before designing the engine. Consult their `src/engine/` only as *documentation of the game's rules* — don't copy code or data verbatim: the repo is MIT-labeled, but it's a port of DDOBuilderV2, which has **no license** (all rights reserved), so the MIT grant is only as solid as its unlicensed upstream. Game mechanics themselves are facts and not copyrightable; implement independently against our own SQLite data. Credit both repos in the README when the engine ships. Open design decision recorded in stacking-rules.md: whether to mirror DDOBuilderV2's item-vs-non-item competition split or apply type competition uniformly.
 
 ### Phase 7: Build Plan (single scrollable page)
+
+Tracked in [ddo-tools#72](https://github.com/WestonChan/ddo-tools/issues/72).
 - Build header (race, point buy, base stats, tomes, class set)
 - Class set: declare up to 3 classes, per-level dropdown filtered to that set, and bulk class swap (remap every level of one class to another in a single action, with a warning listing dependent choices that break)
 - Level progression (classes/feats + skills)
@@ -1929,6 +1862,8 @@ Detail: [docs/notes/Characters View.md](notes/Characters%20View.md) (reincarnati
 - **Collapsible-section primitive.** Grow it out of `PageSection` (`src/components/PageSection.tsx`, shipped in D1 as the titled, anchorable section header the scaffolds use): add controlled `expanded` / `onToggle` (collapse state persists in `user.db`) and a `summary` slot for the collapsed progress text ("Skills: 0/320 allocated"). Prior art for the expand animation: the deleted `src/components/CollapsibleSection.tsx` (`git show 8f1f648:src/components/CollapsibleSection.tsx`) used `grid-template-rows: 0fr → 1fr`, which animates to true content height without a hardcoded `max-height` — add the `transition` it never had. Two other chevron-expand idioms exist to reconcile against: `SitePatchNotes.tsx` rotates a chevron via an `is-open` class, `PastLifeStacks.tsx` swaps `ChevronDown`/`ChevronRight`.
 
 ### Phase 8: Gear
+
+Tracked in [ddo-tools#82](https://github.com/WestonChan/ddo-tools/issues/82).
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets).
 - Layout decided in D1 (scaffold shipped in `src/features/gear/GearView.tsx`): gear-set tabs across the top (sets are shared across builds), Finder and Compare as **in-view modes** on `/gear` rather than routes (they share the set context, so separate routes would fork state), then the 15-slot paper-doll tile grid (Quiver included). Each tile carries two mono tags — `N/4` pinned stats the item covers and `+N` unique bonus types it adds — and the selected tile opens the slot's equipped-item panel beside a Compare panel that lists candidate items with signed stat deltas versus the equipped item and a `Swap in` / `Revert` action. A "Compare list" strip above holds items added from Resources ("Add to compare" on item detail); hovering a candidate highlights the stats it changes in the stats panel.
 - Full overview + side-by-side slot editor
@@ -1938,6 +1873,8 @@ Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (gear-mechanics bullets)
 - Gear set management (per-build + standalone)
 
 ### Phase 9: Comparison Mode
+
+Tracked in [ddo-tools#95](https://github.com/WestonChan/ddo-tools/issues/95).
 Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets).
 - Click-to-compare in Characters view (connector line from comparison -> active build). The rail card's compare picker, `VS` row and Swap already ship as UI in D1 (`comparisonBuildId` on the build selection, `setComparisonBuildId` / `swapViewedAndComparedBuilds` on the character context); this phase gives them stat effects.
 - Comparison display for stats panel, build overview, and gear
@@ -1947,6 +1884,8 @@ Detail: [docs/notes/Gear View.md](notes/Gear%20View.md) (comparison-view bullets
 - Build warning calculation + bottom bar
 
 ### Phase 10: Farm Checklist
+
+Tracked in [ddo-tools#102](https://github.com/WestonChan/ddo-tools/issues/102).
 Sections decided in D1 (scaffold in `src/app/routeComponents.tsx`): Wanted items (acquisition path per item), Materials summary (summed across crafting paths, grouped by system), Quest run list (where to go, what drops there). Item detail's "Add to farm list" button feeds the first.
 - Item acquisition list from all gear sets (checkboxes, farm locations, wiki links)
 - Acquisition path selector per item (farm / craft / purchase)
@@ -1961,12 +1900,16 @@ Sections decided in D1 (scaffold in `src/app/routeComponents.tsx`): Wanted items
 - Populate via `build_db` pipeline
 
 ### Phase 12: Build Overview
+
+Tracked in [ddo-tools#107](https://github.com/WestonChan/ddo-tools/issues/107).
 Sections decided in D1 (scaffold shipped in `src/features/build/BuildOverviewView.tsx`): Active abilities, Passive feats & abilities, Buffs & stances.
 - **Active abilities as hotbars** (UI shipped in D1 on placeholder data: `src/features/build/components/Hotbars.tsx`, pure state in `hotbars.ts`, `@dnd-kit` drag between pools and slots with keyboard support, the stat-block popover, and the clicky-item picker with a working search and "Content you own" filter; this phase wires real abilities, persists bars, and makes the picker's Slot / Ability / ML filters live). Renameable bars of ten 40px slots; drag abilities from grouped pools below (Spells, SLAs & enhancements, Destiny, Feats, Item clickies) onto slots. A slot shows the ability's short code in its damage-type color; hover shows a stat-block tooltip (type, cooldown, save, damage, cost); click opens the Damage calc with that ability selected. An "Add item…" picker under Item clickies searches every item with an active ability (filters: slot, ability, ML, content you own) and adds it to the pool, flagged "swap to use" when it isn't equipped.
 - Passive feats & abilities: feats, enhancements and destiny passives grouped by source; rows link into Resources detail.
 - Buffs & stances: the same toggle set as the stats panel's Buffs tab (spell buffs, conditionals, stances, external, stacks); toggling recomputes the panel.
 
 ### Phase 13: Settings View Cleanup
+
+Tracked in [ddo-tools#118](https://github.com/WestonChan/ddo-tools/issues/118).
 Currently a minimal placeholder (theme + accent picker). Belongs late because knowing what *needs* a setting depends on what features exist.
 
 - Restructure into sections. D1 laid them out with eyebrow headings: Theme + Accent (live), Owned content (F2P / Premium / VIP preset + per-pack toggles; placeholder), Data (`user.db` export / import; placeholder). Add About / metadata as a fourth.
@@ -2010,6 +1953,8 @@ Share builds via URL links without a backend. Complement to the file-based impor
 
 ### Phase 15: `.DDOBuild` Import
 
+Tracked in [ddo-tools#126](https://github.com/WestonChan/ddo-tools/issues/126).
+
 Import build files from [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOBuilderV2), the dominant desktop build planner. Strong acquisition path: existing users arrive with builds already made. Both comparable sites (ddo-builds.com, ddobuildhub.com) support it. Requires Phase 7's build structures; complements Phase 5's file-based import and Phase 14's URL sharing.
 
 - Parse the `.DDOBuild` XML save format (active life/build, per-level classes, ability scores, tomes, feats, past lives, enhancement spends, gear/augments/filigrees, stances) with native `DOMParser` — no XML library. ddo-builds.com's `src/utils/ddoBuildParser.ts` demonstrates the approach and doubles as format documentation; ddobuildhub.com ships `xmlbuilder2` (~374 KB chunk) for the same job — avoid that.
@@ -2019,6 +1964,8 @@ Import build files from [Maetrim's DDOBuilderV2](https://github.com/Maetrim/DDOB
 ---
 
 ### Phase 16a: PWA Shell and Offline Game Data
+
+Tracked in [ddo-tools#90](https://github.com/WestonChan/ddo-tools/issues/90).
 
 Added 2026-10-17. First half of making the site an installable PWA whose builds can be edited with no connection. It follows Phase 8 and V8 and runs before Phase 9; 16b (the offline merge) follows Phase 12.
 
@@ -2036,6 +1983,8 @@ Added 2026-10-17. First half of making the site an installable PWA whose builds 
 ---
 
 ### Phase 16b: Offline Build Edits and Merge
+
+Tracked in [ddo-tools#111](https://github.com/WestonChan/ddo-tools/issues/111).
 
 Added 2026-10-17. Second half: builds are edited with no connection and merged into the server copy once one is acquired. It needs 16a, V8 and a settled build JSON, so it goes after Phase 12. Each field Phases 9 to 12 add (comparison state, persisted hotbars) widens what the merge handles and tests, and building it last writes the merge function once against a stable shape. Phase 9's unsaved-build badge is reused here for "Not synced".
 
@@ -2123,7 +2072,7 @@ another. The only thing crossing the boundary is the OpenAPI spec, consumed as g
 ### Phases
 
 #### V1 — Plan + workspace scaffold (done)
-This section; status table updated (4m, 4l, 11, 14 superseded); `../ddo-data` created as a cargo
+This section (4m, 4l, 11 and 14 superseded); `../ddo-data` created as a cargo
 workspace with the three empty crates, `rust-toolchain.toml`, CI stub. Rust installed locally via
 Homebrew `rustup`.
 
@@ -2271,7 +2220,7 @@ augments, sets, filigrees, feats, classes, races, trees, spells and items):
   generic `modifiers`, and derived `bonuses`. Trees keep `x`/`y` positions, `cost_per_rank` vectors, `ranks`, `min_spent`, `tier5`, and selector options
   as `enhancement_selections`. Classes keep BAB and spell-point vectors and per-level spell slots.
 
-#### V4 — `ddo-api` (done, deploy pending)
+#### V4 — `ddo-api` (done)
 **Shipped 2026-09-21** in `ddo-data`. Endpoints for every family (items, augments, sets, filigrees,
 feats, races, classes, enhancement trees, spells, clickies, the lookups, `/v1/version`,
 `/v1/dump.sqlite`), Scalar docs at `/docs`, spec at `/openapi.json`. Decisions: the dataset version
@@ -2289,7 +2238,7 @@ Endpoints for every V2 table; `/v1/version`; OpenAPI + Scalar; ETags; rate limit
 Manual first deploy to prove the image. **User steps:** create the Fly account and add a card (the
 trial is 2 machine-hours or 7 days), then `fly tokens create deploy` scoped to the app.
 
-#### V5 — GitHub Action (done, first run pending)
+#### V5 — GitHub Action (done)
 **Shipped 2026-09-21** as `.github/workflows/deploy.yml` in `ddo-data`. Weekly plus
 `workflow_dispatch` (with a `force` input). Skips when the live API's `/v1/version` already reports
 upstream's HEAD. Builds the ETL and API in release, runs `ddo-etl build` and the new `ddo-etl
@@ -2569,6 +2518,8 @@ free-area vendors (Squire Rale, Champion Hunter, Chirugeon Laj'amal).
      - 5 are purchase bonuses (pre-order, Collector's Edition, a special purchase, the Founder's account, a Steam pack). They go to the store.
 
 #### V8 — Build sharing with a server
+
+Tracked in [ddo-data#28](https://github.com/WestonChan/ddo-data/issues/28).
 Moved after Phase 8 on 2026-10-01: sharing a build needs the build to exist first, so this waits for Phase 5 (`user.db` builds), 6 (stats), 7 (build plan) and 8 (gear); the server half could still be built earlier if the ddo-data side wants it.
 
 Two stores, two lifecycles: game data baked into the image (rebuilt every deploy), user data on a
@@ -2584,7 +2535,9 @@ versioned build JSON is also what Phase 15's `.DDOBuild` import targets. Phase 1
 
 ---
 
-#### V9 — Editable source tree (chunk 1 landed 2026-10-15, chunk 3 2026-10-17, chunk 2 2026-10-19; chunk 4 open)
+#### V9 — Editable source tree
+
+Tracked in [ddo-data#35](https://github.com/WestonChan/ddo-data/issues/35).
 Decided 2026-10-07/08 while building chunk 1. The dataset is TOML files under `data/` at the root of ddo-data, exported once from Maetrim's XML plus the wiki and correction files, and from then on the source: (B) above, canonical, ours wins on a conflict with the conflict listed.
 
 **The rule the tree follows.** The files hold what a person would write: `[[source]]` rows as the API serves them, effects, sockets, notes and citations on the item, booleans omitted when false, derived strings never written. The database holds strict constraints and every value the files carry, in typed columns and rows, never a blob. `ddo-etl build --data` (TOML → DB) and `ddo-etl export --db` (DB → TOML) are the two scripts, and their round trip is the test: TOML → DB → TOML byte-equal into a fresh directory, DB → TOML → DB equal on every table and served response. Both are fast (tree build 5–8 s, export 3–5 s; the served-response comparison is the slow step at about 100 s). CI runs the round trip and, until chunk 2, the XML-versus-data comparison against an allow-list that names the only expected differences.
@@ -2605,7 +2558,9 @@ Decided 2026-10-07/08 while building chunk 1. The dataset is TOML files under `d
 
 ---
 
-#### V10 — Data issue reports (decided 2026-10-17; planned)
+#### V10 — Data issue reports
+
+Tracked in [ddo-data#30](https://github.com/WestonChan/ddo-data/issues/30).
 The server half of Phase 5b: players edit a resource in place, and the diff they submit is stored on `ddo-api` and checked against ddowiki by a reader agent. It resolves Phase 5b's open question about where a submission goes: a pre-filled GitHub issue needs a GitHub account, and Sentry feedback leaves applying the correction by hand. It replaces the "Report a mismatch" issue link. It shares the Fly volume with V8; whichever ships first creates it.
 
 **Store.** `reports.db` is a separate SQLite file on the volume, opened read-write with its own schema version. It is never part of `ddo.db`, which is rebuilt on every deploy, and `/v1/dump.sqlite` never serves it. The entity a report names lives in the other file, so `(entity_kind, entity_slug)` is a plain key, not a foreign key. The slug is the key because numeric ids move (item 7 under Open questions) and V9 made the slug the stable name.
@@ -2633,7 +2588,9 @@ The server half of Phase 5b: players edit a resource in place, and the diff they
 
 **Open.** The client must re-derive `verbose_name` from `verbose_name_template` for the live preview; `/v1/effects/{id}` serves the template, but confirm the placeholder rules are reproducible in TypeScript before 5b starts. The other entity kinds' editors (descriptions, sockets, augment slots, sources, sets) join one at a time through the same declaration; item effects are the first slice.
 
-#### V11 — Triggers and effect checks (planned; the next data-side step after V9 chunk 2)
+#### V11 — Triggers and effect checks
+
+Tracked in [ddo-data#43](https://github.com/WestonChan/ddo-data/issues/43).
 Decided 2026-10-18, when V9 chunk 2's column-coverage lint found four columns nothing populates. They stay in the schema, listed in the lint's unpopulated list with a check that they stay NULL, until this phase fills them:
 
 - **Triggers.** `effect_bonuses.trigger_id` and `triggers.description` are internal. Work out how a conditional bonus ("on hit", "while blocking", "on vorpal") is held: today only `effect_damage` links a trigger, and the API selects only its name. The stats engine (Phase 6) reads this, so settle it with Phase 6's needs in view.
@@ -2644,7 +2601,7 @@ Decided 2026-10-18, when V9 chunk 2's column-coverage lint found four columns no
 
 Decided 2026-09-29. A design system for the site was drafted in Claude Design (project "ddo-tools",
 readme: "a ledger for min-maxers") together with two prototypes, a navigation proposal and an
-interactive app-flow prototype grounded in this roadmap and the view notes. D1 adopts them. The
+interactive app-flow prototype grounded in this document and the view notes. D1 adopts them. The
 rules that outlive this phase are in [styling.md](styling.md); this section records what shipped
 and the decisions that changed earlier sketches in this document.
 
@@ -2666,15 +2623,13 @@ and the decisions that changed earlier sketches in this document.
 
 ## Verification
 
-A phase is **done** when all of the following hold. Anything less stays `→ NEXT` in the status table.
+A phase is **done** when all of the following hold. Anything less stays open in the project.
 
 - `npx vitest run` -- all pass (and `cargo test` in `ddo-data` when the change touches the API contract)
 - `npm run lint` + `npm run build` -- no errors
 - `npm run dev` -- layout renders correctly; browser-tool screenshot verification per `.claude/rules/frontend.md`
 - Feature-specific: can interact with the new UI (click, search, equip)
-- **Status table updated in the same commit** -- phase marked `done`, `→ NEXT` moved to the next
-  phase, and any `docs/notes/` bullets it shipped marked `✅` or deleted. This step is the one that
-  has drifted before; treat it as part of the work, not cleanup.
+- **Project updated in the same commit** -- the commit message closes the issues it finishes (`Closes #N`, or `Closes WestonChan/ddo-data#N` across repos), the epic is closed once its last sub-issue is, and any `docs/notes/` bullets it shipped are marked `✅` or deleted. This step is the one that has drifted before; treat it as part of the work, not cleanup.
 
 **Unit tests** (vitest) required for pure logic, by phase: `user.db` migrations (Phase 5), stats
 engine (Phase 6), AP validation + feat prereqs (Phase 7), gear stacking (Phase 8), share codec

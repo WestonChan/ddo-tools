@@ -2,7 +2,7 @@ Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see
 
 How DDO's crafting/upgrade systems are stored in `ddo.db` — the current state, and the decided
 target model. Decisions recorded 2026-08-03 (user-delegated, while landing Phase 4m slice 1b);
-implementation is the roadmap's **per-system crafting modeling** phase. The roadmap entry links
+implementation is the per-system crafting modeling in V7 (see `docs/architecture.md`). That entry links
 here; this file owns the detail.
 
 ## Current state — three disconnected shapes

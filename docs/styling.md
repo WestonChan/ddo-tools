@@ -1,6 +1,6 @@
 # Styling Guide
 
-CSS conventions, design tokens, component recipes, layout architecture, and responsive breakpoints for the DDO Tools frontend. The visual language is the "DDO Tools" design system adopted in D1 (see `docs/roadmap.md`): a ledger for min-maxers, set like a well-typeset rulebook table rather than a fantasy poster.
+CSS conventions, design tokens, component recipes, layout architecture, and responsive breakpoints for the DDO Tools frontend. The visual language is the "DDO Tools" design system adopted in D1 (see `docs/architecture.md`): a ledger for min-maxers, set like a well-typeset rulebook table rather than a fantasy poster.
 
 ## Design Principles
 
