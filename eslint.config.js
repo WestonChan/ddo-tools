@@ -40,6 +40,36 @@ const featureImportRestrictions = FEATURE_NAMES.map((featureName) => ({
   },
 }))
 
+const lazyViewImportRestriction = {
+  files: ['src/*.{ts,tsx}', 'src/app/**'],
+  ignores: ['**/*.test.{ts,tsx}'],
+  rules: {
+    'no-restricted-imports': restrictedImportRegexes([
+      {
+        regex: '^(\\.\\.?/)+features/[^/]+/.+',
+        message:
+          'Import a feature through its barrel; load its lazyViews only with import(), so its views stay out of the startup bundle.',
+      },
+    ]),
+  },
+}
+
+const sentryReplayStartupRestriction = {
+  files: ['src/**/*.{ts,tsx}'],
+  ignores: ['src/lib/sentryReplay.ts', '**/*.test.{ts,tsx}'],
+  rules: {
+    'no-restricted-properties': [
+      'error',
+      ...['getReplay', 'replayIntegration'].map((property) => ({
+        object: 'Sentry',
+        property,
+        message:
+          "Session Replay loads from src/lib/sentryReplay.ts after init; read it through getClient().getIntegrationByName('Replay') so it stays out of the startup bundle.",
+      })),
+    ],
+  },
+}
+
 const barrelReExportRestriction = {
   files: ['src/**/index.ts'],
   rules: {
@@ -253,6 +283,8 @@ export default defineConfig([
   },
   sharedCodeImportRestriction,
   ...featureImportRestrictions,
+  lazyViewImportRestriction,
+  sentryReplayStartupRestriction,
   barrelReExportRestriction,
   exactRoleNameRestriction,
   popupRoleClaimRestriction,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type JSX } from 'react'
 import { Outlet, useLocation, useMatches } from '@tanstack/react-router'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import AppNavBar from './AppNavBar'
@@ -12,10 +12,14 @@ import {
   useTheme,
 } from '../hooks'
 import { captureBoundaryError } from '../lib/sentry'
-import { StatsPanel } from '../features/character'
 import './App.css'
 
 const buildWarnings: BuildWarning[] = []
+
+const StatsPanel = lazy(async () => {
+  const { StatsPanel } = await import('../features/character/lazyViews')
+  return { default: StatsPanel }
+})
 
 const ViewCrashScreen = (props: FallbackProps): JSX.Element => (
   <ErrorScreen
@@ -105,7 +109,11 @@ function AppLayout(): JSX.Element {
             </ErrorBoundary>
           </div>
 
-          {shouldShowStatsPanel && <StatsPanel />}
+          {shouldShowStatsPanel && (
+            <Suspense fallback={null}>
+              <StatsPanel />
+            </Suspense>
+          )}
         </div>
       </div>
     </HoverCardProvider>

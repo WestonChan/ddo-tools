@@ -10,11 +10,13 @@ import { captureBoundaryError, initializeSentry } from './lib/sentry'
 import { persistNormalizedAccent, restoreAccent } from './lib/accent'
 import { shouldRetryQuery } from './lib/api'
 import { loadAppFonts } from './lib/appFonts'
+import { reloadOnStaleChunk } from './lib/staleChunkReload'
 import { StartupFontGate } from './app/StartupFontGate'
 import './index.css'
 import './components/SharedControlFocus.css'
 
 initializeSentry()
+reloadOnStaleChunk()
 restoreAccent()
 persistNormalizedAccent()
 const fontsReady = loadAppFonts()

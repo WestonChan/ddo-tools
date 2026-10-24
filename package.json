@@ -1,7 +1,7 @@
 {
   "name": "ddo-tools",
   "private": true,
-  "version": "0.0.94",
+  "version": "0.0.95",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -9,6 +9,9 @@
   },
   "homepage": "https://ddo-tools.com/",
   "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

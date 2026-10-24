@@ -38,7 +38,7 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 
 **Where things are.**
 
-- `src/app/` — shell: `AppLayout`, `AppNavBar`, `BottomBar`, `routeComponents` (one export per route; placeholder views for unbuilt phases).
+- `src/app/` — shell: `AppLayout`, `AppNavBar`, `BottomBar`, `routeComponents` (eager route views: landing, not found, placeholder views for unbuilt phases), `lazyRouteViews` (every feature view, loaded on demand from the feature's `lazyViews.ts`; see Loading in `docs/architecture.md`).
 - `src/router.tsx`, `src/appPaths.ts` — TanStack Router tree and the path list.
 - `src/features/resources/` — the game-data browser (the only feature reading the API today): `ResourcesView`, `components/` (picker, detail drawer, `detail/*`), `queries/items.ts` (fetchers + mappers) and `queries/useItems.ts` (query hooks), `itemSearch.ts` (Fuse index).
 - `src/features/character/`, `landing/`, `settings/` — the other features (`gear/` arrives with Phase 8); `landing/data/sitePatchNotes.ts` is the user-facing changelog.

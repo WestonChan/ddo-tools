@@ -49,7 +49,7 @@ The CI workflow ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) forw
 ## Privacy
 
 - **No PII by default.** `Sentry.init` runs with `sendDefaultPii: false`. The `beforeSend` hook strips query strings, URL fragments, request headers, and the user object before transmission ([src/lib/sentry.ts](../src/lib/sentry.ts)).
-- **Replay masks text + inputs.** `replayIntegration({ maskAllText: true, maskAllInputs: true })` means recorded sessions show only structural DOM changes — character names, build descriptions, custom inputs are redacted in the replay viewer.
+- **Replay masks text + inputs.** `replayIntegration({ maskAllText: true, maskAllInputs: true })` ([src/lib/sentryReplay.ts](../src/lib/sentryReplay.ts)) means recorded sessions show only structural DOM changes — character names, build descriptions, custom inputs are redacted in the replay viewer. Replay is added with `Sentry.addIntegration` right after `Sentry.init`, from its own lazily loaded chunk, so it stays out of the startup bundle; the trade-off is that the first few hundred milliseconds of a visit are not in its buffer. The rail reads the replay ID through `getClient().getIntegrationByName('Replay')`, never `Sentry.getReplay()`, which would put Replay back in the startup bundle.
 - **Errors leave the user's device.** When configured, any caught error is uploaded to Sentry's servers. If that's not acceptable for your deployment, leave the DSN unset — the app falls back to the GitHub-issue flow only.
 
 ## Environments

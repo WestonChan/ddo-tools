@@ -5,9 +5,10 @@ vi.mock('@sentry/react', () => ({
   init: vi.fn(),
   browserTracingIntegration: vi.fn(() => ({})),
   replayIntegration: vi.fn(() => ({})),
+  addIntegration: vi.fn(),
   captureException: vi.fn(),
   lastEventId: vi.fn(() => undefined),
-  getReplay: vi.fn(() => undefined),
+  getClient: vi.fn(() => undefined),
 }))
 
 if (

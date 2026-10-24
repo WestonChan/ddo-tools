@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as Sentry from '@sentry/react'
 import { RouterProvider, createMemoryHistory } from '@tanstack/react-router'
@@ -8,8 +8,8 @@ import { createAppRouter } from '../router'
 import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../test/matchMediaStub'
 import { resetThemeForTests } from '../hooks/useTheme'
 
-vi.mock('./routeComponents', async (importActual) => {
-  const actual = await importActual<typeof import('./routeComponents')>()
+vi.mock('./lazyRouteViews', async (importActual) => {
+  const actual = await importActual<typeof import('./lazyRouteViews')>()
   return {
     ...actual,
     BuildPlanView: function ThrowingView(): never {
@@ -110,7 +110,7 @@ describe('AppLayout stats panel', () => {
     setViewportWidth(1200)
     renderApp('/build-plan')
     await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
-    expect(document.querySelector('.stats-panel')).toBeInTheDocument()
+    await waitFor(() => expect(document.querySelector('.stats-panel')).toBeInTheDocument())
     expect(document.querySelector('.app')).not.toHaveClass('app--no-stats')
   })
 })

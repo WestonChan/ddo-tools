@@ -28,14 +28,7 @@ export function initializeSentry(): void {
     Sentry.init({
       dsn,
       environment: import.meta.env.MODE,
-      integrations: [
-        Sentry.browserTracingIntegration(),
-        Sentry.replayIntegration({
-          maskAllText: true,
-          maskAllInputs: true,
-          blockAllMedia: false,
-        }),
-      ],
+      integrations: [Sentry.browserTracingIntegration()],
       tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
       replaysSessionSampleRate: import.meta.env.DEV ? 1.0 : 0.1,
       replaysOnErrorSampleRate: 1.0,
@@ -51,8 +44,18 @@ export function initializeSentry(): void {
         return event
       },
     })
+    void addMaskedReplay()
   } catch (err) {
     console.warn('[sentry] init failed (likely malformed DSN):', err)
+  }
+}
+
+async function addMaskedReplay(): Promise<void> {
+  try {
+    const { maskedReplayIntegration } = await import('./sentryReplay')
+    Sentry.addIntegration(maskedReplayIntegration())
+  } catch (err) {
+    console.warn('[sentry] session replay failed to load:', err)
   }
 }
 
@@ -77,8 +80,11 @@ export interface SentryEventReference {
 export function lastSentryEventReference(): SentryEventReference {
   try {
     const eventId = Sentry.lastEventId() ?? undefined
-    const replay = Sentry.getReplay?.()
-    const replayId = replay?.getReplayId?.() ?? undefined
+    const replay =
+      Sentry.getClient()?.getIntegrationByName<ReturnType<typeof Sentry.replayIntegration>>(
+        'Replay',
+      )
+    const replayId = replay?.getReplayId() ?? undefined
     const organizationSlug = import.meta.env.SENTRY_ORG
     const replayUrl =
       replayId && organizationSlug

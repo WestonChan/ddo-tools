@@ -145,7 +145,7 @@ test('startup waits for requested fonts while item data loads and the first hove
   const navigation = routeFocusRestoreItems(page)
   try {
     await Promise.all([fontRequest, itemPageRequest])
-    await expect(page.getByRole('status', { name: 'Loading game data', exact: true })).toBeVisible()
+    await expect(page.getByRole('status', { name: 'Loading DDO Tools', exact: true })).toBeVisible()
     await expect(page.getByRole('row', { name: /Focus Armor 1/ })).toBeHidden()
   } finally {
     releaseFontResponses()

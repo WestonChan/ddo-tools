@@ -1,11 +1,8 @@
 import type { JSX } from 'react'
 import { Link } from '@tanstack/react-router'
-import { ErrorScreen, WireframePlaceholder } from '../components'
-import { BuildOverviewView, BuildPlanView } from '../features/build'
+import { ErrorScreen, LoadingSkeleton, WireframePlaceholder } from '../components'
 import { useActiveCharacterSummary } from '../features/character'
-import { GearView } from '../features/gear'
 import { LandingView } from '../features/landing'
-import { ResourcesView } from '../features/resources'
 import { urlWithoutQueryOrFragment, githubIssueUrls } from '../lib/githubIssue'
 import './routeComponents.css'
 
@@ -47,7 +44,13 @@ export function FarmChecklistView(): JSX.Element {
   )
 }
 
-export { BuildOverviewView, BuildPlanView, GearView, ResourcesView }
+export function RoutePendingView(): JSX.Element {
+  return (
+    <div className="route-pending">
+      <LoadingSkeleton label="Loading page" />
+    </div>
+  )
+}
 
 export function LandingRoute(): JSX.Element {
   return <LandingView activeCharacterSummary={useActiveCharacterSummary()} />

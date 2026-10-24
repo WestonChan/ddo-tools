@@ -9,3 +9,8 @@
   font-size: var(--fs-body-sm);
   color: var(--text-link);
 }
+
+.route-pending {
+  max-width: var(--content-max);
+  margin: 0 auto;
+}

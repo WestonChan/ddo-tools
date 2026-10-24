@@ -1,5 +1,5 @@
 import { useEffect, useState, type JSX, type ReactNode } from 'react'
-import { ApiGate } from '../components'
+import { LoadingSkeleton } from '../components'
 import './StartupFontGate.css'
 
 const APP_FONT_WAIT_CAP_MS = 1500
@@ -42,7 +42,7 @@ export function StartupFontGate({ fontsReady, children }: StartupFontGateProps):
       </div>
       {areFontsPending && (
         <div className="startup-font-gate__skeleton">
-          <ApiGate isPending>{null}</ApiGate>
+          <LoadingSkeleton label="Loading DDO Tools" />
         </div>
       )}
     </>

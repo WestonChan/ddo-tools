@@ -1,4 +1,4 @@
-.api-gate-skeleton {
+.loading-skeleton {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -6,18 +6,18 @@
   max-width: 32rem;
 }
 
-.api-gate-bar {
+.loading-skeleton-bar {
   height: 1rem;
   border-radius: var(--radius-xs);
   background: var(--surface-active);
-  animation: api-gate-pulse 1.2s ease-in-out infinite;
+  animation: loading-skeleton-pulse 1.2s ease-in-out infinite;
 
-  &.api-gate-bar--short {
+  &.loading-skeleton-bar--short {
     width: 60%;
   }
 }
 
-@keyframes api-gate-pulse {
+@keyframes loading-skeleton-pulse {
   0%,
   100% {
     opacity: 0.42;
@@ -28,7 +28,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .api-gate-bar {
+  .loading-skeleton-bar {
     animation: none;
   }
 }

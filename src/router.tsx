@@ -5,18 +5,21 @@ import {
   type RouterHistory,
 } from '@tanstack/react-router'
 import AppLayout from './app/AppLayout'
-import { CharacterView } from './features/character'
-import { SettingsView } from './features/settings'
+import {
+  DamageCalculatorView,
+  FarmChecklistView,
+  LandingRoute,
+  NotFoundView,
+  RoutePendingView,
+} from './app/routeComponents'
 import {
   BuildOverviewView,
   BuildPlanView,
-  DamageCalculatorView,
-  FarmChecklistView,
+  CharacterView,
   GearView,
-  LandingRoute,
-  NotFoundView,
   ResourcesView,
-} from './app/routeComponents'
+  SettingsView,
+} from './app/lazyRouteViews'
 
 const rootRoute = createRootRoute({
   component: AppLayout,
@@ -111,7 +114,13 @@ const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 export function createAppRouter(
   history?: RouterHistory,
 ): ReturnType<typeof createRouter<typeof routeTree>> {
-  return createRouter({ routeTree, basepath, history })
+  return createRouter({
+    routeTree,
+    basepath,
+    history,
+    defaultPendingComponent: RoutePendingView,
+    defaultPreload: 'intent',
+  })
 }
 
 export const router = createAppRouter()

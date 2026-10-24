@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from 'react'
-import './ApiGate.css'
+import { LoadingSkeleton } from './LoadingSkeleton'
 
 interface ApiGateProps {
   isPending: boolean
@@ -7,19 +7,6 @@ interface ApiGateProps {
 }
 
 export function ApiGate({ isPending, children }: ApiGateProps): JSX.Element {
-  if (isPending) {
-    return (
-      <div
-        className="api-gate-skeleton"
-        role="status"
-        aria-live="polite"
-        aria-label="Loading game data"
-      >
-        <div className="api-gate-bar" />
-        <div className="api-gate-bar api-gate-bar--short" />
-        <div className="api-gate-bar" />
-      </div>
-    )
-  }
+  if (isPending) return <LoadingSkeleton label="Loading game data" />
   return <>{children}</>
 }

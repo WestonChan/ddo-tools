@@ -7,8 +7,11 @@ describe('initializeSentry', () => {
   let consoleInfoSpy: ReturnType<typeof vi.spyOn>
   let consoleWarnSpy: ReturnType<typeof vi.spyOn>
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    await vi.dynamicImportSettled()
     sentryInitSpy.mockClear()
+    vi.mocked(Sentry.replayIntegration).mockClear()
+    vi.mocked(Sentry.addIntegration).mockClear()
     consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
     consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
   })
@@ -50,6 +53,22 @@ describe('initializeSentry', () => {
       }),
     )
     expect(options).not.toHaveProperty('sendDefaultPii')
+  })
+
+  it('adds the masked session replay after init instead of loading it at startup', async () => {
+    vi.stubEnv('SENTRY_DSN', 'https://key@o0.ingest.sentry.io/0')
+    const replayIntegrationSpy = vi.mocked(Sentry.replayIntegration)
+    const addIntegrationSpy = vi.mocked(Sentry.addIntegration)
+    initializeSentry()
+    expect(replayIntegrationSpy).not.toHaveBeenCalled()
+    await vi.dynamicImportSettled()
+    expect(addIntegrationSpy).toHaveBeenCalledOnce()
+    expect(replayIntegrationSpy).toHaveBeenCalledWith({
+      maskAllText: true,
+      maskAllInputs: true,
+      blockAllMedia: false,
+    })
+    expect(addIntegrationSpy).toHaveBeenCalledWith(replayIntegrationSpy.mock.results[0].value)
   })
 
   it('does not crash when Sentry.init throws (e.g. malformed DSN)', () => {
@@ -99,31 +118,36 @@ describe('captureBoundaryError', () => {
 
 describe('lastSentryEventReference', () => {
   const lastEventIdSpy = vi.mocked(Sentry.lastEventId)
-  const getReplaySpy = vi.mocked(Sentry.getReplay)
+  const getClientSpy = vi.mocked(Sentry.getClient)
+
+  function replayReporting(replayId: string): ReturnType<typeof Sentry.getClient> {
+    return {
+      getIntegrationByName: (name: string) =>
+        name === 'Replay' ? { getReplayId: () => replayId } : undefined,
+    } as unknown as ReturnType<typeof Sentry.getClient>
+  }
 
   beforeEach(() => {
     lastEventIdSpy.mockReset()
-    getReplaySpy.mockReset()
+    getClientSpy.mockReset()
   })
 
   it('returns an empty object when Sentry is not initialized', () => {
     lastEventIdSpy.mockReturnValueOnce(undefined)
-    getReplaySpy.mockReturnValueOnce(undefined)
+    getClientSpy.mockReturnValueOnce(undefined)
     expect(lastSentryEventReference()).toEqual({ eventId: undefined, replayUrl: undefined })
   })
 
   it('returns the most recent event ID when Sentry has captured one', () => {
     lastEventIdSpy.mockReturnValueOnce('evt_test')
-    getReplaySpy.mockReturnValueOnce(undefined)
+    getClientSpy.mockReturnValueOnce(undefined)
     expect(lastSentryEventReference().eventId).toBe('evt_test')
   })
 
-  it('returns a clickable Sentry replay URL when getReplay() reports a replay ID and SENTRY_ORG is set', () => {
+  it('returns a clickable Sentry replay URL when the Replay integration reports a replay ID and SENTRY_ORG is set', () => {
     vi.stubEnv('SENTRY_ORG', 'weston-00')
     lastEventIdSpy.mockReturnValueOnce('evt_a')
-    getReplaySpy.mockReturnValueOnce({
-      getReplayId: () => 'rep_xyz',
-    } as unknown as ReturnType<typeof Sentry.getReplay>)
+    getClientSpy.mockReturnValueOnce(replayReporting('rep_xyz'))
     const sentryEventReference = lastSentryEventReference()
     expect(sentryEventReference.eventId).toBe('evt_a')
     expect(sentryEventReference.replayUrl).toBe('https://weston-00.sentry.io/replays/rep_xyz/')
@@ -133,9 +157,7 @@ describe('lastSentryEventReference', () => {
   it('omits replayUrl when SENTRY_ORG is unset (replay ID alone is not enough to build a link)', () => {
     vi.stubEnv('SENTRY_ORG', '')
     lastEventIdSpy.mockReturnValueOnce('evt_a')
-    getReplaySpy.mockReturnValueOnce({
-      getReplayId: () => 'rep_xyz',
-    } as unknown as ReturnType<typeof Sentry.getReplay>)
+    getClientSpy.mockReturnValueOnce(replayReporting('rep_xyz'))
     const sentryEventReference = lastSentryEventReference()
     expect(sentryEventReference.eventId).toBe('evt_a')
     expect(sentryEventReference.replayUrl).toBeUndefined()

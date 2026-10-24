@@ -24,6 +24,13 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: true,
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [{ name: 'sentry', test: /node_modules[\\/]@sentry[\\/]/, tags: ['$initial'] }],
+          },
+        },
+      },
     },
     test: {
       globals: true,

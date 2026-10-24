@@ -5,6 +5,12 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-23',
+    changes: [
+      'The site opens faster: each page downloads its own code the first time you open it, showing a brief placeholder if that takes more than a second',
+    ],
+  },
+  {
     date: '2026-10-18',
     changes: [
       "Item links read as the item's name, as /resources/items/legendary-bracers-of-the-demons-consort; old links with a number still open the item and switch to the named link",
