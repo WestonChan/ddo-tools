@@ -20,13 +20,13 @@ npx vitest run       # Unit and integration tests
 
 Two repos, side by side under `~/Documents/Personal Projects/`:
 
-| | `ddo-tools` (this repo) | `ddo-data` |
-|---|---|---|
-| What | React SPA: the site users see | Rust workspace: ETL + the game-data API |
-| GitHub | `WestonChan/ddo-tools` | `WestonChan/ddo-data` |
-| Live | https://ddo-tools.com | https://ddo-data.fly.dev (`/docs` is the OpenAPI UI) |
-| Deploy | Vercel GitHub integration on every push to `main` | GitHub Action `deploy.yml`: every push to `main` that changes more than Markdown, or manual dispatch; builds the DB and icons from the checked-in `data/` files (Maetrim's DDOBuilderV2 enters only through `ddo-etl import-ddobuilder`, see ddo-data's `docs/update-from-maetrim.md`), then `flyctl deploy`. Never `fly deploy` by hand |
-| Instructions | this file | `ddo-data/AGENTS.md` |
+|              | `ddo-tools` (this repo)                           | `ddo-data`                                                                                                                                                                                                                                                                                                                               |
+| ------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What         | React SPA: the site users see                     | Rust workspace: ETL + the game-data API                                                                                                                                                                                                                                                                                                  |
+| GitHub       | `WestonChan/ddo-tools`                            | `WestonChan/ddo-data`                                                                                                                                                                                                                                                                                                                    |
+| Live         | https://ddo-tools.com                             | https://ddo-data.fly.dev (`/docs` is the OpenAPI UI)                                                                                                                                                                                                                                                                                     |
+| Deploy       | Vercel GitHub integration on every push to `main` | GitHub Action `deploy.yml`: every push to `main` that changes more than Markdown, or manual dispatch; builds the DB and icons from the checked-in `data/` files (Maetrim's DDOBuilderV2 enters only through `ddo-etl import-ddobuilder`, see ddo-data's `docs/update-from-maetrim.md`), then `flyctl deploy`. Never `fly deploy` by hand |
+| Instructions | this file                                         | `ddo-data/AGENTS.md`                                                                                                                                                                                                                                                                                                                     |
 
 **Data flow.** DDOBuilderV2 XML → `ddo-etl` → SQLite (`ddo.db`, ~14 MB) → `ddo-api` (axum, read-only, immutable per deployment) → this app via `src/lib/api/` + TanStack Query. The frontend holds no game data and has no pipeline; the old Python `scripts/` package and `public/data/ddo.db` were removed in September 2026. `VITE_API_URL` picks the API origin; unset means the public Fly deployment.
 
@@ -140,6 +140,7 @@ Write tests **before** the code they cover. The required loop:
 5. **Refactor** if needed, keeping tests green.
 
 This applies to new hooks/components with logic, bug fixes, and behavior changes. It does **not** apply to:
+
 - Pure refactors that don't change behavior (existing tests must still pass).
 - Presentational components with no logic.
 - Doc, config, or styling-only changes.
@@ -151,6 +152,7 @@ Test conventions (where tests live, what to test, mocking patterns) are in `.cla
 ## Commits
 
 - **Atomic commits**: Each commit is a single logical change that passes lint (`npm run lint`) and builds (`npm run build`). No broken intermediate states.
+- **Never ignore lint or build output.** Run `npm run lint` and `npm run build` before every commit, and fix every error **and every warning** they print, including ones that were already there before your change. "It was already like that" is not a reason to leave it. The one exception is a warning a board issue already plans to fix: name that issue in your report. If no issue covers it, fix it now, or file one and place it on the board (see Planning) before you commit. A file a check can't parse, or that it skips, is not an exception either: add it to the check's scope, as `AGENTS.md` is in `format:check`.
 - **Feature branches**: Implementation work happens on feature branches (e.g., `navigation-refactor`), then merges directly into `main` — fast-forward where possible, matching the linear history — after which the local branch is deleted. Feature branches stay local; only `main` is pushed. (The `Merge pull request #1`–`#4` commits are historical; work no longer routes through review-before-merge.)
 - **Dependabot**: `.github/dependabot.yml` opens weekly PRs (Mondays, after a 7-day cooldown) for npm and GitHub Actions, minor and patch bumps grouped into one PR per ecosystem, majors separate except where packages must move together (`vite-and-vitest`, `eslint`). TypeScript majors are ignored until `typescript-eslint` supports them, and `@types/node` majors are ignored because the types follow the Node major CI and Vercel run: bump them by hand when that moves. Vercel skips `dependabot/**` branches (`vercel.json`); CI's Build job covers them. They are the one exception to local-only branches: merge one on GitHub once CI passes, then pull `main`. A major bump gets the same review as hand-written code.
 - **Commit per step**: When following a multi-step implementation plan, each step gets its own commit. Don't batch unrelated changes.
@@ -162,9 +164,9 @@ Test conventions (where tests live, what to test, mocking patterns) are in `.cla
 
 Path-relevant docs (styling, testing) are surfaced by `.claude/rules/*.md` when editing matching files (automatically in Claude Code; read them yourself elsewhere). The docs below are not path-scoped — read them when the situation calls for it.
 
-| Doc | Read when |
-|-----|-----------|
-| [`docs/ddowiki-api.md`](docs/ddowiki-api.md) | Looking up DDO game data from ddowiki.com via WebFetch, or building wiki links from the frontend. Also: what the AWS WAF blocks (relevant if the wiki parser is ever ported to `ddo-data`) |
-| [`docs/naming.md`](docs/naming.md) | Naming or renaming anything: functions, variables, types, components, files' exports. How to choose a name, word order, and the rules both repos follow |
-| [`docs/sentry.md`](docs/sentry.md) | Configuring Sentry, troubleshooting error capture, or working with `src/lib/sentry.ts` |
+| Doc                                                | Read when                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`docs/ddowiki-api.md`](docs/ddowiki-api.md)       | Looking up DDO game data from ddowiki.com via WebFetch, or building wiki links from the frontend. Also: what the AWS WAF blocks (relevant if the wiki parser is ever ported to `ddo-data`)                                                                                                                           |
+| [`docs/naming.md`](docs/naming.md)                 | Naming or renaming anything: functions, variables, types, components, files' exports. How to choose a name, word order, and the rules both repos follow                                                                                                                                                              |
+| [`docs/sentry.md`](docs/sentry.md)                 | Configuring Sentry, troubleshooting error capture, or working with `src/lib/sentry.ts`                                                                                                                                                                                                                               |
 | [`docs/stacking-rules.md`](docs/stacking-rules.md) | Designing or implementing anything that computes stats from bonuses — the Phase 6–8 stats/gear engine, bonus stacking, effect resolution, or the stacking-semantics tooltip. Documents DDO's rules as game facts (sourced from DDOBuilderV2's model; see the licensing note under Phase 6 in `docs/architecture.md`) |
