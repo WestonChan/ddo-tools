@@ -8,7 +8,6 @@ export const RESOURCE_CATEGORIES = [
   'enhancements',
   'spells',
   'augments',
-  'sets',
 ] as const
 
 export type ResourceCategory = (typeof RESOURCE_CATEGORIES)[number]

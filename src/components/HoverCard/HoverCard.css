@@ -21,6 +21,12 @@
   gap: var(--space-2-5);
 }
 
+.hover-card--preview {
+  position: static;
+  max-height: none;
+  pointer-events: auto;
+}
+
 .hover-card--pinned {
   border-color: var(--border-accent);
   pointer-events: auto;

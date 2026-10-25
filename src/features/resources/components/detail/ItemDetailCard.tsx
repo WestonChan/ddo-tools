@@ -4,7 +4,6 @@ import {
   StructuredDetailCard,
   IngredientCostList,
   DetailMoreButton,
-  detailCardSection,
   type DetailCardDefinition,
   type DetailCardFact,
   DetailStats,
@@ -14,6 +13,7 @@ import {
 } from '../../../../components'
 import { AugmentCandidateLedger, AugmentSlotList } from './AugmentSlotList'
 import { ItemHeaderActions } from './ItemHeaderActions'
+import { itemDetailSection } from './itemDetailSections'
 import { DETAIL_TITLE_ID } from '../../resourceCategories'
 import { EffectListBriefView, EffectListFullView } from './EffectList'
 import { itemEffectRows, setEffectRows } from './effectRows'
@@ -153,7 +153,7 @@ function ObtainedFromRow({
         <div className="resources-item-source-right">
           {levelNumbersText && (
             <span className="resources-item-source-level" data-tip={levelHint}>
-              Level <span className="num">{levelNumbersText}</span>
+              Level {levelNumbersText}
             </span>
           )}
           {locationText && <span className="resources-item-source-location">{locationText}</span>}
@@ -724,13 +724,13 @@ function useItemDetailDefinition({
   ]
   const sources = itemSourceEntries(item, onOpenItem)
   const sections = [
-    detailCardSection({
+    itemDetailSection({
       key: 'description',
       entries: item.description ? [item.description] : [],
       FullView: ItemDescriptionView,
       BriefView: ItemDescriptionBriefView,
     }),
-    detailCardSection({
+    itemDetailSection({
       key: 'stats',
       entries:
         statSection.primaryStats.length ||
@@ -740,19 +740,19 @@ function useItemDetailDefinition({
           : [],
       FullView: ItemStatsView,
     }),
-    detailCardSection({
+    itemDetailSection({
       key: 'enchantments',
       entries: enchantments,
       FullView: EffectListFullView,
       BriefView: EffectListBriefView,
     }),
-    detailCardSection({
+    itemDetailSection({
       key: 'clickies',
       heading: 'Clickies',
       entries: item.clickies,
       FullView: ItemClickiesView,
     }),
-    detailCardSection({
+    itemDetailSection({
       key: 'sources',
       heading: 'Obtained from',
       entries: sources,
@@ -760,13 +760,13 @@ function useItemDetailDefinition({
       BriefView: ItemSourcesBriefView,
       briefEntryLimit: 3,
     }),
-    detailCardSection({
+    itemDetailSection({
       key: 'source-location',
       heading: 'Obtained from',
       entries: sources.length === 0 && item.dropLocation ? [item.dropLocation] : [],
       FullView: ItemDescriptionView,
     }),
-    detailCardSection({
+    itemDetailSection({
       key: 'set-status',
       entries: status ? [status] : [],
       FullView: ResourceStatusView,
@@ -822,13 +822,12 @@ function useItemDetailDefinition({
   return {
     kicker: item.type ? `${item.equipmentSlot} · ${item.type}` : item.category,
     name: item.name,
+    wikiLink: { href: item.wikiUrl, pageName: item.name },
     titleId: DETAIL_TITLE_ID,
     badges,
     facts,
     sections,
-    paneActions: (
-      <ItemHeaderActions name={item.name} wikiUrl={item.wikiUrl} wikiPageName={item.name} />
-    ),
+    paneActions: <ItemHeaderActions name={item.name} />,
     paneFooter,
     afterHeader: expandedSlot ? (
       <AugmentCandidateLedger

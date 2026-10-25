@@ -9,4 +9,5 @@ export const APP_PATHS = [
   'resources',
   'resources/$category',
   'resources/$category/$slug',
+  'dev/components',
 ] as const

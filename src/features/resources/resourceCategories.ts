@@ -8,7 +8,6 @@ export const LABEL_BY_RESOURCE_CATEGORY: Record<ResourceCategory, string> = {
   enhancements: 'Enhancements',
   spells: 'Spells',
   augments: 'Augments',
-  sets: 'Sets',
 }
 
 export const ENABLED_RESOURCE_CATEGORIES: ReadonlySet<ResourceCategory> = new Set(['items'])

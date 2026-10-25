@@ -446,6 +446,21 @@ function CardLayer({
   )
 }
 
+export function HoverCardPreview({ children }: { children: ReactNode }): JSX.Element {
+  return (
+    <DepthContext.Provider value={1}>
+      <div
+        data-hover-card=""
+        data-kind="preview"
+        data-depth={0}
+        className="hover-card hover-card--preview"
+      >
+        <div className="hover-card__content">{children}</div>
+      </div>
+    </DepthContext.Provider>
+  )
+}
+
 export function HoverCardProvider({ children }: { children: ReactNode }): JSX.Element {
   const [cards, setCards] = useState<CardEntry[]>([])
   const cardsRef = useRef(cards)

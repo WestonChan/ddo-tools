@@ -7,7 +7,6 @@ import {
   useState,
   type CSSProperties,
   type JSX,
-  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import { useNavigate, useParams } from '@tanstack/react-router'
 import {
@@ -24,7 +23,6 @@ import { WireframePlaceholder } from '../../components'
 import { LABEL_BY_RESOURCE_CATEGORY } from './resourceCategories'
 import './ResourcesView.css'
 import { useResourceListSession } from './resourceListSessions'
-import { isTypingTarget } from '../../lib/isTypingTarget'
 
 const COMING_SOON_PLACEHOLDER_MIN_HEIGHT_PX = 420
 const RESOURCE_COLUMN_MINIMUM_PX = 480
@@ -53,7 +51,6 @@ function ResourcesView(): JSX.Element {
   const categoryPanelId = useId()
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const pickerRef = useRef<HTMLElement | null>(null)
-  const detailPaneRef = useRef<HTMLElement | null>(null)
   const lastSelectedItemSlug = useRef<Slug | null>(null)
   const wasOpenedFromList = useRef(false)
   const { filters } = useResourceListSession('items')
@@ -101,14 +98,6 @@ function ResourcesView(): JSX.Element {
     wasOpenedFromList.current = false
   }, [selectedResourceSlug])
 
-  const scrollRenderedDetailIntoView = useCallback((): void => {
-    const pane = detailPaneRef.current
-    const picker = pane?.previousElementSibling as HTMLElement | null
-    if (pane && picker && pane.offsetTop > picker.offsetTop) {
-      pane.scrollIntoView({ block: 'start' })
-    }
-  }, [])
-
   const closeDetail = useCallback((): void => {
     if (isSingleColumn && wasOpenedFromList.current) {
       window.history.back()
@@ -116,14 +105,6 @@ function ResourcesView(): JSX.Element {
     }
     navigate({ to: resourceCategoryPath(category), replace: true })
   }, [navigate, category, isSingleColumn])
-
-  function closeFocusedDetailOnEscape(event: ReactKeyboardEvent<HTMLElement>): void {
-    if (event.key !== 'Escape' || event.defaultPrevented || !hasDetailLink) return
-    if (isTypingTarget(event.target)) return
-    event.preventDefault()
-    event.stopPropagation()
-    closeDetail()
-  }
 
   useEffect(() => {
     if (
@@ -207,25 +188,16 @@ function ResourcesView(): JSX.Element {
           </aside>
         )}
         {category === 'items' && (!isSingleColumn || hasDetailLink) && (
-          <section
-            className={`resources-detail-pane${!hasDetailLink ? ' resources-detail-pane--empty' : ''}`}
-            ref={detailPaneRef}
-            aria-label="Item details"
-            data-detail-pane=""
-            onKeyDown={closeFocusedDetailOnEscape}
-          >
-            <ResourceDetailPane
-              invalidLinkSegment={invalidSegment}
-              key={listSelectionCount}
-              resourceInUrl={resourceInUrl}
-              pickerCategory={category}
-              matchingBonuses={filters.bonuses}
-              focusItemSlug={itemToFocus}
-              onFocusItem={() => setItemToFocus(null)}
-              onDetailRendered={scrollRenderedDetailIntoView}
-              onCloseDetail={closeDetail}
-            />
-          </section>
+          <ResourceDetailPane
+            invalidLinkSegment={invalidSegment}
+            key={listSelectionCount}
+            resourceInUrl={resourceInUrl}
+            pickerCategory={category}
+            matchingBonuses={filters.bonuses}
+            focusItemSlug={itemToFocus}
+            onFocusItem={() => setItemToFocus(null)}
+            onCloseDetail={closeDetail}
+          />
         )}
       </div>
     </div>

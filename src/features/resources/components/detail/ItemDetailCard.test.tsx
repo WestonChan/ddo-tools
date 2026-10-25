@@ -951,6 +951,13 @@ describe('ItemDetailCard drop locations', () => {
       'false',
     )
   })
+  it('writes the quest level in the same font as its label', () => {
+    renderItemDetailCard({ ...plainItem, quests: [quest({ level: 25 })] })
+    const level = screen.getByText(/^Level/)
+    expect(level).toHaveTextContent('Level 25')
+    expect(level.querySelector('.num')).toBeNull()
+  })
+
   it('renders a wiki link icon next to each quest in Obtained from', () => {
     renderItemDetailCard({ ...plainItem, quests: [quest()] })
     const link = screen.getByRole('link', { name: "Open Delera's Tomb on DDO Wiki" })
@@ -1370,6 +1377,32 @@ describe('ItemDetailCard sources beyond quests', () => {
 })
 
 describe('ItemDetailCard header attributes', () => {
+  it.each([
+    ['detail pane', (item: Item) => <ItemDetailCard item={item} />],
+    ['hover card', (item: Item) => <ItemHoverCard item={item} />],
+  ])('links the %s name to its wiki page beside the name', (_variant, renderCard) => {
+    const { container } = render(
+      renderCard({ ...plainItem, wikiUrl: 'https://ddowiki.com/page/Item:Voice_of_the_Master' }),
+    )
+    const nameRow = container.querySelector('.detail-card__name-row')!
+    const link = within(nameRow as HTMLElement).getByRole('link', {
+      name: 'Open Voice of the Master on DDO Wiki',
+    })
+    expect(link).toHaveAttribute('href', 'https://ddowiki.com/page/Item:Voice_of_the_Master')
+    expect(link.parentElement).toHaveAttribute('data-tip', 'Open on ddowiki')
+    expect(link.parentElement?.previousElementSibling).toHaveTextContent('Voice of the Master')
+  })
+
+  it('shows the wiki link once in the pane header', () => {
+    renderItemDetailCard({
+      ...plainItem,
+      wikiUrl: 'https://ddowiki.com/page/Item:Voice_of_the_Master',
+    })
+    expect(
+      screen.getAllByRole('link', { name: 'Open Voice of the Master on DDO Wiki' }),
+    ).toHaveLength(1)
+  })
+
   it('shows the signed enhancement in the table without a Set title fact', () => {
     const { container } = renderItemDetailCard({
       ...plainItem,

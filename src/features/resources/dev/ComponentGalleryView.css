@@ -1,0 +1,74 @@
+.component-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.component-gallery__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.component-gallery__title {
+  color: var(--text-heading);
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+}
+
+.component-gallery__note {
+  max-width: 70ch;
+  color: var(--text-muted);
+  font-size: var(--fs-body-sm);
+}
+
+.component-gallery__specimens {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-top: var(--space-2);
+}
+
+.component-gallery__specimen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+}
+
+.component-gallery__specimen-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+}
+
+.component-gallery__specimen-title {
+  color: var(--text-heading);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+}
+
+.component-gallery__specimen-branch {
+  max-width: 90ch;
+  color: var(--text-faint);
+  font-size: var(--fs-label);
+}
+
+.component-gallery__pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.component-gallery__figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  min-width: 0;
+  margin: 0;
+}
+
+.component-gallery__figure--tooltip {
+  align-items: flex-start;
+}

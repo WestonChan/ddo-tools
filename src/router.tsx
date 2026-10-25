@@ -16,6 +16,7 @@ import {
   BuildOverviewView,
   BuildPlanView,
   CharacterView,
+  ComponentGalleryView,
   GearView,
   ResourcesView,
   SettingsView,
@@ -95,6 +96,12 @@ const resourceDetailRoute = createRoute({
   component: ResourcesView,
 })
 
+const componentGalleryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dev/components',
+  component: ComponentGalleryView,
+})
+
 const routeTree = rootRoute.addChildren([
   landingRoute,
   buildPlanRoute,
@@ -107,6 +114,7 @@ const routeTree = rootRoute.addChildren([
   resourcesRoute,
   resourceCategoryRoute,
   resourceDetailRoute,
+  componentGalleryRoute,
 ])
 
 const basepath = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'

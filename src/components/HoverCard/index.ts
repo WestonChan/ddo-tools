@@ -1,6 +1,7 @@
 export {
   HoverCardProvider,
   HintAnchor,
+  HoverCardPreview,
   useHoverCard,
   useHoverCardControl,
   useClearHoverCards,

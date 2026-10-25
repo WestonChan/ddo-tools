@@ -1,7 +1,7 @@
 import { useRef, type JSX, type ReactNode } from 'react'
 import { PageSection, WireframePlaceholder } from '../../components'
+import { useSectionScrollSpy } from '../../hooks'
 import { BUILD_PLAN_SECTIONS, type BuildPlanSectionId } from './buildPlanSections'
-import { useSectionScrollSpy } from './useSectionScrollSpy'
 import './BuildPlanView.css'
 
 interface SectionScaffold {
@@ -49,7 +49,7 @@ const BUILD_PLAN_SECTION_IDS = BUILD_PLAN_SECTIONS.map((section) => section.id)
 
 export function BuildPlanView(): JSX.Element {
   const pageEndRef = useRef<HTMLDivElement | null>(null)
-  useSectionScrollSpy(BUILD_PLAN_SECTION_IDS, pageEndRef)
+  useSectionScrollSpy('/build-plan', BUILD_PLAN_SECTION_IDS, pageEndRef)
 
   return (
     <div className="page">

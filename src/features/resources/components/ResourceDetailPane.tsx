@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type JSX } from 'react'
+import { useCallback, useEffect, useMemo, useRef, type JSX, type KeyboardEvent } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { API_HTTP_ERROR, apiDetailPath, isApiError, type Slug } from '../../../lib/api'
@@ -7,6 +7,7 @@ import { DetailNavigationProvider } from '../contexts/DetailNavigationContext'
 import { useDetailStack, type ResourceReference } from '../hooks/useDetailStack'
 import { DETAIL_TITLE_ID } from '../resourceCategories'
 import { resourcePath, type ResourceCategory } from '../../../lib/resourcePaths'
+import { isTypingTarget } from '../../../lib/isTypingTarget'
 import { DetailBreadcrumbBar } from './DetailBreadcrumbBar'
 import { StatusPlaceholder } from './StatusPlaceholder'
 import { ItemDetailCard } from './detail/ItemDetailCard'
@@ -19,7 +20,6 @@ interface ResourceDetailPaneProps {
   matchingBonuses?: string[]
   focusItemSlug?: Slug | null
   onFocusItem?: () => void
-  onDetailRendered?: () => void
   onCloseDetail?: () => void
 }
 
@@ -30,7 +30,6 @@ export function ResourceDetailPane({
   matchingBonuses = [],
   focusItemSlug = null,
   onFocusItem,
-  onDetailRendered,
   onCloseDetail,
 }: ResourceDetailPaneProps): JSX.Element {
   const navigate = useNavigate()
@@ -50,8 +49,10 @@ export function ResourceDetailPane({
   })
 
   const topEntry = stack[stack.length - 1] ?? null
+  const isDetailEmpty = resourceInUrl === null && invalidLinkSegment === null
   const topItemSlug = topEntry !== null && topEntry.category === 'items' ? topEntry.slug : null
   const lastFocusedItemSlug = useRef<Slug | null>(null)
+  const isTitleFocusPending = useRef(false)
 
   const itemCard = useItemCardContent(topItemSlug)
   const itemDetailQuery = itemCard.itemQuery
@@ -70,8 +71,7 @@ export function ResourceDetailPane({
   useEffect(() => {
     if (!itemDetailQuery.data || topItemSlug === null) return
     nameResource({ category: 'items', slug: topItemSlug, name: itemDetailQuery.data.name })
-    onDetailRendered?.()
-  }, [itemDetailQuery.data, topItemSlug, nameResource, onDetailRendered])
+  }, [itemDetailQuery.data, topItemSlug, nameResource])
 
   useEffect(() => {
     const item = itemDetailQuery.data
@@ -89,41 +89,64 @@ export function ResourceDetailPane({
 
   useEffect(() => {
     if (stack.length <= 1 && focusItemSlug === null) lastFocusedItemSlug.current = null
+    if (topItemSlug === null) isTitleFocusPending.current = false
     const shouldFocus =
-      lastFocusedItemSlug.current !== topItemSlug &&
-      (focusItemSlug === topItemSlug || stack.length > 1)
+      isTitleFocusPending.current ||
+      (lastFocusedItemSlug.current !== topItemSlug &&
+        (focusItemSlug === topItemSlug || stack.length > 1))
     if (shouldFocus && itemDetailQuery.data && topItemSlug !== null) {
       document.getElementById(DETAIL_TITLE_ID)?.focus()
+      isTitleFocusPending.current = false
       lastFocusedItemSlug.current = topItemSlug
       if (focusItemSlug === topItemSlug) onFocusItem?.()
     }
   }, [stack.length, itemDetailQuery.data, topItemSlug, focusItemSlug, onFocusItem])
 
+  const stepBackOneLevel = useCallback((): void => {
+    isTitleFocusPending.current = true
+    popResource()
+  }, [popResource])
+
+  function stepBackOnEscape(event: KeyboardEvent<HTMLElement>): void {
+    if (event.key !== 'Escape' || event.defaultPrevented || isDetailEmpty) return
+    if (isTypingTarget(event.target)) return
+    event.preventDefault()
+    event.stopPropagation()
+    stepBackOneLevel()
+  }
+
   return (
-    <DetailNavigationProvider
-      navigation={{ pushResource, deepLinkUrl, closeDetail, pickerCategory }}
+    <section
+      className={`resources-detail-pane${isDetailEmpty ? ' resources-detail-pane--empty' : ''}`}
+      aria-label="Item details"
+      data-detail-pane=""
+      onKeyDown={stepBackOnEscape}
     >
-      {(topEntry || invalidLinkSegment !== null) && (
-        <div className="resources-detail-pane-bar">
-          <DetailBreadcrumbBar
-            detailStack={namedDetailStack}
-            onBackOneLevel={popResource}
-            onJumpToCrumb={jumpToBreadcrumb}
-          />
+      <DetailNavigationProvider
+        navigation={{ pushResource, deepLinkUrl, closeDetail, pickerCategory }}
+      >
+        {(topEntry || invalidLinkSegment !== null) && (
+          <div className="resources-detail-pane-bar">
+            <DetailBreadcrumbBar
+              detailStack={namedDetailStack}
+              onBackOneLevel={stepBackOneLevel}
+              onJumpToCrumb={jumpToBreadcrumb}
+            />
+          </div>
+        )}
+        <div className="resources-detail-pane-body">
+          <section className="resources-detail">
+            {invalidLinkSegment !== null ? (
+              <StatusPlaceholder reason="not-found" missingLinkSegment={invalidLinkSegment} />
+            ) : (
+              renderedDetailBody(topEntry, itemCard, matchingBonuses, (slug, name) =>
+                pushResource({ category: 'items', slug, name }),
+              )
+            )}
+          </section>
         </div>
-      )}
-      <div className="resources-detail-pane-body">
-        <section className="resources-detail">
-          {invalidLinkSegment !== null ? (
-            <StatusPlaceholder reason="not-found" missingLinkSegment={invalidLinkSegment} />
-          ) : (
-            renderedDetailBody(topEntry, itemCard, matchingBonuses, (slug, name) =>
-              pushResource({ category: 'items', slug, name }),
-            )
-          )}
-        </section>
-      </div>
-    </DetailNavigationProvider>
+      </DetailNavigationProvider>
+    </section>
   )
 }
 

@@ -75,6 +75,8 @@ const resourceQueryKeys = {
   source: (kind: string, slug: Slug) => ['sources', kind, slug] as const,
 }
 
+export const fittingAugmentsQueryKey = resourceQueryKeys.augmentsFittingSlot
+
 export const itemDetailQueryOptions = (
   slug: Slug | null,
 ): DetailQueryOptions<Item, ReturnType<typeof resourceQueryKeys.item>> =>

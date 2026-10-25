@@ -4,6 +4,7 @@ export { EditableText } from './EditableText'
 export {
   HoverCardProvider,
   HintAnchor,
+  HoverCardPreview,
   useHoverCard,
   useClearHoverCards,
   ROW_CARD_OPEN_DELAY_MS,
@@ -18,7 +19,12 @@ export {
   DetailStats,
   type DetailStat,
 } from './DetailCard'
-export type { DetailCardDefinition, DetailCardFact } from './DetailCard'
+export type {
+  DetailCardDefinition,
+  DetailCardFact,
+  DetailCardSectionContent,
+  DetailCardSectionDefinition,
+} from './DetailCard'
 export { WikiLinkIcon } from './WikiLinkIcon'
 export { ErrorScreen } from './ErrorScreen'
 export { ErrorCard } from './ErrorCard'

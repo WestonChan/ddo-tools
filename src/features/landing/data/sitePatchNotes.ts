@@ -5,6 +5,16 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-24',
+    changes: [
+      'The item list and its detail fill the screen height and scroll on their own, so reading a long detail no longer moves the list',
+      'Escape in an item detail steps back one breadcrumb, and closes the detail only from the first item',
+      'An item links to its wiki page beside its name in the detail and in the hover card, and a drop location sits closer to its wiki link',
+      'Hover card enchantment rows line up their type and value columns, and a drop location reads "Level 25" in the same font as its label',
+      'The Sets tab is gone from Resources',
+    ],
+  },
+  {
     date: '2026-10-23',
     changes: [
       'The site opens faster: each page downloads its own code the first time you open it, showing a brief placeholder if that takes more than a second',

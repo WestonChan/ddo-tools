@@ -1,5 +1,10 @@
 import type { JSX, ReactNode } from 'react'
-import type { DetailCardDefinition, DetailCardVariant } from './DetailCardSections'
+import { WikiLinkIcon } from '../WikiLinkIcon'
+import type {
+  DetailCardDefinition,
+  DetailCardVariant,
+  DetailCardWikiLink,
+} from './DetailCardSections'
 import { DetailMore } from './DetailMore'
 import './DetailCard.css'
 
@@ -27,6 +32,7 @@ export function StructuredDetailCard({
   variant,
   kicker,
   name,
+  wikiLink,
   titleId,
   badges,
   facts,
@@ -45,6 +51,7 @@ export function StructuredDetailCard({
         <DetailCardHeader
           kicker={kicker}
           name={name}
+          wikiLink={wikiLink}
           titleId={{ pane: titleId, hover: undefined }[variant]}
           badges={badges}
           actions={actions}
@@ -83,6 +90,7 @@ export function StructuredDetailCard({
 function DetailCardHeader({
   kicker,
   name,
+  wikiLink,
   titleId,
   badges,
   actions,
@@ -90,6 +98,7 @@ function DetailCardHeader({
 }: {
   kicker: string
   name: ReactNode
+  wikiLink?: DetailCardWikiLink
   titleId?: string
   badges?: ReactNode
   actions?: ReactNode
@@ -106,6 +115,14 @@ function DetailCardHeader({
             <h2 id={titleId} tabIndex={titleId ? -1 : undefined} className="detail-card__name">
               {name}
             </h2>
+            {wikiLink && (
+              <WikiLinkIcon
+                href={wikiLink.href ?? undefined}
+                pageName={wikiLink.pageName}
+                icon="external"
+                hintText="Open on ddowiki"
+              />
+            )}
             {badges}
           </div>
         </div>

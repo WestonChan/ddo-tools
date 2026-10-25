@@ -12,6 +12,8 @@
   --detail-card-header-body-gap: 0;
   --detail-card-kicker-row-height: 1lh;
   --detail-stat-min-width: 132px;
+  --detail-value-row-type-width: 96px;
+  --detail-value-row-value-width: 56px;
   display: flex;
   flex-direction: column;
   gap: var(--detail-card-header-body-gap);
@@ -274,6 +276,7 @@
 }
 
 .detail-value-row__type {
+  flex: 0 0 var(--detail-value-row-type-width);
   min-width: 0;
   overflow: hidden;
   color: var(--text-muted);
@@ -282,8 +285,10 @@
 }
 
 .detail-value-row__value {
+  min-width: var(--detail-value-row-value-width);
   color: var(--text-accent);
   font-weight: var(--fw-semibold);
+  text-align: right;
 }
 
 .detail-value-row[data-tone='damage'] .detail-value-row__value {
@@ -293,6 +298,7 @@
 .detail-type-tag {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 20px;
   padding: 0 var(--space-1);
   border: 1px solid var(--border-strong);
@@ -304,6 +310,10 @@
   letter-spacing: var(--ls-eyebrow);
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.detail-value-row .detail-type-tag {
+  flex: 0 0 var(--detail-value-row-type-width);
 }
 
 .detail-type-tag[data-type='insight'] {

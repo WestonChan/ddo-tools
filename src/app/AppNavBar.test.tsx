@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CharacterProvider } from '../features/character'
+import { COMPONENT_GALLERY_SECTIONS } from '../features/resources'
 import { renderWithRouter } from '../test/renderWithRouter'
 import AppNavBar from './AppNavBar'
 import type { BuildWarning } from './buildWarnings'
@@ -102,6 +103,21 @@ describe('AppNavBar', () => {
     await screen.findByRole('link', { name: 'Gear' })
     for (const label of BUILD_PLAN_SECTION_LABELS) {
       expect(screen.queryByRole('link', { name: label })).not.toBeInTheDocument()
+    }
+  })
+
+  it('lists the component gallery sections under Components while developing', async () => {
+    const { renderResult } = renderNavBar({ initialPath: '/gear' })
+    await screen.findByRole('link', { name: 'Components' })
+    expect(screen.queryByRole('link', { name: 'Weapons' })).not.toBeInTheDocument()
+    renderResult.unmount()
+
+    renderNavBar({ initialPath: '/dev/components' })
+    for (const section of COMPONENT_GALLERY_SECTIONS) {
+      expect(await screen.findByRole('link', { name: section.label })).toHaveAttribute(
+        'href',
+        `/dev/components#${section.id}`,
+      )
     }
   })
 

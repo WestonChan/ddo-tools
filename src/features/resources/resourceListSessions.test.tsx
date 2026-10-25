@@ -36,7 +36,7 @@ describe('resource list sessions', () => {
   })
   it('keeps each category independent through writes and a storage round trip', () => {
     const items = renderHook(() => useResourceListSession('items'))
-    const sets = renderHook(() => useResourceListSession('sets'))
+    const feats = renderHook(() => useResourceListSession('feats'))
     act(() => {
       setResourceListSession('items', {
         filters: {
@@ -54,7 +54,7 @@ describe('resource list sessions', () => {
         includesSetBonuses: true,
         scrollTop: 120,
       })
-      setResourceListSession('sets', {
+      setResourceListSession('feats', {
         filters: { tier: 'legendary' },
         searchQuery: 'wild',
         selectedSort: { key: 'name', direction: 'desc' },
@@ -62,13 +62,13 @@ describe('resource list sessions', () => {
       })
     })
     expect(items.result.current.searchQuery).toBe('stone')
-    expect(sets.result.current.searchQuery).toBe('wild')
+    expect(feats.result.current.searchQuery).toBe('wild')
     items.unmount()
-    sets.unmount()
+    feats.unmount()
 
     resetResourceListSessionsForTests()
     const restoredItems = renderHook(() => useResourceListSession('items'))
-    const restoredSets = renderHook(() => useResourceListSession('sets'))
+    const restoredFeats = renderHook(() => useResourceListSession('feats'))
     expect(restoredItems.result.current).toMatchObject({
       filters: {
         ml: { min: '20', max: '32' },
@@ -104,7 +104,7 @@ describe('resource list sessions', () => {
       pack: ['Ravenloft', 'Sharn'],
       sort: ['name'],
     })
-    expect(restoredSets.result.current).toMatchObject({
+    expect(restoredFeats.result.current).toMatchObject({
       filters: { tier: 'legendary' },
       searchQuery: 'wild',
       selectedSort: { key: 'name', direction: 'desc' },
@@ -115,15 +115,15 @@ describe('resource list sessions', () => {
       { initialProps: { category: 'items' as ResourceCategory } },
     )
     expect(switchingCategory.result.current.searchQuery).toBe('stone')
-    switchingCategory.rerender({ category: 'sets' })
+    switchingCategory.rerender({ category: 'feats' })
     expect(switchingCategory.result.current.searchQuery).toBe('wild')
     switchingCategory.rerender({ category: 'items' })
     expect(switchingCategory.result.current.searchQuery).toBe('stone')
     act(() => {
-      setResourceListSession('sets', { searchQuery: 'fey' })
+      setResourceListSession('feats', { searchQuery: 'fey' })
     })
     expect(restoredItems.result.current.searchQuery).toBe('stone')
-    expect(restoredSets.result.current.searchQuery).toBe('fey')
+    expect(restoredFeats.result.current.searchQuery).toBe('fey')
   })
 
   it.each([

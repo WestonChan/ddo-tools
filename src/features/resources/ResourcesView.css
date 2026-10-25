@@ -31,16 +31,15 @@
     auto-fit,
     minmax(min(100%, var(--resources-column-min-width)), 1fr)
   );
+  grid-auto-rows: minmax(0, 1fr);
   gap: var(--space-3);
-  align-items: start;
-  overflow-y: auto;
+  overflow: hidden;
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 .resources-picker {
   min-width: 0;
   min-height: 0;
-  height: min(700px, 70vh);
 }
 
 .resources-picker:focus-visible {
@@ -57,7 +56,10 @@
 }
 
 .resources-detail-pane {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
   background: var(--surface-card);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
@@ -252,8 +254,12 @@
 }
 
 .resources-detail-pane-body {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  overflow-y: auto;
 }
 
 .resources-detail {
@@ -287,8 +293,7 @@
 }
 
 .resources-detail-bar-back,
-.resources-icon-button,
-.resources-entity-actions .wiki-link-icon {
+.resources-icon-button {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -602,12 +607,6 @@
   white-space: nowrap;
 }
 
-.resources-wiki-external {
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
-  border: 1px solid var(--border-hairline);
-}
-
 .resources-hover-anchor {
   color: var(--text-link);
   cursor: default;
@@ -912,7 +911,7 @@ button.resources-hover-row {
 .resources-item-source-name {
   display: flex;
   align-items: baseline;
-  gap: var(--space-3);
+  gap: var(--space-1);
   min-width: 0;
 }
 

@@ -41,7 +41,6 @@ export const RESOURCE_LIST_CONFIGURATION: {
   enhancements: { filters: EMPTY_OTHER_FILTERS, initialSort: null },
   spells: { filters: EMPTY_OTHER_FILTERS, initialSort: null },
   augments: { filters: EMPTY_OTHER_FILTERS, initialSort: null },
-  sets: { filters: EMPTY_OTHER_FILTERS, initialSort: null },
 }
 
 const RESOURCE_LIST_SESSIONS_STORAGE_KEY = 'ddo-tools:resource-list-sessions:v1'

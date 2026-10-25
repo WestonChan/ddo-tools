@@ -242,13 +242,15 @@ describe('resource list sessions', () => {
     expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
     expect(itemPageRequests.mock.lastCall).toEqual(requestBeforeLeaving)
 
-    act(() => setResourceListSession('sets', { searchQuery: 'wild' }))
+    act(() => setResourceListSession('feats', { searchQuery: 'wild' }))
     await user.click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('stone')
     expect(screen.queryByRole('button', { name: 'Show applied · 1' })).toBeNull()
     expect(itemPageRequests.mock.lastCall?.[0]).toMatchObject({ bonuses: [] })
     expect(itemPageRequests.mock.lastCall?.[1]).toBe('stone')
-    expect(renderHook(() => useResourceListSession('sets')).result.current.searchQuery).toBe('wild')
+    expect(renderHook(() => useResourceListSession('feats')).result.current.searchQuery).toBe(
+      'wild',
+    )
     await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('checkbox', { name: 'Include set bonuses' })).not.toBeChecked()
     restoredView.unmount()
@@ -513,6 +515,8 @@ describe('ResourcesView keyboard shortcuts', () => {
       const title = screen.getByRole('heading', { name: 'Bloodstone' })
       expect(title).toHaveFocus()
       await userEvent.tab()
+      expect(screen.getByRole('link', { name: 'Open Bloodstone on DDO Wiki' })).toHaveFocus()
+      await userEvent.tab()
       expect(screen.getByRole('button', { name: 'Copy link to this item' })).toHaveFocus()
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth })
@@ -677,18 +681,26 @@ describe('ResourcesView detail pane', () => {
     expect(navigateMock).toHaveBeenCalledWith({ to: '/resources/items', replace: true })
   })
 
-  it('closes the whole three-item detail stack on Escape', () => {
+  it('steps back one breadcrumb per Escape and closes only from the first item', () => {
     vi.useFakeTimers()
     const view = renderStackedResourcesView()
     openFirstItemFromList(view)
     openSetPieceFromPane('Heartstone')
     openSetPieceFromPane('Moonstone')
     expect(screen.getByRole('heading', { name: 'Moonstone' })).toHaveFocus()
+    const closeCalls = navigateMock.mock.calls.length
 
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    expect(screen.getByRole('heading', { name: 'Heartstone' })).toHaveFocus()
+    expect(screen.queryByRole('heading', { name: 'Moonstone' })).toBeNull()
 
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+    expect(screen.getByRole('heading', { name: 'Bloodstone' })).toHaveFocus()
+    expect(screen.queryByRole('button', { name: 'Back one level' })).toBeNull()
+    expect(navigateMock).toHaveBeenCalledTimes(closeCalls)
+
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
     expect(navigateMock).toHaveBeenLastCalledWith({ to: '/resources/items', replace: true })
-    expect(screen.getByRole('button', { name: 'Back one level' })).toBeInTheDocument()
   })
 
   it('uses history back for Escape from a detail opened from the narrow list', async () => {
@@ -1169,26 +1181,5 @@ describe('ResourcesView detail pane', () => {
     mockRouteParams = { category: 'items' }
     view.rerender(<ResourcesView />)
     expect(screen.getByRole('row', { name: /Bloodstone/ })).toHaveFocus()
-  })
-
-  it('scrolls a stacked pane into view only after its detail card renders', () => {
-    mockRouteParams = { category: 'items', slug: slugFromPathSegment('test-42')! }
-    isItemDetailLoaded = false
-    const scrollIntoView = vi.fn()
-    const previousScrollIntoView = HTMLElement.prototype.scrollIntoView
-    HTMLElement.prototype.scrollIntoView = scrollIntoView
-    try {
-      const view = render(<ResourcesView />)
-      const pane = screen.getByRole('region', { name: 'Item details' })
-      Object.defineProperty(pane, 'offsetTop', { value: 800 })
-      expect(scrollIntoView).not.toHaveBeenCalled()
-
-      isItemDetailLoaded = true
-      view.rerender(<ResourcesView />)
-      expect(screen.getByRole('heading', { name: 'Bloodstone' })).toBeInTheDocument()
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' })
-    } finally {
-      HTMLElement.prototype.scrollIntoView = previousScrollIntoView
-    }
   })
 })

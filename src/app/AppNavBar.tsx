@@ -1,7 +1,8 @@
-import { useCallback, useId, useRef, useState, type JSX, type ReactNode } from 'react'
+import { Fragment, useCallback, useId, useRef, useState, type JSX, type ReactNode } from 'react'
 import { Link, useMatchRoute, useNavigate } from '@tanstack/react-router'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import {
+  Blocks,
   Bug,
   Calculator,
   ExternalLink,
@@ -22,14 +23,22 @@ import { useModalAccessibility } from '../hooks'
 import { githubIssueUrls, REPOSITORY_URL } from '../lib/githubIssue'
 import { captureBoundaryError, lastSentryEventReference } from '../lib/sentry'
 import { BUILD_PLAN_SECTIONS } from '../features/build'
+import { COMPONENT_GALLERY_SECTIONS } from '../features/resources'
 import type { BuildWarning } from './buildWarnings'
 import { NavBarCharacterCard } from './NavBarCharacterCard'
 import './AppNavBar.css'
+
+interface NavBarSection {
+  id: string
+  label: string
+  Icon: LucideIcon
+}
 
 interface NavBarDestination {
   to: string
   label: string
   Icon: LucideIcon
+  sections?: readonly NavBarSection[]
 }
 
 const ROSTER_DESTINATIONS: NavBarDestination[] = [
@@ -45,6 +54,7 @@ const BUILD_PLAN_DESTINATION: NavBarDestination = {
   to: '/build-plan',
   label: 'Build plan',
   Icon: ScrollText,
+  sections: BUILD_PLAN_SECTIONS,
 }
 const GEAR_DESTINATION: NavBarDestination = { to: '/gear', label: 'Gear', Icon: Shirt }
 
@@ -52,6 +62,16 @@ const TOOL_DESTINATIONS: NavBarDestination[] = [
   { to: '/damage-calc', label: 'Damage calc', Icon: Calculator },
   { to: '/farm-checklist', label: 'Farm checklist', Icon: ListTodo },
   { to: '/resources', label: 'Resources', Icon: Library },
+  ...(import.meta.env.DEV
+    ? [
+        {
+          to: '/dev/components',
+          label: 'Components',
+          Icon: Blocks,
+          sections: COMPONENT_GALLERY_SECTIONS,
+        },
+      ]
+    : []),
 ]
 
 const SETTINGS_DESTINATION: NavBarDestination = {
@@ -98,20 +118,35 @@ function AppNavBar({
   })
 
   const matchRoute = useMatchRoute()
-  const shouldShowBuildPlanSections = isExpanded && !!matchRoute({ to: '/build-plan' })
 
   function collapseIfFullscreenOverlay(): void {
     if (isFullscreenOverlay) onCollapse()
   }
 
   function destinationRow(destination: NavBarDestination): JSX.Element {
+    const { sections } = destination
+    const shouldShowSections = isExpanded && sections && !!matchRoute({ to: destination.to })
     return (
-      <NavBarLinkRow
-        key={destination.to}
-        destination={destination}
-        isExpanded={isExpanded}
-        onNavigate={collapseIfFullscreenOverlay}
-      />
+      <Fragment key={destination.to}>
+        <NavBarLinkRow
+          destination={destination}
+          isExpanded={isExpanded}
+          onNavigate={collapseIfFullscreenOverlay}
+        />
+        {shouldShowSections && (
+          <div className="nav-bar-sections">
+            {sections.map((section) => (
+              <NavBarLinkRow
+                key={section.id}
+                destination={{ to: destination.to, label: section.label, Icon: section.Icon }}
+                hash={section.id}
+                isExpanded={isExpanded}
+                onNavigate={collapseIfFullscreenOverlay}
+              />
+            ))}
+          </div>
+        )}
+      </Fragment>
     )
   }
 
@@ -140,19 +175,6 @@ function AppNavBar({
         <NavBarGroup label="Build">
           {destinationRow(BUILD_OVERVIEW_DESTINATION)}
           {destinationRow(BUILD_PLAN_DESTINATION)}
-          {shouldShowBuildPlanSections && (
-            <div className="nav-bar-sections">
-              {BUILD_PLAN_SECTIONS.map((section) => (
-                <NavBarLinkRow
-                  key={section.id}
-                  destination={{ to: '/build-plan', label: section.label, Icon: section.Icon }}
-                  hash={section.id}
-                  isExpanded={isExpanded}
-                  onNavigate={collapseIfFullscreenOverlay}
-                />
-              ))}
-            </div>
-          )}
           {destinationRow(GEAR_DESTINATION)}
         </NavBarGroup>
         <NavBarGroup label="Tools">{TOOL_DESTINATIONS.map(destinationRow)}</NavBarGroup>

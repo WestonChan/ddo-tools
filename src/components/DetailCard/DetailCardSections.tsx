@@ -7,9 +7,15 @@ export interface DetailCardFact {
   value?: ReactNode
 }
 
+export interface DetailCardWikiLink {
+  href?: string | null
+  pageName: string
+}
+
 export interface DetailCardDefinition {
   kicker: string
   name: ReactNode
+  wikiLink?: DetailCardWikiLink
   titleId?: string
   badges?: ReactNode
   facts: readonly DetailCardFact[]

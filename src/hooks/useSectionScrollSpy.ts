@@ -3,6 +3,8 @@ import { useNavigate, useRouter } from '@tanstack/react-router'
 
 const READING_BAND_ROOT_MARGIN = '0px 0px -90% 0px'
 
+export type SectionedRoutePath = '/build-plan' | '/dev/components'
+
 interface ObservedSection {
   id: string
   element: Element
@@ -17,6 +19,7 @@ function observedSectionsOf(sectionIds: readonly string[]): ObservedSection[] {
 }
 
 export function useSectionScrollSpy(
+  routePath: SectionedRoutePath,
   sectionIds: readonly string[],
   pageEndRef: RefObject<HTMLElement | null>,
 ): void {
@@ -57,7 +60,7 @@ export function useSectionScrollSpy(
       if (!nextCurrentSectionId || nextCurrentSectionId === currentSectionId) return
       sectionIdMarkedByScrolling = nextCurrentSectionId
       void navigate({
-        to: '/build-plan',
+        to: routePath,
         hash: nextCurrentSectionId,
         replace: true,
         hashScrollIntoView: false,
@@ -101,5 +104,5 @@ export function useSectionScrollSpy(
       readingBandObserver.disconnect()
       screenObserver.disconnect()
     }
-  }, [sectionIds, pageEndRef, router, navigate])
+  }, [routePath, sectionIds, pageEndRef, router, navigate])
 }
