@@ -30,6 +30,8 @@ Two repos, side by side under `~/Documents/Personal Projects/`:
 
 **Data flow.** DDOBuilderV2 XML → `ddo-etl` → SQLite (`ddo.db`, ~14 MB) → `ddo-api` (axum, read-only, immutable per deployment) → this app via `src/lib/api/` + TanStack Query. The frontend holds no game data and has no pipeline; the old Python `scripts/` package and `public/data/ddo.db` were removed in September 2026. `VITE_API_URL` picks the API origin; unset means the public Fly deployment.
 
+**Changing game data.** It lives in `ddo-data`'s files. A fact about one entity is a hand edit to its file. A change across a group of files goes through the pipeline: the import (`effect_map.toml`, the XML writer, `import-ddobuilder`) or a built database written back with `ddo-etl export --db`, never hand edits or TOML-writing scripts. After either, check the file diff and `diff-db --by-slug` against what you expected before committing. The full rule is in `ddo-data/AGENTS.md`, under "Changing data". Briefs for data work repeat it.
+
 **Running locally, end to end.**
 
 1. On the Node major in `.nvmrc` (`fnm use` or `nvm use`), `npm install && npm run dev` — the site on http://localhost:5173/, reading the public API. That is enough for most frontend work. When another Node major is the one installed, prefix a script with `npx -y -p node@$(cat .nvmrc) --` (for example `npx -y -p node@$(cat .nvmrc) -- npm run lint`), or `npm install` prints `EBADENGINE` and tests run on an unsupported Node.
