@@ -1,4 +1,5 @@
 export { useLocalStorage } from './useLocalStorage'
+export { usePersistedState } from './usePersistedState'
 export { useMediaQuery } from './useMediaQuery'
 export { useAddRemoveGestures } from './useAddRemoveGestures'
 export { useTheme, type ThemePreference } from './useTheme'

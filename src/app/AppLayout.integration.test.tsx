@@ -7,6 +7,7 @@ import { CharacterProvider } from '../features/character'
 import { createAppRouter } from '../router'
 import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../test/matchMediaStub'
 import { resetThemeForTests } from '../hooks/useTheme'
+import { resetPersistedStateForTests } from '../lib/persistedState'
 
 vi.mock('./lazyRouteViews', async (importActual) => {
   const actual = await importActual<typeof import('./lazyRouteViews')>()
@@ -26,13 +27,17 @@ afterEach(() => {
   consoleErrorSpy.mockRestore()
 })
 
-function renderApp(initialPath = '/build-plan'): void {
+function renderAppWithUnmount(initialPath = '/build-plan'): { unmount: () => void } {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [initialPath] }))
-  render(
+  return render(
     <CharacterProvider>
       <RouterProvider router={router} />
     </CharacterProvider>,
   )
+}
+
+function renderApp(initialPath = '/build-plan'): void {
+  renderAppWithUnmount(initialPath)
 }
 
 describe('AppLayout error boundaries', () => {
@@ -176,6 +181,35 @@ describe('AppLayout mobile nav overlay', () => {
     expect(document.querySelector('.app-content')).not.toHaveAttribute('inert')
     expect(document.querySelector('.stats-panel')).not.toHaveAttribute('inert')
     expect(document.querySelector('.app-nav-bar')).not.toHaveAttribute('inert')
+  })
+})
+
+describe('AppLayout nav bar persistence', () => {
+  afterEach(restoreViewportWidth)
+
+  it('falls back to expanded for a stored value that is not a boolean', async () => {
+    setViewportWidth(1200)
+    localStorage.setItem('ddo-nav-bar-expanded', '0')
+    renderApp('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+    expect(document.querySelector('.app-nav-bar')).toHaveClass('expanded')
+  })
+
+  it('stays collapsed after a reload and stores the bare text false', async () => {
+    setViewportWidth(1200)
+    const { unmount } = renderAppWithUnmount('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+    const toggle = document.querySelector('.nav-bar-collapse-btn')
+    if (!(toggle instanceof HTMLElement)) throw new Error('nav bar toggle not found')
+    await userEvent.click(toggle)
+    expect(document.querySelector('.app-nav-bar')).not.toHaveClass('expanded')
+    expect(localStorage.getItem('ddo-nav-bar-expanded')).toBe('false')
+
+    unmount()
+    resetPersistedStateForTests()
+    renderApp('/build-plan')
+    await screen.findByRole('heading', { level: 1, name: 'This view crashed' })
+    expect(document.querySelector('.app-nav-bar')).not.toHaveClass('expanded')
   })
 })
 

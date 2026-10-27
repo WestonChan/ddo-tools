@@ -7,14 +7,23 @@ import { ErrorScreen, HoverCardProvider } from '../components'
 import {
   useIsAnyModalActive,
   useAccentColoredFavicon,
-  useLocalStorage,
   useMediaQuery,
+  usePersistedState,
   useTheme,
 } from '../hooks'
+import { createPersistedValue } from '../lib/persistedState'
 import { captureBoundaryError } from '../lib/sentry'
 import './App.css'
 
 const buildWarnings: BuildWarning[] = []
+
+const navBarExpandedPreference = createPersistedValue<boolean>({
+  storageArea: 'localStorage',
+  storageKey: 'ddo-nav-bar-expanded',
+  codec: 'json',
+  defaultValue: true,
+  validatedValue: (candidate) => (typeof candidate === 'boolean' ? candidate : undefined),
+})
 
 const StatsPanel = lazy(async () => {
   const { StatsPanel } = await import('../features/character/lazyViews')
@@ -37,7 +46,7 @@ const ViewCrashScreen = (props: FallbackProps): JSX.Element => (
 function AppLayout(): JSX.Element {
   useAccentColoredFavicon()
   useTheme()
-  const [shouldExpandNavBar, setShouldExpandNavBar] = useLocalStorage('ddo-nav-bar-expanded', true)
+  const shouldExpandNavBar = usePersistedState(navBarExpandedPreference)
   const [isNavBarExpanded, setIsNavBarExpanded] = useState(() => {
     const width = window.innerWidth
     if (width < 900) return false
@@ -63,13 +72,13 @@ function AppLayout(): JSX.Element {
   function toggleNavBar(): void {
     const willBeExpanded = !isNavBarExpanded
     setIsNavBarExpanded(willBeExpanded)
-    setShouldExpandNavBar(willBeExpanded)
+    navBarExpandedPreference.save(willBeExpanded)
   }
 
   const collapseNavBar = useCallback((): void => {
     setIsNavBarExpanded(false)
-    setShouldExpandNavBar(false)
-  }, [setShouldExpandNavBar])
+    navBarExpandedPreference.save(false)
+  }, [])
 
   const isMobileViewport = useMediaQuery('(max-width: 599px)')
   const isNavBarOverlayOpen = isNavBarExpanded && isMobileViewport
