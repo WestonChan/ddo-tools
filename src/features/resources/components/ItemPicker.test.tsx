@@ -15,7 +15,12 @@ import { render } from '../../../test/renderWithQueryClient'
 import capturedGroupsResponse from '../queries/fixtures/effects-page-groups.json'
 import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
 import { ItemPicker } from './ItemPicker'
-import { itemListParameters, type ItemListFilters, type ItemSummary } from '../queries/items'
+import {
+  ITEM_COLUMN_KEYS,
+  itemListParameters,
+  type ItemListFilters,
+  type ItemSummary,
+} from '../queries/items'
 import { resetResourceListSessionsForTests, useResourceListSession } from '../resourceListSessions'
 
 const capturedGroups = apiFixture(capturedGroupsResponse)
@@ -261,6 +266,14 @@ describe('ItemPicker server-backed filters', () => {
     renderItemPicker()
     expect(resourceResultCount()).toHaveTextContent(/^8084 results$/)
     expect(resourceResultCount().querySelector('.num')).toHaveTextContent('8084')
+  })
+
+  it('renders exactly the columns the item sort map declares', () => {
+    renderItemPicker()
+    const renderedColumnKeys = screen
+      .getAllByRole('columnheader')
+      .map((header) => header.dataset.columnKey)
+    expect([...renderedColumnKeys].sort()).toEqual([...ITEM_COLUMN_KEYS].sort())
   })
 
   it('renders Raid and Rare as sortable headers that can still be focused and moved', () => {

@@ -37,16 +37,20 @@ import {
 import type { IngredientCost } from '../../../lib/ingredientCost'
 
 export const ITEM_PAGE_SIZE = 200
-const ITEM_SORT_FIELD_BY_COLUMN: Record<string, string> = {
+const ITEM_SORT_FIELD_BY_COLUMN = {
   name: 'name',
   ml: 'minimum_level',
   slot: 'slot',
   pack: 'pack',
   raid: 'is_raid',
   rare: 'is_rare',
-}
+} as const satisfies Record<string, string>
 
-export function isItemSortColumn(columnKey: string): boolean {
+export type ItemColumnKey = keyof typeof ITEM_SORT_FIELD_BY_COLUMN
+
+export const ITEM_COLUMN_KEYS = Object.keys(ITEM_SORT_FIELD_BY_COLUMN) as ItemColumnKey[]
+
+export function isItemSortColumn(columnKey: string): columnKey is ItemColumnKey {
   return Object.hasOwn(ITEM_SORT_FIELD_BY_COLUMN, columnKey)
 }
 
@@ -634,7 +638,8 @@ export function itemListParameters(
   offset = 0,
   sort: ItemListSort | null = null,
 ): ApiQueryParameters {
-  const sortField = sort ? ITEM_SORT_FIELD_BY_COLUMN[sort.key] : undefined
+  const sortField =
+    sort && isItemSortColumn(sort.key) ? ITEM_SORT_FIELD_BY_COLUMN[sort.key] : undefined
   return {
     q: searchQuery.trim() || undefined,
     ...multiValueFilterParameters('slot', filters.slot),

@@ -32,6 +32,7 @@ import {
 import { appliedFilterValues } from '../filters/filterModel'
 import {
   EMPTY_ITEM_FILTERS,
+  type ItemColumnKey,
   type ItemListFilters,
   type ItemSummary,
   type RaidQuest,
@@ -106,7 +107,7 @@ function MatchModeControl({
   )
 }
 
-const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
+const ITEM_COLUMNS = [
   {
     key: 'name',
     label: 'Name',
@@ -180,7 +181,7 @@ const ITEM_COLUMNS: LedgerColumn<ItemSummary>[] = [
       </span>
     ),
   },
-]
+] satisfies (LedgerColumn<ItemSummary> & { key: ItemColumnKey })[]
 
 export function ItemPicker({
   category,
