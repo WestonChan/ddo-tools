@@ -6,7 +6,7 @@ interface VitePreloadErrorEvent extends Event {
   payload?: unknown
 }
 
-const reloadedChunkFlag = createPersistedValueFamily<string, boolean>({
+const reloadedChunkStore = createPersistedValueFamily<string, boolean>({
   storageArea: 'sessionStorage',
   storageKeyFor: (failureMessage) => RELOADED_CHUNK_STORAGE_KEY_PREFIX + failureMessage,
   codec: 'json',
@@ -16,9 +16,9 @@ const reloadedChunkFlag = createPersistedValueFamily<string, boolean>({
 
 function reloadOnceForChunk(event: VitePreloadErrorEvent): void {
   const failureMessage = event.payload instanceof Error ? event.payload.message : 'unknown'
-  const hasReloaded = reloadedChunkFlag(failureMessage)
-  if (hasReloaded.snapshot()) return
-  if (!hasReloaded.save(true)) return
+  const reloadedChunkState = reloadedChunkStore(failureMessage)
+  if (reloadedChunkState.snapshot()) return
+  if (!reloadedChunkState.save(true)) return
   window.location.reload()
 }
 

@@ -8,7 +8,6 @@ import { installMatchMedia, restoreMatchMedia } from '../../test/matchMediaStub'
 beforeEach(() => {
   document.documentElement.removeAttribute('style')
   document.documentElement.removeAttribute('data-theme')
-  localStorage.clear()
   resetThemeForTests()
   installMatchMedia(false)
 })

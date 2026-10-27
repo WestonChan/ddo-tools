@@ -39,6 +39,8 @@ interface StoredArea {
   roundTrippedField: (fieldName: string, value: unknown) => unknown
 }
 
+const REJECTED_FIELD = Symbol('rejected field')
+
 interface RegisteredState {
   forgetSnapshot: () => void
   notifyListeners: () => void
@@ -87,11 +89,15 @@ function jsonText(value: unknown): string {
 }
 
 function valueArea<Value>(storageKey: string, options: PersistedValueOptions<Value>): StoredArea {
+  function validatedText(text: string): Value | undefined {
+    const candidate = options.codec === 'text' ? text : JSON.parse(text)
+    return options.validatedValue(candidate)
+  }
   function decodedValue(text: string | null): Value {
     if (text === null) return options.defaultValue
     try {
-      const candidate = options.codec === 'text' ? text : JSON.parse(text)
-      return options.validatedValue(candidate) ?? options.defaultValue
+      const validated = validatedText(text)
+      return validated === undefined ? options.defaultValue : validated
     } catch {
       return options.defaultValue
     }
@@ -107,9 +113,10 @@ function valueArea<Value>(storageKey: string, options: PersistedValueOptions<Val
     encodedText: (fields) => encodedValue(fields[VALUE_FIELD_NAME]),
     roundTrippedField: (_fieldName, value) => {
       try {
-        return decodedValue(encodedValue(value))
+        const validated = validatedText(encodedValue(value))
+        return validated === undefined ? REJECTED_FIELD : validated
       } catch {
-        return options.defaultValue
+        return REJECTED_FIELD
       }
     },
   }
@@ -125,9 +132,14 @@ function recordArea<FamilyKey extends string>(
   function versionOf(fieldName: string): number {
     return fields[fieldName].version ?? DEFAULT_FIELD_VERSION
   }
-  function validatedField(fieldName: string, candidate: unknown): unknown {
+  function readField(fieldName: string, candidate: unknown): unknown {
     const field = fields[fieldName]
-    return field.validatedValue(candidate, familyKey) ?? field.defaultValue(familyKey)
+    try {
+      const validated = field.validatedValue(candidate, familyKey)
+      return validated === undefined ? field.defaultValue(familyKey) : validated
+    } catch {
+      return field.defaultValue(familyKey)
+    }
   }
   return {
     storageArea,
@@ -146,7 +158,9 @@ function recordArea<FamilyKey extends string>(
           isPlainObject(entry) &&
           entry.version === versionOf(fieldName) &&
           Object.hasOwn(entry, 'value')
-        decoded[fieldName] = validatedField(fieldName, isCurrentEntry ? entry.value : undefined)
+        decoded[fieldName] = isCurrentEntry
+          ? readField(fieldName, entry.value)
+          : fields[fieldName].defaultValue(familyKey)
       }
       return decoded
     },
@@ -161,9 +175,10 @@ function recordArea<FamilyKey extends string>(
       ),
     roundTrippedField: (fieldName, value) => {
       try {
-        return validatedField(fieldName, JSON.parse(jsonText(value)))
+        const validated = fields[fieldName].validatedValue(JSON.parse(jsonText(value)), familyKey)
+        return validated === undefined ? REJECTED_FIELD : validated
       } catch {
-        return fields[fieldName].defaultValue(familyKey)
+        return REJECTED_FIELD
       }
     },
   }
@@ -212,6 +227,7 @@ function createStateFamily<FamilyKey extends string, Fields extends object>(
     function save(change: Partial<Fields>): boolean {
       const nextSnapshot: FieldValues = { ...(snapshot() as FieldValues) }
       const changedAreas: StoredArea[] = []
+      let isRejected = false
       for (const area of areas) {
         const changedFieldNames = area.fieldNames.filter(
           (fieldName) =>
@@ -219,13 +235,13 @@ function createStateFamily<FamilyKey extends string, Fields extends object>(
         )
         if (changedFieldNames.length === 0) continue
         for (const fieldName of changedFieldNames) {
-          nextSnapshot[fieldName] = area.roundTrippedField(
-            fieldName,
-            (change as FieldValues)[fieldName],
-          )
+          const roundTripped = area.roundTrippedField(fieldName, (change as FieldValues)[fieldName])
+          if (roundTripped === REJECTED_FIELD) isRejected = true
+          nextSnapshot[fieldName] = roundTripped
         }
         changedAreas.push(area)
       }
+      if (isRejected) return false
       if (changedAreas.length === 0) return true
       cachedSnapshot = nextSnapshot
       let areAllWritesSuccessful = true

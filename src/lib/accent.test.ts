@@ -37,7 +37,6 @@ function presetRamp(presetName: string): Record<number, string> {
 
 beforeEach(() => {
   document.documentElement.removeAttribute('style')
-  localStorage.clear()
 })
 
 afterEach(() => {
@@ -145,7 +144,6 @@ describe('activeAccent', () => {
     expect(activeAccent()).toBe('Gold')
 
     localStorage.setItem('accent', JSON.stringify({ accent: '#5b9a63', hover: '#fedcba' }))
-
     resetPersistedStateForTests()
     expect(activeAccent()).toBe('Moss')
   })

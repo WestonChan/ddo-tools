@@ -27,7 +27,8 @@ function Probe(): JSX.Element {
 }
 
 function Actions(): JSX.Element {
-  const { setComparisonBuildId, setUntrackedStackCount, setPlannedBuilds } = useCharacters()
+  const { setComparisonBuildId, setUntrackedStackCount, setPlannedBuilds, setCharacters } =
+    useCharacters()
   const addPlannedBuild = (id: string, name: string) => (previous: typeof STUB_PLANNED_BUILDS) => [
     ...previous,
     { ...STUB_PLANNED_BUILDS[0], id, name },
@@ -39,6 +40,12 @@ function Actions(): JSX.Element {
       </button>
       <button type="button" onClick={() => setUntrackedStackCount('heroic', 'fighter', 5)}>
         Five fighter lives
+      </button>
+      <button
+        type="button"
+        onClick={() => setCharacters(() => null as unknown as typeof STUB_CHARACTERS)}
+      >
+        Break characters
       </button>
       <button
         type="button"
@@ -214,5 +221,17 @@ describe('CharacterProvider storage', () => {
     expect(screen.getByTestId('planned-names').textContent).toMatch(/Alpha\|Beta$/)
     expect(storedText('ddo-plannedBuilds')).toContain('"Alpha"')
     expect(storedText('ddo-plannedBuilds')).toContain('"Beta"')
+  })
+
+  it('keeps the stored characters byte-identical when a save cannot be migrated', async () => {
+    await renderProvider()
+    await userEvent.click(screen.getByRole('button', { name: 'Five fighter lives' }))
+    const storedBefore = storedText('ddo-characters')
+    expect(storedBefore).toContain('"fighter":5')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Break characters' }))
+
+    expect(storedText('ddo-characters')).toBe(storedBefore)
+    expect(screen.getByTestId('untracked')).toHaveTextContent('"fighter":5')
   })
 })

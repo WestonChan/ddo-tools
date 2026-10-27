@@ -17,7 +17,7 @@ import './App.css'
 
 const buildWarnings: BuildWarning[] = []
 
-const navBarExpandedPreference = createPersistedValue<boolean>({
+const navBarExpandedStore = createPersistedValue<boolean>({
   storageArea: 'localStorage',
   storageKey: 'ddo-nav-bar-expanded',
   codec: 'json',
@@ -46,7 +46,7 @@ const ViewCrashScreen = (props: FallbackProps): JSX.Element => (
 function AppLayout(): JSX.Element {
   useAccentColoredFavicon()
   useTheme()
-  const shouldExpandNavBar = usePersistedState(navBarExpandedPreference)
+  const shouldExpandNavBar = usePersistedState(navBarExpandedStore)
   const [isNavBarExpanded, setIsNavBarExpanded] = useState(() => {
     const width = window.innerWidth
     if (width < 900) return false
@@ -72,12 +72,12 @@ function AppLayout(): JSX.Element {
   function toggleNavBar(): void {
     const willBeExpanded = !isNavBarExpanded
     setIsNavBarExpanded(willBeExpanded)
-    navBarExpandedPreference.save(willBeExpanded)
+    navBarExpandedStore.save(willBeExpanded)
   }
 
   const collapseNavBar = useCallback((): void => {
     setIsNavBarExpanded(false)
-    navBarExpandedPreference.save(false)
+    navBarExpandedStore.save(false)
   }, [])
 
   const isMobileViewport = useMediaQuery('(max-width: 599px)')

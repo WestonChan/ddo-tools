@@ -15,7 +15,6 @@ describe('reloadOnStaleChunk', () => {
   let stopReloading: () => void
 
   beforeEach(() => {
-    sessionStorage.clear()
     reload.mockClear()
     vi.stubGlobal('location', { ...window.location, reload })
     stopReloading = reloadOnStaleChunk()

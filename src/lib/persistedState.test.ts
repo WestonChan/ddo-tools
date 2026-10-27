@@ -207,29 +207,83 @@ describe('fallback on read', () => {
 })
 
 describe('save', () => {
-  it('is validated exactly like a stored value, so a synced value equals a reloaded one', () => {
+  it('shows after a save exactly what a reload reads', () => {
     const items = preferencesFamily('items')
     const inputs: Partial<Preferences>[] = [
       { filters: ['rare'], minimumLevel: 12, searchQuery: 'ring' },
-      { minimumLevel: Number.NaN },
-      { minimumLevel: Number.POSITIVE_INFINITY },
-      { filters: 'rare' as unknown as string[] },
-      { filters: [1] as unknown as string[] },
-      { searchQuery: 7 as unknown as string },
+      { filters: [], minimumLevel: 3 },
+      { searchQuery: '' },
     ]
     for (const input of inputs) {
-      items.save(input)
+      expect(items.save(input)).toBe(true)
       const syncedSnapshot = items.snapshot()
       reload()
       expect(items.snapshot()).toEqual(syncedSnapshot)
     }
   })
 
-  it('gives a text value the validator rejects the default, as a reload would', () => {
-    nameValue.save('Chartreuse' as 'Gold')
-    expect(nameValue.snapshot()).toBe('Gold')
+  it.each([
+    ['a NaN', { minimumLevel: Number.NaN }],
+    ['an infinity', { minimumLevel: Number.POSITIVE_INFINITY }],
+    ['a wrong shape', { filters: 'rare' as unknown as string[] }],
+    ['a wrong element', { filters: [1] as unknown as string[] }],
+    ['a wrong session field', { searchQuery: 7 as unknown as string }],
+    ['one bad field beside a good one', { filters: ['epic'], minimumLevel: Number.NaN }],
+  ])('rejects a save with %s, leaving cache, storage and listeners untouched', (_, input) => {
+    const items = preferencesFamily('items')
+    items.save({ filters: ['rare'], minimumLevel: 12, searchQuery: 'ring' })
+    const snapshotBefore = items.snapshot()
+    const preferencesTextBefore = localStorage.getItem(PREFERENCES_KEY)
+    const tabStateTextBefore = sessionStorage.getItem(TAB_STATE_KEY)
+    const listener = vi.fn()
+    items.subscribe(listener)
+
+    expect(items.save(input)).toBe(false)
+
+    expect(items.snapshot()).toBe(snapshotBefore)
+    expect(localStorage.getItem(PREFERENCES_KEY)).toBe(preferencesTextBefore)
+    expect(sessionStorage.getItem(TAB_STATE_KEY)).toBe(tabStateTextBefore)
+    expect(listener).not.toHaveBeenCalled()
+  })
+
+  it('rejects a text value the validator refuses and keeps the stored one', () => {
+    nameValue.save('Teal')
+    expect(nameValue.save('Chartreuse' as 'Gold')).toBe(false)
+    expect(nameValue.snapshot()).toBe('Teal')
+    expect(localStorage.getItem('test:name')).toBe('Teal')
+  })
+
+  it('rejects a save whose validator throws and keeps the stored value', () => {
+    const fragileValue = createPersistedValue<number>({
+      storageArea: 'localStorage',
+      storageKey: 'test:fragile',
+      codec: 'json',
+      defaultValue: 1,
+      validatedValue: (candidate) => {
+        if (candidate === 13) throw new Error('unlucky')
+        return typeof candidate === 'number' ? candidate : undefined
+      },
+    })
+    fragileValue.save(7)
+    expect(fragileValue.save(13)).toBe(false)
+    expect(fragileValue.snapshot()).toBe(7)
+    expect(localStorage.getItem('test:fragile')).toBe('7')
+  })
+
+  it('keeps a null that the validator returns, in the cache and across a reload', () => {
+    const nullableValue = createPersistedValue<string | null>({
+      storageArea: 'localStorage',
+      storageKey: 'test:nullable',
+      codec: 'json',
+      defaultValue: 'fallback',
+      validatedValue: (candidate) =>
+        candidate === null || typeof candidate === 'string' ? candidate : undefined,
+    })
+    expect(nullableValue.save(null)).toBe(true)
+    expect(nullableValue.snapshot()).toBeNull()
+    expect(localStorage.getItem('test:nullable')).toBe('null')
     reload()
-    expect(nameValue.snapshot()).toBe('Gold')
+    expect(nullableValue.snapshot()).toBeNull()
   })
 
   it('returns true when every attempted write succeeded', () => {

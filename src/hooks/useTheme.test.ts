@@ -15,7 +15,6 @@ function documentTheme(): string | null {
 }
 
 beforeEach(() => {
-  localStorage.clear()
   document.documentElement.removeAttribute('data-theme')
   resetThemeForTests()
 })
