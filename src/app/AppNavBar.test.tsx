@@ -45,7 +45,6 @@ const BUILD_PLAN_SECTION_LABELS = [
 ]
 
 beforeEach(() => {
-  localStorage.clear()
   onToggleExpandedMock.mockClear()
   onCollapseMock.mockClear()
 })

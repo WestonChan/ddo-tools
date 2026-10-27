@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { renderWithRouter } from '../../test/renderWithRouter'
 import { CharacterProvider } from './contexts/CharacterProvider'
 import { useCharacters } from './hooks/useCharacters'
@@ -41,10 +41,6 @@ async function rowIn(sectionTitle: string, rowName: RegExp): Promise<HTMLElement
 function lifeRowButton(lifeNumber: number): HTMLElement {
   return screen.getByRole('button', { name: new RegExp(`^Life ${lifeNumber}(?!\\d)`) })
 }
-
-beforeEach(() => {
-  localStorage.clear()
-})
 
 describe('CharacterView character rows', () => {
   it('marks the character owning the viewed build active and moves the mark to the character picked', async () => {

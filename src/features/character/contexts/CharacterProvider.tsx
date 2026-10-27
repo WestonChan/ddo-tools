@@ -1,4 +1,4 @@
-import { useMemo, type JSX, type ReactNode } from 'react'
+import { useMemo, type Dispatch, type JSX, type ReactNode, type SetStateAction } from 'react'
 import { STUB_CHARACTERS, STUB_PLANNED_BUILDS } from '../data/stubCharacters'
 import type { Character, Life, PastLifeCounts } from '../types'
 import {
@@ -9,26 +9,56 @@ import {
   withStackCount,
 } from '../utils'
 import { buildSelectionViewing, buildSelectionWithoutPlannedBuild } from '../buildSelection'
-import { useLocalStorage } from '../../../hooks'
+import { usePersistedState } from '../../../hooks'
+import { createPersistedValue, type PersistedState } from '../../../lib/persistedState'
 import { defaultBuildSelection, migrateCharacters, migrateBuildSelection } from '../migrations'
 import type { BuildSelection } from '../migrations'
 import { CharacterContext, type CharacterContextValue } from './characterContext'
 
+const charactersStore = createPersistedValue<Character[]>({
+  storageArea: 'localStorage',
+  storageKey: 'ddo-characters',
+  codec: 'json',
+  defaultValue: STUB_CHARACTERS,
+  validatedValue: migrateCharacters,
+})
+
+const buildSelectionStore = createPersistedValue<BuildSelection>({
+  storageArea: 'localStorage',
+  storageKey: 'ddo-selection',
+  codec: 'json',
+  defaultValue: defaultBuildSelection,
+  validatedValue: migrateBuildSelection,
+})
+
+const plannedBuildsStore = createPersistedValue<Life[]>({
+  storageArea: 'localStorage',
+  storageKey: 'ddo-plannedBuilds',
+  codec: 'json',
+  defaultValue: STUB_PLANNED_BUILDS,
+  validatedValue: (candidate) => (Array.isArray(candidate) ? (candidate as Life[]) : undefined),
+})
+
+function setterOf<Value>(
+  persistedState: PersistedState<Value, Value>,
+): Dispatch<SetStateAction<Value>> {
+  return (valueOrUpdater) => {
+    persistedState.save(
+      typeof valueOrUpdater === 'function'
+        ? (valueOrUpdater as (previous: Value) => Value)(persistedState.snapshot())
+        : valueOrUpdater,
+    )
+  }
+}
+
+const setCharacters = setterOf(charactersStore)
+const setBuildSelection = setterOf(buildSelectionStore)
+const setPlannedBuilds = setterOf(plannedBuildsStore)
+
 export function CharacterProvider({ children }: { children: ReactNode }): JSX.Element {
-  const [characters, setCharacters] = useLocalStorage<Character[]>(
-    'ddo-characters',
-    STUB_CHARACTERS,
-    migrateCharacters,
-  )
-  const [buildSelection, setBuildSelection] = useLocalStorage<BuildSelection>(
-    'ddo-selection',
-    defaultBuildSelection,
-    migrateBuildSelection,
-  )
-  const [plannedBuilds, setPlannedBuilds] = useLocalStorage<Life[]>(
-    'ddo-plannedBuilds',
-    STUB_PLANNED_BUILDS,
-  )
+  const characters = usePersistedState(charactersStore)
+  const buildSelection = usePersistedState(buildSelectionStore)
+  const plannedBuilds = usePersistedState(plannedBuildsStore)
 
   const characterContextValue = useMemo<CharacterContextValue>(() => {
     const selectedCharacter =
@@ -135,14 +165,7 @@ export function CharacterProvider({ children }: { children: ReactNode }): JSX.El
       setUntrackedStackCount,
       setDesiredStackCount,
     }
-  }, [
-    characters,
-    buildSelection,
-    plannedBuilds,
-    setCharacters,
-    setBuildSelection,
-    setPlannedBuilds,
-  ])
+  }, [characters, buildSelection, plannedBuilds])
 
   return (
     <CharacterContext.Provider value={characterContextValue}>{children}</CharacterContext.Provider>

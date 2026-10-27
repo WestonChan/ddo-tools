@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { CharacterProvider, useCharacters } from '../features/character'
 import { renderWithRouter } from '../test/renderWithRouter'
 import { NavBarCharacterCard } from './NavBarCharacterCard'
@@ -79,10 +79,6 @@ async function pickComparison(rowName: string): Promise<void> {
   const comparePicker = screen.getByRole('group', { name: 'Compare against' })
   await userEvent.click(within(comparePicker).getByRole('button', { name: rowName }))
 }
-
-beforeEach(() => {
-  localStorage.clear()
-})
 
 describe('NavBarCharacterCard', () => {
   it("shows the selected character's current life as the viewed build", async () => {

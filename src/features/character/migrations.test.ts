@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { migrateBuildSelection, migrateCharacters } from './migrations'
+import { defaultBuildSelection, migrateBuildSelection, migrateCharacters } from './migrations'
+import { STUB_CHARACTERS } from './data/stubCharacters'
 import { EMPTY_PAST_LIFE_COUNTS } from './utils'
 
 describe('migrateBuildSelection', () => {
@@ -78,5 +79,30 @@ describe('migrateCharacters', () => {
     const storedCharacters = [{ id: 'c1' }]
     const migratedCharacters = migrateCharacters(storedCharacters)
     expect(migratedCharacters[0].untrackedLives).toEqual(EMPTY_PAST_LIFE_COUNTS)
+  })
+})
+
+describe('migration idempotence', () => {
+  it.each([
+    ['a current-shape selection', { characterId: 'c1', buildId: 'b1', comparisonBuildId: 'b2' }],
+    ['a selection without a comparison', { characterId: 'c1', buildId: 'b1' }],
+    ['a legacy life selection', { characterId: 'c1', lifeId: 'life-1', plannedBuildId: null }],
+    ['a legacy planned selection', { characterId: 'c1', lifeId: '', plannedBuildId: 'plan-1' }],
+    ['a legacy selection with no ids', { characterId: 'c1', lifeId: null, plannedBuildId: null }],
+    ['a selection without a character', { buildId: 'b1' }],
+    ['the default selection', defaultBuildSelection],
+  ])('migrates %s to a value that migrates to itself', (_description, storedSelection) => {
+    const migratedOnce = migrateBuildSelection(storedSelection)
+    expect(migrateBuildSelection(migratedOnce)).toEqual(migratedOnce)
+  })
+
+  it.each([
+    ['migrated characters', [{ id: 'c1', untrackedLives: { heroic: { fighter: 2 } } }]],
+    ['legacy overrides', [{ id: 'c1', pastLifeOverrides: { heroic: { fighter: 1 } } }]],
+    ['characters with neither field', [{ id: 'c1' }]],
+    ['the stub characters', STUB_CHARACTERS],
+  ])('migrates %s to a value that migrates to itself', (_description, storedCharacters) => {
+    const migratedOnce = migrateCharacters(storedCharacters)
+    expect(migrateCharacters(migratedOnce)).toEqual(migratedOnce)
   })
 })
