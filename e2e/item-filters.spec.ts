@@ -62,8 +62,8 @@ function listPage<K extends string, Row>(
   }
 }
 
-test.beforeEach(async ({ page }) => {
-  await page.route('**/v1/**', async (route) => {
+test.beforeEach(async ({ context }) => {
+  await context.route('**/v1/**', async (route) => {
     const requestedUrl = new URL(route.request().url())
     const path = requestedUrl.pathname
     if (path === '/v1/items' && requestedUrl.searchParams.has('order')) {
@@ -648,4 +648,55 @@ test('loads the next 200 items near the virtual list end without resetting scrol
   await ledgerBody.evaluate((element) => element.scrollTo(0, element.scrollHeight))
   await expect(page.getByRole('row', { name: /Item 201/ })).toBeVisible()
   expect(await ledgerBody.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+})
+
+test('a new tab keeps filters, sort and column layout but starts with an empty search', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/resources/items')
+  await page.getByRole('button', { name: 'Rare only', exact: true }).click()
+  const nameHeader = page.locator('.ledger-header-cell[data-column-key="name"]')
+  await expect(async () => {
+    if ((await nameHeader.getAttribute('aria-sort')) !== 'ascending') await nameHeader.click()
+    await expect(nameHeader).toHaveAttribute('aria-sort', 'ascending', { timeout: 300 })
+  }).toPass({ timeout: 5000 })
+
+  const mlHeader = page.locator('.ledger-header-cell[data-column-key="ml"]')
+  const grip = page.getByRole('separator', { name: 'Resize ML', exact: true })
+  const gripBox = await grip.boundingBox()
+  expect(gripBox).not.toBeNull()
+  await page.mouse.move(gripBox!.x + gripBox!.width / 2, gripBox!.y + 2)
+  await page.mouse.down()
+  await page.mouse.move(gripBox!.x + gripBox!.width / 2 - 10, gripBox!.y + 2, { steps: 4 })
+  await page.mouse.up()
+  const resizedWidth = (await mlHeader.boundingBox())!.width
+
+  await mlHeader.focus()
+  await page.keyboard.press('Shift+ArrowLeft')
+  await expect(page.locator('.ledger-header-cell').first()).toHaveAttribute('data-column-key', 'ml')
+  await page.getByRole('searchbox', { name: 'Search items', exact: true }).fill('ring')
+
+  await page.close()
+  const reopenedPage = await context.newPage()
+  await reopenedPage.goto('/resources/items')
+
+  await expect(reopenedPage.getByRole('button', { name: 'Rare only', exact: true })).toHaveClass(
+    /selected/,
+  )
+  await expect(reopenedPage.locator('.ledger-header-cell[data-column-key="name"]')).toHaveAttribute(
+    'aria-sort',
+    'ascending',
+  )
+  await expect(reopenedPage.locator('.ledger-header-cell').first()).toHaveAttribute(
+    'data-column-key',
+    'ml',
+  )
+  const restoredWidth = (await reopenedPage
+    .locator('.ledger-header-cell[data-column-key="ml"]')
+    .boundingBox())!.width
+  expect(Math.abs(restoredWidth - resizedWidth)).toBeLessThanOrEqual(1)
+  await expect(
+    reopenedPage.getByRole('searchbox', { name: 'Search items', exact: true }),
+  ).toHaveValue('')
 })

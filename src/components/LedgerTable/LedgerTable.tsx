@@ -47,7 +47,14 @@ import {
 } from './ledgerModel'
 import './LedgerTable.css'
 
-interface LedgerTableProps<Row> {
+export interface LedgerColumnLayout {
+  columnOrder: string[]
+  onColumnOrderChange: (order: string[]) => void
+  columnWidths: Record<string, number>
+  onColumnWidthsChange: (widths: Record<string, number>) => void
+}
+
+interface LedgerTableProps<Row> extends Partial<LedgerColumnLayout> {
   columns: LedgerColumn<Row>[]
   rowCount: number
   rowAt: (index: number) => Row
@@ -58,10 +65,6 @@ interface LedgerTableProps<Row> {
   sort?: LedgerSort | null
   onSortChange?: (sort: LedgerSort) => void
   initialSort?: LedgerSort | null
-  columnOrder?: string[]
-  onColumnOrderChange?: (order: string[]) => void
-  columnWidths?: Record<string, number>
-  onColumnWidthsChange?: (widths: Record<string, number>) => void
   isVirtualized?: boolean
   isDense?: boolean
   hasColumnHeaders?: boolean

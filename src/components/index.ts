@@ -35,6 +35,11 @@ export { ApiErrorNotice } from './ApiErrorNotice'
 export { AugmentSlotButton, AugmentSlotDisplay } from './AugmentSlotButton'
 export { AnchoredMenu, type AnchoredMenuCloseReason } from './AnchoredMenu'
 export { Combobox, type FilterOption } from './Combobox'
-export { LedgerTable, type LedgerColumn, type LedgerSort } from './LedgerTable'
+export {
+  LedgerTable,
+  type LedgerColumn,
+  type LedgerColumnLayout,
+  type LedgerSort,
+} from './LedgerTable'
 export { PageSection } from './PageSection'
 export { WireframePlaceholder } from './WireframePlaceholder'

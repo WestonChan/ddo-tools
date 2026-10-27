@@ -21,6 +21,7 @@ import {
   type ItemListFilters,
   type ItemSummary,
 } from '../queries/items'
+import { resetPersistedStateForTests } from '../../../lib/persistedState'
 import { useResourceListState } from '../resourceListState'
 
 const capturedGroups = apiFixture(capturedGroupsResponse)
@@ -272,6 +273,36 @@ describe('ItemPicker server-backed filters', () => {
       .getAllByRole('columnheader')
       .map((header) => header.dataset.columnKey)
     expect([...renderedColumnKeys].sort()).toEqual([...ITEM_COLUMN_KEYS].sort())
+  })
+
+  it('restores resized and moved columns in a new tab', async () => {
+    const view = render(<ItemPickerHarness />)
+    const headerKeys = (): (string | undefined)[] =>
+      screen.getAllByRole('columnheader').map((header) => header.dataset.columnKey)
+    const originalOrder = headerKeys()
+    const originalMlFlex = screen.getByRole('columnheader', { name: /ML/ }).style.flex
+    fireEvent.pointerDown(screen.getByRole('separator', { name: 'Resize ML' }), {
+      button: 0,
+      pointerId: 1,
+      isPrimary: true,
+      clientX: 100,
+    })
+    fireEvent.pointerMove(window, { pointerId: 1, clientX: 200 })
+    fireEvent.pointerUp(window, { pointerId: 1 })
+    const resizedMlFlex = screen.getByRole('columnheader', { name: /ML/ }).style.flex
+    expect(resizedMlFlex).not.toBe(originalMlFlex)
+    act(() => screen.getByRole('columnheader', { name: /ML/ }).focus())
+    await userEvent.keyboard('{Shift>}{ArrowRight}{/Shift}')
+    const movedOrder = headerKeys()
+    expect(movedOrder).not.toEqual(originalOrder)
+
+    view.unmount()
+    sessionStorage.clear()
+    resetPersistedStateForTests()
+    render(<ItemPickerHarness />)
+
+    expect(headerKeys()).toEqual(movedOrder)
+    expect(screen.getByRole('columnheader', { name: /ML/ }).style.flex).toBe(resizedMlFlex)
   })
 
   it('renders Raid and Rare as sortable headers that can still be focused and moved', () => {

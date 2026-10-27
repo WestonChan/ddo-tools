@@ -245,6 +245,71 @@ describe('resource list state', () => {
     expect(result.current.includesSetBonuses).toBe(false)
   })
 
+  it('keeps valid column widths and drops entries that are not positive finite numbers', () => {
+    act(() =>
+      setResourceListState('items', {
+        columnWidths: {
+          ml: 52,
+          slot: Number.NaN,
+          pack: -4,
+          raid: 0,
+          rare: '30' as unknown as number,
+          name: Number.POSITIVE_INFINITY,
+        },
+      }),
+    )
+    resetPersistedStateForTests()
+    const { result } = renderHook(() => useResourceListState('items'))
+    expect(result.current.columnWidths).toEqual({ ml: 52 })
+  })
+
+  it('shows after a save the widths a reload reads', () => {
+    const { result } = renderHook(() => useResourceListState('items'))
+    act(() => setResourceListState('items', { columnWidths: { ml: 52, slot: -1 } }))
+    const savedWidths = result.current.columnWidths
+    resetPersistedStateForTests()
+    expect(renderHook(() => useResourceListState('items')).result.current.columnWidths).toEqual(
+      savedWidths,
+    )
+  })
+
+  it('restores a column order and widths after a new tab', () => {
+    act(() =>
+      setResourceListState('items', {
+        columnOrder: ['name', 'slot', 'ml', 'pack', 'raid', 'rare'],
+        columnWidths: { ml: 52 },
+      }),
+    )
+    startNewTab()
+    const { result } = renderHook(() => useResourceListState('items'))
+    expect(result.current.columnOrder).toEqual(['name', 'slot', 'ml', 'pack', 'raid', 'rare'])
+    expect(result.current.columnWidths).toEqual({ ml: 52 })
+  })
+
+  it.each([
+    ['a non-array', { a: 1 }],
+    ['an array with a non-string entry', ['name', 3]],
+  ])('uses an empty column order for %s', (_, storedOrder) => {
+    act(() => setResourceListState('items', { columnOrder: ['name', 'ml'] }))
+    const stored = JSON.parse(localStorage.getItem(ITEMS_PREFERENCES_KEY)!)
+    stored.columnOrder.value = storedOrder
+    localStorage.setItem(ITEMS_PREFERENCES_KEY, JSON.stringify(stored))
+    resetPersistedStateForTests()
+    expect(renderHook(() => useResourceListState('items')).result.current.columnOrder).toEqual([])
+  })
+
+  it.each([
+    ['an array', [1, 2]],
+    ['a string', 'wide'],
+  ])('uses empty column widths for %s', (_, storedWidths) => {
+    act(() => setResourceListState('items', { columnWidths: { ml: 52 } }))
+    const stored = JSON.parse(localStorage.getItem(ITEMS_PREFERENCES_KEY)!)
+    stored.columnWidths.value = storedWidths
+    localStorage.setItem(ITEMS_PREFERENCES_KEY, JSON.stringify(stored))
+    resetPersistedStateForTests()
+    expect(renderHook(() => useResourceListState('items')).result.current.columnWidths).toEqual({})
+  })
+
   it('uses defaults for broken preferences JSON and keeps the tab state', () => {
     writeSampleStates()
     localStorage.setItem(ITEMS_PREFERENCES_KEY, '{broken json')

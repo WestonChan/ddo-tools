@@ -1,4 +1,5 @@
-import type { LedgerSort } from '../../components'
+import { useMemo } from 'react'
+import type { LedgerColumnLayout, LedgerSort } from '../../components'
 import { usePersistedState } from '../../hooks'
 import { isPlainObject } from '../../lib/isPlainObject'
 import { createPersistedRecordFamily } from '../../lib/persistedState'
@@ -19,6 +20,8 @@ export interface ResourceListState<Category extends ResourceCategory> {
   filters: ResourceFiltersByCategory[Category]
   selectedSort: LedgerSort | null
   includesSetBonuses: boolean
+  columnOrder: string[]
+  columnWidths: Record<string, number>
   searchQuery: string
   scrollTop: number
 }
@@ -106,6 +109,15 @@ function validatedSort(
   return candidate
 }
 
+function validatedColumnWidths(candidate: unknown): Record<string, number> | undefined {
+  if (!isPlainObject(candidate)) return undefined
+  return Object.fromEntries(
+    Object.entries(candidate).filter(
+      ([, width]) => typeof width === 'number' && Number.isFinite(width) && width > 0,
+    ),
+  ) as Record<string, number>
+}
+
 const resourceListStateFamily = createPersistedRecordFamily<
   ResourceCategory,
   ResourceListState<ResourceCategory>
@@ -129,6 +141,16 @@ const resourceListStateFamily = createPersistedRecordFamily<
       storageArea: 'localStorage',
       defaultValue: () => false,
       validatedValue: (candidate) => (typeof candidate === 'boolean' ? candidate : undefined),
+    },
+    columnOrder: {
+      storageArea: 'localStorage',
+      defaultValue: () => [],
+      validatedValue: (candidate) => (isStringArray(candidate) ? candidate : undefined),
+    },
+    columnWidths: {
+      storageArea: 'localStorage',
+      defaultValue: () => ({}),
+      validatedValue: validatedColumnWidths,
     },
     searchQuery: {
       storageArea: 'sessionStorage',
@@ -157,4 +179,19 @@ export function useResourceListState<Category extends ResourceCategory>(
   category: Category,
 ): ResourceListState<Category> {
   return usePersistedState(resourceListStateFamily(category)) as ResourceListState<Category>
+}
+
+export function useResourceListColumnLayout(category: ResourceCategory): LedgerColumnLayout {
+  const { columnOrder, columnWidths } = useResourceListState(category)
+  return useMemo(
+    () => ({
+      columnOrder,
+      onColumnOrderChange: (nextOrder) =>
+        setResourceListState(category, { columnOrder: nextOrder }),
+      columnWidths,
+      onColumnWidthsChange: (nextWidths) =>
+        setResourceListState(category, { columnWidths: nextWidths }),
+    }),
+    [category, columnOrder, columnWidths],
+  )
 }

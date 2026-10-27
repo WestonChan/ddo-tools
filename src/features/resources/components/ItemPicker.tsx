@@ -27,6 +27,7 @@ import { FilterChipRow } from '../filters/FilterChipRow'
 import {
   RESOURCE_LIST_CONFIGURATION,
   setResourceListState,
+  useResourceListColumnLayout,
   useResourceListState,
 } from '../resourceListState'
 import { appliedFilterValues } from '../filters/filterModel'
@@ -196,6 +197,7 @@ export function ItemPicker({
   const queryClient = useQueryClient()
   const { filters, searchQuery, selectedSort, includesSetBonuses, scrollTop } =
     useResourceListState(category)
+  const columnLayout = useResourceListColumnLayout(category)
   const onFiltersChange = (filters: ItemListFilters): void => {
     setResourceListState(category, { filters })
   }
@@ -534,6 +536,7 @@ export function ItemPicker({
       />
       <LedgerTable
         columns={ITEM_COLUMNS}
+        {...columnLayout}
         rowCount={
           itemPageQuery.error && !itemPageQuery.isFetchNextPageError ? 0 : itemsToShow.length
         }
