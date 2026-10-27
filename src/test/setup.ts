@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest'
-import { vi } from 'vitest'
+import { beforeEach, vi } from 'vitest'
+import { resetPersistedStateForTests } from '../lib/persistedState'
 
 vi.mock('@sentry/react', () => ({
   init: vi.fn(),
@@ -68,3 +69,9 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
     }
   }
 }
+
+beforeEach(() => {
+  localStorage.clear()
+  sessionStorage.clear()
+  resetPersistedStateForTests()
+})
