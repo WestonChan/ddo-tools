@@ -1,3 +1,5 @@
+import { createPersistedValue } from './persistedState'
+
 export const ACCENT_RAMP_STEPS = [200, 300, 400, 500, 600, 700] as const
 
 type AccentRampStep = (typeof ACCENT_RAMP_STEPS)[number]
@@ -67,8 +69,6 @@ export const ACCENT_PRESETS: readonly AccentPreset[] = [
 
 const DEFAULT_ACCENT_PRESET = ACCENT_PRESETS[0]
 
-const ACCENT_STORAGE_KEY = 'accent'
-
 export function accentPresetNamed(presetName: string): AccentPreset | undefined {
   return ACCENT_PRESETS.find((preset) => preset.name === presetName)
 }
@@ -87,7 +87,7 @@ function legacyJsonAccentHex(storedText: string): string | null {
   }
 }
 
-function accentPresetFromStoredText(storedText: string | null): AccentPreset {
+function accentPresetFromStoredText(storedText: string): AccentPreset {
   if (!storedText) return DEFAULT_ACCENT_PRESET
   const namedPreset = accentPresetNamed(storedText)
   if (namedPreset) return namedPreset
@@ -95,13 +95,14 @@ function accentPresetFromStoredText(storedText: string | null): AccentPreset {
   return (legacyHex && accentPresetWithBaseColor(legacyHex)) || DEFAULT_ACCENT_PRESET
 }
 
-function storedAccentText(): string | null {
-  try {
-    return localStorage.getItem(ACCENT_STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
+const accentPresetNameStore = createPersistedValue<string>({
+  storageArea: 'localStorage',
+  storageKey: 'accent',
+  codec: 'text',
+  defaultValue: DEFAULT_ACCENT_PRESET.name,
+  validatedValue: (candidate) =>
+    typeof candidate === 'string' ? accentPresetFromStoredText(candidate).name : undefined,
+})
 
 export function applyAccent(presetName: string): void {
   const preset = accentPresetNamed(presetName) ?? DEFAULT_ACCENT_PRESET
@@ -110,12 +111,12 @@ export function applyAccent(presetName: string): void {
   rootStyle.setProperty('--accent', preset.ramp[400])
 }
 
-export function saveAccent(presetName: string): void {
-  localStorage.setItem(ACCENT_STORAGE_KEY, presetName)
+export function saveAccent(presetName: string): boolean {
+  return accentPresetNameStore.save(presetName)
 }
 
 export function activeAccent(): string {
-  return accentPresetFromStoredText(storedAccentText()).name
+  return accentPresetNameStore.snapshot()
 }
 
 export function restoreAccent(): void {
@@ -123,9 +124,5 @@ export function restoreAccent(): void {
 }
 
 export function persistNormalizedAccent(): void {
-  try {
-    saveAccent(activeAccent())
-  } catch {
-    return
-  }
+  saveAccent(activeAccent())
 }

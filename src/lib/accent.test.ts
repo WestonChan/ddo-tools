@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ACCENT_PRESETS,
   ACCENT_RAMP_STEPS,
@@ -10,6 +10,7 @@ import {
   persistNormalizedAccent,
 } from './accent'
 import { runPrePaintScript } from '../test/runPrePaintScript'
+import { resetPersistedStateForTests } from './persistedState'
 
 const LEGACY_PRESET_HEXES = [
   '#c8a24a',
@@ -37,6 +38,10 @@ function presetRamp(presetName: string): Record<number, string> {
 beforeEach(() => {
   document.documentElement.removeAttribute('style')
   localStorage.clear()
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 describe('ACCENT_PRESETS', () => {
@@ -98,6 +103,16 @@ describe('saveAccent', () => {
     expect(localStorage.getItem('accent')).toBe('Moss')
     expect(appliedProperty('--accent')).toBe('')
   })
+
+  it('does not throw when storage refuses the write, and still reads back the saved preset', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError')
+    })
+
+    expect(() => saveAccent('Rust')).not.toThrow()
+
+    expect(activeAccent()).toBe('Rust')
+  })
 })
 
 describe('activeAccent', () => {
@@ -113,20 +128,25 @@ describe('activeAccent', () => {
   it('resolves every legacy preset hex to Gold', () => {
     for (const legacyHex of LEGACY_PRESET_HEXES) {
       localStorage.setItem('accent', legacyHex)
+      resetPersistedStateForTests()
       expect(activeAccent()).toBe('Gold')
     }
   })
 
   it('resolves a legacy hex equal to another preset 400 step to that preset, in any casing', () => {
     localStorage.setItem('accent', '#8B6CB5')
+    resetPersistedStateForTests()
     expect(activeAccent()).toBe('Violet')
   })
 
   it('resolves the legacy {accent, hover} JSON through its accent hex', () => {
     localStorage.setItem('accent', JSON.stringify({ accent: '#a855f7', hover: '#fedcba' }))
+    resetPersistedStateForTests()
     expect(activeAccent()).toBe('Gold')
 
     localStorage.setItem('accent', JSON.stringify({ accent: '#5b9a63', hover: '#fedcba' }))
+
+    resetPersistedStateForTests()
     expect(activeAccent()).toBe('Moss')
   })
 
@@ -139,6 +159,7 @@ describe('activeAccent', () => {
       '',
     ]) {
       localStorage.setItem('accent', storedText)
+      resetPersistedStateForTests()
       expect(activeAccent()).toBe('Gold')
     }
   })
@@ -207,6 +228,7 @@ describe('index.html pre-paint script', () => {
     ]) {
       localStorage.clear()
       if (storedText !== null) localStorage.setItem('accent', storedText)
+      resetPersistedStateForTests()
 
       document.documentElement.removeAttribute('style')
       restoreAccent()
