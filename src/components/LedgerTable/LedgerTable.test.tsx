@@ -590,6 +590,46 @@ describe('LedgerTable', () => {
     expect(screen.getByRole('columnheader', { name: 'Name' })).toHaveAttribute('tabindex', '-1')
   })
 
+  it('renders every column when a controlled order misses one of them', () => {
+    render(
+      <LedgerTable
+        columns={columns}
+        columnOrder={['ml', 'name']}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    expect(screen.getAllByRole('columnheader').map((header) => header.dataset.columnKey)).toEqual([
+      'name',
+      'ml',
+      'pack',
+    ])
+  })
+
+  it('emits a full permutation after a move from an outdated controlled order', async () => {
+    const onColumnOrderChange = vi.fn()
+    render(
+      <LedgerTable
+        columns={columns}
+        columnOrder={['ml', 'name']}
+        onColumnOrderChange={onColumnOrderChange}
+        rowCount={rows.length}
+        rowAt={(index) => rows[index]}
+        rowKey={(row) => row.id}
+        onRowActivate={vi.fn()}
+        isVirtualized={false}
+        viewportWidth={800}
+      />,
+    )
+    act(() => screen.getByRole('columnheader', { name: 'ML' }).focus())
+    await userEvent.keyboard('{Shift>}{ArrowRight}{/Shift}')
+    expect(onColumnOrderChange).toHaveBeenCalledWith(['name', 'pack', 'ml'])
+  })
+
   it('moves between visible headers with clamped arrows and Home and End', async () => {
     render(
       <LedgerTable

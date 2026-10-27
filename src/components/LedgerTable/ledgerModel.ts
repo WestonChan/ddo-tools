@@ -89,6 +89,15 @@ export function visibleLedgerRows<Row>(
   })
 }
 
+export function resolvedColumnOrder<Row>(order: string[], columns: LedgerColumn<Row>[]): string[] {
+  const columnKeys = columns.map((column) => column.key)
+  const isPermutation =
+    order.length === columnKeys.length &&
+    new Set(order).size === order.length &&
+    order.every((key) => columnKeys.includes(key))
+  return isPermutation ? order : columnKeys
+}
+
 export function reorderedColumnKeys(keys: string[], activeKey: string, overKey: string): string[] {
   if (!keys.includes(activeKey) || !keys.includes(overKey)) return keys
   return arrayMove(keys, keys.indexOf(activeKey), keys.indexOf(overKey))

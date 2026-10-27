@@ -36,6 +36,7 @@ import { useRovingGroup } from '../../hooks'
 import {
   nextLedgerSort,
   reorderedColumnKeys,
+  resolvedColumnOrder,
   resizedDividerWidths,
   sortedLedgerRows,
   visibleLedgerRows,
@@ -421,7 +422,10 @@ export function LedgerTable<Row>({
   const listRef = useRef<ListImperativeAPI>(null)
   const pendingFocusIndex = useRef<number | null>(null)
   const sort = controlledSort === undefined ? uncontrolledSort : controlledSort
-  const order = controlledOrder ?? uncontrolledOrder
+  const order = useMemo(
+    () => resolvedColumnOrder(controlledOrder ?? uncontrolledOrder, columns),
+    [controlledOrder, uncontrolledOrder, columns],
+  )
   const widths = controlledWidths ?? uncontrolledWidths
   const orderedColumns = useMemo(
     () => order.flatMap((key) => columns.find((column) => column.key === key) ?? []),

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   nextLedgerSort,
   reorderedColumnKeys,
+  resolvedColumnOrder,
   resizedDividerWidths,
   sortedLedgerRows,
   visibleLedgerColumns,
@@ -89,5 +90,21 @@ describe('ledger model', () => {
       'ml',
       'pack',
     ])
+  })
+})
+
+describe('resolvedColumnOrder', () => {
+  it('passes through an order that is a permutation of the column keys', () => {
+    expect(resolvedColumnOrder(['pack', 'name', 'ml'], columns)).toEqual(['pack', 'name', 'ml'])
+  })
+
+  it.each([
+    ['an unknown key', ['name', 'ml', 'gone']],
+    ['a missing key', ['name', 'ml']],
+    ['a duplicate key', ['name', 'ml', 'ml']],
+    ['an empty order', []],
+    ['an extra key', ['name', 'ml', 'pack', 'gone']],
+  ])('gives declaration order for %s', (_, order) => {
+    expect(resolvedColumnOrder(order, columns)).toEqual(['name', 'ml', 'pack'])
   })
 })
