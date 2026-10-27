@@ -101,7 +101,7 @@ Language-specific prefixes carry the kind of work:
 
 - **Short names are allowed only in short scopes.** A variable that lives 10 lines or fewer, and is not part of an exported API, can be `i`, `row` or `item`. Anything a reader meets far from where it was defined needs the full name.
 - **Specific code gets a purpose name.** A function, hook or component that exists for one job is named for that job, not its mechanism: `useItemsEquippableInGearSlot`, not `useQueries2`.
-- **Shared code gets a capability name.** Code in `src/components/`, `src/hooks/`, `src/lib/`, `ddo-model` and shared helpers serves many callers, so it is named for what it can do, not for its first caller: `Modal`, not `ItemDrawer`; `useLocalStorage`, not `useThemePref`. If a shared name only makes sense from one feature's point of view, either the name is wrong or the code belongs in that feature.
+- **Shared code gets a capability name.** Code in `src/components/`, `src/hooks/`, `src/lib/`, `ddo-model` and shared helpers serves many callers, so it is named for what it can do, not for its first caller: `Modal`, not `ItemDrawer`; `usePersistedState`, not `useThemePref`. If a shared name only makes sense from one feature's point of view, either the name is wrong or the code belongs in that feature.
 
 ## Abbreviations and acronyms
 

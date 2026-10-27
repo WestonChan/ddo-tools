@@ -5,6 +5,13 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-10-28',
+    changes: [
+      'Each Resources list remembers its filters, sort, set-bonus option, column widths and column order between visits; a new tab still starts with an empty search at the top of the list',
+      "Changing the theme or accent no longer fails when the browser's storage is full or blocked",
+    ],
+  },
+  {
     date: '2026-10-24',
     changes: [
       'The item list and its detail fill the screen height and scroll on their own, so reading a long detail no longer moves the list',

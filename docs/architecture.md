@@ -1504,7 +1504,7 @@ Tracked in [ddo-tools#43](https://github.com/WestonChan/ddo-tools/issues/43).
 #### Phase 4g — Polish
 
 Tracked in [ddo-tools#46](https://github.com/WestonChan/ddo-tools/issues/46).
-- Filter persistence per category via `useLocalStorage`, together with the ledger's column widths, order and sort (all component state since 4d).
+- ✅ Filter persistence per category, together with the ledger's column widths, order and sort (#47, 2026-10-27), on the shared persisted-state primitive (`src/lib/persistedState.ts`, #135), which replaced `useLocalStorage` and the other hand-rolled stores and is the only code a lint rule lets touch storage. Preferences live in `localStorage`; search and scroll stay per tab. Decided: a save that fails validation is rejected rather than written as the default, so stored user data is never overwritten by a fallback.
 - **"Content you own" filter** — items whose source quests the user can run, from an account-type setting plus owned packs and the recurring giveaway sets. Needs the spec in [docs/notes/Resource View.md](notes/Resource%20View.md) and Phase 13's settings; moved here from 4d on 2026-10-02.
 - **Filters the list rows cannot answer yet**: material, binding, augment-slot colour, crafting system, augment slot type (sun/moon). Each is a `/v1/items` parameter in `ddo-data` first (the rule since 4d: no client-side matching), then a chip in `itemFilterDefinitions`.
 - **Augment candidates still fetch whole** (`fetchAugmentsFittingSlot`, `limit=10000` on `/v1/augments?slot=`): page or filter them server-side when the Phase 8 augment picker arrives.

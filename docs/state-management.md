@@ -6,12 +6,25 @@ each fitting a different shape of "state":
 1. **Local component state** (`useState`) — UI state owned by one component
    (open/closed, hover-state, in-flight form values). The default. No special
    considerations.
-2. **Persisted user preferences** (`useLocalStorage`) — values the user
-   should see again on next session (nav-bar pinned/collapsed, future filter
-   persistence). Backed by localStorage; one hook per key. Note that
-   "persisted" and "shared" are independent axes: a preference read by
-   several components at once wants pattern #3 with a localStorage write in
-   the mutator (see `useTheme`), not one `useLocalStorage` per consumer.
+2. **Persisted user preferences** (`src/lib/persistedState.ts`, read with
+   `usePersistedState`) — values the user should see again after a reload or
+   on the next visit (theme, accent, the nav bar's expanded flag, each
+   resource list's filters, sort and columns, and the characters until
+   Phase 5 moves them to `user.db`). The primitive owns every `localStorage`
+   and `sessionStorage` access; `no-restricted-globals` and
+   `no-restricted-properties` in `eslint.config.js` fail the build when
+   anything else touches storage. A declaration (`createPersistedValue`,
+   `createPersistedValueFamily`, `createPersistedRecordFamily`) names its
+   key, storage area, codec (`text` for the raw strings the `index.html`
+   pre-paint script reads, `json` otherwise), default and validator, lives
+   at module scope in the file that owns the state, and ends in `Store`
+   (`themePreferenceStore`, `navBarExpandedStore`). Reads and saves pass
+   the same validator, so a save holds exactly what a reload would read: a
+   bad stored value falls back to its default, field by field, and a save
+   that fails validation is rejected (`save` returns `false`, nothing
+   changes), so it never writes a default over stored data. A preference
+   read by several components is still one declaration that every reader
+   passes to `usePersistedState`.
 3. **Shared async/external state** (`useSyncExternalStore` + module store)
    — values that multiple components subscribe to, derived from an async
    source or imperative side-channel, and where every consumer should see
@@ -20,7 +33,7 @@ each fitting a different shape of "state":
 
 ---
 
-Example of #3 with session persistence: `features/resources/resourceListSessions.ts` keeps each resource category's list session (filters, match mode, set-bonus option, search, sort, scroll) in one module store keyed by category, written through to `sessionStorage` under a versioned key, so the list restores synchronously after navigating away and back or reloading the tab, but a new tab starts clean. Filters in the URL are a separate, later item.
+Example of #2 across two storage areas: `features/resources/resourceListState.ts` keeps each resource category's list state in one record family keyed by category. Filters, sort, the set-bonus option and the column widths and order live in `localStorage`, so a new tab or the next visit restores them; search and scroll live in `sessionStorage`, so they survive a reload but a new tab starts with an empty search at the top. Each field carries its own version and validator, so one bad field never resets the others, and a scroll write never touches `localStorage`. Two tabs on the same list can still revert each other's changes to different fields (ddo-tools#139). Filters in the URL are a separate, later item.
 
 ## Pattern: `useSyncExternalStore` for shared/async state
 
@@ -179,6 +192,12 @@ When writing a new hook of this shape:
   the module state stays around. For session-scoped state this is fine;
   for resource-leaky state (event listeners, intervals), expose a
   `_resetForTests` if needed.
+- **Persisted state resets itself between tests.** `src/test/setup.ts`
+  clears both storages and calls `resetPersistedStateForTests()` before
+  every test, so no test inherits another's preferences. Inside a test,
+  `resetPersistedStateForTests()` alone simulates a reload (storage kept,
+  cache dropped); `sessionStorage.clear()` followed by the reset simulates
+  a new tab.
 - **Tests need to reset state between runs.** Module-level state persists
   across vitest test cases in the same file. Provide a test-only reset
   helper if assertions depend on initial state — e.g.
