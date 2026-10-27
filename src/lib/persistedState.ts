@@ -1,3 +1,5 @@
+import { isPlainObject } from './isPlainObject'
+
 export type StorageAreaName = 'localStorage' | 'sessionStorage'
 
 export interface PersistedState<Snapshot, Change> {
@@ -76,10 +78,6 @@ function writeStoredText(storageArea: StorageAreaName, storageKey: string, text:
   } catch {
     return false
   }
-}
-
-function isPlainObject(candidate: unknown): candidate is Record<string, unknown> {
-  return typeof candidate === 'object' && candidate !== null && !Array.isArray(candidate)
 }
 
 function jsonText(value: unknown): string {

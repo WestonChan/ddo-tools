@@ -22,7 +22,7 @@ import { ResourceDetailPane } from './components/ResourceDetailPane'
 import { WireframePlaceholder } from '../../components'
 import { LABEL_BY_RESOURCE_CATEGORY } from './resourceCategories'
 import './ResourcesView.css'
-import { useResourceListSession } from './resourceListSessions'
+import { useResourceListState } from './resourceListState'
 
 const COMING_SOON_PLACEHOLDER_MIN_HEIGHT_PX = 420
 const RESOURCE_COLUMN_MINIMUM_PX = 480
@@ -53,7 +53,7 @@ function ResourcesView(): JSX.Element {
   const pickerRef = useRef<HTMLElement | null>(null)
   const lastSelectedItemSlug = useRef<Slug | null>(null)
   const wasOpenedFromList = useRef(false)
-  const { filters } = useResourceListSession('items')
+  const { filters } = useResourceListState('items')
   const [itemToFocus, setItemToFocus] = useState<Slug | null>(null)
   const [rowToFocusSlug, setRowToFocusSlug] = useState<Slug | null>(null)
   const [isSingleColumn, setIsSingleColumn] = useState(true)

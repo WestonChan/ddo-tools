@@ -21,7 +21,7 @@ import {
   type ItemListFilters,
   type ItemSummary,
 } from '../queries/items'
-import { resetResourceListSessionsForTests, useResourceListSession } from '../resourceListSessions'
+import { useResourceListState } from '../resourceListState'
 
 const capturedGroups = apiFixture(capturedGroupsResponse)
 const capturedSetPage = apiFixture(capturedSetPageResponse)
@@ -160,8 +160,6 @@ vi.mock('../queries/useItems', () => ({
 }))
 
 beforeEach(() => {
-  sessionStorage.clear()
-  resetResourceListSessionsForTests()
   vi.clearAllMocks()
   useEffectVocabularyMock.mockImplementation(effectVocabularyPage)
   useSetVocabularyMock.mockClear()
@@ -308,7 +306,7 @@ describe('ItemPicker server-backed filters', () => {
 
   it('remembers scrolling while the next result set shows placeholder rows', async () => {
     const view = render(<ItemPickerHarness />)
-    const session = renderHook(() => useResourceListSession('items'))
+    const session = renderHook(() => useResourceListState('items'))
     const initialBody = view.container.querySelector<HTMLElement>('.ledger-body')!
     initialBody.scrollTop = 340
     fireEvent.scroll(initialBody)

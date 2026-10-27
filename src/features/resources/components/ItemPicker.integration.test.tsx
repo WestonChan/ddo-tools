@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -6,7 +6,6 @@ import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
 import capturedNullIconSetPageResponse from '../queries/fixtures/sets-null-icon-page.json'
 import { ItemPicker } from './ItemPicker'
-import { resetResourceListSessionsForTests } from '../resourceListSessions'
 import effectPageResponse from '../queries/fixtures/effects-page.json'
 import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
 import type { ApiEffectVocabularyRow } from '../../../lib/api'
@@ -30,11 +29,6 @@ vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }))
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
-})
-
-beforeEach(() => {
-  sessionStorage.clear()
-  resetResourceListSessionsForTests()
 })
 
 function resourceResultCount(): HTMLElement {

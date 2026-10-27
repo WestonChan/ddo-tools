@@ -26,9 +26,9 @@ import { useDebouncedValue } from '../../../hooks'
 import { FilterChipRow } from '../filters/FilterChipRow'
 import {
   RESOURCE_LIST_CONFIGURATION,
-  setResourceListSession,
-  useResourceListSession,
-} from '../resourceListSessions'
+  setResourceListState,
+  useResourceListState,
+} from '../resourceListState'
 import { appliedFilterValues } from '../filters/filterModel'
 import {
   EMPTY_ITEM_FILTERS,
@@ -195,18 +195,18 @@ export function ItemPicker({
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { filters, searchQuery, selectedSort, includesSetBonuses, scrollTop } =
-    useResourceListSession(category)
+    useResourceListState(category)
   const onFiltersChange = (filters: ItemListFilters): void => {
-    setResourceListSession(category, { filters })
+    setResourceListState(category, { filters })
   }
   const setSearchQuery = (searchQuery: string): void => {
-    setResourceListSession(category, { searchQuery })
+    setResourceListState(category, { searchQuery })
   }
   const setSelectedSort = (selectedSort: LedgerSort | null): void => {
-    setResourceListSession(category, { selectedSort })
+    setResourceListState(category, { selectedSort })
   }
   const setIncludesSetBonuses = (includesSetBonuses: boolean): void => {
-    setResourceListSession(category, { includesSetBonuses })
+    setResourceListState(category, { includesSetBonuses })
   }
   const pickerRootRef = useRef<HTMLDivElement>(null)
   const ownSearchInputRef = useRef<HTMLInputElement>(null)
@@ -235,7 +235,7 @@ export function ItemPicker({
       hasRestoredScrollRef.current = true
     }
     const rememberScroll = (): void => {
-      setResourceListSession(category, { scrollTop: body.scrollTop })
+      setResourceListState(category, { scrollTop: body.scrollTop })
     }
     body.addEventListener('scroll', rememberScroll)
     return () => body.removeEventListener('scroll', rememberScroll)

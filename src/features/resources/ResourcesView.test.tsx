@@ -12,17 +12,14 @@ import userEvent from '@testing-library/user-event'
 import { slugFromPathSegment, type Slug } from '../../lib/api'
 import { apiFixture } from '../../test/apiFixture'
 import { render } from '../../test/renderWithQueryClient'
+import { resetPersistedStateForTests } from '../../lib/persistedState'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
 import * as resourceQueries from './queries/useItems'
 import type { Effect, Item, ItemAugmentSlot, ItemSummary } from './queries/items'
 import type { SetDetail } from './queries/sets'
 import capturedEffectsPageResponse from './queries/fixtures/effects-page.json'
-import {
-  resetResourceListSessionsForTests,
-  setResourceListSession,
-  useResourceListSession,
-} from './resourceListSessions'
+import { setResourceListState, useResourceListState } from './resourceListState'
 
 const capturedEffectsPage = apiFixture(capturedEffectsPageResponse)
 
@@ -171,8 +168,6 @@ vi.mock('./queries/useItems', () => ({
 }))
 
 beforeEach(() => {
-  sessionStorage.clear()
-  resetResourceListSessionsForTests()
   isItemDetailLoaded = true
   itemEffects = []
   itemAugmentSlots = []
@@ -242,19 +237,17 @@ describe('resource list sessions', () => {
     expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
     expect(itemPageRequests.mock.lastCall).toEqual(requestBeforeLeaving)
 
-    act(() => setResourceListSession('feats', { searchQuery: 'wild' }))
+    act(() => setResourceListState('feats', { searchQuery: 'wild' }))
     await user.click(screen.getByRole('button', { name: 'Clear filters' }))
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('stone')
     expect(screen.queryByRole('button', { name: 'Show applied · 1' })).toBeNull()
     expect(itemPageRequests.mock.lastCall?.[0]).toMatchObject({ bonuses: [] })
     expect(itemPageRequests.mock.lastCall?.[1]).toBe('stone')
-    expect(renderHook(() => useResourceListSession('feats')).result.current.searchQuery).toBe(
-      'wild',
-    )
+    expect(renderHook(() => useResourceListState('feats')).result.current.searchQuery).toBe('wild')
     await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('checkbox', { name: 'Include set bonuses' })).not.toBeChecked()
     restoredView.unmount()
-    resetResourceListSessionsForTests()
+    resetPersistedStateForTests()
     render(<ResourcesView />)
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveValue('stone')
     expect(screen.queryByRole('button', { name: 'Show applied · 1' })).toBeNull()
