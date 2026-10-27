@@ -1,4 +1,4 @@
-import { isPlainObject } from './isPlainObject'
+import { isRecord } from './isRecord'
 
 export type StorageAreaName = 'localStorage' | 'sessionStorage'
 
@@ -147,15 +147,13 @@ function recordArea<FamilyKey extends string>(
       let stored: Record<string, unknown> = {}
       try {
         const parsed: unknown = text === null ? null : JSON.parse(text)
-        if (isPlainObject(parsed)) stored = parsed
+        if (isRecord(parsed)) stored = parsed
       } catch {}
       const decoded: FieldValues = {}
       for (const fieldName of fieldNames) {
         const entry = Object.hasOwn(stored, fieldName) ? stored[fieldName] : undefined
         const isCurrentEntry =
-          isPlainObject(entry) &&
-          entry.version === versionOf(fieldName) &&
-          Object.hasOwn(entry, 'value')
+          isRecord(entry) && entry.version === versionOf(fieldName) && Object.hasOwn(entry, 'value')
         decoded[fieldName] = isCurrentEntry
           ? readField(fieldName, entry.value)
           : fields[fieldName].defaultValue(familyKey)

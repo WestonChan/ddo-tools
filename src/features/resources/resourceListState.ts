@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { LedgerColumnLayout, LedgerSort } from '../../components'
 import { usePersistedState } from '../../hooks'
-import { isPlainObject } from '../../lib/isPlainObject'
+import { isRecord } from '../../lib/isRecord'
 import { createPersistedRecordFamily } from '../../lib/persistedState'
 import { EMPTY_ITEM_FILTERS, isItemSortColumn, type ItemListFilters } from './queries/items'
 import type { ResourceCategory } from '../../lib/resourcePaths'
@@ -49,12 +49,12 @@ function isStringArray(value: unknown): value is string[] {
 }
 
 function isRange(value: unknown): value is { min: string; max: string } {
-  return isPlainObject(value) && typeof value.min === 'string' && typeof value.max === 'string'
+  return isRecord(value) && typeof value.min === 'string' && typeof value.max === 'string'
 }
 
 function isOtherResourceFilters(value: unknown): value is OtherResourceFilters {
   return (
-    isPlainObject(value) &&
+    isRecord(value) &&
     Object.values(value).every(
       (filter) =>
         typeof filter === 'string' ||
@@ -67,7 +67,7 @@ function isOtherResourceFilters(value: unknown): value is OtherResourceFilters {
 
 function isItemListFilters(value: unknown): value is ItemListFilters {
   return (
-    isPlainObject(value) &&
+    isRecord(value) &&
     isRange(value.ml) &&
     isStringArray(value.slot) &&
     isStringArray(value.bonuses) &&
@@ -84,7 +84,7 @@ function isItemListFilters(value: unknown): value is ItemListFilters {
 function isStoredSort(value: unknown): value is LedgerSort | null {
   return (
     value === null ||
-    (isPlainObject(value) &&
+    (isRecord(value) &&
       typeof value.key === 'string' &&
       value.key.length > 0 &&
       (value.direction === 'asc' || value.direction === 'desc'))
@@ -110,7 +110,7 @@ function validatedSort(
 }
 
 function validatedColumnWidths(candidate: unknown): Record<string, number> | undefined {
-  if (!isPlainObject(candidate)) return undefined
+  if (!isRecord(candidate)) return undefined
   return Object.fromEntries(
     Object.entries(candidate).filter(
       ([, width]) => typeof width === 'number' && Number.isFinite(width) && width > 0,
