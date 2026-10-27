@@ -62,12 +62,20 @@ bonuses** (item effects, augments, set bonuses, filigrees, and effects explicitl
 flagged apply-as-item). Bonuses from feats, enhancements, destinies, and reaper
 trees are allowed to stack even when they share a Highest-Only bonus type.
 
-⚠ This is a *modeling* decision, not a documented game rule — in-game, same-typed
-bonuses from non-gear sources generally also compete (e.g. two Insight bonuses to
-the same stat from two enhancements don't stack). DDOBuilderV2 likely gets away
-with it because the game data rarely hands out colliding types from non-gear
-sources. **Decide deliberately in Phase 6** whether to mirror this split or apply
-type competition uniformly; either way, encode the choice in tests.
+This is a *modeling* decision, not a game rule. The split exists because his data
+uses two bonus types as source labels: 5,003 enhancement-tree bonuses are typed
+"Enhancement" and 1,498 feat bonuses "Feat". Both are non-stacking, because
+"Enhancement" is also the item bonus type, so without the split Half-Orc: Orcish
+Strength I and Frenzied Berserker: Death Frenzy would wrongly compete. The split
+also stacks real collisions the game does not: Action Boost movement speed from
+Stalwart Defender: Swift Defense and Battle Engineer: Tactical Mobility, Class
+Fast Movement from Swashbuckler and Thief-Acrobat, Morale Doublestrike from
+Assassin: Killer and Vistani: Rapid Attack.
+
+**Our engine competes uniformly** (decided 2026-10-27, #68): Highest-Only types
+compete whatever the source. ddo-data gives the source-label rows a stacking type
+(WestonChan/ddo-data#64), so tree and feat bonuses stack as they do in game while
+real typed collisions compete. Tests pin both kinds.
 
 ## Percent bonuses
 
