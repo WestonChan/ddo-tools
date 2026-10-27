@@ -54,20 +54,56 @@ const lazyViewImportRestriction = {
   },
 }
 
-const sentryReplayStartupRestriction = {
-  files: ['src/**/*.{ts,tsx}'],
-  ignores: ['src/lib/sentryReplay.ts', '**/*.test.{ts,tsx}'],
+const SENTRY_REPLAY_RESTRICTED_PROPERTIES = ['getReplay', 'replayIntegration'].map((property) => ({
+  object: 'Sentry',
+  property,
+  message:
+    "Session Replay loads from src/lib/sentryReplay.ts after init; read it through getClient().getIntegrationByName('Replay') so it stays out of the startup bundle.",
+}))
+
+const STORAGE_NAMES = ['localStorage', 'sessionStorage']
+
+const STORAGE_RESTRICTED_PROPERTIES = STORAGE_NAMES.map((property) => ({
+  property,
+  message:
+    'Persisted values go through src/lib/persistedState.ts, which validates what it reads and never lets a blocked store throw.',
+}))
+
+const STORAGE_RESTRICTED_GLOBALS = STORAGE_NAMES.map((name) => ({
+  name,
+  message:
+    'Persisted values go through src/lib/persistedState.ts, which validates what it reads and never lets a blocked store throw.',
+}))
+
+const SOURCE_FILES = ['src/**/*.{ts,tsx}']
+const TEST_FILES = ['**/*.test.{ts,tsx}']
+
+const startupAndStorageRestriction = {
+  files: SOURCE_FILES,
+  ignores: TEST_FILES,
   rules: {
     'no-restricted-properties': [
       'error',
-      ...['getReplay', 'replayIntegration'].map((property) => ({
-        object: 'Sentry',
-        property,
-        message:
-          "Session Replay loads from src/lib/sentryReplay.ts after init; read it through getClient().getIntegrationByName('Replay') so it stays out of the startup bundle.",
-      })),
+      ...SENTRY_REPLAY_RESTRICTED_PROPERTIES,
+      ...STORAGE_RESTRICTED_PROPERTIES,
     ],
   },
+}
+
+const storageOnlyRestriction = {
+  files: ['src/lib/sentryReplay.ts'],
+  rules: { 'no-restricted-properties': ['error', ...STORAGE_RESTRICTED_PROPERTIES] },
+}
+
+const sentryOnlyRestriction = {
+  files: ['src/lib/persistedState.ts', 'src/test/**'],
+  rules: { 'no-restricted-properties': ['error', ...SENTRY_REPLAY_RESTRICTED_PROPERTIES] },
+}
+
+const storageGlobalRestriction = {
+  files: SOURCE_FILES,
+  ignores: [...TEST_FILES, 'src/test/**', 'src/lib/persistedState.ts'],
+  rules: { 'no-restricted-globals': ['error', ...STORAGE_RESTRICTED_GLOBALS] },
 }
 
 const barrelReExportRestriction = {
@@ -284,7 +320,10 @@ export default defineConfig([
   sharedCodeImportRestriction,
   ...featureImportRestrictions,
   lazyViewImportRestriction,
-  sentryReplayStartupRestriction,
+  startupAndStorageRestriction,
+  storageOnlyRestriction,
+  sentryOnlyRestriction,
+  storageGlobalRestriction,
   barrelReExportRestriction,
   exactRoleNameRestriction,
   popupRoleClaimRestriction,
