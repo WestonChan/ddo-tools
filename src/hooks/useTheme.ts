@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { createPersistedValue, resetPersistedStateForTests } from '../lib/persistedState'
 
 export type Theme = 'dark' | 'light'
 export type ThemePreference = Theme | 'system'
@@ -12,28 +13,26 @@ interface ThemeControls extends ThemeState {
   setThemePreference: (nextPreference: ThemePreference) => void
 }
 
-const THEME_STORAGE_KEY = 'theme'
 const PREFERS_LIGHT_QUERY = '(prefers-color-scheme: light)'
 
-function isThemePreference(storedText: string | null): storedText is ThemePreference {
-  return storedText === 'light' || storedText === 'dark' || storedText === 'system'
+function isThemePreference(candidate: unknown): candidate is ThemePreference {
+  return candidate === 'light' || candidate === 'dark' || candidate === 'system'
 }
 
+const themePreferenceStore = createPersistedValue<ThemePreference>({
+  storageArea: 'localStorage',
+  storageKey: 'theme',
+  codec: 'text',
+  defaultValue: 'system',
+  validatedValue: (candidate) => (isThemePreference(candidate) ? candidate : undefined),
+})
+
 function storedThemePreference(): ThemePreference {
-  try {
-    const storedText = localStorage.getItem(THEME_STORAGE_KEY)
-    return isThemePreference(storedText) ? storedText : 'system'
-  } catch {
-    return 'system'
-  }
+  return themePreferenceStore.snapshot()
 }
 
 function saveThemePreference(themePreference: ThemePreference): void {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, themePreference)
-  } catch {
-    return
-  }
+  themePreferenceStore.save(themePreference)
 }
 
 function operatingSystemTheme(): Theme {
@@ -106,5 +105,6 @@ export function useTheme(): ThemeControls {
 
 export function resetThemeForTests(): void {
   currentThemeState = null
+  resetPersistedStateForTests()
   notifyThemeListeners()
 }

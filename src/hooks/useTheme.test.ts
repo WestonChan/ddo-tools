@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useTheme, resetThemeForTests } from './useTheme'
 import { installMatchMedia, restoreMatchMedia, type MatchMediaStub } from '../test/matchMediaStub'
@@ -21,10 +21,28 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   restoreMatchMedia()
 })
 
 describe('useTheme', () => {
+  it('resolves the OS theme and still applies a choice when storage refuses every access', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError')
+    })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError')
+    })
+    stubOperatingSystemPrefersLight(true)
+
+    const { result } = renderHook(() => useTheme())
+    expect(result.current.themePreference).toBe('system')
+    expect(result.current.theme).toBe('light')
+
+    expect(() => act(() => result.current.setThemePreference('dark'))).not.toThrow()
+    expect(documentTheme()).toBe('dark')
+  })
+
   it('keeps a legacy stored light or dark as the explicit preference', () => {
     for (const storedTheme of ['light', 'dark'] as const) {
       resetThemeForTests()
