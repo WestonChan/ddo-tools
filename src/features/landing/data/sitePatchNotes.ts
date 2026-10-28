@@ -9,6 +9,7 @@ export const SITE_PATCH_NOTES: readonly PatchNote[] = [
     changes: [
       'Each Resources list remembers its filters, sort, set-bonus option, column widths and column order between visits; a new tab still starts with an empty search at the top of the list',
       "Changing the theme or accent no longer fails when the browser's storage is full or blocked",
+      "A drop location's focus ring no longer runs into its wiki link, which sits a little further from the location's name",
     ],
   },
   {

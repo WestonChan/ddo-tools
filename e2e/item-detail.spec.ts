@@ -183,6 +183,10 @@ test('clicking a list row focuses its detail without a visible focus ring, then 
   )
   await page.keyboard.press('Tab')
   await expect(
+    pane.getByRole('link', { name: 'Open Focus Armor 1 on DDO Wiki', exact: true }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
     pane.getByRole('button', { name: 'Copy link to this item', exact: true }),
   ).toBeFocused()
 
