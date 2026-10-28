@@ -69,6 +69,10 @@
   overflow-wrap: anywhere;
 }
 
+.detail-card__name-row .wiki-link-icon {
+  --focus-ring-proxy-left: calc(-1 * var(--space-0-5));
+}
+
 .detail-card__facts {
   display: flex;
   flex-wrap: wrap;
