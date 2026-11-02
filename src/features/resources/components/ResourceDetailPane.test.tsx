@@ -33,6 +33,7 @@ const AUGMENTS_BY_SLOT_LABEL = {
 
 function itemDetailFor(slug: Slug): Item {
   return {
+    notes: [],
     slug,
     name: slug === 'test-42' ? 'Test Item' : 'Other Item',
     equipmentSlot: 'Trinket',

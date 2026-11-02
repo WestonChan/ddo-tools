@@ -13,7 +13,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, Search } from 'lucide-react'
 import { resourcePath } from '../../../lib/resourcePaths'
-import { type Slug, isApiError, type ApiEffectVocabularyRow } from '../../../lib/api'
+import { type Slug, isApiError } from '../../../lib/api'
+import type { EffectVocabularyRow } from '../queries/items'
 import {
   ApiErrorNotice,
   ApiGate,
@@ -65,7 +66,7 @@ interface ItemPickerProps {
   onRowFocused?: () => void
 }
 const EMPTY_NAMES: string[] = []
-const EMPTY_EFFECT_VOCABULARY: ApiEffectVocabularyRow[] = []
+const EMPTY_EFFECT_VOCABULARY: EffectVocabularyRow[] = []
 const EMPTY_RAID_QUESTS: RaidQuest[] = []
 const EMPTY_ITEMS: ItemSummary[] = []
 

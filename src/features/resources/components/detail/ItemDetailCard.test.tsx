@@ -18,6 +18,10 @@ import capturedRingResponse from '../../queries/fixtures/item-adversion.json'
 import capturedSetResponse from '../../queries/fixtures/set-adherent-of-the-mists-set-heroic.json'
 import capturedNecklaceResponse from '../../queries/fixtures/item-stolen-necklace-level-25.json'
 import capturedBracersResponse from '../../queries/fixtures/item-epic-ethereal-bracers.json'
+import plagueWolfResponse from '../../queries/fixtures/feat-wild-shape-plague-wolf.json'
+import rampartResponse from '../../queries/fixtures/item-epic-deaths-rampart.json'
+import smallbladeResponse from '../../queries/fixtures/item-cutthroats-smallblade-level-8.json'
+import type { NoteKind } from '../../queries/notes'
 import { toItem } from '../../queries/items'
 import { toSetDetail } from '../../queries/sets'
 import { ItemDetailCard, ItemHoverCard } from './ItemDetailCard'
@@ -54,6 +58,7 @@ afterEach(() => {
 })
 
 const plainItem: Item = {
+  notes: [],
   slug: slugFromPathSegment('test-42')!,
   name: 'Voice of the Master',
   equipmentSlot: 'Trinket',
@@ -723,12 +728,18 @@ describe('ItemDetailCard details', () => {
   it('keeps each captured effect value in the item hover rows', () => {
     const { container } = render(<ItemHoverCard item={toItem(capturedBracers as ApiItemDetail)} />)
     const rows = [...container.querySelectorAll('.resources-hover-effect-row .detail-value-row')]
-    expect(rows[0].querySelector('.detail-value-row__label')).toHaveTextContent('Dexterity')
-    expect(rows[0].querySelector('.detail-value-row__value')).toHaveTextContent('+11')
-    expect(rows[0].querySelector('.detail-value-row__type')).toHaveTextContent('Enhancement')
-    expect(rows[1].querySelector('.detail-value-row__label')).toHaveTextContent('Riposte')
-    expect(rows[1].querySelector('.detail-value-row__value')).toHaveTextContent('+5')
-    expect(rows[1].querySelector('.detail-value-row__type')).toHaveTextContent('Insight')
+    for (const [index, row] of rows.entries()) {
+      const captured = capturedBracers.effects[index]
+      expect(row.querySelector('.detail-value-row__label')).toHaveTextContent(captured.name)
+      expect(row.querySelector('.detail-value-row__value')).toHaveTextContent(
+        captured.value === null ? '—' : `${captured.value >= 0 ? '+' : ''}${captured.value}`,
+      )
+      const types = captured.bonus_type
+        ? [captured.bonus_type]
+        : captured.bonuses.map((bonus) => bonus.bonus_type)
+      for (const type of types)
+        expect(row.querySelector('.detail-value-row__type')).toHaveTextContent(type)
+    }
   })
 
   it('shows an armor enhancement first among the item hover rows', () => {
@@ -1377,6 +1388,78 @@ describe('ItemDetailCard sources beyond quests', () => {
 })
 
 describe('ItemDetailCard header attributes', () => {
+  it('keeps every note kind on its affected row and entity chip in both card variants', async () => {
+    const cases = {
+      game_bug: {
+        line: plagueWolfResponse.bonuses.find((line) => line.notes.length > 0)!,
+        entityNote: plagueWolfResponse.notes[0],
+        label: 'Bug',
+        symbol: '!',
+        prefix: 'Intended',
+        expectedValue: plagueWolfResponse.notes[0].intended,
+      },
+      unverified: {
+        line: rampartResponse.effects.find((line) => line.notes.length > 0)!,
+        entityNote: smallbladeResponse.notes[0],
+        label: 'Unverified',
+        symbol: '?',
+        prefix: 'Assumed',
+        expectedValue: rampartResponse.effects.flatMap((line) => line.notes)[0].assumed,
+      },
+    } satisfies Record<NoteKind, unknown>
+    for (const noteCase of Object.values(cases)) {
+      const note = noteCase.line.notes[0]
+      const item = toItem({
+        ...apiFixture(rampartResponse),
+        notes: [noteCase.entityNote],
+        effects: apiFixture(rampartResponse).effects.map((effect, index) => ({
+          ...effect,
+          notes: index === 1 ? [note] : [],
+        })),
+      } as ApiItemDetail)
+      for (const Card of [ItemDetailCard, ItemHoverCard]) {
+        const { container, unmount } = render(
+          <HoverCardProvider>
+            <Card item={item} />
+          </HoverCardProvider>,
+        )
+        const rows = container.querySelectorAll('.ledger-row, .resources-hover-effect-row')
+        const affectedRow = Array.from(rows).find((row) =>
+          row.textContent?.includes(noteCase.label),
+        )!
+        expect(affectedRow).toBe(rows[item.enhancementBonus ? 2 : 1])
+        expect(affectedRow).toHaveTextContent(item.effects[1].name)
+        const marker = within(affectedRow as HTMLElement).getByText(
+          `${noteCase.symbol} ${noteCase.label}`,
+        )
+        expect(marker).toHaveTextContent(`${noteCase.symbol} ${noteCase.label}`)
+        for (const row of rows)
+          if (row !== affectedRow)
+            expect(
+              within(row as HTMLElement).queryByText(`${noteCase.symbol} ${noteCase.label}`),
+            ).toBeNull()
+        expect(container.querySelectorAll('.resources-note-marker')).toHaveLength(2)
+        const chip = container.querySelector('.detail-card__header .resources-chip')!
+        expect(chip).toHaveTextContent(`${noteCase.symbol} ${noteCase.label}`)
+        await userEvent.hover(marker)
+        const tooltip = await screen.findByRole('tooltip')
+        expect(tooltip).toHaveTextContent(note.text)
+        expect(tooltip).toHaveTextContent(`${noteCase.prefix}: ${noteCase.expectedValue}`)
+        await userEvent.unhover(marker)
+        await userEvent.hover(
+          within(chip as HTMLElement).getByText(`${noteCase.symbol} ${noteCase.label}`),
+        )
+        expect(await screen.findByRole('tooltip')).toHaveTextContent(noteCase.entityNote.text)
+        const entityValue =
+          noteCase.prefix === 'Intended'
+            ? noteCase.entityNote.intended
+            : noteCase.entityNote.assumed
+        expect(screen.getByRole('tooltip')).toHaveTextContent(`${noteCase.prefix}: ${entityValue}`)
+        unmount()
+      }
+    }
+  })
+
   it.each([
     ['detail pane', (item: Item) => <ItemDetailCard item={item} />],
     ['hover card', (item: Item) => <ItemHoverCard item={item} />],

@@ -6,6 +6,7 @@ import { render as renderWithQueryClient } from '../../../test/renderWithQueryCl
 import type { Slug } from '../../../lib/api'
 import { ITEM_DETAIL_SECTION_KEYS } from '../components/detail/itemDetailSections'
 import type { Item, ItemSourceKind } from '../queries/items'
+import type { NoteKind } from '../queries/notes'
 import {
   augmentDetailQueryOptions,
   effectDetailQueryOptions,
@@ -38,6 +39,25 @@ const EVERY_ITEM_SOURCE_KIND: Record<ItemSourceKind, true> = {
 }
 
 describe('gallery specimens', () => {
+  it('shows every note kind on a line and an entity in named specimens', () => {
+    const kinds = { game_bug: true, unverified: true } satisfies Record<NoteKind, true>
+    const items = GALLERY_SPECIMENS.flatMap(({ itemSlug }) =>
+      itemSlug ? [galleryItemBySlug(itemSlug)] : [],
+    )
+    expect(
+      [...new Set(items.flatMap((item) => item.notes?.map((note) => note.kind) ?? []))].sort(),
+    ).toEqual(Object.keys(kinds).sort())
+    expect(
+      [
+        ...new Set(
+          items.flatMap((item) =>
+            item.effects.flatMap((effect) => effect.notes?.map((note) => note.kind) ?? []),
+          ),
+        ),
+      ].sort(),
+    ).toEqual(Object.keys(kinds).sort())
+  })
+
   it('give every section at least one specimen, each naming an existing item', () => {
     for (const section of COMPONENT_GALLERY_SECTIONS)
       expect(

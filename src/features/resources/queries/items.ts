@@ -35,6 +35,7 @@ import {
   type ApiEffectDamage,
 } from '../../../lib/api'
 import type { IngredientCost } from '../../../lib/ingredientCost'
+import { toNotes, type Note } from './notes'
 
 export const ITEM_PAGE_SIZE = 200
 const ITEM_SORT_FIELD_BY_COLUMN = {
@@ -196,6 +197,7 @@ export interface EffectDamage {
 }
 
 export interface Effect {
+  notes: Note[]
   slug: Slug
   name: string
   kind?: ApiEffect['kind']
@@ -226,6 +228,7 @@ export interface ResourceModifier {
 }
 
 export interface AugmentDetail extends AugmentSummary {
+  notes: Note[]
   description: string | null
   effectDescription: string | null
   effects: Effect[]
@@ -289,6 +292,7 @@ export interface RaidQuest {
 }
 
 export interface Item extends ItemAttributes {
+  notes: Note[]
   weaponStats: ItemWeaponStats | null
   armorStats: ItemArmorStats | null
   augmentSlots: ItemAugmentSlot[]
@@ -431,7 +435,10 @@ export function toItem(
       })),
     })),
     modifiers: apiItemDetail.modifiers.map(toResourceModifier),
-    effects: apiItemDetail.effects.map(toEffect),
+    notes: toNotes(apiItemDetail, path),
+    effects: apiItemDetail.effects.map((effect, index) =>
+      toEffect(effect, index, path, `effects[${index}].`),
+    ),
     clickies: apiItemDetail.clickies.map((c) => ({ name: c.name, description: c.description })),
     quests: toLootQuests(apiItemDetail.quests),
     questChains: apiItemDetail.quest_chains.map((c) => ({
@@ -565,21 +572,31 @@ function toResourceModifier(modifier: ApiModifier): ResourceModifier {
 }
 
 export function toAugmentDetail(apiAugment: ApiAugmentDetail): AugmentDetail {
-  assertApiResponseFields(apiAugment, apiResponseDiagnosticPath('augments', apiAugment?.slug), {
+  const path = apiResponseDiagnosticPath('augments', apiAugment?.slug)
+  assertApiResponseFields(apiAugment, path, {
     effects: 'array',
     modifiers: 'array',
   })
   return {
     ...toAugmentSummary(apiAugment),
+    notes: toNotes(apiAugment, path),
     description: apiAugment.description,
     effectDescription: apiAugment.effect_description,
-    effects: apiAugment.effects.map(toEffect),
+    effects: apiAugment.effects.map((effect, index) =>
+      toEffect(effect, index, path, `effects[${index}].`),
+    ),
     modifiers: apiAugment.modifiers.map(toResourceModifier),
   }
 }
 
-export function toEffect(apiEffect: ApiEffect, sortOrder: number): Effect {
+export function toEffect(
+  apiEffect: ApiEffect,
+  sortOrder: number,
+  path = '/v1/effects',
+  prefix = '',
+): Effect {
   return {
+    notes: toNotes(apiEffect, path, prefix),
     slug: apiEffect.effect_slug,
     name: apiEffect.name,
     ...(apiEffect.kind ? { kind: apiEffect.kind } : {}),
@@ -727,9 +744,13 @@ export async function fetchEquipmentSlotNames(): Promise<string[]> {
   })
 }
 
+export interface EffectVocabularyRow extends Omit<ApiEffectVocabularyRow, 'matched_alias'> {
+  matchedAlias: string | null
+}
+
 export async function fetchEffectVocabulary(
   searchQuery = '',
-): Promise<{ rows: ApiEffectVocabularyRow[]; total: number }> {
+): Promise<{ rows: EffectVocabularyRow[]; total: number }> {
   const page = await fetchApiPage<ApiEffectVocabularyRow, 'effects'>(
     '/v1/effects',
     'effects',
@@ -742,7 +763,18 @@ export async function fetchEffectVocabulary(
       responseErrorMessage: 'Invalid effect vocabulary rows for /v1/effects',
     },
   )
-  return { rows: page.rows, total: page.total }
+  return {
+    rows: page.rows.map(({ matched_alias, ...row }, index) => {
+      assertApiResponseFields(
+        { matched_alias },
+        '/v1/effects',
+        { matched_alias: 'nullable-string' },
+        `effects[${index}].`,
+      )
+      return { ...row, matchedAlias: matched_alias }
+    }),
+    total: page.total,
+  }
 }
 
 export async function fetchEffectDetail(slug: Slug): Promise<ApiEffectDetail> {

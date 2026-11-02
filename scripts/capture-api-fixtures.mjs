@@ -2,8 +2,26 @@ import { writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 
 const manifest = {
-  'src/features/resources/queries/fixtures/item-legendary-bracers-of-the-demons-consort.json': '/v1/items/legendary-bracers-of-the-demons-consort',
-  'src/features/resources/queries/fixtures/set-the-legendary-deserts-starless-nights.json': '/v1/sets/the-legendary-deserts-starless-nights',
+  'src/features/resources/queries/fixtures/item-docent-of-shadow-level-8.json':
+    '/v1/items/docent-of-shadow-level-8',
+  'src/features/resources/queries/fixtures/effect-false-life.json':
+    '/v1/effects/false-life?items_limit=1&augments_limit=1&set_tiers_limit=1',
+  'src/features/resources/queries/fixtures/feat-wild-shape-plague-wolf.json':
+    '/v1/feats/wild-shape-plague-wolf',
+  'src/features/resources/queries/fixtures/item-epic-deaths-rampart.json':
+    '/v1/items/epic-deaths-rampart',
+  'src/features/resources/queries/fixtures/item-cutthroats-smallblade-level-8.json':
+    '/v1/items/cutthroats-smallblade-level-8',
+  'src/features/resources/queries/fixtures/effects-page-spellsight.json':
+    '/v1/effects?q=spellsight&limit=3',
+  'src/features/resources/queries/fixtures/effects-page-mighty.json':
+    '/v1/effects?q=mighty&limit=1',
+  'src/features/resources/queries/fixtures/effects-page-strength.json':
+    '/v1/effects?q=strength&limit=1',
+  'src/features/resources/queries/fixtures/item-legendary-bracers-of-the-demons-consort.json':
+    '/v1/items/legendary-bracers-of-the-demons-consort',
+  'src/features/resources/queries/fixtures/set-the-legendary-deserts-starless-nights.json':
+    '/v1/sets/the-legendary-deserts-starless-nights',
   'src/features/resources/queries/fixtures/quest-death-house.json': '/v1/quests/death-house',
   'src/features/resources/queries/fixtures/sets-null-icon-page.json':
     '/v1/sets?q=Conduit%20of%20the%20Titans&limit=1',

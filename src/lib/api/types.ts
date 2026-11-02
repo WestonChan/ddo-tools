@@ -52,7 +52,22 @@ export interface ApiEffectDamage {
   scale: number
 }
 
+export type JsonValue =
+  null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
+
+export interface ApiNote {
+  kind: 'game_bug' | 'unverified'
+  field: string | null
+  qualifier: string | null
+  text: string
+  intended: JsonValue
+  assumed: JsonValue
+  in_game: boolean
+  recorded: string
+}
+
 export interface ApiEffect {
+  notes: ApiNote[]
   effect_slug: Slug
   name: string
   kind?: 'effect' | 'stat' | 'group'
@@ -238,6 +253,7 @@ export interface ApiItemSet {
 }
 
 export interface ApiItemDetail {
+  notes: ApiNote[]
   slug: Slug
   name: string
   slot: string
@@ -286,6 +302,7 @@ export interface ApiAugment {
 }
 
 export interface ApiAugmentDetail extends ApiAugment {
+  notes: ApiNote[]
   quests: ApiLootQuest[]
   modifiers: ApiModifier[]
   effect_description: string | null
@@ -379,6 +396,7 @@ export interface ApiEquipmentSlot {
 }
 
 export interface ApiEffectVocabularyRow {
+  matched_alias: string | null
   slug: Slug
   name: string
   kind: 'stat' | 'effect' | 'group'
@@ -480,6 +498,7 @@ export interface ApiSetRow {
 }
 
 export interface ApiSetDetail {
+  notes: ApiNote[]
   slug: Slug
   name: string
   icon: string | null

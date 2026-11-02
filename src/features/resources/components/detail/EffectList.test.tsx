@@ -9,10 +9,10 @@ import capturedItemResponse from '../../queries/fixtures/item-stolen-necklace-le
 import capturedWeaponResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
 import capturedShieldResponse from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
 import capturedArmorResponse from '../../queries/fixtures/item-beholder-plate-armor.json'
-import capturedRiposteItemResponse from '../../queries/fixtures/item-epic-ethereal-bracers.json'
 import capturedRiposteDetailResponse from '../../queries/fixtures/effect-riposte.json'
 import capturedCharismaDetailResponse from '../../queries/fixtures/effect-charisma.json'
-import capturedDefaultRiposteItemResponse from '../../queries/fixtures/item-aegis-of-the-deep.json'
+import capturedDefaultItemResponse from '../../queries/fixtures/item-docent-of-shadow-level-8.json'
+import capturedDefaultDetailResponse from '../../queries/fixtures/effect-false-life.json'
 import capturedConstantItemResponse from '../../queries/fixtures/item-1-quarterstaff-of-lesser-halfling-bane.json'
 import capturedConstantDetailResponse from '../../queries/fixtures/effect-curse-of-weakness.json'
 import capturedSetResponse from '../../queries/fixtures/set-devoted-heart.json'
@@ -35,10 +35,10 @@ const capturedItem = apiFixture(capturedItemResponse)
 const capturedWeapon = apiFixture(capturedWeaponResponse)
 const capturedShield = apiFixture(capturedShieldResponse)
 const capturedArmor = apiFixture(capturedArmorResponse)
-const capturedRiposteItem = apiFixture(capturedRiposteItemResponse)
 const capturedRiposteDetail = apiFixture(capturedRiposteDetailResponse)
 const capturedCharismaDetail = apiFixture(capturedCharismaDetailResponse)
-const capturedDefaultRiposteItem = apiFixture(capturedDefaultRiposteItemResponse)
+const capturedDefaultItem = apiFixture(capturedDefaultItemResponse)
+const capturedDefaultDetail = apiFixture(capturedDefaultDetailResponse)
 const capturedConstantItem = apiFixture(capturedConstantItemResponse)
 const capturedConstantDetail = apiFixture(capturedConstantDetailResponse)
 const capturedSet = apiFixture(capturedSetResponse)
@@ -359,7 +359,12 @@ it('toggles a set from the roving row and sorts its opened effects within the ti
       .getAllByRole('row')
       .slice(3)
       .map((row) => row.querySelector('.resources-effect-value')?.textContent),
-  ).toEqual(['+10', '+10', '+10', '+10', '+5', '+5'])
+  ).toEqual(
+    capturedLargerSet.tiers
+      .flatMap((tier) => tier.effects)
+      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
+      .map((effect) => `+${effect.value}`),
+  )
   fireEvent.keyDown(heading, { key: ' ' })
   expect(heading).toHaveAttribute('aria-expanded', 'false')
   expect(screen.getAllByRole('row')).toHaveLength(2)
@@ -522,12 +527,31 @@ it('shows a tier step on hover and matches its family name', () => {
   expect(screen.getByRole('dialog')).toHaveTextContent('Spell Lore · Step 2')
 })
 
-it('explains rounded up and rounded down bonuses from a captured Riposte item', () => {
+it('explains rounded up and rounded down bonuses from explicit arithmetic inputs', () => {
   vi.useFakeTimers()
-  effectDetail = capturedRiposteDetail as ApiEffectDetail
-  const riposte = capturedRiposteItem.effects.find((entry) => entry.name === 'Riposte')
-  expect(riposte).toBeDefined()
-  const effect = toEffect(riposte as ApiEffect, 0)
+  effectDetail = {
+    ...capturedRiposteDetail,
+    bonuses: capturedRiposteDetail.bonuses.map((bonus, index) => ({
+      ...bonus,
+      scale: 0.5,
+      rounding: index === 0 ? 'up' : 'down',
+    })),
+  } as ApiEffectDetail
+  const effect = toEffect(
+    {
+      ...capturedRiposteDetail.items.items[0].line,
+      value: 5,
+      verbose_name: 'Riposte +5',
+      description: null,
+      bonuses: capturedRiposteDetail.items.items[0].line.bonuses.map((bonus, index) => ({
+        ...bonus,
+        scale: 0.5,
+        amount_source: 'owner',
+        value: index === 0 ? 3 : 2,
+      })),
+    } as ApiEffect,
+    0,
+  )
   renderEffects([effect])
   const row = screen.getByRole('row', { name: /Riposte/ })
   expect(within(row).getByLabelText('Calculated')).toBeInTheDocument()
@@ -546,13 +570,17 @@ it('explains rounded up and rounded down bonuses from a captured Riposte item', 
 
 it('explains a default amount and a fixed amount from captured effect lines', () => {
   vi.useFakeTimers()
-  effectDetail = capturedRiposteDetail as ApiEffectDetail
-  const defaultLine = capturedDefaultRiposteItem.effects.find((entry) => entry.name === 'Riposte')
+  effectDetail = capturedDefaultDetail as ApiEffectDetail
+  const defaultLine = capturedDefaultItem.effects.find(
+    (entry) => entry.effect_slug === capturedDefaultDetail.slug,
+  )
   expect(defaultLine).toBeDefined()
   renderEffects([toEffect(defaultLine as ApiEffect, 0)])
-  fireEvent.mouseEnter(screen.getByRole('row', { name: /Riposte/ }))
+  fireEvent.mouseEnter(screen.getByRole('row', { name: new RegExp(capturedDefaultDetail.name) }))
   act(() => vi.advanceTimersByTime(120))
-  expect(screen.getByRole('dialog')).toHaveTextContent('half of 2 (effect default)')
+  expect(screen.getByRole('dialog')).toHaveTextContent(
+    `Uses the effect default (${capturedDefaultDetail.default_value})`,
+  )
   cleanup()
   effectDetail = capturedConstantDetail as ApiEffectDetail
   const fixedLine = capturedConstantItem.effects.find((entry) => entry.name === 'Curse of Weakness')

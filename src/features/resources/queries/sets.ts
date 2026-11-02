@@ -11,6 +11,7 @@ import {
   type ApiSetRow,
 } from '../../../lib/api'
 import { toEffect, type Effect } from './items'
+import { toNotes, type Note } from './notes'
 
 export interface SetTier {
   equippedCount: number
@@ -18,6 +19,7 @@ export interface SetTier {
 }
 
 export interface SetDetail {
+  notes: Note[]
   slug: Slug
   name: string
   tiers: SetTier[]
@@ -70,6 +72,7 @@ export function toSetDetail(
     assertApiResponseFields(tier, path, { effects: 'array' }, `tiers[${index}].`)
   })
   return {
+    notes: toNotes(apiSet, path),
     slug: apiSet.slug,
     name: apiSet.name,
     items: apiSet.items.map((item) => ({
@@ -78,9 +81,11 @@ export function toSetDetail(
       slot: item.slot,
       minimumLevel: item.minimum_level,
     })),
-    tiers: apiSet.tiers.map((tier) => ({
+    tiers: apiSet.tiers.map((tier, tierIndex) => ({
       equippedCount: tier.equipped_count,
-      effects: tier.effects.map(toEffect),
+      effects: tier.effects.map((effect, index) =>
+        toEffect(effect, index, path, `tiers[${tierIndex}].effects[${index}].`),
+      ),
     })),
   }
 }

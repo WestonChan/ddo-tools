@@ -12,6 +12,7 @@ import type {
   ItemWeaponStats,
   LootQuest,
 } from '../queries/items'
+import type { Note, NoteKind } from '../queries/notes'
 import type { SetDetail } from '../queries/sets'
 import type { SourceDetail, SourceRecipe } from '../queries/sources'
 
@@ -23,6 +24,7 @@ export function gallerySlug(text: string): Slug {
 
 function galleryItem(slugText: string, name: string, overrides: Partial<Item> = {}): Item {
   return {
+    notes: [],
     slug: gallerySlug(slugText),
     name,
     equipmentSlot: 'Trinket',
@@ -63,6 +65,7 @@ function galleryEffect(
   overrides: Partial<Effect> = {},
 ): Effect {
   return {
+    notes: [],
     slug: gallerySlug(slugText),
     name,
     verboseName: name,
@@ -202,6 +205,7 @@ const STORMFORGED_BONUS_EFFECTS = [
 
 export const GALLERY_SETS: readonly SetDetail[] = [
   {
+    notes: [],
     slug: STORMFORGED_SET.slug,
     name: STORMFORGED_SET.name,
     items: [
@@ -230,6 +234,7 @@ export const GALLERY_SETS: readonly SetDetail[] = [
     ],
   },
   {
+    notes: [],
     slug: MOONLIT_SET.slug,
     name: MOONLIT_SET.name,
     items: [
@@ -305,6 +310,7 @@ const AUGMENT_SLOTS_EVERY_FAMILY: ItemAugmentSlot[] = [
 
 export const GALLERY_AUGMENTS: readonly AugmentDetail[] = [
   {
+    notes: [],
     slug: gallerySlug('augment-blue-skill'),
     name: 'Blue Skill Gem',
     minimumLevel: 8,
@@ -316,6 +322,7 @@ export const GALLERY_AUGMENTS: readonly AugmentDetail[] = [
     modifiers: [],
   },
   {
+    notes: [],
     slug: gallerySlug('augment-blue-ward'),
     name: 'Blue Warding Gem',
     minimumLevel: null,
@@ -333,6 +340,7 @@ export const GALLERY_AUGMENTS: readonly AugmentDetail[] = [
     modifiers: [],
   },
   {
+    notes: [],
     slug: gallerySlug('augment-red-power'),
     name: 'Red Power Gem',
     minimumLevel: 12,
@@ -345,7 +353,56 @@ export const GALLERY_AUGMENTS: readonly AugmentDetail[] = [
   },
 ]
 
+const GALLERY_NOTES: Record<NoteKind, Note> = {
+  game_bug: {
+    kind: 'game_bug',
+    field: 'value',
+    qualifier: 'Charisma / Penalty',
+    text: 'The observed penalty differs from its intended amount.',
+    intended: -2,
+    assumed: null,
+    isInGame: true,
+    recorded: '2026-10-23',
+  },
+  unverified: {
+    kind: 'unverified',
+    field: 'bonus_type',
+    qualifier: 'Elemental Resistance / Competence',
+    text: 'The line title and description disagree about the bonus type.',
+    intended: null,
+    assumed: 'Competence',
+    isInGame: false,
+    recorded: '2026-10-23',
+  },
+}
+
 export const GALLERY_ITEMS: readonly Item[] = [
+  galleryItem('game-bug-note', 'Observed Penalty', {
+    notes: [{ ...GALLERY_NOTES.game_bug, field: 'remove', qualifier: 'Intelligence / Penalty' }],
+    effects: [
+      galleryEffect('noted-penalty', 'Charisma', 'Penalty', -4, 0, {
+        notes: [GALLERY_NOTES.game_bug],
+      }),
+      galleryEffect('unnoted-strength', 'Strength', 'Enhancement', 6, 1),
+    ],
+  }),
+  galleryItem('unverified-note', 'Unverified Ward', {
+    notes: [
+      {
+        ...GALLERY_NOTES.unverified,
+        field: null,
+        qualifier: null,
+        text: 'The current item still needs to be checked.',
+        assumed: 'Legacy enchantments',
+      },
+    ],
+    effects: [
+      galleryEffect('noted-resistance', 'Elemental Resistance', 'Competence', 10, 0, {
+        notes: [GALLERY_NOTES.unverified],
+      }),
+      galleryEffect('unnoted-fortitude', 'Fortitude Save', 'Resistance', 6, 1),
+    ],
+  }),
   galleryItem('legacy-craftable-ring', 'Legacy Craftable Ring', {
     equipmentSlot: 'Ring',
     category: 'Ring',

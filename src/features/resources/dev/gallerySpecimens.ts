@@ -27,6 +27,20 @@ export const GALLERY_SECTION_SUBTITLES: Record<ComponentGallerySectionId, string
 
 export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
   {
+    section: 'enchantments',
+    title: 'Game-bug notes',
+    branch:
+      'A Bug marker on its affected line, an unchanged neighbour, and an entity chip for a removed bonus; both hints show the intended value',
+    itemSlug: gallerySlug('game-bug-note'),
+  },
+  {
+    section: 'enchantments',
+    title: 'Unverified notes',
+    branch:
+      'An Unverified marker on its affected line, an unchanged neighbour, and a whole-entity chip; both hints show the assumed value',
+    itemSlug: gallerySlug('unverified-note'),
+  },
+  {
     section: 'header',
     title: 'Legacy, craftable, raid and rare',
     branch:

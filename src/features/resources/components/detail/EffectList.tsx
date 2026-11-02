@@ -10,6 +10,7 @@ import {
   type LedgerColumn,
 } from '../../../../components'
 import type { EffectRow } from './effectRows'
+import { EffectRowLabel } from './EffectRowLabel'
 import { effectDamageText, isCalculatedEffectBonus } from './structuredRows'
 import { SetHoverCard } from './ResourceHoverCards'
 import { BonusHoverCard } from './BonusDetailCard'
@@ -61,7 +62,7 @@ const COLUMNS: LedgerColumn<EffectRow>[] = [
         <span className="resources-set-tier-heading">{row.name}</span>
       ) : (
         <span className="resources-effect-name">
-          {row.name}
+          <EffectRowLabel name={row.name} notes={row.notes} />
           {row.effect?.damage.map((damage, index) => (
             <span key={index} className="resources-effect-damage">
               {effectDamageText(damage)}
@@ -230,7 +231,7 @@ function EffectHoverRow({ row }: { row: EffectRow }): JSX.Element {
       {...anchor}
     >
       <DetailValueRow
-        label={row.name}
+        label={<EffectRowLabel name={row.name} notes={row.notes} />}
         value={row.value || '—'}
         valueMarker={
           row.effect?.bonuses.some(isCalculatedEffectBonus) ? <CalculatedMarker /> : null

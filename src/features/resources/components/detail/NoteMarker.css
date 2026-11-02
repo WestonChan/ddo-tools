@@ -1,0 +1,5 @@
+.resources-note-marker {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}

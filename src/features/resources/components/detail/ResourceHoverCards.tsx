@@ -48,6 +48,8 @@ import { ItemHoverCard } from './ItemDetailCard'
 import { useItemCardContent } from './useItemCardContent'
 import { titleCasedSlotLabel } from './titleCasedSlotLabel'
 import { BonusHoverCard } from './BonusDetailCard'
+import { EffectRowLabel } from './EffectRowLabel'
+import { NoteBadges } from './NoteMarker'
 import { resourceStatusDefinition } from './resourceStatusDefinition'
 import { DamageView, DescriptionView } from './ResourceCardViews'
 import type { IngredientCost } from '../../../../lib/ingredientCost'
@@ -118,7 +120,13 @@ function useAugmentDetailDefinition(augmentSlug: Slug): DetailCardDefinition {
       FullView: DescriptionView,
     }),
   ]
-  return { kicker: 'Augment', name: augment.name, facts, sections }
+  return {
+    kicker: 'Augment',
+    name: augment.name,
+    facts,
+    sections,
+    badges: <NoteBadges notes={augment.notes} />,
+  }
 }
 
 function augmentFacts(
@@ -199,7 +207,7 @@ function AugmentEffectRow({
       {...anchor}
     >
       <DetailValueRow
-        label={effect.name}
+        label={<EffectRowLabel name={effect.name} notes={effect.notes} />}
         value={effectValue(effect) ?? ''}
         type={effect.bonusType}
         typePresentation="tag"
@@ -794,7 +802,13 @@ function useSetDetailDefinition({
       FullView: SetTiersView,
     }),
   ]
-  return { kicker: 'Set', name: set.name, facts, sections }
+  return {
+    kicker: 'Set',
+    name: set.name,
+    facts,
+    sections,
+    badges: <NoteBadges notes={set.notes} />,
+  }
 }
 
 function setFacts(set?: NonNullable<ReturnType<typeof useSet>['data']>): DetailCardFact[] {
@@ -856,7 +870,7 @@ function SetEffectRow({ effect, originName }: { effect: Effect; originName: stri
       {...anchor}
     >
       <DetailValueRow
-        label={effect.name}
+        label={<EffectRowLabel name={effect.name} notes={effect.notes} />}
         value={effectValue(effect) ?? '—'}
         type={effect.bonusType ?? '—'}
         className="hover-card-row"

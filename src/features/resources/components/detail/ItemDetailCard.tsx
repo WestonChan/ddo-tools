@@ -16,6 +16,7 @@ import { ItemHeaderActions } from './ItemHeaderActions'
 import { itemDetailSection } from './itemDetailSections'
 import { DETAIL_TITLE_ID } from '../../resourceCategories'
 import { EffectListBriefView, EffectListFullView } from './EffectList'
+import { NoteBadges } from './NoteMarker'
 import { itemEffectRows, setEffectRows } from './effectRows'
 import { resourceStatusDefinition } from './resourceStatusDefinition'
 import { ResourceStatusView } from './ResourceStatusView'
@@ -774,6 +775,7 @@ function useItemDetailDefinition({
   ]
   const badges = (
     <>
+      <NoteBadges notes={item.notes} />
       {item.isLegacy && (
         <span className="resources-chip" data-kind="legacy">
           Legacy

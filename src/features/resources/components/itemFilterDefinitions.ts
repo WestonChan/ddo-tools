@@ -1,12 +1,12 @@
 import type { FilterDefinition } from '../filters/filterModel'
-import { type ApiEffectVocabularyRow, statBonusFilterValue } from '../../../lib/api'
-import type { ItemListFilters, RaidQuest } from '../queries/items'
+import { statBonusFilterValue } from '../../../lib/api'
+import type { EffectVocabularyRow, ItemListFilters, RaidQuest } from '../queries/items'
 import { effectKindLabel } from './effectKindLabel'
 
 export function itemFilterDefinitions(
   equipmentSlots: string[],
-  effectVocabulary: ApiEffectVocabularyRow[],
-  allEffectVocabulary: ApiEffectVocabularyRow[],
+  effectVocabulary: EffectVocabularyRow[],
+  allEffectVocabulary: EffectVocabularyRow[],
   effectVocabularyTotal: number,
   setNames: string[],
   setVocabularyTotal: number,
@@ -75,7 +75,10 @@ export function itemFilterDefinitions(
           detailSlug: row.slug,
           value: row.name,
           label: row.name,
-          caption: row.kind === 'stat' ? `Stat · ${typeLabel}` : effectKindLabel(row.kind),
+          caption: [
+            row.kind === 'stat' ? `Stat · ${typeLabel}` : effectKindLabel(row.kind),
+            ...(row.matchedAlias !== null ? [`also: ${row.matchedAlias}`] : []),
+          ].join(' · '),
           children:
             row.kind === 'stat'
               ? row.bonus_types.map((bonusType) => ({

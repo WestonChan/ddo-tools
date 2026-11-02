@@ -14,10 +14,15 @@ import { apiFixture } from '../../../test/apiFixture'
 import { render } from '../../../test/renderWithQueryClient'
 import capturedGroupsResponse from '../queries/fixtures/effects-page-groups.json'
 import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
+import mightyResponse from '../queries/fixtures/effects-page-mighty.json'
+import strengthResponse from '../queries/fixtures/effects-page-strength.json'
+import spellsightResponse from '../queries/fixtures/effects-page-spellsight.json'
 import { ItemPicker } from './ItemPicker'
 import {
   ITEM_COLUMN_KEYS,
+  fetchEffectVocabulary,
   itemListParameters,
+  type EffectVocabularyRow,
   type ItemListFilters,
   type ItemSummary,
 } from '../queries/items'
@@ -77,11 +82,12 @@ const useItemPageMock = vi.fn((...request: [ItemListFilters, string, boolean, un
   return pageState
 })
 const fetchNextPageMock = vi.fn()
-const EFFECT_ROWS = [
+const EFFECT_ROWS: EffectVocabularyRow[] = [
   {
     slug: slugFromPathSegment('test-1')!,
     name: 'Charisma',
     kind: 'stat',
+    matchedAlias: null,
 
     item_count: 1,
     augment_count: 0,
@@ -95,6 +101,7 @@ const EFFECT_ROWS = [
     slug: slugFromPathSegment('test-2')!,
     name: 'Strength',
     kind: 'stat',
+    matchedAlias: null,
 
     item_count: 1,
     augment_count: 0,
@@ -105,6 +112,7 @@ const EFFECT_ROWS = [
     slug: slugFromPathSegment('test-3')!,
     name: 'Vorpal',
     kind: 'effect',
+    matchedAlias: null,
 
     item_count: 1,
     augment_count: 0,
@@ -113,7 +121,7 @@ const EFFECT_ROWS = [
   },
 ]
 function effectVocabularyPage(searchQuery: string): {
-  data: { total: number; rows: typeof EFFECT_ROWS }
+  data: { total: number; rows: EffectVocabularyRow[] }
 } {
   return {
     data: {
@@ -458,7 +466,10 @@ describe('ItemPicker server-backed filters', () => {
     const group = capturedGroups.effects.find((row) => row.kind === 'group')
     expect(group).toBeDefined()
     useEffectVocabularyMock.mockImplementation(() => ({
-      data: { total: capturedGroups.total, rows: [group!, ...EFFECT_ROWS] },
+      data: {
+        total: capturedGroups.total,
+        rows: [{ ...group!, kind: 'group', matchedAlias: null }, ...EFFECT_ROWS],
+      },
     }))
     renderItemPicker()
     await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
@@ -469,6 +480,42 @@ describe('ItemPicker server-backed filters', () => {
     )
     expect(itemListParameters(latestFilters(), '', false).bonus).toEqual([group!.name])
   })
+
+  it.each([
+    ['mighty', mightyResponse],
+    ['strength', strengthResponse],
+    ['spellsight', spellsightResponse],
+  ])(
+    'shows only the captured alias matches for %s and selects the canonical name',
+    async (query, response) => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(response)))
+      const vocabulary = await fetchEffectVocabulary(query)
+      useEffectVocabularyMock.mockImplementation((searchQuery) => ({
+        data: searchQuery === query ? vocabulary : { rows: [], total: 0 },
+      }))
+      renderItemPicker()
+      const user = userEvent.setup()
+      await user.click(screen.getByRole('button', { name: 'Bonuses' }))
+      await user.type(screen.getByRole('combobox', { name: 'Bonuses' }), query)
+      await waitFor(() =>
+        expect(screen.getAllByRole('option')).toHaveLength(response.effects.length),
+      )
+      for (const captured of response.effects) {
+        const option = screen.getByRole('option', {
+          name: (name) => name.startsWith(captured.name),
+        })
+        if (captured.matched_alias !== null)
+          expect(option).toHaveTextContent(`also: ${captured.matched_alias}`)
+        else expect(option).not.toHaveTextContent('also:')
+      }
+      const captured =
+        response.effects.find((row) => row.matched_alias !== null) ?? response.effects[0]
+      await user.click(
+        screen.getByRole('option', { name: (name) => name.startsWith(captured.name) }),
+      )
+      expect(itemListParameters(latestFilters(), '', false).bonus).toEqual([captured.name])
+    },
+  )
 
   it('chooses Constitution Insight through the pointer caption and sends its typed bonus', async () => {
     const constitution = {

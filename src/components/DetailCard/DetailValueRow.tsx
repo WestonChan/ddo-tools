@@ -19,7 +19,7 @@ export function DetailValueRow({
   isNumeric = true,
   className,
 }: {
-  label: string
+  label: ReactNode
   value: string | number
   valueMarker?: ReactNode
   type?: string | null

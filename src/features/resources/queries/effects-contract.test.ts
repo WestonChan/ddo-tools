@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { slugFromPathSegment } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
-import type { ApiAugmentDetail, ApiItemDetail, ApiSetDetail } from '../../../lib/api'
+import type { ApiAugmentDetail, ApiEffect, ApiItemDetail, ApiSetDetail } from '../../../lib/api'
 import {
   isApiEffect,
   isApiEffectDetail,
@@ -23,6 +23,7 @@ import {
   fetchEffectVocabulary,
   fetchItem,
   toAugmentDetail,
+  toEffect,
   toItem,
 } from './items'
 import { fetchSet, toSetDetail } from './sets'
@@ -154,7 +155,9 @@ it('accepts captured group bonuses, group vocabulary and per-link carriers', () 
   expect(groupDetail.kind).toBe('group')
   expect(groupDetail.items.items[0].bonuses).toHaveLength(6)
   expect(groupDetail.items.items[0].bonuses?.[0].group?.name).toBe('Charisma Skills')
-  expect(groupDetail.items.items[0].line.verbose_name).toBe('Insightful Command +5')
+  expect(toEffect(groupDetail.items.items[0].line as ApiEffect, 0).verboseName).toBe(
+    groupDetail.items.items[0].line.verbose_name,
+  )
   expect(isApiEffect(groupDetail.items.items[0].line)).toBe(true)
   expect(
     groupDetail.items.items[0].bonuses?.every(

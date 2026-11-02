@@ -46,6 +46,7 @@ const ITEM_SUMMARIES: ItemSummary[] = [
 ]
 
 const BLOODSTONE_ITEM: Item = {
+  notes: [],
   slug: slugFromPathSegment('test-42')!,
   name: 'Bloodstone',
   equipmentSlot: 'Trinket',
@@ -89,6 +90,7 @@ let itemPageQueryState: {
 let isItemDetailLoaded = true
 let itemEffects: Effect[] = []
 const STRENGTH_EFFECT: Effect = {
+  notes: [],
   slug: slugFromPathSegment('test-1')!,
   name: 'Strength',
   verboseName: 'Strength +2',
@@ -262,6 +264,7 @@ const STACK_ITEMS = [
 
 function renderStackedResourcesView(): ReturnType<typeof render> {
   stackedSet = {
+    notes: [],
     slug: slugFromPathSegment('test-93')!,
     name: 'Stone Set',
     items: STACK_ITEMS.map((item) => ({

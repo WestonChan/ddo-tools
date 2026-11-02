@@ -55,6 +55,7 @@ function createApiItemRow(overrides: Partial<ApiItemRow> = {}): ApiItemRow {
 }
 
 const API_ITEM_DETAIL: ApiItemDetail = {
+  notes: [],
   slug: slugFromPathSegment('test-7')!,
   name: 'Sireth, Spear of the Sky',
   slot: 'Main Hand',
@@ -91,6 +92,7 @@ const API_ITEM_DETAIL: ApiItemDetail = {
   modifiers: [],
   effects: [
     {
+      notes: [],
       effect_slug: slugFromPathSegment('test-9')!,
       name: 'Supreme Good',
       verbose_name: 'Supreme Good',
@@ -287,6 +289,7 @@ describe('mappers', () => {
     expect(item.weaponStats?.damageReductionBypasses).toHaveLength(4)
     expect(item.armorStats).toBeNull()
     expect(item.effects[0]).toEqual({
+      notes: [],
       slug: slugFromPathSegment('test-9')!,
       name: 'Supreme Good',
       verboseName: 'Supreme Good',
@@ -721,7 +724,10 @@ describe('fetchers', () => {
   it('keeps effect and stat vocabulary rows in API order and sends the search query', async () => {
     mockFetchResponse(effectPage)
     await expect(fetchEffectVocabulary('acid')).resolves.toMatchObject({
-      rows: effectPage.effects,
+      rows: effectPage.effects.map(({ matched_alias, ...row }) => ({
+        ...row,
+        matchedAlias: matched_alias,
+      })),
       total: effectPage.total,
     })
     const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
@@ -817,7 +823,10 @@ describe('fetchers', () => {
       offset: 0,
       effects: rows,
     })
-    await expect(fetchEffectVocabulary()).resolves.toMatchObject({ rows, total: 101 })
+    await expect(fetchEffectVocabulary()).resolves.toMatchObject({
+      rows: rows.map(({ matched_alias, ...row }) => ({ ...row, matchedAlias: matched_alias })),
+      total: 101,
+    })
   })
 
   it('rejects a wrong list key with a tagged API error', async () => {

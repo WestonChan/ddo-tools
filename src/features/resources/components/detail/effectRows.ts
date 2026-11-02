@@ -1,9 +1,11 @@
 import type { Slug } from '../../../../lib/api'
 import type { SetDetail } from '../../queries/sets'
 import type { Effect, Item, ResourceModifier } from '../../queries/items'
+import type { Note } from '../../queries/notes'
 import { effectValue, itemEnhancementRow, type ItemEnhancementRow } from './structuredRows'
 
 export interface EffectRow {
+  notes: readonly Note[]
   itemName: string
   modifiers: ResourceModifier[]
   setSlug: Slug | null
@@ -32,6 +34,7 @@ function matchesBonusFilter(effect: Effect, selectedBonuses: ReadonlySet<string>
 
 function toEffectRow(effect: Effect, selectedBonuses: ReadonlySet<string>, prefix = ''): EffectRow {
   return {
+    notes: effect.notes,
     key: `${prefix}effect-${effect.slug}-${effect.sortOrder}`,
     itemName: '',
     modifiers: [],
@@ -53,6 +56,7 @@ function setRows(setDetail: SetDetail, selectedBonuses: ReadonlySet<string>): Ef
   const rows: EffectRow[] = [
     {
       key: `set-${setDetail.slug}`,
+      notes: [],
       itemName: '',
       modifiers: [],
       setSlug: setDetail.slug,
@@ -70,6 +74,7 @@ function setRows(setDetail: SetDetail, selectedBonuses: ReadonlySet<string>): Ef
   for (const tier of setDetail.tiers) {
     rows.push({
       key: `set-${setDetail.slug}-tier-${tier.equippedCount}`,
+      notes: [],
       itemName: '',
       modifiers: [],
       setSlug: setDetail.slug,
@@ -113,6 +118,7 @@ export function itemEffectRows({
       ? [
           {
             key: `item-enhancement-${item.slug}`,
+            notes: [],
             name: enhancement.name,
             type: enhancement.type,
             value: enhancement.value,

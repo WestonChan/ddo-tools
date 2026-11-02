@@ -43,6 +43,10 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.scrollTo = vi.fn()
+}
+
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
   window.matchMedia = () => ({
     matches: false,
