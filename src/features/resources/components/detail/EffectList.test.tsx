@@ -591,6 +591,34 @@ it('explains a default amount and a fixed amount from captured effect lines', ()
   expect(screen.getByRole('dialog')).toHaveTextContent('Fixed at -1 by the effect')
 })
 
+it('explains a scaled effect default from explicit arithmetic inputs', () => {
+  vi.useFakeTimers()
+  effectDetail = {
+    ...capturedRiposteDetail,
+    default_value: 2,
+    bonuses: capturedRiposteDetail.bonuses.map((bonus) => ({ ...bonus, scale: 0.5 })),
+  } as ApiEffectDetail
+  const effect = toEffect(
+    {
+      ...capturedRiposteDetail.items.items[0].line,
+      value: 2,
+      verbose_name: 'Riposte +2',
+      description: null,
+      bonuses: capturedRiposteDetail.items.items[0].line.bonuses.map((bonus) => ({
+        ...bonus,
+        scale: 0.5,
+        amount_source: 'default',
+        value: 1,
+      })),
+    } as ApiEffect,
+    0,
+  )
+  renderEffects([effect])
+  fireEvent.mouseEnter(screen.getByRole('row', { name: /Riposte/ }))
+  act(() => vi.advanceTimersByTime(120))
+  expect(screen.getByRole('dialog')).toHaveTextContent('half of 2 (effect default)')
+})
+
 it('renders effect damage underneath its line', () => {
   const effect = toEffect(
     {
