@@ -2,4 +2,12 @@
   font-size: var(--fs-label);
   font-weight: var(--fw-semibold);
   white-space: nowrap;
+
+  &[data-note-kind='game_bug'] {
+    color: var(--status-warn);
+  }
+
+  &[data-note-kind='unverified'] {
+    color: var(--text-muted);
+  }
 }

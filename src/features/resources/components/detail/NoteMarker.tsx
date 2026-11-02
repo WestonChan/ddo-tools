@@ -3,9 +3,9 @@ import { HintAnchor } from '../../../../components'
 import type { Note, NoteKind } from '../../queries/notes'
 import './NoteMarker.css'
 
-const NOTE_PRESENTATION: Record<NoteKind, { label: string; symbol: string; colorToken: string }> = {
-  game_bug: { label: 'Bug', symbol: '!', colorToken: '--status-warn' },
-  unverified: { label: 'Unverified', symbol: '?', colorToken: '--text-muted' },
+const NOTE_PRESENTATION: Record<NoteKind, { label: string; symbol: string }> = {
+  game_bug: { label: 'Bug', symbol: '!' },
+  unverified: { label: 'Unverified', symbol: '?' },
 }
 
 export function NoteMarker({ note }: { note: Note }): JSX.Element {
@@ -18,7 +18,7 @@ export function NoteMarker({ note }: { note: Note }): JSX.Element {
       <span
         className="resources-note-marker focus-ring-proxy"
         tabIndex={0}
-        style={{ color: `var(${presentation.colorToken})` }}
+        data-note-kind={note.kind}
       >
         {presentation.symbol} {presentation.label}
       </span>

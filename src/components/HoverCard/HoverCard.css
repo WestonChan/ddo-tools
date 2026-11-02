@@ -54,6 +54,7 @@
 }
 
 .hover-card--hint {
+  white-space: pre-line;
   width: max-content;
   max-width: min(260px, calc(100vw - 16px));
   gap: 0;
