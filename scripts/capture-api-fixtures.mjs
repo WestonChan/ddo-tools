@@ -2,6 +2,8 @@ import { writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 
 const manifest = {
+  'src/features/resources/queries/fixtures/effect-elemental-resistance.json':
+    '/v1/effects/elemental-resistance?items_limit=1&items_offset=15&augments_limit=0&set_tiers_limit=0',
   'src/features/resources/queries/fixtures/item-docent-of-shadow-level-8.json':
     '/v1/items/docent-of-shadow-level-8',
   'src/features/resources/queries/fixtures/effect-false-life.json':

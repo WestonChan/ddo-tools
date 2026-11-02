@@ -30,6 +30,7 @@ import { resetPersistedStateForTests } from '../../../lib/persistedState'
 import { useResourceListState } from '../resourceListState'
 
 const capturedGroups = apiFixture(capturedGroupsResponse)
+const originalFetch = globalThis.fetch
 const capturedSetPage = apiFixture(capturedSetPageResponse)
 
 const navigateMock = vi.fn()
@@ -184,7 +185,10 @@ beforeEach(() => {
     error: null,
   }
 })
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 function renderItemPicker(): void {
   render(<ItemPickerHarness />)
@@ -488,6 +492,7 @@ describe('ItemPicker server-backed filters', () => {
   ])(
     'shows only the captured alias matches for %s and selects the canonical name',
     async (query, response) => {
+      expect(globalThis.fetch, 'fetch is restored between alias cases').toBe(originalFetch)
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(response)))
       const vocabulary = await fetchEffectVocabulary(query)
       useEffectVocabularyMock.mockImplementation((searchQuery) => ({

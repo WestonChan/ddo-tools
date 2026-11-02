@@ -27,7 +27,10 @@ vi.mock('../../../hooks', async (importOriginal) => ({
   useSectionScrollSpy: vi.fn(),
 }))
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
 const EVERY_ITEM_SOURCE_KIND: Record<ItemSourceKind, true> = {
   adventurePack: true,
@@ -171,6 +174,16 @@ describe('gallery queries', () => {
     for (const augment of GALLERY_AUGMENTS)
       for (const effect of augment.effects)
         require('augment effect', effectDetailQueryOptions(effect.slug).queryKey)
+    expect(
+      GALLERY_ITEMS.some((item) =>
+        item.effects.some(
+          (effect) =>
+            (queryClient.getQueryData<{ notes?: unknown[] }>(
+              effectDetailQueryOptions(effect.slug).queryKey,
+            )?.notes?.length ?? 0) > 0,
+        ),
+      ),
+    ).toBe(true)
     for (const item of GALLERY_ITEMS) {
       for (const quest of item.quests) {
         const detail = queryClient.getQueryData<{ items: { slug: Slug }[] }>(

@@ -28,6 +28,8 @@ import {
 import { numberWithPlusSign } from './numberWithPlusSign'
 import { ResourceStatusView } from './ResourceStatusView'
 import { DamageView, DescriptionView } from './ResourceCardViews'
+import { NoteBadges } from './NoteMarker'
+import { toNotes } from '../../queries/notes'
 
 function matchingDamageExpressions(effect: Effect, modifiers: ResourceModifier[]): string[] {
   const normalizedNames = [effect.name, effect.verboseName].map((name) =>
@@ -242,6 +244,9 @@ function useBonusDetailDefinition({
     name: cardName,
     facts,
     sections,
+    badges: (
+      <NoteBadges notes={detail ? toNotes(detail, apiDetailPath('effects', detail.slug)) : []} />
+    ),
   }
 }
 

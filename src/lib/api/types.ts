@@ -433,6 +433,7 @@ export interface ApiEffectCarrierLine {
 }
 
 export interface ApiEffectDetail {
+  notes: ApiNote[]
   slug: Slug
   name: string
   kind: 'effect' | 'stat' | 'group'

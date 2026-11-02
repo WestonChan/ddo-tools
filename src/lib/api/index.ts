@@ -13,6 +13,7 @@ export {
   isApiError,
 } from './client'
 export { shouldRetryQuery } from './retry'
+export { invalidApiNoteField } from './notes'
 export {
   API_DETAIL_KINDS,
   apiDetailPath,

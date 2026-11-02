@@ -2,6 +2,7 @@ import {
   API_RESPONSE_ERROR,
   ApiError,
   assertApiResponseFields,
+  invalidApiNoteField,
   type ApiNote,
 } from '../../../lib/api'
 
@@ -15,27 +16,7 @@ export function toNotes(owner: { notes: ApiNote[] }, path: string, prefix = ''):
   assertApiResponseFields(owner, path, { notes: 'array' }, prefix)
   return owner.notes.map((note, index) => {
     const notePrefix = `${prefix}notes[${index}].`
-    assertApiResponseFields(
-      note,
-      path,
-      {
-        kind: 'string',
-        field: 'nullable-string',
-        qualifier: 'nullable-string',
-        text: 'string',
-        in_game: 'boolean',
-        recorded: 'string',
-      },
-      notePrefix,
-    )
-    const invalidField =
-      note.kind !== 'game_bug' && note.kind !== 'unverified'
-        ? 'kind'
-        : note.intended === undefined
-          ? 'intended'
-          : note.assumed === undefined
-            ? 'assumed'
-            : null
+    const invalidField = invalidApiNoteField(note)
     if (invalidField)
       throw new ApiError(
         API_RESPONSE_ERROR,

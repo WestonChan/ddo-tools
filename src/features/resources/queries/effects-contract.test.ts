@@ -1,7 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { slugFromPathSegment } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
-import type { ApiAugmentDetail, ApiEffect, ApiItemDetail, ApiSetDetail } from '../../../lib/api'
+import type {
+  ApiAugmentDetail,
+  ApiEffect,
+  ApiItemDetail,
+  ApiNote,
+  ApiSetDetail,
+} from '../../../lib/api'
 import {
   isApiEffect,
   isApiEffectDetail,
@@ -17,6 +23,9 @@ import effectDetailResponse from './fixtures/effect-strength.json'
 import groupPageResponse from './fixtures/effects-page-groups.json'
 import groupDetailResponse from './fixtures/effect-charisma-skills.json'
 import groupItemResponse from './fixtures/item-absolute-judgement.json'
+import resistanceResponse from './fixtures/effect-elemental-resistance.json'
+import rampartResponse from './fixtures/item-epic-deaths-rampart.json'
+import plagueWolfResponse from './fixtures/feat-wild-shape-plague-wolf.json'
 import {
   fetchAugment,
   fetchEffectDetail,
@@ -71,6 +80,7 @@ it('guards required provenance, damage, tiers and unified vocabulary paths', () 
       effect_slug: slugFromPathSegment('test-4')!,
       name: 'Text only',
       verbose_name: 'Text only',
+      notes: [],
       bonuses: [],
       damage: [],
     }),
@@ -89,6 +99,101 @@ it('guards required provenance, damage, tiers and unified vocabulary paths', () 
   expect(isApiEffectVocabularyRow({ ...effectPage.effects[0], slug: '/v1/stats/test-87' })).toBe(
     false,
   )
+})
+
+it('guards the declared note fields on effects and every carrier line', () => {
+  const note = plagueWolfResponse.notes[0]
+  const invalidFields = {
+    kind: 'unknown',
+    field: 4,
+    qualifier: false,
+    text: null,
+    intended: undefined,
+    assumed: { nested: [undefined] },
+    in_game: 'yes',
+    recorded: null,
+  } satisfies Record<keyof ApiNote, unknown>
+  const invalidNotes = [
+    undefined,
+    null,
+    {},
+    [null],
+    ...Object.entries(invalidFields).map(([field, value]) => [{ ...note, [field]: value }]),
+  ]
+  const line = itemResponse.effects[0]
+  expect(isApiEffect({ ...line, notes: [note] })).toBe(true)
+  expect(isApiEffectDetail({ ...effectDetail, notes: [note] })).toBe(true)
+  for (const notes of invalidNotes) {
+    expect(isApiEffect({ ...line, notes })).toBe(false)
+    expect(isApiEffectDetail({ ...effectDetail, notes })).toBe(false)
+    for (const key of ['items', 'augments', 'set_tiers'] as const) {
+      const page = effectDetail[key]
+      const carriers =
+        key === 'items'
+          ? effectDetail.items.items
+          : key === 'augments'
+            ? effectDetail.augments.augments
+            : effectDetail.set_tiers.set_tiers
+      expect(carriers.length).toBeGreaterThan(0)
+      expect(
+        isApiEffectDetail({
+          ...effectDetail,
+          [key]: {
+            ...page,
+            [key]: carriers.map((carrier) => ({
+              ...carrier,
+              line: { ...carrier.line, notes },
+            })),
+          },
+        }),
+      ).toBe(false)
+      expect(
+        isApiEffectDetail({
+          ...effectDetail,
+          [key]: {
+            ...page,
+            [key]: carriers.map((carrier) => ({
+              ...carrier,
+              lines: [{ line: { ...carrier.line, notes } }],
+            })),
+          },
+        }),
+      ).toBe(false)
+    }
+  }
+})
+
+it('guards nullable alias matches without accepting missing or malformed values', () => {
+  for (const matched_alias of [undefined, 0, false, {}, []])
+    expect(isApiEffectVocabularyRow({ ...effectPage.effects[0], matched_alias })).toBe(false)
+  for (const matched_alias of [null, '', 'Spellsight'])
+    expect(isApiEffectVocabularyRow({ ...effectPage.effects[0], matched_alias })).toBe(true)
+})
+
+it('preserves the captured Rampart note on its nested effect carrier line', () => {
+  const detail = apiFixture(resistanceResponse)
+  expect(isApiEffectDetail(detail)).toBe(true)
+  const carrier = detail.items.items.find((item) => item.slug === rampartResponse.slug)!
+  expect(carrier).toBeDefined()
+  const line = carrier.lines.find(({ line }) => line.notes.length > 0)!.line
+  const item = toItem(apiFixture(rampartResponse) as ApiItemDetail)
+  expect(toEffect(line as ApiEffect, 0).notes).toEqual(
+    item.effects.find((effect) => effect.slug === detail.slug && effect.notes.length > 0)!.notes,
+  )
+  expect(
+    isApiEffectDetail({
+      ...detail,
+      items: {
+        ...detail.items,
+        items: [
+          {
+            ...carrier,
+            lines: [{ line: { ...line, notes: undefined } }],
+          },
+        ],
+      },
+    }),
+  ).toBe(false)
 })
 
 it('guards both effect kinds and partial nested detail responses', () => {

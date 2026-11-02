@@ -1,5 +1,5 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query'
-import type { ApiEffectDetail, Slug } from '../../../lib/api'
+import type { ApiEffectDetail, ApiNote, Slug } from '../../../lib/api'
 import type { Effect, Item, ItemSource } from '../queries/items'
 import type { QuestDetail } from '../queries/quests'
 import type { SourceDetail } from '../queries/sources'
@@ -18,6 +18,7 @@ import {
   GALLERY_SETS,
   galleryAugmentSummary,
   gallerySourceDetail,
+  gallerySlug,
 } from './galleryItems'
 
 interface GalleryQueryEntry {
@@ -34,6 +35,24 @@ const SOURCE_DETAIL_KIND_BY_ITEM_SOURCE_KIND: Partial<
   event: 'event',
 }
 
+const EFFECT_NOTES_BY_SLUG = new Map<Slug, ApiNote[]>([
+  [
+    gallerySlug('noted-resistance'),
+    [
+      {
+        kind: 'unverified',
+        field: null,
+        qualifier: null,
+        text: 'This effect description still needs verification.',
+        intended: null,
+        assumed: 'Competence',
+        in_game: false,
+        recorded: '2026-10-23',
+      },
+    ],
+  ],
+])
+
 function emptyEffectCarrierPage<Key extends 'items' | 'augments' | 'set_tiers'>(
   key: Key,
   total: number,
@@ -47,6 +66,7 @@ function emptyEffectCarrierPage<Key extends 'items' | 'augments' | 'set_tiers'>(
 
 function effectDetailFor(effect: Effect, carrierCount: number): ApiEffectDetail {
   return {
+    notes: EFFECT_NOTES_BY_SLUG.get(effect.slug) ?? [],
     slug: effect.slug,
     name: effect.name,
     kind: 'effect',

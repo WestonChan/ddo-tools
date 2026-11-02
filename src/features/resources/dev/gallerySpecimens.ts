@@ -37,7 +37,7 @@ export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
     section: 'enchantments',
     title: 'Unverified notes',
     branch:
-      'An Unverified marker on its affected line, an unchanged neighbour, and a whole-entity chip; both hints show the assumed value',
+      'An Unverified line and entity chip; hover Elemental Resistance to see the effect’s own note chip, with its assumed value',
     itemSlug: gallerySlug('unverified-note'),
   },
   {

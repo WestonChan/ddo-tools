@@ -1,7 +1,9 @@
 import { isRecord } from '../isRecord'
 import { slugFromPathSegment } from './entityPaths'
+import { isApiNote } from './notes'
 import type {
   ApiEffect,
+  ApiEffectCarrierLine,
   ApiEffectDetail,
   ApiEffectVocabularyRow,
   ApiQueryParameters,
@@ -42,6 +44,8 @@ function isApiEffectBonus(value: unknown): boolean {
 export function isApiEffect(value: unknown): value is ApiEffect {
   if (!isRecord(value)) return false
   return (
+    Array.isArray(value.notes) &&
+    value.notes.every(isApiNote) &&
     typeof value.effect_slug === 'string' &&
     slugFromPathSegment(value.effect_slug) !== null &&
     typeof value.name === 'string' &&
@@ -68,6 +72,7 @@ export function isApiEffectList(value: unknown): value is ApiEffect[] {
 export function isApiEffectVocabularyRow(value: unknown): value is ApiEffectVocabularyRow {
   if (!isRecord(value)) return false
   return (
+    (value.matched_alias === null || typeof value.matched_alias === 'string') &&
     typeof value.slug === 'string' &&
     slugFromPathSegment(value.slug) !== null &&
     typeof value.name === 'string' &&
@@ -85,11 +90,9 @@ export function isApiEffectVocabularyRow(value: unknown): value is ApiEffectVoca
   )
 }
 
-function isEffectCarrier(value: unknown, isSetTier: boolean): boolean {
+function isEffectCarrierLine(value: unknown): value is ApiEffectCarrierLine {
   return (
     isRecord(value) &&
-    (isSetTier || (typeof value.slug === 'string' && slugFromPathSegment(value.slug) !== null)) &&
-    typeof value.name === 'string' &&
     isApiEffect(value.line) &&
     (value.amount_source == null || typeof value.amount_source === 'string') &&
     (value.bonus_type == null || typeof value.bonus_type === 'string') &&
@@ -98,7 +101,18 @@ function isEffectCarrier(value: unknown, isSetTier: boolean): boolean {
       (typeof value.effect_slug === 'string' && slugFromPathSegment(value.effect_slug) !== null)) &&
     (value.scale == null || Number.isFinite(value.scale)) &&
     (value.value == null || Number.isSafeInteger(value.value)) &&
-    (value.value2 == null || Number.isSafeInteger(value.value2)) &&
+    (value.value2 == null || Number.isSafeInteger(value.value2))
+  )
+}
+
+function isEffectCarrier(value: unknown, isSetTier: boolean): boolean {
+  return (
+    isRecord(value) &&
+    isEffectCarrierLine(value) &&
+    (isSetTier || (typeof value.slug === 'string' && slugFromPathSegment(value.slug) !== null)) &&
+    typeof value.name === 'string' &&
+    (value.lines === undefined ||
+      (Array.isArray(value.lines) && value.lines.every(isEffectCarrierLine))) &&
     (value.bonuses == null ||
       (Array.isArray(value.bonuses) && value.bonuses.every(isApiEffectBonus))) &&
     (!isSetTier ||
@@ -133,6 +147,8 @@ function isTierStep(value: unknown): boolean {
 export function isApiEffectDetail(value: unknown): value is ApiEffectDetail {
   return (
     isRecord(value) &&
+    Array.isArray(value.notes) &&
+    value.notes.every(isApiNote) &&
     typeof value.slug === 'string' &&
     slugFromPathSegment(value.slug) !== null &&
     typeof value.name === 'string' &&

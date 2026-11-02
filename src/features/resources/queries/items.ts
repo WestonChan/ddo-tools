@@ -764,15 +764,7 @@ export async function fetchEffectVocabulary(
     },
   )
   return {
-    rows: page.rows.map(({ matched_alias, ...row }, index) => {
-      assertApiResponseFields(
-        { matched_alias },
-        '/v1/effects',
-        { matched_alias: 'nullable-string' },
-        `effects[${index}].`,
-      )
-      return { ...row, matchedAlias: matched_alias }
-    }),
+    rows: page.rows.map(({ matched_alias, ...row }) => ({ ...row, matchedAlias: matched_alias })),
     total: page.total,
   }
 }
