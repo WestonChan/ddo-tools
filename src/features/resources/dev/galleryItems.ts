@@ -188,6 +188,29 @@ function augmentSlot(
   return { sortOrder, label, family, qualifier: null, options: [], ...overrides }
 }
 
+const GALLERY_NOTES: Record<NoteKind, Note> = {
+  game_bug: {
+    kind: 'game_bug',
+    field: 'value',
+    qualifier: 'Charisma / Penalty',
+    text: 'The observed penalty differs from its intended amount.',
+    intended: -2,
+    assumed: null,
+    isInGame: true,
+    recorded: '2026-10-23',
+  },
+  unverified: {
+    kind: 'unverified',
+    field: 'bonus_type',
+    qualifier: 'Elemental Resistance / Competence',
+    text: 'The line title and description disagree about the bonus type.',
+    intended: null,
+    assumed: 'Competence',
+    isInGame: false,
+    recorded: '2026-10-23',
+  },
+}
+
 const STORMFORGED_SET = {
   slug: gallerySlug('stormforged'),
   name: 'Stormforged',
@@ -196,7 +219,9 @@ const STORMFORGED_SET = {
 const MOONLIT_SET = { slug: gallerySlug('moonlit-guard'), name: 'Moonlit Guard', icon: null }
 
 const STORMFORGED_BONUS_EFFECTS = [
-  galleryEffect('storm-resistance', 'Electric Resistance', 'Enhancement', 10, 0),
+  galleryEffect('storm-resistance', 'Electric Resistance', 'Enhancement', 10, 0, {
+    notes: [{ ...GALLERY_NOTES.unverified, qualifier: 'Electric Resistance / Enhancement' }],
+  }),
   galleryEffect('storm-lore', 'Lightning Lore', 'Insightful', 20, 0, {
     description: 'Adds to the damage of your lightning spells.',
   }),
@@ -310,6 +335,37 @@ const AUGMENT_SLOTS_EVERY_FAMILY: ItemAugmentSlot[] = [
 
 export const GALLERY_AUGMENTS: readonly AugmentDetail[] = [
   {
+    notes: [
+      {
+        ...GALLERY_NOTES.unverified,
+        field: null,
+        qualifier: null,
+        text: 'This gem still needs in-game verification.',
+        assumed: 'Enhancement',
+      },
+    ],
+    slug: gallerySlug('augment-noted-skill'),
+    name: 'Unverified Skill Gem',
+    minimumLevel: 8,
+    slots: ['blue'],
+    recipes: [],
+    description: null,
+    effectDescription: null,
+    effects: [
+      galleryEffect('augment-noted-spot', 'Spot', 'Enhancement', 10, 0, {
+        notes: [
+          {
+            ...GALLERY_NOTES.game_bug,
+            qualifier: 'Spot / Enhancement',
+            text: 'The observed skill bonus differs from its intended amount.',
+            intended: 12,
+          },
+        ],
+      }),
+    ],
+    modifiers: [],
+  },
+  {
     notes: [],
     slug: gallerySlug('augment-blue-skill'),
     name: 'Blue Skill Gem',
@@ -353,30 +409,10 @@ export const GALLERY_AUGMENTS: readonly AugmentDetail[] = [
   },
 ]
 
-const GALLERY_NOTES: Record<NoteKind, Note> = {
-  game_bug: {
-    kind: 'game_bug',
-    field: 'value',
-    qualifier: 'Charisma / Penalty',
-    text: 'The observed penalty differs from its intended amount.',
-    intended: -2,
-    assumed: null,
-    isInGame: true,
-    recorded: '2026-10-23',
-  },
-  unverified: {
-    kind: 'unverified',
-    field: 'bonus_type',
-    qualifier: 'Elemental Resistance / Competence',
-    text: 'The line title and description disagree about the bonus type.',
-    intended: null,
-    assumed: 'Competence',
-    isInGame: false,
-    recorded: '2026-10-23',
-  },
-}
-
 export const GALLERY_ITEMS: readonly Item[] = [
+  galleryItem('noted-augment', 'Noted Gem Carrier', {
+    augmentSlots: [augmentSlot(0, 'blue', 'standard')],
+  }),
   galleryItem('game-bug-note', 'Observed Penalty', {
     notes: [{ ...GALLERY_NOTES.game_bug, field: 'remove', qualifier: 'Intelligence / Penalty' }],
     effects: [

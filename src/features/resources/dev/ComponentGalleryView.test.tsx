@@ -39,6 +39,36 @@ const EVERY_ITEM_SOURCE_KIND: Record<ItemSourceKind, true> = {
 }
 
 describe('gallery specimens', () => {
+  it('makes augment entity and line notes and set tier notes reachable from named specimens', () => {
+    const augment = GALLERY_AUGMENTS.find(
+      (augment) =>
+        augment.notes.length > 0 && augment.effects.some((effect) => effect.notes.length > 0),
+    )
+    expect(augment).toBeDefined()
+    expect(
+      GALLERY_SPECIMENS.some(
+        (specimen) =>
+          specimen.section === 'augments' &&
+          specimen.itemSlug !== null &&
+          galleryItemBySlug(specimen.itemSlug).augmentSlots.some((slot) =>
+            augment!.slots.includes(slot.label),
+          ),
+      ),
+    ).toBe(true)
+    const set = GALLERY_SETS.find((set) =>
+      set.tiers.some((tier) => tier.effects.some((effect) => effect.notes.length > 0)),
+    )
+    expect(set).toBeDefined()
+    expect(
+      GALLERY_SPECIMENS.some(
+        (specimen) =>
+          specimen.section === 'sets' &&
+          specimen.itemSlug !== null &&
+          galleryItemBySlug(specimen.itemSlug).sets.some((itemSet) => itemSet.slug === set!.slug),
+      ),
+    ).toBe(true)
+  })
+
   it('shows every note kind on a line and an entity in named specimens', () => {
     const kinds = { game_bug: true, unverified: true } satisfies Record<NoteKind, true>
     const items = GALLERY_SPECIMENS.flatMap(({ itemSlug }) =>

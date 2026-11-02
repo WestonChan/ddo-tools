@@ -119,6 +119,13 @@ export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
   },
   {
     section: 'sets',
+    title: 'Set tier notes',
+    branch:
+      'Open the set band to find an Unverified tier line; its set hover card shows the same marker',
+    itemSlug: gallerySlug('stormforged-gauntlets'),
+  },
+  {
+    section: 'sets',
     title: 'Set failed to load',
     branch: 'The item shows, its set bands are missing, and a set error notice replaces them',
     itemSlug: gallerySlug('stormforged-gauntlets'),
@@ -130,6 +137,13 @@ export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
     branch:
       'Standard colours, Sun and Moon, Isle of Dread, Lamordia, crafting upgrade; each opens its candidate ledger',
     itemSlug: gallerySlug('socketed-bracers'),
+  },
+  {
+    section: 'augments',
+    title: 'Augment notes',
+    branch:
+      'The blue slot offers an Unverified Skill Gem with an entity chip and a Bug marker on its Spot line',
+    itemSlug: gallerySlug('noted-augment'),
   },
   {
     section: 'sources',
