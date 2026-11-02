@@ -326,7 +326,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                             : undefined
                         }
                       >
-                        {option.caption}
+                        <span className="combobox-option-caption-text">{option.caption}</span>
                         {option.children?.length ? (
                           <ChevronDown
                             size={11}
