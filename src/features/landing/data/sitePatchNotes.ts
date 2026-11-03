@@ -5,6 +5,15 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-11-03',
+    changes: [
+      "An enchantment that raises several stats reads as one line, worded as the game's tooltip, on items, augments and set bonuses",
+      'A line or item the game is known to get wrong shows "! Bug", and one still waiting for an in-game check shows "? Unverified"; hover either to read why',
+      'Searching Bonuses by another name the game uses, such as Spellsight, finds the bonus and shows "also: Spellsight"',
+      'Picker options show their full names, shortening the grey caption beside them instead; hover a shortened caption, or arrow to its option, to read it in full',
+    ],
+  },
+  {
     date: '2026-10-28',
     changes: [
       'Each Resources list remembers its filters, sort, set-bonus option, column widths and column order between visits; a new tab still starts with an empty search at the top of the list',

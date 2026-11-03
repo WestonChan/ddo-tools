@@ -2,7 +2,7 @@ Status legend: ✅ done · 🚧 in this phase · 📋 planned (future phase, see
 
 📋 Phase 4e — Schema:
 - Each bonus is its own DB row (promote out of the per-item denormalized fields).
-- Add `bonus_alias` table mapping freeform aliases (typos, alternate names, shorthand) to canonical bonus rows. Used by user-facing bonus selectors (Resource Report View editor in Phase 5+, picker filters in Phase 4f).
+- ✅ Aliases live in ddo-data's `effect_aliases` (ddo-data#46): an alternate name the game uses ("Spellsight" for Spellcraft) with its own line wording, or a search-only name. The API resolves them in `bonus=`, `q` and effect slugs, and `/v1/effects?q=` reports `matched_alias`, which the Bonuses picker shows as "also: …". Freeform typos and shorthand are ddo-data#19, as search-only aliases.
 
 
 ## Decided schema (2026-10-03)

@@ -131,6 +131,9 @@ coherent visual system rather than accreted one-off styles.
 4. Thunder-Forged, Alchemical, the rest — same shapes, more scrapers.
 5. Cannith fold-in (D-CS10).
 
+- 📋 Phase 4h — A tier's base properties belong to the tier, not to each option: every option in a tier shares them (ddo-data#66, under the crafting epic ddo-data#72). Thunder-Forged is the worked case: every orb carries a tier-base Orb Bonus, +9/+10/+11/+12 while blocking (reader R14, ddo-data#46).
+- 🐛 Thunder-Forged's Orb Bonus sits on the Blinding Fear option only, as Maetrim placed it, and our Tier 0 orb has none (R14). It moves to the tier with ddo-data#70.
+
 ## ⚠ Still open (deliberately)
 
 - Whether `item_augment_slots` deserves a rename to `item_sockets` once non-augment pools join
