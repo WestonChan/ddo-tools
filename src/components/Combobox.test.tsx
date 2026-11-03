@@ -265,6 +265,71 @@ describe('Combobox', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByRole('option', { name: 'Strength · Insight' })).toBeInTheDocument()
   })
+
+  it('clears keyboard hints on captionless options and an empty search result', async () => {
+    const user = userEvent.setup()
+    render(
+      <HoverCardProvider>
+        <MultiPicker
+          initialValues={['first']}
+          pickerOptions={[
+            { value: 'first', label: 'First', caption: 'First caption' },
+            { value: 'second', label: 'Second', caption: 'Second caption' },
+            { value: 'plain', label: 'Plain' },
+            { value: 'empty', label: 'Empty', caption: '' },
+          ]}
+        />
+      </HoverCardProvider>,
+    )
+    await user.keyboard('{ArrowDown}')
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Second caption')
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Clear' })).toHaveFocus()
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    await user.tab({ shift: true })
+    await user.keyboard('{ArrowDown}')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    await user.keyboard('{ArrowDown}')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    await user.keyboard('{ArrowDown}')
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('First caption')
+    await user.type(screen.getByRole('combobox'), 'unmatched')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    expect(screen.queryAllByRole('option')).toHaveLength(0)
+    await user.keyboard('{ArrowDown}')
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
+  it('keeps caption hints compatible with expanding types and selecting a child', async () => {
+    const user = userEvent.setup()
+    render(
+      <HoverCardProvider>
+        <MultiPicker
+          pickerOptions={[
+            {
+              value: 'Strength',
+              label: 'Strength',
+              caption: 'Stat · Any type',
+              children: [{ value: 'Strength:Insight', label: 'Strength · Insight', caption: '2' }],
+            },
+          ]}
+        />
+      </HoverCardProvider>,
+    )
+    const caption = screen.getByText('Stat · Any type')
+    await user.hover(caption)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Stat · Any type')
+    await user.click(caption)
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+    const child = screen.getByRole('option', { name: /Strength · Insight/ })
+    await user.click(child)
+    expect(screen.getByRole('status')).toHaveTextContent('Strength:Insight')
+    expect(screen.getByRole('combobox')).toHaveFocus()
+    await user.click(caption)
+    expect(screen.queryByRole('option', { name: /Strength · Insight/ })).toBeNull()
+    expect(screen.getByRole('status')).toHaveTextContent('Strength:Insight')
+  })
+
   it('filters without case sensitivity, wraps the highlight, and closes after a single pick', async () => {
     render(<SinglePicker />)
     const search = screen.getByRole('combobox', { name: 'Slot' })

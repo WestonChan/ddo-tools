@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import effectPage from '../src/features/resources/queries/fixtures/effects-page.json' with { type: 'json' }
 import mightyResponse from '../src/features/resources/queries/fixtures/effects-page-mighty.json' with { type: 'json' }
+import capturedRaidPage from '../src/features/resources/queries/fixtures/quests-page-caught-in-the-web.json' with { type: 'json' }
 import capturedSetPage from '../src/features/resources/queries/fixtures/sets-page.json' with { type: 'json' }
 
 const items = [
@@ -125,32 +126,92 @@ test.beforeEach(async ({ context }) => {
 })
 
 for (const width of [1440, 375]) {
-  test(`alias captions yield space to canonical bonus names at ${width}px`, async ({ page }) => {
-    await page.addInitScript(() => localStorage.clear())
-    await page.setViewportSize({ width, height: 900 })
-    await page.route('**/v1/effects?*', (route) => route.fulfill({ json: mightyResponse }))
-    await page.goto('/resources/items')
-    await page.getByRole('button', { name: 'Bonuses', exact: true }).click()
-    await page.getByRole('combobox', { name: 'Bonuses', exact: true }).fill('mighty')
-    const captured = mightyResponse.effects[0]
-    const option = page.getByRole('option', { name: new RegExp(captured.name) })
-    await expect(option).toContainText(`also: ${captured.matched_alias}`)
-    const label = option.locator('.combobox-option-label')
-    await expect(label).toHaveText(captured.name)
-    expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
-    const caption = option.locator('.combobox-option-caption')
-    expect(
-      await caption.evaluate((element) => {
-        const range = document.createRange()
-        range.selectNodeContents(element)
-        return range.getBoundingClientRect().width > element.clientWidth
-      }),
-    ).toBe(true)
-    const bounds = await option.boundingBox()
-    expect(bounds).not.toBeNull()
-    expect(bounds!.x).toBeGreaterThanOrEqual(0)
-    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
-  })
+  for (const captionCase of [
+    {
+      picker: 'Raid',
+      path: '**/v1/quests?*',
+      response: capturedRaidPage,
+      query: capturedRaidPage.quests[0].name,
+      name: capturedRaidPage.quests[0].name,
+      caption: capturedRaidPage.quests[0].pack,
+    },
+    {
+      picker: 'Bonuses',
+      path: '**/v1/effects?*',
+      response: mightyResponse,
+      query: 'mighty',
+      name: mightyResponse.effects[0].name,
+      caption: `Group · also: ${mightyResponse.effects[0].matched_alias}`,
+    },
+  ]) {
+    for (const interaction of ['mouse', 'keyboard']) {
+      test(`${captionCase.picker} captions yield to names and reveal full text by ${interaction} at ${width}px`, async ({
+        page,
+      }) => {
+        await page.addInitScript(() => localStorage.clear())
+        await page.setViewportSize({ width, height: 900 })
+        await page.route(captionCase.path, (route) => route.fulfill({ json: captionCase.response }))
+        await page.goto('/resources/items')
+        await page.getByRole('button', { name: captionCase.picker, exact: true }).click()
+        const search = page.getByRole('combobox', { name: captionCase.picker, exact: true })
+        await search.fill(captionCase.query)
+        const option = page.getByRole('option', {
+          name: `${captionCase.name} ${captionCase.caption}`,
+          exact: true,
+        })
+        const label = option.locator('.combobox-option-label')
+        await expect(label).toHaveText(captionCase.name)
+        expect(await label.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+          true,
+        )
+        const caption = option.locator('.combobox-option-caption')
+        await expect(caption).toHaveText(captionCase.caption)
+        expect(
+          await caption.evaluate((element) => {
+            const range = document.createRange()
+            range.selectNodeContents(element)
+            return range.getBoundingClientRect().width > element.clientWidth
+          }),
+        ).toBe(true)
+        const bounds = await option.boundingBox()
+        expect(bounds).not.toBeNull()
+        expect(bounds!.x).toBeGreaterThanOrEqual(0)
+        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+        const hint = page.getByRole('tooltip')
+        if (interaction === 'mouse') {
+          await caption.hover()
+          await expect(hint).toHaveText(captionCase.caption)
+          await caption.click()
+          await expect(option).toHaveAttribute('aria-selected', 'true')
+          await expect(search).toBeFocused()
+          await label.click()
+          await expect(option).toHaveAttribute('aria-selected', 'false')
+        } else {
+          await page.mouse.move(0, 0)
+          await search.press('ArrowUp')
+          await expect(search).toHaveAttribute(
+            'aria-activedescendant',
+            await option.evaluate((element) => element.id),
+          )
+          await expect(search).toBeFocused()
+          await expect(hint).toHaveText(captionCase.caption)
+          await search.press('Escape')
+          await expect(hint).toHaveCount(0)
+          await expect(search).toBeFocused()
+          await search.press('ArrowDown')
+          await expect(hint).toHaveText(captionCase.caption)
+          await search.press('Enter')
+          await expect(option).toHaveAttribute('aria-selected', 'true')
+          await expect(hint).toHaveCount(0)
+          await expect(search).toBeFocused()
+          await search.press('ArrowDown')
+          await expect(hint).toHaveText(captionCase.caption)
+          await search.fill('')
+          await expect(hint).toHaveCount(0)
+        }
+      })
+    }
+  }
 }
 
 test('shows loot status in its columns and keeps the count on the applied line', async ({

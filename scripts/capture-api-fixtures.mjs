@@ -25,6 +25,8 @@ const manifest = {
   'src/features/resources/queries/fixtures/set-the-legendary-deserts-starless-nights.json':
     '/v1/sets/the-legendary-deserts-starless-nights',
   'src/features/resources/queries/fixtures/quest-death-house.json': '/v1/quests/death-house',
+  'src/features/resources/queries/fixtures/quests-page-caught-in-the-web.json':
+    '/v1/quests?q=caught%20in%20the%20web&limit=1',
   'src/features/resources/queries/fixtures/sets-null-icon-page.json':
     '/v1/sets?q=Conduit%20of%20the%20Titans&limit=1',
   'src/features/resources/queries/fixtures/adventure-pack-magic-of-myth-drannor.json':

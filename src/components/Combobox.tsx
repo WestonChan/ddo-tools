@@ -2,7 +2,12 @@ import { useEffect, useId, useRef, useState, type JSX, type ReactNode, type RefO
 import { Check, ChevronDown, Search } from 'lucide-react'
 import type { Slug } from '../lib/api'
 import { AnchoredMenu } from './AnchoredMenu'
-import { NESTED_CARD_OPEN_DELAY_MS, positionedCardBeside, useHoverCardControl } from './HoverCard'
+import {
+  HINT_OPEN_DELAY_MS,
+  NESTED_CARD_OPEN_DELAY_MS,
+  positionedCardBeside,
+  useHoverCardControl,
+} from './HoverCard'
 import './Combobox.css'
 
 export interface FilterOption {
@@ -91,6 +96,12 @@ export function Combobox(props: ComboboxProps): JSX.Element {
     placement: 'beside',
     render: () => hoveredOption.current && renderHoverCard?.(hoveredOption.current),
   })
+  const keyboardCaptionAnchor = useRef<HTMLElement | null>(null)
+  const captionHint = useHoverCardControl({
+    kind: 'hint',
+    delayMs: HINT_OPEN_DELAY_MS,
+    render: () => keyboardCaptionAnchor.current?.dataset.tip,
+  })
   const isMultiple = props.values !== undefined
   const selectedValues: string[] = isMultiple ? props.values : props.value ? [props.value] : []
   const pinnedParentValues = new Set(
@@ -171,7 +182,13 @@ export function Combobox(props: ComboboxProps): JSX.Element {
     )
   }
 
+  function hideOptionCards(): void {
+    keyboardCaptionAnchor.current = null
+    hover.hide()
+  }
+
   function chooseOption(option: FilterOption): void {
+    hideOptionCards()
     if (props.values !== undefined) {
       if (props.values.includes(option.value)) {
         props.onChange(props.values.filter((selected) => selected !== option.value))
@@ -193,7 +210,13 @@ export function Combobox(props: ComboboxProps): JSX.Element {
     if (!availableOptions.length) return
     const nextIndex = (activeIndex + delta + availableOptions.length) % availableOptions.length
     setHighlightedIndex(nextIndex)
-    optionRefs.current[nextIndex]?.scrollIntoView?.({ block: 'nearest' })
+    const nextOption = optionRefs.current[nextIndex]
+    nextOption?.scrollIntoView?.({ block: 'nearest' })
+    const caption = nextOption?.querySelector<HTMLElement>('.combobox-option-caption[data-tip]')
+    if (caption) {
+      keyboardCaptionAnchor.current = caption
+      captionHint.show(caption, { openedBy: 'focus' })
+    }
   }
 
   function setOptionExpanded(option: FilterOption, isExpanded: boolean): void {
@@ -209,7 +232,11 @@ export function Combobox(props: ComboboxProps): JSX.Element {
       label={`${label} picker`}
       className="combobox-menu"
       onClose={onRequestClose}
-      onEscape={hover.dismiss}
+      onEscape={() => {
+        if (!keyboardCaptionAnchor.current) return hover.dismiss()
+        hideOptionCards()
+        return true
+      }}
     >
       <div className="combobox-search-wrap">
         <label className="search-well combobox-search focus-ring-proxy focus-ring-proxy--container">
@@ -229,10 +256,11 @@ export function Combobox(props: ComboboxProps): JSX.Element {
               setSearchQuery(event.target.value)
               onSearchChange?.(event.target.value)
               setHighlightedIndex(0)
-              hover.hide()
+              hideOptionCards()
             }}
+            onBlur={hideOptionCards}
             onKeyDown={(event) => {
-              if (event.key !== 'Escape') hover.hide()
+              if (event.key !== 'Escape') hideOptionCards()
               if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 event.preventDefault()
                 moveHighlight(event.key === 'ArrowDown' ? 1 : -1)
@@ -278,6 +306,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                     aria-selected={isSelected}
                     className={`combobox-option${index === activeIndex ? ' combobox-option--active' : ''}${option.isNested ? ' combobox-option--nested' : ''}`}
                     onMouseEnter={(event) => {
+                      if (keyboardCaptionAnchor.current) hideOptionCards()
                       setHighlightedIndex(index)
                       if (!renderHoverCard || !option.detailSlug) return
                       const menu = event.currentTarget.closest<HTMLElement>('.combobox-menu')
@@ -291,7 +320,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                           window.innerHeight,
                         )
                       ) {
-                        hover.hide()
+                        hideOptionCards()
                         return
                       }
                       hoveredOption.current = option
@@ -302,7 +331,7 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                         isReady: isHoverCardReady ? () => isHoverCardReady(option) : undefined,
                       })
                     }}
-                    onMouseLeave={() => hover.hide()}
+                    onMouseLeave={hideOptionCards}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => chooseOption(option)}
                   >
@@ -317,10 +346,12 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                     {option.caption && (
                       <span
                         className={`combobox-option-caption${option.children?.length ? ' combobox-option-caption--expandable' : ''}`}
+                        data-tip={option.caption}
                         onClick={
                           option.children?.length
                             ? (event) => {
                                 event.stopPropagation()
+                                hideOptionCards()
                                 setOptionExpanded(option, !isOptionExpanded(option))
                               }
                             : undefined
