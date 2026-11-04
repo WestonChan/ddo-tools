@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import capturedGroupPage from '../src/features/resources/queries/fixtures/effects-page-groups.json' with { type: 'json' }
 import effectPage from '../src/features/resources/queries/fixtures/effects-page.json' with { type: 'json' }
 import mightyResponse from '../src/features/resources/queries/fixtures/effects-page-mighty.json' with { type: 'json' }
 import capturedRaidPage from '../src/features/resources/queries/fixtures/quests-page-caught-in-the-web.json' with { type: 'json' }
@@ -126,6 +127,51 @@ test.beforeEach(async ({ context }) => {
 })
 
 for (const width of [1440, 375]) {
+  for (const interaction of ['mouse', 'keyboard']) {
+    test(`fully visible Group captions have no hint by ${interaction} at ${width}px`, async ({
+      page,
+    }) => {
+      await page.addInitScript(() => localStorage.clear())
+      await page.setViewportSize({ width, height: 900 })
+      await page.route('**/v1/effects?*', (route) => route.fulfill({ json: capturedGroupPage }))
+      await page.goto('/resources/items')
+      await page.getByRole('button', { name: 'Bonuses', exact: true }).click()
+      const groupIndex = capturedGroupPage.effects.findIndex(
+        (group) => group.name === 'All Ability Scores',
+      )
+      expect(groupIndex).toBeGreaterThanOrEqual(0)
+      const group = capturedGroupPage.effects[groupIndex]
+      const option = page.getByRole('option', { name: `${group.name} Group`, exact: true })
+      const caption = option.locator('.combobox-option-caption-text')
+      await expect(caption).toHaveText('Group')
+      expect(
+        await caption.evaluate((element) => {
+          const range = document.createRange()
+          range.selectNodeContents(element)
+          return range.getBoundingClientRect().width <= element.getBoundingClientRect().width
+        }),
+      ).toBe(true)
+      if (interaction === 'mouse') {
+        await caption.hover()
+      } else {
+        await page.mouse.move(0, 0)
+        const search = page.getByRole('combobox', { name: 'Bonuses', exact: true })
+        for (let index = 1; index <= groupIndex; index++) {
+          await search.press('ArrowDown')
+          await expect(search).toHaveAttribute(
+            'aria-activedescendant',
+            await page
+              .getByRole('option')
+              .nth(index)
+              .evaluate((element) => element.id),
+          )
+        }
+        await expect(search).toBeFocused()
+      }
+      await page.waitForTimeout(350)
+      await expect(page.getByRole('tooltip')).toHaveCount(0)
+    })
+  }
   for (const captionCase of [
     {
       picker: 'Raid',

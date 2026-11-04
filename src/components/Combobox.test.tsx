@@ -4,13 +4,25 @@ import userEvent from '@testing-library/user-event'
 import { useRef, useState, type JSX } from 'react'
 import { slugFromPathSegment } from '../lib/api'
 import { Combobox, type FilterOption } from './Combobox'
-import { HoverCardProvider } from './HoverCard'
+import { HINT_OPEN_DELAY_MS, HoverCardProvider } from './HoverCard'
 
 const options = [
   { value: 'back', label: 'Back' },
   { value: 'belt', label: 'Belt' },
   { value: 'body', label: 'Body' },
 ]
+
+function setCaptionWidths(captionText: HTMLElement, textWidth: number, captionWidth: number): void {
+  const range = document.createRange()
+  Object.defineProperty(range, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => new DOMRect(0, 0, textWidth, 12),
+  })
+  vi.spyOn(document, 'createRange').mockReturnValue(range)
+  vi.spyOn(captionText, 'getBoundingClientRect').mockReturnValue(
+    new DOMRect(0, 0, captionWidth, 12),
+  )
+}
 
 function SinglePicker(): React.JSX.Element {
   const anchorRef = useRef<HTMLButtonElement>(null)
@@ -266,6 +278,39 @@ describe('Combobox', () => {
     expect(screen.getByRole('option', { name: 'Strength · Insight' })).toBeInTheDocument()
   })
 
+  it.each(['mouse', 'keyboard'])(
+    'rechecks fractional caption overflow for %s after widths change',
+    async (interaction) => {
+      const user = userEvent.setup()
+      render(
+        <HoverCardProvider>
+          <MultiPicker pickerOptions={[{ value: 'group', label: 'Bonus', caption: 'Group' }]} />
+        </HoverCardProvider>,
+      )
+      const caption = screen.getByText('Group')
+      for (const { textWidth, captionWidth, shouldShowHint } of [
+        { textWidth: 60.4, captionWidth: 60.4, shouldShowHint: false },
+        { textWidth: 60.4, captionWidth: 60.1, shouldShowHint: true },
+        { textWidth: 60.4, captionWidth: 60.7, shouldShowHint: false },
+        { textWidth: 0, captionWidth: 0, shouldShowHint: false },
+      ]) {
+        setCaptionWidths(caption, textWidth, captionWidth)
+        if (interaction === 'mouse') {
+          await user.unhover(caption)
+          await user.hover(caption)
+        } else {
+          await user.keyboard('{ArrowDown}')
+        }
+        if (shouldShowHint) {
+          expect(await screen.findByRole('tooltip')).toHaveTextContent('Group')
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, HINT_OPEN_DELAY_MS + 20))
+          expect(screen.queryByRole('tooltip')).toBeNull()
+        }
+      }
+    },
+  )
+
   it('clears keyboard hints on captionless options and an empty search result', async () => {
     const user = userEvent.setup()
     render(
@@ -281,6 +326,9 @@ describe('Combobox', () => {
         />
       </HoverCardProvider>,
     )
+    for (const caption of ['First caption', 'Second caption']) {
+      setCaptionWidths(screen.getByText(caption), 120, 60)
+    }
     await user.keyboard('{ArrowDown}')
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Second caption')
     await user.tab()
@@ -317,6 +365,7 @@ describe('Combobox', () => {
       </HoverCardProvider>,
     )
     const caption = screen.getByText('Stat · Any type')
+    setCaptionWidths(caption, 120, 60)
     await user.hover(caption)
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Stat · Any type')
     await user.click(caption)

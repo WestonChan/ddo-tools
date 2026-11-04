@@ -182,6 +182,21 @@ export function Combobox(props: ComboboxProps): JSX.Element {
     )
   }
 
+  function setCaptionHint(caption: HTMLElement): boolean {
+    const text = caption.querySelector<HTMLElement>('.combobox-option-caption-text')
+    let hint: string | null = null
+    if (text) {
+      const range = document.createRange()
+      range.selectNodeContents(text)
+      if (range.getBoundingClientRect().width > text.getBoundingClientRect().width) {
+        hint = text.textContent
+      }
+    }
+    if (hint) caption.dataset.tip = hint
+    else delete caption.dataset.tip
+    return Boolean(hint)
+  }
+
   function hideOptionCards(): void {
     keyboardCaptionAnchor.current = null
     hover.hide()
@@ -212,8 +227,8 @@ export function Combobox(props: ComboboxProps): JSX.Element {
     setHighlightedIndex(nextIndex)
     const nextOption = optionRefs.current[nextIndex]
     nextOption?.scrollIntoView?.({ block: 'nearest' })
-    const caption = nextOption?.querySelector<HTMLElement>('.combobox-option-caption[data-tip]')
-    if (caption) {
+    const caption = nextOption?.querySelector<HTMLElement>('.combobox-option-caption')
+    if (caption && setCaptionHint(caption)) {
       keyboardCaptionAnchor.current = caption
       captionHint.show(caption, { openedBy: 'focus' })
     }
@@ -346,7 +361,9 @@ export function Combobox(props: ComboboxProps): JSX.Element {
                     {option.caption && (
                       <span
                         className={`combobox-option-caption${option.children?.length ? ' combobox-option-caption--expandable' : ''}`}
-                        data-tip={option.caption}
+                        onMouseEnter={(event) => {
+                          setCaptionHint(event.currentTarget)
+                        }}
                         onClick={
                           option.children?.length
                             ? (event) => {
