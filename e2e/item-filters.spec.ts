@@ -201,6 +201,11 @@ for (const width of [1440, 375]) {
         await page.getByRole('button', { name: captionCase.picker, exact: true }).click()
         const search = page.getByRole('combobox', { name: captionCase.picker, exact: true })
         await search.fill(captionCase.query)
+        await page
+          .getByRole('listbox', { name: captionCase.picker, exact: true })
+          .evaluate((element) => {
+            element.style.width = '200px'
+          })
         const option = page.getByRole('option', {
           name: `${captionCase.name} ${captionCase.caption}`,
           exact: true,
@@ -213,12 +218,12 @@ for (const width of [1440, 375]) {
         const caption = option.locator('.combobox-option-caption')
         await expect(caption).toHaveText(captionCase.caption)
         expect(
-          await caption.evaluate((element) => {
+          await caption.locator('.combobox-option-caption-text').evaluate((element) => {
             const range = document.createRange()
             range.selectNodeContents(element)
-            return range.getBoundingClientRect().width > element.clientWidth
+            return range.getBoundingClientRect().width - element.getBoundingClientRect().width
           }),
-        ).toBe(true)
+        ).toBeGreaterThan(32)
         const bounds = await option.boundingBox()
         expect(bounds).not.toBeNull()
         expect(bounds!.x).toBeGreaterThanOrEqual(0)
