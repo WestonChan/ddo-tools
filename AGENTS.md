@@ -89,7 +89,7 @@ The [DDO Tools project](https://github.com/users/WestonChan/projects/2) is the s
 - **Move the status as the work moves.** Statuses are Backlog, Ready, In progress, Done. Set **In progress** when you start a chunk, and **Done** when it ships (closing the issue sets it). `scripts/project-status.sh <ddo-tools|ddo-data> <issue number> <status>` does it. The orchestrator runs it and reads the issue text, never a sandboxed implementer: Codex's sandbox cannot reach the private project, so the brief carries the issue's text.
 - **Close the issue in the same commit that ships the work.** Put `Closes #N` (or `Closes WestonChan/ddo-data#N` for the other repo) in the commit message: a push to `main` closes the issue and the project moves it to Done. Close the epic once its last sub-issue is closed. Don't leave tracker cleanup as a follow-up commit.
 - **Keep it current.** When scope changes mid-phase, edit the issue (or add one) rather than relying on memory or chat history.
-- The plan files under `.claude/plans.local/` are scratch space for an individual planning session and are not a substitute for the board.
+- A planning session's plan file is scratch space for that session and is not a substitute for the board.
 
 ### Detailed task notes (`docs/notes/`)
 
@@ -101,7 +101,7 @@ The [DDO Tools project](https://github.com/users/WestonChan/projects/2) is the s
 - **Prune notes in the same commit that ships the work**, same rule as the project — when a `🚧` bullet ships, mark it `✅` (or delete it). Don't let notes drift behind reality.
 - **Plain markdown only** (Obsidian renders these). No fenced HTML, no JSX, no code-as-prose tricks. Wikilinks (`[[Resource View]]`) are fine if useful.
 - **`Developer Notes:` block at the bottom** — the user occasionally appends a freeform `Developer Notes:` (or `## Developer Notes`) section at the bottom of a note file as inbox-style raw thoughts. When you encounter one: read every line, fold each item into the appropriate phase-tagged bullet in the structured section above (creating new bullets with the right `🚧 Phase N…` / `⏭ Phase N…` prefix as needed), then **delete the `Developer Notes:` block** in the same edit. If an item is genuinely unscoped, move it into [`docs/notes/To Do.md`](docs/notes/To%20Do.md) rather than leaving it loose. If an item is ambiguous (you can't tell which phase it belongs to or which existing bullet it refines), ask the user before integrating — don't guess.
-- **Notes are not a substitute for `.claude/plans.local/`** — plan files there remain per-session scratch for an individual planning session; notes in `docs/notes/` are durable, feature-scoped backlogs.
+- **Notes are not a substitute for a session's plan file** — a plan file remains per-session scratch for an individual planning session; notes in `docs/notes/` are durable, feature-scoped backlogs.
 
 ## Working directory
 
