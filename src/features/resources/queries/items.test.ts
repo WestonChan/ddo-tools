@@ -84,8 +84,8 @@ const API_ITEM_DETAIL: ApiItemDetail = {
     damage_multiplier: 3.6,
     critical_threat_range: 5,
     critical_multiplier: 2,
-    attack_modifier: 'Strength',
-    damage_modifier: 'Strength',
+    attack_abilities: ['Strength'],
+    damage_abilities: ['Strength'],
     dr_bypass: ['Good', 'Magic', 'Pierce', 'Slash'],
   },
   armor: null,
@@ -334,10 +334,26 @@ describe('mappers', () => {
       damageMultiplier: 1.6,
       criticalThreatRange: 2,
       criticalMultiplier: 2,
-      attackModifier: 'Strength',
-      damageModifier: 'Strength',
+      attackAbilities: capturedWeapon.weapon.attack_abilities,
+      damageAbilities: capturedWeapon.weapon.damage_abilities,
       damageReductionBypasses: ['Chaotic', 'Evil', 'Good', 'Lawful', 'Magic', 'Slash'],
     })
+  })
+
+  it('normalizes null ability lists and rejects missing ability fields', () => {
+    const response = {
+      ...capturedWeapon,
+      weapon: { ...capturedWeapon.weapon, attack_abilities: null, damage_abilities: null },
+    }
+    expect(toItem(response as ApiItemDetail).weaponStats).toMatchObject({
+      attackAbilities: [],
+      damageAbilities: [],
+    })
+    for (const field of ['attack_abilities', 'damage_abilities']) {
+      const missingFieldResponse = structuredClone(response)
+      Reflect.deleteProperty(missingFieldResponse.weapon, field)
+      expect(() => toItem(missingFieldResponse as ApiItemDetail)).toThrow(`weapon.${field}`)
+    }
   })
 
   it('maps a captured shield with both armor and weapon blocks as a shield', () => {

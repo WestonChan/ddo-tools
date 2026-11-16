@@ -229,8 +229,8 @@ export interface ApiWeaponStats {
   damage_multiplier: number | null
   critical_threat_range: number | null
   critical_multiplier: number | null
-  attack_modifier: string | null
-  damage_modifier: string | null
+  attack_abilities: string[] | null
+  damage_abilities: string[] | null
   dr_bypass: string[]
 }
 

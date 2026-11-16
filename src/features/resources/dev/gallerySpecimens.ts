@@ -57,7 +57,7 @@ export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
     section: 'weapons',
     title: 'One-handed, numeric critical',
     branch:
-      'Damage with enhancement, threat range and multiplier from numbers, ability modifiers, material, damage reduction bypasses',
+      'Damage with enhancement, threat range and multiplier from numbers, an attack mod of two abilities beside a damage mod of one, material, damage reduction bypasses',
     itemSlug: gallerySlug('longsword'),
   },
   {

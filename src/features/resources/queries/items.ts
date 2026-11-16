@@ -134,8 +134,8 @@ export interface ItemWeaponStats {
   weaponType: string
   proficiency: string | null
   handedness: string | null
-  attackModifier: string | null
-  damageModifier: string | null
+  attackAbilities: string[]
+  damageAbilities: string[]
   damageReductionBypasses: string[]
 }
 
@@ -375,7 +375,16 @@ export function toItem(
     sets: 'array',
   })
   if (apiItemDetail.weapon)
-    assertApiResponseFields(apiItemDetail.weapon, path, { dr_bypass: 'array' }, 'weapon.')
+    assertApiResponseFields(
+      apiItemDetail.weapon,
+      path,
+      {
+        dr_bypass: 'array',
+        attack_abilities: 'nullable-array',
+        damage_abilities: 'nullable-array',
+      },
+      'weapon.',
+    )
   apiItemDetail.augment_slots.forEach((slot, index) => {
     assertApiResponseFields(slot, path, { options: 'array' }, `augment_slots[${index}].`)
   })
@@ -408,8 +417,8 @@ export function toItem(
           weaponType: apiItemDetail.weapon.weapon_type,
           proficiency: apiItemDetail.weapon.proficiency,
           handedness: apiItemDetail.weapon.handedness,
-          attackModifier: apiItemDetail.weapon.attack_modifier,
-          damageModifier: apiItemDetail.weapon.damage_modifier,
+          attackAbilities: apiItemDetail.weapon.attack_abilities ?? [],
+          damageAbilities: apiItemDetail.weapon.damage_abilities ?? [],
           damageReductionBypasses: apiItemDetail.weapon.dr_bypass,
         }
       : null,

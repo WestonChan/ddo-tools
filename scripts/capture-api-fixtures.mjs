@@ -3,6 +3,8 @@ import { parseArgs } from 'node:util'
 
 const manifest = {
   'src/lib/api/openapi/v1.json': '/v1/openapi.json',
+  'src/features/resources/queries/fixtures/item-legendary-rapier-of-the-oozing-hunger.json':
+    '/v1/items/legendary-rapier-of-the-oozing-hunger',
   'src/features/resources/queries/fixtures/weapon-abilities.json': '/v1/weapon-abilities?limit=6',
   'src/features/resources/queries/fixtures/item-materials.json': '/v1/item-materials?limit=50',
   'src/features/resources/queries/fixtures/augment-slot-types-filter-families.json':

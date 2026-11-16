@@ -11,6 +11,7 @@ import { render } from '../../../../test/renderWithQueryClient'
 import { HoverCardProvider } from '../../../../components'
 import type { ApiItemDetail, ApiSetDetail, ApiWeaponStats } from '../../../../lib/api'
 import capturedWeaponResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedRapierResponse from '../../queries/fixtures/item-legendary-rapier-of-the-oozing-hunger.json'
 import capturedRuneArmResponse from '../../queries/fixtures/item-blight-inferno.json'
 import capturedArmorResponse from '../../queries/fixtures/item-beholder-plate-armor.json'
 import capturedShieldResponse from '../../queries/fixtures/item-tower-shield-of-the-fallen-age.json'
@@ -158,12 +159,40 @@ function detailStatText(container: HTMLElement): Array<string | null> {
 }
 
 describe('ItemDetailCard details', () => {
+  it('shows several abilities as comma-joined abbreviations identically in pane and hover', () => {
+    const item = toCapturedItem(apiFixture(capturedRapierResponse))
+    const abbreviationByAbility: Record<string, string> = {
+      Strength: 'STR',
+      Dexterity: 'DEX',
+      Constitution: 'CON',
+      Intelligence: 'INT',
+      Wisdom: 'WIS',
+      Charisma: 'CHA',
+    }
+    const { container, rerender } = renderItemDetailCard(item)
+    for (const [label, abilities] of [
+      ['Attack mod', capturedRapierResponse.weapon.attack_abilities],
+      ['Damage mod', capturedRapierResponse.weapon.damage_abilities],
+    ] as const) {
+      const cell = Array.from(container.querySelectorAll('.detail-fact-grid__cell')).find((cell) =>
+        cell.textContent?.startsWith(label),
+      )
+      expect(cell).toHaveTextContent(
+        label + abilities.map((ability) => abbreviationByAbility[ability]).join(', '),
+      )
+      expect(cell?.querySelector('[title]')).toHaveAttribute('title', abilities.join(', '))
+    }
+    const paneStats = detailStatText(container)
+    rerender(<ItemHoverCard item={item} />)
+    expect(detailStatText(container)).toEqual(paneStats)
+  })
+
   it('shows mapped weapon modifiers as hinted facts and keeps DR bypass visible outside extras', async () => {
     const item = weaponItem()
     const { container } = renderItemDetailCard(item)
     expect(item.weaponStats).toMatchObject({
-      attackModifier: 'Strength',
-      damageModifier: 'Strength',
+      attackAbilities: ['Strength'],
+      damageAbilities: ['Strength'],
     })
     expect(detailStatText(container).slice(0, 5)).toEqual([
       'Damage1.6[2d6]+5',
@@ -184,22 +213,34 @@ describe('ItemDetailCard details', () => {
     expect(container.querySelector('.detail-fact-grid')).not.toHaveTextContent('Enhancement')
   })
 
-  it('omits absent modifiers and shows distinct ability abbreviations with their full-name hints', () => {
-    const { container, rerender } = renderItemDetailCard(
-      weaponItem({ attack_modifier: null, damage_modifier: null }),
+  it.each([null, []])(
+    'omits absent modifiers (%j) and shows distinct ability abbreviations with their full-name hints',
+    (absentAbilities) => {
+      const { container, rerender } = renderItemDetailCard(
+        weaponItem({ attack_abilities: absentAbilities, damage_abilities: absentAbilities }),
+      )
+      expect(detailStatText(container)).toEqual([
+        'Damage1.6[2d6]+5',
+        'Crit range19–20',
+        'Crit multiplier×2',
+      ])
+      rerender(
+        <ItemDetailCard
+          item={weaponItem({ attack_abilities: ['Dexterity'], damage_abilities: ['Intelligence'] })}
+        />,
+      )
+      expect(container.querySelector('[title="Dexterity"]')).toHaveTextContent('DEX')
+      expect(container.querySelector('[title="Intelligence"]')).toHaveTextContent('INT')
+    },
+  )
+
+  it('keeps an unfamiliar ability name visible instead of dropping its fact', () => {
+    const { container } = renderItemDetailCard(
+      weaponItem({ attack_abilities: ['Unfamiliar ability'], damage_abilities: [] }),
     )
-    expect(detailStatText(container)).toEqual([
-      'Damage1.6[2d6]+5',
-      'Crit range19–20',
-      'Crit multiplier×2',
-    ])
-    rerender(
-      <ItemDetailCard
-        item={weaponItem({ attack_modifier: 'Dexterity', damage_modifier: 'Intelligence' })}
-      />,
+    expect(container.querySelector('[title="Unfamiliar ability"]')).toHaveTextContent(
+      'Unfamiliar ability',
     )
-    expect(container.querySelector('[title="Dexterity"]')).toHaveTextContent('DEX')
-    expect(container.querySelector('[title="Intelligence"]')).toHaveTextContent('INT')
   })
 
   it('keeps a weapon’s primary rows above one toggle and reveals its attributes and extras', async () => {

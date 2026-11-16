@@ -239,17 +239,18 @@ function toPrimaryWeaponStats(
   if (!range && !multiplier && critical) {
     primaryStats.push({ label: 'Critical', value: critical, isNumeric: false })
   }
-  for (const [label, modifier] of [
-    ['Attack mod', weaponStats.attackModifier],
-    ['Damage mod', weaponStats.damageModifier],
+  for (const [label, abilities] of [
+    ['Attack mod', weaponStats.attackAbilities],
+    ['Damage mod', weaponStats.damageAbilities],
   ] as const) {
-    const ability = modifier?.trim()
-    if (ability && ABILITY_ABBREVIATION_BY_NAME[ability]) {
+    if (abilities.length > 0) {
       primaryStats.push({
         label,
-        value: ABILITY_ABBREVIATION_BY_NAME[ability],
+        value: abilities
+          .map((ability) => ABILITY_ABBREVIATION_BY_NAME[ability] ?? ability)
+          .join(', '),
         isNumeric: false,
-        hint: ability,
+        hint: abilities.join(', '),
       })
     }
   }
