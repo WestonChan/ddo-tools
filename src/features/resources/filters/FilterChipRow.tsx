@@ -38,7 +38,6 @@ interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue
   onChange: (values: Values) => void
   onClearAll: () => void
   extraControls?: Record<string, ReactNode>
-  searchControls?: Record<string, ReactNode>
   focusFallbackRef?: RefObject<HTMLElement | null>
   onPickerOpen?: (key: keyof Values) => void
   loadingPickers?: ReadonlySet<string>
@@ -48,6 +47,33 @@ interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue
   renderPickerHover?: (key: keyof Values, option: FilterOption) => ReactNode
   prefetchPickerHover?: (key: keyof Values, option: FilterOption) => Promise<unknown>
   isPickerHoverReady?: (key: keyof Values, option: FilterOption) => boolean
+}
+
+function MatchModeControl({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: 'any' | 'all'
+  onChange: (match: 'any' | 'all') => void
+}): JSX.Element {
+  return (
+    <span className="filter-match" aria-label={`${label} match mode`}>
+      {(['any', 'all'] as const).map((match) => (
+        <button
+          key={match}
+          type="button"
+          className="focus-ring-proxy"
+          aria-pressed={value === match}
+          data-tip={`Match ${match}: ${match === 'any' ? 'at least one selected value' : 'every selected value'}`}
+          onClick={() => onChange(match)}
+        >
+          {match === 'any' ? 'Any' : 'All'}
+        </button>
+      ))}
+    </span>
+  )
 }
 
 interface FilterChipProps {
@@ -316,7 +342,6 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
   onChange,
   onClearAll,
   extraControls,
-  searchControls,
   focusFallbackRef,
   onPickerOpen,
   loadingPickers,
@@ -427,7 +452,18 @@ export function FilterChipRow<Values extends { [Key in keyof Values]: FilterValu
                   setOpenKey(null)
                 }}
                 extraControl={extraControls?.[definition.key]}
-                searchControl={searchControls?.[definition.key]}
+                searchControl={
+                  definition.kind === 'multi' && definition.matchKey ? (
+                    <MatchModeControl
+                      label={definition.label}
+                      value={values[definition.matchKey] === 'all' ? 'all' : 'any'}
+                      onChange={(match) => {
+                        if (definition.matchKey)
+                          onChange({ ...values, [definition.matchKey]: match })
+                      }}
+                    />
+                  ) : undefined
+                }
                 rangeCommitRef={rangeCommitRef}
                 isLoading={loadingPickers?.has(String(definition.key))}
                 errorContent={pickerErrors?.[String(definition.key)]}

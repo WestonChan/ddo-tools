@@ -9,6 +9,7 @@ interface TestFilterValues {
   ml: NumericRange
   slot: string
   enchantments: string[]
+  enchantmentMatch: 'any' | 'all'
   isRareOnly: boolean
   isRaidOnly: boolean
 }
@@ -52,12 +53,13 @@ const definitions: FilterDefinition<TestFilterValues>[] = [
   { key: 'isRaidOnly', label: 'Raid only', kind: 'toggle', appliedGroupLabel: 'Show' },
 ]
 
-function Row(): React.JSX.Element {
+function Row({ hasMatchMode = false }: { hasMatchMode?: boolean }): React.JSX.Element {
   const searchRef = useRef<HTMLInputElement>(null)
   const [values, setValues] = useState<TestFilterValues>({
     ml: { min: '', max: '' },
     slot: '',
     enchantments: [],
+    enchantmentMatch: 'any',
     isRareOnly: false,
     isRaidOnly: false,
   })
@@ -65,7 +67,11 @@ function Row(): React.JSX.Element {
     <>
       <input ref={searchRef} aria-label="Search" />
       <FilterChipRow
-        definitions={definitions}
+        definitions={definitions.map<FilterDefinition<TestFilterValues>>((definition) =>
+          definition.kind === 'multi' && hasMatchMode
+            ? { ...definition, matchKey: 'enchantmentMatch' }
+            : definition,
+        )}
         values={values}
         onChange={setValues}
         onClearAll={() =>
@@ -73,6 +79,7 @@ function Row(): React.JSX.Element {
             ml: { min: '', max: '' },
             slot: '',
             enchantments: [],
+            enchantmentMatch: 'any',
             isRareOnly: false,
             isRaidOnly: false,
           })
@@ -86,6 +93,33 @@ function Row(): React.JSX.Element {
 afterEach(cleanup)
 
 describe('FilterChipRow', () => {
+  it('derives match controls and applied labels from the multi definition', async () => {
+    render(<Row hasMatchMode />)
+    await userEvent.click(screen.getByRole('button', { name: 'Gear slot' }))
+    expect(screen.queryByRole('button', { name: 'All' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.getByLabelText('Enchantments match mode')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'All' }))
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(screen.getByRole('option', { name: 'Strength' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Constitution' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Show applied · 2' }))
+    expect(screen.getByText('Enchantments · all')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Remove Enchantments: Strength' }))
+    expect(
+      screen.getByText('Enchantments', { selector: '.filter-applied-label' }),
+    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Clear Enchantments' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('omits the match control when a multi definition has no match key', async () => {
+    render(<Row />)
+    await userEvent.click(screen.getByRole('button', { name: 'Enchantments' }))
+    expect(screen.queryByRole('button', { name: 'All' })).toBeNull()
+  })
+
   it('tabs to one chip, roves in order, opens with Enter, and returns on Escape', async () => {
     render(<Row />)
     const search = screen.getByRole('textbox', { name: 'Search' })

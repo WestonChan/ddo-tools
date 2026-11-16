@@ -78,37 +78,6 @@ function rejectedItemFilter(error: unknown, filters: ItemListFilters): 'bonuses'
   return null
 }
 
-function MatchModeControl({
-  subject,
-  value,
-  onChange,
-}: {
-  subject: 'Bonus' | 'Set'
-  value: 'any' | 'all'
-  onChange: (match: 'any' | 'all') => void
-}): JSX.Element {
-  return (
-    <span className="resources-filter-match" aria-label={`${subject} match mode`}>
-      {(['any', 'all'] as const).map((match) => (
-        <button
-          key={match}
-          type="button"
-          className="focus-ring-proxy"
-          aria-pressed={value === match}
-          data-tip={
-            subject === 'Bonus'
-              ? `Match ${match}: item has ${match === 'any' ? 'at least one selected bonus' : 'every selected bonus'}`
-              : `Match ${match}: item belongs to ${match === 'any' ? 'at least one selected set' : 'every selected set'}`
-          }
-          onClick={() => onChange(match)}
-        >
-          {match === 'any' ? 'Any' : 'All'}
-        </button>
-      ))}
-    </span>
-  )
-}
-
 const ITEM_COLUMNS = [
   {
     key: 'name',
@@ -500,22 +469,6 @@ export function ItemPicker({
             ? isDetailQueryReady(queryClient, effectDetailQueryOptions(option.detailSlug))
             : true
         }
-        searchControls={{
-          bonuses: (
-            <MatchModeControl
-              subject="Bonus"
-              value={filters.bonusMatch}
-              onChange={(match) => onFiltersChange({ ...filters, bonusMatch: match })}
-            />
-          ),
-          set: (
-            <MatchModeControl
-              subject="Set"
-              value={filters.setMatch}
-              onChange={(match) => onFiltersChange({ ...filters, setMatch: match })}
-            />
-          ),
-        }}
         extraControls={{
           bonuses: (
             <label

@@ -7,6 +7,14 @@ export interface NumericRange {
 
 export type FilterValue = string | string[] | NumericRange | boolean
 
+type MatchKeyOf<Values> = {
+  [Key in keyof Values & string]: Values[Key] extends 'any' | 'all'
+    ? 'any' | 'all' extends Values[Key]
+      ? Key
+      : never
+    : never
+}[keyof Values & string]
+
 export interface RangeDefinition {
   minLabel: string
   maxLabel: string
@@ -37,6 +45,7 @@ export type AnyFilterDefinition =
       shouldPreserveOptionOrder?: boolean
       optionCount?: number
       hoverKind?: string
+      matchKey?: string
     })
   | (FilterDefinitionBase<string> & { kind: 'range'; range: RangeDefinition })
   | (FilterDefinitionBase<string> & { kind: 'toggle' })
@@ -47,6 +56,7 @@ export type FilterDefinition<Values extends { [Key in keyof Values]: FilterValue
     : Values[Key] extends string[]
       ? FilterDefinitionBase<Key> & {
           kind: 'multi'
+          matchKey?: MatchKeyOf<Values>
           options?: FilterOption[]
           searchPlaceholder?: string
           isServerSearched?: boolean
@@ -97,7 +107,14 @@ export function appliedFilterValues<Values extends { [Key in keyof Values]: Filt
 ): AppliedFilterValue[] {
   return definitions.flatMap<AppliedFilterValue>((definition) => {
     const selectedValue = values[definition.key]
-    const groupLabel = definition.appliedGroupLabel ?? definition.shortLabel ?? definition.label
+    const groupLabel =
+      definition.appliedGroupLabel ??
+      (definition.kind === 'multi' &&
+      definition.matchKey &&
+      Array.isArray(selectedValue) &&
+      selectedValue.length > 1
+        ? `${definition.label} · ${String(values[definition.matchKey])}`
+        : (definition.shortLabel ?? definition.label))
     if (definition.kind === 'range') {
       if (!isNumericRange(selectedValue) || !isFilterSet(definition, selectedValue)) return []
       return [
