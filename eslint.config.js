@@ -7,6 +7,7 @@ import eslintConfigPrettier from 'eslint-config-prettier/flat'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import { noComments } from './eslint-rules/no-comments.js'
 import { noCaseCollidingModules } from './eslint-rules/no-case-colliding-modules.js'
+import { importsFirst } from './eslint-rules/imports-first.js'
 
 const FEATURE_NAMES = ['build', 'character', 'gear', 'landing', 'resources', 'settings']
 
@@ -304,6 +305,21 @@ const booleanNamingRules = {
 export default defineConfig([
   globalIgnores(['dist']),
   {
+    plugins: {
+      local: {
+        rules: {
+          'no-comments': noComments,
+          'no-case-colliding-modules': noCaseCollidingModules,
+          'imports-first': importsFirst,
+        },
+      },
+    },
+    rules: {
+      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
+      'local/imports-first': 'error',
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
@@ -314,11 +330,6 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
-    },
-    plugins: {
-      local: {
-        rules: { 'no-comments': noComments, 'no-case-colliding-modules': noCaseCollidingModules },
-      },
     },
     rules: {
       'local/no-comments': 'error',
