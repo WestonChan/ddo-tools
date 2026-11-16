@@ -77,6 +77,21 @@ afterEach(() => {
   fetchSearched.mockReset()
 })
 
+it('keeps option sets when a parent renders with unchanged query data and values', async () => {
+  const optionSets = vi.spyOn(plainSource, 'toOptionSet')
+  fetchPlain.mockResolvedValue({ names: ['Loaded option'], total: 1 })
+  const { rerender } = render(<Row />)
+  await userEvent.click(screen.getByRole('button', { name: 'Plain' }))
+  expect(await screen.findByRole('option', { name: 'Loaded option' })).toBeInTheDocument()
+  optionSets.mockClear()
+
+  rerender(<Row />)
+  rerender(<Row />)
+
+  expect(optionSets).not.toHaveBeenCalled()
+  expect(screen.getByRole('option', { name: 'Loaded option' })).toBeInTheDocument()
+})
+
 it.each(declarations)(
   'loads $label only on open, shows loading and uses its own rows',
   async (declaration) => {

@@ -1,5 +1,10 @@
 import { useMemo, useState, type JSX } from 'react'
-import { hashKey, useQueries, type UseQueryOptions } from '@tanstack/react-query'
+import {
+  hashKey,
+  useQueries,
+  type UseQueryOptions,
+  type UseQueryResult,
+} from '@tanstack/react-query'
 import { ApiErrorNotice } from '../../../components'
 import { useDebouncedValue } from '../../../hooks'
 import { FilterChipRow, type FilterChipRowProps } from './FilterChipRow'
@@ -10,6 +15,17 @@ type DeclaredFilterChipRowProps<Values extends { [Key in keyof Values]: FilterVa
   FilterChipRowProps<Values>,
   'definitions' | 'onPickerOpen' | 'onPickerSearch' | 'loadingPickers' | 'pickerErrors'
 > & { declarations: readonly DeclaredFilter<Values>[] }
+
+function optionQueryStates(
+  results: UseQueryResult[],
+): Pick<UseQueryResult, 'data' | 'error' | 'isPending' | 'refetch'>[] {
+  return results.map(({ data, error, isPending, refetch }) => ({
+    data,
+    error,
+    isPending,
+    refetch,
+  }))
+}
 
 export function DeclaredFilterChipRow<Values extends { [Key in keyof Values]: FilterValue }>({
   declarations,
@@ -48,7 +64,7 @@ export function DeclaredFilterChipRow<Values extends { [Key in keyof Values]: Fi
       queriesByKey,
     }
   }, [declarations, openedKeys, searchQueryByKey, debouncedSearchQueryByKey])
-  const queryResults = useQueries({ queries: queryPlan.queries })
+  const queryResults = useQueries({ queries: queryPlan.queries, combine: optionQueryStates })
   const { definitions, loadingPickers, pickerErrors } = useMemo(() => {
     const resultsByHash = new Map(
       queryPlan.hashes.map((hash, index) => [hash, queryResults[index]]),
