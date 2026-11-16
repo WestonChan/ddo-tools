@@ -1,7 +1,8 @@
+import type { ItemListFilters } from '../queries/itemList'
 import type { FilterDefinition } from '../filters/filterModel'
 import { statBonusFilterValue } from '../../../lib/api'
-import type { EffectVocabularyRow, ItemListFilters, RaidQuest } from '../queries/items'
-import { effectKindLabel } from './effectKindLabel'
+import type { EffectVocabularyRow, RaidQuest } from '../queries/items'
+import { effectKindLabel } from '../queries/effectKindLabel'
 
 export function itemFilterDefinitions(
   equipmentSlots: string[],

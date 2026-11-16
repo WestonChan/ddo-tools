@@ -395,6 +395,33 @@ export interface ApiEquipmentSlot {
   category: string
 }
 
+export interface ApiWeaponAbility {
+  slug: Slug
+  name: string
+  sort_order: number
+  attack_item_count: number
+  damage_item_count: number
+}
+
+export interface ApiItemMaterial {
+  name: string
+  sort_order: number
+  item_count: number
+}
+
+export interface ApiAugmentSlotType {
+  slug: Slug
+  label: string
+  family: string
+  item_count: number
+}
+
+export interface ApiCraftingSystemRow {
+  slug: Slug
+  name: string
+  item_count: number
+}
+
 export interface ApiEffectVocabularyRow {
   matched_alias: string | null
   slug: Slug

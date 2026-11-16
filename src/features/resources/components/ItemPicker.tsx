@@ -32,13 +32,8 @@ import {
   useResourceListState,
 } from '../resourceListState'
 import { appliedFilterValues } from '../filters/filterModel'
-import {
-  EMPTY_ITEM_FILTERS,
-  type ItemColumnKey,
-  type ItemListFilters,
-  type ItemSummary,
-  type RaidQuest,
-} from '../queries/items'
+import { type ItemSummary, type RaidQuest } from '../queries/items'
+import { EMPTY_ITEM_FILTERS, type ItemColumnKey, type ItemListFilters } from '../queries/itemList'
 import {
   useAdventurePackNames,
   useEffectVocabulary,

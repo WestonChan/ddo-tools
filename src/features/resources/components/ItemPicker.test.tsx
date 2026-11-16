@@ -18,14 +18,13 @@ import mightyResponse from '../queries/fixtures/effects-page-mighty.json'
 import strengthResponse from '../queries/fixtures/effects-page-strength.json'
 import spellsightResponse from '../queries/fixtures/effects-page-spellsight.json'
 import { ItemPicker } from './ItemPicker'
+import { fetchEffectVocabulary, type EffectVocabularyRow, type ItemSummary } from '../queries/items'
 import {
+  EMPTY_ITEM_FILTERS,
   ITEM_COLUMN_KEYS,
-  fetchEffectVocabulary,
   itemListParameters,
-  type EffectVocabularyRow,
   type ItemListFilters,
-  type ItemSummary,
-} from '../queries/items'
+} from '../queries/itemList'
 import { resetPersistedStateForTests } from '../../../lib/persistedState'
 import { useResourceListState } from '../resourceListState'
 
@@ -405,6 +404,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(useItemPageMock.mock.lastCall?.[3]).toBeNull()
     expect(screen.getByRole('columnheader', { name: 'ML' })).toHaveAttribute('aria-sort', 'none')
     expect(latestFilters()).toEqual({
+      ...EMPTY_ITEM_FILTERS,
       ml: { min: '20', max: '32' },
       slot: ['Back', 'Ring'],
       bonuses: ['Strength', 'Vorpal'],

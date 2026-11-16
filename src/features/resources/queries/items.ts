@@ -8,10 +8,12 @@ import {
   isApiEffectList,
   isApiEffectDetail,
   isApiEffectVocabularyRow,
-  matchableFilterParameters,
-  singleValueFilterParameters,
   WHOLE_LIST_PAGE_LIMIT,
   type ApiAdventurePack,
+  type ApiWeaponAbility,
+  type ApiItemMaterial,
+  type ApiAugmentSlotType,
+  type ApiCraftingSystemRow,
   type ApiAugment,
   type ApiAugmentDetail,
   type ApiCraftingRecipe,
@@ -31,30 +33,11 @@ import {
   type ApiEquipmentSlot,
   type ApiLootQuest,
   type ApiModifier,
-  type ApiQueryParameters,
   type ApiQuestSummary,
   type ApiEffectDamage,
 } from '../../../lib/api'
 import type { IngredientCost } from '../../../lib/ingredientCost'
 import { toNotes, type Note } from './notes'
-
-export const ITEM_PAGE_SIZE = 200
-const ITEM_SORT_FIELD_BY_COLUMN = {
-  name: 'name',
-  ml: 'minimum_level',
-  slot: 'slot',
-  pack: 'pack',
-  raid: 'is_raid',
-  rare: 'is_rare',
-} as const satisfies Record<string, string>
-
-export type ItemColumnKey = keyof typeof ITEM_SORT_FIELD_BY_COLUMN
-
-export const ITEM_COLUMN_KEYS = Object.keys(ITEM_SORT_FIELD_BY_COLUMN) as ItemColumnKey[]
-
-export function isItemSortColumn(columnKey: string): columnKey is ItemColumnKey {
-  return Object.hasOwn(ITEM_SORT_FIELD_BY_COLUMN, columnKey)
-}
 
 export interface ItemSummary {
   slug: Slug
@@ -66,42 +49,6 @@ export interface ItemSummary {
   isRaidLoot: boolean
   isRareLoot: boolean
   isLegacy: boolean
-}
-
-export interface ItemListFilters {
-  ml: { min: string; max: string }
-  slot: string[]
-  bonuses: string[]
-  bonusMatch: 'any' | 'all'
-  set: string[]
-  setMatch: 'any' | 'all'
-  pack: string[]
-  raid: string[]
-  isRareOnly: boolean
-  isRaidOnly: boolean
-}
-
-export interface ItemListSort {
-  key: string
-  direction: 'asc' | 'desc'
-}
-
-export const EMPTY_ITEM_FILTERS: ItemListFilters = {
-  ml: { min: '', max: '' },
-  slot: [],
-  bonuses: [],
-  bonusMatch: 'any',
-  set: [],
-  setMatch: 'any',
-  pack: [],
-  raid: [],
-  isRareOnly: false,
-  isRaidOnly: false,
-}
-
-export interface ItemPage {
-  total: number
-  items: ItemSummary[]
 }
 
 export interface ItemAttributes {
@@ -658,53 +605,6 @@ function toCraftingRecipe(apiRecipe: ApiCraftingRecipe): CraftingRecipe {
   }
 }
 
-export function itemListParameters(
-  filters: ItemListFilters,
-  searchQuery: string,
-  includesSetBonuses: boolean,
-  offset = 0,
-  sort: ItemListSort | null = null,
-): ApiQueryParameters {
-  const sortField =
-    sort && isItemSortColumn(sort.key) ? ITEM_SORT_FIELD_BY_COLUMN[sort.key] : undefined
-  return {
-    q: searchQuery.trim() || undefined,
-    ...singleValueFilterParameters('slot', filters.slot),
-    min_level: filters.ml.min || undefined,
-    max_level: filters.ml.max || undefined,
-    ...matchableFilterParameters('pack', filters.pack),
-    ...matchableFilterParameters('quest', filters.raid),
-    ...matchableFilterParameters('bonus', filters.bonuses, filters.bonusMatch),
-    ...matchableFilterParameters('set', filters.set, filters.setMatch),
-    include_set_bonuses: filters.bonuses.length > 0 && includesSetBonuses,
-    rare: filters.isRareOnly,
-    raid: filters.isRaidOnly,
-    sort: sortField
-      ? [
-          `${sort?.direction === 'desc' ? '-' : ''}${sortField}`,
-          ...(sortField === 'name' ? [] : ['name']),
-        ]
-      : undefined,
-    limit: ITEM_PAGE_SIZE,
-    offset,
-  }
-}
-
-export async function fetchItemPage(
-  filters: ItemListFilters,
-  searchQuery: string,
-  includesSetBonuses: boolean,
-  offset = 0,
-  sort: ItemListSort | null = null,
-): Promise<ItemPage> {
-  const page = await fetchApiPage<ApiItemRow, 'items'>(
-    '/v1/items',
-    'items',
-    itemListParameters(filters, searchQuery, includesSetBonuses, offset, sort),
-  )
-  return { total: page.total, items: page.rows.map((row, index) => toItemSummary(row, index)) }
-}
-
 export async function fetchItem(slug: Slug): Promise<Item> {
   const path = apiDetailPath('items', slug)
   const response = await fetchValidatedApiJson<ApiItemDetail>(
@@ -751,6 +651,80 @@ export async function fetchEquipmentSlotNames(): Promise<string[]> {
       `equipment_slots[${index}].`,
     )
     return slot.name
+  })
+}
+
+export async function fetchWeaponAbilities(): Promise<ApiWeaponAbility[]> {
+  const page = await fetchApiPage<ApiWeaponAbility, 'weapon_abilities'>(
+    '/v1/weapon-abilities',
+    'weapon_abilities',
+    { limit: WHOLE_LIST_PAGE_LIMIT },
+  )
+  return page.rows.map((row, index) => {
+    assertApiResponseFields(
+      row,
+      '/v1/weapon-abilities',
+      {
+        slug: 'string',
+        name: 'string',
+        sort_order: 'number',
+        attack_item_count: 'number',
+        damage_item_count: 'number',
+      },
+      `weapon_abilities[${index}].`,
+    )
+    return row
+  })
+}
+
+export async function fetchItemMaterials(): Promise<ApiItemMaterial[]> {
+  const page = await fetchApiPage<ApiItemMaterial, 'item_materials'>(
+    '/v1/item-materials',
+    'item_materials',
+    { limit: WHOLE_LIST_PAGE_LIMIT },
+  )
+  return page.rows.map((row, index) => {
+    assertApiResponseFields(
+      row,
+      '/v1/item-materials',
+      { name: 'string', sort_order: 'number', item_count: 'number' },
+      `item_materials[${index}].`,
+    )
+    return row
+  })
+}
+
+export async function fetchSocketTypes(): Promise<ApiAugmentSlotType[]> {
+  const page = await fetchApiPage<ApiAugmentSlotType, 'augment_slot_types'>(
+    '/v1/augment-slot-types',
+    'augment_slot_types',
+    { limit: WHOLE_LIST_PAGE_LIMIT, family: ['standard', 'dino', 'lamordia', 'upgrade'] },
+  )
+  return page.rows.map((row, index) => {
+    assertApiResponseFields(
+      row,
+      '/v1/augment-slot-types',
+      { slug: 'string', label: 'string', family: 'string', item_count: 'number' },
+      `augment_slot_types[${index}].`,
+    )
+    return row
+  })
+}
+
+export async function fetchCraftingSystemVocabulary(): Promise<ApiCraftingSystemRow[]> {
+  const page = await fetchApiPage<ApiCraftingSystemRow, 'crafting_systems'>(
+    '/v1/crafting-systems',
+    'crafting_systems',
+    { limit: WHOLE_LIST_PAGE_LIMIT },
+  )
+  return page.rows.map((row, index) => {
+    assertApiResponseFields(
+      row,
+      '/v1/crafting-systems',
+      { slug: 'string', name: 'string', item_count: 'number' },
+      `crafting_systems[${index}].`,
+    )
+    return row
   })
 }
 

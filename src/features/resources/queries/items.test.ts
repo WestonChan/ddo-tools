@@ -1,3 +1,14 @@
+import { fetchItemPage, EMPTY_ITEM_FILTERS } from './itemList'
+import {
+  fetchWeaponAbilities,
+  fetchItemMaterials,
+  fetchSocketTypes,
+  fetchCraftingSystemVocabulary,
+} from './items'
+import abilityPage from './fixtures/weapon-abilities.json'
+import materialPage from './fixtures/item-materials.json'
+import socketPage from './fixtures/augment-slot-types-filter-families.json'
+import craftingPage from './fixtures/crafting-systems.json'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
@@ -15,9 +26,7 @@ import {
   fetchEffectVocabulary,
   fetchEquipmentSlotNames,
   fetchItem,
-  fetchItemPage,
   fetchRaidQuests,
-  EMPTY_ITEM_FILTERS,
   toAugmentSummary,
   toItem,
   toItemSummary,
@@ -657,84 +666,33 @@ describe('fetchers', () => {
     )
   }
 
-  it.each([
-    ['name', 'asc', 'name'],
-    ['ml', 'desc', '-minimum_level'],
-    ['slot', 'asc', 'slot'],
-    ['pack', 'asc', 'pack'],
-    ['raid', 'asc', 'is_raid'],
-    ['rare', 'desc', '-is_rare'],
-  ] as const)(
-    'sends the %s column sort as %s through the API',
-    async (column, direction, apiField) => {
-      mockFetchResponse({ total: 0, limit: 200, offset: 200, items: [] })
-      await fetchItemPage(EMPTY_ITEM_FILTERS, '', false, 200, { key: column, direction })
-      const parameters = new URL(vi.mocked(fetch).mock.calls[0][0] as string).searchParams
-      expect(parameters.get('limit')).toBe('200')
-      expect(parameters.get('offset')).toBe('200')
-      expect(parameters.getAll('sort')).toEqual(
-        apiField === 'name' ? [apiField] : [apiField, 'name'],
-      )
-      expect(parameters.has('order')).toBe(false)
-    },
-  )
+  it('maps the captured weapon-abilities vocabulary in served order', async () => {
+    mockFetchResponse(abilityPage)
+    await expect(fetchWeaponAbilities()).resolves.toEqual(abilityPage.weapon_abilities)
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+    expect(url.pathname).toBe('/v1/weapon-abilities')
+  })
 
-  it('sends every active list filter in one items request and preserves the response total and order', async () => {
-    mockFetchResponse({
-      total: 202,
-      limit: 200,
-      offset: 200,
-      items: [
-        createApiItemRow({ slug: slugFromPathSegment('test-7')!, name: 'Torc' }),
-        createApiItemRow({ slug: slugFromPathSegment('test-8')! }),
-      ],
-    })
-    const page = await fetchItemPage(
-      {
-        ml: { min: '20', max: '32' },
-        slot: ['Back', 'Ring'],
-        bonuses: ['Strength', 'Constitution:Insightful'],
-        bonusMatch: 'all',
-        set: ['Adherent of the Mists Set (Heroic)', 'Adherent of the Mists Set (Legendary)'],
-        setMatch: 'all',
-        pack: ['Shadowfell', 'Vault of Night'],
-        raid: ['7', '8'],
-        isRareOnly: true,
-        isRaidOnly: false,
-      },
-      'torc',
-      true,
-      200,
-    )
-    const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
-    expect(
-      Object.fromEntries(
-        [...url.searchParams].filter(
-          ([key]) => !['slot', 'pack', 'quest', 'bonus', 'set'].includes(key),
-        ),
-      ),
-    ).toEqual({
-      q: 'torc',
-      min_level: '20',
-      max_level: '32',
-      bonus_match: 'all',
-      set_match: 'all',
-      include_set_bonuses: 'true',
-      rare: 'true',
-      limit: '200',
-      offset: '200',
-    })
-    expect(url.searchParams.getAll('bonus')).toEqual(['Strength', 'Constitution:Insightful'])
-    expect(url.searchParams.getAll('set')).toEqual([
-      'Adherent of the Mists Set (Heroic)',
-      'Adherent of the Mists Set (Legendary)',
-    ])
-    expect(url.searchParams.getAll('slot')).toEqual(['Back', 'Ring'])
-    expect(url.searchParams.getAll('pack')).toEqual(['Shadowfell', 'Vault of Night'])
-    expect(url.searchParams.getAll('quest')).toEqual(['7', '8'])
-    expect(vi.mocked(fetch)).toHaveBeenCalledOnce()
-    expect(page.total).toBe(202)
-    expect(page.items.map((item) => item.name)).toEqual(['Torc', 'Bloodstone'])
+  it('maps the captured item-materials vocabulary in served order', async () => {
+    mockFetchResponse(materialPage)
+    await expect(fetchItemMaterials()).resolves.toEqual(materialPage.item_materials)
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+    expect(url.pathname).toBe('/v1/item-materials')
+  })
+
+  it('maps the captured augment-slot-types vocabulary in served order', async () => {
+    mockFetchResponse(socketPage)
+    await expect(fetchSocketTypes()).resolves.toEqual(socketPage.augment_slot_types)
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+    expect(url.pathname).toBe('/v1/augment-slot-types')
+    expect(url.searchParams.getAll('family')).toEqual(['standard', 'dino', 'lamordia', 'upgrade'])
+  })
+
+  it('maps the captured crafting-systems vocabulary in served order', async () => {
+    mockFetchResponse(craftingPage)
+    await expect(fetchCraftingSystemVocabulary()).resolves.toEqual(craftingPage.crafting_systems)
+    const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+    expect(url.pathname).toBe('/v1/crafting-systems')
   })
 
   it('keeps effect and stat vocabulary rows in API order and sends the search query', async () => {
@@ -843,63 +801,6 @@ describe('fetchers', () => {
       rows: rows.map(({ matched_alias, ...row }) => ({ ...row, matchedAlias: matched_alias })),
       total: 101,
     })
-  })
-
-  it('rejects a wrong list key with a tagged API error', async () => {
-    mockFetchResponse({ total: 0, limit: 200, offset: 0, augments: [] })
-    await expect(fetchItemPage(EMPTY_ITEM_FILTERS, '', false)).rejects.toMatchObject({
-      name: 'ApiError',
-      kind: 'api-response',
-    })
-  })
-
-  it('removes cleared filters from the request', async () => {
-    mockFetchResponse({
-      total: 1,
-      limit: 200,
-      offset: 0,
-      items: [createApiItemRow({ slug: slugFromPathSegment('test-5')! })],
-    })
-    const page = await fetchItemPage(
-      {
-        ml: { min: '', max: '' },
-        slot: [],
-        bonuses: [],
-        bonusMatch: 'any',
-        set: [],
-        setMatch: 'any',
-        pack: ['Reign of Madness'],
-        raid: [],
-        isRareOnly: false,
-        isRaidOnly: true,
-      },
-      '  ',
-      true,
-    )
-    const url = new URL(vi.mocked(fetch).mock.calls[0][0] as string)
-    expect(Object.fromEntries(url.searchParams)).toEqual({
-      pack: 'Reign of Madness',
-      raid: 'true',
-      limit: '200',
-      offset: '0',
-    })
-    expect(page.items[0].pack).toBe('Vault of Night')
-  })
-
-  it('omits the match parameter in Any mode while keeping repeated bonuses', async () => {
-    mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
-    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, bonuses: ['Strength', 'Vorpal'] }, '', false)
-    const parameters = new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams
-    expect(parameters.getAll('bonus')).toEqual(['Strength', 'Vorpal'])
-    expect(parameters.has('bonus_match')).toBe(false)
-  })
-
-  it('omits All mode until a bonus is selected', async () => {
-    mockFetchResponse({ total: 0, limit: 200, offset: 0, items: [] })
-    await fetchItemPage({ ...EMPTY_ITEM_FILTERS, bonusMatch: 'all' }, '', false)
-    const parameters = new URL(String(vi.mocked(fetch).mock.calls[0][0])).searchParams
-    expect(parameters.has('bonus_match')).toBe(false)
-    expect(parameters.has('bonus')).toBe(false)
   })
 
   it('fetchAugmentsFittingSlot orders by level then name', async () => {

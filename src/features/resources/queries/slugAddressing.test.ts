@@ -6,13 +6,8 @@ import capturedAugmentResponse from './fixtures/augment-solar-gem-of-physical-re
 import capturedSetResponse from './fixtures/set-devoted-heart.json'
 import capturedEffectResponse from './fixtures/effect-strength.json'
 import capturedPackResponse from './fixtures/adventure-pack-magic-of-myth-drannor.json'
-import {
-  fetchItem,
-  fetchAugment,
-  fetchEffectDetail,
-  itemListParameters,
-  EMPTY_ITEM_FILTERS,
-} from './items'
+import { fetchItem, fetchAugment, fetchEffectDetail } from './items'
+import { itemListParameters, EMPTY_ITEM_FILTERS } from './itemList'
 import { fetchSet } from './sets'
 import { fetchAdventurePack } from './sources'
 

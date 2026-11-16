@@ -16,7 +16,7 @@ import {
   toEffectDamage,
 } from '../../queries/items'
 import { useEffectDetail } from '../../queries/useItems'
-import { effectKindLabel } from '../effectKindLabel'
+import { effectKindLabel } from '../../queries/effectKindLabel'
 import {
   damageExpression,
   effectBonusCalculation,

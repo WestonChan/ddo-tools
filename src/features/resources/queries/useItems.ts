@@ -14,23 +14,24 @@ import {
 import { type Slug, API_HTTP_ERROR, isApiError, shouldRetryQuery } from '../../../lib/api'
 import {
   fetchAugment,
-  fetchAdventurePackNames,
   fetchAugmentsFittingSlot,
   fetchEffectDetail,
   fetchEffectVocabulary,
-  fetchEquipmentSlotNames,
   fetchItem,
-  fetchItemPage,
-  itemListParameters,
   fetchRaidQuests,
   type AugmentSummary,
   type AugmentDetail,
   type Item,
+} from './items'
+import {
+  fetchItemPage,
+  itemListParameters,
   type ItemListFilters,
   type ItemListSort,
   type ItemPage,
+  type ItemListScope,
   ITEM_PAGE_SIZE,
-} from './items'
+} from './itemList'
 import { fetchSet, fetchSetVocabulary, type SetDetail } from './sets'
 import { fetchQuest, type QuestDetail } from './quests'
 import {
@@ -43,7 +44,14 @@ import {
   type SourceDetail,
 } from './sources'
 
-const NEVER_STALE_QUERY_OPTIONS = { staleTime: Infinity, gcTime: 30 * 60 * 1000 } as const
+import { NEVER_STALE_QUERY_OPTIONS } from './neverStaleQueryOptions'
+import {
+  equipmentSlotNamesQueryOptions,
+  adventurePackNamesQueryOptions,
+  raidQuestsQueryOptions,
+  effectVocabularyQueryOptions,
+  setVocabularyQueryOptions,
+} from './itemFilterVocabularies'
 
 type DetailQueryOptions<Result, Key extends QueryKey> = ReturnType<
   typeof queryOptions<Result, Error, Result, Key>
@@ -55,21 +63,18 @@ const resourceQueryKeys = {
     searchQuery: string,
     includesSetBonuses: boolean,
     sort: ItemListSort | null,
+    scope: ItemListScope,
   ) =>
     [
       'items',
       'page',
-      itemListParameters(filters, searchQuery, includesSetBonuses, 0, sort),
+      itemListParameters(filters, searchQuery, includesSetBonuses, 0, sort, scope),
+      scope,
     ] as const,
   item: (slug: Slug | null) => ['items', 'detail', slug] as const,
-  adventurePackNames: ['items', 'packs'] as const,
-  equipmentSlotNames: ['items', 'slots'] as const,
-  effectVocabulary: (searchQuery: string) => ['effects', 'vocabulary', searchQuery] as const,
   effectDetail: (slug: Slug | null) => ['effects', 'detail', slug] as const,
   augmentsFittingSlot: (slotLabel: string) => ['augments', 'for-slot', slotLabel] as const,
   augment: (slug: Slug | null) => ['augments', 'detail', slug] as const,
-  raidQuests: ['quests', 'raids'] as const,
-  setVocabulary: (searchQuery: string) => ['sets', 'vocabulary', searchQuery] as const,
   set: (slug: Slug | null) => ['sets', 'detail', slug] as const,
   quest: (slug: Slug | null) => ['quests', 'detail', slug] as const,
   source: (kind: string, slug: Slug) => ['sources', kind, slug] as const,
@@ -206,11 +211,12 @@ export function useItemPage(
   searchQuery: string,
   includesSetBonuses: boolean,
   sort: ItemListSort | null = null,
+  scope: ItemListScope = { canListWeapons: true },
 ): UseInfiniteQueryResult<InfiniteData<ItemPage, number>> {
   return useInfiniteQuery({
-    queryKey: resourceQueryKeys.itemPage(filters, searchQuery, includesSetBonuses, sort),
+    queryKey: resourceQueryKeys.itemPage(filters, searchQuery, includesSetBonuses, sort, scope),
     queryFn: ({ pageParam }) =>
-      fetchItemPage(filters, searchQuery, includesSetBonuses, pageParam, sort),
+      fetchItemPage(filters, searchQuery, includesSetBonuses, pageParam, sort, scope),
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
       const loadedCount = pages.reduce((count, page) => count + page.items.length, 0)
@@ -250,8 +256,7 @@ export function useSetVocabulary(
   isEnabled = true,
 ): UseQueryResult<Awaited<ReturnType<typeof fetchSetVocabulary>>> {
   return useQuery({
-    queryKey: resourceQueryKeys.setVocabulary(searchQuery),
-    queryFn: () => fetchSetVocabulary(searchQuery),
+    ...setVocabularyQueryOptions(searchQuery),
     enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
@@ -266,8 +271,7 @@ export function useQuest(slug: Slug | null): UseQueryResult<QuestDetail> {
 
 export function useAdventurePackNames(isEnabled = true): UseQueryResult<string[]> {
   return useQuery({
-    queryKey: resourceQueryKeys.adventurePackNames,
-    queryFn: fetchAdventurePackNames,
+    ...adventurePackNamesQueryOptions(),
     enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
@@ -275,8 +279,7 @@ export function useAdventurePackNames(isEnabled = true): UseQueryResult<string[]
 
 export function useEquipmentSlotNames(isEnabled = true): UseQueryResult<string[]> {
   return useQuery({
-    queryKey: resourceQueryKeys.equipmentSlotNames,
-    queryFn: fetchEquipmentSlotNames,
+    ...equipmentSlotNamesQueryOptions(),
     enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
@@ -287,8 +290,7 @@ export function useEffectVocabulary(
   isEnabled = true,
 ): UseQueryResult<Awaited<ReturnType<typeof fetchEffectVocabulary>>> {
   return useQuery({
-    queryKey: resourceQueryKeys.effectVocabulary(searchQuery),
-    queryFn: () => fetchEffectVocabulary(searchQuery),
+    ...effectVocabularyQueryOptions(searchQuery),
     enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })
@@ -308,8 +310,7 @@ export function useRaidQuests(
   isEnabled = true,
 ): UseQueryResult<Awaited<ReturnType<typeof fetchRaidQuests>>> {
   return useQuery({
-    queryKey: resourceQueryKeys.raidQuests,
-    queryFn: fetchRaidQuests,
+    ...raidQuestsQueryOptions(),
     enabled: isEnabled,
     ...NEVER_STALE_QUERY_OPTIONS,
   })

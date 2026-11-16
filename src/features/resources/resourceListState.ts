@@ -3,7 +3,12 @@ import type { LedgerColumnLayout, LedgerSort } from '../../components'
 import { usePersistedState } from '../../hooks'
 import { isRecord } from '../../lib/isRecord'
 import { createPersistedRecordFamily } from '../../lib/persistedState'
-import { EMPTY_ITEM_FILTERS, isItemSortColumn, type ItemListFilters } from './queries/items'
+import {
+  EMPTY_ITEM_FILTERS,
+  ITEM_LIST_FILTERS,
+  isItemSortColumn,
+  type ItemListFilters,
+} from './queries/itemList'
 import type { ResourceCategory } from '../../lib/resourcePaths'
 
 type OtherResourceCategory = Exclude<ResourceCategory, 'items'>
@@ -69,13 +74,13 @@ function isItemListFilters(value: unknown): value is ItemListFilters {
   return (
     isRecord(value) &&
     isRange(value.ml) &&
-    isStringArray(value.slot) &&
-    isStringArray(value.bonuses) &&
-    (value.bonusMatch === 'any' || value.bonusMatch === 'all') &&
-    isStringArray(value.set) &&
-    (value.setMatch === 'any' || value.setMatch === 'all') &&
-    isStringArray(value.pack) &&
-    isStringArray(value.raid) &&
+    Object.entries(ITEM_LIST_FILTERS).every(
+      ([key, entry]) =>
+        isStringArray(value[key]) &&
+        (entry.matchKey === null ||
+          value[entry.matchKey] === 'any' ||
+          value[entry.matchKey] === 'all'),
+    ) &&
     typeof value.isRareOnly === 'boolean' &&
     typeof value.isRaidOnly === 'boolean'
   )
@@ -95,7 +100,11 @@ function validatedFilters(
   candidate: unknown,
   category: ResourceCategory,
 ): ResourceFiltersByCategory[ResourceCategory] | undefined {
-  if (category === 'items') return isItemListFilters(candidate) ? candidate : undefined
+  if (category === 'items') {
+    if (!isRecord(candidate)) return undefined
+    const filters = { ...EMPTY_ITEM_FILTERS, ...candidate }
+    return isItemListFilters(filters) ? filters : undefined
+  }
   return isOtherResourceFilters(candidate) ? candidate : undefined
 }
 

@@ -16,7 +16,7 @@ import {
   isItemCardReady,
   setDetailQueryOptions,
 } from './useItems'
-import { EMPTY_ITEM_FILTERS } from './items'
+import { EMPTY_ITEM_FILTERS } from './itemList'
 import adventurePackResponse from './fixtures/adventure-pack-magic-of-myth-drannor.json'
 import capturedRingResponse from './fixtures/item-adversion.json'
 import capturedSetResponse from './fixtures/set-adherent-of-the-mists-set-heroic.json'

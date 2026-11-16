@@ -2,7 +2,7 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resetPersistedStateForTests } from '../../lib/persistedState'
 import type { ResourceCategory } from '../../lib/resourcePaths'
-import { itemListParameters } from './queries/items'
+import { EMPTY_ITEM_FILTERS, itemListParameters } from './queries/itemList'
 import { setResourceListState, useResourceListState } from './resourceListState'
 
 const ITEMS_PREFERENCES_KEY = 'ddo-tools:resource-list-preferences:items'
@@ -61,6 +61,33 @@ function startNewTab(): void {
 }
 
 describe('resource list state', () => {
+  it('fills new filter defaults while retaining preferences from the previous writer', () => {
+    writeSampleStates()
+    const stored = JSON.parse(localStorage.getItem(ITEMS_PREFERENCES_KEY)!) as StoredPreferences
+    const previousKeys = [
+      'ml',
+      'slot',
+      'bonuses',
+      'bonusMatch',
+      'set',
+      'setMatch',
+      'pack',
+      'raid',
+      'isRareOnly',
+      'isRaidOnly',
+    ]
+    stored.filters.value = Object.fromEntries(
+      Object.entries(stored.filters.value).filter(([key]) => previousKeys.includes(key)),
+    )
+    localStorage.setItem(ITEMS_PREFERENCES_KEY, JSON.stringify(stored))
+    resetPersistedStateForTests()
+    const restored = renderHook(() => useResourceListState('items'))
+    expect(restored.result.current.filters).toEqual({
+      ...EMPTY_ITEM_FILTERS,
+      ...stored.filters.value,
+    })
+  })
+
   it('keeps each category independent through writes and a storage round trip', () => {
     const items = renderHook(() => useResourceListState('items'))
     const feats = renderHook(() => useResourceListState('feats'))
