@@ -5,6 +5,15 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-11-15',
+    changes: [
+      'Filter items by attack ability, damage ability, material, socket and crafting system; each option shows how many items have it',
+      'Pack, Raid, the two ability filters, Socket and Crafting system can match Any or All of the chosen values',
+      'A weapon that can use several abilities shows them all in Attack mod and Damage mod, such as STR, DEX',
+      'A saved Raid or Crafting system filter shows its name after a reload',
+    ],
+  },
+  {
     date: '2026-11-03',
     changes: [
       "An enchantment that raises several stats reads as one line, worded as the game's tooltip, on items, augments and set bonuses",
