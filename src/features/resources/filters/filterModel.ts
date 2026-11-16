@@ -214,6 +214,13 @@ export function isFilterSet(
   return !!value
 }
 
+export function hasAppliedFilters<Values extends { [Key in keyof Values]: FilterValue }>(
+  declarations: readonly (AnyFilterDefinition & { key: keyof Values & string })[],
+  values: Values,
+): boolean {
+  return declarations.some((declaration) => isFilterSet(declaration, values[declaration.key]))
+}
+
 export function filterChipText(
   definition: AnyFilterDefinition,
   value: FilterValue | undefined,

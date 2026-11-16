@@ -32,7 +32,7 @@ import {
 } from './filterModel'
 import './FilterChipRow.css'
 
-interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue }> {
+export interface FilterChipRowProps<Values extends { [Key in keyof Values]: FilterValue }> {
   definitions: readonly FilterDefinition<Values>[]
   values: Values
   onChange: (values: Values) => void
