@@ -10,7 +10,16 @@ import { noCaseCollidingModules } from './eslint-rules/no-case-colliding-modules
 
 const FEATURE_NAMES = ['build', 'character', 'gear', 'landing', 'resources', 'settings']
 
-function restrictedImportRegexes(restrictions) {
+function restrictedImportRegexes(restrictions, canImportFilterChipRow = false) {
+  if (!canImportFilterChipRow)
+    restrictions = [
+      ...restrictions,
+      {
+        regex: '(^|/)FilterChipRow(\\.[cm]?[jt]sx?)?$',
+        message:
+          'Mount DeclaredFilterChipRow so every filter declares its option loading and error handling.',
+      },
+    ]
   return ['error', { patterns: restrictions.map(({ regex, message }) => ({ regex, message })) }]
 }
 
@@ -26,19 +35,30 @@ const sharedCodeImportRestriction = {
   },
 }
 
-const featureImportRestrictions = FEATURE_NAMES.map((featureName) => ({
-  files: [`src/features/${featureName}/**`],
-  rules: {
-    'no-restricted-imports': restrictedImportRegexes([
-      { regex: '^(\\.\\./)+app(/|$)', message: 'Features never import from app/.' },
-      {
-        regex: `^(\\.\\./)+(features/)?(${FEATURE_NAMES.filter((other) => other !== featureName).join('|')})(/|$)`,
-        message:
-          'Features never import from each other; move shared code to src/components, src/hooks or src/lib.',
-      },
-    ]),
-  },
-}))
+const featureImportRestrictions = FEATURE_NAMES.flatMap((featureName) => {
+  const restrictions = [
+    { regex: '^(\\.\\./)+app(/|$)', message: 'Features never import from app/.' },
+    {
+      regex: `^(\\.\\./)+(features/)?(${FEATURE_NAMES.filter((other) => other !== featureName).join('|')})(/|$)`,
+      message:
+        'Features never import from each other; move shared code to src/components, src/hooks or src/lib.',
+    },
+  ]
+  return [
+    {
+      files: [`src/features/${featureName}/**`],
+      rules: { 'no-restricted-imports': restrictedImportRegexes(restrictions) },
+    },
+    ...(featureName === 'resources'
+      ? [
+          {
+            files: ['src/features/resources/filters/**'],
+            rules: { 'no-restricted-imports': restrictedImportRegexes(restrictions, true) },
+          },
+        ]
+      : []),
+  ]
+})
 
 const lazyViewImportRestriction = {
   files: ['src/*.{ts,tsx}', 'src/app/**'],

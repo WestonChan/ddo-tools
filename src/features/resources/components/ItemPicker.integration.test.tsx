@@ -524,3 +524,112 @@ it('lists a captured set with a null icon without creating a broken image', asyn
   expect(await screen.findByRole('option', { name: nullIconSet.name })).toBeInTheDocument()
   expect(container.querySelector('img')).toBeNull()
 })
+
+import { itemFilterDeclarations } from '../queries/itemList'
+import slotsResponse from '../queries/fixtures/equipment-slots.json'
+import abilitiesResponse from '../queries/fixtures/weapon-abilities.json'
+import materialsResponse from '../queries/fixtures/item-materials.json'
+import socketsResponse from '../queries/fixtures/augment-slot-types-filter-families.json'
+import craftingResponse from '../queries/fixtures/crafting-systems.json'
+import packsResponse from '../../../lib/api/fixtures/adventure-packs.json'
+import raidsResponse from '../queries/fixtures/quests-page-caught-in-the-web.json'
+
+const declaredVocabularyResponses: Record<string, { response: unknown; firstLabel: string }> = {
+  '/v1/equipment-slots': {
+    response: slotsResponse,
+    firstLabel: slotsResponse.equipment_slots[0].name,
+  },
+  '/v1/effects': { response: effectPageResponse, firstLabel: effectPageResponse.effects[0].name },
+  '/v1/sets': {
+    response: capturedNullIconSetPageResponse,
+    firstLabel: capturedNullIconSetPageResponse.sets[0].name,
+  },
+  '/v1/adventure-packs': {
+    response: packsResponse,
+    firstLabel: packsResponse.adventure_packs[0].name,
+  },
+  '/v1/quests': { response: raidsResponse, firstLabel: raidsResponse.quests[0].name },
+  '/v1/weapon-abilities': {
+    response: abilitiesResponse,
+    firstLabel: abilitiesResponse.weapon_abilities[0].name,
+  },
+  '/v1/item-materials': {
+    response: materialsResponse,
+    firstLabel: materialsResponse.item_materials[0].name,
+  },
+  '/v1/augment-slot-types': {
+    response: socketsResponse,
+    firstLabel: socketsResponse.augment_slot_types[0].label,
+  },
+  '/v1/crafting-systems': {
+    response: craftingResponse,
+    firstLabel: craftingResponse.crafting_systems[0].name,
+  },
+}
+
+describe('declared item filter options', () => {
+  it.each(
+    itemFilterDeclarations({ canListWeapons: true }).filter(
+      (declaration) => declaration.kind === 'multi',
+    ),
+  )(
+    '$key loads its options on open, shows loading and names its path on failure',
+    async (declaration) => {
+      const { path } = declaration.optionSource
+      const capture = declaredVocabularyResponses[path]
+      expect(capture, 'Missing captured vocabulary for ' + path).toBeDefined()
+      let release: (response: Response) => void = () => {
+        throw new Error('No pending vocabulary request')
+      }
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+        const requestedPath = new URL(String(request)).pathname
+        if (requestedPath === path)
+          return new Promise<Response>((resolve) => {
+            release = resolve
+          })
+        expect(requestedPath).toBe('/v1/items')
+        return Promise.resolve(
+          new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] })),
+        )
+      })
+      for (const isFailure of [false, true]) {
+        fetchMock.mockClear()
+        const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        const view = render(
+          <QueryClientProvider client={client}>
+            <ItemPickerHarness />
+          </QueryClientProvider>,
+        )
+        await waitFor(() => expect(resourceResultCount()).toHaveTextContent('0 results'))
+        expect(
+          fetchMock.mock.calls.some(([request]) => new URL(String(request)).pathname === path),
+        ).toBe(false)
+        await userEvent.click(screen.getByRole('button', { name: declaration.label }))
+        expect(screen.getByText('Loading options…')).toBeInTheDocument()
+        release(
+          isFailure
+            ? new Response('Vocabulary unavailable', { status: 400 })
+            : new Response(JSON.stringify(capture.response)),
+        )
+        if (isFailure) {
+          expect(
+            await screen.findByText('Could not load ' + declaration.label + ' options.'),
+          ).toBeInTheDocument()
+          const report = screen.getByRole('link', { name: 'Report a bug' })
+          expect(new URL(report.getAttribute('href')!).searchParams.get('title')).toContain(path)
+        } else {
+          expect(
+            await screen.findByRole('option', {
+              name: (name) => name.startsWith(capture.firstLabel),
+            }),
+          ).toBeInTheDocument()
+        }
+        expect(
+          fetchMock.mock.calls.filter(([request]) => new URL(String(request)).pathname === path),
+        ).toHaveLength(1)
+        view.unmount()
+        client.clear()
+      }
+    },
+  )
+})

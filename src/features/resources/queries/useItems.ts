@@ -16,9 +16,7 @@ import {
   fetchAugment,
   fetchAugmentsFittingSlot,
   fetchEffectDetail,
-  fetchEffectVocabulary,
   fetchItem,
-  fetchRaidQuests,
   type AugmentSummary,
   type AugmentDetail,
   type Item,
@@ -32,7 +30,7 @@ import {
   type ItemListScope,
   ITEM_PAGE_SIZE,
 } from './itemList'
-import { fetchSet, fetchSetVocabulary, type SetDetail } from './sets'
+import { fetchSet, type SetDetail } from './sets'
 import { fetchQuest, type QuestDetail } from './quests'
 import {
   fetchAdventurePack,
@@ -45,13 +43,6 @@ import {
 } from './sources'
 
 import { NEVER_STALE_QUERY_OPTIONS } from './neverStaleQueryOptions'
-import {
-  equipmentSlotNamesQueryOptions,
-  adventurePackNamesQueryOptions,
-  raidQuestsQueryOptions,
-  effectVocabularyQueryOptions,
-  setVocabularyQueryOptions,
-} from './itemFilterVocabularies'
 
 type DetailQueryOptions<Result, Key extends QueryKey> = ReturnType<
   typeof queryOptions<Result, Error, Result, Key>
@@ -79,6 +70,8 @@ const resourceQueryKeys = {
   quest: (slug: Slug | null) => ['quests', 'detail', slug] as const,
   source: (kind: string, slug: Slug) => ['sources', kind, slug] as const,
 }
+
+export const itemPageQueryKey = resourceQueryKeys.itemPage
 
 export const fittingAugmentsQueryKey = resourceQueryKeys.augmentsFittingSlot
 
@@ -251,48 +244,10 @@ export function useSet(slug: Slug | null): UseQueryResult<SetDetail> {
   })
 }
 
-export function useSetVocabulary(
-  searchQuery: string,
-  isEnabled = true,
-): UseQueryResult<Awaited<ReturnType<typeof fetchSetVocabulary>>> {
-  return useQuery({
-    ...setVocabularyQueryOptions(searchQuery),
-    enabled: isEnabled,
-    ...NEVER_STALE_QUERY_OPTIONS,
-  })
-}
-
 export function useQuest(slug: Slug | null): UseQueryResult<QuestDetail> {
   return useQuery({
     ...questDetailQueryOptions(slug),
     enabled: slug !== null,
-  })
-}
-
-export function useAdventurePackNames(isEnabled = true): UseQueryResult<string[]> {
-  return useQuery({
-    ...adventurePackNamesQueryOptions(),
-    enabled: isEnabled,
-    ...NEVER_STALE_QUERY_OPTIONS,
-  })
-}
-
-export function useEquipmentSlotNames(isEnabled = true): UseQueryResult<string[]> {
-  return useQuery({
-    ...equipmentSlotNamesQueryOptions(),
-    enabled: isEnabled,
-    ...NEVER_STALE_QUERY_OPTIONS,
-  })
-}
-
-export function useEffectVocabulary(
-  searchQuery: string,
-  isEnabled = true,
-): UseQueryResult<Awaited<ReturnType<typeof fetchEffectVocabulary>>> {
-  return useQuery({
-    ...effectVocabularyQueryOptions(searchQuery),
-    enabled: isEnabled,
-    ...NEVER_STALE_QUERY_OPTIONS,
   })
 }
 
@@ -303,16 +258,6 @@ export function useEffectDetail(
   return useQuery({
     ...effectDetailQueryOptions(slug),
     enabled: isEnabled && slug !== null,
-  })
-}
-
-export function useRaidQuests(
-  isEnabled = true,
-): UseQueryResult<Awaited<ReturnType<typeof fetchRaidQuests>>> {
-  return useQuery({
-    ...raidQuestsQueryOptions(),
-    enabled: isEnabled,
-    ...NEVER_STALE_QUERY_OPTIONS,
   })
 }
 

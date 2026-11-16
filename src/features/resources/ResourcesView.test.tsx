@@ -9,19 +9,39 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { slugFromPathSegment, type Slug } from '../../lib/api'
+import { slugFromPathSegment, type Slug, type ApiEffectVocabularyRow } from '../../lib/api'
 import { apiFixture } from '../../test/apiFixture'
-import { render } from '../../test/renderWithQueryClient'
+import { render as renderComponent } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { effectVocabularyQueryOptions } from './queries/itemFilterVocabularies'
+import capturedEffectsPageResponse from './queries/fixtures/effects-page.json'
+
 import { resetPersistedStateForTests } from '../../lib/persistedState'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'
 import * as resourceQueries from './queries/useItems'
 import type { Effect, Item, ItemAugmentSlot, ItemSummary } from './queries/items'
 import type { SetDetail } from './queries/sets'
-import capturedEffectsPageResponse from './queries/fixtures/effects-page.json'
 import { setResourceListState, useResourceListState } from './resourceListState'
 
-const capturedEffectsPage = apiFixture(capturedEffectsPageResponse)
+function render(
+  ...[component, options]: Parameters<typeof renderComponent>
+): ReturnType<typeof renderComponent> {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const capture = apiFixture(capturedEffectsPageResponse)
+  client.setQueryData(effectVocabularyQueryOptions('').queryKey, {
+    rows: capture.effects.map(({ matched_alias, ...row }) => ({
+      ...row,
+      kind: row.kind as ApiEffectVocabularyRow['kind'],
+      matchedAlias: matched_alias,
+    })),
+    total: capture.total,
+  })
+  function Wrapper({ children }: { children: React.ReactNode }): React.JSX.Element {
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  }
+  return renderComponent(component, { ...options, wrapper: Wrapper })
+}
 
 let mockRouteParams: Record<string, string> = { category: 'items' }
 const navigateMock = vi.fn()
@@ -108,7 +128,8 @@ let stackedSet: SetDetail | null = null
 const refetchMock = vi.fn()
 const itemPageRequests = vi.fn()
 
-vi.mock('./queries/useItems', () => ({
+vi.mock('./queries/useItems', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./queries/useItems')>()),
   isItemCardReady: () => isItemDetailLoaded,
   isDetailQueryReady: () => true,
   isEffectReady: () => true,
@@ -146,15 +167,7 @@ vi.mock('./queries/useItems', () => ({
       error: null,
     }
   },
-  useAdventurePackNames: () => ({ data: ['Vault of Night'] }),
-  useEquipmentSlotNames: () => ({ data: ['Trinket'] }),
-  useEffectVocabulary: () => ({
-    data: { rows: [capturedEffectsPage.effects[0]], total: capturedEffectsPage.total },
-    isPending: false,
-  }),
-  useSetVocabulary: () => ({ data: { rows: [], total: 0 }, isPending: false }),
   useEffectDetail: () => ({ data: undefined, isPending: false }),
-  useRaidQuests: () => ({ data: [] }),
   useFittingAugmentsBySlotLabel: () => ({ data: [], isPending: false, error: null }),
   useSets: (slugs: Slug[]) =>
     slugs.map((slug) => ({

@@ -14,7 +14,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Check, Search } from 'lucide-react'
 import { resourcePath } from '../../../lib/resourcePaths'
 import { type Slug, isApiError } from '../../../lib/api'
-import type { EffectVocabularyRow } from '../queries/items'
 import {
   ApiErrorNotice,
   ApiGate,
@@ -24,29 +23,30 @@ import {
   type LedgerSort,
 } from '../../../components'
 import { useDebouncedValue } from '../../../hooks'
-import { FilterChipRow } from '../filters/FilterChipRow'
+import { DeclaredFilterChipRow } from '../filters/DeclaredFilterChipRow'
 import {
   RESOURCE_LIST_CONFIGURATION,
   setResourceListState,
   useResourceListColumnLayout,
   useResourceListState,
 } from '../resourceListState'
-import { appliedFilterValues } from '../filters/filterModel'
-import { type ItemSummary, type RaidQuest } from '../queries/items'
-import { EMPTY_ITEM_FILTERS, type ItemColumnKey, type ItemListFilters } from '../queries/itemList'
+import { hasAppliedFilters } from '../filters/filterModel'
+import { type ItemSummary } from '../queries/items'
 import {
-  useAdventurePackNames,
-  useEffectVocabulary,
-  useEquipmentSlotNames,
+  ITEM_LIST_FILTERS,
+  itemFilterDeclarations,
+  EMPTY_ITEM_FILTERS,
+  type ItemColumnKey,
+  type ItemListFilters,
+} from '../queries/itemList'
+import {
   useItemPage,
+  itemPageQueryKey,
   prefetchItemCard,
   isItemCardReady,
   isDetailQueryReady,
   effectDetailQueryOptions,
-  useRaidQuests,
-  useSetVocabulary,
 } from '../queries/useItems'
-import { itemFilterDefinitions } from './itemFilterDefinitions'
 import { StatusPlaceholder } from './StatusPlaceholder'
 import { ItemHoverContent } from './detail/ResourceHoverCards'
 import { BonusHoverCard } from './detail/BonusDetailCard'
@@ -60,17 +60,19 @@ interface ItemPickerProps {
   rowToFocusSlug?: Slug | null
   onRowFocused?: () => void
 }
-const EMPTY_NAMES: string[] = []
-const EMPTY_EFFECT_VOCABULARY: EffectVocabularyRow[] = []
-const EMPTY_RAID_QUESTS: RaidQuest[] = []
 const EMPTY_ITEMS: ItemSummary[] = []
 
-function rejectedItemFilter(error: unknown, filters: ItemListFilters): 'bonuses' | 'set' | null {
+const ITEM_LIST_SCOPE = { canListWeapons: true }
+type ItemFilterKey = keyof typeof ITEM_LIST_FILTERS
+
+function rejectedItemFilter(error: unknown, filters: ItemListFilters): ItemFilterKey | null {
   if (!isApiError(error) || error.httpStatus !== 400) return null
-  const parameter = error.message.match(/\b(?:unknown|invalid|unrecognized)\s+(bonus|set)\b/i)?.[1]
-  if (parameter === 'bonus' && filters.bonuses.length > 0) return 'bonuses'
-  if (parameter === 'set' && filters.set.length > 0) return 'set'
-  return null
+  const parameter = error.message.match(/\b(?:unknown|invalid|unrecognized)\s+([a-z_]+)\b/i)?.[1]
+  return (
+    (Object.keys(ITEM_LIST_FILTERS) as ItemFilterKey[]).find(
+      (key) => ITEM_LIST_FILTERS[key].parameter === parameter && filters[key].length > 0,
+    ) ?? null
+  )
 }
 
 const ITEM_COLUMNS = [
@@ -180,11 +182,6 @@ export function ItemPicker({
   const effectiveSearchInputRef = searchInputRef ?? ownSearchInputRef
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 250)
   const activeSearchQuery = searchQuery ? debouncedSearchQuery : ''
-  const [openedPickers, setOpenedPickers] = useState<ReadonlySet<string>>(() => new Set())
-  const [bonusSearchQuery, setBonusSearchQuery] = useState('')
-  const debouncedBonusSearchQuery = useDebouncedValue(bonusSearchQuery, 150)
-  const [setVocabularySearchQuery, setSetVocabularySearchQuery] = useState('')
-  const debouncedSetSearchQuery = useDebouncedValue(setVocabularySearchQuery, 150)
   const [hasResolvedFirstPage, setHasResolvedFirstPage] = useState(false)
   const [initialScrollTop] = useState(scrollTop)
   const hasRestoredScrollRef = useRef(false)
@@ -192,7 +189,13 @@ export function ItemPicker({
   const resultCountId = useId()
   const effectiveSort =
     selectedSort ?? (activeSearchQuery ? null : RESOURCE_LIST_CONFIGURATION[category].initialSort)
-  const itemPageQuery = useItemPage(filters, activeSearchQuery, includesSetBonuses, effectiveSort)
+  const itemPageQuery = useItemPage(
+    filters,
+    activeSearchQuery,
+    includesSetBonuses,
+    effectiveSort,
+    ITEM_LIST_SCOPE,
+  )
 
   useLayoutEffect(() => {
     const body = pickerRootRef.current?.querySelector<HTMLElement>('.ledger-body')
@@ -227,95 +230,29 @@ export function ItemPicker({
     [itemPageQuery.data],
   )
   const resultCount = itemPageQuery.data?.pages[0]?.total ?? 0
-  const equipmentSlotQuery = useEquipmentSlotNames(openedPickers.has('slot'))
-  const allEffectsQuery = useEffectVocabulary('', openedPickers.has('bonuses'))
-  const searchedEffectsQuery = useEffectVocabulary(
-    debouncedBonusSearchQuery,
-    openedPickers.has('bonuses') && Boolean(debouncedBonusSearchQuery),
-  )
-  const packQuery = useAdventurePackNames(openedPickers.has('pack'))
-  const allSetsQuery = useSetVocabulary('', openedPickers.has('set'))
-  const searchedSetsQuery = useSetVocabulary(
-    debouncedSetSearchQuery,
-    openedPickers.has('set') && Boolean(debouncedSetSearchQuery),
-  )
-  const raidQuery = useRaidQuests(openedPickers.has('raid'))
-  const activeEffectsQuery = debouncedBonusSearchQuery ? searchedEffectsQuery : allEffectsQuery
-  const activeSetsQuery = debouncedSetSearchQuery ? searchedSetsQuery : allSetsQuery
-  const pickerErrors = Object.fromEntries(
-    [
-      { key: 'slot', label: 'Gear slot', path: '/v1/equipment-slots', query: equipmentSlotQuery },
-      { key: 'bonuses', label: 'Bonuses', path: '/v1/effects', query: activeEffectsQuery },
-      { key: 'set', label: 'Set', path: '/v1/sets', query: activeSetsQuery },
-      { key: 'pack', label: 'Pack', path: '/v1/adventure-packs', query: packQuery },
-      { key: 'raid', label: 'Raid', path: '/v1/quests', query: raidQuery },
-    ]
-      .filter(({ query }) => query.error)
-      .map(({ key, label, path, query }) => [
-        key,
-        <ApiErrorNotice
-          key={key}
-          error={query.error}
-          path={path}
-          heading={`Could not load ${label} options.`}
-          isCompact
-          onRetry={() => void query.refetch()}
-        />,
-      ]),
-  )
-  const equipmentSlots = equipmentSlotQuery.data ?? EMPTY_NAMES
-  const allEffectVocabulary = allEffectsQuery.data?.rows ?? EMPTY_EFFECT_VOCABULARY
-  const effectVocabulary = debouncedBonusSearchQuery
-    ? (searchedEffectsQuery.data?.rows ?? EMPTY_EFFECT_VOCABULARY)
-    : allEffectVocabulary
-  const packNames = packQuery.data ?? EMPTY_NAMES
-  const setNames = debouncedSetSearchQuery
-    ? (searchedSetsQuery.data?.rows ?? EMPTY_NAMES)
-    : (allSetsQuery.data?.rows ?? EMPTY_NAMES)
-  const raidQuests = raidQuery.data ?? EMPTY_RAID_QUESTS
-  const loadingPickers = new Set<string>()
-  if (equipmentSlotQuery.isPending) loadingPickers.add('slot')
-  if (activeEffectsQuery.isPending) loadingPickers.add('bonuses')
-  if (packQuery.isPending) loadingPickers.add('pack')
-  if (activeSetsQuery.isPending) loadingPickers.add('set')
-  if (raidQuery.isPending) loadingPickers.add('raid')
-  const definitions = useMemo(
-    () =>
-      itemFilterDefinitions(
-        equipmentSlots,
-        effectVocabulary,
-        allEffectVocabulary,
-        allEffectsQuery.data?.total ?? effectVocabulary.length,
-        setNames,
-        allSetsQuery.data?.total ?? setNames.length,
-        packNames,
-        raidQuests,
-        filters,
-      ),
-    [
-      equipmentSlots,
-      effectVocabulary,
-      allEffectVocabulary,
-      allEffectsQuery.data?.total,
-      setNames,
-      allSetsQuery.data?.total,
-      packNames,
-      raidQuests,
-      filters,
-    ],
-  )
-  const hasActiveFilters = appliedFilterValues(definitions, filters).length > 0
+  const declarations = useMemo(() => itemFilterDeclarations(ITEM_LIST_SCOPE), [])
+  const hasActiveFilters = hasAppliedFilters(declarations, filters)
   const rejectedFilter = rejectedItemFilter(itemPageQuery.error, filters)
-  const rejectedFilterLabel =
-    rejectedFilter === 'bonuses' ? 'Bonuses' : rejectedFilter === 'set' ? 'Set' : null
+  const rejectedFilterLabel = rejectedFilter ? ITEM_LIST_FILTERS[rejectedFilter].label : null
+  function hasBonusHover(key: keyof ItemListFilters): boolean {
+    return declarations.some(
+      (declaration) =>
+        declaration.key === key &&
+        declaration.kind === 'multi' &&
+        declaration.hoverKind === 'bonus',
+    )
+  }
   const rowAt = useCallback((index: number) => itemsToShow[index], [itemsToShow])
   const rowKey = useCallback((item: ItemSummary) => item.slug, [])
-  const pageQueryKey = JSON.stringify([
-    filters,
-    activeSearchQuery,
-    includesSetBonuses,
-    effectiveSort,
-  ])
+  const pageQueryKey = JSON.stringify(
+    itemPageQueryKey(
+      filters,
+      activeSearchQuery,
+      includesSetBonuses,
+      effectiveSort,
+      ITEM_LIST_SCOPE,
+    ),
+  )
   const fetchNextPageNearEnd = useCallback(() => {
     if (
       itemPageQuery.hasNextPage &&
@@ -416,8 +353,8 @@ export function ItemPicker({
           </kbd>
         </label>
       </div>
-      <FilterChipRow
-        definitions={definitions}
+      <DeclaredFilterChipRow
+        declarations={declarations}
         values={filters}
         onChange={onFiltersChange}
         onClearAll={clearAll}
@@ -438,29 +375,18 @@ export function ItemPicker({
           </span>
         }
         focusFallbackRef={effectiveSearchInputRef}
-        onPickerOpen={(key) => {
-          setOpenedPickers((previous) => new Set(previous).add(String(key)))
-          if (key === 'bonuses') setBonusSearchQuery('')
-          if (key === 'set') setSetVocabularySearchQuery('')
-        }}
-        loadingPickers={loadingPickers}
-        pickerErrors={pickerErrors}
-        onPickerSearch={(key, query) => {
-          if (key === 'bonuses') setBonusSearchQuery(query)
-          if (key === 'set') setSetVocabularySearchQuery(query)
-        }}
         renderPickerHover={(key, option) =>
-          key === 'bonuses' && option.detailSlug ? (
+          hasBonusHover(key) && option.detailSlug ? (
             <BonusHoverCard detailSlug={option.detailSlug} />
           ) : null
         }
         prefetchPickerHover={(key, option) =>
-          key === 'bonuses' && option.detailSlug
+          hasBonusHover(key) && option.detailSlug
             ? queryClient.ensureQueryData(effectDetailQueryOptions(option.detailSlug))
             : Promise.resolve()
         }
         isPickerHoverReady={(key, option) =>
-          key === 'bonuses' && option.detailSlug
+          hasBonusHover(key) && option.detailSlug
             ? isDetailQueryReady(queryClient, effectDetailQueryOptions(option.detailSlug))
             : true
         }
@@ -523,11 +449,13 @@ export function ItemPicker({
                         type="button"
                         className="btn-ghost-sm"
                         onClick={() =>
-                          onFiltersChange(
-                            rejectedFilter === 'bonuses'
-                              ? { ...filters, bonuses: [], bonusMatch: 'any' }
-                              : { ...filters, set: [], setMatch: 'any' },
-                          )
+                          onFiltersChange({
+                            ...filters,
+                            [rejectedFilter]: [],
+                            ...(ITEM_LIST_FILTERS[rejectedFilter].matchKey
+                              ? { [ITEM_LIST_FILTERS[rejectedFilter].matchKey!]: 'any' }
+                              : {}),
+                          })
                         }
                       >
                         Reset {rejectedFilterLabel} filter

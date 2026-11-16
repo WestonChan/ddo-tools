@@ -11,14 +11,22 @@ import {
 import userEvent from '@testing-library/user-event'
 import { slugFromPathSegment } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
-import { render } from '../../../test/renderWithQueryClient'
+import { render as renderComponent } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import * as vocabularies from '../queries/itemFilterVocabularies'
+import { ITEM_LIST_FILTERS } from '../queries/itemList'
+import { ApiError, API_HTTP_ERROR } from '../../../lib/api'
+import abilitiesResponse from '../queries/fixtures/weapon-abilities.json'
+import materialsResponse from '../queries/fixtures/item-materials.json'
+import socketsResponse from '../queries/fixtures/augment-slot-types-filter-families.json'
+import craftingResponse from '../queries/fixtures/crafting-systems.json'
 import capturedGroupsResponse from '../queries/fixtures/effects-page-groups.json'
 import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
 import mightyResponse from '../queries/fixtures/effects-page-mighty.json'
 import strengthResponse from '../queries/fixtures/effects-page-strength.json'
 import spellsightResponse from '../queries/fixtures/effects-page-spellsight.json'
 import { ItemPicker } from './ItemPicker'
-import { fetchEffectVocabulary, type EffectVocabularyRow, type ItemSummary } from '../queries/items'
+import { type EffectVocabularyRow, type ItemSummary } from '../queries/items'
 import {
   EMPTY_ITEM_FILTERS,
   ITEM_COLUMN_KEYS,
@@ -132,8 +140,8 @@ function effectVocabularyPage(searchQuery: string): {
     },
   }
 }
-const useEffectVocabularyMock = vi.fn(effectVocabularyPage)
-const useSetVocabularyMock = vi.fn((searchQuery: string) => ({
+const effectVocabularyMock = vi.fn(effectVocabularyPage)
+const setVocabularyMock = vi.fn((searchQuery: string) => ({
   data: {
     rows: capturedSetPage.sets
       .filter((set) => set.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -142,7 +150,8 @@ const useSetVocabularyMock = vi.fn((searchQuery: string) => ({
   },
 }))
 
-vi.mock('../queries/useItems', () => ({
+vi.mock('../queries/useItems', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../queries/useItems')>()),
   useItemPage: (
     filters: ItemListFilters,
     query: string,
@@ -156,22 +165,68 @@ vi.mock('../queries/useItems', () => ({
       fetchNextPage: fetchNextPageMock,
     }
   },
-  useEquipmentSlotNames: () => ({ data: ['Back', 'Ring', 'Trinket'] }),
-  useEffectVocabulary: (searchQuery: string) => useEffectVocabularyMock(searchQuery),
-  useSetVocabulary: (searchQuery: string) => useSetVocabularyMock(searchQuery),
-  useAdventurePackNames: () => ({ data: ['Shadowfell', 'Vault of Night'] }),
-  useRaidQuests: () => ({
-    data: [
-      { slug: slugFromPathSegment('test-7')!, name: 'The Raid', pack: 'Vault of Night' },
-      { slug: slugFromPathSegment('test-8')!, name: 'Empty Raid', pack: null },
-    ],
-  }),
 }))
+
+vi.mock('../queries/items', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../queries/items')>()),
+  fetchEffectVocabulary: (search: string) => Promise.resolve(effectVocabularyMock(search).data),
+}))
+vi.mock('../queries/sets', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../queries/sets')>()),
+  fetchSetVocabulary: (search: string) => Promise.resolve(setVocabularyMock(search).data),
+}))
+
+function render(
+  ...[component, options]: Parameters<typeof renderComponent>
+): ReturnType<typeof renderComponent> {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  client.setQueryData(vocabularies.equipmentSlotNamesQueryOptions().queryKey, [
+    'Back',
+    'Ring',
+    'Trinket',
+  ])
+  client.setQueryData(vocabularies.adventurePackNamesQueryOptions().queryKey, [
+    'Shadowfell',
+    'Vault of Night',
+  ])
+  client.setQueryData(vocabularies.raidQuestsQueryOptions().queryKey, [
+    { slug: slugFromPathSegment('test-7')!, name: 'The Raid', pack: 'Vault of Night' },
+    { slug: slugFromPathSegment('test-8')!, name: 'Empty Raid', pack: null },
+  ])
+  client.setQueryData(
+    vocabularies.effectVocabularyQueryOptions('').queryKey,
+    effectVocabularyMock('').data,
+  )
+  client.setQueryData(
+    vocabularies.setVocabularyQueryOptions('').queryKey,
+    setVocabularyMock('').data,
+  )
+  client.setQueryData(
+    vocabularies.weaponAbilitiesQueryOptions().queryKey,
+    apiFixture(abilitiesResponse).weapon_abilities,
+  )
+  client.setQueryData(
+    vocabularies.itemMaterialsQueryOptions().queryKey,
+    materialsResponse.item_materials,
+  )
+  client.setQueryData(
+    vocabularies.socketTypesQueryOptions().queryKey,
+    apiFixture(socketsResponse).augment_slot_types,
+  )
+  client.setQueryData(
+    vocabularies.craftingSystemVocabularyQueryOptions().queryKey,
+    apiFixture(craftingResponse).crafting_systems,
+  )
+  function Wrapper({ children }: { children: React.ReactNode }): React.JSX.Element {
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  }
+  return renderComponent(component, { ...options, wrapper: Wrapper })
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
-  useEffectVocabularyMock.mockImplementation(effectVocabularyPage)
-  useSetVocabularyMock.mockClear()
+  effectVocabularyMock.mockImplementation(effectVocabularyPage)
+  setVocabularyMock.mockClear()
   useItemPageMock.mockImplementation((...request) => {
     void request
     return pageState
@@ -213,7 +268,12 @@ describe('ItemPicker server-backed filters', () => {
       within(chipRow)
         .getAllByRole('button')
         .map((button) => button.getAttribute('data-tip')),
-    ).toEqual(['ML range', 'Gear slot', 'Bonuses', 'Set', 'Pack', 'Raid', 'Rare only', 'Raid only'])
+    ).toEqual([
+      'ML range',
+      ...Object.values(ITEM_LIST_FILTERS).map((entry) => entry.label),
+      'Rare only',
+      'Raid only',
+    ])
     expect(
       screen.getByRole('button', { name: 'Minimum level' }).querySelector('.filter-chip-text'),
     ).toHaveTextContent('ML')
@@ -425,7 +485,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(latestFilters().slot).toEqual(['Ring'])
   }, 10000)
 
-  it('shows match mode only for bonuses, labels applied values, and resets with Clear filters', async () => {
+  it('labels applied match modes and resets them with Clear filters', async () => {
     const user = userEvent.setup()
     renderItemPicker()
     await user.click(screen.getByRole('button', { name: 'Gear slot' }))
@@ -469,7 +529,7 @@ describe('ItemPicker server-backed filters', () => {
   it('lists a captured group by kind and sends its name as a bonus filter', async () => {
     const group = capturedGroups.effects.find((row) => row.kind === 'group')
     expect(group).toBeDefined()
-    useEffectVocabularyMock.mockImplementation(() => ({
+    effectVocabularyMock.mockImplementation(() => ({
       data: {
         total: capturedGroups.total,
         rows: [{ ...group!, kind: 'group', matchedAlias: null }, ...EFFECT_ROWS],
@@ -494,8 +554,10 @@ describe('ItemPicker server-backed filters', () => {
     async (query, response) => {
       expect(globalThis.fetch, 'fetch is restored between alias cases').toBe(originalFetch)
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(response)))
+      const { fetchEffectVocabulary } =
+        await vi.importActual<typeof import('../queries/items')>('../queries/items')
       const vocabulary = await fetchEffectVocabulary(query)
-      useEffectVocabularyMock.mockImplementation((searchQuery) => ({
+      effectVocabularyMock.mockImplementation((searchQuery) => ({
         data: searchQuery === query ? vocabulary : { rows: [], total: 0 },
       }))
       renderItemPicker()
@@ -530,7 +592,7 @@ describe('ItemPicker server-backed filters', () => {
 
       bonus_types: [{ name: 'Insight', item_count: 1 }],
     }
-    useEffectVocabularyMock.mockImplementation((searchQuery) => ({
+    effectVocabularyMock.mockImplementation((searchQuery) => ({
       data: {
         total: 2162,
         rows: searchQuery ? [] : [constitution, ...EFFECT_ROWS],
@@ -602,11 +664,11 @@ describe('ItemPicker server-backed filters', () => {
     renderItemPicker()
     await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     await user.type(screen.getByRole('combobox', { name: 'Bonuses' }), 'charisma')
-    await waitFor(() => expect(useEffectVocabularyMock.mock.lastCall?.[0]).toBe('charisma'))
+    await waitFor(() => expect(effectVocabularyMock.mock.lastCall?.[0]).toBe('charisma'))
     await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     expect(screen.getByRole('combobox', { name: 'Bonuses' })).toHaveValue('')
-    await waitFor(() => expect(useEffectVocabularyMock.mock.lastCall?.[0]).toBe(''))
+    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(EFFECT_ROWS.length))
   })
 
   it('does not offer Reset match for an error with no selected bonuses', async () => {
@@ -639,7 +701,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(latestFilters().raid).toEqual(['test-7', 'test-8'])
     expect(
       Array.from(document.querySelectorAll('.filter-applied-label'), (label) => label.textContent),
-    ).toEqual(['Pack', 'Raid'])
+    ).toEqual(['Pack · any', 'Raid · any'])
     for (const name of ['Shadowfell', 'Vault of Night', 'The Raid', 'Empty Raid']) {
       expect(
         screen.getByRole('button', { name: new RegExp(`Remove (Pack|Raid): ${name}`) }),
@@ -660,7 +722,7 @@ describe('ItemPicker server-backed filters', () => {
     expect(parameters.set).toEqual(setNames)
     expect(parameters.set_match).toBe('all')
     await user.type(screen.getByRole('combobox', { name: 'Set' }), 'Legendary')
-    await waitFor(() => expect(useSetVocabularyMock.mock.lastCall?.[0]).toBe('Legendary'))
+    await waitFor(() => expect(setVocabularyMock.mock.lastCall?.[0]).toBe('Legendary'))
     expect(screen.getByRole('option', { name: setNames[1] })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: setNames[0] })).toBeNull()
   })
@@ -898,4 +960,66 @@ describe('ItemPicker server-backed filters', () => {
     expect(focusedRow).toHaveFocus()
     expect(search).not.toHaveAttribute('aria-activedescendant')
   })
+})
+
+describe('every declared filter control', () => {
+  it('sends Dexterity from the Attack ability chip to the server', async () => {
+    renderItemPicker()
+    await userEvent.click(screen.getByRole('button', { name: 'Attack ability' }))
+    await userEvent.click(
+      screen.getByRole('option', { name: (name) => name.startsWith('Dexterity') }),
+    )
+    expect(latestFilters().attackAbility).toEqual(['Dexterity'])
+    expect(itemListParameters(latestFilters(), '', false).attack_ability).toEqual(['Dexterity'])
+  })
+
+  it.each(Object.entries(ITEM_LIST_FILTERS))(
+    '%s offers only its declared match control and clears with the other filters',
+    async (key, entry) => {
+      renderItemPicker()
+      const filterKey = key as keyof typeof ITEM_LIST_FILTERS
+      await userEvent.click(screen.getByRole('button', { name: entry.label }))
+      expect(screen.queryByLabelText(entry.label + ' match mode') !== null).toBe(
+        entry.matchKey !== null,
+      )
+      if (entry.matchKey) await userEvent.click(screen.getByRole('button', { name: 'All' }))
+      await userEvent.click(screen.getAllByRole('option')[0])
+      expect(latestFilters()[filterKey]).toHaveLength(1)
+      await userEvent.click(screen.getByRole('button', { name: 'Clear ' + entry.label }))
+      expect(latestFilters()[filterKey]).toEqual([])
+      if (entry.matchKey) expect(latestFilters()[entry.matchKey]).toBe('all')
+      await userEvent.click(screen.getByRole('button', { name: entry.label }))
+      await userEvent.click(screen.getAllByRole('option')[0])
+      await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+      expect(latestFilters()).toEqual(EMPTY_ITEM_FILTERS)
+    },
+  )
+
+  it.each(Object.entries(ITEM_LIST_FILTERS))(
+    'resets a rejected %s filter and its match mode',
+    async (key, entry) => {
+      const view = render(<ItemPickerHarness />)
+      const filterKey = key as keyof typeof ITEM_LIST_FILTERS
+      await userEvent.click(screen.getByRole('button', { name: entry.label }))
+      if (entry.matchKey) await userEvent.click(screen.getByRole('button', { name: 'All' }))
+      await userEvent.click(screen.getAllByRole('option')[0])
+      await userEvent.click(screen.getByRole('button', { name: entry.label }))
+      const selectedValue = latestFilters()[filterKey][0]
+      pageState = {
+        ...pageState,
+        error: new ApiError(
+          API_HTTP_ERROR,
+          400,
+          'unknown ' + entry.parameter + ' "' + selectedValue + '"; accepted values: …',
+        ),
+      }
+      view.rerender(<ItemPickerHarness />)
+      expect(screen.getByText('Could not load ' + entry.label + ' filter.')).toBeInTheDocument()
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Reset ' + entry.label + ' filter' }),
+      )
+      expect(latestFilters()[filterKey]).toEqual([])
+      if (entry.matchKey) expect(latestFilters()[entry.matchKey]).toBe('any')
+    },
+  )
 })
