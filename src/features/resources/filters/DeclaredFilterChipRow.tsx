@@ -48,7 +48,9 @@ export function DeclaredFilterChipRow<Values extends { [Key in keyof Values]: Fi
       if (!('optionSource' in declaration)) continue
       const source = declaration.optionSource
       const isOpened = openedKeys.has(declaration.key)
-      const unsearchedHash = registerQuery(source.queryOptions(''), isOpened)
+      const selectedValues = values[declaration.key]
+      const hasSelectedValues = Array.isArray(selectedValues) && selectedValues.length > 0
+      const unsearchedHash = registerQuery(source.queryOptions(''), isOpened || hasSelectedValues)
       const search =
         source.isServerSearched && searchQueryByKey[declaration.key]?.trim()
           ? (debouncedSearchQueryByKey[declaration.key]?.trim() ?? '')
@@ -63,7 +65,7 @@ export function DeclaredFilterChipRow<Values extends { [Key in keyof Values]: Fi
       hashes: [...requestsByHash.keys()],
       queriesByKey,
     }
-  }, [declarations, openedKeys, searchQueryByKey, debouncedSearchQueryByKey])
+  }, [declarations, openedKeys, searchQueryByKey, debouncedSearchQueryByKey, values])
   const queryResults = useQueries({ queries: queryPlan.queries, combine: optionQueryStates })
   const { definitions, loadingPickers, pickerErrors } = useMemo(() => {
     const resultsByHash = new Map(

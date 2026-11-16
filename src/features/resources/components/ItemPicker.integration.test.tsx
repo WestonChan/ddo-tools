@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
+import { resetPersistedStateForTests } from '../../../lib/persistedState'
 import capturedNullIconSetPageResponse from '../queries/fixtures/sets-null-icon-page.json'
 import { ItemPicker } from './ItemPicker'
 import effectPageResponse from '../queries/fixtures/effects-page.json'
@@ -525,7 +526,7 @@ it('lists a captured set with a null icon without creating a broken image', asyn
   expect(container.querySelector('img')).toBeNull()
 })
 
-import { itemFilterDeclarations } from '../queries/itemList'
+import { ITEM_LIST_FILTERS, itemFilterDeclarations } from '../queries/itemList'
 import slotsResponse from '../queries/fixtures/equipment-slots.json'
 import abilitiesResponse from '../queries/fixtures/weapon-abilities.json'
 import materialsResponse from '../queries/fixtures/item-materials.json'
@@ -568,6 +569,83 @@ const declaredVocabularyResponses: Record<string, { response: unknown; firstLabe
 }
 
 describe('declared item filter options', () => {
+  it.each(
+    itemFilterDeclarations({ canListWeapons: true }).filter(
+      (declaration) => declaration.kind === 'multi',
+    ),
+  )('$key restores applied labels without opening its chip', async (declaration) => {
+    const { path } = declaration.optionSource
+    const capture = declaredVocabularyResponses[path]
+    expect(capture, 'Missing captured vocabulary for ' + path).toBeDefined()
+    let isReloaded = false
+    let release: (response: Response) => void = () => {
+      throw new Error('No pending vocabulary request')
+    }
+    const restoredVocabulary = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+      const requestedPath = new URL(String(request)).pathname
+      if (requestedPath === path)
+        return isReloaded
+          ? restoredVocabulary
+          : Promise.resolve(new Response(JSON.stringify(capture.response)))
+      expect(requestedPath).toBe('/v1/items')
+      return Promise.resolve(
+        new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] })),
+      )
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const view = render(
+      <QueryClientProvider client={client}>
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: declaration.label }))
+    await userEvent.click(
+      await screen.findByRole('option', { name: (name) => name.startsWith(capture.firstLabel) }),
+    )
+    const { parameter } = ITEM_LIST_FILTERS[declaration.key]
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([request]) =>
+          new URL(String(request)).searchParams.has(parameter),
+        ),
+      ).toBe(true),
+    )
+    const selectedRequest = fetchMock.mock.calls
+      .map(([request]) => new URL(String(request)))
+      .find((url) => url.searchParams.has(parameter))!
+    const storedValue = selectedRequest.searchParams.get(parameter)!
+    view.unmount()
+    client.clear()
+    resetPersistedStateForTests()
+    fetchMock.mockClear()
+    isReloaded = true
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Show applied · 1' }))
+    const appliedValue = screen.getByRole('button', {
+      name: `Remove ${declaration.label}: ${storedValue}`,
+    })
+    expect(appliedValue).toBeVisible()
+    release(new Response(JSON.stringify(capture.response)))
+    expect(
+      await screen.findByRole('button', {
+        name: `Remove ${declaration.label}: ${capture.firstLabel}`,
+      }),
+    ).toBe(appliedValue)
+    expect(
+      fetchMock.mock.calls.filter(([request]) => new URL(String(request)).pathname === path),
+    ).toHaveLength(1)
+    expect(screen.queryByRole('group', { name: `${declaration.label} picker` })).toBeNull()
+  })
+
   it.each(
     itemFilterDeclarations({ canListWeapons: true }).filter(
       (declaration) => declaration.kind === 'multi',
