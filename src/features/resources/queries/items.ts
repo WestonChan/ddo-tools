@@ -327,8 +327,8 @@ export function toItem(
       path,
       {
         dr_bypass: 'array',
-        attack_abilities: 'nullable-array',
-        damage_abilities: 'nullable-array',
+        attack_abilities: 'array',
+        damage_abilities: 'array',
       },
       'weapon.',
     )
@@ -364,8 +364,8 @@ export function toItem(
           weaponType: apiItemDetail.weapon.weapon_type,
           proficiency: apiItemDetail.weapon.proficiency,
           handedness: apiItemDetail.weapon.handedness,
-          attackAbilities: apiItemDetail.weapon.attack_abilities ?? [],
-          damageAbilities: apiItemDetail.weapon.damage_abilities ?? [],
+          attackAbilities: apiItemDetail.weapon.attack_abilities,
+          damageAbilities: apiItemDetail.weapon.damage_abilities,
           damageReductionBypasses: apiItemDetail.weapon.dr_bypass,
         }
       : null,

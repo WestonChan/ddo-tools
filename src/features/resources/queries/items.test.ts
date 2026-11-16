@@ -17,6 +17,7 @@ import pricedItemResponse from './fixtures/item-barovian-handwraps.json'
 import type { ApiAugment, ApiItemDetail, ApiItemRow } from '../../../lib/api'
 import capturedItemResponse from './fixtures/item-stolen-necklace-level-25.json'
 import capturedWeaponResponse from './fixtures/item-greatsword-of-the-fallen-age.json'
+import capturedRuneArmResponse from './fixtures/item-rune-arm-of-the-great-decay.json'
 import capturedShieldResponse from './fixtures/item-tower-shield-of-the-fallen-age.json'
 import capturedAugmentResponse from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
 import effectPageResponse from './fixtures/effects-page.json'
@@ -36,6 +37,7 @@ const twoSetItem = apiFixture(twoSetItemResponse)
 const pricedItem = apiFixture(pricedItemResponse)
 const capturedItem = apiFixture(capturedItemResponse)
 const capturedWeapon = apiFixture(capturedWeaponResponse)
+const capturedRuneArm = apiFixture(capturedRuneArmResponse)
 const capturedShield = apiFixture(capturedShieldResponse)
 const capturedAugment = apiFixture(capturedAugmentResponse)
 const effectPage = apiFixture(effectPageResponse)
@@ -349,21 +351,25 @@ describe('mappers', () => {
     })
   })
 
-  it('normalizes null ability lists and rejects missing ability fields', () => {
-    const response = {
-      ...capturedWeapon,
-      weapon: { ...capturedWeapon.weapon, attack_abilities: null, damage_abilities: null },
-    }
-    expect(toItem(response as ApiItemDetail).weaponStats).toMatchObject({
-      attackAbilities: [],
-      damageAbilities: [],
+  it('preserves empty ability lists from a captured weapon', () => {
+    expect(capturedRuneArm.weapon.attack_abilities).toHaveLength(0)
+    expect(capturedRuneArm.weapon.damage_abilities).toHaveLength(0)
+    expect(toItem(capturedRuneArm as ApiItemDetail).weaponStats).toMatchObject({
+      attackAbilities: capturedRuneArm.weapon.attack_abilities,
+      damageAbilities: capturedRuneArm.weapon.damage_abilities,
     })
-    for (const field of ['attack_abilities', 'damage_abilities']) {
-      const missingFieldResponse = structuredClone(response)
-      Reflect.deleteProperty(missingFieldResponse.weapon, field)
-      expect(() => toItem(missingFieldResponse as ApiItemDetail)).toThrow(`weapon.${field}`)
-    }
   })
+
+  it.each(['attack_abilities', 'damage_abilities'])(
+    'rejects null or missing %s instead of treating it as an empty list',
+    (field) => {
+      for (const invalidValue of [null, undefined]) {
+        const response = structuredClone(capturedRuneArm)
+        Reflect.set(response.weapon, field, invalidValue)
+        expect(() => toItem(response as ApiItemDetail)).toThrow(`weapon.${field}`)
+      }
+    },
+  )
 
   it('maps a captured shield with both armor and weapon blocks as a shield', () => {
     const item = toItem({ ...capturedShield, effects: [] } as ApiItemDetail)

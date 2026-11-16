@@ -241,7 +241,6 @@ export function apiErrorDescription(
 
 type ApiResponseFieldType =
   | 'array'
-  | 'nullable-array'
   | 'string'
   | 'number'
   | 'boolean'
@@ -266,8 +265,8 @@ export function assertApiResponseFields(
   for (const [field, expectedType] of Object.entries(fields)) {
     const value = responseFields[field]
     const isValid =
-      expectedType === 'array' || expectedType === 'nullable-array'
-        ? Array.isArray(value) || (expectedType === 'nullable-array' && value === null)
+      expectedType === 'array'
+        ? Array.isArray(value)
         : expectedType === 'nullable-string'
           ? value === null || typeof value === 'string'
           : expectedType === 'nullable-number'

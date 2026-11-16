@@ -3,6 +3,8 @@ import { writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 
 const manifest = {
+  'src/features/resources/queries/fixtures/item-rune-arm-of-the-great-decay.json':
+    '/v1/items/rune-arm-of-the-great-decay',
   'src/features/resources/queries/fixtures/equipment-slots.json': '/v1/equipment-slots?limit=20',
   'src/lib/api/openapi/v1.json': '/v1/openapi.json',
   'src/features/resources/queries/fixtures/item-legendary-rapier-of-the-oozing-hunger.json':

@@ -213,26 +213,23 @@ describe('ItemDetailCard details', () => {
     expect(container.querySelector('.detail-fact-grid')).not.toHaveTextContent('Enhancement')
   })
 
-  it.each([null, []])(
-    'omits absent modifiers (%j) and shows distinct ability abbreviations with their full-name hints',
-    (absentAbilities) => {
-      const { container, rerender } = renderItemDetailCard(
-        weaponItem({ attack_abilities: absentAbilities, damage_abilities: absentAbilities }),
-      )
-      expect(detailStatText(container)).toEqual([
-        'Damage1.6[2d6]+5',
-        'Crit range19–20',
-        'Crit multiplier×2',
-      ])
-      rerender(
-        <ItemDetailCard
-          item={weaponItem({ attack_abilities: ['Dexterity'], damage_abilities: ['Intelligence'] })}
-        />,
-      )
-      expect(container.querySelector('[title="Dexterity"]')).toHaveTextContent('DEX')
-      expect(container.querySelector('[title="Intelligence"]')).toHaveTextContent('INT')
-    },
-  )
+  it('omits empty modifiers and shows distinct ability abbreviations with their full-name hints', () => {
+    const { container, rerender } = renderItemDetailCard(
+      weaponItem({ attack_abilities: [], damage_abilities: [] }),
+    )
+    expect(detailStatText(container)).toEqual([
+      'Damage1.6[2d6]+5',
+      'Crit range19–20',
+      'Crit multiplier×2',
+    ])
+    rerender(
+      <ItemDetailCard
+        item={weaponItem({ attack_abilities: ['Dexterity'], damage_abilities: ['Intelligence'] })}
+      />,
+    )
+    expect(container.querySelector('[title="Dexterity"]')).toHaveTextContent('DEX')
+    expect(container.querySelector('[title="Intelligence"]')).toHaveTextContent('INT')
+  })
 
   it('keeps an unfamiliar ability name visible instead of dropping its fact', () => {
     const { container } = renderItemDetailCard(

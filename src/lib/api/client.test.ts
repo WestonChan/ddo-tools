@@ -11,25 +11,11 @@ import {
   ApiError,
   apiErrorDescription,
   isApiError,
-  assertApiResponseFields,
 } from './client'
 import { githubIssueUrls } from '../githubIssue'
 
 afterEach(() => {
   vi.restoreAllMocks()
-})
-
-it('accepts null and arrays for nullable arrays and rejects missing or scalar fields', () => {
-  for (const abilities of [null, [], ['Strength', 'Dexterity']]) {
-    expect(() =>
-      assertApiResponseFields({ abilities }, '/v1/items', { abilities: 'nullable-array' }),
-    ).not.toThrow()
-  }
-  for (const abilities of [undefined, 'Strength', 1, {}]) {
-    expect(() =>
-      assertApiResponseFields({ abilities }, '/v1/items', { abilities: 'nullable-array' }),
-    ).toThrow('Invalid response for /v1/items: abilities')
-  }
 })
 
 describe('apiUrl', () => {
