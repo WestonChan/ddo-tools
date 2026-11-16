@@ -2,7 +2,16 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import type { JSX } from 'react'
 import { readFileSync } from 'node:fs'
-import { slugFromPathSegment, type Slug } from '../../../../lib/api'
+import {
+  slugFromPathSegment,
+  type Slug,
+  ApiError,
+  API_RESPONSE_ERROR,
+  type ApiAugmentDetail,
+  type ApiEffect,
+  type ApiItemDetail,
+  type ApiSetDetail,
+} from '../../../../lib/api'
 import { apiFixture } from '../../../../test/apiFixture'
 import capturedNullIconSetResponse from '../../queries/fixtures/set-conduit-of-the-titans.json'
 import { render } from '../../../../test/renderWithQueryClient'
@@ -38,14 +47,6 @@ import capturedSetResponse from '../../queries/fixtures/set-devoted-heart.json'
 import riposteDetailResponse from '../../queries/fixtures/effect-riposte.json'
 import groupDetailResponse from '../../queries/fixtures/effect-charisma-skills.json'
 import charismaDetailResponse from '../../queries/fixtures/effect-charisma.json'
-import {
-  ApiError,
-  API_RESPONSE_ERROR,
-  type ApiAugmentDetail,
-  type ApiEffect,
-  type ApiItemDetail,
-  type ApiSetDetail,
-} from '../../../../lib/api'
 import { toAugmentDetail, toItem } from '../../queries/items'
 import { ItemDetailCard, ItemHoverCard } from './ItemDetailCard'
 import { toSetDetail } from '../../queries/sets'

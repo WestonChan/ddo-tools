@@ -1,6 +1,24 @@
 import { slugFromPathSegment, type ApiItemRow } from '../../../lib/api'
-import { describe, expect, it } from 'vitest'
-import { EMPTY_ITEM_FILTERS, itemListParameters, fetchItemPage } from './itemList'
+import { describe, expect, it, afterEach, vi } from 'vitest'
+import {
+  EMPTY_ITEM_FILTERS,
+  itemListParameters,
+  fetchItemPage,
+  ITEM_LIST_FILTERS,
+  itemFilterDeclarations,
+  type ItemListFilters,
+} from './itemList'
+import { QueryClient } from '@tanstack/react-query'
+import { MATCHABLE_ITEM_FILTER_PARAMETERS } from '../../../lib/api/itemListParameters'
+import abilities from './fixtures/weapon-abilities.json'
+import materials from './fixtures/item-materials.json'
+import sockets from './fixtures/augment-slot-types-filter-families.json'
+import crafting from './fixtures/crafting-systems.json'
+import slots from './fixtures/equipment-slots.json'
+import packs from '../../../lib/api/fixtures/adventure-packs.json'
+import raids from './fixtures/quests-page-caught-in-the-web.json'
+import sets from './fixtures/sets-null-icon-page.json'
+import effects from './fixtures/effects-page.json'
 
 describe('item list filters', () => {
   it.each([
@@ -18,20 +36,6 @@ describe('item list filters', () => {
     )
   })
 })
-
-import { QueryClient } from '@tanstack/react-query'
-import { afterEach, vi } from 'vitest'
-import { MATCHABLE_ITEM_FILTER_PARAMETERS } from '../../../lib/api/itemListParameters'
-import { ITEM_LIST_FILTERS, itemFilterDeclarations, type ItemListFilters } from './itemList'
-import abilities from './fixtures/weapon-abilities.json'
-import materials from './fixtures/item-materials.json'
-import sockets from './fixtures/augment-slot-types-filter-families.json'
-import crafting from './fixtures/crafting-systems.json'
-import slots from './fixtures/equipment-slots.json'
-import packs from '../../../lib/api/fixtures/adventure-packs.json'
-import raids from './fixtures/quests-page-caught-in-the-web.json'
-import sets from './fixtures/sets-null-icon-page.json'
-import effects from './fixtures/effects-page.json'
 
 afterEach(() => vi.restoreAllMocks())
 

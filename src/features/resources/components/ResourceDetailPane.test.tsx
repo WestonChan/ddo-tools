@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { slugFromPathSegment, type Slug } from '../../../lib/api'
+import {
+  slugFromPathSegment,
+  type Slug,
+  ApiError,
+  API_HTTP_ERROR,
+  API_NETWORK_ERROR,
+} from '../../../lib/api'
 import { render } from '../../../test/renderWithQueryClient'
 import { ResourceDetailPane } from './ResourceDetailPane'
-import { ApiError, API_HTTP_ERROR, API_NETWORK_ERROR } from '../../../lib/api'
 import type { Item } from '../queries/items'
 
 const navigateMock = vi.fn()

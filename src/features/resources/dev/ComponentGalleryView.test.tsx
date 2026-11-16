@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { QueryClient } from '@tanstack/react-query'
-import { cleanup, screen } from '@testing-library/react'
+import { cleanup, screen, within } from '@testing-library/react'
 import { HoverCardProvider } from '../../../components'
 import { render as renderWithQueryClient } from '../../../test/renderWithQueryClient'
 import type { Slug } from '../../../lib/api'
@@ -21,6 +21,10 @@ import { ComponentGalleryView } from './ComponentGalleryView'
 import { GALLERY_AUGMENTS, GALLERY_ITEMS, GALLERY_SETS, galleryItemBySlug } from './galleryItems'
 import { seedGalleryQueries } from './gallerySeed'
 import { GALLERY_SPECIMENS } from './gallerySpecimens'
+import { StrictMode } from 'react'
+import userEvent from '@testing-library/user-event'
+import { ITEM_LIST_FILTERS } from '../queries/itemList'
+import { seedGalleryFilterVocabularies } from './galleryFilters'
 
 vi.mock('../../../hooks', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../hooks')>()),
@@ -230,12 +234,6 @@ describe('ComponentGalleryView', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 })
-
-import { StrictMode } from 'react'
-import { within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { ITEM_LIST_FILTERS } from '../queries/itemList'
-import { seedGalleryFilterVocabularies } from './galleryFilters'
 
 describe('gallery filters', () => {
   it('seeds every declared option source', () => {

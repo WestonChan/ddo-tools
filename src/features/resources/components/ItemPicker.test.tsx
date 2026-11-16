@@ -7,15 +7,20 @@ import {
   screen,
   waitFor,
   within,
+  render as renderComponent,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { slugFromPathSegment } from '../../../lib/api'
+import { slugFromPathSegment, ApiError, API_HTTP_ERROR } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
-import { render as renderComponent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import * as vocabularies from '../queries/itemFilterVocabularies'
-import { ITEM_LIST_FILTERS } from '../queries/itemList'
-import { ApiError, API_HTTP_ERROR } from '../../../lib/api'
+import {
+  ITEM_LIST_FILTERS,
+  EMPTY_ITEM_FILTERS,
+  ITEM_COLUMN_KEYS,
+  itemListParameters,
+  type ItemListFilters,
+} from '../queries/itemList'
 import abilitiesResponse from '../queries/fixtures/weapon-abilities.json'
 import materialsResponse from '../queries/fixtures/item-materials.json'
 import socketsResponse from '../queries/fixtures/augment-slot-types-filter-families.json'
@@ -27,12 +32,6 @@ import strengthResponse from '../queries/fixtures/effects-page-strength.json'
 import spellsightResponse from '../queries/fixtures/effects-page-spellsight.json'
 import { ItemPicker } from './ItemPicker'
 import { type EffectVocabularyRow, type ItemSummary } from '../queries/items'
-import {
-  EMPTY_ITEM_FILTERS,
-  ITEM_COLUMN_KEYS,
-  itemListParameters,
-  type ItemListFilters,
-} from '../queries/itemList'
 import { resetPersistedStateForTests } from '../../../lib/persistedState'
 import { useResourceListState } from '../resourceListState'
 

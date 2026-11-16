@@ -7,15 +7,14 @@ import {
   fireEvent,
   waitFor,
   within,
+  render as renderComponent,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { slugFromPathSegment, type Slug, type ApiEffectVocabularyRow } from '../../lib/api'
 import { apiFixture } from '../../test/apiFixture'
-import { render as renderComponent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { effectVocabularyQueryOptions } from './queries/itemFilterVocabularies'
 import capturedEffectsPageResponse from './queries/fixtures/effects-page.json'
-
 import { resetPersistedStateForTests } from '../../lib/persistedState'
 import { HoverCardProvider } from '../../components'
 import ResourcesView from './ResourcesView'

@@ -10,6 +10,14 @@ import { ItemPicker } from './ItemPicker'
 import effectPageResponse from '../queries/fixtures/effects-page.json'
 import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
 import type { ApiEffectVocabularyRow } from '../../../lib/api'
+import { ITEM_LIST_FILTERS, itemFilterDeclarations } from '../queries/itemList'
+import slotsResponse from '../queries/fixtures/equipment-slots.json'
+import abilitiesResponse from '../queries/fixtures/weapon-abilities.json'
+import materialsResponse from '../queries/fixtures/item-materials.json'
+import socketsResponse from '../queries/fixtures/augment-slot-types-filter-families.json'
+import craftingResponse from '../queries/fixtures/crafting-systems.json'
+import packsResponse from '../../../lib/api/fixtures/adventure-packs.json'
+import raidsResponse from '../queries/fixtures/quests-page-caught-in-the-web.json'
 
 const capturedNullIconSetPage = apiFixture(capturedNullIconSetPageResponse)
 const effectPage = apiFixture(effectPageResponse)
@@ -525,15 +533,6 @@ it('lists a captured set with a null icon without creating a broken image', asyn
   expect(await screen.findByRole('option', { name: nullIconSet.name })).toBeInTheDocument()
   expect(container.querySelector('img')).toBeNull()
 })
-
-import { ITEM_LIST_FILTERS, itemFilterDeclarations } from '../queries/itemList'
-import slotsResponse from '../queries/fixtures/equipment-slots.json'
-import abilitiesResponse from '../queries/fixtures/weapon-abilities.json'
-import materialsResponse from '../queries/fixtures/item-materials.json'
-import socketsResponse from '../queries/fixtures/augment-slot-types-filter-families.json'
-import craftingResponse from '../queries/fixtures/crafting-systems.json'
-import packsResponse from '../../../lib/api/fixtures/adventure-packs.json'
-import raidsResponse from '../queries/fixtures/quests-page-caught-in-the-web.json'
 
 const declaredVocabularyResponses: Record<string, { response: unknown; firstLabel: string }> = {
   '/v1/equipment-slots': {

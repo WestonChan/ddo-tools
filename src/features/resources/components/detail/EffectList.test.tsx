@@ -17,7 +17,6 @@ import capturedConstantItemResponse from '../../queries/fixtures/item-1-quarters
 import capturedConstantDetailResponse from '../../queries/fixtures/effect-curse-of-weakness.json'
 import capturedSetResponse from '../../queries/fixtures/set-devoted-heart.json'
 import capturedLargerSetResponse from '../../queries/fixtures/set-adherent-of-the-mists-set-heroic.json'
-import capturedTextOnlyItemResponse from '../../queries/fixtures/item-greatsword-of-the-fallen-age.json'
 import capturedGroupAugmentResponse from '../../queries/fixtures/augment-eldritch-rune-of-skill--charisma.json'
 import capturedMixedGroupItemResponse from '../../queries/fixtures/item-absolute-judgement.json'
 import {
@@ -43,7 +42,7 @@ const capturedConstantItem = apiFixture(capturedConstantItemResponse)
 const capturedConstantDetail = apiFixture(capturedConstantDetailResponse)
 const capturedSet = apiFixture(capturedSetResponse)
 const capturedLargerSet = apiFixture(capturedLargerSetResponse)
-const capturedTextOnlyItem = apiFixture(capturedTextOnlyItemResponse)
+const capturedTextOnlyItem = apiFixture(capturedWeaponResponse)
 const capturedGroupAugment = apiFixture(capturedGroupAugmentResponse)
 const capturedMixedGroupItem = apiFixture(capturedMixedGroupItemResponse)
 

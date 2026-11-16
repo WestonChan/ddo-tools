@@ -1,5 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { slugFromPathSegment } from '../../../lib/api'
+import {
+  slugFromPathSegment,
+  isApiEffect,
+  isApiEffectDetail,
+  isApiEffectVocabularyRow,
+  matchableFilterParameters,
+  singleValueFilterParameters,
+  statBonusFilterValue,
+} from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
 import type {
   ApiAugmentDetail,
@@ -7,14 +15,6 @@ import type {
   ApiItemDetail,
   ApiNote,
   ApiSetDetail,
-} from '../../../lib/api'
-import {
-  isApiEffect,
-  isApiEffectDetail,
-  isApiEffectVocabularyRow,
-  matchableFilterParameters,
-  singleValueFilterParameters,
-  statBonusFilterValue,
 } from '../../../lib/api'
 import itemResponseResponse from './fixtures/item-stolen-necklace-level-25.json'
 import augmentResponseResponse from './fixtures/augment-solar-gem-of-physical-resistance-rating-heroic.json'
