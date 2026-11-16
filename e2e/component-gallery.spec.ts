@@ -17,7 +17,6 @@ test('every gallery section uses seeded data without requesting the API', async 
       page.getByRole('heading', { name: section.label, exact: true, level: 2 }),
     ).toBeInViewport()
   }
-  expect(apiRequests).toEqual([])
   await page.getByRole('link', { name: 'Item filters', exact: true }).click()
   const appliedSpecimen = page.locator('.component-gallery__specimen').filter({
     has: page.getByRole('heading', { name: 'Applied with match modes', exact: true }),
@@ -32,4 +31,5 @@ test('every gallery section uses seeded data without requesting the API', async 
       exact: true,
     }),
   ).toBeVisible()
+  expect(apiRequests).toEqual([])
 })
