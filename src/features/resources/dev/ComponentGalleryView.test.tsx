@@ -74,8 +74,10 @@ describe('gallery specimens', () => {
 
   it('shows every note kind on a line and an entity in named specimens', () => {
     const kinds = { game_bug: true, unverified: true } satisfies Record<NoteKind, true>
-    const items = GALLERY_SPECIMENS.flatMap(({ itemSlug }) =>
-      itemSlug ? [galleryItemBySlug(itemSlug)] : [],
+    const items = GALLERY_SPECIMENS.flatMap((specimen) =>
+      specimen.section !== 'filters' && specimen.itemSlug
+        ? [galleryItemBySlug(specimen.itemSlug)]
+        : [],
     )
     expect(
       [...new Set(items.flatMap((item) => item.notes?.map((note) => note.kind) ?? []))].sort(),
@@ -97,8 +99,11 @@ describe('gallery specimens', () => {
         GALLERY_SPECIMENS.some((specimen) => specimen.section === section.id),
         section.label,
       ).toBe(true)
-    for (const { itemSlug } of GALLERY_SPECIMENS)
-      if (itemSlug !== null) expect(() => galleryItemBySlug(itemSlug)).not.toThrow()
+    for (const specimen of GALLERY_SPECIMENS) {
+      if (specimen.section === 'filters') expect(specimen.kind).toBe('item-filters')
+      else if (specimen.itemSlug !== null)
+        expect(() => galleryItemBySlug(specimen.itemSlug!)).not.toThrow()
+    }
   })
 
   it('show every kind of item source', () => {
@@ -222,6 +227,61 @@ describe('ComponentGalleryView', () => {
       ),
     )
     expect([...ITEM_DETAIL_SECTION_KEYS].filter((key) => !shownSectionKeys.has(key))).toEqual([])
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+})
+
+import { StrictMode } from 'react'
+import { within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { ITEM_LIST_FILTERS } from '../queries/itemList'
+import { seedGalleryFilterVocabularies } from './galleryFilters'
+
+describe('gallery filters', () => {
+  it('seeds every declared option source', () => {
+    const client = new QueryClient()
+    seedGalleryFilterVocabularies(client)
+    for (const [key, entry] of Object.entries(ITEM_LIST_FILTERS)) {
+      expect(client.getQueryData(entry.optionSource.queryOptions('').queryKey), key).toBeDefined()
+    }
+    client.clear()
+  })
+
+  it('shows every chip and searches the seeded vocabularies without fetching', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    const { container } = renderWithQueryClient(
+      <StrictMode>
+        <HoverCardProvider>
+          <ComponentGalleryView />
+        </HoverCardProvider>
+      </StrictMode>,
+    )
+    const section = container.querySelector('#filters')?.closest('section')
+    expect(section).not.toBeNull()
+    const specimens = section!.querySelectorAll<HTMLElement>('.component-gallery__specimen')
+    expect(specimens).toHaveLength(2)
+    for (const specimen of specimens) {
+      for (const entry of Object.values(ITEM_LIST_FILTERS))
+        expect(within(specimen).getByRole('button', { name: entry.label })).toBeInTheDocument()
+      expect(specimen.querySelector('.detail-card')).toBeNull()
+    }
+    const everyChip = within(specimens[0])
+    await userEvent.click(everyChip.getByRole('button', { name: 'Socket' }))
+    expect(
+      screen.getByRole('option', { name: (name) => name.startsWith('red') }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('option', { name: (name) => name.startsWith('blue') }),
+    ).toBeInTheDocument()
+    await userEvent.click(everyChip.getByRole('button', { name: 'Bonuses' }))
+    expect(screen.getAllByRole('option')).toHaveLength(2)
+    await userEvent.type(screen.getByRole('combobox', { name: 'Bonuses' }), 'Strength')
+    expect(screen.getAllByRole('option')).toHaveLength(1)
+    expect(screen.getByRole('option', { name: /Strength/ })).toBeInTheDocument()
+    await userEvent.click(everyChip.getByRole('button', { name: 'Bonuses' }))
+    await userEvent.click(within(specimens[1]).getByRole('button', { name: 'Show applied · 4' }))
+    expect(within(specimens[1]).getByText('Socket · all')).toBeInTheDocument()
+    expect(within(specimens[1]).getByText('Attack ability · any')).toBeInTheDocument()
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 })

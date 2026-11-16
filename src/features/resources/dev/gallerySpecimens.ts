@@ -1,11 +1,12 @@
+import { EMPTY_ITEM_FILTERS, type ItemListFilters } from '../queries/itemList'
 import type { Slug } from '../../../lib/api'
 import { gallerySlug } from './galleryItems'
 import type { ComponentGallerySectionId } from './componentGallerySections'
 
 export type GalleryItemState = 'loading' | 'unavailable' | 'item-error' | 'set-error'
 
-export interface GallerySpecimen {
-  section: ComponentGallerySectionId
+export interface GalleryItemSpecimen {
+  section: Exclude<ComponentGallerySectionId, 'filters'>
   title: string
   branch: string
   itemSlug: Slug | null
@@ -13,7 +14,18 @@ export interface GallerySpecimen {
   state?: GalleryItemState
 }
 
+export type GallerySpecimen =
+  | GalleryItemSpecimen
+  | {
+      section: 'filters'
+      kind: 'item-filters'
+      title: string
+      branch: string
+      filters: ItemListFilters
+    }
+
 export const GALLERY_SECTION_SUBTITLES: Record<ComponentGallerySectionId, string> = {
+  filters: 'every chip, option vocabulary, match mode and applied value',
   header: 'kicker, name, wiki link, chips, facts, description',
   weapons: 'dice, crit, modifiers, damage reduction bypasses',
   armor: 'armor, shield and other items',
@@ -26,6 +38,27 @@ export const GALLERY_SECTION_SUBTITLES: Record<ComponentGallerySectionId, string
 }
 
 export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
+  {
+    section: 'filters',
+    kind: 'item-filters',
+    title: 'Every chip',
+    branch:
+      'Open any chip to browse its seeded options; search and Any/All use the same controls as Resources',
+    filters: EMPTY_ITEM_FILTERS,
+  },
+  {
+    section: 'filters',
+    kind: 'item-filters',
+    title: 'Applied with match modes',
+    branch:
+      'Two attack abilities in Any mode and two sockets in All mode; expand applied values to see both groups',
+    filters: {
+      ...EMPTY_ITEM_FILTERS,
+      attackAbility: ['Strength', 'Dexterity'],
+      socket: ['red', 'blue'],
+      socketMatch: 'all',
+    },
+  },
   {
     section: 'enchantments',
     title: 'Game-bug notes',

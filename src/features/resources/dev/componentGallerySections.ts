@@ -1,5 +1,6 @@
 import {
   Gem,
+  ListFilter,
   Layers,
   MapPin,
   MousePointerClick,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react'
 
 export type ComponentGallerySectionId =
+  | 'filters'
   | 'header'
   | 'weapons'
   | 'armor'
@@ -29,6 +31,7 @@ export interface ComponentGallerySection {
 }
 
 export const COMPONENT_GALLERY_SECTIONS: readonly ComponentGallerySection[] = [
+  { id: 'filters', label: 'Item filters', Icon: ListFilter },
   { id: 'header', label: 'Header and chips', Icon: Tag },
   { id: 'weapons', label: 'Weapons', Icon: Sword },
   { id: 'armor', label: 'Armor and shields', Icon: ShieldHalf },

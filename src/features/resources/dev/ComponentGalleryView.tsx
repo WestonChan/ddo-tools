@@ -1,5 +1,9 @@
+import { DeclaredFilterChipRow } from '../filters/DeclaredFilterChipRow'
+import { locallySearched } from '../filters/filterOptionSources'
+import { EMPTY_ITEM_FILTERS, itemFilterDeclarations } from '../queries/itemList'
+import { seedGalleryFilterVocabularies } from './galleryFilters'
 import { useEffect, useRef, useState, type JSX } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { ApiErrorNotice, HoverCardPreview, PageSection } from '../../../components'
 import { useSectionScrollSpy } from '../../../hooks'
 import { API_NETWORK_ERROR, ApiError, apiDetailPath } from '../../../lib/api'
@@ -13,6 +17,7 @@ import {
   GALLERY_SECTION_SUBTITLES,
   GALLERY_SPECIMENS,
   type GallerySpecimen,
+  type GalleryItemSpecimen,
 } from './gallerySpecimens'
 
 const SECTION_IDS = COMPONENT_GALLERY_SECTIONS.map((section) => section.id)
@@ -26,7 +31,7 @@ function useSeededGalleryQueries(): void {
   }, [queryClient, seededQueryKeys])
 }
 
-function statusFor(specimen: GallerySpecimen): JSX.Element | string | null {
+function statusFor(specimen: GalleryItemSpecimen): JSX.Element | string | null {
   const missingItemPath = apiDetailPath('items', gallerySlug('missing'))
   switch (specimen.state) {
     case 'loading':
@@ -56,7 +61,7 @@ function statusFor(specimen: GallerySpecimen): JSX.Element | string | null {
   }
 }
 
-function ItemSpecimen({ specimen }: { specimen: GallerySpecimen }): JSX.Element {
+function ItemSpecimen({ specimen }: { specimen: GalleryItemSpecimen }): JSX.Element {
   const item =
     specimen.itemSlug === null || specimen.state === 'loading' || specimen.state === 'unavailable'
       ? null
@@ -73,30 +78,55 @@ function ItemSpecimen({ specimen }: { specimen: GallerySpecimen }): JSX.Element 
     onOpenItem: () => {},
   }
   return (
-    <article className="component-gallery__specimen">
-      <header className="component-gallery__specimen-header">
-        <h3 className="component-gallery__specimen-title">{specimen.title}</h3>
-        <p className="component-gallery__specimen-branch">{specimen.branch}</p>
-      </header>
-      <div className="component-gallery__pair">
-        <figure className="component-gallery__figure">
-          <figcaption className="section-label">Detail pane</figcaption>
-          <section className="resources-detail-pane">
-            <div className="resources-detail-pane-body">
-              <div className="resources-detail">
-                <ItemDetailCard {...cardProps} />
-              </div>
+    <div className="component-gallery__pair">
+      <figure className="component-gallery__figure">
+        <figcaption className="section-label">Detail pane</figcaption>
+        <section className="resources-detail-pane">
+          <div className="resources-detail-pane-body">
+            <div className="resources-detail">
+              <ItemDetailCard {...cardProps} />
             </div>
-          </section>
-        </figure>
-        <figure className="component-gallery__figure component-gallery__figure--tooltip">
-          <figcaption className="section-label">Tooltip</figcaption>
-          <HoverCardPreview>
-            <ItemHoverCard {...cardProps} />
-          </HoverCardPreview>
-        </figure>
-      </div>
-    </article>
+          </div>
+        </section>
+      </figure>
+      <figure className="component-gallery__figure component-gallery__figure--tooltip">
+        <figcaption className="section-label">Tooltip</figcaption>
+        <HoverCardPreview>
+          <ItemHoverCard {...cardProps} />
+        </HoverCardPreview>
+      </figure>
+    </div>
+  )
+}
+
+const GALLERY_FILTER_DECLARATIONS = locallySearched(
+  itemFilterDeclarations({ canListWeapons: true }),
+)
+
+function FilterSpecimen({
+  specimen,
+}: {
+  specimen: Extract<GallerySpecimen, { kind: 'item-filters' }>
+}): JSX.Element {
+  const [filters, setFilters] = useState(specimen.filters)
+  const [queryClient] = useState(() => {
+    const client = new QueryClient()
+    seedGalleryFilterVocabularies(client)
+    return client
+  })
+  useEffect(() => {
+    seedGalleryFilterVocabularies(queryClient)
+    return () => queryClient.clear()
+  }, [queryClient])
+  return (
+    <QueryClientProvider client={queryClient}>
+      <DeclaredFilterChipRow
+        declarations={GALLERY_FILTER_DECLARATIONS}
+        values={filters}
+        onChange={setFilters}
+        onClearAll={() => setFilters(EMPTY_ITEM_FILTERS)}
+      />
+    </QueryClientProvider>
   )
 }
 
@@ -110,9 +140,9 @@ export function ComponentGalleryView(): JSX.Element {
         <header className="component-gallery__header">
           <h1 className="component-gallery__title">Interface components</h1>
           <p className="component-gallery__note">
-            Development only. Every specimen is static data shown as the detail pane and the tooltip
-            side by side; hover, pin and click work as in the real view, and nothing calls the API.
-            Add a specimen here whenever a component gains a branch.
+            Development only. Item cards show the detail pane and tooltip side by side, and filter
+            specimens use the Resources controls. Every specimen uses static data; nothing calls the
+            API. Add a specimen here whenever a component gains a branch.
           </p>
         </header>
         {COMPONENT_GALLERY_SECTIONS.map((section) => (
@@ -125,7 +155,17 @@ export function ComponentGalleryView(): JSX.Element {
             <div className="component-gallery__specimens">
               {GALLERY_SPECIMENS.filter((specimen) => specimen.section === section.id).map(
                 (specimen) => (
-                  <ItemSpecimen key={specimen.title} specimen={specimen} />
+                  <article key={specimen.title} className="component-gallery__specimen">
+                    <header className="component-gallery__specimen-header">
+                      <h3 className="component-gallery__specimen-title">{specimen.title}</h3>
+                      <p className="component-gallery__specimen-branch">{specimen.branch}</p>
+                    </header>
+                    {specimen.section === 'filters' ? (
+                      <FilterSpecimen specimen={specimen} />
+                    ) : (
+                      <ItemSpecimen specimen={specimen} />
+                    )}
+                  </article>
                 ),
               )}
             </div>
