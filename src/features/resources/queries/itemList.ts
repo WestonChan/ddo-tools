@@ -163,7 +163,7 @@ export const ITEM_LIST_FILTERS = {
       isServerSearched: true,
       toOptionSet: ({ shown, unsearched, values }) => {
         return {
-          optionCount: unsearched?.total ?? 0,
+          optionCount: unsearched?.total ?? shown?.rows.length ?? 0,
           selectedOptionLabels: new Map(
             (unsearched?.rows ?? []).flatMap((row): Array<[string, string]> => [
               [row.name, row.name],
@@ -219,7 +219,7 @@ export const ITEM_LIST_FILTERS = {
       toOptionSet: ({ shown, unsearched }) => {
         return {
           options: (shown?.rows ?? []).map((name) => ({ value: name, label: name })),
-          optionCount: unsearched?.total ?? 0,
+          optionCount: unsearched?.total ?? shown?.rows.length ?? 0,
         }
       },
     }),

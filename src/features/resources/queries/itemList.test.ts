@@ -170,6 +170,14 @@ describe('the item filter declaration', () => {
             )
       }
       if (key === 'set') expect(optionSet.optionCount).toBe(sets.total)
+      if (entry.optionSource.isServerSearched) {
+        const withoutUnsearched = entry.optionSource.toOptionSet({
+          shown: vocabulary,
+          unsearched: undefined,
+          values: EMPTY_ITEM_FILTERS,
+        })
+        expect(withoutUnsearched.optionCount).toBe(withoutUnsearched.options.length)
+      }
       client.clear()
     },
   )
