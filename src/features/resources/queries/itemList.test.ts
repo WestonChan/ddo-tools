@@ -5,7 +5,7 @@ import {
   itemListParameters,
   fetchItemPage,
   ITEM_LIST_FILTERS,
-  itemFilterDeclarations,
+  declaredItemFilters,
   type ItemListFilters,
 } from './itemList'
 import { QueryClient } from '@tanstack/react-query'
@@ -52,9 +52,9 @@ const vocabularyResponses = {
   craftingSystem: { response: crafting, values: crafting.crafting_systems.map((row) => row.slug) },
 }
 
-describe('the item filter declaration', () => {
+describe('ITEM_LIST_FILTERS and declaredItemFilters', () => {
   it('declares one chip per multi-value field in table order with its parameter matchability', () => {
-    const declarations = itemFilterDeclarations({ canListWeapons: true }).filter(
+    const declarations = declaredItemFilters({ canListWeapons: true }).filter(
       (row) => row.kind === 'multi',
     )
     expect(declarations.map((row) => row.key)).toEqual(Object.keys(ITEM_LIST_FILTERS))
@@ -102,7 +102,7 @@ describe('the item filter declaration', () => {
       for (const key of Object.keys(ITEM_LIST_FILTERS) as Array<keyof typeof ITEM_LIST_FILTERS>)
         values[key] = ['selected']
       const parameters = itemListParameters(values, '', false, 0, null, scope)
-      const keys = itemFilterDeclarations(scope).map((row) => row.key)
+      const keys = declaredItemFilters(scope).map((row) => row.key)
       for (const [key, entry] of Object.entries(ITEM_LIST_FILTERS)) {
         const isVisible = canListWeapons || !entry.isWeaponOnly
         expect(keys.includes(key as keyof ItemListFilters)).toBe(isVisible)

@@ -1,6 +1,6 @@
 import { DeclaredFilterChipRow } from '../filters/DeclaredFilterChipRow'
 import { locallySearched } from '../filters/filterOptionSources'
-import { EMPTY_ITEM_FILTERS, itemFilterDeclarations } from '../queries/itemList'
+import { EMPTY_ITEM_FILTERS, declaredItemFilters } from '../queries/itemList'
 import { seedGalleryFilterVocabularies } from './galleryFilters'
 import { useLayoutEffect, useRef, useState, type JSX } from 'react'
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
@@ -99,9 +99,7 @@ function ItemSpecimen({ specimen }: { specimen: GalleryItemSpecimen }): JSX.Elem
   )
 }
 
-const GALLERY_FILTER_DECLARATIONS = locallySearched(
-  itemFilterDeclarations({ canListWeapons: true }),
-)
+const GALLERY_FILTER_DECLARATIONS = locallySearched(declaredItemFilters({ canListWeapons: true }))
 
 function FilterSpecimen({
   specimen,

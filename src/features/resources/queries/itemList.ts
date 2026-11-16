@@ -120,7 +120,7 @@ type ItemFilterDeclaration = ItemFilterChip & { isWeaponOnly: boolean } & (
     | { parameter: SingleValueItemFilterParameter; matchKey: null }
   )
 
-function matchableItemFilterDeclaration(
+function createMatchableItemFilterDeclaration(
   parameter: MatchableItemFilterParameter,
   matchKey: ItemMatchKey,
   chip: ItemFilterChip & { isWeaponOnly?: boolean },
@@ -128,7 +128,7 @@ function matchableItemFilterDeclaration(
   return { isWeaponOnly: false, ...chip, parameter, matchKey }
 }
 
-function singleValueItemFilterDeclaration(
+function createSingleValueItemFilterDeclaration(
   parameter: SingleValueItemFilterParameter,
   chip: ItemFilterChip,
 ): ItemFilterDeclaration {
@@ -136,7 +136,7 @@ function singleValueItemFilterDeclaration(
 }
 
 export const ITEM_LIST_FILTERS = {
-  slot: singleValueItemFilterDeclaration('slot', {
+  slot: createSingleValueItemFilterDeclaration('slot', {
     label: 'Gear slot',
     group: 'item',
     searchPlaceholder: 'Find a slot…',
@@ -151,7 +151,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  bonuses: matchableItemFilterDeclaration('bonus', 'bonusMatch', {
+  bonuses: createMatchableItemFilterDeclaration('bonus', 'bonusMatch', {
     label: 'Bonuses',
     group: 'item',
     searchPlaceholder: 'Stat, group or enchantment…',
@@ -211,7 +211,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  set: matchableItemFilterDeclaration('set', 'setMatch', {
+  set: createMatchableItemFilterDeclaration('set', 'setMatch', {
     label: 'Set',
     group: 'item',
     searchPlaceholder: 'Find a set…',
@@ -229,7 +229,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  attackAbility: matchableItemFilterDeclaration('attack_ability', 'attackAbilityMatch', {
+  attackAbility: createMatchableItemFilterDeclaration('attack_ability', 'attackAbilityMatch', {
     label: 'Attack ability',
     group: 'item',
     searchPlaceholder: 'Find attack ability…',
@@ -253,7 +253,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  damageAbility: matchableItemFilterDeclaration('damage_ability', 'damageAbilityMatch', {
+  damageAbility: createMatchableItemFilterDeclaration('damage_ability', 'damageAbilityMatch', {
     label: 'Damage ability',
     group: 'item',
     searchPlaceholder: 'Find damage ability…',
@@ -277,7 +277,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  material: singleValueItemFilterDeclaration('material', {
+  material: createSingleValueItemFilterDeclaration('material', {
     label: 'Material',
     group: 'item',
     searchPlaceholder: 'Find material…',
@@ -298,7 +298,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  socket: matchableItemFilterDeclaration('socket', 'socketMatch', {
+  socket: createMatchableItemFilterDeclaration('socket', 'socketMatch', {
     label: 'Socket',
     group: 'item',
     searchPlaceholder: 'Find socket…',
@@ -319,7 +319,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  pack: matchableItemFilterDeclaration('pack', 'packMatch', {
+  pack: createMatchableItemFilterDeclaration('pack', 'packMatch', {
     label: 'Pack',
     group: 'source',
     searchPlaceholder: 'Find a pack…',
@@ -334,7 +334,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  raid: matchableItemFilterDeclaration('quest', 'raidMatch', {
+  raid: createMatchableItemFilterDeclaration('quest', 'raidMatch', {
     label: 'Raid',
     group: 'source',
     searchPlaceholder: 'Find a raid…',
@@ -355,7 +355,7 @@ export const ITEM_LIST_FILTERS = {
       },
     }),
   }),
-  craftingSystem: matchableItemFilterDeclaration('crafting_system', 'craftingSystemMatch', {
+  craftingSystem: createMatchableItemFilterDeclaration('crafting_system', 'craftingSystemMatch', {
     label: 'Crafting system',
     group: 'source',
     searchPlaceholder: 'Find crafting system…',
@@ -378,7 +378,7 @@ export const ITEM_LIST_FILTERS = {
   }),
 } satisfies Record<MultiValueItemFilterKey, ItemFilterDeclaration>
 
-export function itemFilterDeclarations(scope: ItemListScope): DeclaredFilter<ItemListFilters>[] {
+export function declaredItemFilters(scope: ItemListScope): DeclaredFilter<ItemListFilters>[] {
   return [
     {
       key: 'ml',

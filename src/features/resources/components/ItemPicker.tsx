@@ -34,7 +34,7 @@ import { hasAppliedFilters } from '../filters/filterModel'
 import { type ItemSummary } from '../queries/items'
 import {
   ITEM_LIST_FILTERS,
-  itemFilterDeclarations,
+  declaredItemFilters,
   EMPTY_ITEM_FILTERS,
   type ItemColumnKey,
   type ItemListFilters,
@@ -230,7 +230,7 @@ export function ItemPicker({
     [itemPageQuery.data],
   )
   const resultCount = itemPageQuery.data?.pages[0]?.total ?? 0
-  const declarations = useMemo(() => itemFilterDeclarations(ITEM_LIST_SCOPE), [])
+  const declarations = useMemo(() => declaredItemFilters(ITEM_LIST_SCOPE), [])
   const hasActiveFilters = hasAppliedFilters(declarations, filters)
   const rejectedFilter = rejectedItemFilter(itemPageQuery.error, filters)
   const rejectedFilterLabel = rejectedFilter ? ITEM_LIST_FILTERS[rejectedFilter].label : null

@@ -10,7 +10,7 @@ import { ItemPicker } from './ItemPicker'
 import effectPageResponse from '../queries/fixtures/effects-page.json'
 import capturedSetPageResponse from '../queries/fixtures/sets-page.json'
 import type { ApiEffectVocabularyRow } from '../../../lib/api'
-import { ITEM_LIST_FILTERS, itemFilterDeclarations } from '../queries/itemList'
+import { ITEM_LIST_FILTERS, declaredItemFilters } from '../queries/itemList'
 import slotsResponse from '../queries/fixtures/equipment-slots.json'
 import abilitiesResponse from '../queries/fixtures/weapon-abilities.json'
 import materialsResponse from '../queries/fixtures/item-materials.json'
@@ -569,7 +569,7 @@ const declaredVocabularyResponses: Record<string, { response: unknown; firstLabe
 
 describe('declared item filter options', () => {
   it.each(
-    itemFilterDeclarations({ canListWeapons: true }).filter(
+    declaredItemFilters({ canListWeapons: true }).filter(
       (declaration) => declaration.kind === 'multi',
     ),
   )(
@@ -675,7 +675,7 @@ describe('declared item filter options', () => {
   )
 
   it('requests only the two slug vocabularies when every chip is restored', async () => {
-    const declarations = itemFilterDeclarations({ canListWeapons: true }).filter(
+    const declarations = declaredItemFilters({ canListWeapons: true }).filter(
       (declaration) => declaration.kind === 'multi',
     )
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
@@ -796,7 +796,7 @@ describe('declared item filter options', () => {
   })
 
   it.each(
-    itemFilterDeclarations({ canListWeapons: true }).filter(
+    declaredItemFilters({ canListWeapons: true }).filter(
       (declaration) => declaration.kind === 'multi',
     ),
   )(
