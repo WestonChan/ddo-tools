@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { QueryClient } from '@tanstack/react-query'
-import { cleanup, screen, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { HoverCardProvider } from '../../../components'
 import { render as renderWithQueryClient } from '../../../test/renderWithQueryClient'
 import type { Slug } from '../../../lib/api'
@@ -245,15 +245,21 @@ describe('gallery filters', () => {
     client.clear()
   })
 
-  it('shows every chip and searches the seeded vocabularies without fetching', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch')
-    const { container } = renderWithQueryClient(
+  it('keeps card and filter seeds through root StrictMode replay without fetching', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('{}', { status: 500 }))
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { container } = render(
       <StrictMode>
-        <HoverCardProvider>
-          <ComponentGalleryView />
-        </HoverCardProvider>
+        <QueryClientProvider client={queryClient}>
+          <HoverCardProvider>
+            <ComponentGalleryView />
+          </HoverCardProvider>
+        </QueryClientProvider>
       </StrictMode>,
     )
+    expect.soft(fetchSpy).not.toHaveBeenCalled()
     const section = container.querySelector('#filters')?.closest('section')
     expect(section).not.toBeNull()
     const specimens = section!.querySelectorAll<HTMLElement>('.component-gallery__specimen')
@@ -280,6 +286,8 @@ describe('gallery filters', () => {
     await userEvent.click(within(specimens[1]).getByRole('button', { name: 'Show applied · 4' }))
     expect(within(specimens[1]).getByText('Socket · all')).toBeInTheDocument()
     expect(within(specimens[1]).getByText('Attack ability · any')).toBeInTheDocument()
+    await userEvent.click(within(specimens[1]).getByRole('button', { name: 'Attack ability' }))
+    expect(screen.getAllByRole('option')).toHaveLength(2)
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 })

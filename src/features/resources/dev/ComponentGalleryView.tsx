@@ -2,7 +2,7 @@ import { DeclaredFilterChipRow } from '../filters/DeclaredFilterChipRow'
 import { locallySearched } from '../filters/filterOptionSources'
 import { EMPTY_ITEM_FILTERS, itemFilterDeclarations } from '../queries/itemList'
 import { seedGalleryFilterVocabularies } from './galleryFilters'
-import { useEffect, useRef, useState, type JSX } from 'react'
+import { useLayoutEffect, useRef, useState, type JSX } from 'react'
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { ApiErrorNotice, HoverCardPreview, PageSection } from '../../../components'
 import { useSectionScrollSpy } from '../../../hooks'
@@ -25,7 +25,7 @@ const SECTION_IDS = COMPONENT_GALLERY_SECTIONS.map((section) => section.id)
 function useSeededGalleryQueries(): void {
   const queryClient = useQueryClient()
   const [seededQueryKeys] = useState(() => seedGalleryQueries(queryClient))
-  useEffect(() => {
+  useLayoutEffect(() => {
     seedGalleryQueries(queryClient)
     return () => removeGalleryQueries(queryClient, seededQueryKeys)
   }, [queryClient, seededQueryKeys])
@@ -110,14 +110,10 @@ function FilterSpecimen({
 }): JSX.Element {
   const [filters, setFilters] = useState(specimen.filters)
   const [queryClient] = useState(() => {
-    const client = new QueryClient()
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } })
     seedGalleryFilterVocabularies(client)
     return client
   })
-  useEffect(() => {
-    seedGalleryFilterVocabularies(queryClient)
-    return () => queryClient.clear()
-  }, [queryClient])
   return (
     <QueryClientProvider client={queryClient}>
       <DeclaredFilterChipRow
