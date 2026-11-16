@@ -1,3 +1,4 @@
+import { format, resolveConfig } from 'prettier'
 import { writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 
@@ -103,22 +104,26 @@ const manifest = {
   'src/test/fixtures/vendor-morten-edgewright.json': '/v1/vendors/morten-edgewright',
 }
 
-for (const [file, path] of Object.entries(manifest)) {
+const captures = Object.entries(manifest).map(([file, path]) => {
   const isSpecification = path.endsWith('/openapi.json')
   const isValidDestination = isSpecification
     ? file.startsWith('src/lib/api/openapi/')
     : file.includes('/fixtures/')
   if (!isValidDestination) throw new Error(`Invalid capture placement: ${file} ← ${path}`)
-}
+  return { file, path, isSpecification }
+})
 
 const { values } = parseArgs({
   options: { api: { type: 'string', default: 'https://ddo-data.fly.dev' } },
 })
-for (const [file, path] of Object.entries(manifest)) {
+for (const { file, path, isSpecification } of captures) {
   const response = await fetch(new URL(path, values.api))
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`)
   const body = await response.text()
   JSON.parse(body)
-  await writeFile(new URL(`../${file}`, import.meta.url), body)
+  await writeFile(
+    new URL(`../${file}`, import.meta.url),
+    isSpecification ? await format(body, { ...(await resolveConfig(file)), parser: 'json' }) : body,
+  )
   console.info(`${file} ← ${response.url}`)
 }
