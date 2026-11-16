@@ -2,6 +2,12 @@ import { writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 
 const manifest = {
+  'src/lib/api/openapi/v1.json': '/v1/openapi.json',
+  'src/features/resources/queries/fixtures/weapon-abilities.json': '/v1/weapon-abilities?limit=6',
+  'src/features/resources/queries/fixtures/item-materials.json': '/v1/item-materials?limit=50',
+  'src/features/resources/queries/fixtures/augment-slot-types-filter-families.json':
+    '/v1/augment-slot-types?family=standard&family=dino&family=lamordia&family=upgrade&limit=100',
+  'src/features/resources/queries/fixtures/crafting-systems.json': '/v1/crafting-systems?limit=100',
   'src/features/resources/queries/fixtures/effect-elemental-resistance.json':
     '/v1/effects/elemental-resistance?items_limit=1&items_offset=15&augments_limit=0&set_tiers_limit=0',
   'src/features/resources/queries/fixtures/item-docent-of-shadow-level-8.json':
@@ -92,6 +98,14 @@ const manifest = {
   'src/lib/api/fixtures/adventure-packs.json': '/v1/adventure-packs?limit=67',
   'src/lib/api/fixtures/optional-buffs.json': '/v1/optional-buffs?limit=50',
   'src/test/fixtures/vendor-morten-edgewright.json': '/v1/vendors/morten-edgewright',
+}
+
+for (const [file, path] of Object.entries(manifest)) {
+  const isSpecification = path.endsWith('/openapi.json')
+  const isValidDestination = isSpecification
+    ? file.startsWith('src/lib/api/openapi/')
+    : file.includes('/fixtures/')
+  if (!isValidDestination) throw new Error(`Invalid capture placement: ${file} ← ${path}`)
 }
 
 const { values } = parseArgs({

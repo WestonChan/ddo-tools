@@ -12,7 +12,8 @@ import {
   isApiEffect,
   isApiEffectDetail,
   isApiEffectVocabularyRow,
-  multiValueFilterParameters,
+  matchableFilterParameters,
+  singleValueFilterParameters,
   statBonusFilterValue,
 } from '../../../lib/api'
 import itemResponseResponse from './fixtures/item-stolen-necklace-level-25.json'
@@ -408,21 +409,20 @@ it('fetches both kinds through /v1/effects and rejects malformed owner effects',
 it('builds repeated bonus keys and type selection without a match flag in Any mode', () => {
   expect(statBonusFilterValue('Constitution', 'Insightful')).toBe('Constitution:Insightful')
   expect(
-    multiValueFilterParameters('bonus', ['Strength', 'Constitution:Insightful'], 'all'),
+    matchableFilterParameters('bonus', ['Strength', 'Constitution:Insightful'], 'all'),
   ).toEqual({
     bonus: ['Strength', 'Constitution:Insightful'],
     bonus_match: 'all',
   })
-  expect(multiValueFilterParameters('bonus', ['Strength'])).toEqual({
+  expect(matchableFilterParameters('bonus', ['Strength'])).toEqual({
     bonus: ['Strength'],
     bonus_match: undefined,
   })
-  expect(multiValueFilterParameters('bonus', [], 'all')).toEqual({})
-  expect(multiValueFilterParameters('slot', ['Back', 'Ring'])).toEqual({
+  expect(matchableFilterParameters('bonus', [], 'all')).toEqual({})
+  expect(singleValueFilterParameters('slot', ['Back', 'Ring'])).toEqual({
     slot: ['Back', 'Ring'],
-    slot_match: undefined,
   })
-  expect(multiValueFilterParameters('quest', ['7', '8'])).toEqual({
+  expect(matchableFilterParameters('quest', ['7', '8'])).toEqual({
     quest: ['7', '8'],
     quest_match: undefined,
   })

@@ -6,7 +6,6 @@ import type {
   ApiEffectCarrierLine,
   ApiEffectDetail,
   ApiEffectVocabularyRow,
-  ApiQueryParameters,
 } from './types'
 
 function isApiEffectDamage(value: unknown): boolean {
@@ -183,19 +182,6 @@ export function isApiEffectDetail(value: unknown): value is ApiEffectDetail {
     isEffectCarrierPage(value.augments, 'augments') &&
     isEffectCarrierPage(value.set_tiers, 'set_tiers', true)
   )
-}
-
-export type MultiValueFilterName =
-  'bonus' | 'slot' | 'set' | 'pack' | 'quest' | 'quest_chain' | 'saga'
-
-export function multiValueFilterParameters(
-  name: MultiValueFilterName,
-  values: readonly string[],
-  match: 'any' | 'all' = 'any',
-): ApiQueryParameters {
-  return values.length
-    ? { [name]: values, [`${name}_match`]: match === 'all' ? 'all' : undefined }
-    : {}
 }
 
 export function statBonusFilterValue(statName: string, bonusType?: string): string {
