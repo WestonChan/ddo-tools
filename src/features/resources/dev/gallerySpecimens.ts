@@ -51,12 +51,14 @@ export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
     kind: 'item-filters',
     title: 'Applied with match modes',
     branch:
-      'Two attack abilities in Any mode and two sockets in All mode; expand applied values to see both groups',
+      'Two attack abilities in Any mode, two sockets in All mode, and stored Raid and Crafting system slugs labelled from seeded vocabularies; expand applied values to see the groups',
     filters: {
       ...EMPTY_ITEM_FILTERS,
       attackAbility: ['Strength', 'Dexterity'],
       socket: ['red', 'blue'],
       socketMatch: 'all',
+      raid: [gallerySlug('raid')],
+      craftingSystem: [gallerySlug('thunder-forged')],
     },
   },
   {

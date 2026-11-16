@@ -236,12 +236,41 @@ describe('ComponentGalleryView', () => {
 })
 
 describe('gallery filters', () => {
-  it('seeds every declared option source', () => {
+  it('seeds every option source and exhibits every restored-label source', () => {
     const client = new QueryClient()
     seedGalleryFilterVocabularies(client)
-    for (const [key, entry] of Object.entries(ITEM_LIST_FILTERS)) {
-      expect(client.getQueryData(entry.optionSource.queryOptions('').queryKey), key).toBeDefined()
+    const filterSpecimens = GALLERY_SPECIMENS.filter((specimen) => specimen.section === 'filters')
+    const shownLabelSources = new Set<string>()
+    for (const key of Object.keys(ITEM_LIST_FILTERS) as Array<keyof typeof ITEM_LIST_FILTERS>) {
+      const { optionSource } = ITEM_LIST_FILTERS[key]
+      const vocabulary = client.getQueryData(optionSource.queryOptions('').queryKey)
+      expect(vocabulary, key).toBeDefined()
+      let hasDistinctSeededLabel = false
+      for (const specimen of filterSpecimens) {
+        const selectedValues = specimen.filters[key]
+        if (selectedValues.length === 0) continue
+        shownLabelSources.add(optionSource.restoredLabelSource)
+        const { options } = optionSource.toOptionSet({
+          shown: vocabulary,
+          unsearched: vocabulary,
+          values: specimen.filters,
+        })
+        hasDistinctSeededLabel ||= selectedValues.some((value) =>
+          options.some((option) => option.value === value && option.label !== value),
+        )
+      }
+      if (optionSource.restoredLabelSource === 'vocabulary')
+        expect
+          .soft(hasDistinctSeededLabel, `${key} needs a selected vocabulary-labelled specimen`)
+          .toBe(true)
     }
+    expect(shownLabelSources).toEqual(
+      new Set(
+        Object.values(ITEM_LIST_FILTERS).map(
+          ({ optionSource }) => optionSource.restoredLabelSource,
+        ),
+      ),
+    )
     client.clear()
   })
 
@@ -283,9 +312,15 @@ describe('gallery filters', () => {
     expect(screen.getAllByRole('option')).toHaveLength(1)
     expect(screen.getByRole('option', { name: /Strength/ })).toBeInTheDocument()
     await userEvent.click(everyChip.getByRole('button', { name: 'Bonuses' }))
-    await userEvent.click(within(specimens[1]).getByRole('button', { name: 'Show applied · 4' }))
+    await userEvent.click(within(specimens[1]).getByRole('button', { name: 'Show applied · 6' }))
     expect(within(specimens[1]).getByText('Socket · all')).toBeInTheDocument()
     expect(within(specimens[1]).getByText('Attack ability · any')).toBeInTheDocument()
+    expect(
+      within(specimens[1]).getByRole('button', { name: 'Remove Raid: A gallery raid' }),
+    ).toBeInTheDocument()
+    expect(
+      within(specimens[1]).getByRole('button', { name: 'Remove Crafting system: Thunder-Forged' }),
+    ).toBeInTheDocument()
     await userEvent.click(within(specimens[1]).getByRole('button', { name: 'Attack ability' }))
     expect(screen.getAllByRole('option')).toHaveLength(2)
     expect(fetchSpy).not.toHaveBeenCalled()

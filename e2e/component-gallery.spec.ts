@@ -18,4 +18,18 @@ test('every gallery section uses seeded data without requesting the API', async 
     ).toBeInViewport()
   }
   expect(apiRequests).toEqual([])
+  await page.getByRole('link', { name: 'Item filters', exact: true }).click()
+  const appliedSpecimen = page.locator('.component-gallery__specimen').filter({
+    has: page.getByRole('heading', { name: 'Applied with match modes', exact: true }),
+  })
+  await appliedSpecimen.getByRole('button', { name: 'Show applied · 6', exact: true }).click()
+  await expect(
+    appliedSpecimen.getByRole('button', { name: 'Remove Raid: A gallery raid', exact: true }),
+  ).toBeVisible()
+  await expect(
+    appliedSpecimen.getByRole('button', {
+      name: 'Remove Crafting system: Thunder-Forged',
+      exact: true,
+    }),
+  ).toBeVisible()
 })
