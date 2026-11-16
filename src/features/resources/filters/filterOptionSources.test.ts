@@ -9,6 +9,7 @@ interface Values {
 
 const source = filterOptionSource<Values, string[]>({
   path: '/v1/tags',
+  restoredLabelSource: 'value',
   isServerSearched: true,
   queryOptions: (search) => ({ queryKey: ['tags', search], queryFn: async () => [] }),
   toOptionSet: ({ shown }) => ({
@@ -47,4 +48,14 @@ it('requires a source and forbids hand-fed options on a declared multi filter', 
   }
   expect(withoutSource.kind).toBe('multi')
   expect(withOptions.kind).toBe('multi')
+})
+
+it('requires every option source to declare how restored values get their labels', () => {
+  // @ts-expect-error An option source requires its restored-label source.
+  const withoutLabelSource = filterOptionSource<Values, unknown>({
+    path: source.path,
+    queryOptions: source.queryOptions,
+    toOptionSet: () => ({ options: [] }),
+  })
+  expect(withoutLabelSource.path).toBe(source.path)
 })

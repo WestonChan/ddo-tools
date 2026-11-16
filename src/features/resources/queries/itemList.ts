@@ -143,6 +143,7 @@ export const ITEM_LIST_FILTERS = {
 
     optionSource: filterOptionSource<ItemListFilters, string[]>({
       path: '/v1/equipment-slots',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.equipmentSlotNamesQueryOptions,
 
       toOptionSet: ({ shown }) => {
@@ -161,6 +162,7 @@ export const ITEM_LIST_FILTERS = {
       Awaited<ReturnType<typeof fetchEffectVocabulary>>
     >({
       path: '/v1/effects',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.effectVocabularyQueryOptions,
       isServerSearched: true,
       toOptionSet: ({ shown, unsearched, values }) => {
@@ -216,6 +218,7 @@ export const ITEM_LIST_FILTERS = {
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, { rows: string[]; total: number }>({
       path: '/v1/sets',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.setVocabularyQueryOptions,
       isServerSearched: true,
       toOptionSet: ({ shown, unsearched }) => {
@@ -235,6 +238,7 @@ export const ITEM_LIST_FILTERS = {
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiWeaponAbility[]>({
       path: '/v1/weapon-abilities',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.weaponAbilitiesQueryOptions,
 
       toOptionSet: ({ shown }) => {
@@ -258,6 +262,7 @@ export const ITEM_LIST_FILTERS = {
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiWeaponAbility[]>({
       path: '/v1/weapon-abilities',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.weaponAbilitiesQueryOptions,
 
       toOptionSet: ({ shown }) => {
@@ -279,6 +284,7 @@ export const ITEM_LIST_FILTERS = {
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiItemMaterial[]>({
       path: '/v1/item-materials',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.itemMaterialsQueryOptions,
 
       toOptionSet: ({ shown }) => {
@@ -299,6 +305,7 @@ export const ITEM_LIST_FILTERS = {
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiAugmentSlotType[]>({
       path: '/v1/augment-slot-types',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.socketTypesQueryOptions,
 
       toOptionSet: ({ shown }) => {
@@ -319,6 +326,7 @@ export const ITEM_LIST_FILTERS = {
 
     optionSource: filterOptionSource<ItemListFilters, string[]>({
       path: '/v1/adventure-packs',
+      restoredLabelSource: 'value',
       queryOptions: vocabularies.adventurePackNamesQueryOptions,
 
       toOptionSet: ({ shown }) => {
@@ -333,6 +341,7 @@ export const ITEM_LIST_FILTERS = {
 
     optionSource: filterOptionSource<ItemListFilters, RaidQuest[]>({
       path: '/v1/quests',
+      restoredLabelSource: 'vocabulary',
       queryOptions: vocabularies.raidQuestsQueryOptions,
 
       toOptionSet: ({ shown }) => {
@@ -353,6 +362,7 @@ export const ITEM_LIST_FILTERS = {
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiCraftingSystemRow[]>({
       path: '/v1/crafting-systems',
+      restoredLabelSource: 'vocabulary',
       queryOptions: vocabularies.craftingSystemVocabularyQueryOptions,
 
       toOptionSet: ({ shown }) => {

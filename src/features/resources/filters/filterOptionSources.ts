@@ -10,6 +10,7 @@ export interface FilterOptionSet {
 
 export interface FilterOptionSource<Values, Vocabulary = unknown> {
   path: string
+  restoredLabelSource: 'value' | 'vocabulary'
   queryOptions: (searchQuery: string) => UseQueryOptions<Vocabulary>
   isServerSearched?: boolean
   toOptionSet: (input: {

@@ -50,7 +50,10 @@ export function DeclaredFilterChipRow<Values extends { [Key in keyof Values]: Fi
       const isOpened = openedKeys.has(declaration.key)
       const selectedValues = values[declaration.key]
       const hasSelectedValues = Array.isArray(selectedValues) && selectedValues.length > 0
-      const unsearchedHash = registerQuery(source.queryOptions(''), isOpened || hasSelectedValues)
+      const unsearchedHash = registerQuery(
+        source.queryOptions(''),
+        isOpened || (source.restoredLabelSource === 'vocabulary' && hasSelectedValues),
+      )
       const search =
         source.isServerSearched && searchQueryByKey[declaration.key]?.trim()
           ? (debouncedSearchQueryByKey[declaration.key]?.trim() ?? '')
@@ -111,6 +114,11 @@ export function DeclaredFilterChipRow<Values extends { [Key in keyof Values]: Fi
       loadingPickers={loadingPickers}
       pickerErrors={pickerErrors}
       onPickerOpen={(key) => {
+        if (!openedKeys.has(String(key))) {
+          const hash = queryPlan.queriesByKey.get(String(key))?.unsearchedHash
+          const unsearchedResult = hash ? queryResults[queryPlan.hashes.indexOf(hash)] : undefined
+          if (unsearchedResult?.error) void unsearchedResult.refetch()
+        }
         setOpenedKeys((opened) => new Set([...opened, String(key)]))
         setSearchQueryByKey((searches) => ({ ...searches, [key]: '' }))
       }}

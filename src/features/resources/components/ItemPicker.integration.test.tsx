@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { slugFromPathSegment, type Slug } from '../../../lib/api'
@@ -572,26 +572,120 @@ describe('declared item filter options', () => {
     itemFilterDeclarations({ canListWeapons: true }).filter(
       (declaration) => declaration.kind === 'multi',
     ),
-  )('$key restores applied labels without opening its chip', async (declaration) => {
-    const { path } = declaration.optionSource
-    const capture = declaredVocabularyResponses[path]
-    expect(capture, 'Missing captured vocabulary for ' + path).toBeDefined()
-    let isReloaded = false
-    let release: (response: Response) => void = () => {
-      throw new Error('No pending vocabulary request')
-    }
-    const restoredVocabulary = new Promise<Response>((resolve) => {
-      release = resolve
-    })
+  )(
+    '$key loads restored labels only when needed and retries background failures on open',
+    async (declaration) => {
+      const { path } = declaration.optionSource
+      const capture = declaredVocabularyResponses[path]
+      expect(capture, 'Missing captured vocabulary for ' + path).toBeDefined()
+      let isReloaded = false
+      let release: (response: Response) => void = () => {
+        throw new Error('No pending vocabulary request')
+      }
+      const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+        const requestedPath = new URL(String(request)).pathname
+        if (requestedPath === path)
+          return isReloaded
+            ? new Promise<Response>((resolve) => {
+                release = resolve
+              })
+            : Promise.resolve(new Response(JSON.stringify(capture.response)))
+        expect(requestedPath).toBe('/v1/items')
+        return Promise.resolve(
+          new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] })),
+        )
+      })
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      const view = render(
+        <QueryClientProvider client={client}>
+          <ItemPickerHarness />
+        </QueryClientProvider>,
+      )
+      await userEvent.click(await screen.findByRole('button', { name: declaration.label }))
+      await userEvent.click(
+        await screen.findByRole('option', { name: (name) => name.startsWith(capture.firstLabel) }),
+      )
+      const { parameter } = ITEM_LIST_FILTERS[declaration.key]
+      await waitFor(() =>
+        expect(
+          fetchMock.mock.calls.some(([request]) =>
+            new URL(String(request)).searchParams.has(parameter),
+          ),
+        ).toBe(true),
+      )
+      const selectedRequest = fetchMock.mock.calls
+        .map(([request]) => new URL(String(request)))
+        .find((url) => url.searchParams.has(parameter))!
+      const storedValue = selectedRequest.searchParams.get(parameter)!
+      view.unmount()
+      client.clear()
+      isReloaded = true
+      const hasDistinctLabel = storedValue !== capture.firstLabel
+      for (const isFailure of hasDistinctLabel ? [false, true] : [false]) {
+        resetPersistedStateForTests()
+        fetchMock.mockClear()
+        const restoredClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        const restoredView = render(
+          <QueryClientProvider client={restoredClient}>
+            <ItemPickerHarness />
+          </QueryClientProvider>,
+        )
+        await userEvent.click(await screen.findByRole('button', { name: 'Show applied · 1' }))
+        const appliedValue = screen.getByRole('button', {
+          name: `Remove ${declaration.label}: ${storedValue}`,
+        })
+        expect(appliedValue).toBeVisible()
+        expect(screen.queryByRole('group', { name: `${declaration.label} picker` })).toBeNull()
+        expect(
+          fetchMock.mock.calls.filter(([request]) => new URL(String(request)).pathname === path),
+        ).toHaveLength(hasDistinctLabel ? 1 : 0)
+        if (isFailure) {
+          release(new Response('Vocabulary unavailable', { status: 400 }))
+          await waitFor(() =>
+            expect(
+              restoredClient.getQueryState(declaration.optionSource.queryOptions('').queryKey)
+                ?.status,
+            ).toBe('error'),
+          )
+        }
+        if (!hasDistinctLabel || isFailure) {
+          await userEvent.click(screen.getByRole('button', { name: declaration.label }))
+          expect(await screen.findByText('Loading options…')).toBeInTheDocument()
+        }
+        release(new Response(JSON.stringify(capture.response)))
+        expect(
+          await screen.findByRole('button', {
+            name: `Remove ${declaration.label}: ${capture.firstLabel}`,
+          }),
+        ).toBe(appliedValue)
+        if (!hasDistinctLabel || isFailure) {
+          expect(
+            await screen.findByRole('option', {
+              name: (name) => name.startsWith(capture.firstLabel),
+            }),
+          ).toBeInTheDocument()
+        }
+        expect(
+          fetchMock.mock.calls.filter(([request]) => new URL(String(request)).pathname === path),
+        ).toHaveLength(isFailure ? 2 : 1)
+        restoredView.unmount()
+        restoredClient.clear()
+      }
+    },
+  )
+
+  it('requests only the two slug vocabularies when every chip is restored', async () => {
+    const declarations = itemFilterDeclarations({ canListWeapons: true }).filter(
+      (declaration) => declaration.kind === 'multi',
+    )
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
-      const requestedPath = new URL(String(request)).pathname
-      if (requestedPath === path)
-        return isReloaded
-          ? restoredVocabulary
-          : Promise.resolve(new Response(JSON.stringify(capture.response)))
-      expect(requestedPath).toBe('/v1/items')
+      const path = new URL(String(request)).pathname
+      const capture = declaredVocabularyResponses[path]
+      if (!capture) expect(path).toBe('/v1/items')
       return Promise.resolve(
-        new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] })),
+        new Response(
+          JSON.stringify(capture?.response ?? { total: 0, limit: 200, offset: 0, items: [] }),
+        ),
       )
     })
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -600,27 +694,86 @@ describe('declared item filter options', () => {
         <ItemPickerHarness />
       </QueryClientProvider>,
     )
-    await userEvent.click(await screen.findByRole('button', { name: declaration.label }))
-    await userEvent.click(
-      await screen.findByRole('option', { name: (name) => name.startsWith(capture.firstLabel) }),
-    )
-    const { parameter } = ITEM_LIST_FILTERS[declaration.key]
+    for (const declaration of declarations) {
+      const capture = declaredVocabularyResponses[declaration.optionSource.path]
+      await userEvent.click(await screen.findByRole('button', { name: declaration.label }))
+      await userEvent.click(
+        await screen.findByRole('option', {
+          name: (name) => name.startsWith(capture.firstLabel),
+        }),
+      )
+    }
     await waitFor(() =>
       expect(
-        fetchMock.mock.calls.some(([request]) =>
-          new URL(String(request)).searchParams.has(parameter),
-        ),
+        fetchMock.mock.calls.some(([request]) => {
+          const parameters = new URL(String(request)).searchParams
+          return Object.values(ITEM_LIST_FILTERS).every(({ parameter }) =>
+            parameters.has(parameter),
+          )
+        }),
       ).toBe(true),
     )
-    const selectedRequest = fetchMock.mock.calls
-      .map(([request]) => new URL(String(request)))
-      .find((url) => url.searchParams.has(parameter))!
-    const storedValue = selectedRequest.searchParams.get(parameter)!
     view.unmount()
     client.clear()
     resetPersistedStateForTests()
     fetchMock.mockClear()
-    isReloaded = true
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(resourceResultCount()).toHaveTextContent('0 results'))
+    expect(
+      fetchMock.mock.calls.map(([request]) => new URL(String(request)).pathname).sort(),
+    ).toEqual(['/v1/crafting-systems', '/v1/items', '/v1/quests'])
+  })
+
+  it('keeps restored typed bonuses as stored values until opening loads the unsearched labels', async () => {
+    const stat = effectPageResponse.effects.find(
+      (row) => row.kind === 'stat' && row.bonus_types.length > 0,
+    )!
+    const label = `${stat.name} · ${stat.bonus_types[0].name}`
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((request) => {
+      const path = new URL(String(request)).pathname
+      expect(['/v1/items', '/v1/effects']).toContain(path)
+      return Promise.resolve(
+        new Response(
+          JSON.stringify(
+            path === '/v1/effects'
+              ? effectPageResponse
+              : { total: 0, limit: 200, offset: 0, items: [] },
+          ),
+        ),
+      )
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const view = render(
+      <QueryClientProvider client={client}>
+        <ItemPickerHarness />
+      </QueryClientProvider>,
+    )
+    await userEvent.click(await screen.findByRole('button', { name: 'Bonuses' }))
+    const statOption = await screen.findByRole('option', {
+      name: (name) => name.startsWith(stat.name),
+    })
+    await userEvent.click(within(statOption).getByText('Stat · Any type'))
+    await userEvent.click(screen.getByRole('option', { name: (name) => name.startsWith(label) }))
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([request]) =>
+          new URL(String(request)).searchParams.has('bonus'),
+        ),
+      ).toBe(true),
+    )
+    const storedValue = fetchMock.mock.calls
+      .map(([request]) => new URL(String(request)).searchParams.get('bonus'))
+      .find(Boolean)!
+    view.unmount()
+    client.clear()
+    resetPersistedStateForTests()
+    fetchMock.mockClear()
     render(
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -629,20 +782,17 @@ describe('declared item filter options', () => {
       </QueryClientProvider>,
     )
     await userEvent.click(await screen.findByRole('button', { name: 'Show applied · 1' }))
-    const appliedValue = screen.getByRole('button', {
-      name: `Remove ${declaration.label}: ${storedValue}`,
-    })
-    expect(appliedValue).toBeVisible()
-    release(new Response(JSON.stringify(capture.response)))
     expect(
-      await screen.findByRole('button', {
-        name: `Remove ${declaration.label}: ${capture.firstLabel}`,
-      }),
-    ).toBe(appliedValue)
-    expect(
-      fetchMock.mock.calls.filter(([request]) => new URL(String(request)).pathname === path),
-    ).toHaveLength(1)
-    expect(screen.queryByRole('group', { name: `${declaration.label} picker` })).toBeNull()
+      fetchMock.mock.calls.some(([request]) => new URL(String(request)).pathname === '/v1/effects'),
+    ).toBe(false)
+    expect(screen.getByRole('button', { name: `Remove Bonuses: ${storedValue}` })).toBeVisible()
+    await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
+    expect(await screen.findByRole('button', { name: `Remove Bonuses: ${label}` })).toBeVisible()
+    const vocabularyRequests = fetchMock.mock.calls
+      .map(([request]) => new URL(String(request)))
+      .filter((url) => url.pathname === '/v1/effects')
+    expect(vocabularyRequests).toHaveLength(1)
+    expect(vocabularyRequests[0].searchParams.has('q')).toBe(false)
   })
 
   it.each(

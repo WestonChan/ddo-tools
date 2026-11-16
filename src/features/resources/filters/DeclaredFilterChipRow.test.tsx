@@ -24,6 +24,7 @@ const fetchSearched = vi.fn<(search: string) => Promise<Vocabulary>>()
 
 const plainSource = filterOptionSource<Values, Vocabulary>({
   path: '/v1/plain',
+  restoredLabelSource: 'value',
   queryOptions: () => ({ queryKey: ['plain'], queryFn: fetchPlain, staleTime: Infinity }),
   toOptionSet: ({ shown }) => ({
     options: (shown?.names ?? []).map((name) => ({ label: name, value: name })),
@@ -38,6 +39,7 @@ const declarations: DeclaredFilter<Values>[] = [
     label: 'Searched',
     optionSource: filterOptionSource<Values, Vocabulary>({
       path: '/v1/searched',
+      restoredLabelSource: 'value',
       isServerSearched: true,
       queryOptions: (search) => ({
         queryKey: ['searched', search],
