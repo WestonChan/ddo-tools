@@ -427,40 +427,42 @@ export function ItemPicker({
         emptyState={
           itemPageQuery.error && !itemPageQuery.isFetchNextPageError ? (
             <div className="resources-list-error">
-              <FilteredListErrorNotice
-                error={itemPageQuery.error}
-                declarations={declarations}
-                values={filters}
-                onChange={applyRemainingFilters}
-              >
-                <StatusPlaceholder
+              <div className="resources-status">
+                <FilteredListErrorNotice
                   error={itemPageQuery.error}
-                  path="/v1/items"
-                  onRetry={() => void itemPageQuery.refetch()}
-                  additionalActions={
-                    <>
-                      {selectedSort && (
-                        <button
-                          type="button"
-                          className="btn-ghost-sm"
-                          onClick={() => setSelectedSort(null)}
-                        >
-                          Reset sort
-                        </button>
-                      )}
-                      {filters.bonuses.length > 0 && filters.bonusMatch === 'all' && (
-                        <button
-                          type="button"
-                          className="btn-ghost-sm"
-                          onClick={() => setFilters({ ...filters, bonusMatch: 'any' })}
-                        >
-                          Reset match
-                        </button>
-                      )}
-                    </>
-                  }
-                />
-              </FilteredListErrorNotice>
+                  declarations={declarations}
+                  values={filters}
+                  onChange={applyRemainingFilters}
+                >
+                  <ApiErrorNotice
+                    error={itemPageQuery.error}
+                    path="/v1/items"
+                    onRetry={() => void itemPageQuery.refetch()}
+                    additionalActions={
+                      <>
+                        {selectedSort && (
+                          <button
+                            type="button"
+                            className="btn-ghost-sm"
+                            onClick={() => setSelectedSort(null)}
+                          >
+                            Reset sort
+                          </button>
+                        )}
+                        {filters.bonuses.length > 0 && filters.bonusMatch === 'all' && (
+                          <button
+                            type="button"
+                            className="btn-ghost-sm"
+                            onClick={() => setFilters({ ...filters, bonusMatch: 'any' })}
+                          >
+                            Reset match
+                          </button>
+                        )}
+                      </>
+                    }
+                  />
+                </FilteredListErrorNotice>
+              </div>
             </div>
           ) : itemPageQuery.isPending ? (
             <StatusPlaceholder reason="loading" />
