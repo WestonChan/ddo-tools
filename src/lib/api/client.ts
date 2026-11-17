@@ -25,16 +25,37 @@ export type ApiErrorKind =
 export class ApiError extends Error {
   readonly kind: ApiErrorKind
   readonly httpStatus: number
-  constructor(kind: ApiErrorKind, httpStatus: number, message: string, options?: ErrorOptions) {
+  readonly apiErrorText: string | null
+  constructor(
+    kind: ApiErrorKind,
+    httpStatus: number,
+    message: string,
+    options?: ErrorOptions & { apiErrorText?: string | null },
+  ) {
     super(message, options)
     this.name = 'ApiError'
     this.kind = kind
     this.httpStatus = httpStatus
+    this.apiErrorText = options?.apiErrorText ?? null
   }
 }
 
 export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError
+}
+
+function apiErrorTextFromBody(body: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(body)
+    return parsed !== null &&
+      typeof parsed === 'object' &&
+      'error' in parsed &&
+      typeof parsed.error === 'string'
+      ? parsed.error
+      : null
+  } catch {
+    return null
+  }
 }
 
 export function apiUrl(path: string, queryParameters?: ApiQueryParameters): string {
@@ -79,6 +100,7 @@ export async function fetchApiJson<T>(
         API_HTTP_ERROR,
         response.status,
         `${statusDescription} for ${path}${errorBodyPreview ? `: ${errorBodyPreview}` : ''}`,
+        { apiErrorText: apiErrorTextFromBody(errorBodyText) },
       )
     }
     try {

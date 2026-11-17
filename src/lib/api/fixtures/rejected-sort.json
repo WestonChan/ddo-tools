@@ -1,0 +1,1 @@
+{"error":"invalid sort \"bogus\"; allowed fields: name, slug, id, minimum_level, slot, category, attack_ability, damage_ability, material, socket, pack, crafting_system, set, enhancement_bonus, icon, is_legacy, is_raid, is_rare, item_type, min_level, max_level, raid, rare, quest, quest_chain, saga, bonus"}

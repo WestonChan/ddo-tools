@@ -3,6 +3,20 @@ import { writeFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
 
 const manifest = {
+  'src/lib/api/fixtures/rejected-pack-value.json': {
+    path: `/v1/items?${new URLSearchParams({ pack: '  a"b\\c; accepted values: x  ' })}`,
+    status: 400,
+  },
+  'src/lib/api/fixtures/rejected-bonus-value.json': {
+    path: '/v1/items?bonus=Made-Up',
+    status: 400,
+  },
+  'src/lib/api/fixtures/rejected-bonus-type.json': {
+    path: '/v1/items?bonus=Strength:Nope',
+    status: 400,
+  },
+  'src/lib/api/fixtures/rejected-sort.json': { path: '/v1/items?sort=bogus', status: 400 },
+  'src/lib/api/fixtures/rejected-view.json': { path: '/v1/items?view=bogus', status: 400 },
   'src/features/resources/queries/fixtures/item-rune-arm-of-the-great-decay.json':
     '/v1/items/rune-arm-of-the-great-decay',
   'src/features/resources/queries/fixtures/equipment-slots.json': '/v1/equipment-slots?limit=20',
@@ -106,21 +120,31 @@ const manifest = {
   'src/test/fixtures/vendor-morten-edgewright.json': '/v1/vendors/morten-edgewright',
 }
 
-const captures = Object.entries(manifest).map(([file, path]) => {
+const captures = Object.entries(manifest).map(([file, capture]) => {
+  const { path, status } = typeof capture === 'string' ? { path: capture, status: 200 } : capture
   const isSpecification = path.endsWith('/openapi.json')
   const isValidDestination = isSpecification
     ? file.startsWith('src/lib/api/openapi/')
     : file.includes('/fixtures/')
   if (!isValidDestination) throw new Error(`Invalid capture placement: ${file} ← ${path}`)
-  return { file, path, isSpecification }
+  return { file, path, status, isSpecification }
 })
 
 const { values } = parseArgs({
-  options: { api: { type: 'string', default: 'https://ddo-data.fly.dev' } },
+  options: {
+    api: { type: 'string', default: 'https://ddo-data.fly.dev' },
+    file: { type: 'string', multiple: true },
+  },
 })
-for (const { file, path, isSpecification } of captures) {
+for (const file of values.file ?? []) {
+  if (!Object.hasOwn(manifest, file)) throw new Error(`Unknown capture: ${file}`)
+}
+for (const { file, path, status, isSpecification } of captures) {
+  if (values.file && !values.file.includes(file)) continue
   const response = await fetch(new URL(path, values.api))
-  if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`)
+  if (response.status !== status) {
+    throw new Error(`${path}: expected HTTP ${status}, received ${response.status}`)
+  }
   const body = await response.text()
   JSON.parse(body)
   await writeFile(
