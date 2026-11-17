@@ -13,7 +13,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Check, Search } from 'lucide-react'
 import { resourcePath } from '../../../lib/resourcePaths'
-import { type Slug, isApiError } from '../../../lib/api'
+import { type Slug } from '../../../lib/api'
 import {
   ApiErrorNotice,
   ApiGate,
@@ -24,6 +24,7 @@ import {
 } from '../../../components'
 import { useDebouncedValue } from '../../../hooks'
 import { DeclaredFilterChipRow } from '../filters/DeclaredFilterChipRow'
+import { FilteredListErrorNotice } from '../filters/FilteredListErrorNotice'
 import {
   RESOURCE_LIST_CONFIGURATION,
   setResourceListState,
@@ -33,7 +34,6 @@ import {
 import { hasAppliedFilters } from '../filters/filterModel'
 import { type ItemSummary } from '../queries/items'
 import {
-  ITEM_LIST_FILTERS,
   declaredItemFilters,
   EMPTY_ITEM_FILTERS,
   type ItemColumnKey,
@@ -63,17 +63,6 @@ interface ItemPickerProps {
 const EMPTY_ITEMS: ItemSummary[] = []
 
 const ITEM_LIST_SCOPE = { canListWeapons: true }
-type ItemFilterKey = keyof typeof ITEM_LIST_FILTERS
-
-function rejectedItemFilter(error: unknown, filters: ItemListFilters): ItemFilterKey | null {
-  if (!isApiError(error) || error.httpStatus !== 400) return null
-  const parameter = error.message.match(/\b(?:unknown|invalid|unrecognized)\s+([a-z_]+)\b/i)?.[1]
-  return (
-    (Object.keys(ITEM_LIST_FILTERS) as ItemFilterKey[]).find(
-      (key) => ITEM_LIST_FILTERS[key].parameter === parameter && filters[key].length > 0,
-    ) ?? null
-  )
-}
 
 const ITEM_COLUMNS = [
   {
@@ -165,7 +154,7 @@ export function ItemPicker({
   const { filters, searchQuery, selectedSort, includesSetBonuses, scrollTop } =
     useResourceListState(category)
   const columnLayout = useResourceListColumnLayout(category)
-  const onFiltersChange = (filters: ItemListFilters): void => {
+  const setFilters = (filters: ItemListFilters): void => {
     setResourceListState(category, { filters })
   }
   const setSearchQuery = (searchQuery: string): void => {
@@ -232,8 +221,6 @@ export function ItemPicker({
   const resultCount = itemPageQuery.data?.pages[0]?.total ?? 0
   const declarations = useMemo(() => declaredItemFilters(ITEM_LIST_SCOPE), [])
   const hasActiveFilters = hasAppliedFilters(declarations, filters)
-  const rejectedFilter = rejectedItemFilter(itemPageQuery.error, filters)
-  const rejectedFilterLabel = rejectedFilter ? ITEM_LIST_FILTERS[rejectedFilter].label : null
   function hasBonusHover(key: keyof ItemListFilters): boolean {
     return declarations.some(
       (declaration) =>
@@ -311,8 +298,13 @@ export function ItemPicker({
     return () => observer.disconnect()
   }, [rowToFocusSlug, onRowFocused, itemsToShow, itemPageQuery.isPending, effectiveSearchInputRef])
 
+  function applyRemainingFilters(remainingFilters: ItemListFilters): void {
+    setFilters(remainingFilters)
+    queueMicrotask(() => effectiveSearchInputRef.current?.focus())
+  }
+
   function clearAll(): void {
-    onFiltersChange(EMPTY_ITEM_FILTERS)
+    setFilters(EMPTY_ITEM_FILTERS)
     setIncludesSetBonuses(false)
     queueMicrotask(() => effectiveSearchInputRef.current?.focus())
   }
@@ -356,7 +348,7 @@ export function ItemPicker({
       <DeclaredFilterChipRow
         declarations={declarations}
         values={filters}
-        onChange={onFiltersChange}
+        onChange={setFilters}
         onClearAll={clearAll}
         resultCount={
           <span className="resources-result-count" id={resultCountId} aria-live="polite">
@@ -435,53 +427,40 @@ export function ItemPicker({
         emptyState={
           itemPageQuery.error && !itemPageQuery.isFetchNextPageError ? (
             <div className="resources-list-error">
-              <StatusPlaceholder
+              <FilteredListErrorNotice
                 error={itemPageQuery.error}
-                path="/v1/items"
-                heading={
-                  rejectedFilterLabel ? `Could not load ${rejectedFilterLabel} filter.` : undefined
-                }
-                onRetry={() => void itemPageQuery.refetch()}
-                additionalActions={
-                  <>
-                    {rejectedFilter && (
-                      <button
-                        type="button"
-                        className="btn-ghost-sm"
-                        onClick={() =>
-                          onFiltersChange({
-                            ...filters,
-                            [rejectedFilter]: [],
-                            ...(ITEM_LIST_FILTERS[rejectedFilter].matchKey
-                              ? { [ITEM_LIST_FILTERS[rejectedFilter].matchKey!]: 'any' }
-                              : {}),
-                          })
-                        }
-                      >
-                        Reset {rejectedFilterLabel} filter
-                      </button>
-                    )}
-                    {selectedSort && (
-                      <button
-                        type="button"
-                        className="btn-ghost-sm"
-                        onClick={() => setSelectedSort(null)}
-                      >
-                        Reset sort
-                      </button>
-                    )}
-                    {filters.bonuses.length > 0 && filters.bonusMatch === 'all' && (
-                      <button
-                        type="button"
-                        className="btn-ghost-sm"
-                        onClick={() => onFiltersChange({ ...filters, bonusMatch: 'any' })}
-                      >
-                        Reset match
-                      </button>
-                    )}
-                  </>
-                }
-              />
+                declarations={declarations}
+                values={filters}
+                onChange={applyRemainingFilters}
+              >
+                <StatusPlaceholder
+                  error={itemPageQuery.error}
+                  path="/v1/items"
+                  onRetry={() => void itemPageQuery.refetch()}
+                  additionalActions={
+                    <>
+                      {selectedSort && (
+                        <button
+                          type="button"
+                          className="btn-ghost-sm"
+                          onClick={() => setSelectedSort(null)}
+                        >
+                          Reset sort
+                        </button>
+                      )}
+                      {filters.bonuses.length > 0 && filters.bonusMatch === 'all' && (
+                        <button
+                          type="button"
+                          className="btn-ghost-sm"
+                          onClick={() => setFilters({ ...filters, bonusMatch: 'any' })}
+                        >
+                          Reset match
+                        </button>
+                      )}
+                    </>
+                  }
+                />
+              </FilteredListErrorNotice>
             </div>
           ) : itemPageQuery.isPending ? (
             <StatusPlaceholder reason="loading" />
@@ -505,11 +484,18 @@ export function ItemPicker({
       />
       {itemPageQuery.isFetchNextPageError && (
         <div className="resources-page-error">
-          <ApiErrorNotice
+          <FilteredListErrorNotice
             error={itemPageQuery.error}
-            path="/v1/items"
-            onRetry={() => void itemPageQuery.fetchNextPage()}
-          />
+            declarations={declarations}
+            values={filters}
+            onChange={applyRemainingFilters}
+          >
+            <ApiErrorNotice
+              error={itemPageQuery.error}
+              path="/v1/items"
+              onRetry={() => void itemPageQuery.fetchNextPage()}
+            />
+          </FilteredListErrorNotice>
         </div>
       )}
     </div>

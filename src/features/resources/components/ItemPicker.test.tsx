@@ -10,6 +10,7 @@ import {
   render as renderComponent,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode } from 'react'
 import { slugFromPathSegment, ApiError, API_HTTP_ERROR } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -995,30 +996,119 @@ describe('every declared filter control', () => {
   )
 
   it.each(Object.entries(ITEM_LIST_FILTERS))(
-    'resets a rejected %s filter and its match mode',
+    'removes a rejected %s value and keeps the rest',
     async (key, entry) => {
-      const view = render(<ItemPickerHarness />)
+      const picker = (
+        <StrictMode>
+          <ItemPickerHarness />
+        </StrictMode>
+      )
+      const view = render(picker)
       const filterKey = key as keyof typeof ITEM_LIST_FILTERS
       await userEvent.click(screen.getByRole('button', { name: entry.label }))
       if (entry.matchKey) await userEvent.click(screen.getByRole('button', { name: 'All' }))
       await userEvent.click(screen.getAllByRole('option')[0])
+      expect(latestFilters()[filterKey]).toHaveLength(1)
+      await userEvent.click(screen.getAllByRole('option')[1])
+      expect(latestFilters()[filterKey]).toHaveLength(2)
       await userEvent.click(screen.getByRole('button', { name: entry.label }))
-      const selectedValue = latestFilters()[filterKey][0]
+      const [stale, kept] = latestFilters()[filterKey]
+      for (const rejected of [stale, kept]) {
+        const apiErrorText = `unknown ${entry.parameter} ${JSON.stringify(rejected)}${key === 'bonuses' ? '' : `; accepted values: ${kept}`}`
+        pageState = {
+          ...pageState,
+          error: new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText }),
+        }
+        view.rerender(
+          <StrictMode>
+            <ItemPickerHarness />
+          </StrictMode>,
+        )
+        const notice = within(
+          screen
+            .getByText(`${entry.label}: "${rejected}" is no longer in the game data.`)
+            .closest('[role="status"]') as HTMLElement,
+        )
+        expect(notice.getAllByRole('button')).toHaveLength(1)
+        expect(notice.queryByRole('button', { name: 'Retry' })).toBeNull()
+        expect(notice.queryByRole('link')).toBeNull()
+        await userEvent.click(notice.getByRole('button', { name: `Remove from ${entry.label}` }))
+        expect(latestFilters()[filterKey]).toEqual(rejected === stale ? [kept] : [])
+        if (entry.matchKey)
+          expect(latestFilters()[entry.matchKey]).toBe(rejected === stale ? 'all' : 'any')
+        expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveFocus()
+      }
+    },
+  )
+
+  it('shows a rejected value below loaded rows when a later page fails', async () => {
+    const view = render(
+      <StrictMode>
+        <ItemPickerHarness />
+      </StrictMode>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Pack' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Shadowfell' }))
+    await userEvent.click(screen.getByRole('option', { name: 'Vault of Night' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Pack' }))
+    const apiErrorText = 'unknown pack "Shadowfell"; accepted values: Vault of Night'
+    pageState = {
+      ...pageState,
+      isFetchNextPageError: true,
+      error: new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText }),
+    }
+    view.rerender(
+      <StrictMode>
+        <ItemPickerHarness />
+      </StrictMode>,
+    )
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toBeInTheDocument()
+    const pageError = within(document.querySelector<HTMLElement>('.resources-page-error')!)
+    expect(
+      pageError.getByText('Pack: "Shadowfell" is no longer in the game data.'),
+    ).toBeInTheDocument()
+    expect(pageError.getAllByRole('button')).toHaveLength(1)
+    expect(pageError.queryByRole('link')).toBeNull()
+    await userEvent.click(pageError.getByRole('button', { name: 'Remove from Pack' }))
+    expect(latestFilters().pack).toEqual(['Vault of Night'])
+    expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveFocus()
+    expect(fetchNextPageMock).not.toHaveBeenCalled()
+  })
+
+  it.each(['invalid sort "bogus"; allowed fields: name', 'unknown bonus type "Insightful"'])(
+    'keeps the ordinary error actions for %s',
+    async (apiErrorText) => {
+      const view = render(
+        <StrictMode>
+          <ItemPickerHarness />
+        </StrictMode>,
+      )
+      await userEvent.click(screen.getByRole('columnheader', { name: 'Name' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
+      await userEvent.click(screen.getByRole('button', { name: 'All' }))
+      await userEvent.click(
+        within(screen.getByRole('option', { name: /Charisma.*Stat/ })).getByText('Stat · Any type'),
+      )
+      await userEvent.click(screen.getByRole('option', { name: /Charisma · Insightful/ }))
+      await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
       pageState = {
         ...pageState,
-        error: new ApiError(
-          API_HTTP_ERROR,
-          400,
-          'unknown ' + entry.parameter + ' "' + selectedValue + '"; accepted values: …',
-        ),
+        error: new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText }),
       }
-      view.rerender(<ItemPickerHarness />)
-      expect(screen.getByText('Could not load ' + entry.label + ' filter.')).toBeInTheDocument()
-      await userEvent.click(
-        screen.getByRole('button', { name: 'Reset ' + entry.label + ' filter' }),
+      view.rerender(
+        <StrictMode>
+          <ItemPickerHarness />
+        </StrictMode>,
       )
-      expect(latestFilters()[filterKey]).toEqual([])
-      if (entry.matchKey) expect(latestFilters()[entry.matchKey]).toBe('any')
+      expect(screen.getByText('Something went wrong on our side.')).toBeInTheDocument()
+      expect(
+        screen.getByText("This isn't something you can fix. Please report it so we can."),
+      ).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Report a bug' })).toBeInTheDocument()
+      for (const name of ['Retry', 'Reset sort', 'Reset match'])
+        expect(screen.getByRole('button', { name })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Reset Bonuses filter' })).toBeNull()
+      expect(screen.queryByRole('button', { name: /Remove from/ })).toBeNull()
     },
   )
 })

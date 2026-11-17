@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { slugFromPathSegment, type Slug } from '../../../lib/api'
 import { apiFixture } from '../../../test/apiFixture'
@@ -198,7 +199,14 @@ describe('ItemPicker page errors', () => {
       const url = new URL(String(request))
       if (url.pathname === '/v1/items') {
         if (url.searchParams.has('bonus')) {
-          return Promise.resolve(new Response('Unknown bonus', { status: 400 }))
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                error: `unknown bonus ${JSON.stringify(url.searchParams.get('bonus'))}`,
+              }),
+              { status: 400 },
+            ),
+          )
         }
         return Promise.resolve(
           new Response(
@@ -275,20 +283,22 @@ describe('ItemPicker page errors', () => {
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
     await user.click(screen.getByRole('button', { name: 'Bonuses' }))
     await user.click(screen.getByRole('option', { name: /Bad Filter/ }))
-    expect(await screen.findByText('Could not load Bonuses filter.')).toBeInTheDocument()
-    const report = screen.getByRole('link', { name: 'Report a bug' })
-    expect(new URL(report.getAttribute('href') ?? '').searchParams.get('body')).toContain(
-      'Unknown bonus',
-    )
+    expect(
+      await screen.findByText('Bonuses: "Bad Filter" is no longer in the game data.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Report a bug' })).toBeNull()
     expect(screen.getByRole('searchbox', { name: 'Search items' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Bonuses' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Show applied · 1' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
     expect(resourceResultCount()).toBeEmptyDOMElement()
     expect(screen.queryByText('The game data API returned 400')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Reset Bonuses filter' }))
+    await user.click(screen.getByRole('button', { name: 'Remove from Bonuses' }))
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
+    expect(screen.getByRole('row', { name: /Bloodstone/ })).toBeInTheDocument()
+    expect(screen.queryByText(/no longer in the game data/)).toBeNull()
+    expect(screen.queryByText('Something went wrong on our side.')).toBeNull()
     await waitFor(() =>
       expect(
         fetchMock.mock.calls.filter(
@@ -330,7 +340,14 @@ describe('ItemPicker page errors', () => {
       }
       itemRequests.push(url)
       if (url.searchParams.has('set')) {
-        return Promise.resolve(new Response('Unknown set value', { status: 400 }))
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              error: `unknown set ${JSON.stringify(url.searchParams.get('set'))}; accepted values: kept`,
+            }),
+            { status: 400 },
+          ),
+        )
       }
       return Promise.resolve(
         new Response(JSON.stringify({ total: 1, limit: 200, offset: 0, items: [] }), {
@@ -348,10 +365,14 @@ describe('ItemPicker page errors', () => {
     await userEvent.click(await screen.findByRole('option', { name: 'Vault of Night' }))
     await userEvent.click(screen.getByRole('button', { name: 'Set' }))
     await userEvent.click(await screen.findByRole('option', { name: capturedSetPage.sets[0].name }))
-    expect(await screen.findByText('Could not load Set filter.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Reset Set filter' })).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Reset Set filter' }))
+    expect(
+      await screen.findByText(
+        `Set: "${capturedSetPage.sets[0].name}" is no longer in the game data.`,
+      ),
+    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Remove from Set' }))
     await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^1 result$/))
+    expect(screen.queryByText(/no longer in the game data/)).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Show applied · 1' }))
     expect(screen.getByRole('button', { name: 'Remove Pack: Vault of Night' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Remove Set:/ })).not.toBeInTheDocument()
@@ -363,6 +384,102 @@ describe('ItemPicker page errors', () => {
       ),
     ).toBe(true)
   })
+
+  it.each([false, true])(
+    'recovers from two saved rejected values with separate filters: %s',
+    async (hasSeparateFilters) => {
+      const keptPack = packsResponse.adventure_packs[2].name
+      const staleSelections = [
+        { label: 'Pack', parameter: 'pack', value: packsResponse.adventure_packs[0].name },
+        hasSeparateFilters
+          ? { label: 'Set', parameter: 'set', value: capturedSetPage.sets[0].name }
+          : { label: 'Pack', parameter: 'pack', value: packsResponse.adventure_packs[1].name },
+      ]
+      let hasRetiredValues = false
+      const itemRequests: URL[] = []
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (request) => {
+        const url = new URL(String(request))
+        if (url.pathname === '/v1/adventure-packs')
+          return new Response(JSON.stringify(packsResponse))
+        if (url.pathname === '/v1/sets')
+          return new Response(
+            JSON.stringify({ ...capturedSetPage, total: capturedSetPage.sets.length }),
+          )
+        expect(url.pathname).toBe('/v1/items')
+        itemRequests.push(url)
+        const rejected =
+          hasRetiredValues &&
+          staleSelections.find(({ parameter, value }) =>
+            url.searchParams.getAll(parameter).includes(value),
+          )
+        return rejected
+          ? new Response(
+              JSON.stringify({
+                error: `unknown ${rejected.parameter} ${JSON.stringify(rejected.value)}; accepted values: ${keptPack}`,
+              }),
+              { status: 400 },
+            )
+          : new Response(JSON.stringify({ total: 0, limit: 200, offset: 0, items: [] }))
+      })
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      const view = render(
+        <StrictMode>
+          <QueryClientProvider client={client}>
+            <ItemPickerHarness />
+          </QueryClientProvider>
+        </StrictMode>,
+      )
+      await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
+      for (const selection of [
+        ...staleSelections,
+        { label: 'Pack', parameter: 'pack', value: keptPack },
+      ]) {
+        await userEvent.click(screen.getByRole('button', { name: selection.label }))
+        await userEvent.click(await screen.findByRole('option', { name: selection.value }))
+        await waitFor(() =>
+          expect(itemRequests.at(-1)?.searchParams.getAll(selection.parameter)).toContain(
+            selection.value,
+          ),
+        )
+        await userEvent.click(screen.getByRole('button', { name: selection.label }))
+      }
+      await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
+      view.unmount()
+      client.clear()
+      resetPersistedStateForTests()
+      hasRetiredValues = true
+      itemRequests.length = 0
+      render(
+        <StrictMode>
+          <QueryClientProvider
+            client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+          >
+            <ItemPickerHarness />
+          </QueryClientProvider>
+        </StrictMode>,
+      )
+      for (const [index, rejected] of staleSelections.entries()) {
+        const heading = `${rejected.label}: "${rejected.value}" is no longer in the game data.`
+        expect(await screen.findByText(heading)).toBeInTheDocument()
+        expect(screen.getAllByText(/no longer in the game data/)).toHaveLength(1)
+        expect(itemRequests).toHaveLength(index + 1)
+        await userEvent.click(screen.getByRole('button', { name: `Remove from ${rejected.label}` }))
+        await waitFor(() => expect(itemRequests).toHaveLength(index + 2))
+        expect(itemRequests.at(-1)?.searchParams.getAll(rejected.parameter)).not.toContain(
+          rejected.value,
+        )
+        expect(itemRequests.at(-1)?.searchParams.getAll('pack')).toContain(keptPack)
+        expect(itemRequests.at(-1)?.searchParams.get('offset')).toBe('0')
+        expect(screen.queryByText(heading)).toBeNull()
+      }
+      await waitFor(() => expect(resourceResultCount()).toHaveTextContent(/^0 results$/))
+      expect(screen.queryByText(/no longer in the game data/)).toBeNull()
+      expect(screen.queryByText('Something went wrong on our side.')).toBeNull()
+      expect(screen.getByRole('searchbox', { name: 'Search items' })).toHaveFocus()
+      expect(itemRequests.at(-1)?.searchParams.getAll('pack')).toEqual([keptPack])
+      expect(itemRequests.at(-1)?.searchParams.getAll('set')).toEqual([])
+    },
+  )
 
   it('offers Reset match when the All request returns 400', async () => {
     const itemRequests: URL[] = []
