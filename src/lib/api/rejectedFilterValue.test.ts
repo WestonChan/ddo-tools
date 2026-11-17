@@ -25,6 +25,14 @@ describe('rejectedFilterValue', () => {
     expect(rejectedFilterValue(await responseError(JSON.stringify(body)))).toEqual(expected)
   })
 
+  it.each(['v2', 'filter_2', 'v2_filter'])(
+    'accepts letters, digits and underscores in parameter %s',
+    async (parameter) => {
+      const error = await responseError(JSON.stringify({ error: `unknown ${parameter} "x"` }))
+      expect(rejectedFilterValue(error)).toEqual({ parameter, value: 'x' })
+    },
+  )
+
   it.each([
     [String.raw`a\nb\tc\rd\0e\u{200b}\u{10ffff}`, 'a\nb\tc\rd\0e\u200b\u{10ffff}'],
     ['', ''],
@@ -45,6 +53,13 @@ describe('rejectedFilterValue', () => {
     String.raw`unknown pack "value"; accepted values:`,
     'unknown pack "raw\nnewline"',
     'invalid pack_match "bogus"; expected any or all',
+    'unknown PACK "x"',
+    'unknown pack2Name "x"',
+    'unknown _pack "x"',
+    'unknown 2pack "x"',
+    'unknown bonus type "x"',
+    'unknown query parameter "x"; allowed parameters: view, sort',
+    'prefix unknown pack "x"',
   ])('ignores a different or malformed message %j', async (responseErrorText) => {
     expect(
       rejectedFilterValue(await responseError(JSON.stringify({ error: responseErrorText }))),

@@ -14,7 +14,7 @@ export function rejectedFilterValue(error: unknown): RejectedFilterValue | null 
   )
     return null
   const matched =
-    /^unknown ([a-z_]+) "((?:[^"\\\p{Cc}]|\\(?:["\\nrt0]|u\{[0-9a-fA-F]{1,6}\}))*)"(?:; accepted values: [\s\S]*)?$/u.exec(
+    /^unknown ([a-z][a-z0-9_]*) "((?:[^"\\\p{Cc}]|\\(?:["\\nrt0]|u\{[0-9a-fA-F]{1,6}\}))*)"(?:; accepted values: [\s\S]*)?$/u.exec(
       error.responseErrorText,
     )
   if (!matched) return null
