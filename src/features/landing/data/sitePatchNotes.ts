@@ -5,7 +5,7 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
-    date: '2026-11-17',
+    date: '2026-11-16',
     changes: [
       'A saved filter value the game data no longer has, such as a renamed pack, says so and offers to remove just that value, keeping the rest of the filter',
     ],
