@@ -31,5 +31,22 @@ test('every gallery section uses seeded data without requesting the API', async 
       exact: true,
     }),
   ).toBeVisible()
+  const rejectedSpecimen = page.locator('.component-gallery__specimen').filter({
+    has: page.getByRole('heading', { name: 'Rejected saved value', exact: true }),
+  })
+  await expect(
+    rejectedSpecimen.getByText('Pack: "Renamed pack" is no longer in the game data.', {
+      exact: true,
+    }),
+  ).toBeVisible()
+  await rejectedSpecimen.getByRole('button', { name: 'Remove from Pack', exact: true }).click()
+  await expect(rejectedSpecimen.getByRole('status')).toHaveCount(0)
+  await rejectedSpecimen.getByRole('button', { name: 'Show applied · 1', exact: true }).click()
+  await expect(
+    rejectedSpecimen.getByRole('button', { name: 'Remove Pack: Sharn', exact: true }),
+  ).toBeVisible()
+  await expect(
+    rejectedSpecimen.getByRole('button', { name: 'Remove Pack: Renamed pack', exact: true }),
+  ).toHaveCount(0)
   expect(apiRequests).toEqual([])
 })

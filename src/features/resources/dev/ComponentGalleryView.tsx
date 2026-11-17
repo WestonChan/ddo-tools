@@ -1,4 +1,5 @@
 import { DeclaredFilterChipRow } from '../filters/DeclaredFilterChipRow'
+import { FilteredListErrorNotice } from '../filters/FilteredListErrorNotice'
 import { locallySearched } from '../filters/filterOptionSources'
 import { EMPTY_ITEM_FILTERS, declaredItemFilters } from '../queries/itemList'
 import { seedGalleryFilterVocabularies } from './galleryFilters'
@@ -6,7 +7,7 @@ import { useLayoutEffect, useRef, useState, type JSX } from 'react'
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { ApiErrorNotice, HoverCardPreview, PageSection } from '../../../components'
 import { useSectionScrollSpy } from '../../../hooks'
-import { API_NETWORK_ERROR, ApiError, apiDetailPath } from '../../../lib/api'
+import { API_HTTP_ERROR, API_NETWORK_ERROR, ApiError, apiDetailPath } from '../../../lib/api'
 import { ItemDetailCard, ItemHoverCard } from '../components/detail/ItemDetailCard'
 import '../ResourcesView.css'
 import './ComponentGalleryView.css'
@@ -107,6 +108,11 @@ function FilterSpecimen({
   specimen: Extract<GallerySpecimen, { kind: 'item-filters' }>
 }): JSX.Element {
   const [filters, setFilters] = useState(specimen.filters)
+  const apiErrorText = specimen.rejectedValue
+    ? `unknown ${specimen.rejectedValue.parameter} ${JSON.stringify(specimen.rejectedValue.value)}`
+    : null
+  const rejectedValueError =
+    apiErrorText === null ? null : new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText })
   const [queryClient] = useState(() => {
     const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } })
     seedGalleryFilterVocabularies(client)
@@ -120,6 +126,14 @@ function FilterSpecimen({
         onChange={setFilters}
         onClearAll={() => setFilters(EMPTY_ITEM_FILTERS)}
       />
+      <FilteredListErrorNotice
+        error={rejectedValueError}
+        declarations={GALLERY_FILTER_DECLARATIONS}
+        values={filters}
+        onChange={setFilters}
+      >
+        {null}
+      </FilteredListErrorNotice>
     </QueryClientProvider>
   )
 }

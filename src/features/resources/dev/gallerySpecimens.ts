@@ -22,6 +22,7 @@ export type GallerySpecimen =
       title: string
       branch: string
       filters: ItemListFilters
+      rejectedValue?: { parameter: string; value: string }
     }
 
 export const GALLERY_SECTION_SUBTITLES: Record<ComponentGallerySectionId, string> = {
@@ -60,6 +61,14 @@ export const GALLERY_SPECIMENS: readonly GallerySpecimen[] = [
       raid: [gallerySlug('raid')],
       craftingSystem: [gallerySlug('thunder-forged')],
     },
+  },
+  {
+    section: 'filters',
+    kind: 'item-filters',
+    title: 'Rejected saved value',
+    branch: 'Remove the renamed pack from the saved filter while keeping Sharn selected',
+    filters: { ...EMPTY_ITEM_FILTERS, pack: ['Renamed pack', 'Sharn'] },
+    rejectedValue: { parameter: 'pack', value: 'Renamed pack' },
   },
   {
     section: 'enchantments',

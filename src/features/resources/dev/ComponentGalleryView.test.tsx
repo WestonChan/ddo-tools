@@ -236,6 +236,38 @@ describe('ComponentGalleryView', () => {
 })
 
 describe('gallery filters', () => {
+  it('shows a seeded rejected saved value without fetching', () => {
+    const specimen = GALLERY_SPECIMENS.find(
+      (specimen) => specimen.section === 'filters' && specimen.rejectedValue,
+    )
+    expect(specimen).toBeDefined()
+    if (!specimen || specimen.section !== 'filters' || !specimen.rejectedValue)
+      throw new Error('Missing rejected filter specimen')
+    const declaration = Object.values(ITEM_LIST_FILTERS).find(
+      ({ parameter }) => parameter === specimen.rejectedValue!.parameter,
+    )!
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    renderWithQueryClient(
+      <StrictMode>
+        <HoverCardProvider>
+          <ComponentGalleryView />
+        </HoverCardProvider>
+      </StrictMode>,
+    )
+    const shownSpecimen = within(
+      screen.getByRole('heading', { name: specimen.title, level: 3 }).closest('article')!,
+    )
+    expect(
+      shownSpecimen.getByText(
+        `${declaration.label}: "${specimen.rejectedValue.value}" is no longer in the game data.`,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      shownSpecimen.getByRole('button', { name: `Remove from ${declaration.label}` }),
+    ).toBeInTheDocument()
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
   it('seeds every option source and exhibits every restored-label source', () => {
     const client = new QueryClient()
     seedGalleryFilterVocabularies(client)
@@ -292,7 +324,9 @@ describe('gallery filters', () => {
     const section = container.querySelector('#filters')?.closest('section')
     expect(section).not.toBeNull()
     const specimens = section!.querySelectorAll<HTMLElement>('.component-gallery__specimen')
-    expect(specimens).toHaveLength(2)
+    expect(specimens).toHaveLength(
+      GALLERY_SPECIMENS.filter((specimen) => specimen.section === 'filters').length,
+    )
     for (const specimen of specimens) {
       for (const entry of Object.values(ITEM_LIST_FILTERS))
         expect(within(specimen).getByRole('button', { name: entry.label })).toBeInTheDocument()
