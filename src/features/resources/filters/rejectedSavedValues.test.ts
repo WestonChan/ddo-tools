@@ -42,7 +42,7 @@ const selectedValues: Values = {
 
 function rejection(parameter: string, value: string): ApiError {
   return new ApiError(API_HTTP_ERROR, 400, 'Bad request', {
-    apiErrorText: `unknown ${parameter} "${value}"; accepted values: kept`,
+    responseErrorText: `unknown ${parameter} "${value}"; accepted values: kept`,
   })
 }
 

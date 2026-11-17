@@ -108,11 +108,13 @@ function FilterSpecimen({
   specimen: Extract<GallerySpecimen, { kind: 'item-filters' }>
 }): JSX.Element {
   const [filters, setFilters] = useState(specimen.filters)
-  const apiErrorText = specimen.rejectedValue
+  const responseErrorText = specimen.rejectedValue
     ? `unknown ${specimen.rejectedValue.parameter} ${JSON.stringify(specimen.rejectedValue.value)}`
     : null
   const rejectedValueError =
-    apiErrorText === null ? null : new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText })
+    responseErrorText === null
+      ? null
+      : new ApiError(API_HTTP_ERROR, 400, responseErrorText, { responseErrorText })
   const [queryClient] = useState(() => {
     const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } })
     seedGalleryFilterVocabularies(client)

@@ -25,18 +25,18 @@ export type ApiErrorKind =
 export class ApiError extends Error {
   readonly kind: ApiErrorKind
   readonly httpStatus: number
-  readonly apiErrorText: string | null
+  readonly responseErrorText: string | null
   constructor(
     kind: ApiErrorKind,
     httpStatus: number,
     message: string,
-    options?: ErrorOptions & { apiErrorText?: string | null },
+    options?: ErrorOptions & { responseErrorText?: string | null },
   ) {
     super(message, options)
     this.name = 'ApiError'
     this.kind = kind
     this.httpStatus = httpStatus
-    this.apiErrorText = options?.apiErrorText ?? null
+    this.responseErrorText = options?.responseErrorText ?? null
   }
 }
 
@@ -44,7 +44,7 @@ export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError
 }
 
-function apiErrorTextFromBody(body: string): string | null {
+function responseErrorTextFromBody(body: string): string | null {
   try {
     const parsed: unknown = JSON.parse(body)
     return parsed !== null &&
@@ -100,7 +100,7 @@ export async function fetchApiJson<T>(
         API_HTTP_ERROR,
         response.status,
         `${statusDescription} for ${path}${errorBodyPreview ? `: ${errorBodyPreview}` : ''}`,
-        { apiErrorText: apiErrorTextFromBody(errorBodyText) },
+        { responseErrorText: responseErrorTextFromBody(errorBodyText) },
       )
     }
     try {

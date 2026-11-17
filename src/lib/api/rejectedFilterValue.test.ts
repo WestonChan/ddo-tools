@@ -45,9 +45,9 @@ describe('rejectedFilterValue', () => {
     String.raw`unknown pack "value"; accepted values:`,
     'unknown pack "raw\nnewline"',
     'invalid pack_match "bogus"; expected any or all',
-  ])('ignores a different or malformed message %j', async (apiErrorText) => {
+  ])('ignores a different or malformed message %j', async (responseErrorText) => {
     expect(
-      rejectedFilterValue(await responseError(JSON.stringify({ error: apiErrorText }))),
+      rejectedFilterValue(await responseError(JSON.stringify({ error: responseErrorText }))),
     ).toBeNull()
   })
 

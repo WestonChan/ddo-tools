@@ -1014,10 +1014,10 @@ describe('every declared filter control', () => {
       await userEvent.click(screen.getByRole('button', { name: entry.label }))
       const [stale, kept] = latestFilters()[filterKey]
       for (const rejected of [stale, kept]) {
-        const apiErrorText = `unknown ${entry.parameter} ${JSON.stringify(rejected)}${key === 'bonuses' ? '' : `; accepted values: ${kept}`}`
+        const responseErrorText = `unknown ${entry.parameter} ${JSON.stringify(rejected)}${key === 'bonuses' ? '' : `; accepted values: ${kept}`}`
         pageState = {
           ...pageState,
-          error: new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText }),
+          error: new ApiError(API_HTTP_ERROR, 400, responseErrorText, { responseErrorText }),
         }
         view.rerender(
           <StrictMode>
@@ -1051,11 +1051,11 @@ describe('every declared filter control', () => {
     await userEvent.click(screen.getByRole('option', { name: 'Shadowfell' }))
     await userEvent.click(screen.getByRole('option', { name: 'Vault of Night' }))
     await userEvent.click(screen.getByRole('button', { name: 'Pack' }))
-    const apiErrorText = 'unknown pack "Shadowfell"; accepted values: Vault of Night'
+    const responseErrorText = 'unknown pack "Shadowfell"; accepted values: Vault of Night'
     pageState = {
       ...pageState,
       isFetchNextPageError: true,
-      error: new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText }),
+      error: new ApiError(API_HTTP_ERROR, 400, responseErrorText, { responseErrorText }),
     }
     view.rerender(
       <StrictMode>
@@ -1077,7 +1077,7 @@ describe('every declared filter control', () => {
 
   it.each(['invalid sort "bogus"; allowed fields: name', 'unknown bonus type "Insightful"'])(
     'keeps the ordinary error actions for %s',
-    async (apiErrorText) => {
+    async (responseErrorText) => {
       const view = render(
         <StrictMode>
           <ItemPickerHarness />
@@ -1093,7 +1093,7 @@ describe('every declared filter control', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Bonuses' }))
       pageState = {
         ...pageState,
-        error: new ApiError(API_HTTP_ERROR, 400, apiErrorText, { apiErrorText }),
+        error: new ApiError(API_HTTP_ERROR, 400, responseErrorText, { responseErrorText }),
       }
       view.rerender(
         <StrictMode>

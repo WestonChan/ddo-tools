@@ -10,12 +10,12 @@ export function rejectedFilterValue(error: unknown): RejectedFilterValue | null 
     !isApiError(error) ||
     error.kind !== API_HTTP_ERROR ||
     error.httpStatus !== 400 ||
-    error.apiErrorText === null
+    error.responseErrorText === null
   )
     return null
   const matched =
     /^unknown ([a-z_]+) "((?:[^"\\\p{Cc}]|\\(?:["\\nrt0]|u\{[0-9a-fA-F]{1,6}\}))*)"(?:; accepted values: [\s\S]*)?$/u.exec(
-      error.apiErrorText,
+      error.responseErrorText,
     )
   if (!matched) return null
   const escapes: Record<string, string> = {

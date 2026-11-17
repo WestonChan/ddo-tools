@@ -49,7 +49,7 @@ it('names the rejected value and offers only its removal', async () => {
       <Notice
         error={
           new ApiError(API_HTTP_ERROR, 400, 'Bad request', {
-            apiErrorText: 'unknown tag "stale"; accepted values: kept',
+            responseErrorText: 'unknown tag "stale"; accepted values: kept',
           })
         }
       />
@@ -73,8 +73,8 @@ it.each([
   'invalid sort "bogus"',
   'unknown view "bogus"; accepted values: full, summary',
   'unknown tag "removed"',
-])('renders the ordinary notice for %s', (apiErrorText) => {
-  render(<Notice error={new ApiError(API_HTTP_ERROR, 400, 'Bad request', { apiErrorText })} />)
+])('renders the ordinary notice for %s', (responseErrorText) => {
+  render(<Notice error={new ApiError(API_HTTP_ERROR, 400, 'Bad request', { responseErrorText })} />)
   expect(screen.getByText('Ordinary notice')).toBeInTheDocument()
   expect(screen.queryByRole('button')).not.toBeInTheDocument()
 })

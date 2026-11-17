@@ -213,11 +213,11 @@ describe('fetchApiPage', () => {
 
 describe('fetchApiJson', () => {
   it('preserves the full API error text separately from the bounded report message', async () => {
-    const apiErrorText = `unknown pack "${'x'.repeat(400)}"; accepted values: kept`
-    const body = JSON.stringify({ error: apiErrorText })
+    const responseErrorText = `unknown pack "${'x'.repeat(400)}"; accepted values: kept`
+    const body = JSON.stringify({ error: responseErrorText })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(body, { status: 400 }))
     await expect(fetchApiJson('/v1/items')).rejects.toMatchObject({
-      apiErrorText,
+      responseErrorText,
       message: `400 for /v1/items: ${body.slice(0, 300)}…`,
     })
   })
@@ -226,7 +226,7 @@ describe('fetchApiJson', () => {
     'leaves API error text absent for %s',
     async (body) => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(body, { status: 400 }))
-      await expect(fetchApiJson('/v1/items')).rejects.toMatchObject({ apiErrorText: null })
+      await expect(fetchApiJson('/v1/items')).rejects.toMatchObject({ responseErrorText: null })
     },
   )
 
