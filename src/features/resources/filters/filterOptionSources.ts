@@ -32,6 +32,7 @@ export type DeclaredFilter<Values extends { [Key in keyof Values]: FilterValue }
       Extract<FilterDefinition<Values>, { kind: 'multi' }>,
       'options' | 'optionCount' | 'selectedOptionLabels' | 'isServerSearched'
     > & {
+      parameter: string
       optionSource: FilterOptionSource<Values>
       options?: never
       optionCount?: never

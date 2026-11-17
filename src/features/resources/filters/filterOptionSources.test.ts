@@ -18,7 +18,14 @@ const source = filterOptionSource<Values, string[]>({
 })
 
 const declarations: DeclaredFilter<Values>[] = [
-  { key: 'tags', kind: 'multi', label: 'Tags', matchKey: 'match', optionSource: source },
+  {
+    key: 'tags',
+    kind: 'multi',
+    parameter: 'tag',
+    label: 'Tags',
+    matchKey: 'match',
+    optionSource: source,
+  },
 ]
 
 it('uses local search without changing the original source or its unsearched query', () => {
@@ -37,17 +44,34 @@ it('detects applied values without loading options or treating match mode as a f
 
 it('requires a source and forbids hand-fed options on a declared multi filter', () => {
   // @ts-expect-error A declared multi filter requires an option source.
-  const withoutSource: DeclaredFilter<Values> = { key: 'tags', kind: 'multi', label: 'Tags' }
+  const withoutSource: DeclaredFilter<Values> = {
+    key: 'tags',
+    kind: 'multi',
+    parameter: 'tag',
+    label: 'Tags',
+  }
   // @ts-expect-error Declared filters cannot receive hand-fed options.
   const withOptions: DeclaredFilter<Values> = {
     key: 'tags',
     kind: 'multi',
+    parameter: 'tag',
     label: 'Tags',
     optionSource: source,
     options: [],
   }
   expect(withoutSource.kind).toBe('multi')
   expect(withOptions.kind).toBe('multi')
+})
+
+it('requires the API parameter on every declared option-list filter', () => {
+  // @ts-expect-error A declared option-list filter requires its API parameter.
+  const withoutParameter: DeclaredFilter<Values> = {
+    key: 'tags',
+    kind: 'multi',
+    label: 'Tags',
+    optionSource: source,
+  }
+  expect(withoutParameter.kind).toBe('multi')
 })
 
 it('requires every option source to declare how restored values get their labels', () => {

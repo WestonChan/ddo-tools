@@ -1,7 +1,7 @@
 import type { JSX, ReactNode } from 'react'
 import { API_BASE_URL, apiErrorDescription } from '../lib/api'
 import { githubIssueUrls } from '../lib/githubIssue'
-import './ApiErrorNotice.css'
+import { StatusNotice } from './StatusNotice'
 
 interface ApiErrorNoticeProps {
   error: unknown
@@ -58,19 +58,19 @@ export function ApiErrorNotice({
   ) : null
 
   return (
-    <div
-      className={`api-error-notice${isCompact ? ' api-error-notice--compact' : ''}`}
-      role="status"
-    >
-      <strong className="api-error-notice__heading">{heading ?? description.heading}</strong>
-      <span className="api-error-notice__hint">{description.hint}</span>
-      {(reportLink || retryButton || additionalActions) && (
-        <div className="api-error-notice__actions">
-          {description.kind === 'our-bug' ? reportLink : retryButton}
-          {description.kind === 'our-bug' ? retryButton : reportLink}
-          {additionalActions}
-        </div>
-      )}
-    </div>
+    <StatusNotice
+      heading={heading ?? description.heading}
+      hint={description.hint}
+      isCompact={isCompact}
+      actions={
+        (reportLink || retryButton || additionalActions) && (
+          <>
+            {description.kind === 'our-bug' ? reportLink : retryButton}
+            {description.kind === 'our-bug' ? retryButton : reportLink}
+            {additionalActions}
+          </>
+        )
+      }
+    />
   )
 }

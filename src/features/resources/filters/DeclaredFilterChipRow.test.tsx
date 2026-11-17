@@ -32,9 +32,17 @@ const plainSource = filterOptionSource<Values, Vocabulary>({
 })
 
 const declarations: DeclaredFilter<Values>[] = [
-  { key: 'plain', kind: 'multi', label: 'Plain', optionSource: plainSource, matchKey: 'match' },
+  {
+    key: 'plain',
+    kind: 'multi',
+    parameter: 'plain',
+    label: 'Plain',
+    optionSource: plainSource,
+    matchKey: 'match',
+  },
   {
     key: 'searched',
+    parameter: 'searched',
     kind: 'multi',
     label: 'Searched',
     optionSource: filterOptionSource<Values, Vocabulary>({
@@ -52,7 +60,7 @@ const declarations: DeclaredFilter<Values>[] = [
       }),
     }),
   },
-  { key: 'shared', kind: 'multi', label: 'Shared', optionSource: plainSource },
+  { key: 'shared', kind: 'multi', parameter: 'shared', label: 'Shared', optionSource: plainSource },
 ]
 
 function Row(): React.JSX.Element {

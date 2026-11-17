@@ -1,4 +1,4 @@
-.api-error-notice {
+.status-notice {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -13,19 +13,19 @@
   text-align: center;
 }
 
-.api-error-notice__heading {
+.status-notice__heading {
   color: var(--text-heading);
   font-size: var(--fs-body-sm);
 }
 
-.api-error-notice__hint {
+.status-notice__hint {
   max-width: 420px;
   color: var(--text-muted);
   font-size: var(--fs-body-sm);
   line-height: var(--lh-body);
 }
 
-.api-error-notice__actions {
+.status-notice__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -33,13 +33,13 @@
   margin-top: var(--space-1);
 }
 
-.api-error-notice--compact {
+.status-notice--compact {
   min-height: 0;
   padding: var(--space-2);
   border: 0;
   background: transparent;
 }
 
-[data-hover-card] .api-error-notice {
+[data-hover-card] .status-notice {
   min-height: 0;
 }

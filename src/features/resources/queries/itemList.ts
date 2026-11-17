@@ -110,7 +110,7 @@ type MultiValueItemFilterKey = {
 
 type ItemFilterChip = Omit<
   Extract<DeclaredFilter<ItemListFilters>, { kind: 'multi' }>,
-  'key' | 'kind' | 'matchKey'
+  'key' | 'kind' | 'matchKey' | 'parameter'
 >
 type ItemMatchKey = NonNullable<
   Extract<DeclaredFilter<ItemListFilters>, { kind: 'multi' }>['matchKey']

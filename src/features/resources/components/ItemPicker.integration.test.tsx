@@ -65,7 +65,7 @@ describe('ItemPicker page errors', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Gear slot' }))
     expect(await screen.findByText('Could not load Gear slot options.')).toBeInTheDocument()
     expect(screen.queryByText('No matches.')).toBeNull()
-    expect(document.querySelectorAll('.api-error-notice')).toHaveLength(1)
+    expect(document.querySelectorAll('.status-notice')).toHaveLength(1)
     expect(screen.getByRole('group', { name: 'Gear slot picker' })).toContainElement(
       screen.getByText('Could not load Gear slot options.'),
     )
@@ -98,7 +98,7 @@ describe('ItemPicker page errors', () => {
     expect(await screen.findByText('Could not load Pack options.')).toBeInTheDocument()
     expect(screen.queryByText('Could not load Gear slot options.')).toBeNull()
     expect(screen.queryByText('No matches.')).toBeNull()
-    expect(document.querySelectorAll('.api-error-notice')).toHaveLength(1)
+    expect(document.querySelectorAll('.status-notice')).toHaveLength(1)
   })
   it('requests only items on mount and loads each vocabulary when its picker opens', async () => {
     let finishSlots: ((response: Response) => void) | undefined
