@@ -697,6 +697,7 @@ describe('fetchers', () => {
     await expect(fetchCraftingSystemVocabulary()).resolves.toEqual(craftingPage.crafting_systems)
     const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
     expect(url.pathname).toBe('/v1/crafting-systems')
+    expect(url.searchParams.get('has_items')).toBe('true')
   })
 
   it('keeps effect and stat vocabulary rows in API order and sends the search query', async () => {

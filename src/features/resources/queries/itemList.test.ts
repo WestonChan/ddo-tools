@@ -1,4 +1,4 @@
-import { slugFromPathSegment, type ApiItemRow } from '../../../lib/api'
+import { slugFromPathSegment, WHOLE_LIST_PAGE_LIMIT, type ApiItemRow } from '../../../lib/api'
 import { describe, expect, it, afterEach, vi } from 'vitest'
 import {
   EMPTY_ITEM_FILTERS,
@@ -16,9 +16,10 @@ import sockets from './fixtures/augment-slot-types-filter-families.json'
 import crafting from './fixtures/crafting-systems.json'
 import slots from './fixtures/equipment-slots.json'
 import packs from '../../../lib/api/fixtures/adventure-packs.json'
-import raids from './fixtures/quests-page-caught-in-the-web.json'
+import raids from './fixtures/quests-page-raid-and-quest.json'
 import sets from './fixtures/sets-null-icon-page.json'
 import effects from './fixtures/effects-page.json'
+import openapi from '../../../lib/api/openapi/v1.json'
 
 describe('item list filters', () => {
   it.each([
@@ -40,16 +41,37 @@ describe('item list filters', () => {
 afterEach(() => vi.restoreAllMocks())
 
 const vocabularyResponses = {
-  slot: { response: slots, values: slots.equipment_slots.map((row) => row.name) },
-  bonuses: { response: effects, values: effects.effects.map((row) => row.name) },
-  set: { response: sets, values: sets.sets.map((row) => row.name) },
-  attackAbility: { response: abilities, values: abilities.weapon_abilities.map((row) => row.name) },
-  damageAbility: { response: abilities, values: abilities.weapon_abilities.map((row) => row.name) },
-  material: { response: materials, values: materials.item_materials.map((row) => row.name) },
-  socket: { response: sockets, values: sockets.augment_slot_types.map((row) => row.label) },
-  pack: { response: packs, values: packs.adventure_packs.map((row) => row.name) },
-  raid: { response: raids, values: raids.quests.map((row) => row.slug) },
-  craftingSystem: { response: crafting, values: crafting.crafting_systems.map((row) => row.slug) },
+  slot: slots,
+  bonuses: effects,
+  set: sets,
+  attackAbility: abilities,
+  damageAbility: abilities,
+  material: materials,
+  socket: sockets,
+  pack: packs,
+  raid: raids,
+  craftingSystem: crafting,
+}
+
+const vocabularyContractExemptions: Readonly<
+  Record<
+    string,
+    {
+      reason: string
+      valuesWithoutVocabulary?: readonly string[]
+      isOfferedRow?: (row: Record<string, unknown>) => boolean
+    }
+  >
+> = {
+  bonus: {
+    reason: 'The API exempts bonus: it resolves names, aliases and stat:bonus type values.',
+    valuesWithoutVocabulary: effects.effects.map((row) => row.name),
+  },
+  quest: {
+    reason:
+      'Raid selects is_raid rows locally until WestonChan/ddo-data#106 adds a raid query parameter and WestonChan/ddo-tools#156 adopts it.',
+    isOfferedRow: (row) => row.is_raid === true,
+  },
 }
 
 describe('ITEM_LIST_FILTERS and declaredItemFilters', () => {
@@ -112,12 +134,10 @@ describe('ITEM_LIST_FILTERS and declaredItemFilters', () => {
   )
 
   it.each(Object.entries(ITEM_LIST_FILTERS))(
-    'loads every %s option from its captured vocabulary in served order',
+    'loads every %s option in served order through the API vocabulary contract',
     async (key, entry) => {
       const capture = vocabularyResponses[key as keyof typeof vocabularyResponses]
-      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(JSON.stringify(capture.response)),
-      )
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(capture)))
       const client = new QueryClient()
       const vocabulary = await client.fetchQuery(entry.optionSource.queryOptions(''))
       const optionSet = entry.optionSource.toOptionSet({
@@ -125,10 +145,60 @@ describe('ITEM_LIST_FILTERS and declaredItemFilters', () => {
         unsearched: vocabulary,
         values: EMPTY_ITEM_FILTERS,
       })
-      expect(optionSet.options.map((option) => option.value)).toEqual(capture.values)
-      expect(new URL(String(vi.mocked(fetch).mock.calls[0][0])).pathname).toBe(
-        entry.optionSource.path,
-      )
+      const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]))
+      expect([[], ['0']]).toContainEqual(url.searchParams.getAll('offset'))
+      const { request } = entry.optionSource
+      for (const [input] of vi.mocked(fetch).mock.calls) {
+        const requestedUrl = new URL(String(input))
+        expect(requestedUrl.pathname).toBe(request.path)
+        expect(requestedUrl.searchParams.getAll('q')).toEqual([])
+        expect(requestedUrl.searchParams.getAll('limit')).toEqual([String(WHOLE_LIST_PAGE_LIMIT)])
+        expect(
+          [...requestedUrl.searchParams.keys()].filter(
+            (name) =>
+              !Object.hasOwn(request.parameters, name) && !['limit', 'offset', 'q'].includes(name),
+          ),
+        ).toEqual([])
+        for (const [name, value] of Object.entries(request.parameters))
+          expect(requestedUrl.searchParams.getAll(name)).toEqual(
+            Array.isArray(value) ? value : [String(value)],
+          )
+      }
+      const exemption = vocabularyContractExemptions[entry.parameter]
+      const optionValues = optionSet.options.map((option) => option.value)
+      if (exemption?.valuesWithoutVocabulary) {
+        expect(optionValues, exemption.reason).toEqual(exemption.valuesWithoutVocabulary)
+      } else {
+        const parameter = openapi.paths['/v1/items'].get.parameters.find(
+          (parameter) => parameter.in === 'query' && parameter.name === entry.parameter,
+        )
+        if (!parameter || !('x-vocabulary' in parameter))
+          throw new Error(`Missing API vocabulary for ${entry.parameter}`)
+        const vocabulary = parameter['x-vocabulary']
+        if (!vocabulary?.route || !vocabulary.rows_key || !vocabulary.value_key)
+          throw new Error(`Missing API vocabulary route or columns for ${entry.parameter}`)
+        expect(request.path).toBe(vocabulary.route)
+        const parameters = vocabulary.parameters ?? {}
+        expect(request.parameters).toMatchObject(parameters)
+        for (const [name, value] of Object.entries(parameters))
+          expect(url.searchParams.getAll(name)).toEqual([value])
+        const valueKey = vocabulary.value_key
+        const rows = (capture as Record<string, unknown>)[vocabulary.rows_key] as Record<
+          string,
+          unknown
+        >[]
+        expect(Array.isArray(rows)).toBe(true)
+        expect(rows.every((row) => typeof row[valueKey] === 'string')).toBe(true)
+        const isOfferedRow = exemption?.isOfferedRow
+        const offeredRows = isOfferedRow ? rows.filter(isOfferedRow) : rows
+        if (isOfferedRow) {
+          expect(offeredRows.length, exemption?.reason).toBeGreaterThan(0)
+          expect(offeredRows.length, exemption?.reason).toBeLessThan(rows.length)
+          for (const row of rows.filter((row) => !isOfferedRow(row)))
+            expect(optionValues, exemption?.reason).not.toContain(row[valueKey])
+        }
+        expect(optionValues, exemption?.reason).toEqual(offeredRows.map((row) => row[valueKey]))
+      }
       expect(
         entry.optionSource.toOptionSet({
           shown: undefined,

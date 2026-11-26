@@ -16,7 +16,7 @@ const declarations: DeclaredFilter<Values>[] = [
     parameter: 'tag',
     label: 'Tags',
     optionSource: filterOptionSource<Values, string[]>({
-      path: '/v1/tags',
+      request: { path: '/v1/tags', parameters: {} },
       restoredLabelSource: 'value',
       queryOptions: () => ({ queryKey: ['tags'], queryFn: async () => [] }),
       toOptionSet: () => ({ options: [] }),

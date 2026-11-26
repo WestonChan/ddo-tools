@@ -1,5 +1,6 @@
 import type { UseQueryOptions } from '@tanstack/react-query'
 import type { FilterOption } from '../../../components'
+import type { ApiQueryParameters } from '../../../lib/api'
 import type { FilterDefinition, FilterValue } from './filterModel'
 
 export interface FilterOptionSet {
@@ -8,8 +9,13 @@ export interface FilterOptionSet {
   selectedOptionLabels?: ReadonlyMap<string, string>
 }
 
+export interface FilterOptionRequest {
+  readonly path: string
+  readonly parameters: Readonly<ApiQueryParameters>
+}
+
 export interface FilterOptionSource<Values, Vocabulary = unknown> {
-  path: string
+  readonly request: FilterOptionRequest
   restoredLabelSource: 'value' | 'vocabulary'
   queryOptions: (searchQuery: string) => UseQueryOptions<Vocabulary>
   isServerSearched?: boolean

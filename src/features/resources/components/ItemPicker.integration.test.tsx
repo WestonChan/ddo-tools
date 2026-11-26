@@ -18,7 +18,7 @@ import materialsResponse from '../queries/fixtures/item-materials.json'
 import socketsResponse from '../queries/fixtures/augment-slot-types-filter-families.json'
 import craftingResponse from '../queries/fixtures/crafting-systems.json'
 import packsResponse from '../../../lib/api/fixtures/adventure-packs.json'
-import raidsResponse from '../queries/fixtures/quests-page-caught-in-the-web.json'
+import raidsResponse from '../queries/fixtures/quests-page-raid-and-quest.json'
 
 const capturedNullIconSetPage = apiFixture(capturedNullIconSetPageResponse)
 const effectPage = apiFixture(effectPageResponse)
@@ -692,7 +692,7 @@ describe('declared item filter options', () => {
   )(
     '$key loads restored labels only when needed and retries background failures on open',
     async (declaration) => {
-      const { path } = declaration.optionSource
+      const { path } = declaration.optionSource.request
       const capture = declaredVocabularyResponses[path]
       expect(capture, 'Missing captured vocabulary for ' + path).toBeDefined()
       let isReloaded = false
@@ -812,7 +812,7 @@ describe('declared item filter options', () => {
       </QueryClientProvider>,
     )
     for (const declaration of declarations) {
-      const capture = declaredVocabularyResponses[declaration.optionSource.path]
+      const capture = declaredVocabularyResponses[declaration.optionSource.request.path]
       await userEvent.click(await screen.findByRole('button', { name: declaration.label }))
       await userEvent.click(
         await screen.findByRole('option', {
@@ -919,7 +919,7 @@ describe('declared item filter options', () => {
   )(
     '$key loads its options on open, shows loading and names its path on failure',
     async (declaration) => {
-      const { path } = declaration.optionSource
+      const { path } = declaration.optionSource.request
       const capture = declaredVocabularyResponses[path]
       expect(capture, 'Missing captured vocabulary for ' + path).toBeDefined()
       let release: (response: Response) => void = () => {

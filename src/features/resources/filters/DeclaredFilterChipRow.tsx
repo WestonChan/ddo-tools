@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 import { ApiErrorNotice } from '../../../components'
 import { useDebouncedValue } from '../../../hooks'
+import { API_BASE_URL, apiUrl } from '../../../lib/api'
 import { FilterChipRow, type FilterChipRowProps } from './FilterChipRow'
 import type { FilterDefinition, FilterValue } from './filterModel'
 import type { DeclaredFilter } from './filterOptionSources'
@@ -87,7 +88,9 @@ export function DeclaredFilterChipRow<Values extends { [Key in keyof Values]: Fi
         pickerErrors[declaration.key] = (
           <ApiErrorNotice
             error={activeResult.error}
-            path={optionSource.path}
+            path={apiUrl(optionSource.request.path, optionSource.request.parameters).slice(
+              API_BASE_URL.length,
+            )}
             heading={`Could not load ${declaration.label} options.`}
             isCompact
             onRetry={() => void activeResult.refetch()}

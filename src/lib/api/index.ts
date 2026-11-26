@@ -5,6 +5,7 @@ export {
   API_RESPONSE_ERROR,
   WHOLE_LIST_PAGE_LIMIT,
   ApiError,
+  apiUrl,
   fetchApiJson,
   fetchApiPage,
   fetchValidatedApiJson,

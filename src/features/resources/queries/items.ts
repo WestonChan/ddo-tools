@@ -36,6 +36,8 @@ import {
   type ApiQuestSummary,
   type ApiEffectDamage,
 } from '../../../lib/api'
+import { fetchFilterOptionPage } from '../filters/filterOptionRequests'
+import type { FilterOptionRequest } from '../filters/filterOptionSources'
 import type { IngredientCost } from '../../../lib/ingredientCost'
 import { toNotes, type Note } from './notes'
 
@@ -620,16 +622,20 @@ export async function fetchItem(slug: Slug): Promise<Item> {
   return toItem(response, path)
 }
 
+export const ADVENTURE_PACK_VOCABULARY_REQUEST = {
+  path: '/v1/adventure-packs',
+  parameters: {},
+} as const satisfies FilterOptionRequest
+
 export async function fetchAdventurePackNames(): Promise<string[]> {
-  const page = await fetchApiPage<ApiAdventurePack, 'adventure_packs'>(
-    '/v1/adventure-packs',
+  const page = await fetchFilterOptionPage<ApiAdventurePack, 'adventure_packs'>(
+    ADVENTURE_PACK_VOCABULARY_REQUEST,
     'adventure_packs',
-    { limit: WHOLE_LIST_PAGE_LIMIT },
   )
   return page.rows.map((pack, index) => {
     assertApiResponseFields(
       pack,
-      '/v1/adventure-packs',
+      ADVENTURE_PACK_VOCABULARY_REQUEST.path,
       { name: 'string' },
       `adventure_packs[${index}].`,
     )
@@ -637,16 +643,20 @@ export async function fetchAdventurePackNames(): Promise<string[]> {
   })
 }
 
+export const EQUIPMENT_SLOT_VOCABULARY_REQUEST = {
+  path: '/v1/equipment-slots',
+  parameters: {},
+} as const satisfies FilterOptionRequest
+
 export async function fetchEquipmentSlotNames(): Promise<string[]> {
-  const page = await fetchApiPage<ApiEquipmentSlot, 'equipment_slots'>(
-    '/v1/equipment-slots',
+  const page = await fetchFilterOptionPage<ApiEquipmentSlot, 'equipment_slots'>(
+    EQUIPMENT_SLOT_VOCABULARY_REQUEST,
     'equipment_slots',
-    { limit: WHOLE_LIST_PAGE_LIMIT },
   )
   return page.rows.map((slot, index) => {
     assertApiResponseFields(
       slot,
-      '/v1/equipment-slots',
+      EQUIPMENT_SLOT_VOCABULARY_REQUEST.path,
       { name: 'string' },
       `equipment_slots[${index}].`,
     )
@@ -654,16 +664,20 @@ export async function fetchEquipmentSlotNames(): Promise<string[]> {
   })
 }
 
+export const WEAPON_ABILITY_VOCABULARY_REQUEST = {
+  path: '/v1/weapon-abilities',
+  parameters: {},
+} as const satisfies FilterOptionRequest
+
 export async function fetchWeaponAbilities(): Promise<ApiWeaponAbility[]> {
-  const page = await fetchApiPage<ApiWeaponAbility, 'weapon_abilities'>(
-    '/v1/weapon-abilities',
+  const page = await fetchFilterOptionPage<ApiWeaponAbility, 'weapon_abilities'>(
+    WEAPON_ABILITY_VOCABULARY_REQUEST,
     'weapon_abilities',
-    { limit: WHOLE_LIST_PAGE_LIMIT },
   )
   return page.rows.map((row, index) => {
     assertApiResponseFields(
       row,
-      '/v1/weapon-abilities',
+      WEAPON_ABILITY_VOCABULARY_REQUEST.path,
       {
         slug: 'string',
         name: 'string',
@@ -677,16 +691,20 @@ export async function fetchWeaponAbilities(): Promise<ApiWeaponAbility[]> {
   })
 }
 
+export const ITEM_MATERIAL_VOCABULARY_REQUEST = {
+  path: '/v1/item-materials',
+  parameters: {},
+} as const satisfies FilterOptionRequest
+
 export async function fetchItemMaterials(): Promise<ApiItemMaterial[]> {
-  const page = await fetchApiPage<ApiItemMaterial, 'item_materials'>(
-    '/v1/item-materials',
+  const page = await fetchFilterOptionPage<ApiItemMaterial, 'item_materials'>(
+    ITEM_MATERIAL_VOCABULARY_REQUEST,
     'item_materials',
-    { limit: WHOLE_LIST_PAGE_LIMIT },
   )
   return page.rows.map((row, index) => {
     assertApiResponseFields(
       row,
-      '/v1/item-materials',
+      ITEM_MATERIAL_VOCABULARY_REQUEST.path,
       { name: 'string', sort_order: 'number', item_count: 'number' },
       `item_materials[${index}].`,
     )
@@ -694,16 +712,20 @@ export async function fetchItemMaterials(): Promise<ApiItemMaterial[]> {
   })
 }
 
+export const SOCKET_TYPE_VOCABULARY_REQUEST = {
+  path: '/v1/augment-slot-types',
+  parameters: { family: ['standard', 'dino', 'lamordia', 'upgrade'] },
+} as const satisfies FilterOptionRequest
+
 export async function fetchSocketTypes(): Promise<ApiAugmentSlotType[]> {
-  const page = await fetchApiPage<ApiAugmentSlotType, 'augment_slot_types'>(
-    '/v1/augment-slot-types',
+  const page = await fetchFilterOptionPage<ApiAugmentSlotType, 'augment_slot_types'>(
+    SOCKET_TYPE_VOCABULARY_REQUEST,
     'augment_slot_types',
-    { limit: WHOLE_LIST_PAGE_LIMIT, family: ['standard', 'dino', 'lamordia', 'upgrade'] },
   )
   return page.rows.map((row, index) => {
     assertApiResponseFields(
       row,
-      '/v1/augment-slot-types',
+      SOCKET_TYPE_VOCABULARY_REQUEST.path,
       { slug: 'string', label: 'string', family: 'string', item_count: 'number' },
       `augment_slot_types[${index}].`,
     )
@@ -711,16 +733,20 @@ export async function fetchSocketTypes(): Promise<ApiAugmentSlotType[]> {
   })
 }
 
+export const CRAFTING_SYSTEM_VOCABULARY_REQUEST = {
+  path: '/v1/crafting-systems',
+  parameters: { has_items: 'true' },
+} as const satisfies FilterOptionRequest
+
 export async function fetchCraftingSystemVocabulary(): Promise<ApiCraftingSystemRow[]> {
-  const page = await fetchApiPage<ApiCraftingSystemRow, 'crafting_systems'>(
-    '/v1/crafting-systems',
+  const page = await fetchFilterOptionPage<ApiCraftingSystemRow, 'crafting_systems'>(
+    CRAFTING_SYSTEM_VOCABULARY_REQUEST,
     'crafting_systems',
-    { limit: WHOLE_LIST_PAGE_LIMIT },
   )
   return page.rows.map((row, index) => {
     assertApiResponseFields(
       row,
-      '/v1/crafting-systems',
+      CRAFTING_SYSTEM_VOCABULARY_REQUEST.path,
       { slug: 'string', name: 'string', item_count: 'number' },
       `crafting_systems[${index}].`,
     )
@@ -732,19 +758,21 @@ export interface EffectVocabularyRow extends Omit<ApiEffectVocabularyRow, 'match
   matchedAlias: string | null
 }
 
+export const EFFECT_VOCABULARY_REQUEST = {
+  path: '/v1/effects',
+  parameters: {},
+} as const satisfies FilterOptionRequest
+
 export async function fetchEffectVocabulary(
   searchQuery = '',
 ): Promise<{ rows: EffectVocabularyRow[]; total: number }> {
-  const page = await fetchApiPage<ApiEffectVocabularyRow, 'effects'>(
-    '/v1/effects',
+  const page = await fetchFilterOptionPage<ApiEffectVocabularyRow, 'effects'>(
+    EFFECT_VOCABULARY_REQUEST,
     'effects',
-    {
-      q: searchQuery.trim() || undefined,
-      limit: WHOLE_LIST_PAGE_LIMIT,
-    },
+    { q: searchQuery },
     {
       isValidPage: (page) => page.rows.every(isApiEffectVocabularyRow),
-      responseErrorMessage: 'Invalid effect vocabulary rows for /v1/effects',
+      responseErrorMessage: `Invalid effect vocabulary rows for ${EFFECT_VOCABULARY_REQUEST.path}`,
     },
   )
   return {
@@ -791,15 +819,21 @@ export async function fetchAugment(augmentSlug: Slug): Promise<AugmentDetail> {
   return toAugmentDetail(response)
 }
 
+export const RAID_QUEST_VOCABULARY_REQUEST = {
+  path: '/v1/quests',
+  parameters: {},
+} as const satisfies FilterOptionRequest
+
 export async function fetchRaidQuests(): Promise<RaidQuest[]> {
-  const page = await fetchApiPage<ApiQuestSummary, 'quests'>('/v1/quests', 'quests', {
-    limit: WHOLE_LIST_PAGE_LIMIT,
-  })
+  const page = await fetchFilterOptionPage<ApiQuestSummary, 'quests'>(
+    RAID_QUEST_VOCABULARY_REQUEST,
+    'quests',
+  )
   return page.rows
     .filter((quest, index) => {
       assertApiResponseFields(
         quest,
-        '/v1/quests',
+        RAID_QUEST_VOCABULARY_REQUEST.path,
         { slug: 'string', name: 'string', is_raid: 'boolean', pack: 'nullable-string' },
         `quests[${index}].`,
       )

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import capturedGroupPage from '../src/features/resources/queries/fixtures/effects-page-groups.json' with { type: 'json' }
 import effectPage from '../src/features/resources/queries/fixtures/effects-page.json' with { type: 'json' }
 import mightyResponse from '../src/features/resources/queries/fixtures/effects-page-mighty.json' with { type: 'json' }
-import capturedRaidPage from '../src/features/resources/queries/fixtures/quests-page-caught-in-the-web.json' with { type: 'json' }
+import capturedRaidPage from '../src/features/resources/queries/fixtures/quests-page-raid-and-quest.json' with { type: 'json' }
 import capturedSetPage from '../src/features/resources/queries/fixtures/sets-page.json' with { type: 'json' }
 
 const items = [

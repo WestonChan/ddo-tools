@@ -8,7 +8,7 @@ interface Values {
 }
 
 const source = filterOptionSource<Values, string[]>({
-  path: '/v1/tags',
+  request: { path: '/v1/tags', parameters: {} },
   restoredLabelSource: 'value',
   isServerSearched: true,
   queryOptions: (search) => ({ queryKey: ['tags', search], queryFn: async () => [] }),
@@ -77,9 +77,28 @@ it('requires the API parameter on every declared option-list filter', () => {
 it('requires every option source to declare how restored values get their labels', () => {
   // @ts-expect-error An option source requires its restored-label source.
   const withoutLabelSource = filterOptionSource<Values, unknown>({
-    path: source.path,
+    request: source.request,
     queryOptions: source.queryOptions,
     toOptionSet: () => ({ options: [] }),
   })
-  expect(withoutLabelSource.path).toBe(source.path)
+  expect(withoutLabelSource.request).toBe(source.request)
+})
+
+it('requires a complete request instead of a separate path on every option source', () => {
+  const { request, ...loading } = source
+  // @ts-expect-error An option source requires its request.
+  const withoutRequest = filterOptionSource(loading)
+  const withSeparatePath = filterOptionSource({
+    ...loading,
+    // @ts-expect-error A path belongs inside the request.
+    path: request.path,
+  })
+  const withoutParameters = filterOptionSource({
+    ...loading,
+    // @ts-expect-error A request declares parameters even when empty.
+    request: { path: request.path },
+  })
+  expect(withoutRequest.request).toBeUndefined()
+  expect(withSeparatePath.request).toBeUndefined()
+  expect(withoutParameters.request.path).toBe(request.path)
 })

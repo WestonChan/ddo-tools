@@ -23,7 +23,7 @@ const fetchPlain = vi.fn<() => Promise<Vocabulary>>()
 const fetchSearched = vi.fn<(search: string) => Promise<Vocabulary>>()
 
 const plainSource = filterOptionSource<Values, Vocabulary>({
-  path: '/v1/plain',
+  request: { path: '/v1/plain', parameters: {} },
   restoredLabelSource: 'value',
   queryOptions: () => ({ queryKey: ['plain'], queryFn: fetchPlain, staleTime: Infinity }),
   toOptionSet: ({ shown }) => ({
@@ -46,7 +46,7 @@ const declarations: DeclaredFilter<Values>[] = [
     kind: 'multi',
     label: 'Searched',
     optionSource: filterOptionSource<Values, Vocabulary>({
-      path: '/v1/searched',
+      request: { path: '/v1/searched', parameters: { has_items: 'true' } },
       restoredLabelSource: 'value',
       isServerSearched: true,
       queryOptions: (search) => ({
@@ -126,7 +126,7 @@ it.each(declarations)(
 )
 
 it.each(declarations)(
-  'names the $label path on failure and retries only that source',
+  'names the whole $label request on failure and retries only that source',
   async (declaration) => {
     const failedFetcher = declaration.key === 'searched' ? fetchSearched : fetchPlain
     failedFetcher.mockRejectedValueOnce(new ApiError(API_HTTP_ERROR, 503, 'Unavailable'))
@@ -137,9 +137,11 @@ it.each(declarations)(
       await screen.findByText(`Could not load ${declaration.label} options.`),
     ).toBeInTheDocument()
     const report = screen.getByRole('link', { name: 'Report a bug' })
-    expect(new URL(report.getAttribute('href')!).searchParams.get('title')).toContain(
-      declaration.kind === 'multi' ? declaration.optionSource.path : '',
-    )
+    const reportParameters = new URL(report.getAttribute('href')!).searchParams
+    const expectedPath =
+      declaration.key === 'searched' ? '/v1/searched?has_items=true' : '/v1/plain'
+    expect(reportParameters.get('title')).toContain(`on ${expectedPath}`)
+    expect(reportParameters.get('body')).toContain(`**API path:** ${expectedPath}`)
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }))
     expect(await screen.findByRole('option', { name: 'Recovered' })).toBeInTheDocument()
     expect(failedFetcher).toHaveBeenCalledTimes(2)

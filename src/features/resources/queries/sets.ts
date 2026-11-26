@@ -3,13 +3,13 @@ import {
   apiResponseDiagnosticPath,
   type Slug,
   assertApiResponseFields,
-  fetchApiPage,
   fetchValidatedApiJson,
   isApiEffectList,
-  WHOLE_LIST_PAGE_LIMIT,
   type ApiSetDetail,
   type ApiSetRow,
 } from '../../../lib/api'
+import { fetchFilterOptionPage } from '../filters/filterOptionRequests'
+import type { FilterOptionRequest } from '../filters/filterOptionSources'
 import { toEffect, type Effect } from './items'
 import { toNotes, type Note } from './notes'
 
@@ -26,6 +26,11 @@ export interface SetDetail {
   items: Array<{ slug: Slug; name: string; slot: string; minimumLevel: number | null }>
 }
 
+export const SET_VOCABULARY_REQUEST = {
+  path: '/v1/sets',
+  parameters: {},
+} as const satisfies FilterOptionRequest
+
 export async function fetchSetVocabulary(
   searchQuery = '',
 ): Promise<{ rows: string[]; total: number }> {
@@ -33,22 +38,23 @@ export async function fetchSetVocabulary(
   let total: number
   let offset = 0
   do {
-    const page = await fetchApiPage<ApiSetRow, 'sets'>(
-      '/v1/sets',
+    const page = await fetchFilterOptionPage<ApiSetRow, 'sets'>(
+      SET_VOCABULARY_REQUEST,
       'sets',
-      {
-        q: searchQuery.trim() || undefined,
-        limit: WHOLE_LIST_PAGE_LIMIT,
-        offset,
-      },
+      { q: searchQuery, offset },
       {
         isValidPage: (page) => page.rows.length > 0 || page.total <= offset,
-        responseErrorMessage: 'Incomplete set vocabulary for /v1/sets',
+        responseErrorMessage: `Incomplete set vocabulary for ${SET_VOCABULARY_REQUEST.path}`,
       },
     )
     rows.push(
       ...page.rows.map((set, index) => {
-        assertApiResponseFields(set, '/v1/sets', { name: 'string' }, `sets[${offset + index}].`)
+        assertApiResponseFields(
+          set,
+          SET_VOCABULARY_REQUEST.path,
+          { name: 'string' },
+          `sets[${offset + index}].`,
+        )
         return set.name
       }),
     )

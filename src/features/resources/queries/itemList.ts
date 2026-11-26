@@ -15,9 +15,18 @@ import {
   type ApiCraftingSystemRow,
 } from '../../../lib/api'
 import { filterOptionSource, type DeclaredFilter } from '../filters/filterOptionSources'
+import { SET_VOCABULARY_REQUEST } from './sets'
 import { effectKindLabel } from './effectKindLabel'
 import * as vocabularies from './itemFilterVocabularies'
 import {
+  ADVENTURE_PACK_VOCABULARY_REQUEST,
+  EQUIPMENT_SLOT_VOCABULARY_REQUEST,
+  WEAPON_ABILITY_VOCABULARY_REQUEST,
+  ITEM_MATERIAL_VOCABULARY_REQUEST,
+  SOCKET_TYPE_VOCABULARY_REQUEST,
+  CRAFTING_SYSTEM_VOCABULARY_REQUEST,
+  EFFECT_VOCABULARY_REQUEST,
+  RAID_QUEST_VOCABULARY_REQUEST,
   type fetchEffectVocabulary,
   type RaidQuest,
   toItemSummary,
@@ -142,7 +151,7 @@ export const ITEM_LIST_FILTERS = {
     searchPlaceholder: 'Find a slot…',
 
     optionSource: filterOptionSource<ItemListFilters, string[]>({
-      path: '/v1/equipment-slots',
+      request: EQUIPMENT_SLOT_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.equipmentSlotNamesQueryOptions,
 
@@ -161,7 +170,7 @@ export const ITEM_LIST_FILTERS = {
       ItemListFilters,
       Awaited<ReturnType<typeof fetchEffectVocabulary>>
     >({
-      path: '/v1/effects',
+      request: EFFECT_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.effectVocabularyQueryOptions,
       isServerSearched: true,
@@ -217,7 +226,7 @@ export const ITEM_LIST_FILTERS = {
     searchPlaceholder: 'Find a set…',
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, { rows: string[]; total: number }>({
-      path: '/v1/sets',
+      request: SET_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.setVocabularyQueryOptions,
       isServerSearched: true,
@@ -237,7 +246,7 @@ export const ITEM_LIST_FILTERS = {
     hoverKind: 'bonus',
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiWeaponAbility[]>({
-      path: '/v1/weapon-abilities',
+      request: WEAPON_ABILITY_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.weaponAbilitiesQueryOptions,
 
@@ -261,7 +270,7 @@ export const ITEM_LIST_FILTERS = {
     hoverKind: 'bonus',
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiWeaponAbility[]>({
-      path: '/v1/weapon-abilities',
+      request: WEAPON_ABILITY_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.weaponAbilitiesQueryOptions,
 
@@ -283,7 +292,7 @@ export const ITEM_LIST_FILTERS = {
     searchPlaceholder: 'Find material…',
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiItemMaterial[]>({
-      path: '/v1/item-materials',
+      request: ITEM_MATERIAL_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.itemMaterialsQueryOptions,
 
@@ -304,7 +313,7 @@ export const ITEM_LIST_FILTERS = {
     searchPlaceholder: 'Find socket…',
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiAugmentSlotType[]>({
-      path: '/v1/augment-slot-types',
+      request: SOCKET_TYPE_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.socketTypesQueryOptions,
 
@@ -325,7 +334,7 @@ export const ITEM_LIST_FILTERS = {
     searchPlaceholder: 'Find a pack…',
 
     optionSource: filterOptionSource<ItemListFilters, string[]>({
-      path: '/v1/adventure-packs',
+      request: ADVENTURE_PACK_VOCABULARY_REQUEST,
       restoredLabelSource: 'value',
       queryOptions: vocabularies.adventurePackNamesQueryOptions,
 
@@ -340,7 +349,7 @@ export const ITEM_LIST_FILTERS = {
     searchPlaceholder: 'Find a raid…',
 
     optionSource: filterOptionSource<ItemListFilters, RaidQuest[]>({
-      path: '/v1/quests',
+      request: RAID_QUEST_VOCABULARY_REQUEST,
       restoredLabelSource: 'vocabulary',
       queryOptions: vocabularies.raidQuestsQueryOptions,
 
@@ -361,7 +370,7 @@ export const ITEM_LIST_FILTERS = {
     searchPlaceholder: 'Find crafting system…',
     shouldPreserveOptionOrder: true,
     optionSource: filterOptionSource<ItemListFilters, ApiCraftingSystemRow[]>({
-      path: '/v1/crafting-systems',
+      request: CRAFTING_SYSTEM_VOCABULARY_REQUEST,
       restoredLabelSource: 'vocabulary',
       queryOptions: vocabularies.craftingSystemVocabularyQueryOptions,
 
