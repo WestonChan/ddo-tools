@@ -5,6 +5,13 @@ export interface PatchNote {
 
 export const SITE_PATCH_NOTES: readonly PatchNote[] = [
   {
+    date: '2026-11-26',
+    changes: [
+      'Crafting system finds the items a system upgrades in place as well as the ones it makes, such as the Nearly Finished items, and offers only the systems that find items',
+      'An upgrade socket that several crafting systems shared is one Socket option per system, such as "upgrade: tier 2 (crystal cove)"',
+    ],
+  },
+  {
     date: '2026-11-16',
     changes: [
       'A saved filter value the game data no longer has, such as a renamed pack, says so and offers to remove just that value, keeping the rest of the filter',
