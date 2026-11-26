@@ -4,6 +4,8 @@ import { rejectedFilterValue } from './index'
 import rejectedPack from './fixtures/rejected-pack-value.json'
 import rejectedBonus from './fixtures/rejected-bonus-value.json'
 import rejectedBonusType from './fixtures/rejected-bonus-type.json'
+import rejectedCraftingSystem from './fixtures/rejected-crafting-system-value.json'
+import rejectedSocket from './fixtures/rejected-socket-value.json'
 import rejectedSort from './fixtures/rejected-sort.json'
 import rejectedView from './fixtures/rejected-view.json'
 
@@ -19,6 +21,12 @@ describe('rejectedFilterValue', () => {
     ['pack', rejectedPack, { parameter: 'pack', value: '  a"b\\c; accepted values: x  '.trim() }],
     ['bonus', rejectedBonus, { parameter: 'bonus', value: 'Made-Up' }],
     ['bonus type', rejectedBonusType, null],
+    [
+      'crafting system',
+      rejectedCraftingSystem,
+      { parameter: 'crafting_system', value: 'trapmaking' },
+    ],
+    ['socket', rejectedSocket, { parameter: 'socket', value: 'upgrade: tier 2' }],
     ['sort', rejectedSort, null],
     ['view', rejectedView, { parameter: 'view', value: 'bogus' }],
   ])('reads the captured %s response', async (_name, body, expected) => {

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DDO Tools data API",
-    "description": "Dungeons & Dragons Online game data, parsed from Maetrim's DDOBuilderV2 data files and served read-only. Items, augments, set bonuses, filigrees, sentient gems, feats, stances, guild and optional buffs, races, classes, enhancement trees, spells and clickies, plus the reference vocabularies they share, and the quest facts, quest chains, sagas, vendors, events and crafting recipes read from ddowiki.\n\n**Caching.** The dataset is rebuilt only when DDOBuilderV2 changes, so a response changes only with a new deployment. Each successful response carries a strong `ETag`, an `X-Dataset-Version` header naming the DDOBuilderV2 commit and `Cache-Control: public, max-age=300, stale-while-revalidate=3600`: fresh for five minutes, then revalidated with `If-None-Match`, which answers 304 unless the dataset or the API build changed (the `ETag` hashes both), so a deploy is visible within minutes. `/v1/dump.sqlite` and the icons follow the same policy. Redirects carry the data cache policy and no `ETag`. `/v1/version` reports the current commit and carries `Cache-Control: no-cache`, so every use revalidates it. Error responses (every 4xx and 5xx, 429 included) carry `Cache-Control: no-store` and no `ETag`.\n\n**Shapes.** Entities are addressed by slugs unique within their kind. Effects, groups and stats share one slug space. Numeric ids remain accepted. Renamed slugs redirect with 308 for one year. Every list returns `{ total, limit, offset, <name>: [...] }`, and detail routes return an entity with its related collections. Booleans are JSON booleans, absent values are `null`, and unknown slugs or ids return 404.\n\n**Query parameters.** Different filters are AND-ed. On `/v1/items`, repeat `slot`, `category`, `pack`, `set`, `quest`, `quest_chain`, `saga`, `bonus`, `attack_ability`, `damage_ability`, `material`, `socket` or `crafting_system` for any matching value; comma-separated lists are never used. `pack_match`, `set_match`, `quest_match`, `quest_chain_match`, `saga_match`, `bonus_match`, `attack_ability_match`, `damage_ability_match`, `socket_match` and `crafting_system_match` accept `any` (default) or `all`; `slot_match`, `category_match` and `material_match` return 400 because an item has one slot, category and material. Filter vocabulary counts exclude legacy items and are independent of active item filters. `q` matches a case-insensitive name substring unless a route says otherwise. `limit` defaults to 100 and clamps to 1–10000, or 50 for the full item view; `offset` defaults to zero and clamps to nonnegative values; `total` counts before paging. Repeat `sort` keys in priority order and prefix `-` for descending; nulls sort last in either direction. Each route lists its sort fields, and invalid or unknown query keys return 400 naming the bad key and accepted keys.\n\n**Effects and bonuses.** An effect is one line of equipment text; its owner link carries values and sometimes a bonus type, while its bonus rows derive zero or more typed bonuses from those amounts. Stats are effects identified by `is_stat`; direct stat links carry a value and type. Groups expand one level into member stats, with the group named on each derived bonus. Item, augment and set details render effect templates in owner order. Each line has a concise `name`, a displayed `verbose_name`, and a separate prose `description`; effect detail carriers include the same line under `line`. `/v1/effects` lists effects, groups and stats in one id space; each row's `kind` and `detail_path` identify the detail route. Its `q` also finds effects through aliases and granted stat names, never stats through effect names, and returns each effect once. Item `bonus` filters accept an effect, group, tier group or stat name, or an alias name or slug, and `stat:bonus type` narrows a stat to that type. Family and stat detail page items, augments and set tiers independently with their own limit and offset parameters; each owner is one row holding every one of its lines, so a `total` matches the vocabulary row's count. Effect lists and details include `aliases`. A line may choose alias wording while keeping its canonical effect slug and description. Alias slugs redirect to the canonical effect; member-stat aliases only change display wording. Effect lines and item, augment, set, feat and effect details add `notes` for game bugs and open verification questions. Notes appear on every affected line, or at the top level when no line is affected; game-bug notes come first.\n\n**Bulk.** Download `/v1/dump.sqlite` once instead of paging. Icons are at `/icons/{kind}/{icon}.png`, where `kind` is `items`, `augments`, `feats`, `enhancements`, `spells`, `classes`, `filigrees`, `sets`, `sentient-gems` or `ui` and `icon` is the row's `icon` field.\n\nRequests are rate limited per IP (5 per second, bursts of 100); a limited request gets 429 with `Retry-After` in seconds. CORS allows any origin for GET, on error responses too, and exposes `Retry-After`.",
+    "description": "Dungeons & Dragons Online game data, parsed from Maetrim's DDOBuilderV2 data files and served read-only. Items, augments, set bonuses, filigrees, sentient gems, feats, stances, guild and optional buffs, races, classes, enhancement trees, spells and clickies, plus the reference vocabularies they share, and the quest facts, quest chains, sagas, vendors, events and crafting recipes read from ddowiki.\n\n**Caching.** The dataset is rebuilt only when DDOBuilderV2 changes, so a response changes only with a new deployment. Each successful response carries a strong `ETag`, an `X-Dataset-Version` header naming the DDOBuilderV2 commit and `Cache-Control: public, max-age=300, stale-while-revalidate=3600`: fresh for five minutes, then revalidated with `If-None-Match`, which answers 304 unless the dataset or the API build changed (the `ETag` hashes both), so a deploy is visible within minutes. `/v1/dump.sqlite` and the icons follow the same policy. Redirects carry the data cache policy and no `ETag`. `/v1/version` reports the current commit and carries `Cache-Control: no-cache`, so every use revalidates it. Error responses (every 4xx and 5xx, 429 included) carry `Cache-Control: no-store` and no `ETag`.\n\n**Shapes.** Entities are addressed by slugs unique within their kind. Effects, groups and stats share one slug space. Numeric ids remain accepted. Renamed slugs redirect with 308 for one year. Every list returns `{ total, limit, offset, <name>: [...] }`, and detail routes return an entity with its related collections. Booleans are JSON booleans, absent values are `null`, and unknown slugs or ids return 404.\n\n**Query parameters.** Different filters are AND-ed. On `/v1/items`, repeat `slot`, `category`, `pack`, `set`, `quest`, `quest_chain`, `saga`, `bonus`, `attack_ability`, `damage_ability`, `material`, `socket` or `crafting_system` for any matching value; comma-separated lists are never used. `pack_match`, `set_match`, `quest_match`, `quest_chain_match`, `saga_match`, `bonus_match`, `attack_ability_match`, `damage_ability_match`, `socket_match` and `crafting_system_match` accept `any` (default) or `all`; `slot_match`, `category_match` and `material_match` return 400 because an item has one slot, category and material. Filter vocabulary counts exclude legacy items and are independent of active item filters. `q` matches a case-insensitive name substring unless a route says otherwise. `limit` defaults to 100 and clamps to 1–10000, or 50 for the full item view; `offset` defaults to zero and clamps to nonnegative values; `total` counts before paging. Repeat `sort` keys in priority order and prefix `-` for descending; nulls sort last in either direction. Each route lists its sort fields, and invalid or unknown query keys return 400 naming the bad key and accepted keys. Unknown vocabulary filter values return 400 listing every accepted value; `bonus` resolves names instead.\n\n**Effects and bonuses.** An effect is one line of equipment text; its owner link carries values and sometimes a bonus type, while its bonus rows derive zero or more typed bonuses from those amounts. Stats are effects identified by `is_stat`; direct stat links carry a value and type. Groups expand one level into member stats, with the group named on each derived bonus. Item, augment and set details render effect templates in owner order. Each line has a concise `name`, a displayed `verbose_name`, and a separate prose `description`; effect detail carriers include the same line under `line`. `/v1/effects` lists effects, groups and stats in one id space; each row's `kind` and `detail_path` identify the detail route. Its `q` also finds effects through aliases and granted stat names, never stats through effect names, and returns each effect once. Item `bonus` filters accept an effect, group, tier group or stat name, or an alias name or slug, and `stat:bonus type` narrows a stat to that type. Family and stat detail page items, augments and set tiers independently with their own limit and offset parameters; each owner is one row holding every one of its lines, so a `total` matches the vocabulary row's count. Effect lists and details include `aliases`. A line may choose alias wording while keeping its canonical effect slug and description. Alias slugs redirect to the canonical effect; member-stat aliases only change display wording. Effect lines and item, augment, set, feat and effect details add `notes` for game bugs and open verification questions. Notes appear on every affected line, or at the top level when no line is affected; game-bug notes come first.\n\n**Bulk.** Download `/v1/dump.sqlite` once instead of paging. Icons are at `/icons/{kind}/{icon}.png`, where `kind` is `items`, `augments`, `feats`, `enhancements`, `spells`, `classes`, `filigrees`, `sets`, `sentient-gems` or `ui` and `icon` is the row's `icon` field.\n\nRequests are rate limited per IP (5 per second, bursts of 100); a limited request gets 429 with `Retry-After` in seconds. CORS allows any origin for GET, on error responses too, and exposes `Retry-After`.",
     "license": { "name": "MIT" },
     "version": "v1 · dataset d1350a0c6ec396a65dc02680fa9801a14a79ebf3"
   },
@@ -182,7 +182,13 @@
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": {
+              "name": "AugmentSlotFamilies",
+              "route": "/v1/augment-slot-types",
+              "rows_key": "augment_slot_types",
+              "value_key": "family"
+            }
           }
         ],
         "responses": {
@@ -226,7 +232,7 @@
                   ],
                   "limit": 100,
                   "offset": 0,
-                  "total": 259
+                  "total": 265
                 }
               }
             }
@@ -508,25 +514,38 @@
           {
             "name": "crafting_system",
             "in": "query",
-            "description": "Repeat crafting system slugs from /v1/crafting-systems to match augments yielded by any; omitted includes all.",
+            "description": "Repeat current or redirected slugs or numeric ids from /v1/crafting-systems to match augments yielded by any; omitted includes all.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": {
+              "name": "CraftingSystems",
+              "route": "/v1/crafting-systems",
+              "rows_key": "crafting_systems",
+              "value_key": "slug"
+            }
           },
           {
             "name": "slot",
             "in": "query",
-            "description": "Socket label as /v1/augment-slot-types lists it, e.g. `red` or `lamordia: melancholic (accessory)`; case-insensitive",
+            "description": "Case-insensitive socket label from /v1/augment-slot-types; omitted includes augments fitting any socket.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": {
+              "name": "AugmentSlotTypes",
+              "route": "/v1/augment-slot-types",
+              "rows_key": "augment_slot_types",
+              "value_key": "label"
+            }
           },
           {
             "name": "family",
             "in": "query",
-            "description": "Augment family, e.g. `standard`, `lamordia`, `dino`, `crafting`",
+            "description": "Exact family as served on augment rows; omitted includes every family.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": { "name": "AugmentFamilies" }
           },
           {
             "name": "max_level",
@@ -653,7 +672,7 @@
             }
           },
           "400": {
-            "description": "Unknown or malformed query parameter",
+            "description": "Unknown filter value with accepted values, or an unknown or malformed query parameter",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } }
             }
@@ -1378,11 +1397,18 @@
           {
             "name": "sort",
             "in": "query",
-            "description": "Repeat `sort` in priority order; prefix `-` for descending; nulls sort last; an invalid field returns 400; Allowed fields: name, slug, id, pack, ingredient_count, recipe_count, item_count, npc, page.",
+            "description": "Repeat `sort` in priority order; prefix `-` for descending; nulls sort last; an invalid field returns 400; Allowed fields: name, slug, id, pack, ingredient_count, recipe_count, item_count, has_items, has_item_input, has_item_output, can_apply_to_any_item, npc, page.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
             "explode": true
+          },
+          {
+            "name": "has_items",
+            "in": "query",
+            "description": "Whether the system makes or upgrades at least one non-legacy named item; omitted includes every system.",
+            "required": false,
+            "schema": { "type": "boolean" }
           }
         ],
         "responses": {
@@ -1394,10 +1420,14 @@
                 "example": {
                   "crafting_systems": [
                     {
+                      "can_apply_to_any_item": false,
                       "families": ["Alchemical"],
+                      "has_item_input": true,
+                      "has_item_output": true,
+                      "has_items": true,
                       "id": 5484217083334237,
                       "ingredient_count": 27,
-                      "item_count": 0,
+                      "item_count": 67,
                       "name": "Alchemical Crafting",
                       "npc": "Cannith Melting Station, Just inside the entrance of House Cannith Manufactury",
                       "pack": "Secrets of the Artificers",
@@ -1406,10 +1436,14 @@
                       "slug": "alchemical-crafting"
                     },
                     {
+                      "can_apply_to_any_item": false,
                       "families": ["SealedInFire", "SealedInUndeath"],
+                      "has_item_input": true,
+                      "has_item_output": true,
+                      "has_items": true,
                       "id": 4706586130038373,
                       "ingredient_count": 3,
-                      "item_count": 0,
+                      "item_count": 22,
                       "name": "Augmentation Altar",
                       "npc": "Augmentation Altar, Temple of Silith-tar in the raid Den of Vipers",
                       "pack": null,
@@ -1418,7 +1452,11 @@
                       "slug": "augmentation-altar"
                     },
                     {
+                      "can_apply_to_any_item": false,
                       "families": [],
+                      "has_item_input": true,
+                      "has_item_output": true,
+                      "has_items": true,
                       "id": 6638433828303093,
                       "ingredient_count": 8,
                       "item_count": 84,
@@ -1468,7 +1506,11 @@
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/CraftingSystemsDetailResponse" },
                 "example": {
+                  "can_apply_to_any_item": false,
                   "families": ["Slavelords_Heroic", "Slavelords_Legendary"],
+                  "has_item_input": true,
+                  "has_item_output": true,
+                  "has_items": true,
                   "id": 2218020696701597,
                   "ingredient_count": 16,
                   "ingredients": [
@@ -1497,7 +1539,7 @@
                       "tier": "heroic"
                     }
                   ],
-                  "item_count": 0,
+                  "item_count": 27,
                   "name": "Slave Lords Crafting",
                   "npc": "Garvon, Forsaken Temple, just inside the entrance of the quest Slave Pits of the Undercity (Part 1), safely before any challenging encounter",
                   "pack": "Against the Slave Lords",
@@ -1932,9 +1974,10 @@
           {
             "name": "kind",
             "in": "query",
-            "description": "Keep `effect`, `group` or `stat` rows only.",
+            "description": "Keep effect, group or stat rows only; omitted includes every kind.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": { "name": "EffectKinds" }
           }
         ],
         "responses": {
@@ -3678,23 +3721,26 @@
           {
             "name": "source",
             "in": "query",
-            "description": "`standard`, `class` or `race`; anything else is a 400",
+            "description": "Keep standard, class or race feats; omitted includes every source.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": { "name": "FeatSources" }
           },
           {
             "name": "group",
             "in": "query",
-            "description": "Feat group name, e.g. `Metamagic`; keeps feats listed in that group",
+            "description": "Exact group name listed on feats; omitted includes every group.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": { "name": "FeatGroups" }
           },
           {
             "name": "acquire",
             "in": "query",
-            "description": "How the feat is taken, e.g. `Train`, `Automatic`, `Special`",
+            "description": "How a feat is acquired, using values listed on feats such as Train or Automatic; omitted includes every rule.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": { "name": "FeatAcquisitions" }
           }
         ],
         "responses": {
@@ -3746,7 +3792,7 @@
             }
           },
           "400": {
-            "description": "Unknown source, or an unknown or malformed query parameter",
+            "description": "Unknown filter value with accepted values, or an unknown or malformed query parameter",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } }
             }
@@ -4598,8 +4644,8 @@
             "description": "Unsupported because an item has one slot; this parameter returns 400.",
             "required": false,
             "schema": { "type": "string" },
-            "x-single-value": true,
-            "x-match-key": "slot"
+            "x-match-key": "slot",
+            "x-single-value": true
           },
           {
             "name": "category_match",
@@ -4622,20 +4668,27 @@
           {
             "name": "slot",
             "in": "query",
-            "description": "Repeat equipment slot names from /v1/equipment-slots to match any.",
+            "description": "Repeat equipment slot names from /v1/equipment-slots to match any; omitted applies no filter.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": {
+              "name": "EquipmentSlots",
+              "route": "/v1/equipment-slots",
+              "rows_key": "equipment_slots",
+              "value_key": "name"
+            }
           },
           {
             "name": "category",
             "in": "query",
-            "description": "Repeat Armor, Shield, Weapon, Jewelry or Clothing to match any.",
+            "description": "Repeat Armor, Shield, Weapon, Jewelry or Clothing to match any; omitted applies no filter.",
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": { "name": "ItemCategories" }
           },
           {
             "name": "attack_ability",
@@ -4644,7 +4697,13 @@
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": {
+              "name": "WeaponAbilities",
+              "route": "/v1/weapon-abilities",
+              "rows_key": "weapon_abilities",
+              "value_key": "name"
+            }
           },
           {
             "name": "damage_ability",
@@ -4653,7 +4712,13 @@
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": {
+              "name": "WeaponAbilities",
+              "route": "/v1/weapon-abilities",
+              "rows_key": "weapon_abilities",
+              "value_key": "name"
+            }
           },
           {
             "name": "material",
@@ -4662,7 +4727,13 @@
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": {
+              "name": "ItemMaterials",
+              "route": "/v1/item-materials",
+              "rows_key": "item_materials",
+              "value_key": "name"
+            }
           },
           {
             "name": "socket",
@@ -4671,7 +4742,113 @@
             "required": false,
             "schema": { "type": "array", "items": { "type": "string" } },
             "style": "form",
-            "explode": true
+            "explode": true,
+            "x-vocabulary": {
+              "name": "AugmentSlotTypes",
+              "route": "/v1/augment-slot-types",
+              "rows_key": "augment_slot_types",
+              "value_key": "label"
+            }
+          },
+          {
+            "name": "crafting_system",
+            "in": "query",
+            "description": "Repeat current or redirected slugs or numeric ids from /v1/crafting-systems?has_items=true to match items made or upgraded; omitted applies no filter.",
+            "required": false,
+            "schema": { "type": "array", "items": { "type": "string" } },
+            "style": "form",
+            "explode": true,
+            "x-vocabulary": {
+              "name": "ItemCraftingSystems",
+              "parameters": { "has_items": "true" },
+              "route": "/v1/crafting-systems",
+              "rows_key": "crafting_systems",
+              "value_key": "slug"
+            }
+          },
+          {
+            "name": "pack",
+            "in": "query",
+            "description": "Repeat names from /v1/adventure-packs reached through item sources; omitted applies no filter.",
+            "required": false,
+            "schema": { "type": "array", "items": { "type": "string" } },
+            "style": "form",
+            "explode": true,
+            "x-vocabulary": {
+              "name": "AdventurePacks",
+              "route": "/v1/adventure-packs",
+              "rows_key": "adventure_packs",
+              "value_key": "name"
+            }
+          },
+          {
+            "name": "set",
+            "in": "query",
+            "description": "Repeat set names from /v1/sets to match member items; omitted applies no filter.",
+            "required": false,
+            "schema": { "type": "array", "items": { "type": "string" } },
+            "style": "form",
+            "explode": true,
+            "x-vocabulary": {
+              "name": "Sets",
+              "route": "/v1/sets",
+              "rows_key": "sets",
+              "value_key": "name"
+            }
+          },
+          {
+            "name": "quest",
+            "in": "query",
+            "description": "Repeat current or redirected slugs or numeric ids from /v1/quests to match their item drops; omitted applies no filter.",
+            "required": false,
+            "schema": { "type": "array", "items": { "type": "string" } },
+            "style": "form",
+            "explode": true,
+            "x-vocabulary": {
+              "name": "Quests",
+              "route": "/v1/quests",
+              "rows_key": "quests",
+              "value_key": "slug"
+            }
+          },
+          {
+            "name": "quest_chain",
+            "in": "query",
+            "description": "Repeat current or redirected slugs or numeric ids from /v1/quest-chains to match end rewards; omitted applies no filter.",
+            "required": false,
+            "schema": { "type": "array", "items": { "type": "string" } },
+            "style": "form",
+            "explode": true,
+            "x-vocabulary": {
+              "name": "QuestChains",
+              "route": "/v1/quest-chains",
+              "rows_key": "quest_chains",
+              "value_key": "slug"
+            }
+          },
+          {
+            "name": "saga",
+            "in": "query",
+            "description": "Repeat current or redirected slugs or numeric ids from /v1/sagas to match end rewards; omitted applies no filter.",
+            "required": false,
+            "schema": { "type": "array", "items": { "type": "string" } },
+            "style": "form",
+            "explode": true,
+            "x-vocabulary": {
+              "name": "Sagas",
+              "route": "/v1/sagas",
+              "rows_key": "sagas",
+              "value_key": "slug"
+            }
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "description": "Use `summary` (default) for compact rows or `full` for detail records; full pages cap at 50 rows.",
+            "required": false,
+            "schema": { "type": "string" },
+            "example": "full",
+            "x-vocabulary": { "name": "ItemViews" }
           },
           {
             "name": "min_level",
@@ -4688,33 +4865,6 @@
             "schema": { "type": "integer", "format": "int64" }
           },
           {
-            "name": "pack",
-            "in": "query",
-            "description": "Repeat adventure pack names reached through item sources.",
-            "required": false,
-            "schema": { "type": "array", "items": { "type": "string" } },
-            "style": "form",
-            "explode": true
-          },
-          {
-            "name": "crafting_system",
-            "in": "query",
-            "description": "Repeat current or redirected slugs or numeric ids from /v1/crafting-systems to match their item outputs; omitted applies no filter.",
-            "required": false,
-            "schema": { "type": "array", "items": { "type": "string" } },
-            "style": "form",
-            "explode": true
-          },
-          {
-            "name": "set",
-            "in": "query",
-            "description": "Repeat set names from /v1/sets to match member items.",
-            "required": false,
-            "schema": { "type": "array", "items": { "type": "string" } },
-            "style": "form",
-            "explode": true
-          },
-          {
             "name": "raid",
             "in": "query",
             "description": "Use true to keep items from raid quests.",
@@ -4729,33 +4879,6 @@
             "schema": { "type": "boolean" }
           },
           {
-            "name": "quest",
-            "in": "query",
-            "description": "Repeat quest slugs or numeric ids from /v1/quests to match their item drops.",
-            "required": false,
-            "schema": { "type": "array", "items": { "type": "string" } },
-            "style": "form",
-            "explode": true
-          },
-          {
-            "name": "quest_chain",
-            "in": "query",
-            "description": "Repeat quest chain slugs or numeric ids to match end rewards.",
-            "required": false,
-            "schema": { "type": "array", "items": { "type": "string" } },
-            "style": "form",
-            "explode": true
-          },
-          {
-            "name": "saga",
-            "in": "query",
-            "description": "Repeat saga slugs or numeric ids to match end rewards.",
-            "required": false,
-            "schema": { "type": "array", "items": { "type": "string" } },
-            "style": "form",
-            "explode": true
-          },
-          {
             "name": "include_set_bonuses",
             "in": "query",
             "description": "Use true to match effects through the item's set tiers too.",
@@ -4768,14 +4891,6 @@
             "description": "Use true to include legacy item versions in the list.",
             "required": false,
             "schema": { "type": "boolean" }
-          },
-          {
-            "name": "view",
-            "in": "query",
-            "description": "Use `summary` (default) for compact rows or `full` for detail records; full pages cap at 50 rows.",
-            "required": false,
-            "schema": { "type": "string" },
-            "example": "full"
           }
         ],
         "responses": {
@@ -7205,9 +7320,15 @@
           {
             "name": "slot",
             "in": "query",
-            "description": "Socket label from /v1/augment-slot-types; omitted includes every label.",
+            "description": "Case-insensitive socket label from /v1/augment-slot-types; omitted includes every label.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": {
+              "name": "AugmentSlotTypes",
+              "route": "/v1/augment-slot-types",
+              "rows_key": "augment_slot_types",
+              "value_key": "label"
+            }
           }
         ],
         "responses": {
@@ -7228,10 +7349,10 @@
                       "variant": null
                     },
                     {
-                      "id": 6696183991990116,
-                      "label": "upgrade: tier 2",
+                      "id": 272145648544535,
+                      "label": "upgrade: tier 2 (toee)",
                       "name": "+3 Combustion Scorched Bastard Sword",
-                      "slug": "upgrade-tier-2-3-combustion-scorched-bastard-sword",
+                      "slug": "upgrade-tier-2-toee-3-combustion-scorched-bastard-sword",
                       "variant": null
                     },
                     {
@@ -7242,13 +7363,13 @@
                       "variant": null
                     }
                   ],
-                  "total": 521
+                  "total": 524
                 }
               }
             }
           },
           "400": {
-            "description": "Unknown or malformed query parameter",
+            "description": "Unknown filter value with accepted values, or an unknown or malformed query parameter",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } }
             }
@@ -7422,16 +7543,23 @@
           {
             "name": "school",
             "in": "query",
-            "description": "Spell school, e.g. `Evocation`; matches spells listing it among their schools",
+            "description": "Exact school listed on spells, such as Evocation; omitted includes every school.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": { "name": "SpellSchools" }
           },
           {
             "name": "class",
             "in": "query",
-            "description": "Class name as /v1/classes lists it; keeps spells on that class's list",
+            "description": "Class name from /v1/classes; keeps spells on that class's list; omitted includes every class.",
             "required": false,
-            "schema": { "type": "string" }
+            "schema": { "type": "string" },
+            "x-vocabulary": {
+              "name": "Classes",
+              "route": "/v1/classes",
+              "rows_key": "classes",
+              "value_key": "name"
+            }
           }
         ],
         "responses": {
@@ -7473,7 +7601,7 @@
             }
           },
           "400": {
-            "description": "Unknown or malformed query parameter",
+            "description": "Unknown filter value with accepted values, or an unknown or malformed query parameter",
             "content": {
               "application/json": { "schema": { "$ref": "#/components/schemas/ErrorBody" } }
             }
@@ -7902,7 +8030,7 @@
                     "crafting_ingredients": 434,
                     "crafting_recipes": 3693,
                     "crafting_stations": 97,
-                    "crafting_steps": 242,
+                    "crafting_steps": 240,
                     "crafting_system_sources": 1854,
                     "crafting_systems": 53,
                     "effect_bonuses": 711,
@@ -7918,7 +8046,7 @@
                     "item_effects": 28576,
                     "items": 8729,
                     "legacy_items": 686,
-                    "modifiers": 15033,
+                    "modifiers": 15036,
                     "optional_buffs": 138,
                     "pack_augment_loot": 0,
                     "pack_loot": 478,
@@ -7935,7 +8063,7 @@
                     "set_bonus_tier_effects": 990,
                     "set_bonuses": 328,
                     "socket_option_effects": 891,
-                    "socket_option_sets": 521,
+                    "socket_option_sets": 524,
                     "sources": 9495,
                     "spells": 706,
                     "starter_items": 174,
@@ -7946,10 +8074,10 @@
                     "wiki_quests": 4
                   },
                   "dataset": {
-                    "built_at": "2026-11-15T13:37:33Z",
+                    "built_at": "2026-11-26T04:38:35Z",
                     "upstream_sha": "d1350a0c6ec396a65dc02680fa9801a14a79ebf3"
                   },
-                  "schema_version": 50
+                  "schema_version": 51
                 }
               }
             }
@@ -8883,6 +9011,10 @@
           "ingredient_count",
           "ingredients",
           "item_count",
+          "has_items",
+          "has_item_input",
+          "has_item_output",
+          "can_apply_to_any_item",
           "name",
           "page",
           "recipe_count",
@@ -8892,7 +9024,23 @@
           "unlocks"
         ],
         "properties": {
+          "can_apply_to_any_item": {
+            "type": "boolean",
+            "description": "Whether this system acts on any item of a kind rather than named items."
+          },
           "families": { "type": "array", "items": { "type": "string" } },
+          "has_item_input": {
+            "type": "boolean",
+            "description": "Whether an item goes into this system, including an item upgraded in place."
+          },
+          "has_item_output": {
+            "type": "boolean",
+            "description": "Whether this system makes or returns equipment, including a changed input item."
+          },
+          "has_items": {
+            "type": "boolean",
+            "description": "Whether this system makes or upgrades at least one non-legacy item; only these systems are accepted by /v1/items?crafting_system=."
+          },
           "id": { "type": "integer", "format": "int64" },
           "ingredient_count": { "type": "integer", "format": "int64" },
           "ingredients": {
@@ -8901,7 +9049,11 @@
               "$ref": "#/components/schemas/CraftingSystemsDetailResponseIngredientsEntry"
             }
           },
-          "item_count": { "type": "integer", "format": "int64" },
+          "item_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Non-legacy items this system makes or upgrades in place."
+          },
           "name": { "type": "string" },
           "npc": {
             "type": ["string", "null"],
@@ -9023,15 +9175,39 @@
           "families",
           "ingredient_count",
           "item_count",
+          "has_items",
+          "has_item_input",
+          "has_item_output",
+          "can_apply_to_any_item",
           "name",
           "page",
           "recipe_count"
         ],
         "properties": {
+          "can_apply_to_any_item": {
+            "type": "boolean",
+            "description": "Whether this system acts on any item of a kind rather than named items."
+          },
           "families": { "type": "array", "items": { "type": "string" } },
+          "has_item_input": {
+            "type": "boolean",
+            "description": "Whether an item goes into this system, including an item upgraded in place."
+          },
+          "has_item_output": {
+            "type": "boolean",
+            "description": "Whether this system makes or returns equipment, including a changed input item."
+          },
+          "has_items": {
+            "type": "boolean",
+            "description": "Whether this system makes or upgrades at least one non-legacy item; only these systems are accepted by /v1/items?crafting_system=."
+          },
           "id": { "type": "integer", "format": "int64" },
           "ingredient_count": { "type": "integer", "format": "int64" },
-          "item_count": { "type": "integer", "format": "int64" },
+          "item_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Non-legacy items this system makes or upgrades in place."
+          },
           "name": { "type": "string" },
           "npc": {
             "type": ["string", "null"],

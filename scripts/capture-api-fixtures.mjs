@@ -15,6 +15,14 @@ const manifest = {
     path: '/v1/items?bonus=Strength:Nope',
     status: 400,
   },
+  'src/lib/api/fixtures/rejected-crafting-system-value.json': {
+    path: '/v1/items?crafting_system=trapmaking',
+    status: 400,
+  },
+  'src/lib/api/fixtures/rejected-socket-value.json': {
+    path: '/v1/items?socket=upgrade:%20tier%202',
+    status: 400,
+  },
   'src/lib/api/fixtures/rejected-sort.json': { path: '/v1/items?sort=bogus', status: 400 },
   'src/lib/api/fixtures/rejected-view.json': { path: '/v1/items?view=bogus', status: 400 },
   'src/features/resources/queries/fixtures/item-rune-arm-of-the-great-decay.json':
@@ -27,7 +35,8 @@ const manifest = {
   'src/features/resources/queries/fixtures/item-materials.json': '/v1/item-materials?limit=50',
   'src/features/resources/queries/fixtures/augment-slot-types-filter-families.json':
     '/v1/augment-slot-types?family=standard&family=dino&family=lamordia&family=upgrade&limit=100',
-  'src/features/resources/queries/fixtures/crafting-systems.json': '/v1/crafting-systems?limit=100',
+  'src/features/resources/queries/fixtures/crafting-systems.json':
+    '/v1/crafting-systems?has_items=true&limit=100',
   'src/features/resources/queries/fixtures/effect-elemental-resistance.json':
     '/v1/effects/elemental-resistance?items_limit=1&items_offset=15&augments_limit=0&set_tiers_limit=0',
   'src/features/resources/queries/fixtures/item-docent-of-shadow-level-8.json':
