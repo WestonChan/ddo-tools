@@ -84,6 +84,12 @@ export function seedGalleryFilterVocabularies(queryClient: QueryClient): void {
       item_count: 6,
     },
     { slug: gallerySlug('upgrade'), label: 'upgrade', family: 'upgrade', item_count: 2 },
+    {
+      slug: gallerySlug('upgrade-tier-2-toee'),
+      label: 'upgrade: tier 2 (toee)',
+      family: 'upgrade',
+      item_count: 0,
+    },
   ])
   queryClient.setQueryData(craftingSystemVocabularyQueryOptions().queryKey, [
     { slug: gallerySlug('thunder-forged'), name: 'Thunder-Forged', item_count: 12 },
